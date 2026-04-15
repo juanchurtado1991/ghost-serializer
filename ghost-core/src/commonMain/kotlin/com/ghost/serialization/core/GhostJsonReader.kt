@@ -104,36 +104,44 @@ class GhostJsonReader(
         
         val b = source.buffer[index]
         if (b == QUOTE) {
-             val result = readPooledString(index)
+            val result = readPooledString(index)
             internalSkip(index + 1)
             return result
         }
-        
-        if (b < 32) throwError("Unescaped control character in string")
         
         return readStringWithEscapes(index)
     }
 
     private fun readPooledString(length: Long): String {
         if (length <= 0) return ""
-        if (length > GhostJsonConstants.MAX_POOL_STRING_LENGTH) {
-            return source.peek().readUtf8(length)
+        
+        val len = length.toInt()
+        
+        if (len > GhostJsonConstants.MAX_POOL_STRING_LENGTH) {
+            for (i in 0L until length) {
+                val byte = source.buffer[i]
+                if (byte in 0..31) throwError("Unescaped control character in string")
+            }
+            return source.buffer.snapshot(len).utf8()
         }
         
         var hash = 0
         for (i in 0L until length) {
-            hash = 31 * hash + source.buffer[i].toInt()
+            val byte = source.buffer[i].toInt()
+            if (byte in 0..31) throwError("Unescaped control character in string")
+            hash = 31 * hash + byte
         }
         val poolIndex = hash and (GhostJsonConstants.STR_POOL_SIZE - 1)
         val cached = stringPool[poolIndex]
-        if (cached != null && cached.length == length.toInt()) {
+        if (cached != null && cached.length == len) {
             var match = true
-            for (i in 0L until length) {
-                if (cached[i.toInt()].code.toByte() != source.buffer[i]) { match = false; break }
+            for (i in 0 until len) {
+                if (cached[i].code.toByte() != source.buffer[i.toLong()]) { match = false; break }
             }
             if (match) return cached
         }
-        val result = source.peek().readUtf8(length)
+        val chars = CharArray(len) { source.buffer[it.toLong()].toInt().toChar() }
+        val result = String(chars)
         stringPool[poolIndex] = result
         return result
     }
