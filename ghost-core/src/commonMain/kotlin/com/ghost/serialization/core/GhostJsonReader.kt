@@ -104,16 +104,17 @@ class GhostJsonReader(
         
         val b = source.buffer[index]
         if (b == QUOTE) {
-            val result = readPooledString(index)
-            internalSkip(index + 1)
-            return result
+            return readPooledString(index)
         }
         
         return readStringWithEscapes(index)
     }
 
     private fun readPooledString(length: Long): String {
-        if (length <= 0) return ""
+        if (length <= 0) {
+            internalSkip(1)
+            return ""
+        }
         
         val len = length.toInt()
         
@@ -122,7 +123,10 @@ class GhostJsonReader(
                 val byte = source.buffer[i]
                 if (byte in 0..31) throwError("Unescaped control character in string")
             }
-            return source.buffer.snapshot(len).utf8()
+            val result = source.readUtf8(length)
+            column += len
+            internalSkip(1)
+            return result
         }
         
         var hash = 0
@@ -138,11 +142,15 @@ class GhostJsonReader(
             for (i in 0 until len) {
                 if (cached[i].code.toByte() != source.buffer[i.toLong()]) { match = false; break }
             }
-            if (match) return cached
+            if (match) {
+                internalSkip(length + 1)
+                return cached
+            }
         }
-        val chars = CharArray(len) { source.buffer[it.toLong()].toInt().toChar() }
-        val result = String(chars)
+        val result = source.readUtf8(length)
+        column += len
         stringPool[poolIndex] = result
+        internalSkip(1)
         return result
     }
 
