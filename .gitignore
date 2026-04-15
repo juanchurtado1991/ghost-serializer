@@ -1,0 +1,30 @@
+# Android/IntelliJ
+*.iml
+.gradle/
+.idea/
+local.properties
+.kotlin/
+.vscode/
+
+# Build outputs (Recursive)
+**/build/
+**/bin/
+**/out/
+**/target/
+
+# Captures and Logs
+/captures
+*.txt
+*.log
+audit_log.txt
+benchmark_output.txt
+final_*.txt
+perf_log.txt
+trace_log.txt
+
+# OS
+.DS_Store
+
+# Native/KMP
+.externalNativeBuild
+.cxx

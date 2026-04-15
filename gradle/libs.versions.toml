@@ -1,0 +1,54 @@
+[versions]
+# Build Tools & Languages
+agp = "8.8.0" # Updated to latest stable AGP
+kotlin = "2.1.0"
+ksp = "2.1.0-1.0.29"
+jvmTarget = "17" # Standardized across the entire project
+
+# Libraries
+okio = "3.9.1"
+kotlinpoet = "1.18.1" # Updated to latest stable
+retrofit = "2.11.0"
+okhttp = "4.12.0"
+gson = "2.11.0"
+moshi = "1.15.1"
+kotlinx-serialization = "1.7.3"
+
+# Sample App UI (Only to be used in the sample module, NOT in the library)
+appcompat = "1.7.0"
+material = "1.12.0"
+
+[libraries]
+# Ghost Core Essentials
+okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
+
+# Compiler & KSP
+kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
+ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
+
+# Optional Integrations (For separate modules)
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
+moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+# Testing
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+junit-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "1.11.3" }
+junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.11.3" }
+
+# Sample App Only
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
