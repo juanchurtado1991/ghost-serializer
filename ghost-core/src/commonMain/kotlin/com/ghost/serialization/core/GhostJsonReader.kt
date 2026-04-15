@@ -239,15 +239,28 @@ class GhostJsonReader(
 
     internal fun skipWhitespace() {
         while (source.request(1)) {
-            val b = source.buffer[0]
-            if (b == SPACE || b == TAB || b == CR) {
-                internalSkip(1)
-            } else if (b == NEWLINE) {
-                source.skip(1)
-                line++
-                column = 1
-            } else {
-                break
+            val buf = source.buffer
+            val size = buf.size
+            var pos = 0L
+            while (pos < size) {
+                val b = buf[pos]
+                if (b == SPACE || b == TAB || b == CR) {
+                    pos++
+                } else if (b == NEWLINE) {
+                    pos++
+                    line++
+                    column = 1
+                } else {
+                    if (pos > 0) {
+                        source.skip(pos)
+                        column += pos.toInt()
+                    }
+                    return
+                }
+            }
+            if (pos > 0) {
+                source.skip(pos)
+                column += pos.toInt()
             }
         }
     }

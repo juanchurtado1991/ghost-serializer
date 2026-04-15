@@ -106,7 +106,7 @@ private fun runColdStart(data: ByteString): BenchmarkMetrics {
     val k =
         measureTime { coldKser.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray())) }
     val gh = measureTime {
-        Ghost.deserialize<ComplexResponse>(data.utf8())
+        Ghost.deserialize<ComplexResponse>(Buffer().write(data))
     }
 
     return BenchmarkMetrics(Result(g, 0), Result(m, 0), Result(k, 0), Result(gh, 0))
@@ -127,7 +127,7 @@ private fun runWarmup(
         )
         moshi.adapter<ComplexResponse>().fromJson(Buffer().write(data))
         kJson.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray()))
-        Ghost.deserialize<ComplexResponse>(data.utf8())
+        Ghost.deserialize<ComplexResponse>(Buffer().write(data))
 
         // Warmup serialization
         gson.toJson(complex)
@@ -189,7 +189,7 @@ private fun runSteadyState(
     val m = measurePerf(bean) { moshi.adapter<ComplexResponse>().fromJson(Buffer().write(data)) }
     val k =
         measurePerf(bean) { kJson.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray())) }
-    val gh = measurePerf(bean) { Ghost.deserialize<ComplexResponse>(data.utf8()) }
+    val gh = measurePerf(bean) { Ghost.deserialize<ComplexResponse>(Buffer().write(data)) }
     return BenchmarkMetrics(
         Result(g.first, g.second),
         Result(m.first, m.second),
@@ -212,7 +212,7 @@ private fun runStressTests(gson: Gson, moshi: Moshi, kJson: Json): StressMetrics
         measurePerfSimple { moshi.adapter<Category>().fromJson(Buffer().copy().write(tBytes)) }
     val kTree =
         measurePerfSimple { kJson.decodeFromStream<Category>(ByteArrayInputStream(tBytes.toByteArray())) }
-    val ghTree = measurePerfSimple { Ghost.deserialize<Category>(tBytes.utf8()) }
+    val ghTree = measurePerfSimple { Ghost.deserialize<Category>(Buffer().write(tBytes)) }
 
     return StressMetrics(
         BenchmarkMetrics(Result(gTree, 0), Result(mTree, 0), Result(kTree, 0), Result(ghTree, 0)),
@@ -248,7 +248,7 @@ private fun runFailureTests(data: ByteString): BenchmarkMetrics {
     }
     val gh = measureAvgFailSpeed {
         try {
-            Ghost.deserialize<ComplexResponse>(malformed)
+            Ghost.deserialize<ComplexResponse>(Buffer().write(bytes))
         } catch (e: Exception) {
         }
     }

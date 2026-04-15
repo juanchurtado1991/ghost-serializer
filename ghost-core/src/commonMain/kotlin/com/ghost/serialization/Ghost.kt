@@ -4,6 +4,7 @@ import com.ghost.serialization.core.GhostJsonReader
 import com.ghost.serialization.core.GhostRegistry
 import com.ghost.serialization.core.GhostSerializer
 import okio.BufferedSink
+import okio.BufferedSource
 import kotlin.reflect.KClass
 
 /**
@@ -51,6 +52,13 @@ object Ghost {
 
     inline fun <reified T : Any> deserialize(json: String): T {
         val reader = GhostJsonReader(okio.Buffer().writeUtf8(json))
+        val serializer = getSerializer(T::class)
+            ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")
+        return serializer.deserialize(reader)
+    }
+
+    inline fun <reified T : Any> deserialize(source: BufferedSource): T {
+        val reader = GhostJsonReader(source)
         val serializer = getSerializer(T::class)
             ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")
         return serializer.deserialize(reader)

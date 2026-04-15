@@ -20,23 +20,25 @@ import com.ghost.serialization.core.GhostJsonConstants.TRUE_LENGTH
  */
 
 fun GhostJsonReader.selectName(options: GhostJsonReader.Options): Int {
-    var b = nextNonWhitespace()
+    skipWhitespace()
+    if (!source.request(1)) internalThrowError("Unexpected EOF")
+    var b = source.buffer[0]
+    
     if (b == CLOSE_OBJ) return -1
     
     if (b == COMMA) {
         internalSkip(1)
-        b = nextNonWhitespace()
+        skipWhitespace()
+        if (!source.request(1)) internalThrowError("Unexpected EOF")
+        b = source.buffer[0]
+        if (b == CLOSE_OBJ) return -1
     }
     
-    if (b == CLOSE_OBJ) return -1
-    
     if (b != QUOTE) internalThrowError("Expected property name but found ${b.toInt().toChar()}")
-    internalSkip(1) // Consume opening quote
+    internalSkip(1)
 
     val index = internalSelect(options)
     if (index != -1) {
-        // Atomic Match: Consume the closing quote only if we are pointing at it.
-        // This handles cases where long names cross buffer segments.
         if (source.request(1) && source.buffer[0] == QUOTE) {
             internalSkip(1)
             return index
@@ -77,8 +79,10 @@ fun GhostJsonReader.nextKey(): String? {
 }
 
 fun GhostJsonReader.consumeKeySeparator() { 
-    val b = nextNonWhitespace()
-    if (b != COLON) internalThrowError("Expected ':' but found ${b.toInt().toChar()}")
+    skipWhitespace()
+    if (!source.request(1) || source.buffer[0] != COLON) {
+        internalThrowError("Expected ':'")
+    }
     internalSkip(1)
 }
 
@@ -127,30 +131,21 @@ fun GhostJsonReader.skipValue() {
 
 fun <T> GhostJsonReader.readList(capacity: Int = 10, itemParser: () -> T): List<T> {
     beginArray()
-    if (nextNonWhitespace(throwOnEof = false) == CLOSE_ARR) {
+    skipWhitespace()
+    if (source.request(1) && source.buffer[0] == CLOSE_ARR) {
         endArray()
         return emptyList()
     }
     val list = ArrayList<T>(capacity)
+    list.add(itemParser())
     while (true) {
-        list.add(itemParser())
-        
-        // --- Unified Scan (V36 Hyper-Path) ---
         skipWhitespace()
         if (!source.request(1)) internalThrowError("Unexpected EOF in array")
         val b = source.buffer[0]
-        
         if (b == CLOSE_ARR) break
-        if (b != COMMA) internalThrowError("Expected ',' but found ${b.toInt().toChar()}")
-        
-        internalSkip(1) // Skip comma
-        
-        // Peek for trailing comma
-        skipWhitespace()
-        if (!source.request(1)) internalThrowError("Unexpected EOF after comma")
-        if (source.buffer[0] == CLOSE_ARR) {
-            internalThrowError("Trailing comma not allowed in array")
-        }
+        if (b != COMMA) internalThrowError("Expected ',' or ']' but found ${b.toInt().toChar()}")
+        internalSkip(1)
+        list.add(itemParser())
     }
     endArray()
     return list

@@ -10,8 +10,8 @@ okio = "3.9.1"
 kotlinpoet = "1.18.1" # Updated to latest stable
 retrofit = "2.11.0"
 okhttp = "4.12.0"
-gson = "2.11.0"
-moshi = "1.15.1"
+gson = "2.13.2"
+moshi = "1.15.2"
 kotlinx-serialization = "1.7.3"
 
 # Sample App UI (Only to be used in the sample module, NOT in the library)
