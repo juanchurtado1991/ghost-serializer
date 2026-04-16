@@ -65,13 +65,16 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitEnumDeserialization(body: CodeBlock.Builder) {
-        body.addStatement(
-            "val s = reader.nextString()"
-        )
-        body.addStatement(
-            "return try { %T.valueOf(s) } catch (_: %T) { throw GhostJsonException(\"Invalid enum value: \$s\", 0, 0) }",
-            originalClassName, IllegalArgumentException::class
-        )
+        body.addStatement("val index = reader.selectName(ENUM_OPTIONS)")
+        body.beginControlFlow("return when (index)")
+        
+        properties.firstOrNull()?.enumValues?.entries?.forEachIndexed { i, entry ->
+            body.addStatement("$i -> %T.${entry.key}", originalClassName)
+        }
+        
+        body.addStatement("-1 -> reader.throwError(\"Invalid enum value at path \${reader.path}\")")
+        body.addStatement("else -> throw GhostJsonException(\"Unexpected index: \$index\")")
+        body.endControlFlow()
     }
 
     private fun emitStandardDeserialization(body: CodeBlock.Builder) {
@@ -134,7 +137,7 @@ internal class DeserializeCodeEmitter(
             }
 
             prop.isSealedClass -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(prop.type))
-            prop.isEnum -> buildEnumCall(prop.typeName)
+            prop.isEnum -> buildEnumCall(prop)
             prop.type.isPrimitiveInt() -> CodeBlock.of(STR_NEXT_INT)
             prop.type.isPrimitiveBoolean() -> CodeBlock.of(STR_NEXT_BOOLEAN)
             prop.type.isPrimitiveLong() -> CodeBlock.of(STR_NEXT_LONG)
@@ -164,10 +167,9 @@ internal class DeserializeCodeEmitter(
             )
 
             prop.isEnum -> CodeBlock.of(
-                STR_NULL_CHECK_3 +
-                        STR_NULL_CHECK_4,
-                prop.typeName.copy(nullable = false),
-                IllegalArgumentException::class
+                STR_NULL_CHECK_1 +
+                        STR_NULL_CHECK_2,
+                serializerName(prop.type)
             )
 
             prop.type.isPrimitiveInt() -> CodeBlock.of(STR_NULL_CHECK_INT)
@@ -194,10 +196,10 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    private fun buildEnumCall(typeName: com.squareup.kotlinpoet.TypeName): CodeBlock {
+    private fun buildEnumCall(prop: GhostPropertyModel): CodeBlock {
         return CodeBlock.of(
-            STR_ENUM_EXPR,
-            typeName, IllegalArgumentException::class
+            STR_T_DESERIALIZE,
+            serializerName(prop.type)
         )
     }
 
@@ -208,11 +210,8 @@ internal class DeserializeCodeEmitter(
             )
 
             prop.listInnerIsEnum -> CodeBlock.of(
-                STR_TRY_ENUM +
-                        STR_CATCH_ENUM_FIRST,
-                prop.listInnerType!!.toTypeName(),
-                IllegalArgumentException::class,
-                prop.listInnerType.toTypeName()
+                STR_T_DESERIALIZE,
+                serializerName(prop.listInnerType!!)
             )
 
             prop.listInnerType?.isPrimitiveInt() == true -> CodeBlock.of(STR_NEXT_INT)

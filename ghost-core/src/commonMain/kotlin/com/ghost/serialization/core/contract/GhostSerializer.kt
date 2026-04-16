@@ -16,4 +16,9 @@ interface GhostSerializer<T> {
     fun deserialize(source: BufferedSource): T = deserialize(GhostJsonReader(source))
 
     fun deserialize(reader: GhostJsonReader): T
+
+    /**
+     * Deep Prewarm Support: Performs a dummy cycle to induce JIT/ART optimization.
+     */
+    fun warmUp() {}
 }

@@ -10,6 +10,7 @@ kotlin {
 dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-core"))
+    implementation(libs.kotlinx.serialization.json)
     ksp(project(":ghost-compiler"))
 
     testImplementation(libs.kotlin.test)

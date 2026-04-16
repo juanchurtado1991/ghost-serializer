@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -34,12 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.ghost.serialization.sample.api.RickAndMortyApi
-import com.ghost.serialization.sample.api.BenchmarkUtils
-import com.ghost.serialization.sample.domain.CharacterResponse
-import com.ghost.serialization.sample.domain.Character
 import coil3.compose.AsyncImage
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.sample.api.RickAndMortyApi
+import com.ghost.serialization.sample.domain.GhostCharacter
 import com.ghost.serialization.sample.util.copyToClipboard
 import kotlinx.coroutines.launch
 
@@ -50,15 +47,18 @@ fun GhostSampleApp() {
 
     LaunchedEffect(Unit) { Ghost.prewarm() }
 
-    var characters by remember { mutableStateOf<List<Character>>(emptyList()) }
+    var characters by remember { mutableStateOf<List<GhostCharacter>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var networkTimeMs by remember { mutableStateOf(0.0) }
-    var parseTimeMs by remember { mutableStateOf(0.0) }
+    var ghostTimeMs by remember { mutableStateOf(0.0) }
     var moshiTimeMs by remember { mutableStateOf(-1.0) }
+    var kserTimeMs by remember { mutableStateOf(-1.0) }
     var ghostMemBytes by remember { mutableStateOf(0L) }
     var moshiMemBytes by remember { mutableStateOf(0L) }
-    var lastResponse by remember { mutableStateOf<CharacterResponse?>(null) }
+    var kserMemBytes by remember { mutableStateOf(0L) }
+    var pageCount by remember { mutableStateOf(1f) }
+    var lastResponse by remember { mutableStateOf<List<GhostCharacter>>(emptyList()) }
     var sessionHistory by remember { mutableStateOf(listOf<String>()) }
 
     Box(
@@ -82,117 +82,166 @@ fun GhostSampleApp() {
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             IndustrialText(
-                text = "Industrial Multiplatform Architecture Demo",
+                text = "Industrial Multiplatform Performance Laboratory",
                 isSecondary = true,
                 fontSize = 14,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Action Section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                IndustrialButton(
-                    text = "FETCH COMPLEX API",
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        if (isLoading) return@IndustrialButton
-                        scope.launch {
-                            isLoading = true
-                            errorMessage = null
-                            val result = api.getCharacters()
-
-                            result.onSuccess { res ->
-                                characters = res.data.results
-                                lastResponse = res.data
-                                networkTimeMs = res.networkTimeMs
-                                parseTimeMs = res.parseTimeMs
-                                moshiTimeMs = res.moshiTimeMs
-                                ghostMemBytes = res.ghostMemoryBytes
-                                moshiMemBytes = res.moshiMemoryBytes
-                                
-                                // Record in session history
-                                val timestamp = (System.currentTimeMillis() % 100000).toString()
-                                val logEntry = "$timestamp, ${formatMs(parseTimeMs)}, ${formatMs(moshiTimeMs)}, ${res.ghostMemoryBytes/1024}K, ${res.moshiMemoryBytes/1024}K"
-                                sessionHistory = sessionHistory + logEntry
-                            }.onFailure { err ->
-                                errorMessage = err.message
-                            }
-
-                            isLoading = false
-                        }
+            // Stress Test Controller
+            IndustrialCard(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IndustrialText(text = "STRESS LOAD (PAGES)", isBold = true, fontSize = 12)
+                        IndustrialText(
+                            text = "${pageCount.toInt()} PAGES (~${pageCount.toInt() * 20} ITEMS)",
+                            overrideColor = IndustrialDesignSystem.AccentGlow,
+                            isBold = true,
+                            fontSize = 12
+                        )
                     }
-                )
+                    androidx.compose.material3.Slider(
+                        value = pageCount,
+                        onValueChange = { pageCount = it },
+                        valueRange = 1f..10f,
+                        steps = 8,
+                        colors = androidx.compose.material3.SliderDefaults.colors(
+                            thumbColor = IndustrialDesignSystem.AccentGlow,
+                            activeTrackColor = IndustrialDesignSystem.AccentGlow,
+                            inactiveTrackColor = IndustrialDesignSystem.BorderColor
+                        )
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Action Section
+            IndustrialButton(
+                text = "FETCH RICK AND MORTY",
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    if (isLoading) return@IndustrialButton
+                    scope.launch {
+                        isLoading = true
+                        errorMessage = null
+                        val result = api.getCharacters(pageCount.toInt())
+
+                        result.onSuccess { res ->
+                            characters = res.data
+                            networkTimeMs = res.networkTimeMs
+                            ghostTimeMs = res.parseTimeMs
+                            moshiTimeMs = res.moshiTimeMs
+                            kserTimeMs = res.kserTimeMs
+                            ghostMemBytes = res.ghostMemoryBytes
+                            moshiMemBytes = res.moshiMemoryBytes
+                            kserMemBytes = res.kserMemoryBytes
+
+                            // Record in session history
+                            val timestamp = "Log #${sessionHistory.size + 1}"
+                            val logEntry =
+                                "$timestamp, ${formatMs(ghostTimeMs)}, ${formatMs(moshiTimeMs)}, ${
+                                    formatMs(kserTimeMs)
+                                }, ${ghostMemBytes / 1024}K, ${moshiMemBytes / 1024}K, ${kserMemBytes / 1024}K"
+                            sessionHistory = sessionHistory + logEntry
+                        }.onFailure { err ->
+                            errorMessage = err.message
+                        }
+
+                        isLoading = false
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Metrics Dashboard
             AnimatedVisibility(
-                visible = parseTimeMs > 0 && !isLoading,
+                visible = ghostTimeMs > 0 && !isLoading,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(IndustrialDesignSystem.PrimaryAccent.copy(alpha = 0.1f))
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                IndustrialCard(modifier = Modifier.fillMaxWidth()) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Spacer(modifier = Modifier.width(40.dp)) // Equalizer
                             IndustrialText(
-                                text = "⚡ HYPER-PERFORMANCE METRICS",
+                                text = "TRIPLE-CORE BENCHMARK",
                                 isBold = true,
-                                fontSize = 12
+                                fontSize = 11,
+                                isSecondary = true
                             )
-                            // Discreet Log Copy
                             androidx.compose.material3.TextButton(
                                 onClick = {
                                     if (sessionHistory.isEmpty()) return@TextButton
-                                    val logText = "SESSION METRICS HISTORY (Ghost vs Moshi)\n" +
-                                            "TIMESTAMP, GHOST (ms), MOSHI (ms), GHOST MEM (KB), MOSHI MEM (KB)\n" +
-                                            sessionHistory.joinToString("\n")
+                                    val logText =
+                                        "SESSION METRICS HISTORY (Ghost vs Moshi vs KSer)\n" +
+                                                "TIMESTAMP, GHOST (ms), MOSHI (ms), KSER (ms), GHOST MEM (KB), MOSHI MEM (KB), KSER MEM (KB)\n" +
+                                                sessionHistory.joinToString("\n")
                                     copyToClipboard(logText)
                                 },
                                 contentPadding = PaddingValues(0.dp),
                                 modifier = Modifier.height(24.dp)
                             ) {
                                 IndustrialText(
-                                    text = "COPY LOGS",
+                                    text = "EXPORT LOGS",
                                     fontSize = 10,
                                     isSecondary = true
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                            MetricItem("NETWORK", formatMs(networkTimeMs))
-                            MetricItem("GHOST", formatMs(parseTimeMs), IndustrialDesignSystem.AccentGlow)
-                            if (moshiTimeMs >= 0) {
-                                MetricItem("MOSHI", formatMs(moshiTimeMs), IndustrialDesignSystem.ErrorColor)
-                            }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Performance Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            MetricItem(
+                                "GHOST",
+                                formatMs(ghostTimeMs),
+                                IndustrialDesignSystem.AccentGlow
+                            )
+                            MetricItem(
+                                "MOSHI",
+                                formatMs(moshiTimeMs),
+                                IndustrialDesignSystem.ErrorColor
+                            )
+                            MetricItem(
+                                "K-SER",
+                                formatMs(kserTimeMs),
+                                androidx.compose.ui.graphics.Color(0xFF818CF8)
+                            )
                         }
 
-                        if (ghostMemBytes > 0 || moshiMemBytes > 0) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                                val ghostKb = ghostMemBytes / 1024
-                                MetricItem("GHOST MEM", "${ghostKb}KB", IndustrialDesignSystem.AccentGlow)
-                                
-                                if (moshiMemBytes > 0) {
-                                    val moshiKb = moshiMemBytes / 1024
-                                    MetricItem("MOSHI MEM", "${moshiKb}KB", IndustrialDesignSystem.ErrorColor)
-                                }
-                            }
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Memory Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            MetricItem(
+                                "GHOST MEM",
+                                "${ghostMemBytes} B",
+                                IndustrialDesignSystem.AccentGlow
+                            )
+                            MetricItem(
+                                "MOSHI MEM",
+                                "${moshiMemBytes} B",
+                                IndustrialDesignSystem.ErrorColor
+                            )
+                            MetricItem(
+                                "K-SER MEM",
+                                "${kserMemBytes} B",
+                                androidx.compose.ui.graphics.Color(0xFF818CF8)
+                            )
                         }
                     }
                 }
@@ -201,21 +250,26 @@ fun GhostSampleApp() {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Content Area
-            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
                 if (isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            color = IndustrialDesignSystem.AccentGlow,
-                            strokeWidth = 3.dp,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
+                    CircularProgressIndicator(
+                        color = IndustrialDesignSystem.AccentGlow,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(48.dp)
+                    )
                 } else if (errorMessage != null) {
                     IndustrialText(
-                        text = "NETWORK ERROR: \n$errorMessage",
+                        text = "HYPER-ENGINE ERROR:\n$errorMessage",
                         isBold = true,
                         fontSize = 14,
-                        modifier = Modifier.align(Alignment.Center).padding(32.dp)
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier
+                            .padding(horizontal = 48.dp)
                     )
                 } else {
                     LazyColumn(
@@ -234,7 +288,7 @@ fun GhostSampleApp() {
 }
 
 @Composable
-private fun CharacterCard(character: Character) {
+private fun CharacterCard(character: GhostCharacter) {
     IndustrialCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),

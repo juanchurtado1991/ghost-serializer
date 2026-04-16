@@ -42,6 +42,8 @@ internal class GhostCodeGenerator(
         null
     }
 
+    private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
+
     private val serializerInterface = ClassName(PKG_CONTRACT, STR_GHOST_SERIALIZER)
     private val writerClass = ClassName(PKG_WRITER, STR_GHOST_JSON_WRITER)
     private val readerClass = ClassName(PKG_PARSER, STR_GHOST_JSON_READER)
@@ -66,7 +68,7 @@ internal class GhostCodeGenerator(
                 STR_PEEK_STRING_FIELD
             )
             .addImport(PKG_EXCEPTION, STR_GHOST_JSON_EXCEPTION)
-            .addImport(STR_OKIO_BYTESTRING_COMPANION, STR_ENCODE_UTF8)
+            .addImport(OKIO_PACKAGE, "ByteString.Companion.encodeUtf8")
             .addType(buildSerializerObject())
             .build()
     }
@@ -97,17 +99,8 @@ internal class GhostCodeGenerator(
         )
 
         val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
-        val namesArrayBuilder = CodeBlock.builder().add(STR_ARRAY_OF).indent()
-        properties.forEachIndexed { index, prop ->
-            val comma = if (index < properties.size - 1) STR_COMMA else STR_EMPTY
-            namesArrayBuilder.add(
-                "$STR_FORMAT_S$STR_DOT_ENCODE_UTF8$comma$STR_NEWLINE",
-                prop.jsonName
-            )
-        }
-        namesArrayBuilder.unindent().add(STR_PAREN_CLOSE)
-
-        return TypeSpec.objectBuilder(serializerName)
+        
+        val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
             .addKdoc(STR_KDOC_HIGH_PERF, originalClassName)
             .addKdoc(STR_KDOC_GENERATED)
             .addSuperinterface(
@@ -123,8 +116,44 @@ internal class GhostCodeGenerator(
                     .initializer(optionsBuilder.build())
                     .build()
             )
+
+        if (isEnum && enumValues != null) {
+            val enumOptionsBuilder = CodeBlock.builder()
+                .add(STR_OPTIONS_OF, readerClass)
+                .indent()
+            
+            val values = enumValues.values.toList()
+            values.forEachIndexed { index, serialName ->
+                val comma = if (index < values.size - 1) STR_COMMA else STR_EMPTY
+                enumOptionsBuilder.add("$STR_FORMAT_S$comma$STR_NEWLINE", serialName)
+            }
+            enumOptionsBuilder.unindent().add(STR_PAREN_CLOSE)
+
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder("ENUM_OPTIONS", readerClass.nestedClass(STR_OPTIONS_CLASS))
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(enumOptionsBuilder.build())
+                    .build()
+            )
+        }
+
+        return typeSpecBuilder
             .addFunction(serializeEmitter.build())
             .addFunction(deserializeEmitter.build())
+            .addFunction(
+                com.squareup.kotlinpoet.FunSpec.builder("warmUp")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addCode(
+                        """
+                        |try {
+                        |  val reader = %T("{}".encodeToByteArray())
+                        |  deserialize(reader)
+                        |} catch (e: Exception) {}
+                        """.trimMargin(),
+                        readerClass
+                    )
+                    .build()
+            )
             .build()
     }
 

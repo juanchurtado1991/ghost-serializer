@@ -133,9 +133,10 @@ object Ghost {
     fun prewarm() {
         registries.forEach { registry ->
             registry.prewarm()
-            // Deep Prewarm: Pull all serializers into global cache
+            // Deep Prewarm: Pull all serializers and induce JIT/ART optimization
             registry.getAllSerializers().forEach { (kclass, serializer) ->
                 serializerCache[kclass] = serializer
+                serializer.warmUp()
             }
         }
     }

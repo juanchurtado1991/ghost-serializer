@@ -21,12 +21,10 @@ actual fun parseWithMoshi(bytes: ByteArray): BenchmarkResult {
         val endMem = getCurrentThreadAllocatedBytes()
         
         BenchmarkResult(
-            ghostTimeMs = 0.0,
-            ghostAllocatedBytes = 0L,
-            moshiTimeMs = (end - start).inWholeMicroseconds / 1000.0,
-            moshiAllocatedBytes = if (startMem >= 0 && endMem >= 0) endMem - startMem else 0L
+            timeMs = (end - start).inWholeMicroseconds / 1000.0,
+            allocatedBytes = if (startMem >= 0 && endMem >= 0) endMem - startMem else 0L
         )
     } catch (e: Exception) {
-        BenchmarkResult(0.0, 0L, -1.0, -1L)
+        BenchmarkResult(-1.0, 0L)
     }
 }

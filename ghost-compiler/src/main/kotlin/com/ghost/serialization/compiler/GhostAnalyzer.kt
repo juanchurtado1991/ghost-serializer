@@ -6,6 +6,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 internal class GhostAnalyzer(private val logger: KSPLogger) {
@@ -42,7 +43,39 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             )
         }
 
-        val propertyModels = properties.map { prop -> buildPropertyModel(prop, parameters) }
+        val enumValues = if (isEnum) {
+            classDeclaration.declarations
+                .filter { it is KSClassDeclaration && it.classKind == ClassKind.ENUM_ENTRY }
+                .map { it as KSClassDeclaration }
+                .associate { entry ->
+                    entry.simpleName.asString() to getSerialName(entry)
+                }
+        } else null
+
+        val propertyModels = if (isEnum) {
+            properties
+                .filterNot { it.simpleName.asString() in listOf("name", "ordinal") }
+                .map { prop -> buildPropertyModel(prop, parameters).copy(enumValues = enumValues) }
+                .let { 
+                    if (it.isEmpty()) {
+                        listOf(GhostPropertyModel(
+                            kotlinName = "name",
+                            jsonName = "name",
+                            type = classDeclaration.asType(emptyList()),
+                            typeName = classDeclaration.toClassName(),
+                            isNullable = false,
+                            isGhost = false,
+                            isList = false,
+                            isEnum = true,
+                            enumValues = enumValues
+                        ))
+                    } else it
+                }
+        } else {
+            properties.map { prop -> 
+                buildPropertyModel(prop, parameters)
+            }
+        }
         validateNames(propertyModels, classDeclaration)
         return propertyModels
     }
@@ -144,18 +177,33 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return type.arguments.getOrNull(1)?.type?.resolve()
     }
 
-    private fun getJsonName(prop: KSPropertyDeclaration): String {
-        val annotation = prop.annotations.find {
-            it.shortName.asString() == GHOST_NAME
-        }
-        return annotation?.arguments
-            ?.firstOrNull { it.name?.asString() == NAME_ARG }
-            ?.value as? String
-            ?: prop.simpleName.asString()
-    }
+    private fun getJsonName(prop: KSPropertyDeclaration): String = getSerialName(prop)
 
     private fun KSPropertyDeclaration.hasAnnotation(name: String): Boolean {
         return annotations.any { it.shortName.asString() == name }
+    }
+
+    internal fun getSerialName(declaration: com.google.devtools.ksp.symbol.KSAnnotated): String {
+        val annotations = declaration.annotations.toList()
+        
+        // 1. GhostName (Primary)
+        val ghostName = annotations.find { it.shortName.asString() == GHOST_NAME }
+        if (ghostName != null) {
+            val arg = ghostName.arguments.find { it.name?.asString() == NAME_ARG } ?: ghostName.arguments.firstOrNull()
+            return arg?.value?.toString() ?: ""
+        }
+        
+        // 2. SerialName (kotlinx compatibility)
+        val serialName = annotations.find { 
+            val name = it.shortName.asString()
+            name == SERIAL_NAME || name.endsWith("SerialName")
+        }
+        if (serialName != null) {
+            val arg = serialName.arguments.find { it.name?.asString() == "value" } ?: serialName.arguments.firstOrNull()
+            return arg?.value?.toString() ?: (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString() ?: ""
+        }
+
+        return (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString() ?: ""
     }
 
     private fun isEnumType(type: KSType): Boolean {
@@ -190,6 +238,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         private const val STR_TYPE_BOOLEAN_ARRAY = "kotlin.BooleanArray"
         private const val GHOST_IGNORE = "GhostIgnore"
         private const val GHOST_NAME = "GhostName"
+        private const val SERIAL_NAME = "SerialName"
         private const val GHOST_SERIALIZATION = "GhostSerialization"
         private const val NAME_ARG = "name"
         private const val LIST_QUALIFIED = "kotlin.collections.List"

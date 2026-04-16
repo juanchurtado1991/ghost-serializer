@@ -1,8 +1,15 @@
 package com.ghost.serialization.sample.api
 
 actual fun getCurrentThreadAllocatedBytes(): Long {
-    // Android doesn't expose thread-specific allocation easily in the SDK.
-    // We use a Runtime heap delta as a fallback estimate.
-    val runtime = Runtime.getRuntime()
-    return runtime.totalMemory() - runtime.freeMemory()
+    return try {
+        // VMDebug is the internal truth of Dalvik/ART.
+        // threadAllocSize() provides byte-precision that android.os.Debug might aggregate in 32KB chunks.
+        val vmDebugClass = Class.forName("dalvik.system.VMDebug")
+        val method = vmDebugClass.getMethod("threadAllocSize")
+        method.invoke(null) as Long
+    } catch (e: Exception) {
+        // Last-ditch effort if VMDebug is missing
+        val runtime = Runtime.getRuntime()
+        runtime.totalMemory() - runtime.freeMemory()
+    }
 }

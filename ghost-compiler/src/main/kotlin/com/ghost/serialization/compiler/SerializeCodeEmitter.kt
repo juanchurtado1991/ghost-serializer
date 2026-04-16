@@ -45,7 +45,16 @@ internal class SerializeCodeEmitter(
     }
 
     private fun emitEnumSerialization(code: CodeBlock.Builder) {
-        code.addStatement(STR_WRITER_VALUE_VALUE_NAME)
+        val enumValues = properties.firstOrNull()?.enumValues
+        if (enumValues != null) {
+            code.beginControlFlow("when (value)")
+            enumValues.forEach { (kotlinName, serialName) ->
+                code.addStatement("%T.$kotlinName -> writer.value(%S)", originalClassName, serialName)
+            }
+            code.endControlFlow()
+        } else {
+            code.addStatement("writer.value(value.name)")
+        }
     }
 
     private fun emitSealedDispatch(code: CodeBlock.Builder) {
@@ -78,8 +87,6 @@ internal class SerializeCodeEmitter(
             code.beginControlFlow(STR_IF_ACCESSOR_NOT_NULL, accessor)
             code.addStatement(STR_WRITER_NAME_OPTIONS_INDEX, nameIndex)
             emitValue(code, prop, accessor)
-            code.nextControlFlow(STR_ELSE)
-            code.addStatement(STR_WRITER_NAME_OPTIONS_NULL, nameIndex)
             code.endControlFlow()
             return
         }
@@ -99,7 +106,7 @@ internal class SerializeCodeEmitter(
                 code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(prop.type), accessor)
             }
 
-            prop.isEnum -> code.addStatement(STR_WRITER_VALUE_ACC_NAME, accessor)
+            prop.isEnum -> code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(prop.type), accessor)
             prop.type.isPrimitive() -> code.addStatement(STR_WRITER_VALUE_ACC, accessor)
             prop.isGhost -> emitGhost(code, prop, accessor)
             prop.isPrimitiveArray -> code.addStatement(
@@ -127,7 +134,7 @@ internal class SerializeCodeEmitter(
                 STR_T_SERIALIZE_WRITER_ITEM, serializerName(prop.listInnerType!!)
             )
 
-            prop.listInnerIsEnum -> code.addStatement(STR_WRITER_VALUE_ITEM_NAME)
+            prop.listInnerIsEnum -> code.addStatement(STR_T_SERIALIZE_WRITER_ITEM, serializerName(prop.listInnerType!!))
             else -> code.addStatement(STR_WRITER_VALUE_ITEM)
         }
 

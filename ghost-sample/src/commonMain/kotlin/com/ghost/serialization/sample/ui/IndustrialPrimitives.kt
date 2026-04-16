@@ -95,7 +95,8 @@ fun IndustrialText(
     isSecondary: Boolean = false,
     isBold: Boolean = false,
     fontSize: Int = 14,
-    overrideColor: Color? = null
+    overrideColor: Color? = null,
+    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Start
 ) {
     Text(
         text = text,
@@ -103,7 +104,8 @@ fun IndustrialText(
         color = overrideColor ?: if (isSecondary) IndustrialDesignSystem.TextSecondary else IndustrialDesignSystem.TextPrimary,
         fontWeight = if (isBold) FontWeight.ExtraBold else FontWeight.Medium,
         fontSize = fontSize.sp,
-        fontFamily = FontFamily.SansSerif
+        fontFamily = FontFamily.SansSerif,
+        textAlign = textAlign
     )
 }
 

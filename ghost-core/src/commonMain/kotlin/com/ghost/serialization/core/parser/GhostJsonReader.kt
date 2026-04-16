@@ -15,6 +15,7 @@ class GhostJsonReader(
     internal var line = 1
     internal var column = 1
     internal var depth = 0
+    val path: String get() = "$" 
     internal val stringPool = arrayOfNulls<String>(GhostJsonConstants.STR_POOL_SIZE)
 
     class Options private constructor(
@@ -39,6 +40,38 @@ class GhostJsonReader(
         column += n
     }
 
+    internal fun expectByte(expected: Byte) {
+        if (pos >= data.size) throwError("Expected '${expected.toInt().toChar()}' but reached end")
+        val actual = data[pos++]
+        column++
+        if (actual != expected) throwError(
+            "Expected '${expected.toInt().toChar()}' but found '${actual.toInt().toChar()}'"
+        )
+    }
+
+    internal fun internalSelect(options: Options): Int {
+        val remaining = data.size - pos
+        for (i in options.rawBytes.indices) {
+            val opt = options.rawBytes[i]
+            val optLen = opt.size
+            if (optLen + 1 > remaining) continue
+            
+            var match = true
+            for (j in 0 until optLen) {
+                if (data[pos + j] != opt[j]) {
+                    match = false; break
+                }
+            }
+            
+            if (match && data[pos + optLen] == GhostJsonConstants.QUOTE) {
+                pos += optLen
+                column += optLen
+                return i
+            }
+        }
+        return -2
+    }
+
     fun selectName(options: Options): Int {
         skipWhitespace()
         if (pos >= data.size) return -1
@@ -57,47 +90,13 @@ class GhostJsonReader(
             return index
         }
         
-        // If not found, internalSelect returns -2 and pos is stuck after the opening quote.
         if (strictMode) {
-            val fileNameBody = readStringBody() // Will throw or finish the string
+            val fileNameBody = readStringBody()
             throwError("Unknown field in strict mode: '$fileNameBody'")
         }
         
-        // We MUST skip the field name to leave the reader at the separator (colon).
         skipQuotedStringBody()
-        return -2 // Industrial constant for UNKNOWN_FIELD
-    }
-
-    internal fun internalSelect(options: Options): Int {
-        val remaining = data.size - pos
-        for (i in options.rawBytes.indices) {
-            val opt = options.rawBytes[i]
-            val optLen = opt.size
-            
-            // Industrial Optimization Level 1: Length filter
-            // We need optLen + 1 for the closing quote
-            if (optLen + 1 > remaining) continue
-            
-            // Industrial Optimization Level 2: First-byte filter
-            if (data[pos] != opt[0]) continue
-
-            // Full content verification
-            var match = true
-            for (j in 1 until optLen) {
-                if (data[pos + j] != opt[j]) {
-                    match = false; break
-                }
-            }
-            
-            // Industrial Optimization Level 3: Suffix check (Closing Quote)
-            // This prevents "id" from matching "ids"
-            if (match && data[pos + optLen] == GhostJsonConstants.QUOTE) {
-                pos += optLen
-                column += optLen
-                return i
-            }
-        }
-        return -2 // Internal signal for no match
+        return -2
     }
 
     fun beginObject() {
@@ -334,16 +333,6 @@ class GhostJsonReader(
                 else -> return
             }
         }
-    }
-
-    internal fun expectByte(expected: Byte) {
-        if (pos >= data.size) throwError("Expected '${expected.toInt().toChar()}' but reached end")
-        val actual = data[pos++]; column++
-        if (actual != expected) throwError(
-            "Expected '${
-                expected.toInt().toChar()
-            }' but found '${actual.toInt().toChar()}'"
-        )
     }
 
     internal fun peekByte(): Byte {
