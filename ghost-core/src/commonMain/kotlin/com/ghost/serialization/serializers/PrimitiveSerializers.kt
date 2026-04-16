@@ -1,7 +1,13 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.serializers
 
 import okio.BufferedSink
+import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.writer.GhostJsonWriter
 import okio.BufferedSource
+import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextLong
+import com.ghost.serialization.core.parser.nextDouble
 
 object StringSerializer : GhostSerializer<String> {
     override fun serialize(writer: GhostJsonWriter, value: String) {

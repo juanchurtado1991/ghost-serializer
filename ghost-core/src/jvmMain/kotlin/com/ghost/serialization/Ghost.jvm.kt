@@ -1,6 +1,6 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.core.GhostRegistry
+import com.ghost.serialization.core.contract.GhostRegistry
 import java.util.ServiceLoader
 
 /**

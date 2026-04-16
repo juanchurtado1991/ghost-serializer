@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
@@ -6,7 +8,9 @@ plugins {
 kotlin {
     androidTarget {
         compilations.all {
-            kotlinOptions { jvmTarget = libs.versions.jvmTarget.get() }
+            compileTaskProvider.configure {
+                compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+            }
         }
     }
     iosArm64()
@@ -22,7 +26,7 @@ kotlin {
 
 android {
     namespace = "com.ghost.serialization.api"
-    compileSdk = 35 // FIXED: Stable SDK
+    compileSdk = 36
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17 // FIXED: Standardized

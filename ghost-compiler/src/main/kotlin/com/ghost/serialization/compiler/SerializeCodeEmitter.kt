@@ -92,7 +92,7 @@ internal class SerializeCodeEmitter(
             prop.isGhost -> emitGhost(code, prop, accessor)
             prop.isPrimitiveArray -> code.addStatement(
                 "%T.serialize(writer, $accessor)",
-                ClassName("com.ghost.serialization.core", "${prop.primitiveArrayType}Serializer")
+                ClassName("com.ghost.serialization.serializers", "${prop.primitiveArrayType}Serializer")
             )
             prop.isList -> emitList(code, prop, accessor)
             prop.isMap -> emitMap(code, prop, accessor)

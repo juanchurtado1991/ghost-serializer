@@ -1,7 +1,16 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.serializers
 
 import okio.BufferedSink
+import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghost.serialization.core.parser.GhostJsonConstants
 import okio.BufferedSource
+import com.ghost.serialization.core.parser.readList
+import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.consumeArraySeparator
+import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextLong
 
 class ListSerializer<T>(private val itemSerializer: GhostSerializer<T>) : GhostSerializer<List<T>> {
     override fun serialize(writer: GhostJsonWriter, value: List<T>) {

@@ -1,8 +1,8 @@
 package com.ghost.serialization.integration
 
-import com.ghost.serialization.models.GhostAdvancedProfile
-import com.ghost.serialization.models.GhostShape
-import com.ghost.serialization.models.GhostUserToken
+import com.ghost.integration.model.GhostAdvancedProfile
+import com.ghost.integration.model.GhostShape
+import com.ghost.integration.model.GhostUserToken
 import com.ghost.serialization.Ghost
 import kotlin.test.Test
 import kotlin.test.assertEquals

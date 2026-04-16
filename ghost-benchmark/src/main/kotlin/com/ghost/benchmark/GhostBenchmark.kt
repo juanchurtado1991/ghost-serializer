@@ -1,7 +1,7 @@
 @file:OptIn(ExperimentalStdlibApi::class)
 package com.ghost.benchmark
 
-import com.ghost.serialization.core.GhostRegistry
+import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.Ghost
 import java.util.ServiceLoader
 import com.ghost.benchmark.model.*

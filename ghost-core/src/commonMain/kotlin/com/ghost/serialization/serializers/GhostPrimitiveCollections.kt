@@ -1,4 +1,4 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.serializers
 
 internal class GhostIntList(initialCapacity: Int = 16) {
     private var data = IntArray(initialCapacity)

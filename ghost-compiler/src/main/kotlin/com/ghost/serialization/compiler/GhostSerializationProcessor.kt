@@ -97,7 +97,7 @@ class GhostSerializationProcessor(
      * Replaces reflection and avoids global Map allocation at startup.
      */
     private fun generateModuleRegistry() {
-        val serializerType = ClassName("com.ghost.serialization.core", "GhostSerializer")
+        val serializerType = ClassName("com.ghost.serialization.core.contract", "GhostSerializer")
         val kClassType = ClassName("kotlin.reflect", "KClass")
         val t = TypeVariableName("T", Any::class)
 
@@ -124,7 +124,7 @@ class GhostSerializationProcessor(
             .returns(serializerType.parameterizedBy(t).copy(nullable = true))
             .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build())
             .addStatement("return serializers[clazz] as? %T", serializerType.parameterizedBy(t))
-        val registryInterface = ClassName("com.ghost.serialization.core", "GhostRegistry")
+        val registryInterface = ClassName("com.ghost.serialization.core.contract", "GhostRegistry")
 
         val prewarmMethod = FunSpec.builder("prewarm")
             .addModifiers(KModifier.OVERRIDE)
@@ -168,7 +168,7 @@ class GhostSerializationProcessor(
                 public static ** INSTANCE;
                 public *** getSerializer(...);
             }
-            -keep class * implements com.ghost.serialization.core.GhostSerializer {
+            -keep class * implements com.ghost.serialization.core.contract.GhostSerializer {
                 *;
             }
         """.trimIndent()
@@ -190,7 +190,7 @@ class GhostSerializationProcessor(
      * discover this registry at runtime.
      */
     private fun generateServiceFile() {
-        val serviceName = "com.ghost.serialization.core.GhostRegistry"
+        val serviceName = "com.ghost.serialization.core.contract.GhostRegistry"
         val implementationName = "$PACKAGE_NAME.$registryClassName"
         
         try {

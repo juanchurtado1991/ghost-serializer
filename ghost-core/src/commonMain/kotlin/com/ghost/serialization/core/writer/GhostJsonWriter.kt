@@ -1,6 +1,8 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.core.writer
 
 import okio.BufferedSink
+import com.ghost.serialization.core.parser.GhostJsonConstants
+import com.ghost.serialization.core.exception.GhostJsonException
 
 class GhostJsonWriter(internal val sink: BufferedSink) {
 

@@ -122,7 +122,7 @@ internal class DeserializeCodeEmitter(
             prop.isGhost -> CodeBlock.of("%T.deserialize(reader)", serializerName(prop.type))
             prop.isPrimitiveArray -> CodeBlock.of(
                 "%T.deserialize(reader)",
-                ClassName("com.ghost.serialization.core", "${prop.primitiveArrayType}Serializer")
+                ClassName("com.ghost.serialization.serializers", "${prop.primitiveArrayType}Serializer")
             )
             prop.isList -> buildListCall(prop)
             prop.isMap -> buildMapCall(prop)
@@ -154,7 +154,7 @@ internal class DeserializeCodeEmitter(
             prop.isPrimitiveArray -> nullGuarded(
                 CodeBlock.of(
                     "%T.deserialize(reader)",
-                    ClassName("com.ghost.serialization.core", "${prop.primitiveArrayType}Serializer")
+                    ClassName("com.ghost.serialization.serializers", "${prop.primitiveArrayType}Serializer")
                 )
             )
             else -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextString()")
@@ -227,7 +227,7 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder) {
-        val exceptionClass = ClassName("com.ghost.serialization.core", "GhostJsonException")
+        val exceptionClass = ClassName("com.ghost.serialization.core.exception", "GhostJsonException")
         properties.filter { !it.isNullable && !it.hasDefaultValue }.forEach {
             body.beginControlFlow("if (!_${it.kotlinName}Set)")
             body.addStatement(

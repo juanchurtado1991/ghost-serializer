@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application) apply false
@@ -9,11 +10,15 @@ plugins {
     alias(libs.plugins.ksp) apply false
 }
 
-allprojects {
-    tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions { 
-            jvmTarget = "17" 
-            freeCompilerArgs += "-Xexpect-actual-classes" // Required for KMP 2.x sometimes
+subprojects {
+    afterEvaluate {
+        if (name != "ghostsample") {
+            tasks.withType<KotlinCompile>().configureEach {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_17)
+                    freeCompilerArgs.add("-Xexpect-actual-classes")
+                }
+            }
         }
     }
 }

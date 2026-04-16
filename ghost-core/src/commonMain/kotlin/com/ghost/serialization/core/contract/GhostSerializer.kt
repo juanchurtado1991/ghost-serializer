@@ -1,7 +1,9 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.core.contract
 
 import okio.BufferedSink
 import okio.BufferedSource
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.writer.GhostJsonWriter
 
 interface GhostSerializer<T> {
     fun serialize(sink: BufferedSink, value: T) {

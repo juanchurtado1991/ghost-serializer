@@ -1,8 +1,8 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.core.GhostJsonReader
-import com.ghost.serialization.core.GhostRegistry
-import com.ghost.serialization.core.GhostSerializer
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.contract.GhostRegistry
+import com.ghost.serialization.core.contract.GhostSerializer
 import okio.BufferedSink
 import okio.BufferedSource
 import kotlin.reflect.KClass

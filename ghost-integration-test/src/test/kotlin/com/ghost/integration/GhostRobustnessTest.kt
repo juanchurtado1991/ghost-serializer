@@ -1,8 +1,8 @@
 package com.ghost.integration
 
-import com.ghost.serialization.core.GhostJsonReader
-import com.ghost.serialization.core.GhostJsonWriter
-import com.ghost.serialization.core.GhostJsonException
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghost.serialization.core.exception.GhostJsonException
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals

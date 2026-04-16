@@ -1,6 +1,6 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.core.parser
 
-import com.ghost.serialization.core.GhostJsonConstants.POWERS_OF_TEN
+import com.ghost.serialization.core.parser.GhostJsonConstants.POWERS_OF_TEN
 import kotlin.math.pow
 
 fun GhostJsonReader.nextFloat(): Float = nextDouble().toFloat()

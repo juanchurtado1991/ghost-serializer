@@ -1,6 +1,7 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.core.parser
 
 import okio.BufferedSource
+import com.ghost.serialization.core.exception.GhostJsonException
 
 class GhostJsonReader(
     internal val data: ByteArray,

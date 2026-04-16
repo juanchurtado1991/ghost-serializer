@@ -3,7 +3,6 @@ plugins {
 }
 
 kotlin {
-    // FIXED: Downgraded from 21 to 17 to maximize library adoption across different CIs.
     jvmToolchain(17) 
 }
 

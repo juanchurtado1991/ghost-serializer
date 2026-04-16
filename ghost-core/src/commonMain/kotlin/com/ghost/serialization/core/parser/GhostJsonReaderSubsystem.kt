@@ -1,16 +1,16 @@
-package com.ghost.serialization.core
+package com.ghost.serialization.core.parser
 
-import com.ghost.serialization.core.GhostJsonConstants.CLOSE_ARR
-import com.ghost.serialization.core.GhostJsonConstants.CLOSE_OBJ
-import com.ghost.serialization.core.GhostJsonConstants.COLON
-import com.ghost.serialization.core.GhostJsonConstants.COMMA
-import com.ghost.serialization.core.GhostJsonConstants.FALSE_CHAR
-import com.ghost.serialization.core.GhostJsonConstants.NULL_CHAR
-import com.ghost.serialization.core.GhostJsonConstants.NULL_LENGTH
-import com.ghost.serialization.core.GhostJsonConstants.OPEN_ARR
-import com.ghost.serialization.core.GhostJsonConstants.OPEN_OBJ
-import com.ghost.serialization.core.GhostJsonConstants.QUOTE
-import com.ghost.serialization.core.GhostJsonConstants.TRUE_CHAR
+import com.ghost.serialization.core.parser.GhostJsonConstants.CLOSE_ARR
+import com.ghost.serialization.core.parser.GhostJsonConstants.CLOSE_OBJ
+import com.ghost.serialization.core.parser.GhostJsonConstants.COLON
+import com.ghost.serialization.core.parser.GhostJsonConstants.COMMA
+import com.ghost.serialization.core.parser.GhostJsonConstants.FALSE_CHAR
+import com.ghost.serialization.core.parser.GhostJsonConstants.NULL_CHAR
+import com.ghost.serialization.core.parser.GhostJsonConstants.NULL_LENGTH
+import com.ghost.serialization.core.parser.GhostJsonConstants.OPEN_ARR
+import com.ghost.serialization.core.parser.GhostJsonConstants.OPEN_OBJ
+import com.ghost.serialization.core.parser.GhostJsonConstants.QUOTE
+import com.ghost.serialization.core.parser.GhostJsonConstants.TRUE_CHAR
 
 fun GhostJsonReader.selectName(options: GhostJsonReader.Options): Int {
     skipWhitespace()
