@@ -1,30 +1,16 @@
 package com.ghost.serialization.core
 
 import okio.BufferedSource
-import com.ghost.serialization.core.GhostJsonConstants.COLON
-import com.ghost.serialization.core.GhostJsonConstants.COMMA
-import com.ghost.serialization.core.GhostJsonConstants.CR
-import com.ghost.serialization.core.GhostJsonConstants.FALSE_CHAR
-import com.ghost.serialization.core.GhostJsonConstants.FALSE_LENGTH
-import com.ghost.serialization.core.GhostJsonConstants.NEWLINE
-import com.ghost.serialization.core.GhostJsonConstants.NULL_CHAR
-import com.ghost.serialization.core.GhostJsonConstants.NULL_LENGTH
-import com.ghost.serialization.core.GhostJsonConstants.CLOSE_ARR
-import com.ghost.serialization.core.GhostJsonConstants.CLOSE_OBJ
-import com.ghost.serialization.core.GhostJsonConstants.OPEN_ARR
-import com.ghost.serialization.core.GhostJsonConstants.OPEN_OBJ
-import com.ghost.serialization.core.GhostJsonConstants.QUOTE
-import com.ghost.serialization.core.GhostJsonConstants.BACKSLASH
-import com.ghost.serialization.core.GhostJsonConstants.SPACE
-import com.ghost.serialization.core.GhostJsonConstants.TAB
-import com.ghost.serialization.core.GhostJsonConstants.TRUE_CHAR
-import com.ghost.serialization.core.GhostJsonConstants.TRUE_LENGTH
 
 class GhostJsonReader(
-    internal val source: okio.BufferedSource,
+    internal val data: ByteArray,
     internal val maxDepth: Int = 255,
     internal val strictMode: Boolean = false
 ) {
+    constructor(source: BufferedSource, maxDepth: Int = 255, strictMode: Boolean = false)
+        : this(source.readByteArray(), maxDepth, strictMode)
+
+    internal var pos = 0
     internal var line = 1
     internal var column = 1
     internal var depth = 0
@@ -33,105 +19,124 @@ class GhostJsonReader(
     class Options private constructor(
         val strings: Array<String>,
         val byteStrings: Array<okio.ByteString>,
-        val okioOptions: okio.Options
+        val rawBytes: Array<ByteArray>
     ) {
         companion object {
             fun of(vararg names: String): Options {
-                val byteStrings = Array<okio.ByteString>(names.size) { 
-                    okio.ByteString.Companion.run { names[it].encodeUtf8() } 
+                val byteStrings = Array(names.size) {
+                    okio.ByteString.Companion.run { names[it].encodeUtf8() }
                 }
-                val strings = Array<String>(names.size) { names[it] }
-                return Options(strings, byteStrings, okio.Options.of(*byteStrings))
+                val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
+                val strings = Array(names.size) { names[it] }
+                return Options(strings, byteStrings, rawBytes)
             }
         }
     }
 
-    // --- STATEFUL CONSUMPTION PIPELINE ---
-
     internal fun internalReadByte(): Byte {
-        val actual = source.readByte()
+        if (pos >= data.size) throwError("Unexpected EOF")
+        val b = data[pos++]
         column++
-        return actual
+        return b
     }
 
-    internal fun internalSkip(n: Long) {
-        source.skip(n)
-        column += n.toInt()
+    internal fun internalSkip(n: Int) {
+        pos += n
+        column += n
     }
+
+    internal fun internalSkip(n: Long) = internalSkip(n.toInt())
 
     internal fun internalSelect(options: Options): Int {
-        val index = source.select(options.okioOptions)
-        if (index != -1) {
-            column += options.byteStrings[index].size
+        for (i in options.rawBytes.indices) {
+            val opt = options.rawBytes[i]
+            val optLen = opt.size
+            if (pos + optLen > data.size) continue
+            var match = true
+            for (j in 0 until optLen) {
+                if (data[pos + j] != opt[j]) { match = false; break }
+            }
+            if (match) {
+                pos += optLen
+                column += optLen
+                return i
+            }
         }
-        return index
+        return -1
     }
 
-    // --- CORE LOGIC ---
-
-    fun beginObject() { checkDepth(); skipWhitespace(); expectByte(OPEN_OBJ); depth++ }
-    fun endObject() { skipWhitespace(); expectByte(CLOSE_OBJ); depth-- }
-    fun beginArray() { checkDepth(); skipWhitespace(); expectByte(OPEN_ARR); depth++ }
-    fun endArray() { skipWhitespace(); expectByte(CLOSE_ARR); depth-- }
+    fun beginObject() { checkDepth(); skipWhitespace(); expectByte(GhostJsonConstants.OPEN_OBJ); depth++ }
+    fun endObject() { skipWhitespace(); expectByte(GhostJsonConstants.CLOSE_OBJ); depth-- }
+    fun beginArray() { checkDepth(); skipWhitespace(); expectByte(GhostJsonConstants.OPEN_ARR); depth++ }
+    fun endArray() { skipWhitespace(); expectByte(GhostJsonConstants.CLOSE_ARR); depth-- }
 
     fun hasNext(): Boolean {
         skipWhitespace()
-        if (!source.request(1)) return false
-        val b = source.buffer[0]
+        if (pos >= data.size) return false
+        val b = data[pos]
         return b != GhostJsonConstants.CLOSE_OBJ && b != GhostJsonConstants.CLOSE_ARR
     }
 
-    fun nextString(): String { skipWhitespace(); return readQuotedString() }
+    fun nextString(): String {
+        skipWhitespace()
+        return readQuotedString()
+    }
 
     fun nextBoolean(): Boolean {
         skipWhitespace()
         val b = peekByte()
         return when (b) {
-            TRUE_CHAR -> { internalSkip(TRUE_LENGTH); true }
-            FALSE_CHAR -> { internalSkip(FALSE_LENGTH); false }
+            GhostJsonConstants.TRUE_CHAR -> {
+                val len = GhostJsonConstants.TRUE_LENGTH.toInt()
+                if (pos + len > data.size) throwError("Truncated 'true' literal")
+                internalSkip(len); true
+            }
+            GhostJsonConstants.FALSE_CHAR -> {
+                val len = GhostJsonConstants.FALSE_LENGTH.toInt()
+                if (pos + len > data.size) throwError("Truncated 'false' literal")
+                internalSkip(len); false
+            }
             else -> throwError("Expected boolean but found ${b.toInt().toChar()}")
         }
     }
 
     internal fun readQuotedString(): String {
-        expectByte(QUOTE)
+        expectByte(GhostJsonConstants.QUOTE)
         return readStringBody()
     }
 
     internal fun readStringBody(): String {
-        val index = source.indexOfElement(GhostJsonConstants.QUOTE_OR_BACKSLASH)
-        if (index == -1L) throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
-        
-        val b = source.buffer[index]
-        if (b == QUOTE) {
-            return readPooledString(index)
+        val start = pos
+        while (pos < data.size) {
+            val b = data[pos]
+            if (b == GhostJsonConstants.QUOTE) {
+                val len = pos - start
+                return readPooledString(start, len)
+            }
+            if (b == GhostJsonConstants.BACKSLASH) return readStringWithEscapes(start)
+            pos++
         }
-        
-        return readStringWithEscapes(index)
+        throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
     }
 
-    private fun readPooledString(length: Long): String {
-        if (length <= 0) {
-            internalSkip(1)
+    private fun readPooledString(start: Int, len: Int): String {
+        if (len <= 0) {
+            pos++; column += 1
             return ""
         }
-        
-        val len = length.toInt()
-        
+
         if (len > GhostJsonConstants.MAX_POOL_STRING_LENGTH) {
-            for (i in 0L until length) {
-                val byte = source.buffer[i]
-                if (byte in 0..31) throwError("Unescaped control character in string")
+            for (i in start until start + len) {
+                if (data[i].toInt() in 0..31) throwError("Unescaped control character in string")
             }
-            val result = source.readUtf8(length)
-            column += len
-            internalSkip(1)
+            val result = data.decodeToString(start, start + len)
+            pos++; column += len + 1
             return result
         }
-        
+
         var hash = 0
-        for (i in 0L until length) {
-            val byte = source.buffer[i].toInt()
+        for (i in start until start + len) {
+            val byte = data[i].toInt()
             if (byte in 0..31) throwError("Unescaped control character in string")
             hash = 31 * hash + byte
         }
@@ -140,30 +145,31 @@ class GhostJsonReader(
         if (cached != null && cached.length == len) {
             var match = true
             for (i in 0 until len) {
-                if (cached[i].code.toByte() != source.buffer[i.toLong()]) { match = false; break }
+                if (cached[i].code.toByte() != data[start + i]) { match = false; break }
             }
             if (match) {
-                internalSkip(length + 1)
+                pos++; column += len + 1
                 return cached
             }
         }
-        val result = source.readUtf8(length)
-        column += len
+        val result = data.decodeToString(start, start + len)
         stringPool[poolIndex] = result
-        internalSkip(1)
+        pos++; column += len + 1
         return result
     }
 
-    private fun readStringWithEscapes(index: Long): String {
-        val out = StringBuilder()
-        out.append(source.readUtf8(index))
-        column += index.toInt()
-        
-        while (source.request(1)) {
-            val b = internalReadByte()
-            if (b == QUOTE) return out.toString()
-            if (b < 32) throwError("Unescaped control character in string")
-            if (b == BACKSLASH) {
+    private fun readStringWithEscapes(start: Int): String {
+        val out = StringBuilder(GhostJsonConstants.STRING_BUILDER_CAPACITY)
+        if (pos > start) {
+            out.append(data.decodeToString(start, pos))
+            column += pos - start
+        }
+        while (pos < data.size) {
+            val b = data[pos]
+            if (b == GhostJsonConstants.QUOTE) { pos++; column++; return out.toString() }
+            if (b.toInt() in 0..31) throwError("Unescaped control character in string")
+            if (b == GhostJsonConstants.BACKSLASH) {
+                pos++; column++
                 val c = readEscapeCode()
                 if (c <= 0xFFFF) {
                     out.append(c.toChar())
@@ -172,65 +178,73 @@ class GhostJsonReader(
                     out.append(((c - 0x10000) and 0x3FF or 0xDC00).toChar())
                 }
             } else {
-                out.append(b.toInt().toChar())
+                val scanStart = pos
+                while (pos < data.size) {
+                    val sb = data[pos]
+                    if (sb == GhostJsonConstants.QUOTE || sb == GhostJsonConstants.BACKSLASH || sb.toInt() in 0..31) break
+                    pos++
+                }
+                out.append(data.decodeToString(scanStart, pos))
+                column += pos - scanStart
             }
         }
         throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
     }
 
     private fun readEscapeCode(): Int {
-        if (!source.request(1)) throwError("Unterminated escape sequence")
-        return when (val b = internalReadByte()) {
-            'n'.code.toByte() -> '\n'.code
-            't'.code.toByte() -> '\t'.code
-            'r'.code.toByte() -> '\r'.code
-            'b'.code.toByte() -> '\b'.code
-            'f'.code.toByte() -> '\u000C'.code
-            'u'.code.toByte() -> readUnicodeCode()
-            BACKSLASH, QUOTE, '/'.code.toByte() -> b.toInt() and 0xFF
+        if (pos >= data.size) throwError("Unterminated escape sequence")
+        val b = data[pos++]; column++
+        return when (b.toInt().toChar()) {
+            'n' -> '\n'.code; 't' -> '\t'.code; 'r' -> '\r'.code
+            'b' -> '\b'.code; 'f' -> '\u000C'.code
+            'u' -> readUnicodeCode()
+            '\\' -> '\\'.code; '"' -> '"'.code; '/' -> '/'.code
             else -> throwError("Invalid escape sequence: \\${b.toInt().toChar()}")
         }
     }
 
     private fun readUnicodeCode(): Int {
-        if (!source.request(4)) throwError("Unterminated unicode escape")
-        val hex = source.readUtf8(4)
-        column += 4
-        val code = try { hex.toInt(16) } catch (e: Exception) { throwError("Invalid unicode escape: \\u$hex") }
-        
+        if (pos + 4 > data.size) throwError("Unterminated unicode escape")
+        val hex = data.decodeToString(pos, pos + 4)
+        pos += 4; column += 4
+        val code = try { hex.toInt(16) } catch (_: Exception) { throwError("Invalid unicode escape: \\u$hex") }
         if (code in 0xD800..0xDBFF) {
-            if (!source.request(6) || source.readByte() != BACKSLASH || source.readByte() != 'u'.code.toByte()) {
+            if (pos + 6 > data.size || data[pos] != GhostJsonConstants.BACKSLASH || data[pos + 1] != 'u'.code.toByte()) {
                 throwError("Lone high surrogate: \\u$hex")
             }
-            val lowHex = source.readUtf8(4)
-            column += 6
-            val lowCode = try { lowHex.toInt(16) } catch (e: Exception) { throwError("Invalid low surrogate: \\u$lowHex") }
-            if (lowCode !in 0xDC00..0xDFFF) {
-                throwError("Invalid low surrogate: \\u$lowHex")
-            }
+            pos += 2; column += 2
+            val lowHex = data.decodeToString(pos, pos + 4)
+            pos += 4; column += 4
+            val lowCode = try { lowHex.toInt(16) } catch (_: Exception) { throwError("Invalid low surrogate: \\u$lowHex") }
+            if (lowCode !in 0xDC00..0xDFFF) throwError("Invalid low surrogate: \\u$lowHex")
             return (((code - 0xD800) shl 10) or (lowCode - 0xDC00)) + 0x10000
         }
-        
-        if (code in 0xDC00..0xDFFF) {
-            throwError("Lone low surrogate: \\u$hex")
-        }
-        
+        if (code in 0xDC00..0xDFFF) throwError("Lone low surrogate: \\u$hex")
         return code
     }
 
     internal fun skipQuotedString() {
-        expectByte(QUOTE)
-        while (source.request(1)) {
-            val b = internalReadByte()
-            if (b == QUOTE) return
-            if (b == BACKSLASH) {
-                // In strict mode, we validate escapes even when skipping
+        expectByte(GhostJsonConstants.QUOTE)
+        skipQuotedStringBody()
+    }
+
+    internal fun skipQuotedStringBody() {
+        while (pos < data.size) {
+            val b = data[pos++]; column++
+            if (b == GhostJsonConstants.QUOTE) return
+            if (b == GhostJsonConstants.BACKSLASH) {
                 if (strictMode) {
                     readEscapeCode()
-                } else {
-                    internalSkip(1)
+                } else if (pos < data.size) {
+                    if (data[pos] == 'u'.code.toByte()) {
+                        pos++; column++
+                        val skip = minOf(4, data.size - pos)
+                        pos += skip; column += skip
+                    } else {
+                        pos++; column++
+                    }
                 }
-            } else if (b < 32) {
+            } else if (b.toInt() in 0..31) {
                 throwError("Unescaped control character in string")
             }
         }
@@ -238,47 +252,30 @@ class GhostJsonReader(
     }
 
     internal fun skipWhitespace() {
-        while (source.request(1)) {
-            val buf = source.buffer
-            val size = buf.size
-            var pos = 0L
-            while (pos < size) {
-                val b = buf[pos]
-                if (b == SPACE || b == TAB || b == CR) {
-                    pos++
-                } else if (b == NEWLINE) {
-                    pos++
-                    line++
-                    column = 1
-                } else {
-                    if (pos > 0) {
-                        source.skip(pos)
-                        column += pos.toInt()
-                    }
-                    return
-                }
-            }
-            if (pos > 0) {
-                source.skip(pos)
-                column += pos.toInt()
+        while (pos < data.size) {
+            when (data[pos]) {
+                GhostJsonConstants.SPACE, GhostJsonConstants.TAB, GhostJsonConstants.CR -> { pos++; column++ }
+                GhostJsonConstants.NEWLINE -> { pos++; line++; column = 1 }
+                else -> return
             }
         }
     }
 
     internal fun expectByte(expected: Byte) {
-        if (!source.request(1)) throwError("Expected '${expected.toInt().toChar()}' but reached end")
-        val actual = internalReadByte()
+        if (pos >= data.size) throwError("Expected '${expected.toInt().toChar()}' but reached end")
+        val actual = data[pos++]; column++
         if (actual != expected) throwError("Expected '${expected.toInt().toChar()}' but found '${actual.toInt().toChar()}'")
     }
 
     internal fun peekByte(): Byte {
-        source.require(1)
-        return source.buffer[0]
+        if (pos >= data.size) throwError("Unexpected EOF")
+        return data[pos]
     }
 
     internal fun peekNextByte(offset: Long): Byte? {
-        if (!source.request(offset + 1)) return null
-        return source.buffer[offset]
+        val idx = pos + offset.toInt()
+        if (idx >= data.size) return null
+        return data[idx]
     }
 
     internal fun internalThrowError(msg: String): Nothing = throwError(msg)

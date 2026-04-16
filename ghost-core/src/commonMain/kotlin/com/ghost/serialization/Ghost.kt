@@ -64,6 +64,13 @@ object Ghost {
         return serializer.deserialize(reader)
     }
 
+    inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
+        val reader = GhostJsonReader(bytes)
+        val serializer = getSerializer(T::class)
+            ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")
+        return serializer.deserialize(reader)
+    }
+
     fun prewarm() {
         registries.forEach { it.prewarm() }
     }

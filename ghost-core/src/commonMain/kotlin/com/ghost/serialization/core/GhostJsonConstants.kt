@@ -16,9 +16,6 @@ internal object GhostJsonConstants {
     val FALSE_BYTES = "false".encodeUtf8()
     val NULL_BYTES = "null".encodeUtf8()
 
-    val NUMBER_TERMINATORS = ",}] \n\r\t".encodeUtf8()
-    val QUOTE_OR_BACKSLASH = okio.ByteString.of('"'.code.toByte(), '\\'.code.toByte())
-
     const val SPACE = ' '.code.toByte()
     const val NEWLINE = '\n'.code.toByte()
     const val CR = '\r'.code.toByte()

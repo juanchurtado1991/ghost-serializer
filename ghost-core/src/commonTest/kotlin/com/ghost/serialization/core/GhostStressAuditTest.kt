@@ -78,8 +78,8 @@ class GhostStressAuditTest {
             assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
                 recursiveSkip(reader)
                 reader.skipWhitespace()
-                if (!reader.source.exhausted()) {
-                    val leftover = reader.source.readUtf8()
+                if (reader.pos < reader.data.size) {
+                    val leftover = reader.data.decodeToString(reader.pos, reader.data.size)
                     if (leftover.trim().isNotEmpty()) {
                         throw GhostJsonException("Unconsumed input: $leftover", 0, 0)
                     }
@@ -90,7 +90,7 @@ class GhostStressAuditTest {
 
     private fun recursiveSkip(reader: GhostJsonReader) {
         reader.skipWhitespace()
-        if (reader.source.exhausted()) return
+        if (reader.pos >= reader.data.size) return
         when (val b = reader.peekByte()) {
             '{'.code.toByte() -> {
                 reader.beginObject()

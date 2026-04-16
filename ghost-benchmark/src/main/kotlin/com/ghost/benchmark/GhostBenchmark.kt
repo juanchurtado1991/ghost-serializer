@@ -51,12 +51,7 @@ fun main() {
     val stress = runStressTests(gson, moshi, kJson)
     val failure = runFailureTests(byteData)
 
-    printAuditReport(coldMetrics, metrics, serializationMetrics, stress, failure)
-    printComparativeMatrix()
-    printEfficiencyAnalysis(metrics)
-
-    val registryCount = ServiceLoader.load(GhostRegistry::class.java).firstOrNull()?.registeredCount() ?: 0
-    printTransparencyReport(coldMetrics, failure, registryCount)
+    printBenchmarkReport(coldMetrics, metrics, serializationMetrics, stress, failure)
 }
 
 /**
@@ -106,7 +101,7 @@ private fun runColdStart(data: ByteString): BenchmarkMetrics {
     val k =
         measureTime { coldKser.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray())) }
     val gh = measureTime {
-        Ghost.deserialize<ComplexResponse>(Buffer().write(data))
+        Ghost.deserialize<ComplexResponse>(data.toByteArray())
     }
 
     return BenchmarkMetrics(Result(g, 0), Result(m, 0), Result(k, 0), Result(gh, 0))
@@ -127,7 +122,7 @@ private fun runWarmup(
         )
         moshi.adapter<ComplexResponse>().fromJson(Buffer().write(data))
         kJson.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray()))
-        Ghost.deserialize<ComplexResponse>(Buffer().write(data))
+        Ghost.deserialize<ComplexResponse>(data.toByteArray())
 
         // Warmup serialization
         gson.toJson(complex)
@@ -160,16 +155,15 @@ private fun runSerializationSteadyState(
     )
 }
 
-@OptIn(ExperimentalStdlibApi::class)
-private data class BenchmarkMetrics(
+internal data class BenchmarkMetrics(
     val gson: Result,
     val moshi: Result,
     val kser: Result,
     val ghost: Result
 )
 
-private data class Result(val ms: Long, val alloc: Long)
-private data class StressMetrics(val nesting: BenchmarkMetrics, val large: BenchmarkMetrics)
+internal data class Result(val ms: Long, val alloc: Long)
+internal data class StressMetrics(val nesting: BenchmarkMetrics, val large: BenchmarkMetrics)
 
 private fun runSteadyState(
     bean: ThreadMXBean,
@@ -189,7 +183,7 @@ private fun runSteadyState(
     val m = measurePerf(bean) { moshi.adapter<ComplexResponse>().fromJson(Buffer().write(data)) }
     val k =
         measurePerf(bean) { kJson.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray())) }
-    val gh = measurePerf(bean) { Ghost.deserialize<ComplexResponse>(Buffer().write(data)) }
+    val gh = measurePerf(bean) { Ghost.deserialize<ComplexResponse>(data.toByteArray()) }
     return BenchmarkMetrics(
         Result(g.first, g.second),
         Result(m.first, m.second),
@@ -212,7 +206,7 @@ private fun runStressTests(gson: Gson, moshi: Moshi, kJson: Json): StressMetrics
         measurePerfSimple { moshi.adapter<Category>().fromJson(Buffer().copy().write(tBytes)) }
     val kTree =
         measurePerfSimple { kJson.decodeFromStream<Category>(ByteArrayInputStream(tBytes.toByteArray())) }
-    val ghTree = measurePerfSimple { Ghost.deserialize<Category>(Buffer().write(tBytes)) }
+    val ghTree = measurePerfSimple { Ghost.deserialize<Category>(tBytes.toByteArray()) }
 
     return StressMetrics(
         BenchmarkMetrics(Result(gTree, 0), Result(mTree, 0), Result(kTree, 0), Result(ghTree, 0)),
@@ -248,7 +242,7 @@ private fun runFailureTests(data: ByteString): BenchmarkMetrics {
     }
     val gh = measureAvgFailSpeed {
         try {
-            Ghost.deserialize<ComplexResponse>(Buffer().write(bytes))
+            Ghost.deserialize<ComplexResponse>(bytes.toByteArray())
         } catch (e: Exception) {
         }
     }
@@ -264,181 +258,6 @@ private inline fun measureAvgFailSpeed(block: () -> Unit): Long {
 
 private fun createTree(d: Int): Category =
     if (d <= 0) Category("L") else Category("N", listOf(createTree(d - 1)))
-
-private fun printAuditReport(
-    cold: BenchmarkMetrics,
-    m: BenchmarkMetrics,
-    ser: BenchmarkMetrics,
-    s: StressMetrics,
-    f: BenchmarkMetrics
-) {
-    val hr = {
-        println(
-            "+" + "-".repeat(22) + "+" + "-".repeat(14) + "+" + "-".repeat(14) + "+" + "-".repeat(14) + "+" + "-".repeat(
-                23
-            ) + "+"
-        )
-    }
-    println("\n" + "=".repeat(93))
-    println("| ROBUST SERIALIZATION BENCHMARK | (L)=Lower is better | (H)=Higher is better            |")
-    hr()
-    println("| SCENARIO             | GSON (Reader)| MOSHI (Buf)  | K-SER (Strm) | GHOST (Registry)      |")
-    hr()
-    println(
-        "| Cold Start (ms) (L)  | %-12d | %-12d | %-12d | %-21d |".format(
-            cold.gson.ms,
-            cold.moshi.ms,
-            cold.kser.ms,
-            cold.ghost.ms
-        )
-    )
-    println(
-        "| Steady State (ms) (L)| %-12d | %-12d | %-12d | %-21d |".format(
-            m.gson.ms,
-            m.moshi.ms,
-            m.kser.ms,
-            m.ghost.ms
-        )
-    )
-    println(
-        "| Throughput (ops/s)(H)| %-12d | %-12d | %-12d | %-21d |".format(
-            60000000 / m.gson.ms.coerceAtLeast(
-                1
-            ),
-            60000000 / m.moshi.ms.coerceAtLeast(1),
-            60000000 / m.kser.ms.coerceAtLeast(1),
-            60000000 / m.ghost.ms.coerceAtLeast(1)
-        )
-    )
-    println(
-        "| Serialization (ms)(L)| %-12d | %-12d | %-12d | %-21d |".format(
-            ser.gson.ms,
-            ser.moshi.ms,
-            ser.kser.ms,
-            ser.ghost.ms
-        )
-    )
-    println(
-        "| Heap Alloc (KB) (L)  | %-12d | %-12d | %-12d | %-21d |".format(
-            m.gson.alloc,
-            m.moshi.alloc,
-            m.kser.alloc,
-            m.ghost.alloc
-        )
-    )
-    println(
-        "| Fail Latency (ns) (L)| %-12d | %-12d | %-12d | %-21d |".format(
-            f.gson.ms,
-            f.moshi.ms,
-            f.kser.ms,
-            f.ghost.ms
-        )
-    )
-    hr()
-}
-
-private fun printComparativeMatrix() {
-    val hr = {
-        println(
-            "+" + "-".repeat(20) + "+" + "-".repeat(12) + "+" + "-".repeat(12) + "+" + "-".repeat(12) + "+" + "-".repeat(
-                12
-            ) + "+" + "-".repeat(12) + "+"
-        )
-    }
-    println("\n| PROJECT GHOST: ABSOLUTE SUPERIORITY COMPARATIVE MATRIX                                      |")
-    hr()
-    println("| FEATURE            | GSON       | MOSHI      | K-SER      | **GHOST**  |")
-    hr()
-    println("| Sealed Classes     | Manual     | Manual     | Native     | **NATIVE** |")
-    println("| Value Classes      | No/Manual  | Manual     | Native     | **NATIVE** |")
-    println("| Inline Classes     | No         | No         | Native     | **NATIVE** |")
-    println("| Runtime Reflection | High       | Low        | None       | **ZERO**   |")
-    println("| R8/ProGuard Rules  | Complex    | Required   | Minimal    | **ZERO**   |")
-    println("| KMP (Common)       | No         | No         | Yes        | **YES**    |")
-    println("| Zero-Allocation    | No         | No         | No         | **YES**    |")
-    hr()
-}
-
-private fun printEfficiencyAnalysis(m: BenchmarkMetrics) {
-    val red = { b: Long, t: Long ->
-        if (b > 0) ((b - t).toDouble() / b * 100).toInt().coerceAtLeast(0) else 0
-    }
-    val rG = red(m.gson.alloc, m.ghost.alloc)
-    val rM = red(m.moshi.alloc, m.ghost.alloc)
-    val rK = red(m.kser.alloc, m.ghost.alloc)
-    val avg = (rG + rM + rK) / 3
-
-    val hrFull = { println("+" + "-".repeat(22) + "+" + "-".repeat(68) + "+") }
-
-    hrFull()
-    println("| MEMORY EFFICIENCY ANALYSIS: TOTAL HEAP ALLOCATION REDUCTION (H)                           |")
-    hrFull()
-    println(
-        "| GHOST VS GSON        | Ghost uses %2d%% LESS heap memory than Gson                         |".format(
-            rG
-        )
-    )
-    println(
-        "| GHOST VS MOSHI       | Ghost uses %2d%% LESS heap memory than Moshi                        |".format(
-            rM
-        )
-    )
-    println(
-        "| GHOST VS K-SER       | Ghost uses %2d%% LESS heap memory than Kotlinx Serialization        |".format(
-            rK
-        )
-    )
-    hrFull()
-    println(
-        "| AVG GC IMPACT (H)    | ~%2d%% Reduction in Garbage Collection pressure                      |".format(
-            avg
-        )
-    )
-    println("| REAL-WORLD BENEFIT   | Prevents frame drops (jank) & improves background stability         |")
-    hrFull()
-}
-
-private fun printTransparencyReport(
-    cold: BenchmarkMetrics,
-    failure: BenchmarkMetrics,
-    modelCount: Int
-) {
-    println("\n" + "=".repeat(93))
-    println("| TRANSPARENCY & TRADE-OFFS: HONEST PERFORMANCE ANALYSIS                                    |")
-    println("=".repeat(93))
-
-    val competitorColdAvg = (cold.gson.ms + cold.moshi.ms + cold.kser.ms) / 3
-    val coldDelta = cold.ghost.ms - competitorColdAvg
-    val coldBadge = if (coldDelta > 0) "[TRADE-OFF]" else "[ADVANTAGE]"
-
-    println("\n$coldBadge Registry Latency")
-    println("         Measurement: Ghost boots in ${cold.ghost.ms}ms vs competitor avg of ${competitorColdAvg}ms")
-    println("         Impact     : One-time first-hit penalty due to Registry initialization")
-    println("         Mitigation : Call GhostRuntime.prewarm() in Application.onCreate() to pay cost upfront")
-
-    val bestCompetitorFail = minOf(failure.gson.ms, failure.moshi.ms, failure.kser.ms)
-    val failDelta =
-        ((bestCompetitorFail - failure.ghost.ms).toDouble() / bestCompetitorFail * 100).toInt()
-            .coerceAtLeast(0)
-    val failBadge = if (failure.ghost.ms <= bestCompetitorFail) "[ADVANTAGE]" else "[TRADE-OFF]"
-    val failDirection = if (failure.ghost.ms <= bestCompetitorFail) "faster" else "slower"
-
-    println("\n$failBadge Error Detection Throughput")
-    println("         Measurement: Ghost detects errors $failDelta% $failDirection than best competitor")
-    println("         Impact     : Very fast failure paths prevent application hang during malformed I/O")
-    println("         Mitigation : None required. Ghost uses an optimized exception parser.")
-
-    println("\n[ADVANTAGE] Binary Footprint")
-    println("         Measurement: 1 class generated per @GhostSerialization model")
-    println("         Impact     : Minimal footprint. No legacy bridges or reflection helpers by default")
-    println("         Mitigation : If Moshi compatibility is needed, enable ghost.generateMoshiAdapters=true")
-
-    println("\n[TRADE-OFF] Build Time & Flexibility")
-    println("         Measurement: KSP annotation processing overhead per compilation")
-    println("         Impact     : Rigid schema. All types require explicit @GhostSerialization annotation")
-    println("         Mitigation : Safety over Speed. Reflection allows dynamic types but causes runtime crashes.")
-    println()
-}
 
 private fun printInputStatistics(count: Int, json: String) {
     println("--- INPUT STATISTICS ---")
