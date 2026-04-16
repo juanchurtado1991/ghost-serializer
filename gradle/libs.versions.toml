@@ -3,6 +3,8 @@
 agp = "8.13.2"
 kotlin = "2.3.20"
 ksp = "2.1.21-2.0.2"
+compose-plugin = "1.7.1"
+ktor = "3.0.0"
 
 # Libraries
 okio = "3.17.0"
@@ -41,9 +43,13 @@ junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", ver
 # Sample App Only
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 
 [plugins]
-
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

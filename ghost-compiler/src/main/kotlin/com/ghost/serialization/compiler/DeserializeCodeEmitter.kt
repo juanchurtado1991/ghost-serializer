@@ -13,7 +13,6 @@ internal class DeserializeCodeEmitter(
     private val properties: List<GhostPropertyModel>,
     private val originalClassName: ClassName,
     private val readerClass: ClassName,
-    private val bufferedSource: ClassName,
     private val isSealed: Boolean,
     private val isValue: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>
@@ -38,8 +37,6 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitSealedDeserialization(body: CodeBlock.Builder) {
-        // For sealed classes, we need to find the "type" field.
-        // We'll use a type-aware lookahead or a buffered re-read.
         body.addStatement("val typeName = reader.peekStringField(%S) ?: throw GhostJsonException(%S, 0, 0)", "type", "Missing 'type' discriminator for sealed class")
         body.beginControlFlow("val result = when (typeName)")
         sealedSubclasses.forEach { subclass ->
@@ -286,8 +283,7 @@ internal class DeserializeCodeEmitter(
         body.endControlFlow()
     }
 
-    private fun serializerName(type: KSType): ClassName {
-        val decl = type.declaration
-        return ClassName(decl.packageName.asString(), "${decl.simpleName.asString()}Serializer")
+    private fun serializerName(type: KSType): ClassName  = with(type.declaration) {
+        return ClassName(packageName.asString(), "${simpleName.asString()}Serializer")
     }
 }

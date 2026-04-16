@@ -56,7 +56,7 @@ internal class GhostCodeGenerator(
             properties, originalClassName, writerClass, bufferedSink, isSealed, isValue, sealedSubclasses, discriminator
         )
         val deserializeEmitter = DeserializeCodeEmitter(
-            properties, originalClassName, readerClass, bufferedSource, isSealed, isValue, sealedSubclasses
+            properties, originalClassName, readerClass, isSealed, isValue, sealedSubclasses
         )
 
         val serializerName = "${baseClassName}Serializer"
