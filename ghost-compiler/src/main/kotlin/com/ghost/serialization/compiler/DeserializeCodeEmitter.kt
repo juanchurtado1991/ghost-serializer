@@ -15,6 +15,7 @@ internal class DeserializeCodeEmitter(
     private val readerClass: ClassName,
     private val isSealed: Boolean,
     private val isValue: Boolean,
+    private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>
 ) {
 
@@ -24,35 +25,53 @@ internal class DeserializeCodeEmitter(
         when {
             isSealed -> emitSealedDeserialization(body)
             isValue -> emitValueDeserialization(body)
+            isEnum -> emitEnumDeserialization(body)
             else -> emitStandardDeserialization(body)
         }
 
-        return FunSpec.builder("deserialize")
-            .addKdoc("Robust deserialization for [%T].\n", originalClassName)
+        return FunSpec.builder(STR_DESERIALIZE)
+            .addKdoc(STR_KDOC_DESERIALIZE, originalClassName)
             .addModifiers(KModifier.OVERRIDE)
-            .addParameter("reader", readerClass)
+            .addParameter(STR_READER, readerClass)
             .returns(originalClassName)
             .addCode(body.build())
             .build()
     }
 
     private fun emitSealedDeserialization(body: CodeBlock.Builder) {
-        body.addStatement("val typeName = reader.peekStringField(%S) ?: throw GhostJsonException(%S, 0, 0)", "type", "Missing 'type' discriminator for sealed class")
-        body.beginControlFlow("val result = when (typeName)")
+        body.addStatement(STR_PEEK_TYPE, STR_TYPE, STR_MISSING_TYPE)
+        body.beginControlFlow(STR_WHEN_TYPENAME)
         sealedSubclasses.forEach { subclass ->
             val subClassName = subclass.toClassName()
-            val serializerName = ClassName(subClassName.packageName, "${subClassName.simpleName}Serializer")
-            body.addStatement("%S -> %T.deserialize(reader)", subClassName.simpleName, serializerName)
+            val serializerName = ClassName(
+                subClassName.packageName,
+                "${subClassName.simpleNames.joinToString("_")}$STR_SERIALIZER"
+            )
+            body.addStatement(
+                STR_DESERIALIZE_BRANCH,
+                subClassName.simpleName,
+                serializerName
+            )
         }
-        body.addStatement("else -> throw GhostJsonException(\"Unknown type discriminator: \$typeName\", 0, 0)")
+        body.addStatement(STR_UNKNOWN_TYPE)
         body.endControlFlow()
-        body.addStatement("return result")
+        body.addStatement(STR_RETURN_RESULT)
     }
 
     private fun emitValueDeserialization(body: CodeBlock.Builder) {
         val prop = properties.firstOrNull() ?: return
         val call = buildCall(prop)
-        body.addStatement("return %T(%L)", originalClassName, call)
+        body.addStatement(STR_RETURN_CONSTRUCTOR, originalClassName, call)
+    }
+
+    private fun emitEnumDeserialization(body: CodeBlock.Builder) {
+        body.addStatement(
+            "val s = reader.nextString()"
+        )
+        body.addStatement(
+            "return try { %T.valueOf(s) } catch (_: %T) { throw GhostJsonException(\"Invalid enum value: \$s\", 0, 0) }",
+            originalClassName, IllegalArgumentException::class
+        )
     }
 
     private fun emitStandardDeserialization(body: CodeBlock.Builder) {
@@ -60,16 +79,20 @@ internal class DeserializeCodeEmitter(
             val isPrimitive = it.type.isPrimitive() && !it.isNullable
             val varType = if (isPrimitive) it.typeName else it.typeName.copy(nullable = true)
             val initialValue = when {
-                it.isNullable -> "null"
-                it.type.isPrimitiveInt() -> "0"
-                it.type.isPrimitiveLong() -> "0L"
-                it.type.isPrimitiveDouble() -> "0.0"
-                it.type.isPrimitiveFloat() -> "0.0f"
-                it.type.isPrimitiveBoolean() -> "false"
-                else -> "null"
+                it.isNullable -> STR_NULL
+                it.type.isPrimitiveInt() -> STR_ZERO
+                it.type.isPrimitiveLong() -> STR_ZERO_L
+                it.type.isPrimitiveDouble() -> STR_ZERO_D
+                it.type.isPrimitiveFloat() -> STR_ZERO_F
+                it.type.isPrimitiveBoolean() -> STR_FALSE
+                else -> STR_NULL
             }
-            body.addStatement("var _${it.kotlinName}: %T = %L", varType, initialValue)
-            body.addStatement("var _${it.kotlinName}Set = false")
+            body.addStatement(
+                "$STR_VAR_UNDERSCORE${it.kotlinName}$STR_COLON_T_EQ_L",
+                varType,
+                initialValue
+            )
+            body.addStatement("$STR_VAR_UNDERSCORE${it.kotlinName}$STR_SET_EQ_FALSE")
         }
 
         emitParseLoop(body)
@@ -78,28 +101,28 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitParseLoop(body: CodeBlock.Builder) {
-        body.addStatement("reader.beginObject()")
-        body.beginControlFlow("while (true)")
-        body.addStatement("val index = reader.selectName(OPTIONS)")
-        body.beginControlFlow("when (index)")
-        
+        body.addStatement(STR_BEGIN_OBJECT)
+        body.beginControlFlow(STR_WHILE_TRUE)
+        body.addStatement(STR_SELECT_NAME)
+        body.beginControlFlow(STR_WHEN_INDEX)
+
         properties.forEachIndexed { index, prop ->
             val call = buildCall(prop)
-            body.beginControlFlow("$index ->")
-            body.addStatement("reader.consumeKeySeparator()")
-            body.addStatement("_${prop.kotlinName} = %L", call)
-            body.addStatement("_${prop.kotlinName}Set = true")
+            body.beginControlFlow("$index$STR_ARROW")
+            body.addStatement(STR_CONSUME_KEY_SEP)
+            body.addStatement("$STR_UNDERSCORE${prop.kotlinName}$STR_EQ_L", call)
+            body.addStatement("$STR_UNDERSCORE${prop.kotlinName}$STR_SET_EQ_TRUE")
             body.endControlFlow()
         }
 
-        body.addStatement("-1 -> break")
-        body.beginControlFlow("-2 ->")
-        body.addStatement("reader.consumeKeySeparator()")
-        body.addStatement("reader.skipValue()")
+        body.addStatement(STR_MINUS_ONE_BREAK)
+        body.beginControlFlow(STR_MINUS_TWO_ARROW)
+        body.addStatement(STR_CONSUME_KEY_SEP)
+        body.addStatement(STR_SKIP_VALUE)
         body.endControlFlow()
         body.endControlFlow()
         body.endControlFlow()
-        body.addStatement("reader.endObject()")
+        body.addStatement(STR_END_OBJECT)
     }
 
     private fun buildCall(prop: GhostPropertyModel): CodeBlock {
@@ -107,23 +130,27 @@ internal class DeserializeCodeEmitter(
 
         return when {
             prop.isValueClass && prop.valueClassProperty != null -> {
-                CodeBlock.of("%T(%L)", prop.typeName, buildCall(prop.valueClassProperty))
+                CodeBlock.of(STR_T_L, prop.typeName, buildCall(prop.valueClassProperty))
             }
-            prop.isSealedClass -> CodeBlock.of("%T.deserialize(reader)", serializerName(prop.type))
+
+            prop.isSealedClass -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(prop.type))
             prop.isEnum -> buildEnumCall(prop.typeName)
-            prop.type.isPrimitiveInt() -> CodeBlock.of("reader.nextInt()")
-            prop.type.isPrimitiveBoolean() -> CodeBlock.of("reader.nextBoolean()")
-            prop.type.isPrimitiveLong() -> CodeBlock.of("reader.nextLong()")
-            prop.type.isPrimitiveDouble() -> CodeBlock.of("reader.nextDouble()")
-            prop.type.isPrimitiveFloat() -> CodeBlock.of("reader.nextFloat()")
-            prop.isGhost -> CodeBlock.of("%T.deserialize(reader)", serializerName(prop.type))
+            prop.type.isPrimitiveInt() -> CodeBlock.of(STR_NEXT_INT)
+            prop.type.isPrimitiveBoolean() -> CodeBlock.of(STR_NEXT_BOOLEAN)
+            prop.type.isPrimitiveLong() -> CodeBlock.of(STR_NEXT_LONG)
+            prop.type.isPrimitiveDouble() -> CodeBlock.of(STR_NEXT_DOUBLE)
+            prop.type.isPrimitiveFloat() -> CodeBlock.of(STR_NEXT_FLOAT)
+            prop.isGhost -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(prop.type))
             prop.isPrimitiveArray -> CodeBlock.of(
-                "%T.deserialize(reader)",
-                ClassName("com.ghost.serialization.serializers", "${prop.primitiveArrayType}Serializer")
+                STR_T_DESERIALIZE,
+                ClassName(STR_SERIALIZERS_PKG,
+                    "${prop.primitiveArrayType}$STR_SERIALIZER"
+                )
             )
+
             prop.isList -> buildListCall(prop)
             prop.isMap -> buildMapCall(prop)
-            else -> CodeBlock.of("reader.nextString()")
+            else -> CodeBlock.of(STR_NEXT_STRING)
         }
     }
 
@@ -131,43 +158,45 @@ internal class DeserializeCodeEmitter(
     private fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
         return when {
             prop.isGhost -> CodeBlock.of(
-                "if (reader.isNextNullValue()) { reader.consumeNull(); null } " +
-                    "else %T.deserialize(reader)",
+                STR_NULL_CHECK_1 +
+                        STR_NULL_CHECK_2,
                 serializerName(prop.type)
             )
+
             prop.isEnum -> CodeBlock.of(
-                "if (reader.isNextNullValue()) { reader.consumeNull(); null } else { " +
-                    "val s = reader.nextString(); try { %T.valueOf(s) } catch (_: %T) { null } }",
+                STR_NULL_CHECK_3 +
+                        STR_NULL_CHECK_4,
                 prop.typeName.copy(nullable = false),
                 IllegalArgumentException::class
             )
-            prop.type.isPrimitiveInt() -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextInt()")
-            prop.type.isPrimitiveLong() -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextLong()")
-            prop.type.isPrimitiveDouble() -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextDouble()")
-            prop.type.isPrimitiveFloat() -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextFloat()")
-            prop.type.isPrimitiveBoolean() -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextBoolean()")
+
+            prop.type.isPrimitiveInt() -> CodeBlock.of(STR_NULL_CHECK_INT)
+            prop.type.isPrimitiveLong() -> CodeBlock.of(STR_NULL_CHECK_LONG)
+            prop.type.isPrimitiveDouble() -> CodeBlock.of(STR_NULL_CHECK_DOUBLE)
+            prop.type.isPrimitiveFloat() -> CodeBlock.of(STR_NULL_CHECK_FLOAT)
+            prop.type.isPrimitiveBoolean() -> CodeBlock.of(STR_NULL_CHECK_BOOLEAN)
             prop.isList -> nullGuarded(buildListCall(prop))
             prop.isMap -> nullGuarded(buildMapCall(prop))
             prop.isPrimitiveArray -> nullGuarded(
                 CodeBlock.of(
-                    "%T.deserialize(reader)",
-                    ClassName("com.ghost.serialization.serializers", "${prop.primitiveArrayType}Serializer")
+                    STR_T_DESERIALIZE,
+                    ClassName(STR_SERIALIZERS_PKG, "${prop.primitiveArrayType}$STR_SERIALIZER")
                 )
             )
-            else -> CodeBlock.of("if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextString()")
+
+            else -> CodeBlock.of(STR_NULL_CHECK_STRING)
         }
     }
 
     private fun nullGuarded(inner: CodeBlock): CodeBlock {
         return CodeBlock.of(
-            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else %L", inner
+            STR_NULL_CHECK_L, inner
         )
     }
 
     private fun buildEnumCall(typeName: com.squareup.kotlinpoet.TypeName): CodeBlock {
         return CodeBlock.of(
-            "try { %T.valueOf(reader.nextString()) } " +
-                "catch (_: %T) { throw GhostJsonException(\"Invalid enum value\", 0, 0) }",
+            STR_ENUM_EXPR,
             typeName, IllegalArgumentException::class
         )
     }
@@ -175,62 +204,66 @@ internal class DeserializeCodeEmitter(
     private fun buildListCall(prop: GhostPropertyModel): CodeBlock {
         val innerCall = when {
             prop.listInnerIsGhost -> CodeBlock.of(
-                "%T.deserialize(reader)", serializerName(prop.listInnerType!!)
+                STR_T_DESERIALIZE, serializerName(prop.listInnerType!!)
             )
+
             prop.listInnerIsEnum -> CodeBlock.of(
-                "try { %T.valueOf(reader.nextString()) } " +
-                    "catch (_: %T) { %T.entries.first() }",
+                STR_TRY_ENUM +
+                        STR_CATCH_ENUM_FIRST,
                 prop.listInnerType!!.toTypeName(),
                 IllegalArgumentException::class,
                 prop.listInnerType.toTypeName()
             )
-            prop.listInnerType?.isPrimitiveInt() == true -> CodeBlock.of("reader.nextInt()")
-            prop.listInnerType?.isPrimitiveLong() == true -> CodeBlock.of("reader.nextLong()")
-            prop.listInnerType?.isPrimitiveDouble() == true -> CodeBlock.of("reader.nextDouble()")
+
+            prop.listInnerType?.isPrimitiveInt() == true -> CodeBlock.of(STR_NEXT_INT)
+            prop.listInnerType?.isPrimitiveLong() == true -> CodeBlock.of(STR_NEXT_LONG)
+            prop.listInnerType?.isPrimitiveDouble() == true -> CodeBlock.of(STR_NEXT_DOUBLE)
             prop.listInnerType?.isPrimitiveFloat() == true ->
-                CodeBlock.of("reader.nextDouble().toFloat()")
+                CodeBlock.of(STR_DOUBLE_TO_FLOAT)
+
             prop.listInnerType?.isPrimitiveBoolean() == true ->
-                CodeBlock.of("reader.nextBoolean()")
-            else -> CodeBlock.of("reader.nextString()")
+                CodeBlock.of(STR_NEXT_BOOLEAN)
+
+            else -> CodeBlock.of(STR_NEXT_STRING)
         }
-        return CodeBlock.of("reader.readList { %L }", innerCall)
+        return CodeBlock.of(STR_READ_LIST, innerCall)
     }
 
     private fun buildMapCall(prop: GhostPropertyModel): CodeBlock {
         val valueReader = when {
             prop.mapValueIsGhost -> CodeBlock.of(
-                "%T.deserialize(reader)", serializerName(prop.mapValueType!!)
+                STR_T_DESERIALIZE, serializerName(prop.mapValueType!!)
             )
-            prop.mapValueType?.isPrimitiveInt() == true -> CodeBlock.of("reader.nextInt()")
-            prop.mapValueType?.isPrimitiveLong() == true -> CodeBlock.of("reader.nextLong()")
-            prop.mapValueType?.isPrimitiveDouble() == true -> CodeBlock.of("reader.nextDouble()")
+
+            prop.mapValueType?.isPrimitiveInt() == true -> CodeBlock.of(STR_NEXT_INT)
+            prop.mapValueType?.isPrimitiveLong() == true -> CodeBlock.of(STR_NEXT_LONG)
+            prop.mapValueType?.isPrimitiveDouble() == true -> CodeBlock.of(STR_NEXT_DOUBLE)
             prop.mapValueType?.isPrimitiveBoolean() == true ->
-                CodeBlock.of("reader.nextBoolean()")
-            else -> CodeBlock.of("reader.nextString()")
+                CodeBlock.of(STR_NEXT_BOOLEAN)
+
+            else -> CodeBlock.of(STR_NEXT_STRING)
         }
 
         return CodeBlock.of(
-            "buildMap {\n" +
-                "  reader.beginObject()\n" +
-                "  while (true) {\n" +
-                "    val mapKey = reader.nextKey() ?: break\n" +
-                "    reader.consumeKeySeparator()\n" +
-                "    put(mapKey, %L)\n" +
-                "  }\n" +
-                "  reader.endObject()\n" +
-                "}",
+            STR_BUILD_MAP_1 +
+                    STR_BUILD_MAP_2 +
+                    STR_BUILD_MAP_3 +
+                    STR_BUILD_MAP_4 +
+                    STR_BUILD_MAP_5 +
+                    STR_BUILD_MAP_6 +
+                    STR_BUILD_MAP_7 +
+                    STR_BUILD_MAP_8 +
+                    STR_BUILD_MAP_9,
             valueReader
         )
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder) {
-        val exceptionClass = ClassName("com.ghost.serialization.core.exception", "GhostJsonException")
         properties.filter { !it.isNullable && !it.hasDefaultValue }.forEach {
-            body.beginControlFlow("if (!_${it.kotlinName}Set)")
+            body.beginControlFlow("$STR_IF_NOT_SET${it.kotlinName}$STR_SET_PAREN")
             body.addStatement(
-                "throw %T(%S)",
-                exceptionClass,
-                "Required field '${it.jsonName}' missing in JSON"
+                STR_THROW_S,
+                "$STR_REQ_FIELD_1${it.jsonName}$STR_REQ_FIELD_2"
             )
             body.endControlFlow()
         }
@@ -240,11 +273,11 @@ internal class DeserializeCodeEmitter(
         val hasDefaults = properties.any { it.hasDefaultValue }
 
         if (!hasDefaults) {
-            val args = properties.joinToString(", ") { prop ->
+            val args = properties.joinToString(STR_COMMA_SPACE) { prop ->
                 val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
-                if (isPrimitive) "_${prop.kotlinName}" else "_${prop.kotlinName}!!"
+                if (isPrimitive) "$STR_UNDERSCORE${prop.kotlinName}" else "$STR_UNDERSCORE${prop.kotlinName}$STR_BANG_BANG"
             }
-            body.addStatement("return %T($args)", originalClassName)
+            body.addStatement("$STR_RETURN_T_PAREN$args$STR_PAREN", originalClassName)
             return
         }
 
@@ -255,35 +288,150 @@ internal class DeserializeCodeEmitter(
         val requiredProps = properties.filter { !it.hasDefaultValue }
         val defaultProps = properties.filter { it.hasDefaultValue }
 
-        val requiredArgs = requiredProps.joinToString(", ") { prop ->
-            "${prop.kotlinName} = " +
-                if (prop.isNullable) "_${prop.kotlinName}" else "_${prop.kotlinName}!!"
+        val requiredArgs = requiredProps.joinToString(STR_COMMA_SPACE) { prop ->
+            "${prop.kotlinName}$STR_EQ_SPACE" + if (prop.isNullable) {
+                "$STR_UNDERSCORE${prop.kotlinName}"
+            } else {
+                "$STR_UNDERSCORE${prop.kotlinName}$STR_BANG_BANG"
+            }
         }
 
-        body.addStatement("val _result = %T($requiredArgs)", originalClassName)
-        
-        val anyDefaultSetCheck = defaultProps.joinToString(" || ") { "_${it.kotlinName}Set" }
-        body.beginControlFlow("if ($anyDefaultSetCheck)")
-        body.addStatement("return _result.copy(")
+        body.addStatement("$STR_VAL_RESULT$requiredArgs$STR_PAREN", originalClassName)
+
+        val anyDefaultSetCheck =
+            defaultProps.joinToString(STR_OR) { "$STR_UNDERSCORE${it.kotlinName}$STR_SET" }
+        body.beginControlFlow("$STR_IF_PAREN$anyDefaultSetCheck$STR_PAREN")
+        body.addStatement(STR_RETURN_RESULT_COPY)
         defaultProps.forEachIndexed { index, prop ->
-            val comma = if (index < defaultProps.size - 1) "," else ""
+            val comma = if (index < defaultProps.size - 1) STR_COMMA else STR_EMPTY
             val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
             val valueExpr = if (prop.isNullable) {
-                "_${prop.kotlinName}"
+                "$STR_UNDERSCORE${prop.kotlinName}"
             } else if (isPrimitive) {
-                "if (_${prop.kotlinName}Set) _${prop.kotlinName} else _result.${prop.kotlinName}"
+                "$STR_IF_UNDERSCORE${prop.kotlinName}$STR_SET_UNDERSCORE${prop.kotlinName}$STR_ELSE_RESULT${prop.kotlinName}"
             } else {
-                "if (_${prop.kotlinName}Set) _${prop.kotlinName}!! else _result.${prop.kotlinName}"
+                "$STR_IF_UNDERSCORE${prop.kotlinName}$STR_SET_UNDERSCORE${prop.kotlinName}$STR_BANG_ELSE_RESULT${prop.kotlinName}"
             }
-            body.addStatement("  ${prop.kotlinName} = $valueExpr$comma")
+            body.addStatement("$STR_SPACE_SPACE${prop.kotlinName}$STR_EQ_SPACE$valueExpr$comma")
         }
-        body.addStatement(")")
-        body.nextControlFlow("else")
-        body.addStatement("return _result")
+        body.addStatement(STR_PAREN)
+        body.nextControlFlow(STR_ELSE)
+        body.addStatement(STR_RETURN_RESULT_FINAL)
         body.endControlFlow()
     }
 
-    private fun serializerName(type: KSType): ClassName  = with(type.declaration) {
-        return ClassName(packageName.asString(), "${simpleName.asString()}Serializer")
+    private fun serializerName(type: KSType): ClassName = with(type.declaration as KSClassDeclaration) {
+        val className = toClassName()
+        return ClassName(className.packageName, "${className.simpleNames.joinToString("_")}$STR_SERIALIZER")
+    }
+
+    companion object {
+        private const val STR_DESERIALIZE = "deserialize"
+        private const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
+        private const val STR_READER = "reader"
+        private const val STR_PEEK_TYPE =
+            "val typeName = reader.peekStringField(%S) ?: reader.throwError(%S)"
+        private const val STR_TYPE = "type"
+        private const val STR_MISSING_TYPE = "Missing 'type' discriminator for sealed class"
+        private const val STR_WHEN_TYPENAME = "val result = when (typeName)"
+        private const val STR_SERIALIZER = "Serializer"
+        private const val STR_DESERIALIZE_BRANCH = "%S -> %T.deserialize(reader)"
+        private const val STR_UNKNOWN_TYPE =
+            "else -> reader.throwError(\"Unknown type discriminator: \$typeName\")"
+        private const val STR_RETURN_RESULT = "return result"
+        private const val STR_RETURN_CONSTRUCTOR = "return %T(%L)"
+        private const val STR_NULL = "null"
+        private const val STR_ZERO = "0"
+        private const val STR_ZERO_L = "0L"
+        private const val STR_ZERO_D = "0.0"
+        private const val STR_ZERO_F = "0.0f"
+        private const val STR_FALSE = "false"
+        private const val STR_VAR_UNDERSCORE = "var _"
+        private const val STR_COLON_T_EQ_L = ": %T = %L"
+        private const val STR_SET_EQ_FALSE = "Set = false"
+        private const val STR_BEGIN_OBJECT = "reader.beginObject()"
+        private const val STR_WHILE_TRUE = "while (true)"
+        private const val STR_SELECT_NAME = "val index = reader.selectName(OPTIONS)"
+        private const val STR_WHEN_INDEX = "when (index)"
+        private const val STR_ARROW = " ->"
+        private const val STR_CONSUME_KEY_SEP = "reader.consumeKeySeparator()"
+        private const val STR_UNDERSCORE = "_"
+        private const val STR_EQ_L = " = %L"
+        private const val STR_SET_EQ_TRUE = "Set = true"
+        private const val STR_MINUS_ONE_BREAK = "-1 -> break"
+        private const val STR_MINUS_TWO_ARROW = "-2 ->"
+        private const val STR_SKIP_VALUE = "reader.skipValue()"
+        private const val STR_END_OBJECT = "reader.endObject()"
+        private const val STR_T_L = "%T(%L)"
+        private const val STR_T_DESERIALIZE = "%T.deserialize(reader)"
+        private const val STR_NEXT_INT = "reader.nextInt()"
+        private const val STR_NEXT_BOOLEAN = "reader.nextBoolean()"
+        private const val STR_NEXT_LONG = "reader.nextLong()"
+        private const val STR_NEXT_DOUBLE = "reader.nextDouble()"
+        private const val STR_NEXT_FLOAT = "reader.nextFloat()"
+        private const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"
+        private const val STR_NEXT_STRING = "reader.nextString()"
+        private const val STR_NULL_CHECK_1 = "if (reader.isNextNullValue()) { reader.consumeNull(); null } "
+        private const val STR_NULL_CHECK_2 = "else %T.deserialize(reader)"
+        private const val STR_NULL_CHECK_3 =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else { "
+        private const val STR_NULL_CHECK_4 =
+            "val s = reader.nextString(); try { %T.valueOf(s) } catch (_: %T) { null } }"
+        private const val STR_NULL_CHECK_INT =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextInt()"
+        private const val STR_NULL_CHECK_LONG =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextLong()"
+        private const val STR_NULL_CHECK_DOUBLE =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextDouble()"
+        private const val STR_NULL_CHECK_FLOAT =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextFloat()"
+        private const val STR_NULL_CHECK_BOOLEAN =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextBoolean()"
+        private const val STR_NULL_CHECK_STRING =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextString()"
+        private const val STR_NULL_CHECK_L =
+            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else %L"
+        private const val STR_ENUM_EXPR = "reader.nextString().let { s -> try { %T.valueOf(s) } catch (_: %T) { reader.throwError(\"Invalid enum value: \$s\") } }"
+        private const val STR_TRY_ENUM = "val s = reader.nextString(); val result = try { %T.valueOf(s) } "
+        private const val STR_CATCH_ENUM_INVALID =
+            "catch (_: %T) { reader.throwError(\"Invalid enum value: \$s\") }"
+        private const val STR_CATCH_ENUM_FIRST = "catch (_: %T) { %T.entries.first() }"
+        private const val STR_DOUBLE_TO_FLOAT = "reader.nextDouble().toFloat()"
+        private const val STR_READ_LIST = "reader.readList { %L }"
+        private const val STR_BUILD_MAP_1 = "buildMap {\n"
+        private const val STR_BUILD_MAP_2 = "  reader.beginObject()\n"
+        private const val STR_BUILD_MAP_3 = "  while (true) {\n"
+        private const val STR_BUILD_MAP_4 = "    val mapKey = reader.nextKey() ?: break\n"
+        private const val STR_BUILD_MAP_5 = "    reader.consumeKeySeparator()\n"
+        private const val STR_BUILD_MAP_6 = "    put(mapKey, %L)\n"
+        private const val STR_BUILD_MAP_7 = "  }\n"
+        private const val STR_BUILD_MAP_8 = "  reader.endObject()\n"
+        private const val STR_BUILD_MAP_9 = "}"
+        private const val STR_CORE_EXC_PKG = "com.ghost.serialization.core.exception"
+        private const val STR_GHOST_JSON_EXC = "GhostJsonException"
+        private const val STR_IF_NOT_SET = "if (!_"
+        private const val STR_SET_PAREN = "Set)"
+        private const val STR_THROW_S = "reader.throwError(%S)"
+        private const val STR_REQ_FIELD_1 = "Required field '"
+        private const val STR_REQ_FIELD_2 = "' missing in JSON"
+        private const val STR_COMMA_SPACE = ", "
+        private const val STR_BANG_BANG = "!!"
+        private const val STR_RETURN_T_PAREN = "return %T("
+        private const val STR_PAREN = ")"
+        private const val STR_EQ_SPACE = " = "
+        private const val STR_VAL_RESULT = "val _result = %T("
+        private const val STR_OR = " || "
+        private const val STR_IF_PAREN = "if ("
+        private const val STR_RETURN_RESULT_COPY = "return _result.copy("
+        private const val STR_COMMA = ","
+        private const val STR_EMPTY = ""
+        private const val STR_IF_UNDERSCORE = "if (_"
+        private const val STR_SET_UNDERSCORE = "Set) _"
+        private const val STR_ELSE_RESULT = " else _result."
+        private const val STR_BANG_ELSE_RESULT = "!! else _result."
+        private const val STR_SPACE_SPACE = "  "
+        private const val STR_ELSE = "else"
+        private const val STR_RETURN_RESULT_FINAL = "return _result"
+        private const val STR_SET = "Set"
     }
 }

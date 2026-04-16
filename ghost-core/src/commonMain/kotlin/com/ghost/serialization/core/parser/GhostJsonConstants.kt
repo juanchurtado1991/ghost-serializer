@@ -5,8 +5,6 @@ import kotlin.math.pow
 
 internal object GhostJsonConstants {
     const val STRING_BUILDER_CAPACITY = 64
-    const val UNICODE_HEX_LENGTH = 4L
-    const val HEX_RADIX = 16
     const val NULL_LENGTH = 4L
     const val TRUE_LENGTH = 4L
     const val FALSE_LENGTH = 5L

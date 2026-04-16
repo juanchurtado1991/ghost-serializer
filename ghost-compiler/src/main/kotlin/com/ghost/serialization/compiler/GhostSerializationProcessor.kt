@@ -15,13 +15,13 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.asClassName
-import kotlin.reflect.KClass
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
+import kotlin.reflect.KClass
 
 /**
  * Main KSP Processor for Ghost Serialization.
@@ -31,21 +31,27 @@ import com.squareup.kotlinpoet.ksp.writeTo
 class GhostSerializationProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
-    private val options: Map<String, String> = emptyMap()
+    options: Map<String, String> = emptyMap()
 ) : SymbolProcessor {
 
-    private val generateMoshiAdapters: Boolean =
-        options[OPTION_GENERATE_MOSHI_ADAPTERS]?.toBoolean() ?: false
+    private val generateMoshiAdapters: Boolean = options[OPTION_GENERATE_MOSHI_ADAPTERS]
+        ?.toBoolean()
+        ?: false
 
-    private val processedClasses = mutableListOf<ClassName>()
+    // Map of Class -> Its Serializer Name (Flattened)
+    private val classToSerializer = mutableMapOf<ClassName, ClassName>()
     private val originatingFiles = mutableSetOf<com.google.devtools.ksp.symbol.KSFile>()
     private val analyzer = GhostAnalyzer(logger)
 
     private val registryClassName: String by lazy {
-        val suffix = processedClasses.firstOrNull()?.packageName?.hashCode()?.let { 
-            if (it < 0) "n${-it}" else "$it" 
-        } ?: "Default"
-        "${REGISTRY_CLASS_NAME}_$suffix"
+        val firstClass = classToSerializer.keys.firstOrNull()
+        val suffix = firstClass
+            ?.packageName
+            ?.replace(".", "_")
+            ?.replace("-", "_")
+            ?: STR_DEFAULT
+
+        "${REGISTRY_CLASS_NAME}$STR_UNDERSCORE$suffix"
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -59,7 +65,7 @@ class GhostSerializationProcessor(
             generateProGuardRules()
             generateServiceFile()
             if (!generateMoshiAdapters) {
-                logger.info("$LOG_PREFIX ghost.generateMoshiAdapters=false: Moshi JsonAdapter generation skipped. Binary footprint reduced to 1 class per model.")
+                logger.info("$LOG_PREFIX$STR_LOG_MOSHI_SKIPPED")
             }
         }
 
@@ -84,11 +90,22 @@ class GhostSerializationProcessor(
                 )
             )
 
-            processedClasses.add(classDeclaration.toClassName())
+            val serializerClassName = ClassName(
+                classDeclaration.packageName.asString(),
+                "${classDeclaration.toClassName().simpleNames.joinToString("_")}$STR_SERIALIZER_SUFFIX"
+            )
+            classToSerializer[classDeclaration.toClassName()] = serializerClassName
+
+            // Industrial Advancement: Automatically register sealed subclasses to the same serializer
+            if (classDeclaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.SEALED)) {
+                classDeclaration.getSealedSubclasses().forEach { subclass ->
+                    classToSerializer[subclass.toClassName()] = serializerClassName
+                }
+            }
             classDeclaration.containingFile?.let { originatingFiles.add(it) }
-            logger.info("$LOG_PREFIX Successfully optimized: $className")
+            logger.info("$LOG_PREFIX$STR_LOG_OPTIMIZED$className")
         } catch (e: Exception) {
-            logger.error("$LOG_PREFIX Critical error processing $className: ${e.stackTraceToString()}")
+            logger.error("$LOG_PREFIX$STR_LOG_CRITICAL$className$STR_COLON_SPACE${e.stackTraceToString()}")
         }
     }
 
@@ -97,64 +114,86 @@ class GhostSerializationProcessor(
      * Replaces reflection and avoids global Map allocation at startup.
      */
     private fun generateModuleRegistry() {
-        val serializerType = ClassName("com.ghost.serialization.core.contract", "GhostSerializer")
-        val kClassType = ClassName("kotlin.reflect", "KClass")
-        val t = TypeVariableName("T", Any::class)
+        val serializerType = ClassName(STR_CONTRACT_PKG, STR_GHOST_SERIALIZER)
+        val kClassType = ClassName(STR_REFLECT_PKG, STR_KCLASS)
+        val t = TypeVariableName(STR_TYPE_T, Any::class)
 
-        // Generate the private Map property
-        val mapType = ClassName("kotlin.collections", "Map")
+        val mapType = ClassName(STR_COLLECTIONS_PKG, STR_MAP)
             .parameterizedBy(kClassType.parameterizedBy(STAR), serializerType.parameterizedBy(STAR))
-        
-        val mapBuilder = CodeBlock.builder().add("mapOf(\n")
-        processedClasses.forEachIndexed { index, className ->
-            val serializerName = ClassName(className.packageName, "${className.simpleName}Serializer")
-            mapBuilder.add("    %T::class to %T", className, serializerName)
-            if (index < processedClasses.size - 1) mapBuilder.add(",\n")
-        }
-        mapBuilder.add("\n)")
 
-        val serializersProperty = PropertySpec.builder("serializers", mapType)
+        val mapBuilder = CodeBlock.builder().add(STR_MAP_OF)
+        val entries = classToSerializer.entries.toList()
+        entries.forEachIndexed { index, entry ->
+            mapBuilder.add(STR_MAP_ENTRY, entry.key, entry.value)
+            if (index < entries.size - 1) mapBuilder.add(STR_COMMA_NEWLINE)
+        }
+        mapBuilder.add(STR_NEWLINE_PAREN)
+
+        val serializersProperty = PropertySpec.builder(STR_PROP_SERIALIZERS, mapType)
             .addModifiers(KModifier.PRIVATE)
             .initializer(mapBuilder.build())
             .build()
 
-        val getMethod = FunSpec.builder("getSerializer")
+        val getMethod = FunSpec.builder(STR_FUN_GET_SERIALIZER)
             .addTypeVariable(t)
-            .addParameter("clazz", KClass::class.asClassName().parameterizedBy(t))
+            .addParameter(STR_PARAM_CLAZZ, KClass::class.asClassName().parameterizedBy(t))
             .returns(serializerType.parameterizedBy(t).copy(nullable = true))
-            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build())
-            .addStatement("return serializers[clazz] as? %T", serializerType.parameterizedBy(t))
-        val registryInterface = ClassName("com.ghost.serialization.core.contract", "GhostRegistry")
+            .addAnnotation(
+                AnnotationSpec.builder(Suppress::class).addMember(STR_FORMAT_S, STR_UNCHECKED_CAST)
+                    .build()
+            )
+            .addStatement(STR_RETURN_SERIALIZERS, serializerType.parameterizedBy(t))
+        val registryInterface = ClassName(STR_CONTRACT_PKG, STR_GHOST_REGISTRY)
 
-        val prewarmMethod = FunSpec.builder("prewarm")
+        val prewarmMethod = FunSpec.builder(STR_FUN_PREWARM)
             .addModifiers(KModifier.OVERRIDE)
-            .addStatement("serializers.size")
+            .addStatement(STR_SERIALIZERS_SIZE)
             .build()
 
-        val registeredCountMethod = FunSpec.builder("registeredCount")
+        val registeredCountMethod = FunSpec.builder(STR_FUN_REG_COUNT)
             .addModifiers(KModifier.OVERRIDE)
             .returns(Int::class)
-            .addStatement("return serializers.size")
+            .addStatement(STR_RETURN_SERIALIZERS_SIZE)
+            .build()
+
+        val getAllSerializersMethod = FunSpec.builder(STR_FUN_GET_ALL_SERIALIZERS)
+            .addModifiers(KModifier.OVERRIDE)
+            .returns(mapType)
+            .addStatement(STR_RETURN_ALL_SERIALIZERS)
             .build()
 
         val registrySpec = TypeSpec.classBuilder(registryClassName)
-            .addKdoc("Generated Registry for GhostSerialization.\nProvides ultra-fast, O(1), and R8-safe serializer lookups.")
+            .addKdoc(STR_KDOC_REGISTRY)
             .addSuperinterface(registryInterface)
             .addProperty(serializersProperty)
             .addFunction(getMethod.addModifiers(KModifier.OVERRIDE).build())
             .addFunction(prewarmMethod)
             .addFunction(registeredCountMethod)
-            .addType(TypeSpec.companionObjectBuilder()
-                .addProperty(PropertySpec.builder("INSTANCE", ClassName(PACKAGE_NAME, registryClassName))
-                    .initializer("%T()", ClassName(PACKAGE_NAME, registryClassName))
-                    .build())
-                .build())
+            .addFunction(getAllSerializersMethod)
+            .addType(
+                TypeSpec.companionObjectBuilder()
+                    .addProperty(
+                        PropertySpec.builder(
+                            STR_INSTANCE,
+                            ClassName(PACKAGE_NAME, registryClassName)
+                        )
+                            .initializer(
+                                STR_INIT_INSTANCE,
+                                ClassName(PACKAGE_NAME, registryClassName)
+                            )
+                            .build()
+                    )
+                    .build()
+            )
             .build()
 
         FileSpec.builder(PACKAGE_NAME, registryClassName)
             .addType(registrySpec)
             .build()
-            .writeTo(codeGenerator, Dependencies(aggregating = true, *originatingFiles.toTypedArray()))
+            .writeTo(
+                codeGenerator,
+                Dependencies(aggregating = true, *originatingFiles.toTypedArray())
+            )
     }
 
     /**
@@ -176,12 +215,12 @@ class GhostSerializationProcessor(
         try {
             codeGenerator.createNewFile(
                 dependencies = Dependencies(aggregating = true),
-                packageName = "META-INF.proguard",
-                fileName = "ghost-serialization",
-                extensionName = "pro"
+                packageName = STR_META_INF_PROGUARD,
+                fileName = STR_GHOST_SERIALIZATION_FILE,
+                extensionName = STR_EXT_PRO
             ).use { it.write(rules.toByteArray()) }
         } catch (e: Exception) {
-            logger.warn("$LOG_PREFIX Could not generate ProGuard rules: ${e.message}")
+            logger.warn("$LOG_PREFIX$STR_LOG_PROGUARD_WARN${e.message}")
         }
     }
 
@@ -190,22 +229,70 @@ class GhostSerializationProcessor(
      * discover this registry at runtime.
      */
     private fun generateServiceFile() {
-        val serviceName = "com.ghost.serialization.core.contract.GhostRegistry"
+        val serviceName = STR_SERVICE_NAME
         val implementationName = "$PACKAGE_NAME.$registryClassName"
-        
+
         try {
             codeGenerator.createNewFile(
-                dependencies = Dependencies(aggregating = true, *originatingFiles.toTypedArray()),
-                packageName = "META-INF.services",
+                dependencies = Dependencies(
+                    aggregating = true,
+                    *originatingFiles.toTypedArray()
+                ),
+                packageName = STR_META_INF_SERVICES,
                 fileName = serviceName,
-                extensionName = ""
+                extensionName = STR_EMPTY
             ).use { it.write(implementationName.toByteArray()) }
         } catch (e: Exception) {
-            logger.warn("$LOG_PREFIX Could not generate ServiceLoader file: ${e.message}")
+            logger.warn("$LOG_PREFIX$STR_LOG_SERVICE_WARN${e.message}")
         }
     }
 
     companion object {
+        private const val STR_SUFFIX_N = "n"
+        private const val STR_DEFAULT = "Default"
+        private const val STR_UNDERSCORE = "_"
+        private const val STR_LOG_MOSHI_SKIPPED =
+            " ghost.generateMoshiAdapters=false: Moshi JsonAdapter generation skipped. Binary footprint reduced to 1 class per model."
+        private const val STR_LOG_OPTIMIZED = " Successfully optimized: "
+        private const val STR_LOG_CRITICAL = " Critical error processing "
+        private const val STR_COLON_SPACE = ": "
+        private const val STR_CONTRACT_PKG = "com.ghost.serialization.core.contract"
+        private const val STR_GHOST_SERIALIZER = "GhostSerializer"
+        private const val STR_REFLECT_PKG = "kotlin.reflect"
+        private const val STR_KCLASS = "KClass"
+        private const val STR_TYPE_T = "T"
+        private const val STR_COLLECTIONS_PKG = "kotlin.collections"
+        private const val STR_MAP = "Map"
+        private const val STR_MAP_OF = "mapOf(\n"
+        private const val STR_SERIALIZER_SUFFIX = "Serializer"
+        private const val STR_MAP_ENTRY = "    %T::class to %T"
+        private const val STR_COMMA_NEWLINE = ",\n"
+        private const val STR_NEWLINE_PAREN = "\n)"
+        private const val STR_PROP_SERIALIZERS = "serializers"
+        private const val STR_FUN_GET_SERIALIZER = "getSerializer"
+        private const val STR_PARAM_CLAZZ = "clazz"
+        private const val STR_UNCHECKED_CAST = "UNCHECKED_CAST"
+        private const val STR_RETURN_SERIALIZERS = "return serializers[clazz] as? %T"
+        private const val STR_GHOST_REGISTRY = "GhostRegistry"
+        private const val STR_FUN_PREWARM = "prewarm"
+        private const val STR_SERIALIZERS_SIZE = "serializers.size"
+        private const val STR_FUN_REG_COUNT = "registeredCount"
+        private const val STR_RETURN_SERIALIZERS_SIZE = "return serializers.size"
+        private const val STR_FUN_GET_ALL_SERIALIZERS = "getAllSerializers"
+        private const val STR_RETURN_ALL_SERIALIZERS = "return serializers"
+        private const val STR_KDOC_REGISTRY =
+            "Generated Registry for GhostSerialization.\nProvides ultra-fast, O(1), and R8-safe serializer lookups."
+        private const val STR_INSTANCE = "INSTANCE"
+        private const val STR_INIT_INSTANCE = "%T()"
+        private const val STR_META_INF_PROGUARD = "META-INF.proguard"
+        private const val STR_GHOST_SERIALIZATION_FILE = "ghost-serialization"
+        private const val STR_EXT_PRO = "pro"
+        private const val STR_LOG_PROGUARD_WARN = " Could not generate ProGuard rules: "
+        private const val STR_SERVICE_NAME = "com.ghost.serialization.core.contract.GhostRegistry"
+        private const val STR_META_INF_SERVICES = "META-INF.services"
+        private const val STR_EMPTY = ""
+        private const val STR_LOG_SERVICE_WARN = " Could not generate ServiceLoader file: "
+        private const val STR_FORMAT_S = "%S"
         private const val ANNOTATION_NAME = "com.ghost.serialization.annotations.GhostSerialization"
         private const val PACKAGE_NAME = "com.ghost.serialization.generated"
         private const val REGISTRY_CLASS_NAME = "GhostModuleRegistry"

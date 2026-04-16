@@ -57,8 +57,11 @@ dependencies {
     // 2. Add the Ghost Core Runtime
     implementation("com.ghost.serialization:ghost-core:1.0.0")
     
-    // (Optional) For Network Layer Integration
+    // (Optional) For Network Layer Integration (Retrofit)
     implementation("com.ghost.serialization:ghost-retrofit:1.0.0")
+
+    // (Optional) For Ktor 3.0 / Ktorfit 2.3.0 Integration
+    implementation("com.ghost.serialization:ghost-ktor:1.0.0")
 }
 ```
 
@@ -117,7 +120,45 @@ val retrofit = Retrofit.Builder()
     .build()
 ```
 
-### 2. Sealed Classes (Polymorphism)
+### 2. KMP Ktor & Ktorfit 2.3.0
+Ghost is now a first-class citizen in the **Kotlin Multiplatform (KMP)** networking stack. Integrate with Ktor's `ContentNegotiation` or use the industrial interface approach with **Ktorfit**.
+
+**Ktor Client Setup:**
+```kotlin
+val client = HttpClient {
+    install(ContentNegotiation) {
+        ghost() // High-performance streaming converter
+    }
+}
+```
+
+**Ktorfit Service:**
+```kotlin
+@GhostSerialization
+data class CharacterResponse(val results: List<Character>)
+
+interface RickAndMortyService {
+    @GET("character/")
+    suspend fun getCharacters(@Query("page") page: Int): CharacterResponse
+}
+```
+
+### 3. Industrial Optimization: Pre-warming
+To achieve absolute zero-latency on the first serialization call, Ghost provides a `prewarm()` method. This initializes registry discovery in the background, ensuring the first interaction doesn't pay the "Discovery Tax".
+
+```kotlin
+// In your App startup or ViewModel init
+Ghost.prewarm()
+```
+
+### 4. Hyper-Performance Dashboard
+The Ghost ecosystem includes a high-fidelity benchmarking suite to validate performance and memory allocation directly in your application.
+
+- **CPU Stress Test**: Measure deserialization latency in complex recursive graphs.
+- **Memory Allocation Audit**: Compare Ghost's -70% heap advantage against Moshi using real-time thread byte allocation tracking.
+- **iOS Parity**: Identical performance profiles across Android and iOS/Darwin targets.
+
+### 4. Sealed Classes (Polymorphism)
 When dealing with `sealed class` or `sealed interface`, Ghost transparently identifies the concrete type.
 
 ```kotlin

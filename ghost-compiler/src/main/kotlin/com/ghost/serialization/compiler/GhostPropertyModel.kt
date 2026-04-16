@@ -22,8 +22,6 @@ internal data class GhostPropertyModel(
     val mapValueIsGhost: Boolean = false,
     val isPrimitiveArray: Boolean = false,
     val primitiveArrayType: String? = null,
-    
-    // Superiority Expansion
     val isValueClass: Boolean = false,
     val valueClassProperty: GhostPropertyModel? = null,
     val isSealedClass: Boolean = false,

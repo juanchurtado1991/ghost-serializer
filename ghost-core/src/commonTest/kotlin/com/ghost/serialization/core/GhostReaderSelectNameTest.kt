@@ -15,7 +15,6 @@ import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.parser.isNextNullValue
 import com.ghost.serialization.core.parser.skipValue
-import com.ghost.serialization.core.parser.selectName
 import com.ghost.serialization.core.parser.JsonToken
 import com.ghost.serialization.core.parser.peekJsonToken
 import com.ghost.serialization.core.parser.readList

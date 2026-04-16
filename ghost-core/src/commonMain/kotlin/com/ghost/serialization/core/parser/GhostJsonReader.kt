@@ -9,7 +9,7 @@ class GhostJsonReader(
     internal val strictMode: Boolean = false
 ) {
     constructor(source: BufferedSource, maxDepth: Int = 255, strictMode: Boolean = false)
-        : this(source.readByteArray(), maxDepth, strictMode)
+            : this(source.readByteArray(), maxDepth, strictMode)
 
     internal var pos = 0
     internal var line = 1
@@ -34,42 +34,96 @@ class GhostJsonReader(
         }
     }
 
-    internal fun internalReadByte(): Byte {
-        if (pos >= data.size) throwError("Unexpected EOF")
-        val b = data[pos++]
-        column++
-        return b
-    }
-
     internal fun internalSkip(n: Int) {
         pos += n
         column += n
     }
 
-    internal fun internalSkip(n: Long) = internalSkip(n.toInt())
+    fun selectName(options: Options): Int {
+        skipWhitespace()
+        if (pos >= data.size) return -1
+        
+        // Handle leading comma between fields
+        if (data[pos] == GhostJsonConstants.COMMA) {
+            pos++; column++; skipWhitespace()
+        }
+        
+        if (pos >= data.size || data[pos] == GhostJsonConstants.CLOSE_OBJ) return -1
+        
+        expectByte(GhostJsonConstants.QUOTE)
+        val index = internalSelect(options)
+        if (index >= 0) {
+            expectByte(GhostJsonConstants.QUOTE)
+            return index
+        }
+        
+        // If not found, internalSelect returns -2 and pos is stuck after the opening quote.
+        if (strictMode) {
+            val fileNameBody = readStringBody() // Will throw or finish the string
+            throwError("Unknown field in strict mode: '$fileNameBody'")
+        }
+        
+        // We MUST skip the field name to leave the reader at the separator (colon).
+        skipQuotedStringBody()
+        return -2 // Industrial constant for UNKNOWN_FIELD
+    }
 
     internal fun internalSelect(options: Options): Int {
+        val remaining = data.size - pos
         for (i in options.rawBytes.indices) {
             val opt = options.rawBytes[i]
             val optLen = opt.size
-            if (pos + optLen > data.size) continue
+            
+            // Industrial Optimization Level 1: Length filter
+            // We need optLen + 1 for the closing quote
+            if (optLen + 1 > remaining) continue
+            
+            // Industrial Optimization Level 2: First-byte filter
+            if (data[pos] != opt[0]) continue
+
+            // Full content verification
             var match = true
-            for (j in 0 until optLen) {
-                if (data[pos + j] != opt[j]) { match = false; break }
+            for (j in 1 until optLen) {
+                if (data[pos + j] != opt[j]) {
+                    match = false; break
+                }
             }
-            if (match) {
+            
+            // Industrial Optimization Level 3: Suffix check (Closing Quote)
+            // This prevents "id" from matching "ids"
+            if (match && data[pos + optLen] == GhostJsonConstants.QUOTE) {
                 pos += optLen
                 column += optLen
                 return i
             }
         }
-        return -1
+        return -2 // Internal signal for no match
     }
 
-    fun beginObject() { checkDepth(); skipWhitespace(); expectByte(GhostJsonConstants.OPEN_OBJ); depth++ }
-    fun endObject() { skipWhitespace(); expectByte(GhostJsonConstants.CLOSE_OBJ); depth-- }
-    fun beginArray() { checkDepth(); skipWhitespace(); expectByte(GhostJsonConstants.OPEN_ARR); depth++ }
-    fun endArray() { skipWhitespace(); expectByte(GhostJsonConstants.CLOSE_ARR); depth-- }
+    fun beginObject() {
+        checkDepth()
+        skipWhitespace()
+        expectByte(GhostJsonConstants.OPEN_OBJ); depth++
+    }
+
+    fun endObject() {
+        skipWhitespace()
+        expectByte(GhostJsonConstants.CLOSE_OBJ)
+        depth--
+    }
+
+    fun beginArray() {
+        checkDepth()
+        skipWhitespace()
+        expectByte(GhostJsonConstants.OPEN_ARR)
+        depth++
+    }
+
+    fun endArray() {
+        skipWhitespace()
+        expectByte(GhostJsonConstants.CLOSE_ARR)
+        depth--
+    }
 
     fun hasNext(): Boolean {
         skipWhitespace()
@@ -92,11 +146,13 @@ class GhostJsonReader(
                 if (pos + len > data.size) throwError("Truncated 'true' literal")
                 internalSkip(len); true
             }
+
             GhostJsonConstants.FALSE_CHAR -> {
                 val len = GhostJsonConstants.FALSE_LENGTH.toInt()
                 if (pos + len > data.size) throwError("Truncated 'false' literal")
                 internalSkip(len); false
             }
+
             else -> throwError("Expected boolean but found ${b.toInt().toChar()}")
         }
     }
@@ -146,7 +202,9 @@ class GhostJsonReader(
         if (cached != null && cached.length == len) {
             var match = true
             for (i in 0 until len) {
-                if (cached[i].code.toByte() != data[start + i]) { match = false; break }
+                if (cached[i].code.toByte() != data[start + i]) {
+                    match = false; break
+                }
             }
             if (match) {
                 pos++; column += len + 1
@@ -167,7 +225,9 @@ class GhostJsonReader(
         }
         while (pos < data.size) {
             val b = data[pos]
-            if (b == GhostJsonConstants.QUOTE) { pos++; column++; return out.toString() }
+            if (b == GhostJsonConstants.QUOTE) {
+                pos++; column++; return out.toString()
+            }
             if (b.toInt() in 0..31) throwError("Unescaped control character in string")
             if (b == GhostJsonConstants.BACKSLASH) {
                 pos++; column++
@@ -208,7 +268,11 @@ class GhostJsonReader(
         if (pos + 4 > data.size) throwError("Unterminated unicode escape")
         val hex = data.decodeToString(pos, pos + 4)
         pos += 4; column += 4
-        val code = try { hex.toInt(16) } catch (_: Exception) { throwError("Invalid unicode escape: \\u$hex") }
+        val code = try {
+            hex.toInt(16)
+        } catch (_: Exception) {
+            throwError("Invalid unicode escape: \\u$hex")
+        }
         if (code in 0xD800..0xDBFF) {
             if (pos + 6 > data.size || data[pos] != GhostJsonConstants.BACKSLASH || data[pos + 1] != 'u'.code.toByte()) {
                 throwError("Lone high surrogate: \\u$hex")
@@ -216,7 +280,11 @@ class GhostJsonReader(
             pos += 2; column += 2
             val lowHex = data.decodeToString(pos, pos + 4)
             pos += 4; column += 4
-            val lowCode = try { lowHex.toInt(16) } catch (_: Exception) { throwError("Invalid low surrogate: \\u$lowHex") }
+            val lowCode = try {
+                lowHex.toInt(16)
+            } catch (_: Exception) {
+                throwError("Invalid low surrogate: \\u$lowHex")
+            }
             if (lowCode !in 0xDC00..0xDFFF) throwError("Invalid low surrogate: \\u$lowHex")
             return (((code - 0xD800) shl 10) or (lowCode - 0xDC00)) + 0x10000
         }
@@ -255,8 +323,14 @@ class GhostJsonReader(
     internal fun skipWhitespace() {
         while (pos < data.size) {
             when (data[pos]) {
-                GhostJsonConstants.SPACE, GhostJsonConstants.TAB, GhostJsonConstants.CR -> { pos++; column++ }
-                GhostJsonConstants.NEWLINE -> { pos++; line++; column = 1 }
+                GhostJsonConstants.SPACE, GhostJsonConstants.TAB, GhostJsonConstants.CR -> {
+                    pos++; column++
+                }
+
+                GhostJsonConstants.NEWLINE -> {
+                    pos++; line++; column = 1
+                }
+
                 else -> return
             }
         }
@@ -265,7 +339,11 @@ class GhostJsonReader(
     internal fun expectByte(expected: Byte) {
         if (pos >= data.size) throwError("Expected '${expected.toInt().toChar()}' but reached end")
         val actual = data[pos++]; column++
-        if (actual != expected) throwError("Expected '${expected.toInt().toChar()}' but found '${actual.toInt().toChar()}'")
+        if (actual != expected) throwError(
+            "Expected '${
+                expected.toInt().toChar()
+            }' but found '${actual.toInt().toChar()}'"
+        )
     }
 
     internal fun peekByte(): Byte {
@@ -279,9 +357,7 @@ class GhostJsonReader(
         return data[idx]
     }
 
-    internal fun internalThrowError(msg: String): Nothing = throwError(msg)
-
-    private fun throwError(msg: String): Nothing {
+    fun throwError(msg: String): Nothing {
         throw GhostJsonException(msg, line, column)
     }
 

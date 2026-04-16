@@ -8,15 +8,26 @@ import java.util.ServiceLoader
  * Uses ServiceLoader to aggregate all module registries from the classpath.
  */
 actual fun discoverRegistries(): List<GhostRegistry> {
-    return ServiceLoader.load(GhostRegistry::class.java).toList().ifEmpty {
-        // Fallback for classpath issues during development
+    val discovered = ServiceLoader.load(GhostRegistry::class.java).toList()
+    if (discovered.isNotEmpty()) return discovered
+
+    // Fallback for classpath issues during development or complex KMP layouts
+    val registries = mutableListOf<GhostRegistry>()
+    val patterns = listOf(
+        "com.ghost.serialization.generated.GhostModuleRegistry_Default",
+        "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_serialization_sample_domain",
+        "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_integration_model"
+    )
+
+    patterns.forEach { className ->
         try {
-            val fallback = Class.forName("com.ghost.serialization.generated.GhostModuleRegistry")
+            val registry = Class.forName(className)
                 .getDeclaredField("INSTANCE")
                 .get(null) as? GhostRegistry
-            if (fallback != null) listOf(fallback) else emptyList()
+            if (registry != null) registries.add(registry)
         } catch (e: Exception) {
-            emptyList()
+            // Ignore
         }
     }
+    return registries
 }

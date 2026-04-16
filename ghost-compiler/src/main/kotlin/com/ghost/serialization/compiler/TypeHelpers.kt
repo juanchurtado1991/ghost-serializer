@@ -15,6 +15,8 @@ internal fun KSType.isPrimitiveBoolean(): Boolean = nonNullTypeName() == BOOLEAN
 internal fun KSType.isPrimitiveLong(): Boolean = nonNullTypeName() == LONG
 internal fun KSType.isPrimitiveDouble(): Boolean = nonNullTypeName() == DOUBLE
 internal fun KSType.isPrimitiveFloat(): Boolean = nonNullTypeName() == FLOAT
-internal fun KSType.isPrimitive(): Boolean =
-    isPrimitiveInt() || isPrimitiveBoolean() || isPrimitiveLong() ||
-        isPrimitiveDouble() || isPrimitiveFloat()
+internal fun KSType.isPrimitive(): Boolean = isPrimitiveInt() ||
+        isPrimitiveBoolean() ||
+        isPrimitiveLong() ||
+        isPrimitiveDouble() ||
+        isPrimitiveFloat()

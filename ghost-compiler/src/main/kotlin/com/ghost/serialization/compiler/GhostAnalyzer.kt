@@ -5,20 +5,22 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 internal class GhostAnalyzer(private val logger: KSPLogger) {
 
     fun analyze(classDeclaration: KSClassDeclaration): List<GhostPropertyModel> {
-        val isSealed = classDeclaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.SEALED)
-        val isData = classDeclaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.DATA)
-        val isValue = classDeclaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) || 
-                       classDeclaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
+        val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
+        val isData = classDeclaration.modifiers.contains(Modifier.DATA)
+        val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||
+                classDeclaration.modifiers.contains(Modifier.INLINE)
+        val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
 
-        if (!isData && !isSealed && !isValue) {
+        if (!isData && !isSealed && !isValue && !isEnum) {
             logger.error(
-                "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class' or 'value class'. " +
-                    "Class '${classDeclaration.simpleName.asString()}' is not supported.",
+                STR_ERR_CLASS_1 +
+                        "$STR_ERR_CLASS_2${classDeclaration.simpleName.asString()}$STR_ERR_CLASS_3",
                 classDeclaration
             )
         }
@@ -30,12 +32,12 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             .toList()
 
         val hasPrivateProperties = properties.any {
-            it.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.PRIVATE)
+            it.modifiers.contains(Modifier.PRIVATE)
         }
         if (hasPrivateProperties) {
             logger.error(
-                "GhostSerialization: Properties in @GhostSerialization classes cannot be private. " +
-                    "Please remove 'private' modifier from properties in '${classDeclaration.simpleName.asString()}'.",
+                STR_ERR_PRIV_1 +
+                        "$STR_ERR_PRIV_2${classDeclaration.simpleName.asString()}$STR_ERR_PRIV_3",
                 classDeclaration
             )
         }
@@ -50,8 +52,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         names.forEach { (name, props) ->
             if (props.size > 1) {
                 logger.error(
-                    "GhostSerialization: Duplicate JSON name '$name' found in class '${clazz.simpleName.asString()}'. " +
-                        "Problematic properties: ${props.joinToString { it.kotlinName }}",
+                    "$STR_ERR_DUP_1$name$STR_ERR_DUP_2${clazz.simpleName.asString()}$STR_ERR_DUP_3" +
+                            "$STR_ERR_DUP_4${props.joinToString { it.kotlinName }}",
                     clazz
                 )
             }
@@ -74,8 +76,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != STRING_QUALIFIED) {
             logger.error(
-                "GhostSerialization: Map key must be a String in property '${prop.simpleName.asString()}'. " +
-                    "JSON only supports string-keyed objects.",
+                "$STR_ERR_MAP_1${prop.simpleName.asString()}$STR_ERR_MAP_2" +
+                        STR_ERR_MAP_3,
                 prop
             )
         }
@@ -85,7 +87,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
 
         val isPrimitiveArray = qualifiedName in PRIMITIVE_ARRAYS
-        val primitiveArrayType = if (isPrimitiveArray) qualifiedName?.removePrefix("kotlin.") else null
+        val primitiveArrayType =
+            if (isPrimitiveArray) qualifiedName?.removePrefix(STR_KOTLIN_DOT) else null
 
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
@@ -108,26 +111,28 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             isValueClass = isValueClass(type),
             valueClassProperty = if (isValueClass(type)) resolveValueClassProperty(type) else null,
             isSealedClass = isSealedClass(type),
-            sealedSubclasses = if (isSealedClass(type)) (type.declaration as KSClassDeclaration).getSealedSubclasses().toList() else emptyList()
+            sealedSubclasses = if (isSealedClass(type)) (type.declaration as KSClassDeclaration).getSealedSubclasses()
+                .toList() else emptyList()
         )
     }
 
     private fun isValueClass(type: KSType): Boolean {
-        val decl = type.declaration as? KSClassDeclaration ?: return false
-        return decl.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) || 
-               decl.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
+        val declaration = type.declaration as? KSClassDeclaration ?: return false
+        return declaration.modifiers.contains(Modifier.VALUE) ||
+                declaration.modifiers.contains(Modifier.INLINE)
     }
 
     private fun isSealedClass(type: KSType): Boolean {
-        val decl = type.declaration as? KSClassDeclaration ?: return false
-        return decl.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.SEALED)
+        val declaration = type.declaration as? KSClassDeclaration ?: return false
+        return declaration.modifiers.contains(Modifier.SEALED)
     }
 
     private fun resolveValueClassProperty(type: KSType): GhostPropertyModel? {
-        val decl = type.declaration as? KSClassDeclaration ?: return null
-        val primaryConstructor = decl.primaryConstructor ?: return null
+        val declaration = type.declaration as? KSClassDeclaration ?: return null
+        val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null
-        val prop = decl.getAllProperties().find { it.simpleName.asString() == param.name?.asString() } ?: return null
+        val prop = declaration.getAllProperties()
+            .find { it.simpleName.asString() == param.name?.asString() } ?: return null
         return buildPropertyModel(prop, listOf(param))
     }
 
@@ -164,6 +169,25 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     }
 
     companion object {
+        private const val STR_ERR_CLASS_1 = "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class', 'value class' or 'enum class'. "
+        private const val STR_ERR_CLASS_2 = "Class '"
+        private const val STR_ERR_CLASS_3 = "' is not supported."
+        private const val STR_ERR_PRIV_1 = "GhostSerialization: Properties in @GhostSerialization classes cannot be private. "
+        private const val STR_ERR_PRIV_2 = "Please remove 'private' modifier from properties in '"
+        private const val STR_ERR_PRIV_3 = "'."
+        private const val STR_ERR_DUP_1 = "GhostSerialization: Duplicate JSON name '"
+        private const val STR_ERR_DUP_2 = "' found in class '"
+        private const val STR_ERR_DUP_3 = "'. "
+        private const val STR_ERR_DUP_4 = "Problematic properties: "
+        private const val STR_ERR_MAP_1 = "GhostSerialization: Map key must be a String in property '"
+        private const val STR_ERR_MAP_2 = "'. "
+        private const val STR_ERR_MAP_3 = "JSON only supports string-keyed objects."
+        private const val STR_KOTLIN_DOT = "kotlin."
+        private const val STR_TYPE_INT_ARRAY = "kotlin.IntArray"
+        private const val STR_TYPE_LONG_ARRAY = "kotlin.LongArray"
+        private const val STR_TYPE_FLOAT_ARRAY = "kotlin.FloatArray"
+        private const val STR_TYPE_DOUBLE_ARRAY = "kotlin.DoubleArray"
+        private const val STR_TYPE_BOOLEAN_ARRAY = "kotlin.BooleanArray"
         private const val GHOST_IGNORE = "GhostIgnore"
         private const val GHOST_NAME = "GhostName"
         private const val GHOST_SERIALIZATION = "GhostSerialization"
@@ -172,11 +196,11 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         private const val MAP_QUALIFIED = "kotlin.collections.Map"
         private const val STRING_QUALIFIED = "kotlin.String"
         private val PRIMITIVE_ARRAYS = setOf(
-            "kotlin.IntArray",
-            "kotlin.LongArray",
-            "kotlin.FloatArray",
-            "kotlin.DoubleArray",
-            "kotlin.BooleanArray"
+            STR_TYPE_INT_ARRAY,
+            STR_TYPE_LONG_ARRAY,
+            STR_TYPE_FLOAT_ARRAY,
+            STR_TYPE_DOUBLE_ARRAY,
+            STR_TYPE_BOOLEAN_ARRAY
         )
     }
 }

@@ -9,8 +9,12 @@ application {
     mainClass.set("com.ghost.benchmark.GhostBenchmarkKt")
 }
 
+tasks.withType<org.gradle.jvm.application.tasks.CreateStartScripts> {
+    dependsOn(":ghost-core:jvmTestClasses", ":ghost-integration-test:testClasses")
+}
+
 tasks.named<JavaExec>("run") {
-    dependsOn(":ghost-core:compileTestKotlinJvm", ":ghost-integration-test:testClasses")
+    dependsOn(":ghost-core:jvmTestClasses", ":ghost-integration-test:testClasses")
 }
 
 kotlin {
@@ -40,4 +44,13 @@ dependencies {
     
     ksp(project(":ghost-compiler"))
     ksp(libs.moshi.kotlin.codegen)
+}
+
+// Industrial Resource Propagation: Include KSP generated resources
+sourceSets.main {
+    resources.srcDir("build/generated/ksp/main/resources")
+}
+
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
