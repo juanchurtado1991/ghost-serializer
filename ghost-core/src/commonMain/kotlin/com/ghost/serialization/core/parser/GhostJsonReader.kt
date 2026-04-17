@@ -12,8 +12,6 @@ class GhostJsonReader(
             : this(source.readByteArray(), maxDepth, strictMode)
 
     @PublishedApi internal var pos = 0
-    @PublishedApi internal var line = 1
-    @PublishedApi internal var column = 1
     @PublishedApi internal var depth = 0
     val path: String get() = GhostJsonConstants.PATH_ROOT
     internal val stringPool = arrayOfNulls<String>(GhostJsonConstants.STR_POOL_SIZE)
@@ -59,13 +57,11 @@ class GhostJsonReader(
 
     @PublishedApi internal fun internalSkip(n: Int) {
         pos += n
-        column += n
     }
 
     internal fun expectByte(expected: Byte) {
         if (pos >= data.size) throwError("Expected '${expected.toInt().toChar()}' but reached end")
         val actual = data[pos++]
-        column++
         if (actual != expected) throwError(
             "Expected '${expected.toInt().toChar()}' but found '${actual.toInt().toChar()}'"
         )
@@ -73,17 +69,14 @@ class GhostJsonReader(
 
     internal fun internalSelect(options: Options): Int {
         val remaining = data.size - pos
-        if (remaining == 0) return -2
+        if (remaining <= 0) return -2
 
-        // Find the length of the field name without decoding
         var len = 0
         while (pos + len < data.size && data[pos + len] != GhostJsonConstants.QUOTE) {
             len++
         }
-        
         if (pos + len >= data.size) return -2
 
-        // O(1) Dispatch Table Look-up
         val firstByte = data[pos].toInt() and 0xFF
         val h = (firstByte * 31 + len) and 1023
         val hint = options.dispatch[h]
@@ -91,36 +84,34 @@ class GhostJsonReader(
         if (hint != -1) {
             val opt = options.rawBytes[hint]
             if (opt.size == len) {
-                var match = true
-                for (j in 0 until len) {
-                    if (data[pos + j] != opt[j]) {
-                        match = false; break
+                if (len >= 4) {
+                    if (data[pos] == opt[0] && data[pos + 1] == opt[1] && 
+                        data[pos + 2] == opt[2] && data[pos + 3] == opt[3]) {
+                        var match = true
+                        for (j in 4 until len) {
+                            if (data[pos + j] != opt[j]) { match = false; break }
+                        }
+                        if (match) { pos += len; return hint }
                     }
-                }
-                if (match) {
-                    pos += len
-                    column += len
-                    return hint
+                } else {
+                    var match = true
+                    for (j in 0 until len) {
+                        if (data[pos + j] != opt[j]) { match = false; break }
+                    }
+                    if (match) { pos += len; return hint }
                 }
             }
         }
 
-        // Fallback to linear scan (rare, only on hash collisions)
         for (idx in options.rawBytes.indices) {
             if (idx == hint) continue
             val opt = options.rawBytes[idx]
             if (opt.size == len) {
                 var match = true
                 for (j in 0 until len) {
-                    if (data[pos + j] != opt[j]) {
-                        match = false; break
-                    }
+                    if (data[pos + j] != opt[j]) { match = false; break }
                 }
-                if (match) {
-                    pos += len
-                    column += len
-                    return idx
-                }
+                if (match) { pos += len; return idx }
             }
         }
         return -2
@@ -130,9 +121,9 @@ class GhostJsonReader(
         skipWhitespace()
         if (pos >= data.size) return -1
         
-        // Handle leading comma between fields
-        if (data[pos] == GhostJsonConstants.COMMA) {
-            pos++; column++; skipWhitespace()
+        val b = data[pos]
+        if (b == GhostJsonConstants.COMMA) {
+            pos++; skipWhitespace()
         }
         
         if (pos >= data.size || data[pos] == GhostJsonConstants.CLOSE_OBJ) return -1
@@ -153,13 +144,9 @@ class GhostJsonReader(
         return -2
     }
 
-    /**
-     * Hyper-optimized fused operation: Selects name AND consumes the colon separator.
-     * Gains ~10% performance by reducing call stack and instruction count.
-     */
     fun selectNameAndConsume(options: Options): Int {
         val index = selectName(options)
-        if (index != -1 && index != -2) {
+        if (index >= 0) {
             consumeKeySeparator()
         }
         return index
@@ -258,16 +245,12 @@ class GhostJsonReader(
 
     private fun readPooledString(start: Int, len: Int): String {
         if (len <= 0) {
-            pos++; column += 1
-            return ""
+            pos++; return ""
         }
-
         if (len > GhostJsonConstants.MAX_POOL_STRING_LENGTH) {
             val result = data.decodeToString(start, start + len)
-            pos++; column += len + 1
-            return result
+            pos++; return result
         }
-
         var hash = 0
         for (i in start until start + len) {
             hash = 33 * hash + data[i].toInt()
@@ -282,30 +265,27 @@ class GhostJsonReader(
                 }
             }
             if (match) {
-                pos++; column += len + 1
-                return cached
+                pos++; return cached
             }
         }
         val result = data.decodeToString(start, start + len)
         stringPool[poolIndex] = result
-        pos++; column += len + 1
-        return result
+        pos++; return result
     }
 
     private fun readStringWithEscapes(start: Int): String {
         val out = StringBuilder(GhostJsonConstants.STRING_BUILDER_CAPACITY)
         if (pos > start) {
             out.append(data.decodeToString(start, pos))
-            column += pos - start
         }
         while (pos < data.size) {
             val b = data[pos]
             if (b == GhostJsonConstants.QUOTE) {
-                pos++; column++; return out.toString()
+                pos++; return out.toString()
             }
             if (b.toInt() in 0..31) throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             if (b == GhostJsonConstants.BACKSLASH) {
-                pos++; column++
+                pos++
                 val c = readEscapeCode()
                 if (c <= 0xFFFF) {
                     out.append(c.toChar())
@@ -321,7 +301,6 @@ class GhostJsonReader(
                     pos++
                 }
                 out.append(data.decodeToString(scanStart, pos))
-                column += pos - scanStart
             }
         }
         throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
@@ -329,7 +308,7 @@ class GhostJsonReader(
 
     private fun readEscapeCode(): Int {
         if (pos >= data.size) throwError(GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR)
-        val b = data[pos++]; column++
+        val b = data[pos++]
         return when (b.toInt().toChar()) {
             'n' -> '\n'.code; 't' -> '\t'.code; 'r' -> '\r'.code
             'b' -> '\b'.code; 'f' -> '\u000C'.code
@@ -342,24 +321,16 @@ class GhostJsonReader(
     private fun readUnicodeCode(): Int {
         if (pos + 4 > data.size) throwError(GhostJsonConstants.UNTERMINATED_UNICODE_ERROR)
         val hex = data.decodeToString(pos, pos + 4)
-        pos += 4; column += 4
-        val code = try {
-            hex.toInt(16)
-        } catch (_: Exception) {
-            throwError("Invalid unicode escape: \\u$hex")
-        }
+        pos += 4
+        val code = try { hex.toInt(16) } catch (_: Exception) { throwError("Invalid unicode escape: \\u$hex") }
         if (code in 0xD800..0xDBFF) {
             if (pos + 6 > data.size || data[pos] != GhostJsonConstants.BACKSLASH || data[pos + 1] != 'u'.code.toByte()) {
                 throwError("Lone high surrogate: \\u$hex")
             }
-            pos += 2; column += 2
+            pos += 2
             val lowHex = data.decodeToString(pos, pos + 4)
-            pos += 4; column += 4
-            val lowCode = try {
-                lowHex.toInt(16)
-            } catch (_: Exception) {
-                throwError("Invalid low surrogate: \\u$lowHex")
-            }
+            pos += 4
+            val lowCode = try { lowHex.toInt(16) } catch (_: Exception) { throwError("Invalid low surrogate: \\u$lowHex") }
             if (lowCode !in 0xDC00..0xDFFF) throwError("Invalid low surrogate: \\u$lowHex")
             return (((code - 0xD800) shl 10) or (lowCode - 0xDC00)) + 0x10000
         }
@@ -374,19 +345,15 @@ class GhostJsonReader(
 
     internal fun skipQuotedStringBody() {
         while (pos < data.size) {
-            val b = data[pos++]; column++
+            val b = data[pos++]
             if (b == GhostJsonConstants.QUOTE) return
             if (b == GhostJsonConstants.BACKSLASH) {
                 if (strictMode) {
                     readEscapeCode()
                 } else if (pos < data.size) {
                     if (data[pos] == 'u'.code.toByte()) {
-                        pos++; column++
-                        val skip = minOf(4, data.size - pos)
-                        pos += skip; column += skip
-                    } else {
-                        pos++; column++
-                    }
+                        pos++; val skip = minOf(4, data.size - pos); pos += skip
+                    } else { pos++ }
                 }
             } else if (b.toInt() in 0..31) {
                 throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
@@ -400,19 +367,8 @@ class GhostJsonReader(
     internal inline fun skipWhitespace() {
         while (pos < data.size) {
             val b = data[pos]
-            if (b > 32) return // Most common case: not whitespace
-            
-            when (b) {
-                GhostJsonConstants.SPACE, GhostJsonConstants.TAB, GhostJsonConstants.CR -> {
-                    pos++; column++
-                }
-
-                GhostJsonConstants.NEWLINE -> {
-                    pos++; line++; column = 1
-                }
-
-                else -> return
-            }
+            if (b > 32) return
+            pos++
         }
     }
 
@@ -428,6 +384,11 @@ class GhostJsonReader(
     }
 
     fun throwError(msg: String): Nothing {
+        var line = 1
+        var column = 1
+        for (i in 0 until pos) {
+            if (data[i] == GhostJsonConstants.NEWLINE) { line++; column = 1 } else { column++ }
+        }
         throw GhostJsonException(msg, line, column)
     }
 

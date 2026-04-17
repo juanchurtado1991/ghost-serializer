@@ -281,11 +281,16 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun tracksLineNumberOnNewlines() {
-        val json = "{\n\"v\"\n:\n1\n}"
+        val json = "{\n\"v\"\n:\n1\n X" // 'X' is invalid
         val reader = readerOf(json)
         reader.beginObject()
-        reader.skipWhitespace()
-        assertTrue(reader.line > 1)
+        val ex = assertFailsWith<GhostJsonException> {
+            reader.selectName(GhostJsonReader.Options.of("v"))
+            reader.consumeKeySeparator()
+            reader.nextInt()
+            reader.endObject() // This MUST fail
+        }
+        assertTrue(ex.line > 1, "Line should be > 1. Found: ${ex.line}")
     }
 
     // ── H. FLOAT PRECISION ───────────────────────────────────────────

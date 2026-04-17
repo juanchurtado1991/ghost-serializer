@@ -146,7 +146,7 @@ internal fun GhostJsonReader.skipBalanced(open: Byte, close: Byte) {
         if (depth + balance > maxDepth) {
             throwError("Reached maximum recursion depth ($maxDepth) during skip")
         }
-        val b = data[pos++]; column++
+        val b = data[pos++]
         if (b == open) balance++
         else if (b == close) balance--
         else if (b == QUOTE) skipQuotedStringBody()
@@ -156,17 +156,13 @@ internal fun GhostJsonReader.skipBalanced(open: Byte, close: Byte) {
 
 fun GhostJsonReader.peekStringField(keyName: String): String? {
     val savedPos = pos
-    val savedLine = line
-    val savedColumn = column
     try {
         skipWhitespace()
         if (pos >= data.size || data[pos] != OPEN_OBJ) return null
-        pos++; column++
+        pos++
 
         val tempReader = GhostJsonReader(data, maxDepth = this.maxDepth, strictMode = false)
         tempReader.pos = pos
-        tempReader.line = line
-        tempReader.column = column
 
         while (true) {
             val currentKey = tempReader.nextKey() ?: break
@@ -178,8 +174,6 @@ fun GhostJsonReader.peekStringField(keyName: String): String? {
     } catch (_: Exception) {
     } finally {
         pos = savedPos
-        line = savedLine
-        column = savedColumn
     }
     return null
 }
