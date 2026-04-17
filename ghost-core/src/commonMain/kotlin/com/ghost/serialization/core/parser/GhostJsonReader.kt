@@ -59,8 +59,20 @@ class GhostJsonReader(
     constructor(source: BufferedSource, maxDepth: Int = 255, strictMode: Boolean = false)
             : this(source.readByteArray(), maxDepth, strictMode)
 
-    @PublishedApi internal var pos = 0
-    @PublishedApi internal var depth = 0
+    private var _pos = 0
+    @PublishedApi internal var pos: Int
+        get() = _pos
+        set(value) {
+            _pos = value
+            _nextTokenByte = -1
+        }
+
+    @PublishedApi internal var depth: Int = 0
+    
+    private var _nextTokenByte: Int = -1
+    @PublishedApi internal var nextTokenByte: Int
+        get() = _nextTokenByte
+        set(value) { _nextTokenByte = value }
     val path: String get() = GhostJsonConstants.PATH_ROOT
     internal val stringPool = arrayOfNulls<String>(GhostJsonConstants.STR_POOL_SIZE)
 
@@ -108,7 +120,7 @@ class GhostJsonReader(
                         i++
                     }
                 }
-                if (match) { pos += len; return hint }
+                if (match) { internalSkip(len); return hint }
             }
         }
 
@@ -131,7 +143,7 @@ class GhostJsonReader(
                         i++
                     }
                 }
-                if (match) { pos += len; return idx }
+                if (match) { internalSkip(len); return idx }
             }
         }
         return -2
@@ -143,7 +155,7 @@ class GhostJsonReader(
         
         val b = data[pos]
         if (b == GhostJsonConstants.COMMA) {
-            pos++; skipWhitespace()
+            internalSkip(1); skipWhitespace()
         }
         
         if (pos >= data.size || data[pos] == GhostJsonConstants.CLOSE_OBJ) return -1
@@ -198,10 +210,9 @@ class GhostJsonReader(
     }
 
     fun hasNext(): Boolean {
-        skipWhitespace()
-        if (pos >= data.size) return false
-        val b = data[pos]
-        return b != GhostJsonConstants.CLOSE_OBJ && b != GhostJsonConstants.CLOSE_ARR
+        val b = peekNextToken()
+        if (b == -1) return false
+        return b.toByte() != GhostJsonConstants.CLOSE_OBJ && b.toByte() != GhostJsonConstants.CLOSE_ARR
     }
 
     fun nextString(): String {
@@ -258,18 +269,18 @@ class GhostJsonReader(
             }
             if (b.toInt() in 0..31) throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             if (b == GhostJsonConstants.BACKSLASH) return readStringWithEscapes(start)
-            pos++
+            internalSkip(1)
         }
         throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
     }
 
     private fun readPooledString(start: Int, len: Int): String {
         if (len <= 0) {
-            pos++; return ""
+            internalSkip(1); return ""
         }
         if (len > GhostJsonConstants.MAX_POOL_STRING_LENGTH) {
             val result = data.decodeToString(start, start + len)
-            pos++; return result
+            internalSkip(1); return result
         }
         var hash = 0
         for (i in start until start + len) {
@@ -280,27 +291,19 @@ class GhostJsonReader(
         if (cached != null && cached.length == len) {
             var match = true
             for (i in 0 until len) {
-                if (cached[i].code.toByte() != data[start + i]) {
+                // ASCII optimization: Direct comparison
+                if (cached[i].code != (data[start + i].toInt() and 0xFF)) {
                     match = false; break
                 }
             }
             if (match) {
-                pos++; return cached
-            }
-        }
-
-        // Zenith Fast Path: Check if string is ASCII-only
-        var isAscii = true
-        for (i in 0 until len) {
-            if (data[start + i].toInt() < 0) {
-                isAscii = false
-                break
+                internalSkip(1); return cached
             }
         }
 
         val result = data.decodeToString(start, start + len)
         stringPool[poolIndex] = result
-        pos++
+        internalSkip(1)
         return result
     }
 
@@ -312,11 +315,11 @@ class GhostJsonReader(
         while (pos < data.size) {
             val b = data[pos]
             if (b == GhostJsonConstants.QUOTE) {
-                pos++; return out.toString()
+                internalSkip(1); return out.toString()
             }
             if (b.toInt() in 0..31) throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             if (b == GhostJsonConstants.BACKSLASH) {
-                pos++
+                internalSkip(1)
                 val c = readEscapeCode()
                 if (c <= 0xFFFF) {
                     out.append(c.toChar())
@@ -329,7 +332,7 @@ class GhostJsonReader(
                 while (pos < data.size) {
                     val sb = data[pos]
                     if (sb == GhostJsonConstants.QUOTE || sb == GhostJsonConstants.BACKSLASH || sb.toInt() in 0..31) break
-                    pos++
+                    internalSkip(1)
                 }
                 out.append(data.decodeToString(scanStart, pos))
             }
@@ -339,7 +342,8 @@ class GhostJsonReader(
 
     private fun readEscapeCode(): Int {
         if (pos >= data.size) throwError(GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR)
-        val b = data[pos++]
+        val b = data[pos]
+        internalSkip(1)
         return when (b.toInt().toChar()) {
             'n' -> '\n'.code; 't' -> '\t'.code; 'r' -> '\r'.code
             'b' -> '\b'.code; 'f' -> '\u000C'.code
@@ -352,15 +356,15 @@ class GhostJsonReader(
     private fun readUnicodeCode(): Int {
         if (pos + 4 > data.size) throwError(GhostJsonConstants.UNTERMINATED_UNICODE_ERROR)
         val hex = data.decodeToString(pos, pos + 4)
-        pos += 4
+        internalSkip(4)
         val code = try { hex.toInt(16) } catch (_: Exception) { throwError("Invalid unicode escape: \\u$hex") }
         if (code in 0xD800..0xDBFF) {
             if (pos + 6 > data.size || data[pos] != GhostJsonConstants.BACKSLASH || data[pos + 1] != 'u'.code.toByte()) {
                 throwError("Lone high surrogate: \\u$hex")
             }
-            pos += 2
+            internalSkip(2)
             val lowHex = data.decodeToString(pos, pos + 4)
-            pos += 4
+            internalSkip(4)
             val lowCode = try { lowHex.toInt(16) } catch (_: Exception) { throwError("Invalid low surrogate: \\u$lowHex") }
             if (lowCode !in 0xDC00..0xDFFF) throwError("Invalid low surrogate: \\u$lowHex")
             return (((code - 0xD800) shl 10) or (lowCode - 0xDC00)) + 0x10000
@@ -376,15 +380,16 @@ class GhostJsonReader(
 
     internal fun skipQuotedStringBody() {
         while (pos < data.size) {
-            val b = data[pos++]
+            val b = data[pos]
+            internalSkip(1)
             if (b == GhostJsonConstants.QUOTE) return
             if (b == GhostJsonConstants.BACKSLASH) {
                 if (strictMode) {
                     readEscapeCode()
                 } else if (pos < data.size) {
                     if (data[pos] == 'u'.code.toByte()) {
-                        pos++; val skip = minOf(4, data.size - pos); pos += skip
-                    } else { pos++ }
+                        internalSkip(1); val skip = minOf(4, data.size - pos); internalSkip(skip)
+                    } else { internalSkip(1) }
                 }
             } else if (b.toInt() in 0..31) {
                 throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
@@ -396,17 +401,27 @@ class GhostJsonReader(
     @PublishedApi
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun skipWhitespace() {
+        if (nextTokenByte != -1) return
+        
         while (pos < data.size) {
             val b = data[pos].toInt() and 0xFF
             if (b > 32) return
             
-            if (b == 32 || b == 10 || b == 13 || b == 9) {
+            // Fast-path for common space (0x20)
+            if (b == 32) {
                 pos++
-                if (pos + 3 < data.size) {
-                    if (data[pos].toInt() <= 32 && data[pos + 1].toInt() <= 32 && data[pos + 2].toInt() <= 32) {
-                        pos += 3
-                    }
+                // Word-skipping: check 4 bytes at once if possible
+                while (pos + 3 < data.size) {
+                    if (data[pos] == GhostJsonConstants.SPACE && data[pos + 1] == GhostJsonConstants.SPACE &&
+                        data[pos + 2] == GhostJsonConstants.SPACE && data[pos + 3] == GhostJsonConstants.SPACE) {
+                        pos += 4
+                    } else break
                 }
+                continue
+            }
+            
+            if (b == 10 || b == 13 || b == 9) {
+                pos++
                 continue
             }
             pos++

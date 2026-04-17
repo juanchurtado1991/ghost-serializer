@@ -1,6 +1,5 @@
 package com.ghost.serialization.core.parser
 
-import com.ghost.serialization.core.parser.GhostJsonConstants.POWERS_OF_TEN
 import kotlin.math.pow
 
 fun GhostJsonReader.nextFloat(): Float = nextDouble().toFloat()
@@ -18,63 +17,38 @@ fun GhostJsonReader.nextLong(): Long {
     if (pos >= data.size) throwError("Expected number but reached EOF")
 
     var i = pos
-    var value = 0L
     var negative = false
-
-    // Zenith Fast-Path: Positive single/double digit integer
-    if (i + 1 < data.size) {
-        val b1 = data[i].toInt() - '0'.code
-        if (b1 in 0..9) {
-            val b2 = data[i + 1].toInt() and 0xFF
-            if (b2 < 128 && GhostJsonConstants.IS_TERMINATOR[b2]) {
-                pos += 1
-                return b1.toLong()
-            }
-            val b2Digit = b2 - '0'.code
-            if (b2Digit in 0..9 && i + 2 < data.size) {
-                val b3 = data[i + 2].toInt() and 0xFF
-                if (b3 < 128 && GhostJsonConstants.IS_TERMINATOR[b3]) {
-                    pos += 2
-                    return (b1 * 10 + b2Digit).toLong()
-                }
-            }
-        }
-    }
-
     if (data[i] == GhostJsonConstants.MINUS) {
         negative = true
         i++
         if (i >= data.size) throwError("Isolated minus sign")
     }
 
-    if (data[i] == '0'.code.toByte() && i + 1 < data.size) {
-        val next = data[i + 1]
-        if (next >= '0'.code.toByte() && next <= '9'.code.toByte()) {
-            throwError("Leading zeros are not allowed")
-        }
+    // Leading zero check
+    if (data[i] == 48.toByte() && i + 1 < data.size) {
+        val next = data[i + 1].toInt()
+        if (next in 48..57) throwError("Leading zeros are not allowed")
     }
 
+    // Overdrive Path: Pure integer parsing
+    var value = 0L
     var hasDigits = false
     while (i < data.size) {
-        val b = data[i]
-        val digit = b - '0'.code.toByte()
+        val b = data[i].toInt()
+        val digit = b - 48
         if (digit in 0..9) {
             value = value * 10 + digit
             hasDigits = true
             i++
-        } else if (b == GhostJsonConstants.DOT || b == GhostJsonConstants.EXP_LOWER || b == GhostJsonConstants.EXP_UPPER) {
+        } else if (b == GhostJsonConstants.DOT.toInt() || b == GhostJsonConstants.EXP_LOWER.toInt() || b == GhostJsonConstants.EXP_UPPER.toInt()) {
+            // Defer to double parsing for complex numbers
             return nextDouble().toLong()
-        } else if (b.toInt() and 0xFF < 128 && GhostJsonConstants.IS_TERMINATOR[b.toInt() and 0xFF]) {
-            break
-        } else {
-            throwError("Invalid character in number: ${b.toInt().toChar()}")
-        }
+        } else break
     }
 
-    if (!hasDigits) throwError("Expected digits but found EOF")
+    if (!hasDigits) throwError("Expected digits but found ${data[i].toInt().toChar()}")
 
-    val consumed = i - pos
-    internalSkip(consumed)
+    internalSkip(i - pos)
     return if (negative) -value else value
 }
 
@@ -84,23 +58,21 @@ fun GhostJsonReader.nextDouble(): Double {
 
     var i = pos
     var negative = false
-
     if (data[i] == GhostJsonConstants.MINUS) {
         negative = true
         i++
     }
 
-    if (i < data.size && data[i] == '0'.code.toByte() && i + 1 < data.size) {
-        val next = data[i + 1]
-        if (next >= '0'.code.toByte() && next <= '9'.code.toByte()) {
-            throwError("Leading zeros are not allowed")
-        }
+    // Leading zero check
+    if (i < data.size && data[i] == 48.toByte() && i + 1 < data.size) {
+        val next = data[i + 1].toInt()
+        if (next in 48..57) throwError("Leading zeros are not allowed")
     }
 
     var result = 0.0
     var hasIntDigits = false
     while (i < data.size) {
-        val digit = data[i] - '0'.code.toByte()
+        val digit = data[i].toInt() - 48
         if (digit in 0..9) {
             result = result * 10.0 + digit
             i++
@@ -116,7 +88,7 @@ fun GhostJsonReader.nextDouble(): Double {
         var scale = 0
         var decimalValue = 0.0
         while (i < data.size) {
-            val digit = data[i] - '0'.code.toByte()
+            val digit = data[i].toInt() - 48
             if (digit in 0..9) {
                 decimalValue = decimalValue * 10.0 + digit
                 scale++
