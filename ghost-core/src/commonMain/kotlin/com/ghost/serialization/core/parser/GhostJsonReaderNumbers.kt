@@ -14,94 +14,110 @@ fun GhostJsonReader.nextInt(): Int {
 
 fun GhostJsonReader.nextLong(): Long {
     if (nextTokenByte == -1) skipWhitespace()
-    if (pos >= data.size) throwError("Expected number but reached EOF")
+    if (positon >= data.size) throwError("Expected number but reached EOF")
 
-    var i = pos
+    var cursor = positon
     var negative = false
-    if (data[i] == GhostJsonConstants.MINUS) {
+    if (data[cursor] == GhostJsonConstants.MINUS) {
         negative = true
-        i++
-        if (i >= data.size) throwError("Isolated minus sign")
+        cursor++
+        if (cursor >= data.size) throwError("Isolated minus sign")
     }
 
-    // Hot Path: Integer parsing (Optimized Zenith)
+    // Optimized integer parsing path
     var value = 0L
     var hasDigits = false
-    
+
     // Check first digit for leading zero (Rule: leading zeros only allowed if it's JUST '0')
-    val first = data[i].toInt()
-    if (first == 48) { // '0'
-        i++
+    val firstDigit = data[cursor].toInt()
+    if (firstDigit == 48) { // '0'
+        cursor++
         hasDigits = true
-        if (i < data.size) {
-            val next = data[i].toInt()
-            if (next in 48..57) throwError("Leading zeros are not allowed")
+        if (cursor < data.size) {
+            val nextDigit = data[cursor].toInt()
+            if (nextDigit in 48..57) {
+                throwError("Leading zeros are not allowed")
+            }
         }
     } else {
-        // Unroll common case: Positive integer
-        while (i < data.size) {
-            val b = data[i].toInt()
-            val digit = b - 48
-            if (digit in 0..9) {
-                value = value * 10 + digit
+        // Common case: Positive integer
+        while (cursor < data.size) {
+            val currentByte = data[cursor].toInt()
+            val digitValue = currentByte - 48
+            if (digitValue in 0..9) {
+                value = value * 10 + digitValue
                 hasDigits = true
-                i++
-            } else if (b == GhostJsonConstants.DOT.toInt() || b == GhostJsonConstants.EXP_LOWER.toInt() || b == GhostJsonConstants.EXP_UPPER.toInt()) {
+                cursor++
+            } else if (
+                currentByte == GhostJsonConstants.DOT.toInt() ||
+                currentByte == GhostJsonConstants.EXP_LOWER.toInt() ||
+                currentByte == GhostJsonConstants.EXP_UPPER.toInt()
+            ) {
                 return nextDouble().toLong()
             } else break
         }
     }
 
-    if (!hasDigits) throwError("Expected digits but found ${data[i].toInt().toChar()}")
+    if (!hasDigits) {
+        throwError("Expected digits but found ${data[cursor].toInt().toChar()}")
+    }
 
-    internalSkip(i - pos)
+    internalSkip(cursor - positon)
     return if (negative) -value else value
 }
 
 fun GhostJsonReader.nextDouble(): Double {
     if (nextTokenByte == -1) skipWhitespace()
-    if (pos >= data.size) throwError("Expected number but reached EOF")
+    if (positon >= data.size) {
+        throwError("Expected number but reached EOF")
+    }
 
-    var i = pos
+    var cursor = positon
     var negative = false
-    if (data[i] == GhostJsonConstants.MINUS) {
+    if (data[cursor] == GhostJsonConstants.MINUS) {
         negative = true
-        i++
+        cursor++
     }
 
     // Leading zero check
-    if (i < data.size && data[i] == 48.toByte() && i + 1 < data.size) {
-        val next = data[i + 1].toInt()
-        if (next in 48..57) throwError("Leading zeros are not allowed")
+    if (cursor < data.size && data[cursor] == 48.toByte() && cursor + 1 < data.size) {
+        val nextDigit = data[cursor + 1].toInt()
+        if (nextDigit in 48..57) throwError("Leading zeros are not allowed")
     }
 
     var result = 0.0
     var hasIntDigits = false
-    while (i < data.size) {
-        val digit = data[i].toInt() - 48
-        if (digit in 0..9) {
-            result = result * 10.0 + digit
-            i++
+    while (cursor < data.size) {
+        val digitValue = data[cursor].toInt() - 48
+        if (digitValue in 0..9) {
+            result = result * 10.0 + digitValue
+            cursor++
             hasIntDigits = true
-        } else break
+        } else {
+            break
+        }
     }
 
     if (!hasIntDigits) throwError("Expected integer part of number")
 
-    if (i < data.size && data[i] == GhostJsonConstants.DOT) {
-        i++
-        if (i >= data.size) throwError("Expected digits after decimal point")
+    if (cursor < data.size && data[cursor] == GhostJsonConstants.DOT) {
+        cursor++
+        if (cursor >= data.size) {
+            throwError("Expected digits after decimal point")
+        }
         var scale = 0
         var decimalValue = 0.0
-        while (i < data.size) {
-            val digit = data[i].toInt() - 48
-            if (digit in 0..9) {
-                decimalValue = decimalValue * 10.0 + digit
+        while (cursor < data.size) {
+            val digitValue = data[cursor].toInt() - 48
+            if (digitValue in 0..9) {
+                decimalValue = decimalValue * 10.0 + digitValue
                 scale++
-                i++
+                cursor++
             } else break
         }
-        if (scale == 0) throwError("Expected digits after decimal point")
+        if (scale == 0) {
+            throwError("Expected digits after decimal point")
+        }
         val decimalDouble = if (scale < GhostJsonConstants.INVERSE_POWERS_OF_TEN.size) {
             decimalValue * GhostJsonConstants.INVERSE_POWERS_OF_TEN[scale]
         } else {
@@ -110,26 +126,34 @@ fun GhostJsonReader.nextDouble(): Double {
         result += decimalDouble
     }
 
-    if (i < data.size) {
-        val b = data[i]
-        if (b == GhostJsonConstants.EXP_LOWER || b == GhostJsonConstants.EXP_UPPER) {
-            i++
+    if (cursor < data.size) {
+        val currentByte = data[cursor]
+        if (
+            currentByte == GhostJsonConstants.EXP_LOWER ||
+            currentByte == GhostJsonConstants.EXP_UPPER
+        ) {
+            cursor++
             var expNegative = false
-            if (i < data.size) {
-                if (data[i] == GhostJsonConstants.MINUS) { expNegative = true; i++ }
-                else if (data[i] == GhostJsonConstants.PLUS) { i++ }
+            if (cursor < data.size) {
+                if (data[cursor] == GhostJsonConstants.MINUS) {
+                    expNegative = true; cursor++
+                } else if (data[cursor] == GhostJsonConstants.PLUS) {
+                    cursor++
+                }
             }
             var exponent = 0
             var hasExpDigits = false
-            while (i < data.size) {
-                val digit = data[i] - '0'.code.toByte()
-                if (digit in 0..9) {
-                    exponent = exponent * 10 + digit
+            while (cursor < data.size) {
+                val digitValue = data[cursor] - '0'.code.toByte()
+                if (digitValue in 0..9) {
+                    exponent = exponent * 10 + digitValue
                     hasExpDigits = true
-                    i++
+                    cursor++
                 } else break
             }
-            if (!hasExpDigits) throwError("Expected digits in exponent")
+            if (!hasExpDigits) {
+                throwError("Expected digits in exponent")
+            }
             if (exponent > 0) {
                 if (expNegative) {
                     val factor = if (exponent < GhostJsonConstants.INVERSE_POWERS_OF_TEN.size) {
@@ -156,70 +180,73 @@ fun GhostJsonReader.nextDouble(): Double {
         throwError("Numeric overflow or NaN is not allowed in JSON")
     }
 
-    val consumed = i - pos
-    internalSkip(consumed)
+    val consumedBytes = cursor - positon
+    internalSkip(consumedBytes)
     return result
 }
 
 internal fun GhostJsonReader.skipRawNumber() {
     skipWhitespace()
-    if (pos >= data.size) throwError("Expected number but reached EOF")
+    if (positon >= data.size) throwError("Expected number but reached EOF")
 
-    var i = pos
-    if (data[i] == GhostJsonConstants.MINUS) i++
+    var cursor = positon
+    if (data[cursor] == GhostJsonConstants.MINUS) cursor++
 
     var hasDot = false
     var hasE = false
     var hasDigits = false
 
-    while (i < data.size) {
-        val b = data[i]
+    while (cursor < data.size) {
+        val currentByte = data[cursor]
         when {
-            b >= '0'.code.toByte() && b <= '9'.code.toByte() -> {
-                if (!hasDigits && b == '0'.code.toByte() && i + 1 < data.size) {
-                    val next = data[i + 1]
-                    if (next >= '0'.code.toByte() && next <= '9'.code.toByte()) {
+            currentByte >= '0'.code.toByte() && currentByte <= '9'.code.toByte() -> {
+                if (!hasDigits && currentByte == '0'.code.toByte() && cursor + 1 < data.size) {
+                    val nextByte = data[cursor + 1]
+                    if (nextByte >= '0'.code.toByte() && nextByte <= '9'.code.toByte()) {
                         throwError("Leading zeros are not allowed")
                     }
                 }
                 hasDigits = true
-                i++
+                cursor++
             }
-            b == GhostJsonConstants.DOT -> {
+
+            currentByte == GhostJsonConstants.DOT -> {
                 if (hasDot || hasE || !hasDigits) throwError("Invalid decimal point")
                 hasDot = true
-                i++
-                if (i >= data.size) throwError("Trailing decimal point")
-                val next = data[i]
-                if (next < '0'.code.toByte() || next > '9'.code.toByte()) {
+                cursor++
+                if (cursor >= data.size) throwError("Trailing decimal point")
+                val nextByte = data[cursor]
+                if (nextByte < '0'.code.toByte() || nextByte > '9'.code.toByte()) {
                     throwError("Trailing decimal point")
                 }
-                i++
+                cursor++
             }
-            b == GhostJsonConstants.EXP_LOWER || b == GhostJsonConstants.EXP_UPPER -> {
+
+            currentByte == GhostJsonConstants.EXP_LOWER || currentByte == GhostJsonConstants.EXP_UPPER -> {
                 if (hasE || !hasDigits) throwError("Invalid exponent")
                 hasE = true
-                i++
-                if (i < data.size) {
-                    val eb = data[i]
-                    if (eb == GhostJsonConstants.MINUS || eb == GhostJsonConstants.PLUS) i++
+                cursor++
+                if (cursor < data.size) {
+                    val exponentByte = data[cursor]
+                    if (exponentByte == GhostJsonConstants.MINUS || exponentByte == GhostJsonConstants.PLUS) cursor++
                 }
-                if (i >= data.size) throwError("Empty exponent")
-                val next = data[i]
-                if (next < '0'.code.toByte() || next > '9'.code.toByte()) {
+                if (cursor >= data.size) throwError("Empty exponent")
+                val nextByte = data[cursor]
+                if (nextByte < '0'.code.toByte() || nextByte > '9'.code.toByte()) {
                     throwError("Empty exponent")
                 }
-                i++
+                cursor++
             }
+
             else -> {
-                val code = b.toInt() and 0xFF
-                if (code < 128 && GhostJsonConstants.IS_TERMINATOR[code]) break
-                throwError("Unexpected character in number: ${b.toInt().toChar()}")
+                val byteCode = currentByte.toInt() and 0xFF
+                if (byteCode < 128 && GhostJsonConstants.IS_TERMINATOR[byteCode]) break
+                throwError("Unexpected character in number: ${currentByte.toInt().toChar()}")
             }
         }
     }
 
     if (!hasDigits) throwError("Empty number")
-    val consumed = i - pos
-    internalSkip(consumed)
+    val consumedBytes = cursor - positon
+    internalSkip(consumedBytes)
 }

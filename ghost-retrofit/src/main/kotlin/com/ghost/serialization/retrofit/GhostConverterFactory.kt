@@ -36,9 +36,7 @@ class GhostConverterFactory private constructor(
         val serializer = resolveSerializer(type) ?: return null
 
         return Converter<ResponseBody, Any> { value ->
-            value.use { body ->
-                serializer.deserialize(body.source())
-            }
+            value.use { body -> serializer.deserialize(body.source()) }
         }
     }
 
@@ -73,7 +71,9 @@ class GhostConverterFactory private constructor(
         return registry.getSerializer(clazz.run { kotlin as KClass<Any> })
     }
 
-    private fun resolveParameterizedSerializer(type: ParameterizedType): GhostSerializer<*>? {
+    private fun resolveParameterizedSerializer(
+        type: ParameterizedType
+    ): GhostSerializer<*>? {
         val rawType = type.rawType as? Class<*> ?: return null
         val typeArgs = type.actualTypeArguments
 
@@ -99,7 +99,7 @@ class GhostConverterFactory private constructor(
         private val PRIMITIVES = mapOf<Class<*>, GhostSerializer<*>>(
             String::class.java to StringSerializer,
             Int::class.java to IntSerializer,
-            java.lang.Integer::class.java to IntSerializer,
+            Integer::class.java to IntSerializer,
             Long::class.java to LongSerializer,
             java.lang.Long::class.java to LongSerializer,
             Boolean::class.java to BooleanSerializer,

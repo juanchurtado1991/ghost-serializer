@@ -1,11 +1,6 @@
 package com.ghost.serialization.core
-import com.ghost.serialization.core.parser.Options
+import com.ghost.serialization.core.parser.JsonReaderOptions
 
-import com.ghost.serialization.core.parser.skipCommaIfPresent
-import com.ghost.serialization.core.parser.nextNonWhitespace
-import com.ghost.serialization.core.parser.skipAnyValue
-import com.ghost.serialization.serializers.IntArraySerializer
-import com.ghost.serialization.serializers.LongArraySerializer
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
 
@@ -17,7 +12,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.exception.GhostJsonException
 import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.parser.isNextNullValue
@@ -226,22 +220,22 @@ class GhostCrashProofTest {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // RISK 7: selectName with empty/edge-case Options
+    // RISK 7: selectString with empty/edge-case Options
     // ══════════════════════════════════════════════════════════════════
 
     @Test
     fun readsObjectWithMultipleArrays() {
-        val options = Options.of("a", "b")
+        val options = JsonReaderOptions.of("a", "b")
         val json = "{\"a\":[1,2],\"b\":[3,4]}"
         val reader = readerOf(json)
         reader.beginObject()
         
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         val list1 = reader.readList { reader.nextInt() }
         assertEquals(listOf(1, 2), list1)
         
-        assertEquals(1, reader.selectName(options))
+        assertEquals(1, reader.selectString(options))
         reader.consumeKeySeparator()
         val list2 = reader.readList { reader.nextInt() }
         assertEquals(listOf(3, 4), list2)
@@ -252,43 +246,43 @@ class GhostCrashProofTest {
     fun testSegmentBoundarySplitting() {
         // Force a key selection at the end of a buffer segment
         val key = "very_long_key_to_force_segment_switching_in_okio_buffer"
-        val options = Options.of(key)
+        val options = JsonReaderOptions.of(key)
         val json = "{\"$key\":\"value\"}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals("value", reader.nextString())
         reader.endObject()
     }
 
     @Test
-    fun selectNameWithEmptyOptionsSkipsAllFields() {
-        val options = Options.of()
+    fun selectStringWithEmptyOptionsSkipsAllFields() {
+        val options = JsonReaderOptions.of()
         val json = "{\"a\":1,\"b\":2}"
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(-2, reader.selectName(options))
+        assertEquals(-2, reader.selectString(options))
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(-2, reader.selectName(options))
+        assertEquals(-2, reader.selectString(options))
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(-1, reader.selectName(options))
+        assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
 
     @Test
-    fun selectNameWithSingleOption() {
-        val options = Options.of("only")
+    fun selectStringWithSingleOption() {
+        val options = JsonReaderOptions.of("only")
         val json = "{\"only\":\"found\"}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals("found", reader.nextString())
-        assertEquals(-1, reader.selectName(options))
+        assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
 
@@ -381,42 +375,42 @@ class GhostCrashProofTest {
 
     @Test
     fun skipsObjectContainingBracesInStrings() {
-        val options = Options.of("id")
+        val options = JsonReaderOptions.of("id")
         val json = "{\"junk\":{\"msg\":\"value with { and } inside\"},\"id\":1}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(-2, reader.selectName(options))
+        assertEquals(-2, reader.selectString(options))
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals(1, reader.nextInt())
     }
 
     @Test
     fun skipsArrayContainingBracketsInStrings() {
-        val options = Options.of("id")
+        val options = JsonReaderOptions.of("id")
         val json = "{\"junk\":[\"contains [ and ]\"],\"id\":2}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(-2, reader.selectName(options))
+        assertEquals(-2, reader.selectString(options))
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals(2, reader.nextInt())
     }
 
     @Test
     fun skipsObjectContainingEscapedQuotesInStrings() {
-        val options = Options.of("id")
+        val options = JsonReaderOptions.of("id")
         val json = "{\"junk\":{\"msg\":\"escaped \\\"quotes\\\" and {braces}\"},\"id\":3}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(-2, reader.selectName(options))
+        assertEquals(-2, reader.selectString(options))
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals(3, reader.nextInt())
     }
@@ -460,24 +454,24 @@ class GhostCrashProofTest {
     // ══════════════════════════════════════════════════════════════════
 
     @Test
-    fun selectNameWithThreePrefixVariants() {
-        val options = Options.of(
+    fun selectStringWithThreePrefixVariants() {
+        val options = JsonReaderOptions.of(
             "user", "userId", "userIds", "userName"
         )
         val json = "{\"userIds\":[1],\"userName\":\"g\",\"userId\":42,\"user\":\"obj\"}"
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(2, reader.selectName(options))
+        assertEquals(2, reader.selectString(options))
         reader.consumeKeySeparator()
         reader.readList { reader.nextInt() }
-        assertEquals(3, reader.selectName(options))
+        assertEquals(3, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals("g", reader.nextString())
-        assertEquals(1, reader.selectName(options))
+        assertEquals(1, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals(42, reader.nextInt())
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals("obj", reader.nextString())
     }

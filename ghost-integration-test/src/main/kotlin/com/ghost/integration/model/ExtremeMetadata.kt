@@ -1,3 +1,5 @@
+@file:Suppress("ArrayInDataClass")
+
 package com.ghost.integration.model
 
 import com.ghost.serialization.annotations.GhostSerialization

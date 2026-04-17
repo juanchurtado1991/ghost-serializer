@@ -1,5 +1,5 @@
 package com.ghost.serialization
-import com.ghost.serialization.core.parser.Options
+import com.ghost.serialization.core.parser.JsonReaderOptions
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import kotlin.test.Test
@@ -15,10 +15,10 @@ class FieldTrieLogicTest {
         // Skip '{'
         reader.beginObject()
         
-        val options = Options.of("id", "name", "species")
+        val options = JsonReaderOptions.of("id", "name", "species")
         
         // 1. Select "id"
-        val index1 = reader.selectName(options)
+        val index1 = reader.selectString(options)
         assertEquals(0, index1, "Should match 'id' at index 0")
         
         // Consume value and separator
@@ -27,18 +27,18 @@ class FieldTrieLogicTest {
         reader.expectByte(','.code.toByte())
         
         // 2. Select "name"
-        val index2 = reader.selectName(options)
+        val index2 = reader.selectString(options)
         assertEquals(1, index2, "Should match 'name' at index 1")
     }
 
     @Test
-    fun `selectName should return -2 for unknown fields`() {
+    fun `selectString should return -2 for unknown fields`() {
         val json = """{"unknown":true}""".encodeToByteArray()
         val reader = GhostJsonReader(json)
         reader.beginObject()
         
-        val options = Options.of("id", "name")
-        val index = reader.selectName(options)
+        val options = JsonReaderOptions.of("id", "name")
+        val index = reader.selectString(options)
         assertEquals(-2, index, "Should return -2 for unknown field (Industrial Constant)")
     }
 }

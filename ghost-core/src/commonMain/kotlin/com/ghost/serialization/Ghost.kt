@@ -3,6 +3,15 @@ package com.ghost.serialization
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghost.serialization.core.parser.GhostJsonConstants.BOOLEAN
+import com.ghost.serialization.core.parser.GhostJsonConstants.KOTLIN_LIST
+import com.ghost.serialization.core.parser.GhostJsonConstants.DOUBLE
+import com.ghost.serialization.core.parser.GhostJsonConstants.INT
+import com.ghost.serialization.core.parser.GhostJsonConstants.JAVA_LIST
+import com.ghost.serialization.core.parser.GhostJsonConstants.JAVA_MAP
+import com.ghost.serialization.core.parser.GhostJsonConstants.KOTLIN_MAP
+import com.ghost.serialization.core.parser.GhostJsonConstants.LONG
+import com.ghost.serialization.core.parser.GhostJsonConstants.STRING
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.DoubleSerializer
 import com.ghost.serialization.serializers.IntSerializer
@@ -65,29 +74,29 @@ object Ghost {
 
         when {
             classifier == String::class ||
-                    classifierStr.contains("String") ->
+                    classifierStr.contains(STRING) ->
                 return StringSerializer as GhostSerializer<Any>
 
             classifier == Int::class ||
-                    classifierStr.contains("Int") ->
+                    classifierStr.contains(INT) ->
                 return IntSerializer as GhostSerializer<Any>
 
             classifier == Long::class ||
-                    classifierStr.contains("Long") ->
+                    classifierStr.contains(LONG) ->
                 return LongSerializer as GhostSerializer<Any>
 
             classifier == Boolean::class ||
-                    classifierStr.contains("Boolean") ->
+                    classifierStr.contains(BOOLEAN) ->
                 return BooleanSerializer as GhostSerializer<Any>
 
             classifier == Double::class ||
-                    classifierStr.contains("Double") ->
+                    classifierStr.contains(DOUBLE) ->
                 return DoubleSerializer as GhostSerializer<Any>
         }
 
         val isList = classifier == List::class ||
-                classifierStr.contains("kotlin.collections.List") ||
-                classifierStr.contains("java.util.List")
+                classifierStr.contains(KOTLIN_LIST) ||
+                classifierStr.contains(JAVA_LIST)
 
         if (isList) {
             val itemType = type.arguments.getOrNull(0)?.type ?: return null
@@ -96,8 +105,8 @@ object Ghost {
         }
 
         val isMap = classifier == Map::class ||
-                classifierStr.contains("kotlin.collections.Map") ||
-                classifierStr.contains("java.util.Map")
+                classifierStr.contains(KOTLIN_MAP) ||
+                classifierStr.contains(JAVA_MAP)
 
         if (isMap) {
             val valueType = type.arguments.getOrNull(1)?.type ?: return null
@@ -112,7 +121,10 @@ object Ghost {
 
     fun <T : Any> serialize(sink: BufferedSink, value: T) {
         val serializer = getSerializer(value::class as KClass<T>)
-            ?: throw IllegalArgumentException("No Ghost serializer found for ${value::class.simpleName}. Did you annotate it with @GhostSerialization?")
+            ?: throw IllegalArgumentException(
+                "No Ghost serializer found for ${value::class.simpleName}." +
+                        " Did you annotate it with @GhostSerialization?"
+            )
         serializer.serialize(sink, value)
     }
 

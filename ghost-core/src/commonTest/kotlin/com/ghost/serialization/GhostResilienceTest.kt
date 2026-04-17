@@ -1,5 +1,5 @@
 package com.ghost.serialization
-import com.ghost.serialization.core.parser.Options
+import com.ghost.serialization.core.parser.JsonReaderOptions
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeKeySeparator
@@ -24,7 +24,7 @@ class GhostResilienceTest {
         // This simulates a generated serializer failing at a specific point
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
-            reader.selectName(Options.of("name"))
+            reader.selectString(JsonReaderOptions.of("name"))
             reader.consumeKeySeparator()
             reader.nextString() // name
             
@@ -47,7 +47,7 @@ class GhostResilienceTest {
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
             while (reader.hasNext()) {
-                val index = reader.selectName(Options.of("id", "name"))
+                val index = reader.selectString(JsonReaderOptions.of("id", "name"))
                 reader.consumeKeySeparator()
                 when (index) {
                     0 -> reader.nextInt()
@@ -67,13 +67,13 @@ class GhostResilienceTest {
         
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
-            val opts = Options.of("id")
-            assertEquals(0, reader.selectName(opts))
+            val opts = JsonReaderOptions.of("id")
+            assertEquals(0, reader.selectString(opts))
             reader.consumeKeySeparator()
             reader.nextInt()
             
             // Next one is 'unknown_field', in strict mode it should throw
-            reader.selectName(opts)
+            reader.selectString(opts)
         }
         
         assert(exception.message!!.contains("unknown_field"))

@@ -1,9 +1,8 @@
 package com.ghost.serialization
-import com.ghost.serialization.core.parser.Options
+import com.ghost.serialization.core.parser.JsonReaderOptions
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextInt
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
 import kotlin.test.Test
@@ -48,21 +47,21 @@ class GhostPerformanceValidationTest {
 
     @Test
     fun testFieldTrieLogicCorrectness() {
-        val options = Options.of("id", "name", "email", "active")
+        val options = JsonReaderOptions.of("id", "name", "email", "active")
         val json = """{"email": "ghost@standard.com", "id": 1}""".encodeToByteArray()
         val reader = GhostJsonReader(json)
         
         reader.beginObject()
         
         // Search for 'email'
-        val index = reader.selectName(options)
+        val index = reader.selectString(options)
         assertEquals(2, index, "Trie must match 'email' with priority index 2")
         
         reader.consumeKeySeparator()
         reader.nextString()
         
         // Search for 'id'
-        val index2 = reader.selectName(options)
+        val index2 = reader.selectString(options)
         assertEquals(0, index2, "Trie must match 'id' with index 0")
     }
 }

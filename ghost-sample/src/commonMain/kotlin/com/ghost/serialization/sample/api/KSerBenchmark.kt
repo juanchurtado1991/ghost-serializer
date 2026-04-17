@@ -14,7 +14,7 @@ fun parseWithKSer(bytes: ByteArray): BenchmarkResult {
     val startMem = getCurrentThreadAllocatedBytes()
     
     val jsonString = bytes.decodeToString()
-    val result = json.decodeFromString<CharacterResponse>(jsonString)
+    json.decodeFromString<CharacterResponse>(jsonString)
     
     val end = TimeSource.Monotonic.markNow()
     val endMem = getCurrentThreadAllocatedBytes()

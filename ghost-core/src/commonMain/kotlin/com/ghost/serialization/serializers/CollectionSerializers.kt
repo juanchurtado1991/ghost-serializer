@@ -1,18 +1,18 @@
 package com.ghost.serialization.serializers
 
-import okio.BufferedSink
 import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
 import com.ghost.serialization.core.parser.GhostJsonConstants
-import okio.BufferedSource
-import com.ghost.serialization.core.parser.readList
-import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeArraySeparator
 import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.nextLong
+import com.ghost.serialization.core.parser.readList
+import com.ghost.serialization.core.writer.GhostJsonWriter
 
-class ListSerializer<T>(private val itemSerializer: GhostSerializer<T>) : GhostSerializer<List<T>> {
+class ListSerializer<T>(
+    private val itemSerializer: GhostSerializer<T>
+) : GhostSerializer<List<T>> {
     override fun serialize(writer: GhostJsonWriter, value: List<T>) {
         writer.beginArray()
         for (i in 0 until value.size) {
@@ -26,8 +26,13 @@ class ListSerializer<T>(private val itemSerializer: GhostSerializer<T>) : GhostS
     }
 }
 
-class MapSerializer<V>(private val valueSerializer: GhostSerializer<V>) : GhostSerializer<Map<String, V>> {
-    override fun serialize(writer: GhostJsonWriter, value: Map<String, V>) {
+class MapSerializer<V>(
+    private val valueSerializer: GhostSerializer<V>
+) : GhostSerializer<Map<String, V>> {
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: Map<String, V>
+    ) {
         writer.beginObject()
         value.forEach { (k, v) ->
             writer.name(k)
@@ -36,11 +41,12 @@ class MapSerializer<V>(private val valueSerializer: GhostSerializer<V>) : GhostS
         writer.endObject()
     }
 
-    override fun deserialize(reader: GhostJsonReader): Map<String, V> {
+    override fun deserialize(
+        reader: GhostJsonReader
+    ): Map<String, V> {
         reader.beginObject()
         if (reader.peekByte() == GhostJsonConstants.CLOSE_OBJ) {
-            reader.endObject()
-            return emptyMap()
+            reader.endObject(); return emptyMap()
         }
         return buildMap {
             while (true) {
@@ -53,7 +59,10 @@ class MapSerializer<V>(private val valueSerializer: GhostSerializer<V>) : GhostS
 }
 
 object IntArraySerializer : GhostSerializer<IntArray> {
-    override fun serialize(writer: GhostJsonWriter, value: IntArray) {
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: IntArray
+    ) {
         writer.beginArray()
         for (i in 0 until value.size) {
             writer.value(value[i].toLong())
@@ -78,7 +87,10 @@ object IntArraySerializer : GhostSerializer<IntArray> {
 }
 
 object LongArraySerializer : GhostSerializer<LongArray> {
-    override fun serialize(writer: GhostJsonWriter, value: LongArray) {
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: LongArray
+    ) {
         writer.beginArray()
         for (i in 0 until value.size) {
             writer.value(value[i])

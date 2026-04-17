@@ -1,7 +1,7 @@
 package com.ghost.serialization.ktor
 
-import io.ktor.serialization.*
-import io.ktor.http.*
+import io.ktor.http.ContentType
+import io.ktor.serialization.Configuration
 
 /**
  * Extension to register Ghost as the content negotiator in Ktor.

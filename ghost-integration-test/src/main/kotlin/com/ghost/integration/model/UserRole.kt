@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 @GhostSerialization
 @Serializable
 enum class UserRole { 
-    ADMIN, 
     EDITOR, 
     VIEWER 
 }

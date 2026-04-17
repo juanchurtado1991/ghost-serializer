@@ -1,6 +1,8 @@
 package com.ghost.benchmark
 
-import com.ghost.integration.model.*
+import com.ghost.integration.model.BenchmarkMetrics
+import com.ghost.integration.model.GhostMetrics
+import com.ghost.integration.model.StressMetrics
 
 private const val W = 100
 
@@ -17,13 +19,37 @@ internal fun printBenchmarkReport(
     title("GHOST SERIALIZATION ENGINE — PERFORMANCE AUDIT REPORT")
 
     printEnvironment(count, payloadMb)
-    printDeserialization(metrics.steady, count, payloadMb, line)
-    printSerialization(metrics.serialization, count, line)
+
+    printDeserialization(
+        metrics.steady,
+        count,
+        payloadMb,
+        line
+    )
+    printSerialization(
+        metrics.serialization,
+        count,
+        line
+    )
+
     printMemory(metrics.steady, line)
-    printReliability(metrics.cold, metrics.failure, line)
-    printStress(metrics.stress, line)
+
+    printReliability(
+        metrics.cold,
+        metrics.failure,
+        line
+    )
+    printStress(
+        metrics.stress,
+        line
+    )
+
     printArchMatrix(line)
-    printTradeOffs(metrics.steady, thick)
+
+    printTradeOffs(
+        metrics.steady,
+        thick
+    )
 }
 
 private fun printEnvironment(count: Int, payloadMb: String) {

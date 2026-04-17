@@ -17,8 +17,12 @@ import org.junit.platform.engine.TestExecutionResult
 object ParsingTestBenchmark {
 
     fun runSafetyAudit() {
-        val request: LauncherDiscoveryRequest = LauncherDiscoveryRequestBuilder.request()
-            .selectors(DiscoverySelectors.selectPackage("com.ghost"))
+        val request: LauncherDiscoveryRequest = LauncherDiscoveryRequestBuilder
+            .request()
+            .selectors(
+                DiscoverySelectors
+                    .selectPackage("com.ghost")
+            )
             .build()
 
         val launcher = LauncherFactory.create()
@@ -33,8 +37,12 @@ object ParsingTestBenchmark {
 
             override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
                 if (testIdentifier.isTest) {
-                    val status = if (testExecutionResult.status == TestExecutionResult.Status.SUCCESSFUL) 
-                        "✅ [PASS]" else "❌ [FAIL]"
+                    val status = if (testExecutionResult.status == TestExecutionResult.Status.SUCCESSFUL) {
+                        "✅ [PASS]"
+                    } else {
+                        "❌ [FAIL]"
+                    }
+
                     println("\r$status ${testIdentifier.displayName}".padEnd(80))
                     if (testExecutionResult.status == TestExecutionResult.Status.FAILED) {
                         testExecutionResult.throwable.ifPresent { it.printStackTrace() }
@@ -56,7 +64,7 @@ object ParsingTestBenchmark {
         println("\n" + "=".repeat(93))
         println("| AUDIT SUMMARY (H): TEST RESULTS                                                           |")
         println("=".repeat(93))
-        println("Total Verifications : ${summary.testsFoundCount}")
+        println("Total Verifications: ${summary.testsFoundCount}")
         println("Succeeded          : ${summary.testsSucceededCount}")
         println("Failed             : ${summary.testsFailedCount}")
         println("Aborted            : ${summary.testsAbortedCount}")

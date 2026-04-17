@@ -1,15 +1,33 @@
 package com.ghost.serialization.core.writer
 
-import okio.BufferedSink
-import com.ghost.serialization.core.parser.GhostJsonConstants
 import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghost.serialization.core.parser.GhostJsonConstants
+import com.ghost.serialization.core.parser.JsonReaderOptions
+import okio.BufferedSink
 
-class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
+/**
+ * High-performance JSON writer that streams output directly to a [BufferedSink].
+ *
+ * GhostJsonWriter is optimized to minimize memory allocations by using an internal
+ * work buffer ([scratch]) and supporting pre-encoded field names for faster output.
+ *
+ * @param sink The destination output stream where JSON data is written.
+ */
+class GhostJsonWriter(
+    @PublishedApi internal val sink: BufferedSink
+) {
 
-    @PublishedApi internal var needsComma = false
-    @PublishedApi internal val scratch = ByteArray(48)
+    @PublishedApi
+    internal var needsComma = false
+
+    @PublishedApi
+    internal val scratch = ByteArray(48)
+
     private var depth = 0
 
+    /**
+     * Begins a new JSON object '{'. Handles comma insertion between fields automatically.
+     */
     fun beginObject(): GhostJsonWriter {
         checkDepth()
         appendSeparator()
@@ -60,7 +78,16 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
         return this
     }
 
-    fun writeName(index: Int, options: com.ghost.serialization.core.parser.Options): GhostJsonWriter {
+    /**
+     * Writes a field name using pre-encoded headers defined in [JsonReaderOptions]
+     * to avoid UTF-8 encoding overhead at runtime.
+     *
+     * @param index The field index defined in the serializer's [JsonReaderOptions].
+     */
+    fun writeName(
+        index: Int,
+        options: JsonReaderOptions
+    ): GhostJsonWriter {
         if (needsComma) {
             sink.write(options.writerHeadersWithComma[index])
         } else {
@@ -70,33 +97,59 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
         return this
     }
 
-    // Zenith Fused Field Writing
-    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Int) {
+    /**
+     * Writes both field name and value in a single fused operation to improve CPU cache efficiency.
+     */
+    fun writeField(
+        index: Int,
+        options: JsonReaderOptions,
+        value: Int
+    ) {
         writeName(index, options)
         value(value)
     }
 
-    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Long) {
+    fun writeField(
+        index: Int,
+        options: JsonReaderOptions,
+        value: Long
+    ) {
         writeName(index, options)
         value(value)
     }
 
-    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: String) {
+    fun writeField(
+        index: Int,
+        options: JsonReaderOptions,
+        value: String
+    ) {
         writeName(index, options)
         value(value)
     }
 
-    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Boolean) {
+    fun writeField(
+        index: Int,
+        options: JsonReaderOptions,
+        value: Boolean
+    ) {
         writeName(index, options)
         value(value)
     }
 
-    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Double) {
+    fun writeField(
+        index: Int,
+        options: JsonReaderOptions,
+        value: Double
+    ) {
         writeName(index, options)
         value(value)
     }
 
-    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Float) {
+    fun writeField(
+        index: Int,
+        options: JsonReaderOptions,
+        value: Float
+    ) {
         writeName(index, options)
         value(value)
     }
@@ -110,6 +163,7 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
         return this
     }
 
+    /** Writes an integer value directly to the sink without intermediate string allocations. */
     fun value(number: Int): GhostJsonWriter {
         appendSeparator()
         writeDecimalLong(number.toLong())
@@ -147,11 +201,17 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
     }
 
     fun value(number: Double): GhostJsonWriter {
-        if (!number.isFinite()) throw GhostJsonException(GhostJsonConstants.ERR_NON_FINITE, 0, 0)
+        if (!number.isFinite()) {
+            throw GhostJsonException(
+                GhostJsonConstants.ERR_NON_FINITE,
+                0,
+                0
+            )
+        }
         appendSeparator()
-        
+
         var count = 0
-        var n = if (number < 0) {
+        val n = if (number < 0) {
             scratch[count++] = '-'.code.toByte()
             -number
         } else number
@@ -175,7 +235,7 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
                 left++; right--
             }
         }
-        
+
         val f = n - i
         if (f > 0.0) {
             scratch[count++] = '.'.code.toByte()
@@ -197,7 +257,7 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
             scratch[count++] = '.'.code.toByte()
             scratch[count++] = '0'.code.toByte()
         }
-        
+
         sink.write(scratch, 0, count)
         needsComma = true
         return this
@@ -209,7 +269,13 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
 
     fun value(bool: Boolean): GhostJsonWriter {
         appendSeparator()
-        sink.write(if (bool) GhostJsonConstants.TRUE_BYTES else GhostJsonConstants.FALSE_BYTES)
+        sink.write(
+            if (bool) {
+                GhostJsonConstants.TRUE_BYTES
+            } else {
+                GhostJsonConstants.FALSE_BYTES
+            }
+        )
         needsComma = true
         return this
     }
@@ -221,9 +287,8 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
         return this
     }
 
-    fun rawSink(): BufferedSink = sink
-
-    @PublishedApi internal fun appendSeparator() {
+    @PublishedApi
+    internal fun appendSeparator() {
         if (needsComma) {
             sink.writeByte(GhostJsonConstants.COMMA.toInt())
         }
@@ -233,7 +298,7 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
         val length = text.length
         if (length == 0) return
 
-        // Zenith Fast Path: Check if any character needs escaping
+        // Fast Path: Check if any character needs escaping
         var needsEscape = false
         for (i in 0 until length) {
             val c = text[i].code
@@ -250,15 +315,15 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
 
         var last = 0
         val escapeTable = GhostJsonConstants.BLOCK_ESCAPE
-        
+
         for (i in 0 until length) {
             val c = text[i]
             val code = c.code
-            
+
             if (code >= 128 || escapeTable[code].toInt() == 0) continue
 
             if (i > last) sink.writeUtf8(text, last, i)
-            
+
             val replacement = when (c) {
                 '"' -> "\\\""
                 '\\' -> "\\\\"
@@ -269,7 +334,7 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
                 '\u000C' -> "\\f"
                 else -> null
             }
-            
+
             if (replacement != null) {
                 sink.writeUtf8(replacement)
             } else {
@@ -277,13 +342,19 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
             }
             last = i + 1
         }
-        
-        if (length > last) sink.writeUtf8(text, last, length)
+
+        if (length > last) {
+            sink.writeUtf8(text, last, length)
+        }
     }
 
     private fun checkDepth() {
         if (depth >= MAX_DEPTH) {
-            throw GhostJsonException("${GhostJsonConstants.ERR_DEPTH_EXCEEDED} ($MAX_DEPTH)", 0, 0)
+            throw GhostJsonException(
+                "${GhostJsonConstants.ERR_DEPTH_EXCEEDED} ($MAX_DEPTH)",
+                0,
+                0
+            )
         }
     }
 
@@ -291,20 +362,16 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
     private fun writeUnicodeEscape(char: Char) {
         sink.writeUtf8(GhostJsonConstants.UNICODE_PREFIX)
         val hex = char.code.toString(HEX_RADIX)
-        repeat(UNICODE_PAD_LENGTH - hex.length) { sink.writeUtf8(GhostJsonConstants.ZERO_CHAR) }
+        repeat(UNICODE_PAD_LENGTH - hex.length) {
+            sink.writeUtf8(GhostJsonConstants.ZERO_CHAR)
+        }
         sink.writeUtf8(hex)
     }
 
     companion object {
         private const val MAX_DEPTH = 100
-        private const val NULL_LITERAL = "null"
-        private const val TRUE_LITERAL = "true"
-        private const val FALSE_LITERAL = "false"
-        private const val CONTROL_CHAR_BOUND = 0x20
         private const val HEX_RADIX = 16
         private const val UNICODE_PAD_LENGTH = 4
-        private val CONTROL_CHARS_AND_QUOTES = charArrayOf(
-            '"', '\\', '\n', '\r', '\t', '\b', '\u000C'
-        )
     }
 }
+

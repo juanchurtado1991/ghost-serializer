@@ -1,5 +1,4 @@
 package com.ghost.serialization
-import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.serializers.ListSerializer

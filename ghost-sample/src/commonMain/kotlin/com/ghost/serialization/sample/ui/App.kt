@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ghost.serialization.Ghost
@@ -52,7 +54,6 @@ fun GhostSampleApp() {
     var characters by remember { mutableStateOf<List<GhostCharacter>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var networkTimeMs by remember { mutableStateOf(0.0) }
     var ghostTimeMs by remember { mutableStateOf(0.0) }
     var moshiTimeMs by remember { mutableStateOf(-1.0) }
     var kserTimeMs by remember { mutableStateOf(-1.0) }
@@ -65,7 +66,7 @@ fun GhostSampleApp() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(IndustrialDesignSystem.BackgroundGradient)
+            .background(DesignSystem.BackgroundGradient)
     ) {
         Column(
             modifier = Modifier
@@ -75,32 +76,38 @@ fun GhostSampleApp() {
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Header Section
-            IndustrialText(
+            SampleText(
                 text = Constants.STR_APP_TITLE,
                 isBold = true,
                 fontSize = 28,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
-            IndustrialText(
+            SampleText(
                 text = Constants.STR_APP_SUBTITLE,
                 isSecondary = true,
                 fontSize = 14,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Stress Test Controller
-            IndustrialCard(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IndustrialText(text = Constants.STR_STRESS_LOAD, isBold = true, fontSize = 12)
-                        IndustrialText(
+                        SampleText(
+                            text = Constants.STR_STRESS_LOAD,
+                            isBold = true,
+                            fontSize = 12
+                        )
+                        SampleText(
                             text = "${pageCount.toInt()} ${Constants.STR_PAGES} (~${pageCount.toInt() * 20} ${Constants.STR_ITEMS})",
-                            overrideColor = IndustrialDesignSystem.AccentGlow,
+                            overrideColor = DesignSystem.AccentGlow,
                             isBold = true,
                             fontSize = 12
                         )
@@ -111,15 +118,14 @@ fun GhostSampleApp() {
                         valueRange = 1f..20f,
                         steps = 18,
                         colors = SliderDefaults.colors(
-                            thumbColor = IndustrialDesignSystem.AccentGlow,
-                            activeTrackColor = IndustrialDesignSystem.AccentGlow,
-                            inactiveTrackColor = IndustrialDesignSystem.BorderColor
+                            thumbColor = DesignSystem.AccentGlow,
+                            activeTrackColor = DesignSystem.AccentGlow,
+                            inactiveTrackColor = DesignSystem.BorderColor
                         )
                     )
                 }
             }
 
-            // Action Section
             IndustrialButton(
                 text = Constants.STR_BTN_FETCH,
                 modifier = Modifier.fillMaxWidth(),
@@ -132,7 +138,6 @@ fun GhostSampleApp() {
 
                         result.onSuccess { res ->
                             characters = res.data
-                            networkTimeMs = res.networkTimeMs
                             ghostTimeMs = res.parseTimeMs
                             moshiTimeMs = res.moshiTimeMs
                             kserTimeMs = res.kserTimeMs
@@ -140,13 +145,13 @@ fun GhostSampleApp() {
                             moshiMemBytes = res.moshiMemoryBytes
                             kserMemBytes = res.kserMemoryBytes
 
-                            // Record in session history
                             val timestamp = "${Constants.STR_LOG_PREFIX}${sessionHistory.size + 1}"
                             val logEntry =
                                 "$timestamp, ${formatMs(ghostTimeMs)}, ${formatMs(moshiTimeMs)}, ${
                                     formatMs(kserTimeMs)
                                 }, ${ghostMemBytes / 1024}K, ${moshiMemBytes / 1024}K, ${kserMemBytes / 1024}K"
                             sessionHistory = sessionHistory + logEntry
+
                         }.onFailure { err ->
                             errorMessage = err.message
                         }
@@ -158,26 +163,25 @@ fun GhostSampleApp() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Metrics Dashboard
             AnimatedVisibility(
                 visible = ghostTimeMs > 0 && !isLoading,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
-                IndustrialCard(modifier = Modifier.fillMaxWidth()) {
+                Card(modifier = Modifier.fillMaxWidth()) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IndustrialText(
+                            SampleText(
                                 text = Constants.STR_BENCHMARK_TITLE,
                                 isBold = true,
                                 fontSize = 11,
                                 isSecondary = true
                             )
-                            androidx.compose.material3.TextButton(
+                            TextButton(
                                 onClick = {
                                     if (sessionHistory.isEmpty()) return@TextButton
                                     val logText =
@@ -189,7 +193,7 @@ fun GhostSampleApp() {
                                 contentPadding = PaddingValues(0.dp),
                                 modifier = Modifier.height(24.dp)
                             ) {
-                                IndustrialText(
+                                SampleText(
                                     text = Constants.STR_BTN_EXPORT,
                                     fontSize = 10,
                                     isSecondary = true
@@ -199,7 +203,6 @@ fun GhostSampleApp() {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Performance Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -207,41 +210,40 @@ fun GhostSampleApp() {
                             MetricItem(
                                 "GHOST",
                                 formatMs(ghostTimeMs),
-                                IndustrialDesignSystem.AccentGlow
+                                DesignSystem.AccentGlow
                             )
                             MetricItem(
                                 "MOSHI",
                                 formatMs(moshiTimeMs),
-                                IndustrialDesignSystem.ErrorColor
+                                DesignSystem.ErrorColor
                             )
                             MetricItem(
                                 "K-SER",
                                 formatMs(kserTimeMs),
-                                androidx.compose.ui.graphics.Color(0xFF818CF8)
+                                Color(0xFF818CF8)
                             )
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Memory Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             MetricItem(
                                 "GHOST MEM",
-                                "${ghostMemBytes} B",
-                                IndustrialDesignSystem.AccentGlow
+                                "$ghostMemBytes B",
+                                DesignSystem.AccentGlow
                             )
                             MetricItem(
                                 "MOSHI MEM",
-                                "${moshiMemBytes} B",
-                                IndustrialDesignSystem.ErrorColor
+                                "$moshiMemBytes B",
+                                DesignSystem.ErrorColor
                             )
                             MetricItem(
                                 "K-SER MEM",
-                                "${kserMemBytes} B",
-                                androidx.compose.ui.graphics.Color(0xFF818CF8)
+                                "$kserMemBytes B",
+                                Color(0xFF818CF8)
                             )
                         }
                     }
@@ -250,7 +252,6 @@ fun GhostSampleApp() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Content Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -259,12 +260,12 @@ fun GhostSampleApp() {
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = IndustrialDesignSystem.AccentGlow,
+                        color = DesignSystem.AccentGlow,
                         strokeWidth = 3.dp,
                         modifier = Modifier.size(48.dp)
                     )
                 } else if (errorMessage != null) {
-                    IndustrialText(
+                    SampleText(
                         text = "${Constants.STR_ERR_PREFIX}\n$errorMessage",
                         isBold = true,
                         fontSize = 14,
@@ -290,25 +291,24 @@ fun GhostSampleApp() {
 
 @Composable
 private fun CharacterCard(character: GhostCharacter) {
-    IndustrialCard(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Industrial Image Loading with Coil
             AsyncImage(
                 model = character.image,
                 contentDescription = character.name,
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(IndustrialDesignSystem.BorderColor)
+                    .background(DesignSystem.BorderColor)
             )
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column {
-                IndustrialText(
+                SampleText(
                     text = character.name,
                     isBold = true,
                     fontSize = 18,
@@ -316,8 +316,8 @@ private fun CharacterCard(character: GhostCharacter) {
                 )
                 StatusIndicator(character.status.name)
                 Spacer(modifier = Modifier.height(10.dp))
-                IndustrialRow("Species:", character.species)
-                IndustrialRow("Origin:", character.origin.name)
+                SampleRow("Species:", character.species)
+                SampleRow("Origin:", character.origin.name)
             }
         }
     }
@@ -327,16 +327,16 @@ private fun CharacterCard(character: GhostCharacter) {
 private fun MetricItem(
     title: String,
     value: String,
-    overrideColor: androidx.compose.ui.graphics.Color? = null
+    overrideColor: Color? = null
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        IndustrialText(
+        SampleText(
             text = title,
             isSecondary = true,
             fontSize = 11,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        IndustrialText(
+        SampleText(
             text = value,
             isSecondary = false,
             fontSize = 16,
@@ -360,7 +360,8 @@ private object Constants {
     const val STR_LOG_PREFIX = "Log #"
     const val STR_BENCHMARK_TITLE = "TRIPLE-CORE BENCHMARK"
     const val STR_EXPORT_HEADER = "SESSION METRICS HISTORY (Ghost vs Moshi vs KSer)\n"
-    const val STR_EXPORT_COLUMNS = "TIMESTAMP, GHOST (ms), MOSHI (ms), KSER (ms), GHOST MEM (KB), MOSHI MEM (KB), KSER MEM (KB)\n"
+    const val STR_EXPORT_COLUMNS =
+        "TIMESTAMP, GHOST (ms), MOSHI (ms), KSER (ms), GHOST MEM (KB), MOSHI MEM (KB), KSER MEM (KB)\n"
     const val STR_BTN_EXPORT = "EXPORT LOGS"
     const val STR_ERR_PREFIX = "HYPER-ENGINE ERROR:"
     const val STR_LOW_LATENCY = "<0.01ms"

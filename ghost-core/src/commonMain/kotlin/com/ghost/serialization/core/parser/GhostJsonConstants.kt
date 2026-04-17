@@ -3,11 +3,9 @@ package com.ghost.serialization.core.parser
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.pow
 
-@PublishedApi internal object GhostJsonConstants {
+@PublishedApi
+internal object GhostJsonConstants {
     const val STRING_BUILDER_CAPACITY = 64
-    const val NULL_LENGTH = 4L
-    const val TRUE_LENGTH = 4L
-    const val FALSE_LENGTH = 5L
     const val UNTERMINATED_STRING_ERROR = "Unterminated string"
     const val TRUNCATED_LITERAL_ERROR = "Truncated literal at end of source"
     const val UNEXPECTED_EOF_ERROR = "Unexpected EOF"
@@ -15,29 +13,30 @@ import kotlin.math.pow
     const val UNTERMINATED_UNICODE_ERROR = "Unterminated unicode escape"
     const val UNESCAPED_CONTROL_CHAR_ERROR = "Unescaped control character in string"
     const val STRICT_MODE_UNKNOWN_FIELD = "Unknown field in strict mode: "
-    const val ERR_MISSING_TYPE = "Missing 'type' discriminator for sealed class"
-    const val ERR_INVALID_ESCAPE = "Invalid escape sequence: \\"
-    const val ERR_INVALID_UNICODE = "Invalid unicode escape: \\u"
-    const val ERR_LONE_HIGH_SURROGATE = "Lone high surrogate: \\u"
-    const val ERR_LONE_LOW_SURROGATE = "Lone low surrogate: \\u"
-    const val ERR_EXPECTED_OBJ = "Expected '{'"
-    const val ERR_EXPECTED_ARR = "Expected '['"
-    const val ERR_MAX_DEPTH = "Reached maximum recursion depth"
     const val PATH_ROOT = "$"
     const val COLON_QUOTE = "\":"
     const val UNICODE_PREFIX = "\\u"
     const val ZERO_CHAR = "0"
     const val ERR_NON_FINITE = "JSON does not support non-finite numbers like NaN or Infinity"
     const val ERR_DEPTH_EXCEEDED = "Reached maximum recursion depth"
+    const val JAVA_MAP = "java.util.Map"
+    const val KOTLIN_MAP = "kotlin.collections.Map"
+    const val KOTLIN_LIST = "kotlin.collections.List"
+    const val JAVA_LIST = "java.util.List"
+    const val STRING = "String"
+    const val INT = "Int"
+    const val LONG = "Long"
+    const val BOOLEAN = "Boolean"
+    const val DOUBLE = "Double"
 
-    @PublishedApi internal val TRUE_BYTES = "true".encodeUtf8()
-    @PublishedApi internal val FALSE_BYTES = "false".encodeUtf8()
-    @PublishedApi internal val NULL_BYTES = "null".encodeUtf8()
+    @PublishedApi
+    internal val TRUE_BYTES = "true".encodeUtf8()
+    @PublishedApi
+    internal val FALSE_BYTES = "false".encodeUtf8()
+    @PublishedApi
+    internal val NULL_BYTES = "null".encodeUtf8()
 
-    const val SPACE = ' '.code.toByte()
     const val NEWLINE = '\n'.code.toByte()
-    const val CR = '\r'.code.toByte()
-    const val TAB = '\t'.code.toByte()
 
     const val COMMA = ','.code.toByte()
     const val COLON = ':'.code.toByte()

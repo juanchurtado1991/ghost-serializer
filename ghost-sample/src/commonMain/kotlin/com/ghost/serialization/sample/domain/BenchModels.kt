@@ -16,6 +16,7 @@ enum class UserRole {
     ADMIN, USER, GUEST, EDITOR
 }
 
+@Suppress("ArrayInDataClass")
 @GhostSerialization
 data class ExtremeMetadata(
     val timestamp: Long,

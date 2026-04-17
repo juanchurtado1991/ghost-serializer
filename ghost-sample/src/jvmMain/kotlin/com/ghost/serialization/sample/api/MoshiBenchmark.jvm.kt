@@ -1,24 +1,30 @@
 package com.ghost.serialization.sample.api
 
 import com.ghost.serialization.sample.domain.CharacterResponse
+import com.ghost.serialization.sample.domain.CharacterStatus
+import com.squareup.moshi.FromJson
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.ToJson
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okio.Buffer
 import kotlin.time.TimeSource
 
+@Suppress("CheckResult")
 actual fun parseWithMoshi(bytes: ByteArray): BenchmarkResult {
     return try {
         val moshi = Moshi.Builder()
             .add(object {
-                @com.squareup.moshi.ToJson fun toJson(status: com.ghost.serialization.sample.domain.CharacterStatus): String = when(status) {
-                    com.ghost.serialization.sample.domain.CharacterStatus.Alive -> "Alive"
-                    com.ghost.serialization.sample.domain.CharacterStatus.Dead -> "Dead"
-                    com.ghost.serialization.sample.domain.CharacterStatus.Unknown -> "unknown"
+                @ToJson
+                fun toJson(status: CharacterStatus): String = when(status) {
+                    CharacterStatus.Alive -> "Alive"
+                    CharacterStatus.Dead -> "Dead"
+                    CharacterStatus.Unknown -> "unknown"
                 }
-                @com.squareup.moshi.FromJson fun fromJson(name: String): com.ghost.serialization.sample.domain.CharacterStatus = when(name) {
-                    "Alive" -> com.ghost.serialization.sample.domain.CharacterStatus.Alive
-                    "Dead" -> com.ghost.serialization.sample.domain.CharacterStatus.Dead
-                    else -> com.ghost.serialization.sample.domain.CharacterStatus.Unknown
+                @FromJson
+                fun fromJson(name: String): CharacterStatus = when(name) {
+                    "Alive" -> CharacterStatus.Alive
+                    "Dead" -> CharacterStatus.Dead
+                    else -> CharacterStatus.Unknown
                 }
             })
             .addLast(KotlinJsonAdapterFactory()).build()

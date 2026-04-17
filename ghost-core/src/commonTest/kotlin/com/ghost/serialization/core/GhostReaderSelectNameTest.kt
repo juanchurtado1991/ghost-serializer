@@ -1,29 +1,17 @@
 package com.ghost.serialization.core
-import com.ghost.serialization.core.parser.Options
+import com.ghost.serialization.core.parser.JsonReaderOptions
 
 import com.ghost.serialization.core.parser.skipCommaIfPresent
-import com.ghost.serialization.core.parser.nextNonWhitespace
-import com.ghost.serialization.core.parser.skipAnyValue
-import com.ghost.serialization.serializers.IntArraySerializer
-import com.ghost.serialization.serializers.LongArraySerializer
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.writer.GhostJsonWriter
-import com.ghost.serialization.core.exception.GhostJsonException
 import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.parser.isNextNullValue
 import com.ghost.serialization.core.parser.skipValue
-import com.ghost.serialization.core.parser.JsonToken
-import com.ghost.serialization.core.parser.peekJsonToken
 import com.ghost.serialization.core.parser.readList
 import com.ghost.serialization.core.parser.nextInt
 import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.consumeArraySeparator
-import com.ghost.serialization.core.parser.nextLong
-import com.ghost.serialization.core.parser.nextFloat
 import com.ghost.serialization.core.parser.consumeNull
 
 import okio.Buffer
@@ -40,77 +28,77 @@ class GhostReaderSelectNameTest {
     // ── H. PREFIX-MATCHING REGRESSION ─────────────────────────────────
 
     @Test
-    fun selectNameDistinguishesPrefixFields() {
-        val options = Options.of("score", "scores", "name", "namespace")
+    fun selectStringDistinguishesPrefixFields() {
+        val options = JsonReaderOptions.of("score", "scores", "name", "namespace")
         val json = "{\"scores\":10,\"score\":5,\"namespace\":\"ns\",\"name\":\"n\"}"
         val reader = readerOf(json)
         reader.beginObject()
 
-        val firstIndex = reader.selectName(options)
+        val firstIndex = reader.selectString(options)
         assertEquals(1, firstIndex)
         reader.consumeKeySeparator()
         assertEquals(10, reader.nextInt())
 
-        val secondIndex = reader.selectName(options)
+        val secondIndex = reader.selectString(options)
         assertEquals(0, secondIndex)
         reader.consumeKeySeparator()
         assertEquals(5, reader.nextInt())
 
-        val thirdIndex = reader.selectName(options)
+        val thirdIndex = reader.selectString(options)
         assertEquals(3, thirdIndex)
         reader.consumeKeySeparator()
         assertEquals("ns", reader.nextString())
 
-        val fourthIndex = reader.selectName(options)
+        val fourthIndex = reader.selectString(options)
         assertEquals(2, fourthIndex)
         reader.consumeKeySeparator()
         assertEquals("n", reader.nextString())
 
-        assertEquals(-1, reader.selectName(options))
+        assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
 
     // ── I. UNKNOWN FIELD SKIPPING ─────────────────────────────────────
 
     @Test
-    fun selectNameReturnsMinusTwoForUnknownFields() {
-        val options = Options.of("id", "name")
+    fun selectStringReturnsMinusTwoForUnknownFields() {
+        val options = JsonReaderOptions.of("id", "name")
         val json = "{\"unknown\":\"skip_me\",\"id\":1}"
         val reader = readerOf(json)
         reader.beginObject()
 
-        val firstIndex = reader.selectName(options)
+        val firstIndex = reader.selectString(options)
         assertEquals(-2, firstIndex)
         reader.consumeKeySeparator()
         reader.skipValue()
 
-        val secondIndex = reader.selectName(options)
+        val secondIndex = reader.selectString(options)
         assertEquals(0, secondIndex)
         reader.consumeKeySeparator()
         assertEquals(1, reader.nextInt())
 
-        assertEquals(-1, reader.selectName(options))
+        assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
 
     @Test
     fun skipsComplexUnknownValues() {
-        val options = Options.of("id")
+        val options = JsonReaderOptions.of("id")
         val json = "{\"nested\":{\"a\":\"b\",\"c\":\"d\"},\"id\":42}"
         val reader = readerOf(json)
         reader.beginObject()
 
-        val firstIndex = reader.selectName(options)
+        val firstIndex = reader.selectString(options)
         assertEquals(-2, firstIndex)
         reader.consumeKeySeparator()
         reader.skipValue()
 
-        val secondIndex = reader.selectName(options)
+        val secondIndex = reader.selectString(options)
         assertEquals(0, secondIndex)
         reader.consumeKeySeparator()
         assertEquals(42, reader.nextInt())
 
-        assertEquals(-1, reader.selectName(options))
+        assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
 
@@ -187,21 +175,21 @@ class GhostReaderSelectNameTest {
     @Test
     fun readsObjectWithMultipleArrays() {
         val json = "{\"a\":[1,2],\"b\":[\"x\",\"y\"]}"
-        val options = Options.of("a", "b")
+        val options = JsonReaderOptions.of("a", "b")
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(0, reader.selectName(options))
+        assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         val ints = reader.readList { reader.nextInt() }
         assertEquals(listOf(1, 2), ints)
 
-        assertEquals(1, reader.selectName(options))
+        assertEquals(1, reader.selectString(options))
         reader.consumeKeySeparator()
         val strings = reader.readList { reader.nextString() }
         assertEquals(listOf("x", "y"), strings)
 
-        assertEquals(-1, reader.selectName(options))
+        assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
 }

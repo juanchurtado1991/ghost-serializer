@@ -1,30 +1,15 @@
 package com.ghost.serialization.core
-import com.ghost.serialization.core.parser.Options
+import com.ghost.serialization.core.parser.JsonReaderOptions
 
-import com.ghost.serialization.core.parser.skipCommaIfPresent
 import com.ghost.serialization.core.parser.nextNonWhitespace
 import com.ghost.serialization.core.parser.skipAnyValue
-import com.ghost.serialization.serializers.IntArraySerializer
-import com.ghost.serialization.serializers.LongArraySerializer
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.writer.GhostJsonWriter
 import com.ghost.serialization.core.exception.GhostJsonException
 import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.isNextNullValue
-import com.ghost.serialization.core.parser.skipValue
-import com.ghost.serialization.core.parser.JsonToken
-import com.ghost.serialization.core.parser.peekJsonToken
-import com.ghost.serialization.core.parser.readList
 import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.consumeArraySeparator
-import com.ghost.serialization.core.parser.nextLong
-import com.ghost.serialization.core.parser.nextFloat
-import com.ghost.serialization.core.parser.consumeNull
 
 import okio.Buffer
 import kotlin.test.Test
@@ -50,7 +35,7 @@ class GhostStressAuditTest {
         
         val reader1 = GhostJsonReader(Buffer().writeUtf8(jsonString))
         reader1.beginObject()
-        assertEquals(0, reader1.selectName(Options.of("k")))
+        assertEquals(0, reader1.selectString(JsonReaderOptions.of("k")))
         reader1.consumeKeySeparator()
         assertEquals(stringPadding + "BC", reader1.nextString())
         reader1.endObject()
@@ -104,8 +89,8 @@ class GhostStressAuditTest {
             assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
                 recursiveSkip(reader)
                 reader.skipWhitespace()
-                if (reader.pos < reader.data.size) {
-                    val leftover = reader.data.decodeToString(reader.pos, reader.data.size)
+                if (reader.positon < reader.data.size) {
+                    val leftover = reader.data.decodeToString(reader.positon, reader.data.size)
                     if (leftover.trim().isNotEmpty()) {
                         throw GhostJsonException("Unconsumed input: $leftover", 0, 0)
                     }
@@ -116,7 +101,7 @@ class GhostStressAuditTest {
 
     private fun recursiveSkip(reader: GhostJsonReader) {
         reader.skipWhitespace()
-        if (reader.pos >= reader.data.size) return
+        if (reader.positon >= reader.data.size) return
         when (val b = reader.peekByte()) {
             '{'.code.toByte() -> {
                 reader.beginObject()

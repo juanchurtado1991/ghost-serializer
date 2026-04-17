@@ -1,16 +1,11 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.annotations.GhostSerialization
-import io.ktor.client.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.*
-import io.ktor.util.reflect.*
+import io.ktor.http.ContentType
+import io.ktor.util.reflect.typeInfo
+import io.ktor.utils.io.charsets.Charsets
 import kotlinx.coroutines.test.runTest
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertNotNull
 
 class GhostKtorTest {
 
@@ -25,7 +20,7 @@ class GhostKtorTest {
         // When serializing
         val content = converter.serialize(
             ContentType.Application.Json,
-            io.ktor.utils.io.charsets.Charsets.UTF_8,
+            Charsets.UTF_8,
             typeInfo,
             data
         )

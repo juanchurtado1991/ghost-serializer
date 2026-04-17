@@ -65,7 +65,7 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitEnumDeserialization(body: CodeBlock.Builder) {
-        body.addStatement("val index = reader.selectName(ENUM_OPTIONS)")
+        body.addStatement("val index = reader.selectString(ENUM_OPTIONS)")
         body.beginControlFlow("return when (index)")
         
         properties.firstOrNull()?.enumValues?.entries?.forEachIndexed { i, entry ->
