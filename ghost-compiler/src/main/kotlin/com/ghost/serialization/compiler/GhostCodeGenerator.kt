@@ -74,8 +74,11 @@ internal class GhostCodeGenerator(
     }
 
     private fun buildSerializerObject(): TypeSpec {
+        val names = properties.map { it.jsonName }
+        val (shift, multiplier) = findPerfectHash(names)
+
         val optionsBuilder = CodeBlock.builder()
-            .add(STR_OPTIONS_OF, readerClass)
+            .add("%T.Options.of($shift, $multiplier,\n", readerClass)
             .indent()
 
         properties.forEachIndexed { index, prop ->
@@ -147,6 +150,28 @@ internal class GhostCodeGenerator(
                     .build()
             )
             .build()
+    }
+
+    private fun findPerfectHash(names: List<String>): Pair<Int, Int> {
+        if (names.isEmpty()) return 0 to 31
+        val firstBytes = names.map { it.firstOrNull()?.code?.toByte() ?: 0 }
+        
+        // Brute force search for a collision-free multiplier and shift
+        for (m in 31..1000 step 2) {
+            for (s in 0..16) {
+                val seen = mutableSetOf<Int>()
+                var collision = false
+                for (b in firstBytes) {
+                    val h = (((b.toInt() and 0xFF) * m) shr s) and 1023
+                    if (!seen.add(h)) {
+                        collision = true
+                        break
+                    }
+                }
+                if (!collision) return s to m
+            }
+        }
+        return 0 to 31 // Fallback to default if not found
     }
 
     companion object {

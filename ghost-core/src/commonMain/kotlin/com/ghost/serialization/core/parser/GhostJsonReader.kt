@@ -21,7 +21,9 @@ class GhostJsonReader(
         val byteStrings: Array<okio.ByteString>,
         val rawBytes: Array<ByteArray>,
         val writerHeaders: Array<okio.ByteString>,
-        val writerHeadersWithComma: Array<okio.ByteString>
+        val writerHeadersWithComma: Array<okio.ByteString>,
+        @PublishedApi internal val shift: Int,
+        @PublishedApi internal val multiplier: Int
     ) {
         @PublishedApi internal val dispatch = IntArray(1024) { -1 }
 
@@ -29,14 +31,16 @@ class GhostJsonReader(
             for (i in rawBytes.indices) {
                 val bytes = rawBytes[i]
                 if (bytes.isNotEmpty()) {
-                    val h = ((bytes[0].toInt() and 0xFF) * 31 + bytes.size) and 1023
+                    val h = (((bytes[0].toInt() and 0xFF) * multiplier) shr shift) and 1023
                     if (dispatch[h] == -1) dispatch[h] = i
                 }
             }
         }
 
         companion object {
-            fun of(vararg names: String): Options {
+            fun of(vararg names: String): Options = of(0, 31, *names)
+
+            fun of(shift: Int, multiplier: Int, vararg names: String): Options {
                 val byteStrings = Array(names.size) {
                     okio.ByteString.Companion.run { names[it].encodeUtf8() }
                 }
@@ -50,7 +54,10 @@ class GhostJsonReader(
                     okio.ByteString.Companion.run { ",\"${names[it]}\":".encodeUtf8() }
                 }
 
-                return Options(strings, byteStrings, rawBytes, writerHeaders, writerHeadersWithComma)
+                return Options(
+                    strings, byteStrings, rawBytes, writerHeaders, writerHeadersWithComma,
+                    shift, multiplier
+                )
             }
         }
     }
@@ -78,7 +85,7 @@ class GhostJsonReader(
         if (pos + len >= data.size) return -2
 
         val firstByte = data[pos].toInt() and 0xFF
-        val h = (firstByte * 31 + len) and 1023
+        val h = ((firstByte * options.multiplier) shr options.shift) and 1023
         val hint = options.dispatch[h]
         
         if (hint != -1) {
@@ -369,6 +376,17 @@ class GhostJsonReader(
             val b = data[pos]
             if (b > 32) return
             pos++
+            
+            // Apex Unrolling: Skip more if still whitespace
+            if (pos < data.size && data[pos] <= 32) {
+                pos++
+                if (pos < data.size && data[pos] <= 32) {
+                    pos++
+                    if (pos < data.size && data[pos] <= 32) {
+                        pos++
+                    }
+                }
+            }
         }
     }
 
