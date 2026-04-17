@@ -57,21 +57,24 @@ import kotlin.math.pow
     const val EXP_UPPER = 'E'.code.toByte()
 
     // --- STR POOL METRICS ---
-    const val STR_POOL_SIZE = 2048
+    const val STR_POOL_SIZE = 16384
     const val MAX_POOL_STRING_LENGTH = 64
 
     val POWERS_OF_TEN = DoubleArray(309).apply {
         for (i in indices) this[i] = 10.0.pow(i.toDouble())
     }
 
+    val INVERSE_POWERS_OF_TEN = DoubleArray(309).apply {
+        for (i in indices) this[i] = 1.0 / 10.0.pow(i.toDouble())
+    }
+
     val BLOCK_ESCAPE = ByteArray(128).apply {
         for (i in 0..31) this[i] = 1 // Control characters
-        this['"'.code] = 1
         this['"'.code] = 1
         this['\\'.code] = 1
     }
 
     val IS_TERMINATOR = BooleanArray(128).apply {
-        ",}] \n\r\t".forEach { this[it.code] = true }
+        ",}] \n\r\t:".forEach { this[it.code] = true }
     }
 }

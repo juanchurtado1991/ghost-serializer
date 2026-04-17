@@ -102,7 +102,7 @@ fun GhostJsonReader.skipValue() {
     skipAnyValue()
 }
 
-fun <T> GhostJsonReader.readList(capacity: Int = 10, itemParser: () -> T): List<T> {
+fun <T> GhostJsonReader.readList(capacity: Int = 1024, itemParser: () -> T): List<T> {
     beginArray()
     if (peekNextToken() == CLOSE_ARR.toInt()) {
         endArray()

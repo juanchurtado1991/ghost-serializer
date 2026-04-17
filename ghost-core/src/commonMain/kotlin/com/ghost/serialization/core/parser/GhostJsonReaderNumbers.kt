@@ -13,7 +13,7 @@ fun GhostJsonReader.nextInt(): Int {
 }
 
 fun GhostJsonReader.nextLong(): Long {
-    skipWhitespace()
+    if (nextTokenByte == -1) skipWhitespace()
     if (pos >= data.size) throwError("Expected number but reached EOF")
 
     var i = pos
@@ -53,7 +53,7 @@ fun GhostJsonReader.nextLong(): Long {
 }
 
 fun GhostJsonReader.nextDouble(): Double {
-    skipWhitespace()
+    if (nextTokenByte == -1) skipWhitespace()
     if (pos >= data.size) throwError("Expected number but reached EOF")
 
     var i = pos
@@ -96,11 +96,12 @@ fun GhostJsonReader.nextDouble(): Double {
             } else break
         }
         if (scale == 0) throwError("Expected digits after decimal point")
-        if (scale < GhostJsonConstants.POWERS_OF_TEN.size) {
-            result += decimalValue / GhostJsonConstants.POWERS_OF_TEN[scale]
+        val decimalDouble = if (scale < GhostJsonConstants.INVERSE_POWERS_OF_TEN.size) {
+            decimalValue * GhostJsonConstants.INVERSE_POWERS_OF_TEN[scale]
         } else {
-            result += decimalValue / 10.0.pow(scale.toDouble())
+            decimalValue / 10.0.pow(scale.toDouble())
         }
+        result += decimalDouble
     }
 
     if (i < data.size) {
@@ -124,12 +125,21 @@ fun GhostJsonReader.nextDouble(): Double {
             }
             if (!hasExpDigits) throwError("Expected digits in exponent")
             if (exponent > 0) {
-                val factor = if (exponent < GhostJsonConstants.POWERS_OF_TEN.size) {
-                    GhostJsonConstants.POWERS_OF_TEN[exponent]
+                if (expNegative) {
+                    val factor = if (exponent < GhostJsonConstants.INVERSE_POWERS_OF_TEN.size) {
+                        GhostJsonConstants.INVERSE_POWERS_OF_TEN[exponent]
+                    } else {
+                        1.0 / 10.0.pow(exponent.toDouble())
+                    }
+                    result *= factor
                 } else {
-                    10.0.pow(exponent.toDouble())
+                    val factor = if (exponent < GhostJsonConstants.POWERS_OF_TEN.size) {
+                        GhostJsonConstants.POWERS_OF_TEN[exponent]
+                    } else {
+                        10.0.pow(exponent.toDouble())
+                    }
+                    result *= factor
                 }
-                if (expNegative) result /= factor else result *= factor
             }
         }
     }

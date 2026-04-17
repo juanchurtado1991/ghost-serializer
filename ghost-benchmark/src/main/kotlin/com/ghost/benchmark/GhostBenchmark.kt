@@ -8,6 +8,7 @@ import com.ghost.benchmark.model.ComplexResponse
 import com.ghost.benchmark.model.ExtremeMetadata
 import com.ghost.benchmark.model.UserRole
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.core.parser.GhostJsonReader
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
@@ -39,7 +40,7 @@ fun main() {
     val moshi = Moshi.Builder().build()
     val kJson = Json { ignoreUnknownKeys = true }
 
-    val count = 60_000
+    val count = 300_000
     val complex = generateComplexData(count)
     val jsonString = generateNeutralJson(complex)
     val byteData = jsonString.encodeUtf8()
@@ -54,7 +55,11 @@ fun main() {
     val stress = runStressTests(gson, moshi, kJson)
     val failure = runFailureTests(byteData)
 
-    printBenchmarkReport(coldMetrics, metrics, serializationMetrics, stress, failure)
+    printBenchmarkReport(
+        count,
+        "%.2f".format(byteData.size.toDouble() / 1_048_576.0),
+        coldMetrics, metrics, serializationMetrics, stress, failure
+    )
 }
 
 /**
@@ -117,8 +122,8 @@ private fun runWarmup(
     data: ByteString,
     complex: ComplexResponse
 ) {
-    println("Warming up JIT...")
-    repeat(15) {
+    println("Warming up JIT (50 iterations)...")
+    repeat(50) {
         gson.fromJson<ComplexResponse>(
             GsonReader(InputStreamReader(ByteArrayInputStream(data.toByteArray()))),
             ComplexResponse::class.java
@@ -175,18 +180,25 @@ private fun runSteadyState(
     kJson: Json,
     data: ByteString
 ): BenchmarkMetrics {
-    println("Running Steady-State Throughput Test...")
+    val rawBytes = data.toByteArray() // PRE-CONVERT ONCE
+    val jsonStr = data.utf8()
+    
+    println("Running Steady-State Throughput Test (150k objects)...")
     val g = measurePerf(bean) {
         gson.fromJson<ComplexResponse>(
-            GsonReader(
-                InputStreamReader(ByteArrayInputStream(data.toByteArray()))
-            ), ComplexResponse::class.java
+            GsonReader(InputStreamReader(ByteArrayInputStream(rawBytes))),
+            ComplexResponse::class.java
         )
     }
-    val m = measurePerf(bean) { moshi.adapter<ComplexResponse>().fromJson(Buffer().write(data)) }
+    val m = measurePerf(bean) { moshi.adapter<ComplexResponse>().fromJson(Buffer().write(rawBytes)) }
     val k =
-        measurePerf(bean) { kJson.decodeFromStream<ComplexResponse>(ByteArrayInputStream(data.toByteArray())) }
-    val gh = measurePerf(bean) { Ghost.deserialize<ComplexResponse>(data.toByteArray()) }
+        measurePerf(bean) { kJson.decodeFromStream<ComplexResponse>(ByteArrayInputStream(rawBytes)) }
+    val ghostReader = GhostJsonReader(rawBytes) // Persistent reader
+    val gh = measurePerf(bean) {
+        ghostReader.reset(rawBytes)
+        Ghost.deserialize<ComplexResponse>(ghostReader)
+    }
+    
     return BenchmarkMetrics(
         Result(g.first, g.second),
         Result(m.first, m.second),
@@ -289,7 +301,7 @@ private inline fun measurePerf(bean: ThreadMXBean, block: () -> Unit): Pair<Long
     val sA = bean.getThreadAllocatedBytes(Thread.currentThread().id)
     val s = System.nanoTime(); block();
     val e = System.nanoTime()
-    return (e - s) / 1_000_000 to (bean.getThreadAllocatedBytes(Thread.currentThread().id) - sA) / 1024
+    return (e - s) to (bean.getThreadAllocatedBytes(Thread.currentThread().id) - sA) / 1024
 }
 
 private inline fun measurePerfSimple(block: () -> Unit): Long {

@@ -203,57 +203,62 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun buildListCall(prop: GhostPropertyModel): CodeBlock {
+        val innerType = prop.listInnerType!!
         val innerCall = when {
-            prop.listInnerIsGhost -> CodeBlock.of(
-                STR_T_DESERIALIZE, serializerName(prop.listInnerType!!)
-            )
-
-            prop.listInnerIsEnum -> CodeBlock.of(
-                STR_T_DESERIALIZE,
-                serializerName(prop.listInnerType!!)
-            )
-
-            prop.listInnerType?.isPrimitiveInt() == true -> CodeBlock.of(STR_NEXT_INT)
-            prop.listInnerType?.isPrimitiveLong() == true -> CodeBlock.of(STR_NEXT_LONG)
-            prop.listInnerType?.isPrimitiveDouble() == true -> CodeBlock.of(STR_NEXT_DOUBLE)
-            prop.listInnerType?.isPrimitiveFloat() == true ->
-                CodeBlock.of(STR_DOUBLE_TO_FLOAT)
-
-            prop.listInnerType?.isPrimitiveBoolean() == true ->
-                CodeBlock.of(STR_NEXT_BOOLEAN)
-
-            else -> CodeBlock.of(STR_NEXT_STRING)
+            prop.listInnerIsGhost -> "${serializerName(innerType)}.deserialize(reader)"
+            innerType.isPrimitiveInt() -> "reader.nextInt()"
+            innerType.isPrimitiveLong() -> "reader.nextLong()"
+            innerType.isPrimitiveDouble() -> "reader.nextDouble()"
+            innerType.isPrimitiveFloat() -> "reader.nextDouble().toFloat()"
+            innerType.isPrimitiveBoolean() -> "reader.nextBoolean()"
+            else -> "reader.nextString()"
         }
-        return CodeBlock.of(STR_READ_LIST, innerCall)
+        
+        return CodeBlock.of("""
+            run {
+              reader.beginArray()
+              val list = %T<%T>(1024)
+              if (reader.hasNext()) {
+                list.add($innerCall)
+                while (reader.hasNext()) {
+                  reader.consumeArraySeparator()
+                  list.add($innerCall)
+                }
+              }
+              reader.endArray()
+              list
+            }
+        """.trimIndent(), 
+        ClassName("kotlin.collections", "ArrayList"),
+        innerType.toTypeName())
     }
 
     private fun buildMapCall(prop: GhostPropertyModel): CodeBlock {
+        val valueType = prop.mapValueType!!
         val valueReader = when {
-            prop.mapValueIsGhost -> CodeBlock.of(
-                STR_T_DESERIALIZE, serializerName(prop.mapValueType!!)
-            )
-
-            prop.mapValueType?.isPrimitiveInt() == true -> CodeBlock.of(STR_NEXT_INT)
-            prop.mapValueType?.isPrimitiveLong() == true -> CodeBlock.of(STR_NEXT_LONG)
-            prop.mapValueType?.isPrimitiveDouble() == true -> CodeBlock.of(STR_NEXT_DOUBLE)
-            prop.mapValueType?.isPrimitiveBoolean() == true ->
-                CodeBlock.of(STR_NEXT_BOOLEAN)
-
-            else -> CodeBlock.of(STR_NEXT_STRING)
+            prop.mapValueIsGhost -> "${serializerName(valueType)}.deserialize(reader)"
+            valueType.isPrimitiveInt() -> "reader.nextInt()"
+            valueType.isPrimitiveLong() -> "reader.nextLong()"
+            valueType.isPrimitiveDouble() -> "reader.nextDouble()"
+            valueType.isPrimitiveBoolean() -> "reader.nextBoolean()"
+            else -> "reader.nextString()"
         }
 
-        return CodeBlock.of(
-            STR_BUILD_MAP_1 +
-                    STR_BUILD_MAP_2 +
-                    STR_BUILD_MAP_3 +
-                    STR_BUILD_MAP_4 +
-                    STR_BUILD_MAP_5 +
-                    STR_BUILD_MAP_6 +
-                    STR_BUILD_MAP_7 +
-                    STR_BUILD_MAP_8 +
-                    STR_BUILD_MAP_9,
-            valueReader
-        )
+        return CodeBlock.of("""
+            run {
+              val map = %T<String, %T>()
+              reader.beginObject()
+              while (true) {
+                val mapKey = reader.nextKey() ?: break
+                reader.consumeKeySeparator()
+                map[mapKey] = $valueReader
+              }
+              reader.endObject()
+              map
+            }
+        """.trimIndent(), 
+        ClassName("kotlin.collections", "LinkedHashMap"),
+        valueType.toTypeName())
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder) {

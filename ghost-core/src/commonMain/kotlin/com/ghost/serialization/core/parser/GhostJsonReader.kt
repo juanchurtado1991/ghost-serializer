@@ -52,10 +52,16 @@ class Options(
 }
 
 class GhostJsonReader(
-    @PublishedApi internal val data: ByteArray,
+    @PublishedApi internal var data: ByteArray,
     internal val maxDepth: Int = 255,
     internal val strictMode: Boolean = false
 ) {
+    fun reset(newData: ByteArray) {
+        this.data = newData
+        this.pos = 0
+        this.depth = 0
+        this.nextTokenByte = -1
+    }
     constructor(source: BufferedSource, maxDepth: Int = 255, strictMode: Boolean = false)
             : this(source.readByteArray(), maxDepth, strictMode)
 
@@ -93,7 +99,15 @@ class GhostJsonReader(
         if (remaining <= 0) return -2
 
         var len = 0
-        while (pos + len < data.size && data[pos + len] != GhostJsonConstants.QUOTE) {
+        // Vectorized Scan for field name end
+        while (pos + len + 3 < data.size) {
+            if (data[pos + len] == 34.toByte()) break
+            if (data[pos + len + 1] == 34.toByte()) { len += 1; break }
+            if (data[pos + len + 2] == 34.toByte()) { len += 2; break }
+            if (data[pos + len + 3] == 34.toByte()) { len += 3; break }
+            len += 4
+        }
+        while (pos + len < data.size && data[pos + len] != 34.toByte()) {
             len++
         }
         if (pos + len >= data.size) return -2
@@ -150,38 +164,86 @@ class GhostJsonReader(
     }
 
     fun selectName(options: Options): Int {
-        skipWhitespace()
+        if (nextTokenByte == -1) skipWhitespace()
         if (pos >= data.size) return -1
         
-        val b = data[pos]
-        if (b == GhostJsonConstants.COMMA) {
-            internalSkip(1); skipWhitespace()
+        var b = if (nextTokenByte != -1) nextTokenByte else (data[pos].toInt() and 0xFF)
+        if (b == 44) { // COMMA
+            pos++; nextTokenByte = -1; skipWhitespace()
+            if (pos >= data.size) return -1
+            b = data[pos].toInt() and 0xFF
         }
         
-        if (pos >= data.size || data[pos] == GhostJsonConstants.CLOSE_OBJ) return -1
+        if (b == 125) return -1 // CLOSE_OBJ
         
-        expectByte(GhostJsonConstants.QUOTE)
+        if (b != 34) throwError("Expected '\"' but found ${b.toChar()}")
+        pos++; nextTokenByte = -1 // Skip opening quote
+        
         val index = internalSelect(options)
         if (index >= 0) {
-            expectByte(GhostJsonConstants.QUOTE)
-            return index
+            if (pos < data.size && data[pos] == 34.toByte()) {
+                pos++; nextTokenByte = -1
+                return index
+            }
+            throwError("Expected '\"'")
         }
         
+        // Cold path: Unknown field
         if (strictMode) {
-            val fileNameBody = readStringBody()
-            throwError("${GhostJsonConstants.STRICT_MODE_UNKNOWN_FIELD}'$fileNameBody'")
+            val name = readStringBody() // This skips closing quote
+            throwError("${GhostJsonConstants.STRICT_MODE_UNKNOWN_FIELD}'$name'")
         }
-        
         skipQuotedStringBody()
         return -2
     }
 
     fun selectNameAndConsume(options: Options): Int {
-        val index = selectName(options)
-        if (index >= 0) {
-            consumeKeySeparator()
+        if (nextTokenByte == -1) skipWhitespace()
+        if (pos >= data.size) return -1
+        
+        var b = if (nextTokenByte != -1) nextTokenByte else (data[pos].toInt() and 0xFF)
+        if (b == 44) { // COMMA
+            pos++; nextTokenByte = -1; skipWhitespace()
+            if (pos >= data.size) return -1
+            b = data[pos].toInt() and 0xFF
         }
-        return index
+        
+        if (b == 125) return -1 // CLOSE_OBJ
+        
+        if (b != 34) throwError("Expected '\"' but found ${b.toChar()}")
+        pos++; nextTokenByte = -1 // Skip opening quote
+        
+        val index = internalSelect(options)
+        if (index >= 0) {
+            // Found it. Skip closing quote and separator
+            if (pos < data.size && data[pos] == 34.toByte()) {
+                pos++
+                // Fused consumeKeySeparator
+                skipWhitespace()
+                if (pos < data.size && data[pos] == 58.toByte()) {
+                    pos++; nextTokenByte = -1
+                    skipWhitespace()
+                    if (pos < data.size) nextTokenByte = data[pos].toInt() and 0xFF
+                    return index
+                }
+                throwError("Expected ':'")
+            }
+            throwError("Expected '\"'")
+        }
+        
+        // Cold path: Unknown field
+        if (strictMode) {
+            val name = readStringBody() // This skips closing quote
+            throwError("${GhostJsonConstants.STRICT_MODE_UNKNOWN_FIELD}'$name'")
+        }
+        skipQuotedStringBody()
+        skipWhitespace()
+        if (pos < data.size && data[pos] == 58.toByte()) {
+            pos++; nextTokenByte = -1
+            skipWhitespace()
+            if (pos < data.size) nextTokenByte = data[pos].toInt() and 0xFF
+        }
+        return -2
     }
 
     fun beginObject() {
@@ -216,12 +278,12 @@ class GhostJsonReader(
     }
 
     fun nextString(): String {
-        skipWhitespace()
+        if (nextTokenByte == -1) skipWhitespace()
         return readQuotedString()
     }
 
     fun nextBoolean(): Boolean {
-        skipWhitespace()
+        if (nextTokenByte == -1) skipWhitespace()
         if (pos + 4 > data.size) throwError(GhostJsonConstants.TRUNCATED_LITERAL_ERROR)
         val b = data[pos]
         if (b == GhostJsonConstants.TRUE_CHAR) {
@@ -261,6 +323,21 @@ class GhostJsonReader(
 
     internal fun readStringBody(): String {
         val start = pos
+        // Ghost Vectorized Scan: Find quote or escape faster
+        while (pos + 3 < data.size) {
+            val b1 = data[pos]
+            val b2 = data[pos + 1]
+            val b3 = data[pos + 2]
+            val b4 = data[pos + 3]
+            
+            // Check for Quote (34) or Backslash (92)
+            if (b1 == 34.toByte() || b1 == 92.toByte() || b1.toInt() in 0..31) break
+            if (b2 == 34.toByte() || b2 == 92.toByte() || b2.toInt() in 0..31) { pos += 1; break }
+            if (b3 == 34.toByte() || b3 == 92.toByte() || b3.toInt() in 0..31) { pos += 2; break }
+            if (b4 == 34.toByte() || b4 == 92.toByte() || b4.toInt() in 0..31) { pos += 3; break }
+            pos += 4
+        }
+        
         while (pos < data.size) {
             val b = data[pos]
             if (b == GhostJsonConstants.QUOTE) {
@@ -269,7 +346,7 @@ class GhostJsonReader(
             }
             if (b.toInt() in 0..31) throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             if (b == GhostJsonConstants.BACKSLASH) return readStringWithEscapes(start)
-            internalSkip(1)
+            pos++
         }
         throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
     }
@@ -282,28 +359,49 @@ class GhostJsonReader(
             val result = data.decodeToString(start, start + len)
             internalSkip(1); return result
         }
+        // Fast Hash Zenith: Process bytes in blocks or optimized shifts
         var hash = 0
-        for (i in start until start + len) {
-            hash = 33 * hash + data[i].toInt()
+        var i = start
+        val end = start + len
+        while (i < end) {
+            hash = (hash shl 5) - hash + (data[i].toInt() and 0xFF)
+            i++
         }
+        
         val poolIndex = hash and (GhostJsonConstants.STR_POOL_SIZE - 1)
         val cached = stringPool[poolIndex]
+        
         if (cached != null && cached.length == len) {
+            // Hot Path: Candidate found, verify bytes with unrolling
             var match = true
-            for (i in 0 until len) {
-                // ASCII optimization: Direct comparison
-                if (cached[i].code != (data[start + i].toInt() and 0xFF)) {
-                    match = false; break
+            if (len >= 4) {
+                if (cached[0].code != (data[start].toInt() and 0xFF) ||
+                    cached[1].code != (data[start + 1].toInt() and 0xFF) ||
+                    cached[2].code != (data[start + 2].toInt() and 0xFF) ||
+                    cached[3].code != (data[start + 3].toInt() and 0xFF)) {
+                    match = false
                 }
             }
             if (match) {
-                internalSkip(1); return cached
+                var j = if (len >= 4) 4 else 0
+                while (j < len) {
+                    if (cached[j].code != (data[start + j].toInt() and 0xFF)) {
+                        match = false
+                        break
+                    }
+                    j++
+                }
+                if (match) {
+                    internalSkip(1) // Skip closing quote
+                    return cached
+                }
             }
         }
 
+        // Cold Path: Decode and potentially update pool
         val result = data.decodeToString(start, start + len)
         stringPool[poolIndex] = result
-        internalSkip(1)
+        internalSkip(1) // Skip closing quote
         return result
     }
 
@@ -405,26 +503,27 @@ class GhostJsonReader(
         
         while (pos < data.size) {
             val b = data[pos].toInt() and 0xFF
+            // Ghost Universal Overdrive: Bitmask check for 0x20, 0x0A, 0x0D, 0x09
+            // b <= 32 and (1L << b) and 0x100002600 != 0
             if (b > 32) return
             
-            // Fast-path for common space (0x20)
-            if (b == 32) {
+            if (b == 32 || b == 10 || b == 13 || b == 9) {
                 pos++
-                // Word-skipping: check 4 bytes at once if possible
+                // Word-skipping Overdrive
                 while (pos + 3 < data.size) {
-                    if (data[pos] == GhostJsonConstants.SPACE && data[pos + 1] == GhostJsonConstants.SPACE &&
-                        data[pos + 2] == GhostJsonConstants.SPACE && data[pos + 3] == GhostJsonConstants.SPACE) {
+                    val w1 = data[pos].toInt() and 0xFF
+                    val w2 = data[pos + 1].toInt() and 0xFF
+                    val w3 = data[pos + 2].toInt() and 0xFF
+                    val w4 = data[pos + 3].toInt() and 0xFF
+                    
+                    // Check if all 4 are whitespace
+                    if (w1 <= 32 && w2 <= 32 && w3 <= 32 && w4 <= 32) {
                         pos += 4
                     } else break
                 }
-                continue
-            }
-            
-            if (b == 10 || b == 13 || b == 9) {
+            } else {
                 pos++
-                continue
             }
-            pos++
         }
     }
 

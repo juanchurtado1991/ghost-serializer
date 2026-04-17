@@ -3,6 +3,8 @@ package com.ghost.benchmark
 private const val W = 100
 
 internal fun printBenchmarkReport(
+    count: Int,
+    payloadMb: String,
     cold: BenchmarkMetrics,
     m: BenchmarkMetrics,
     ser: BenchmarkMetrics,
@@ -16,9 +18,9 @@ internal fun printBenchmarkReport(
     println()
     title("GHOST SERIALIZATION ENGINE — PERFORMANCE AUDIT REPORT")
 
-    printEnvironment()
-    printDeserialization(m, line)
-    printSerialization(ser, line)
+    printEnvironment(count, payloadMb)
+    printDeserialization(m, count, payloadMb, line)
+    printSerialization(ser, count, line)
     printMemory(m, line)
     printReliability(cold, f, line)
     printStress(s, line)
@@ -26,22 +28,23 @@ internal fun printBenchmarkReport(
     printTradeOffs(m, thick)
 }
 
-private fun printEnvironment() {
+private fun printEnvironment(count: Int, payloadMb: String) {
     println("\n  TEST ENVIRONMENT")
     println("  ├─ Runtime     : ${System.getProperty("java.vm.name")} ${System.getProperty("java.vm.version")}")
     println("  ├─ OS          : ${System.getProperty("os.name")} ${System.getProperty("os.arch")}")
-    println("  ├─ Payload     : 60,000 objects | ~4.5 MB compact JSON | No whitespace")
-    println("  ├─ Warmup      : 15 JIT iterations before measurement")
+    println("  ├─ Payload     : %,d objects | ~$payloadMb MB compact JSON | No whitespace".format(count))
+    println("  ├─ Warmup      : 50 JIT iterations before measurement")
     println("  ├─ Heap Method : ThreadMXBean.getThreadAllocatedBytes() (per-thread)")
     println("  └─ Methodology : Single-shot post-JIT steady state, fair cold boot")
 }
 
 private fun delta(ghost: Long, other: Long): String {
-    if (other == 0L) return "N/A"
-    val pct = ((other.toDouble() - ghost) / other * 100).toInt()
+    if (other == 0L || ghost <= 0L) return "N/A"
+    val speedup = other.toDouble() / ghost.toDouble()
+    val improvement = ((speedup - 1.0) * 100).toInt()
     return when {
-        pct > 0 -> "▲ $pct% faster"
-        pct < 0 -> "▼ ${-pct}% slower"
+        improvement > 0 -> "▲ $improvement%% faster (%.2fx speedup)".format(speedup)
+        improvement < 0 -> "▼ ${-improvement}%% slower"
         else -> "≈ tied"
     }
 }
@@ -55,17 +58,16 @@ private fun badge(ghost: Long, others: List<Long>, lowerBetter: Boolean): String
         names.getOrElse(idx) { "—" }
     }
 }
-
-private fun printDeserialization(m: BenchmarkMetrics, line: () -> Unit) {
-    val ops = { ms: Long -> 60_000_000 / ms.coerceAtLeast(1) }
+private fun printDeserialization(m: BenchmarkMetrics, count: Int, payloadMb: String, line: () -> Unit) {
+    val ops = { ns: Long -> (count.toLong() * 1_000_000_000L) / ns.coerceAtLeast(1) }
     println("\n  1. DESERIALIZATION PERFORMANCE (JSON → Objects)")
-    println("     Scenario: Parse 60,000 user objects from ~4.5 MB JSON")
+    println("     Scenario: Parse %,d user objects from ~$payloadMb MB JSON".format(count))
     line()
     println("  %-28s %10s %10s %10s %10s   %-10s".format(
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %9dms %9dms %9dms %9dms   %s".format(
-        "Latency (lower = better)", m.gson.ms, m.moshi.ms, m.kser.ms, m.ghost.ms,
+        "Latency (lower = better)", m.gson.ms / 1_000_000, m.moshi.ms / 1_000_000, m.kser.ms / 1_000_000, m.ghost.ms / 1_000_000,
         badge(m.ghost.ms, listOf(m.gson.ms, m.moshi.ms, m.kser.ms), true)))
     println("  %-28s %10d %10d %10d %10d   %s".format(
         "Throughput (ops/s, higher)", ops(m.gson.ms), ops(m.moshi.ms), ops(m.kser.ms), ops(m.ghost.ms),
@@ -76,15 +78,15 @@ private fun printDeserialization(m: BenchmarkMetrics, line: () -> Unit) {
     println("  Ghost vs K-Ser    : ${delta(m.ghost.ms, m.kser.ms)}")
 }
 
-private fun printSerialization(ser: BenchmarkMetrics, line: () -> Unit) {
+private fun printSerialization(ser: BenchmarkMetrics, count: Int, line: () -> Unit) {
     println("\n  2. SERIALIZATION PERFORMANCE (Objects → JSON)")
-    println("     Scenario: Serialize 60,000 user objects to JSON string")
+    println("     Scenario: Serialize %,d user objects to JSON string".format(count))
     line()
     println("  %-28s %10s %10s %10s %10s   %-10s".format(
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %9dms %9dms %9dms %9dms   %s".format(
-        "Latency (lower = better)", ser.gson.ms, ser.moshi.ms, ser.kser.ms, ser.ghost.ms,
+        "Latency (lower = better)", ser.gson.ms / 1_000_000, ser.moshi.ms / 1_000_000, ser.kser.ms / 1_000_000, ser.ghost.ms / 1_000_000,
         badge(ser.ghost.ms, listOf(ser.gson.ms, ser.moshi.ms, ser.kser.ms), true)))
     line()
     println("  Ghost vs GSON     : ${delta(ser.ghost.ms, ser.gson.ms)}")
