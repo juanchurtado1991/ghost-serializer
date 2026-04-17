@@ -45,14 +45,9 @@ fun IndustrialCard(
 ) {
     Box(
         modifier = modifier
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(16.dp),
-                spotColor = Color.Black.copy(alpha = 0.5f)
-            )
             .clip(RoundedCornerShape(16.dp))
             .background(IndustrialDesignSystem.CardGradient)
-            .border(1.dp, IndustrialDesignSystem.BorderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, IndustrialDesignSystem.BorderColor.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
             .padding(20.dp)
     ) {
         content()
@@ -149,7 +144,6 @@ fun StatusIndicator(status: String) {
                 .size(8.dp)
                 .clip(CircleShape)
                 .background(color)
-                .shadow(4.dp, CircleShape, spotColor = color)
         )
         Spacer(modifier = Modifier.width(6.dp))
         IndustrialText(text = status, isBold = true, fontSize = 12)

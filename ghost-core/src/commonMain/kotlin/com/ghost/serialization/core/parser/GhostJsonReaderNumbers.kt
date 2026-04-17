@@ -104,8 +104,8 @@ fun GhostJsonReader.nextDouble(): Double {
             } else break
         }
         if (scale == 0) throwError("Expected digits after decimal point")
-        if (scale < POWERS_OF_TEN.size) {
-            result += decimalValue / POWERS_OF_TEN[scale]
+        if (scale < GhostJsonConstants.POWERS_OF_TEN.size) {
+            result += decimalValue / GhostJsonConstants.POWERS_OF_TEN[scale]
         } else {
             result += decimalValue / 10.0.pow(scale.toDouble())
         }
@@ -132,7 +132,11 @@ fun GhostJsonReader.nextDouble(): Double {
             }
             if (!hasExpDigits) throwError("Expected digits in exponent")
             if (exponent > 0) {
-                val factor = if (exponent < POWERS_OF_TEN.size) POWERS_OF_TEN[exponent] else 10.0.pow(exponent.toDouble())
+                val factor = if (exponent < GhostJsonConstants.POWERS_OF_TEN.size) {
+                    GhostJsonConstants.POWERS_OF_TEN[exponent]
+                } else {
+                    10.0.pow(exponent.toDouble())
+                }
                 if (expNegative) result /= factor else result *= factor
             }
         }

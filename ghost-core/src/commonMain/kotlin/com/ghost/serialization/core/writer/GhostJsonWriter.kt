@@ -4,9 +4,10 @@ import okio.BufferedSink
 import com.ghost.serialization.core.parser.GhostJsonConstants
 import com.ghost.serialization.core.exception.GhostJsonException
 
-class GhostJsonWriter(internal val sink: BufferedSink) {
+class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
 
-    private var needsComma = false
+    @PublishedApi internal var needsComma = false
+    @PublishedApi internal val scratch = ByteArray(48)
     private var depth = 0
 
     fun beginObject(): GhostJsonWriter {
@@ -59,6 +60,17 @@ class GhostJsonWriter(internal val sink: BufferedSink) {
         return this
     }
 
+    fun writeName(index: Int, options: com.ghost.serialization.core.parser.GhostJsonReader.Options): GhostJsonWriter {
+        if (needsComma) {
+            sink.write(options.writerHeadersWithComma[index])
+        } else {
+            sink.write(options.writerHeaders[index])
+            needsComma = true
+        }
+        needsComma = false // Reset for value
+        return this
+    }
+
     fun value(text: String): GhostJsonWriter {
         appendSeparator()
         sink.writeByte('"'.code)
@@ -85,17 +97,62 @@ class GhostJsonWriter(internal val sink: BufferedSink) {
     fun value(number: Double): GhostJsonWriter {
         if (!number.isFinite()) throw GhostJsonException("JSON does not support non-finite numbers like NaN or Infinity", 0, 0)
         appendSeparator()
-        sink.writeUtf8(number.toString())
+        
+        var count = 0
+        var n = if (number < 0) {
+            scratch[count++] = '-'.code.toByte()
+            -number
+        } else number
+
+        val i = n.toLong()
+        val intStart = count
+        var tempI = i
+        if (tempI == 0L) {
+            scratch[count++] = '0'.code.toByte()
+        } else {
+            while (tempI > 0) {
+                scratch[count++] = ('0'.code.toLong() + (tempI % 10)).toByte()
+                tempI /= 10
+            }
+            var left = intStart
+            var right = count - 1
+            while (left < right) {
+                val tmp = scratch[left]
+                scratch[left] = scratch[right]
+                scratch[right] = tmp
+                left++; right--
+            }
+        }
+        
+        val f = n - i
+        if (f > 0.0) {
+            scratch[count++] = '.'.code.toByte()
+            val fracStart = count
+            var fraction = f
+            for (step in 1..15) {
+                fraction *= 10
+                val digit = fraction.toInt()
+                scratch[count++] = ('0'.code + digit).toByte()
+                fraction -= digit
+                if (fraction < 1e-15) break
+            }
+            // Trim trailing zeros; keep at least one digit after the decimal point
+            while (count > fracStart + 1 && scratch[count - 1] == '0'.code.toByte()) {
+                count--
+            }
+        } else {
+            // Always emit ".0" so 0.0 is distinguishable from integer 0
+            scratch[count++] = '.'.code.toByte()
+            scratch[count++] = '0'.code.toByte()
+        }
+        
+        sink.write(scratch, 0, count)
         needsComma = true
         return this
     }
 
     fun value(number: Float): GhostJsonWriter {
-        if (!number.isFinite()) throw GhostJsonException("JSON does not support non-finite numbers line NaN or Infinity", 0, 0)
-        appendSeparator()
-        sink.writeUtf8(number.toString())
-        needsComma = true
-        return this
+        return value(number.toDouble())
     }
 
     fun value(bool: Boolean): GhostJsonWriter {
@@ -114,7 +171,7 @@ class GhostJsonWriter(internal val sink: BufferedSink) {
 
     fun rawSink(): BufferedSink = sink
 
-    private fun appendSeparator() {
+    @PublishedApi internal fun appendSeparator() {
         if (needsComma) {
             sink.writeByte(GhostJsonConstants.COMMA.toInt())
         }
@@ -124,12 +181,17 @@ class GhostJsonWriter(internal val sink: BufferedSink) {
         var last = 0
         val length = text.length
         val escapeTable = GhostJsonConstants.BLOCK_ESCAPE
+        
         for (i in 0 until length) {
             val c = text[i]
             val code = c.code
+            
+            // Fast path for non-escaped characters
             if (code >= 128 || escapeTable[code].toInt() == 0) continue
 
+            // Write accumulated unescaped segment
             if (i > last) sink.writeUtf8(text, last, i)
+            
             val replacement = when (c) {
                 '"' -> "\\\""
                 '\\' -> "\\\\"
@@ -138,8 +200,9 @@ class GhostJsonWriter(internal val sink: BufferedSink) {
                 '\t' -> "\\t"
                 '\b' -> "\\b"
                 '\u000C' -> "\\f"
-                else -> null // Will handle control chars as unicode escapes
+                else -> null
             }
+            
             if (replacement != null) {
                 sink.writeUtf8(replacement)
             } else {
@@ -147,6 +210,8 @@ class GhostJsonWriter(internal val sink: BufferedSink) {
             }
             last = i + 1
         }
+        
+        // Write final segment
         if (length > last) sink.writeUtf8(text, last, length)
     }
 

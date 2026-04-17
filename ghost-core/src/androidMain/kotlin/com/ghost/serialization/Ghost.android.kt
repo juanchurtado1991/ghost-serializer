@@ -20,18 +20,26 @@ actual fun discoverRegistries(): List<GhostRegistry> {
     val patterns = listOf(
         "com.ghost.serialization.generated.GhostModuleRegistry_Default",
         "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_serialization_sample_domain",
-        "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_integration_model"
+        "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_integration"
     )
 
     patterns.forEach { className ->
         try {
-            val registry = Class.forName(className)
-                .getDeclaredField("INSTANCE")
-                .get(null) as? GhostRegistry
+            val clazz = Class.forName(className)
+            val registry = try {
+                // Try direct Singleton (object) behavior first
+                clazz.getDeclaredField("INSTANCE").get(null) as? GhostRegistry
+            } catch (_: Exception) {
+                // Fallback to Companion object behavior
+                try {
+                    val companion = clazz.getDeclaredField("Companion").get(null)
+                    companion.javaClass.getDeclaredField("INSTANCE").get(companion) as? GhostRegistry
+                } catch (_: Exception) {
+                    null
+                }
+            }
             if (registry != null) registries.add(registry)
-        } catch (e: Exception) {
-            // Ignore missing registries
-        }
+        } catch (_: Exception) { }
     }
     return registries
 }

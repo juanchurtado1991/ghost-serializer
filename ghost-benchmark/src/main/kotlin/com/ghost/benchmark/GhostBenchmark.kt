@@ -1,10 +1,13 @@
 @file:OptIn(ExperimentalStdlibApi::class)
+
 package com.ghost.benchmark
 
-import com.ghost.serialization.core.contract.GhostRegistry
+import com.ghost.benchmark.model.BenchUser
+import com.ghost.benchmark.model.Category
+import com.ghost.benchmark.model.ComplexResponse
+import com.ghost.benchmark.model.ExtremeMetadata
+import com.ghost.benchmark.model.UserRole
 import com.ghost.serialization.Ghost
-import java.util.ServiceLoader
-import com.ghost.benchmark.model.*
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
@@ -272,7 +275,7 @@ private fun printInputStatistics(count: Int, json: String) {
 private fun executeSafetyAudit() {
     try {
         println("\n--- AUTOMATED SAFETY AUDIT (RUNNING ALL PROJECT TESTS) ---")
-        com.ghost.benchmark.ParsingTestBenchmark.runSafetyAudit()
+        ParsingTestBenchmark.runSafetyAudit()
     } catch (e: Exception) {
         println("Audit error: ${e.message}")
     }

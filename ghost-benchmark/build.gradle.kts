@@ -39,8 +39,11 @@ dependencies {
     
     // Include test classes for auto-detection (Safe Root-Relative paths)
     runtimeOnly(files("${rootDir.absolutePath}/ghost-core/build/classes/kotlin/jvm/test"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-core/build/generated/ksp/jvm/kotlin"))
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/classes/kotlin/test"))
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/classes/kotlin/main"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/kotlin"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/resources"))
     
     ksp(project(":ghost-compiler"))
     ksp(libs.moshi.kotlin.codegen)

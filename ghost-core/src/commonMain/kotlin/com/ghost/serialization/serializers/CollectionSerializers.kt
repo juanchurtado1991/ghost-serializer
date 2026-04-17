@@ -15,8 +15,8 @@ import com.ghost.serialization.core.parser.nextLong
 class ListSerializer<T>(private val itemSerializer: GhostSerializer<T>) : GhostSerializer<List<T>> {
     override fun serialize(writer: GhostJsonWriter, value: List<T>) {
         writer.beginArray()
-        value.forEach { item ->
-            itemSerializer.serialize(writer, item)
+        for (i in 0 until value.size) {
+            itemSerializer.serialize(writer, value[i])
         }
         writer.endArray()
     }
@@ -55,8 +55,8 @@ class MapSerializer<V>(private val valueSerializer: GhostSerializer<V>) : GhostS
 object IntArraySerializer : GhostSerializer<IntArray> {
     override fun serialize(writer: GhostJsonWriter, value: IntArray) {
         writer.beginArray()
-        value.forEach { item ->
-            writer.value(item.toLong())
+        for (i in 0 until value.size) {
+            writer.value(value[i].toLong())
         }
         writer.endArray()
     }
@@ -80,8 +80,8 @@ object IntArraySerializer : GhostSerializer<IntArray> {
 object LongArraySerializer : GhostSerializer<LongArray> {
     override fun serialize(writer: GhostJsonWriter, value: LongArray) {
         writer.beginArray()
-        value.forEach { item ->
-            writer.value(item)
+        for (i in 0 until value.size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }

@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,12 +106,12 @@ fun GhostSampleApp() {
                             fontSize = 12
                         )
                     }
-                    androidx.compose.material3.Slider(
+                    Slider(
                         value = pageCount,
                         onValueChange = { pageCount = it },
-                        valueRange = 1f..10f,
-                        steps = 8,
-                        colors = androidx.compose.material3.SliderDefaults.colors(
+                        valueRange = 1f..20f,
+                        steps = 18,
+                        colors = SliderDefaults.colors(
                             thumbColor = IndustrialDesignSystem.AccentGlow,
                             activeTrackColor = IndustrialDesignSystem.AccentGlow,
                             inactiveTrackColor = IndustrialDesignSystem.BorderColor

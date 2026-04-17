@@ -3,16 +3,16 @@ package com.ghost.serialization.core.parser
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.pow
 
-internal object GhostJsonConstants {
+@PublishedApi internal object GhostJsonConstants {
     const val STRING_BUILDER_CAPACITY = 64
     const val NULL_LENGTH = 4L
     const val TRUE_LENGTH = 4L
     const val FALSE_LENGTH = 5L
     const val UNTERMINATED_STRING_ERROR = "Unterminated string"
 
-    val TRUE_BYTES = "true".encodeUtf8()
-    val FALSE_BYTES = "false".encodeUtf8()
-    val NULL_BYTES = "null".encodeUtf8()
+    @PublishedApi internal val TRUE_BYTES = "true".encodeUtf8()
+    @PublishedApi internal val FALSE_BYTES = "false".encodeUtf8()
+    @PublishedApi internal val NULL_BYTES = "null".encodeUtf8()
 
     const val SPACE = ' '.code.toByte()
     const val NEWLINE = '\n'.code.toByte()
@@ -37,7 +37,7 @@ internal object GhostJsonConstants {
     const val EXP_UPPER = 'E'.code.toByte()
 
     // --- STR POOL METRICS ---
-    const val STR_POOL_SIZE = 1024
+    const val STR_POOL_SIZE = 2048
     const val MAX_POOL_STRING_LENGTH = 64
 
     val POWERS_OF_TEN = DoubleArray(309).apply {

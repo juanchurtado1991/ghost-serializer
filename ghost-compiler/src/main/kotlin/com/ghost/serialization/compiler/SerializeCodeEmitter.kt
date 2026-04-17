@@ -177,7 +177,7 @@ internal class SerializeCodeEmitter(
         private const val STR_IS_T_ARROW_T_SERIALIZE = "is %T -> %T.serialize(writer, value)"
         private const val STR_VALUE_DOT = "value."
         private const val STR_IF_ACCESSOR_NOT_NULL = "if (%L != null)"
-        private const val STR_WRITER_NAME_OPTIONS_INDEX = "writer.name(OPTIONS.byteStrings[%L])"
+        private const val STR_WRITER_NAME_OPTIONS_INDEX = "writer.writeName(%L, OPTIONS)"
         private const val STR_ELSE = "else"
         private const val STR_WRITER_NAME_OPTIONS_NULL =
             "writer.name(OPTIONS.byteStrings[%L]).nullValue()"

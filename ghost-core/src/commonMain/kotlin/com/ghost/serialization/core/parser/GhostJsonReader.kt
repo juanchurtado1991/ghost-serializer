@@ -4,25 +4,39 @@ import okio.BufferedSource
 import com.ghost.serialization.core.exception.GhostJsonException
 
 class GhostJsonReader(
-    internal val data: ByteArray,
+    @PublishedApi internal val data: ByteArray,
     internal val maxDepth: Int = 255,
     internal val strictMode: Boolean = false
 ) {
     constructor(source: BufferedSource, maxDepth: Int = 255, strictMode: Boolean = false)
             : this(source.readByteArray(), maxDepth, strictMode)
 
-    internal var pos = 0
-    internal var line = 1
-    internal var column = 1
-    internal var depth = 0
+    @PublishedApi internal var pos = 0
+    @PublishedApi internal var line = 1
+    @PublishedApi internal var column = 1
+    @PublishedApi internal var depth = 0
     val path: String get() = "$" 
     internal val stringPool = arrayOfNulls<String>(GhostJsonConstants.STR_POOL_SIZE)
 
     class Options private constructor(
         val strings: Array<String>,
         val byteStrings: Array<okio.ByteString>,
-        val rawBytes: Array<ByteArray>
+        val rawBytes: Array<ByteArray>,
+        val writerHeaders: Array<okio.ByteString>,
+        val writerHeadersWithComma: Array<okio.ByteString>
     ) {
+        @PublishedApi internal val dispatch = IntArray(1024) { -1 }
+
+        init {
+            for (i in rawBytes.indices) {
+                val bytes = rawBytes[i]
+                if (bytes.isNotEmpty()) {
+                    val h = ((bytes[0].toInt() and 0xFF) * 31 + bytes.size) and 1023
+                    if (dispatch[h] == -1) dispatch[h] = i
+                }
+            }
+        }
+
         companion object {
             fun of(vararg names: String): Options {
                 val byteStrings = Array(names.size) {
@@ -30,12 +44,20 @@ class GhostJsonReader(
                 }
                 val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
                 val strings = Array(names.size) { names[it] }
-                return Options(strings, byteStrings, rawBytes)
+
+                val writerHeaders = Array(names.size) {
+                    okio.ByteString.Companion.run { "\"${names[it]}\":".encodeUtf8() }
+                }
+                val writerHeadersWithComma = Array(names.size) {
+                    okio.ByteString.Companion.run { ",\"${names[it]}\":".encodeUtf8() }
+                }
+
+                return Options(strings, byteStrings, rawBytes, writerHeaders, writerHeadersWithComma)
             }
         }
     }
 
-    internal fun internalSkip(n: Int) {
+    @PublishedApi internal fun internalSkip(n: Int) {
         pos += n
         column += n
     }
@@ -51,25 +73,54 @@ class GhostJsonReader(
 
     internal fun internalSelect(options: Options): Int {
         val remaining = data.size - pos
-        for (i in options.rawBytes.indices) {
-            val opt = options.rawBytes[i]
-            val optLen = opt.size
-            if (optLen + 1 > remaining) continue
-            
-            // Fast byte-by-byte comparison using direct indexing
-            if (data[pos] != opt[0]) continue
-            
-            var match = true
-            for (j in 1 until optLen) {
-                if (data[pos + j] != opt[j]) {
-                    match = false; break
+        if (remaining == 0) return -2
+
+        // Find the length of the field name without decoding
+        var len = 0
+        while (pos + len < data.size && data[pos + len] != GhostJsonConstants.QUOTE) {
+            len++
+        }
+        
+        if (pos + len >= data.size) return -2
+
+        // O(1) Dispatch Table Look-up
+        val firstByte = data[pos].toInt() and 0xFF
+        val h = (firstByte * 31 + len) and 1023
+        val hint = options.dispatch[h]
+        
+        if (hint != -1) {
+            val opt = options.rawBytes[hint]
+            if (opt.size == len) {
+                var match = true
+                for (j in 0 until len) {
+                    if (data[pos + j] != opt[j]) {
+                        match = false; break
+                    }
+                }
+                if (match) {
+                    pos += len
+                    column += len
+                    return hint
                 }
             }
-            
-            if (match && data[pos + optLen] == GhostJsonConstants.QUOTE) {
-                pos += optLen
-                column += optLen
-                return i
+        }
+
+        // Fallback to linear scan (rare, only on hash collisions)
+        for (idx in options.rawBytes.indices) {
+            if (idx == hint) continue
+            val opt = options.rawBytes[idx]
+            if (opt.size == len) {
+                var match = true
+                for (j in 0 until len) {
+                    if (data[pos + j] != opt[j]) {
+                        match = false; break
+                    }
+                }
+                if (match) {
+                    pos += len
+                    column += len
+                    return idx
+                }
             }
         }
         return -2
@@ -141,22 +192,36 @@ class GhostJsonReader(
 
     fun nextBoolean(): Boolean {
         skipWhitespace()
-        val b = peekByte()
-        return when (b) {
-            GhostJsonConstants.TRUE_CHAR -> {
-                val len = GhostJsonConstants.TRUE_LENGTH.toInt()
-                if (pos + len > data.size) throwError("Truncated 'true' literal")
-                internalSkip(len); true
+        if (pos + 4 > data.size) throwError("Truncated literal at end of source")
+        val b = data[pos]
+        if (b == GhostJsonConstants.TRUE_CHAR) {
+            if (data[pos + 1] == 'r'.code.toByte() && 
+                data[pos + 2] == 'u'.code.toByte() && 
+                data[pos + 3] == 'e'.code.toByte()) {
+                internalSkip(4); return true
             }
-
-            GhostJsonConstants.FALSE_CHAR -> {
-                val len = GhostJsonConstants.FALSE_LENGTH.toInt()
-                if (pos + len > data.size) throwError("Truncated 'false' literal")
-                internalSkip(len); false
+        } else if (b == GhostJsonConstants.FALSE_CHAR) {
+            if (pos + 5 > data.size) throwError("Truncated literal at end of source")
+            if (data[pos + 1] == 'a'.code.toByte() && 
+                data[pos + 2] == 'l'.code.toByte() && 
+                data[pos + 3] == 's'.code.toByte() && 
+                data[pos + 4] == 'e'.code.toByte()) {
+                internalSkip(5); return false
             }
-
-            else -> throwError("Expected boolean but found ${b.toInt().toChar()}")
         }
+        throwError("Expected boolean but found ${b.toInt().toChar()}")
+    }
+
+    fun nextNull(): Nothing? {
+        skipWhitespace()
+        if (pos + 4 > data.size) throwError("Truncated literal at end of source")
+        if (data[pos] == 'n'.code.toByte() && 
+            data[pos + 1] == 'u'.code.toByte() && 
+            data[pos + 2] == 'l'.code.toByte() && 
+            data[pos + 3] == 'l'.code.toByte()) {
+            internalSkip(4); return null
+        }
+        throwError("Expected null but found ${data[pos].toInt().toChar()}")
     }
 
     internal fun readQuotedString(): String {
@@ -172,6 +237,7 @@ class GhostJsonReader(
                 val len = pos - start
                 return readPooledString(start, len)
             }
+            if (b.toInt() in 0..31) throwError("Unescaped control character in string")
             if (b == GhostJsonConstants.BACKSLASH) return readStringWithEscapes(start)
             pos++
         }
@@ -192,7 +258,7 @@ class GhostJsonReader(
 
         var hash = 0
         for (i in start until start + len) {
-            hash = 31 * hash + data[i].toInt()
+            hash = 33 * hash + data[i].toInt()
         }
         val poolIndex = hash and (GhostJsonConstants.STR_POOL_SIZE - 1)
         val cached = stringPool[poolIndex]
@@ -317,9 +383,14 @@ class GhostJsonReader(
         throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
     }
 
-    internal fun skipWhitespace() {
+    @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun skipWhitespace() {
         while (pos < data.size) {
-            when (data[pos]) {
+            val b = data[pos]
+            if (b > 32) return // Most common case: not whitespace
+            
+            when (b) {
                 GhostJsonConstants.SPACE, GhostJsonConstants.TAB, GhostJsonConstants.CR -> {
                     pos++; column++
                 }
