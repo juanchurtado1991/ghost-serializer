@@ -151,11 +151,9 @@ internal fun GhostJsonReader.skipBalanced(open: Byte, close: Byte) {
         }
         val b = data[pos]
         internalSkip(1)
-        when (b) {
-            open -> balance++
-            close -> balance--
-            QUOTE -> skipQuotedStringBody()
-        }
+        if (b == open) balance++
+        else if (b == close) balance--
+        else if (b == QUOTE) skipQuotedStringBody()
     }
     if (balance > 0) throwError("Unexpected EOF during balanced skip")
 }
