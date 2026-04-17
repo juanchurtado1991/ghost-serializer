@@ -91,22 +91,22 @@ class GhostJsonReader(
         if (hint != -1) {
             val opt = options.rawBytes[hint]
             if (opt.size == len) {
-                if (len >= 4) {
-                    if (data[pos] == opt[0] && data[pos + 1] == opt[1] && 
-                        data[pos + 2] == opt[2] && data[pos + 3] == opt[3]) {
-                        var match = true
-                        for (j in 4 until len) {
-                            if (data[pos + j] != opt[j]) { match = false; break }
-                        }
-                        if (match) { pos += len; return hint }
+                var i = 0
+                var match = true
+                while (i + 3 < len) {
+                    if (data[pos + i] != opt[i] || data[pos + i + 1] != opt[i + 1] || 
+                        data[pos + i + 2] != opt[i + 2] || data[pos + i + 3] != opt[i + 3]) {
+                        match = false; break
                     }
-                } else {
-                    var match = true
-                    for (j in 0 until len) {
-                        if (data[pos + j] != opt[j]) { match = false; break }
-                    }
-                    if (match) { pos += len; return hint }
+                    i += 4
                 }
+                if (match) {
+                    while (i < len) {
+                        if (data[pos + i] != opt[i]) { match = false; break }
+                        i++
+                    }
+                }
+                if (match) { pos += len; return hint }
             }
         }
 
@@ -114,9 +114,20 @@ class GhostJsonReader(
             if (idx == hint) continue
             val opt = options.rawBytes[idx]
             if (opt.size == len) {
+                var i = 0
                 var match = true
-                for (j in 0 until len) {
-                    if (data[pos + j] != opt[j]) { match = false; break }
+                while (i + 3 < len) {
+                    if (data[pos + i] != opt[i] || data[pos + i + 1] != opt[i + 1] || 
+                        data[pos + i + 2] != opt[i + 2] || data[pos + i + 3] != opt[i + 3]) {
+                        match = false; break
+                    }
+                    i += 4
+                }
+                if (match) {
+                    while (i < len) {
+                        if (data[pos + i] != opt[i]) { match = false; break }
+                        i++
+                    }
                 }
                 if (match) { pos += len; return idx }
             }

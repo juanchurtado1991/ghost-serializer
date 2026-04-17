@@ -21,6 +21,26 @@ fun GhostJsonReader.nextLong(): Long {
     var value = 0L
     var negative = false
 
+    // Zenith Fast-Path: Positive single/double digit integer
+    if (i + 1 < data.size) {
+        val b1 = data[i].toInt() - '0'.code
+        if (b1 in 0..9) {
+            val b2 = data[i + 1].toInt() and 0xFF
+            if (b2 < 128 && GhostJsonConstants.IS_TERMINATOR[b2]) {
+                pos += 1
+                return b1.toLong()
+            }
+            val b2Digit = b2 - '0'.code
+            if (b2Digit in 0..9 && i + 2 < data.size) {
+                val b3 = data[i + 2].toInt() and 0xFF
+                if (b3 < 128 && GhostJsonConstants.IS_TERMINATOR[b3]) {
+                    pos += 2
+                    return (b1 * 10 + b2Digit).toLong()
+                }
+            }
+        }
+    }
+
     if (data[i] == GhostJsonConstants.MINUS) {
         negative = true
         i++

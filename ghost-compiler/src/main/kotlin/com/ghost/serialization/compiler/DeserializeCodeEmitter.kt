@@ -95,8 +95,8 @@ internal class DeserializeCodeEmitter(
                 varType,
                 initialValue
             )
-            body.addStatement("$STR_VAR_UNDERSCORE${it.kotlinName}$STR_SET_EQ_FALSE")
         }
+        body.addStatement("var _mask = 0L")
 
         emitParseLoop(body)
         emitFieldValidation(body)
@@ -113,7 +113,7 @@ internal class DeserializeCodeEmitter(
             val call = buildCall(prop)
             body.beginControlFlow("$index$STR_ARROW")
             body.addStatement("$STR_UNDERSCORE${prop.kotlinName}$STR_EQ_L", call)
-            body.addStatement("$STR_UNDERSCORE${prop.kotlinName}$STR_SET_EQ_TRUE")
+            body.addStatement("_mask = _mask or (1L shl $index)")
             body.endControlFlow()
         }
 
@@ -257,13 +257,15 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder) {
-        properties.filter { !it.isNullable && !it.hasDefaultValue }.forEach {
-            body.beginControlFlow("$STR_IF_NOT_SET${it.kotlinName}$STR_SET_PAREN")
-            body.addStatement(
-                STR_THROW_S,
-                "$STR_REQ_FIELD_1${it.jsonName}$STR_REQ_FIELD_2"
-            )
-            body.endControlFlow()
+        properties.forEachIndexed { index, it ->
+            if (!it.isNullable && !it.hasDefaultValue) {
+                body.beginControlFlow("if (_mask and (1L shl $index) == 0L)")
+                body.addStatement(
+                    STR_THROW_S,
+                    "$STR_REQ_FIELD_1${it.jsonName}$STR_REQ_FIELD_2"
+                )
+                body.endControlFlow()
+            }
         }
     }
 
@@ -296,26 +298,30 @@ internal class DeserializeCodeEmitter(
 
         body.addStatement("$STR_VAL_RESULT$requiredArgs$STR_PAREN", originalClassName)
 
-        val anyDefaultSetCheck =
-            defaultProps.joinToString(STR_OR) { "$STR_UNDERSCORE${it.kotlinName}$STR_SET" }
-        body.beginControlFlow("$STR_IF_PAREN$anyDefaultSetCheck$STR_PAREN")
-        body.addStatement(STR_RETURN_RESULT_COPY)
-        defaultProps.forEachIndexed { index, prop ->
-            val comma = if (index < defaultProps.size - 1) STR_COMMA else STR_EMPTY
-            val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
-            val valueExpr = if (prop.isNullable) {
-                "$STR_UNDERSCORE${prop.kotlinName}"
-            } else if (isPrimitive) {
-                "$STR_IF_UNDERSCORE${prop.kotlinName}$STR_SET_UNDERSCORE${prop.kotlinName}$STR_ELSE_RESULT${prop.kotlinName}"
-            } else {
-                "$STR_IF_UNDERSCORE${prop.kotlinName}$STR_SET_UNDERSCORE${prop.kotlinName}$STR_BANG_ELSE_RESULT${prop.kotlinName}"
+        if (defaultProps.isNotEmpty()) {
+            val defaultMask = defaultProps.fold(0L) { acc, prop -> acc or (1L shl properties.indexOf(prop)) }
+            body.beginControlFlow("if (_mask and $defaultMask${"L"} != 0L)")
+            body.addStatement(STR_RETURN_RESULT_COPY)
+            defaultProps.forEachIndexed { index, prop ->
+                val propIndex = properties.indexOf(prop)
+                val comma = if (index < defaultProps.size - 1) STR_COMMA else STR_EMPTY
+                val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
+                val valueExpr = if (prop.isNullable) {
+                    "if (_mask and (1L shl $propIndex) != 0L) _${prop.kotlinName} else _result.${prop.kotlinName}"
+                } else if (isPrimitive) {
+                    "if (_mask and (1L shl $propIndex) != 0L) _${prop.kotlinName} else _result.${prop.kotlinName}"
+                } else {
+                    "if (_mask and (1L shl $propIndex) != 0L) _${prop.kotlinName}!! else _result.${prop.kotlinName}"
+                }
+                body.addStatement("$STR_SPACE_SPACE${prop.kotlinName}$STR_EQ_SPACE$valueExpr$comma")
             }
-            body.addStatement("$STR_SPACE_SPACE${prop.kotlinName}$STR_EQ_SPACE$valueExpr$comma")
+            body.addStatement(STR_PAREN)
+            body.nextControlFlow(STR_ELSE)
+            body.addStatement(STR_RETURN_RESULT_FINAL)
+            body.endControlFlow()
+        } else {
+            body.addStatement(STR_RETURN_RESULT_FINAL)
         }
-        body.addStatement(STR_PAREN)
-        body.nextControlFlow(STR_ELSE)
-        body.addStatement(STR_RETURN_RESULT_FINAL)
-        body.endControlFlow()
     }
 
     private fun serializerName(type: KSType): ClassName = with(type.declaration as KSClassDeclaration) {
