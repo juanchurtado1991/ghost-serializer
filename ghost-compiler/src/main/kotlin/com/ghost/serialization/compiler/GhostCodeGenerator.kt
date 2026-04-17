@@ -77,8 +77,9 @@ internal class GhostCodeGenerator(
         val names = properties.map { it.jsonName }
         val (shift, multiplier) = findPerfectHash(names)
 
+        val optionsClass = readerClass.peerClass(STR_OPTIONS_CLASS)
         val optionsBuilder = CodeBlock.builder()
-            .add("%T.Options.of($shift, $multiplier,\n", readerClass)
+            .add(STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
             .indent()
 
         properties.forEachIndexed { index, prop ->
@@ -102,6 +103,10 @@ internal class GhostCodeGenerator(
 		)
 
         val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
+        val fileSpecBuilder = FileSpec.builder(packageName, serializerName)
+            .addImport(readerClass.packageName, STR_OPTIONS_CLASS)
+            .addImport(PKG_PARSER, STR_GHOST_JSON_READER)
+            .addImport(PKG_WRITER, STR_GHOST_JSON_WRITER)
         
         val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
             .addKdoc(STR_KDOC_HIGH_PERF, originalClassName)
@@ -113,7 +118,7 @@ internal class GhostCodeGenerator(
             .addProperty(
                 PropertySpec.builder(
                     STR_OPTIONS,
-                    readerClass.nestedClass(STR_OPTIONS_CLASS)
+                    readerClass.peerClass(STR_OPTIONS_CLASS)
                 )
                     .addModifiers(KModifier.PRIVATE)
                     .initializer(optionsBuilder.build())
@@ -122,7 +127,7 @@ internal class GhostCodeGenerator(
 
         if (isEnum && enumValues != null) {
             val enumOptionsBuilder = CodeBlock.builder()
-                .add(STR_OPTIONS_OF, readerClass)
+                .add(STR_OPTIONS_OF, optionsClass)
                 .indent()
             
             val values = enumValues.values.toList()
@@ -133,7 +138,7 @@ internal class GhostCodeGenerator(
             enumOptionsBuilder.unindent().add(STR_PAREN_CLOSE)
 
             typeSpecBuilder.addProperty(
-                PropertySpec.builder(STR_ENUM_OPTIONS, readerClass.nestedClass(STR_OPTIONS_CLASS))
+                PropertySpec.builder(STR_ENUM_OPTIONS, readerClass.peerClass(STR_OPTIONS_CLASS))
                     .addModifiers(KModifier.PRIVATE)
                     .initializer(enumOptionsBuilder.build())
                     .build()
@@ -208,7 +213,8 @@ internal class GhostCodeGenerator(
         private const val STR_PEEK_STRING_FIELD = "peekStringField"
         private const val STR_GHOST_JSON_EXCEPTION = "GhostJsonException"
         private const val STR_BYTESTRING_IMPORT = "ByteString.Companion.encodeUtf8"
-        private const val STR_OPTIONS_OF = "%T.Options.of(\n"
+        private const val STR_OPTIONS_OF = "%T.of(\n"
+        private const val STR_OPTIONS_OF_SEEDS = "%T.of(%L, %L,\n"
         private const val STR_COMMA = ","
         private const val STR_EMPTY = ""
         private const val STR_FORMAT_S = "%S"

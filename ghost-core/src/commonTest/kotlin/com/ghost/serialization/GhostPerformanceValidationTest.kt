@@ -1,4 +1,5 @@
 package com.ghost.serialization
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeKeySeparator
@@ -47,7 +48,7 @@ class GhostPerformanceValidationTest {
 
     @Test
     fun testFieldTrieLogicCorrectness() {
-        val options = GhostJsonReader.Options.of("id", "name", "email", "active")
+        val options = Options.of("id", "name", "email", "active")
         val json = """{"email": "ghost@standard.com", "id": 1}""".encodeToByteArray()
         val reader = GhostJsonReader(json)
         

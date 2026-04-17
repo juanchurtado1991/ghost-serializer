@@ -1,4 +1,5 @@
 package com.ghost.serialization.core
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.skipCommaIfPresent
 import com.ghost.serialization.core.parser.nextNonWhitespace
@@ -230,7 +231,7 @@ class GhostCrashProofTest {
 
     @Test
     fun readsObjectWithMultipleArrays() {
-        val options = GhostJsonReader.Options.of("a", "b")
+        val options = Options.of("a", "b")
         val json = "{\"a\":[1,2],\"b\":[3,4]}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -251,7 +252,7 @@ class GhostCrashProofTest {
     fun testSegmentBoundarySplitting() {
         // Force a key selection at the end of a buffer segment
         val key = "very_long_key_to_force_segment_switching_in_okio_buffer"
-        val options = GhostJsonReader.Options.of(key)
+        val options = Options.of(key)
         val json = "{\"$key\":\"value\"}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -263,7 +264,7 @@ class GhostCrashProofTest {
 
     @Test
     fun selectNameWithEmptyOptionsSkipsAllFields() {
-        val options = GhostJsonReader.Options.of()
+        val options = Options.of()
         val json = "{\"a\":1,\"b\":2}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -280,7 +281,7 @@ class GhostCrashProofTest {
 
     @Test
     fun selectNameWithSingleOption() {
-        val options = GhostJsonReader.Options.of("only")
+        val options = Options.of("only")
         val json = "{\"only\":\"found\"}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -380,7 +381,7 @@ class GhostCrashProofTest {
 
     @Test
     fun skipsObjectContainingBracesInStrings() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = "{\"junk\":{\"msg\":\"value with { and } inside\"},\"id\":1}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -394,7 +395,7 @@ class GhostCrashProofTest {
 
     @Test
     fun skipsArrayContainingBracketsInStrings() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = "{\"junk\":[\"contains [ and ]\"],\"id\":2}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -408,7 +409,7 @@ class GhostCrashProofTest {
 
     @Test
     fun skipsObjectContainingEscapedQuotesInStrings() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = "{\"junk\":{\"msg\":\"escaped \\\"quotes\\\" and {braces}\"},\"id\":3}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -460,7 +461,7 @@ class GhostCrashProofTest {
 
     @Test
     fun selectNameWithThreePrefixVariants() {
-        val options = GhostJsonReader.Options.of(
+        val options = Options.of(
             "user", "userId", "userIds", "userName"
         )
         val json = "{\"userIds\":[1],\"userName\":\"g\",\"userId\":42,\"user\":\"obj\"}"

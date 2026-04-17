@@ -60,15 +60,45 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
         return this
     }
 
-    fun writeName(index: Int, options: com.ghost.serialization.core.parser.GhostJsonReader.Options): GhostJsonWriter {
+    fun writeName(index: Int, options: com.ghost.serialization.core.parser.Options): GhostJsonWriter {
         if (needsComma) {
             sink.write(options.writerHeadersWithComma[index])
         } else {
             sink.write(options.writerHeaders[index])
-            needsComma = true
         }
-        needsComma = false // Reset for value
+        needsComma = false
         return this
+    }
+
+    // Zenith Fused Field Writing
+    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Int) {
+        writeName(index, options)
+        value(value)
+    }
+
+    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Long) {
+        writeName(index, options)
+        value(value)
+    }
+
+    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: String) {
+        writeName(index, options)
+        value(value)
+    }
+
+    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Boolean) {
+        writeName(index, options)
+        value(value)
+    }
+
+    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Double) {
+        writeName(index, options)
+        value(value)
+    }
+
+    fun writeField(index: Int, options: com.ghost.serialization.core.parser.Options, value: Float) {
+        writeName(index, options)
+        value(value)
     }
 
     fun value(text: String): GhostJsonWriter {
@@ -82,16 +112,38 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
 
     fun value(number: Int): GhostJsonWriter {
         appendSeparator()
-        sink.writeDecimalLong(number.toLong())
+        writeDecimalLong(number.toLong())
         needsComma = true
         return this
     }
 
     fun value(number: Long): GhostJsonWriter {
         appendSeparator()
-        sink.writeDecimalLong(number)
+        writeDecimalLong(number)
         needsComma = true
         return this
+    }
+
+    private fun writeDecimalLong(value: Long) {
+        if (value == Long.MIN_VALUE) {
+            sink.writeUtf8("-9223372036854775808")
+            return
+        }
+        var v = value
+        if (v < 0) {
+            sink.writeByte('-'.code)
+            v = -v
+        }
+        if (v == 0L) {
+            sink.writeByte('0'.code)
+            return
+        }
+        var i = 20
+        while (v > 0) {
+            scratch[--i] = ((v % 10) + 48).toByte()
+            v /= 10
+        }
+        sink.write(scratch, i, 20 - i)
     }
 
     fun value(number: Double): GhostJsonWriter {
@@ -178,18 +230,33 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
     }
 
     private fun writeEscaped(text: String) {
-        var last = 0
         val length = text.length
+        if (length == 0) return
+
+        // Zenith Fast Path: Check if any character needs escaping
+        var needsEscape = false
+        for (i in 0 until length) {
+            val c = text[i].code
+            if (c < 32 || c == 34 || c == 92) {
+                needsEscape = true
+                break
+            }
+        }
+
+        if (!needsEscape) {
+            sink.writeUtf8(text)
+            return
+        }
+
+        var last = 0
         val escapeTable = GhostJsonConstants.BLOCK_ESCAPE
         
         for (i in 0 until length) {
             val c = text[i]
             val code = c.code
             
-            // Fast path for non-escaped characters
             if (code >= 128 || escapeTable[code].toInt() == 0) continue
 
-            // Write accumulated unescaped segment
             if (i > last) sink.writeUtf8(text, last, i)
             
             val replacement = when (c) {
@@ -211,7 +278,6 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
             last = i + 1
         }
         
-        // Write final segment
         if (length > last) sink.writeUtf8(text, last, length)
     }
 

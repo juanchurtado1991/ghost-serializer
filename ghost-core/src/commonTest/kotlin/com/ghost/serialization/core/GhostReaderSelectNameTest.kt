@@ -1,4 +1,5 @@
 package com.ghost.serialization.core
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.skipCommaIfPresent
 import com.ghost.serialization.core.parser.nextNonWhitespace
@@ -40,7 +41,7 @@ class GhostReaderSelectNameTest {
 
     @Test
     fun selectNameDistinguishesPrefixFields() {
-        val options = GhostJsonReader.Options.of("score", "scores", "name", "namespace")
+        val options = Options.of("score", "scores", "name", "namespace")
         val json = "{\"scores\":10,\"score\":5,\"namespace\":\"ns\",\"name\":\"n\"}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -73,7 +74,7 @@ class GhostReaderSelectNameTest {
 
     @Test
     fun selectNameReturnsMinusTwoForUnknownFields() {
-        val options = GhostJsonReader.Options.of("id", "name")
+        val options = Options.of("id", "name")
         val json = "{\"unknown\":\"skip_me\",\"id\":1}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -94,7 +95,7 @@ class GhostReaderSelectNameTest {
 
     @Test
     fun skipsComplexUnknownValues() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = "{\"nested\":{\"a\":\"b\",\"c\":\"d\"},\"id\":42}"
         val reader = readerOf(json)
         reader.beginObject()
@@ -186,7 +187,7 @@ class GhostReaderSelectNameTest {
     @Test
     fun readsObjectWithMultipleArrays() {
         val json = "{\"a\":[1,2],\"b\":[\"x\",\"y\"]}"
-        val options = GhostJsonReader.Options.of("a", "b")
+        val options = Options.of("a", "b")
         val reader = readerOf(json)
         reader.beginObject()
 

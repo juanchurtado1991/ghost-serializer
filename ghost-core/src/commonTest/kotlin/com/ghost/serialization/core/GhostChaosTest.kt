@@ -1,4 +1,5 @@
 package com.ghost.serialization.core
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.skipCommaIfPresent
 import com.ghost.serialization.core.parser.nextNonWhitespace

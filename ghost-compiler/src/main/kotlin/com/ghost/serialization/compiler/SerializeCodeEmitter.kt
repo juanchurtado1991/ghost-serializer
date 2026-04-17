@@ -83,16 +83,30 @@ internal class SerializeCodeEmitter(
         val accessor = "$STR_VALUE_DOT${prop.kotlinName}"
         val nameIndex = properties.indexOf(prop)
 
+        val type = prop.type.declaration.qualifiedName?.asString()
+        val canUseFused = when (type) {
+            "kotlin.Int", "kotlin.Long", "kotlin.String", "kotlin.Boolean", "kotlin.Double", "kotlin.Float" -> true
+            else -> false
+        }
+
         if (prop.isNullable) {
             code.beginControlFlow(STR_IF_ACCESSOR_NOT_NULL, accessor)
-            code.addStatement(STR_WRITER_NAME_OPTIONS_INDEX, nameIndex)
-            emitValue(code, prop, accessor)
+            if (canUseFused) {
+                code.addStatement("writer.writeField(%L, OPTIONS, %L)", nameIndex, accessor)
+            } else {
+                code.addStatement(STR_WRITER_NAME_OPTIONS_INDEX, nameIndex)
+                emitValue(code, prop, accessor)
+            }
             code.endControlFlow()
             return
         }
 
-        code.addStatement(STR_WRITER_NAME_OPTIONS_INDEX, nameIndex)
-        emitValue(code, prop, accessor)
+        if (canUseFused) {
+            code.addStatement("writer.writeField(%L, OPTIONS, %L)", nameIndex, accessor)
+        } else {
+            code.addStatement(STR_WRITER_NAME_OPTIONS_INDEX, nameIndex)
+            emitValue(code, prop, accessor)
+        }
     }
 
     private fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: String) {

@@ -1,4 +1,5 @@
 package com.ghost.serialization.core
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.skipCommaIfPresent
 import com.ghost.serialization.core.parser.nextNonWhitespace
@@ -42,7 +43,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsUnknownObjectValue() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"extra":{"a":1},"id":42}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -56,7 +57,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsUnknownArrayValue() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"arr":[1,"two",null,true,[]],"id":99}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -70,7 +71,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsUnknownStringValue() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"text":"hello world","id":7}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -84,7 +85,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsUnknownBooleanValue() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"flag":true,"id":8}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -98,7 +99,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsUnknownNullValue() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"nothing":null,"id":9}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -112,7 +113,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsUnknownNumberValue() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"count":12345,"id":10}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -126,7 +127,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsMultipleConsecutiveUnknownFields() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"a":"x","b":true,"c":[1],"d":null,"e":{},"id":1}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -142,7 +143,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun skipsDeeplyNestedUnknownObject() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"deep":{"l1":{"l2":{"l3":{"l4":"bottom"}}}},"id":77}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -178,7 +179,7 @@ class GhostReaderAdvancedTest {
     @Test
     fun readsConsecutiveNullValues() {
         val json = """{"a":null,"b":null,"c":null}"""
-        val options = GhostJsonReader.Options.of("a", "b", "c")
+        val options = Options.of("a", "b", "c")
         val reader = readerOf(json)
         reader.beginObject()
 
@@ -227,7 +228,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun strictModeThrowsOnUnknownField() {
-        val options = GhostJsonReader.Options.of("id")
+        val options = Options.of("id")
         val json = """{"unknown":"val","id":1}"""
         val reader = GhostJsonReader(
             Buffer().writeUtf8(json),
@@ -285,7 +286,7 @@ class GhostReaderAdvancedTest {
         val reader = readerOf(json)
         reader.beginObject()
         val ex = assertFailsWith<GhostJsonException> {
-            reader.selectName(GhostJsonReader.Options.of("v"))
+            reader.selectName(Options.of("v"))
             reader.consumeKeySeparator()
             reader.nextInt()
             reader.endObject() // This MUST fail
@@ -309,7 +310,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun selectNameWithSingleCharFields() {
-        val options = GhostJsonReader.Options.of("a", "b", "c")
+        val options = Options.of("a", "b", "c")
         val json = """{"b":2,"c":3,"a":1}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -328,7 +329,7 @@ class GhostReaderAdvancedTest {
     @Test
     fun selectNameWithLongFieldNames() {
         val longName = "thisIsAVeryLongFieldNameThatExceedsNormalLengths"
-        val options = GhostJsonReader.Options.of(longName)
+        val options = Options.of(longName)
         val json = """{"$longName":"found"}"""
         val reader = readerOf(json)
         reader.beginObject()
@@ -340,7 +341,7 @@ class GhostReaderAdvancedTest {
 
     @Test
     fun selectNameWithUnderscoreFields() {
-        val options = GhostJsonReader.Options.of("user_id", "user_name", "user_ids")
+        val options = Options.of("user_id", "user_name", "user_ids")
         val json = """{"user_ids":[1,2],"user_id":42,"user_name":"ghost"}"""
         val reader = readerOf(json)
         reader.beginObject()

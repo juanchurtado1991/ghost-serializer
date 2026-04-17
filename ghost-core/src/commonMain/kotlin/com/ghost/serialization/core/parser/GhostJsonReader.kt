@@ -3,6 +3,54 @@ package com.ghost.serialization.core.parser
 import okio.BufferedSource
 import com.ghost.serialization.core.exception.GhostJsonException
 
+class Options(
+    val strings: Array<String>,
+    val byteStrings: Array<okio.ByteString>,
+    val rawBytes: Array<ByteArray>,
+    val writerHeaders: Array<okio.ByteString>,
+    val writerHeadersWithComma: Array<okio.ByteString>,
+    @PublishedApi internal val shift: Int,
+    @PublishedApi internal val multiplier: Int
+) {
+    @PublishedApi internal val dispatch = IntArray(1024) { -1 }
+
+    init {
+        for (i in rawBytes.indices) {
+            val bytes = rawBytes[i]
+            if (bytes.isNotEmpty()) {
+                val h = (((bytes[0].toInt() and 0xFF) * multiplier + bytes.size) shr shift) and 1023
+                if (dispatch[h] == -1) {
+                    dispatch[h] = i
+                }
+            }
+        }
+    }
+
+    companion object {
+        fun of(vararg names: String): Options = of(0, 31, *names)
+
+        fun of(shift: Int, multiplier: Int, vararg names: String): Options {
+            val byteStrings = Array(names.size) {
+                okio.ByteString.Companion.run { names[it].encodeUtf8() }
+            }
+            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
+            val strings = Array(names.size) { names[it] }
+
+            val writerHeaders = Array(names.size) {
+                okio.ByteString.Companion.run { "\"${names[it]}\":".encodeUtf8() }
+            }
+            val writerHeadersWithComma = Array(names.size) {
+                okio.ByteString.Companion.run { ",\"${names[it]}\":".encodeUtf8() }
+            }
+
+            return Options(
+                strings, byteStrings, rawBytes, writerHeaders, writerHeadersWithComma,
+                shift, multiplier
+            )
+        }
+    }
+}
+
 class GhostJsonReader(
     @PublishedApi internal val data: ByteArray,
     internal val maxDepth: Int = 255,
@@ -15,54 +63,6 @@ class GhostJsonReader(
     @PublishedApi internal var depth = 0
     val path: String get() = GhostJsonConstants.PATH_ROOT
     internal val stringPool = arrayOfNulls<String>(GhostJsonConstants.STR_POOL_SIZE)
-
-    class Options private constructor(
-        val strings: Array<String>,
-        val byteStrings: Array<okio.ByteString>,
-        val rawBytes: Array<ByteArray>,
-        val writerHeaders: Array<okio.ByteString>,
-        val writerHeadersWithComma: Array<okio.ByteString>,
-        @PublishedApi internal val shift: Int,
-        @PublishedApi internal val multiplier: Int
-    ) {
-        @PublishedApi internal val dispatch = IntArray(1024) { -1 }
-
-        init {
-            for (i in rawBytes.indices) {
-                val bytes = rawBytes[i]
-                if (bytes.isNotEmpty()) {
-                    val h = (((bytes[0].toInt() and 0xFF) * multiplier + bytes.size) shr shift) and 1023
-                    if (dispatch[h] == -1) {
-                        dispatch[h] = i
-                    }
-                }
-            }
-        }
-
-        companion object {
-            fun of(vararg names: String): Options = of(0, 31, *names)
-
-            fun of(shift: Int, multiplier: Int, vararg names: String): Options {
-                val byteStrings = Array(names.size) {
-                    okio.ByteString.Companion.run { names[it].encodeUtf8() }
-                }
-                val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
-                val strings = Array(names.size) { names[it] }
-
-                val writerHeaders = Array(names.size) {
-                    okio.ByteString.Companion.run { "\"${names[it]}\":".encodeUtf8() }
-                }
-                val writerHeadersWithComma = Array(names.size) {
-                    okio.ByteString.Companion.run { ",\"${names[it]}\":".encodeUtf8() }
-                }
-
-                return Options(
-                    strings, byteStrings, rawBytes, writerHeaders, writerHeadersWithComma,
-                    shift, multiplier
-                )
-            }
-        }
-    }
 
     @PublishedApi internal fun internalSkip(n: Int) {
         pos += n
@@ -288,9 +288,20 @@ class GhostJsonReader(
                 pos++; return cached
             }
         }
+
+        // Zenith Fast Path: Check if string is ASCII-only
+        var isAscii = true
+        for (i in 0 until len) {
+            if (data[start + i].toInt() < 0) {
+                isAscii = false
+                break
+            }
+        }
+
         val result = data.decodeToString(start, start + len)
         stringPool[poolIndex] = result
-        pos++; return result
+        pos++
+        return result
     }
 
     private fun readStringWithEscapes(start: Int): String {
@@ -386,20 +397,19 @@ class GhostJsonReader(
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun skipWhitespace() {
         while (pos < data.size) {
-            val b = data[pos]
+            val b = data[pos].toInt() and 0xFF
             if (b > 32) return
-            pos++
             
-            // Apex Unrolling: Skip more if still whitespace
-            if (pos < data.size && data[pos] <= 32) {
+            if (b == 32 || b == 10 || b == 13 || b == 9) {
                 pos++
-                if (pos < data.size && data[pos] <= 32) {
-                    pos++
-                    if (pos < data.size && data[pos] <= 32) {
-                        pos++
+                if (pos + 3 < data.size) {
+                    if (data[pos].toInt() <= 32 && data[pos + 1].toInt() <= 32 && data[pos + 2].toInt() <= 32) {
+                        pos += 3
                     }
                 }
+                continue
             }
+            pos++
         }
     }
 

@@ -1,4 +1,5 @@
 package com.ghost.serialization.core
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.skipCommaIfPresent
 import com.ghost.serialization.core.parser.nextNonWhitespace
@@ -49,7 +50,7 @@ class GhostStressAuditTest {
         
         val reader1 = GhostJsonReader(Buffer().writeUtf8(jsonString))
         reader1.beginObject()
-        assertEquals(0, reader1.selectName(GhostJsonReader.Options.of("k")))
+        assertEquals(0, reader1.selectName(Options.of("k")))
         reader1.consumeKeySeparator()
         assertEquals(stringPadding + "BC", reader1.nextString())
         reader1.endObject()

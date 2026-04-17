@@ -1,4 +1,5 @@
 package com.ghost.serialization
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import kotlin.test.Test
@@ -14,7 +15,7 @@ class FieldTrieLogicTest {
         // Skip '{'
         reader.beginObject()
         
-        val options = GhostJsonReader.Options.of("id", "name", "species")
+        val options = Options.of("id", "name", "species")
         
         // 1. Select "id"
         val index1 = reader.selectName(options)
@@ -36,7 +37,7 @@ class FieldTrieLogicTest {
         val reader = GhostJsonReader(json)
         reader.beginObject()
         
-        val options = GhostJsonReader.Options.of("id", "name")
+        val options = Options.of("id", "name")
         val index = reader.selectName(options)
         assertEquals(-2, index, "Should return -2 for unknown field (Industrial Constant)")
     }

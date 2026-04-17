@@ -1,4 +1,5 @@
 package com.ghost.serialization
+import com.ghost.serialization.core.parser.Options
 
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeKeySeparator
@@ -23,7 +24,7 @@ class GhostResilienceTest {
         // This simulates a generated serializer failing at a specific point
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
-            reader.selectName(GhostJsonReader.Options.of("name"))
+            reader.selectName(Options.of("name"))
             reader.consumeKeySeparator()
             reader.nextString() // name
             
@@ -46,7 +47,7 @@ class GhostResilienceTest {
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
             while (reader.hasNext()) {
-                val index = reader.selectName(GhostJsonReader.Options.of("id", "name"))
+                val index = reader.selectName(Options.of("id", "name"))
                 reader.consumeKeySeparator()
                 when (index) {
                     0 -> reader.nextInt()
@@ -66,7 +67,7 @@ class GhostResilienceTest {
         
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
-            val opts = GhostJsonReader.Options.of("id")
+            val opts = Options.of("id")
             assertEquals(0, reader.selectName(opts))
             reader.consumeKeySeparator()
             reader.nextInt()
