@@ -106,13 +106,12 @@ internal class DeserializeCodeEmitter(
     private fun emitParseLoop(body: CodeBlock.Builder) {
         body.addStatement(STR_BEGIN_OBJECT)
         body.beginControlFlow(STR_WHILE_TRUE)
-        body.addStatement(STR_SELECT_NAME)
+        body.addStatement(STR_SELECT_NAME_AND_CONSUME)
         body.beginControlFlow(STR_WHEN_INDEX)
 
         properties.forEachIndexed { index, prop ->
             val call = buildCall(prop)
             body.beginControlFlow("$index$STR_ARROW")
-            body.addStatement(STR_CONSUME_KEY_SEP)
             body.addStatement("$STR_UNDERSCORE${prop.kotlinName}$STR_EQ_L", call)
             body.addStatement("$STR_UNDERSCORE${prop.kotlinName}$STR_SET_EQ_TRUE")
             body.endControlFlow()
@@ -350,7 +349,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_SET_EQ_FALSE = "Set = false"
         private const val STR_BEGIN_OBJECT = "reader.beginObject()"
         private const val STR_WHILE_TRUE = "while (true)"
-        private const val STR_SELECT_NAME = "val index = reader.selectName(OPTIONS)"
+        private const val STR_SELECT_NAME_AND_CONSUME = "val index = reader.selectNameAndConsume(OPTIONS)"
         private const val STR_WHEN_INDEX = "when (index)"
         private const val STR_ARROW = " ->"
         private const val STR_CONSUME_KEY_SEP = "reader.consumeKeySeparator()"
