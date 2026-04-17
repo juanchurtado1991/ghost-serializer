@@ -61,6 +61,13 @@ class RickAndMortyApi {
                 val netEnd = TimeSource.Monotonic.markNow()
                 totalNetworkTime += (netEnd - netStart).inWholeMicroseconds / 1000.0
                 
+                // Silent Warm-up (5 iterations to induce JIT)
+                repeat(5) {
+                    Ghost.deserialize<CharacterResponse>(rawBytes)
+                    parseWithMoshi(rawBytes)
+                    parseWithKSer(rawBytes)
+                }
+                
                 // GHOST Benchmark
                 val ghostStart = TimeSource.Monotonic.markNow()
                 val ghostMemStart = getCurrentThreadAllocatedBytes()

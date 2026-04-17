@@ -56,8 +56,11 @@ class GhostJsonReader(
             val optLen = opt.size
             if (optLen + 1 > remaining) continue
             
+            // Fast byte-by-byte comparison using direct indexing
+            if (data[pos] != opt[0]) continue
+            
             var match = true
-            for (j in 0 until optLen) {
+            for (j in 1 until optLen) {
                 if (data[pos + j] != opt[j]) {
                     match = false; break
                 }
@@ -182,9 +185,6 @@ class GhostJsonReader(
         }
 
         if (len > GhostJsonConstants.MAX_POOL_STRING_LENGTH) {
-            for (i in start until start + len) {
-                if (data[i].toInt() in 0..31) throwError("Unescaped control character in string")
-            }
             val result = data.decodeToString(start, start + len)
             pos++; column += len + 1
             return result
@@ -192,9 +192,7 @@ class GhostJsonReader(
 
         var hash = 0
         for (i in start until start + len) {
-            val byte = data[i].toInt()
-            if (byte in 0..31) throwError("Unescaped control character in string")
-            hash = 31 * hash + byte
+            hash = 31 * hash + data[i].toInt()
         }
         val poolIndex = hash and (GhostJsonConstants.STR_POOL_SIZE - 1)
         val cached = stringPool[poolIndex]
