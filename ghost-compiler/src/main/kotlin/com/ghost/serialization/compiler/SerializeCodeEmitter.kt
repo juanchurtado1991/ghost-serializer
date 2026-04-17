@@ -161,7 +161,7 @@ internal class SerializeCodeEmitter(
 
     private fun serializerName(type: KSType): ClassName = with(type.declaration as KSClassDeclaration) {
         val className = toClassName()
-        return ClassName(className.packageName, "${className.simpleNames.joinToString("_")}$STR_SERIALIZER_SUFFIX")
+        return ClassName(className.packageName, "${className.simpleNames.joinToString(STR_UNDERSCORE)}$STR_SERIALIZER_SUFFIX")
     }
 
     companion object {
@@ -182,6 +182,7 @@ internal class SerializeCodeEmitter(
         private const val STR_WRITER_NAME_OPTIONS_NULL =
             "writer.name(OPTIONS.byteStrings[%L]).nullValue()"
         private const val STR_DOT = "."
+        private const val STR_UNDERSCORE = "_"
         private const val STR_T_SERIALIZE_WRITER_ACC = "%T.serialize(writer, %L)"
         private const val STR_WRITER_VALUE_VALUE_NAME = "writer.value(value.name)"
         private const val STR_WRITER_VALUE_ACC_NAME = "writer.value(%L.name)"

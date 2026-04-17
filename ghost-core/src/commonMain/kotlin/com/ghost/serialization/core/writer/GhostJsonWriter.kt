@@ -44,18 +44,18 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
 
     fun name(key: String): GhostJsonWriter {
         appendSeparator()
-        sink.writeByte('"'.code)
+        sink.writeByte(GhostJsonConstants.QUOTE.toInt())
         writeEscaped(key)
-        sink.writeUtf8("\":")
+        sink.writeUtf8(GhostJsonConstants.COLON_QUOTE)
         needsComma = false
         return this
     }
 
     fun name(key: okio.ByteString): GhostJsonWriter {
         appendSeparator()
-        sink.writeByte('"'.code)
+        sink.writeByte(GhostJsonConstants.QUOTE.toInt())
         sink.write(key)
-        sink.writeUtf8("\":")
+        sink.writeUtf8(GhostJsonConstants.COLON_QUOTE)
         needsComma = false
         return this
     }
@@ -95,7 +95,7 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
     }
 
     fun value(number: Double): GhostJsonWriter {
-        if (!number.isFinite()) throw GhostJsonException("JSON does not support non-finite numbers like NaN or Infinity", 0, 0)
+        if (!number.isFinite()) throw GhostJsonException(GhostJsonConstants.ERR_NON_FINITE, 0, 0)
         appendSeparator()
         
         var count = 0
@@ -217,15 +217,15 @@ class GhostJsonWriter(@PublishedApi internal val sink: BufferedSink) {
 
     private fun checkDepth() {
         if (depth >= MAX_DEPTH) {
-            throw GhostJsonException("Reached maximum recursion depth ($MAX_DEPTH)", 0, 0)
+            throw GhostJsonException("${GhostJsonConstants.ERR_DEPTH_EXCEEDED} ($MAX_DEPTH)", 0, 0)
         }
     }
 
 
     private fun writeUnicodeEscape(char: Char) {
-        sink.writeUtf8("\\u")
+        sink.writeUtf8(GhostJsonConstants.UNICODE_PREFIX)
         val hex = char.code.toString(HEX_RADIX)
-        repeat(UNICODE_PAD_LENGTH - hex.length) { sink.writeUtf8("0") }
+        repeat(UNICODE_PAD_LENGTH - hex.length) { sink.writeUtf8(GhostJsonConstants.ZERO_CHAR) }
         sink.writeUtf8(hex)
     }
 

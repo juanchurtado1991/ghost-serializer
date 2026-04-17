@@ -56,20 +56,22 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             properties
                 .filterNot { it.simpleName.asString() in listOf("name", "ordinal") }
                 .map { prop -> buildPropertyModel(prop, parameters).copy(enumValues = enumValues) }
-                .let { 
-                    if (it.isEmpty()) {
-                        listOf(GhostPropertyModel(
-                            kotlinName = "name",
-                            jsonName = "name",
-                            type = classDeclaration.asType(emptyList()),
-                            typeName = classDeclaration.toClassName(),
-                            isNullable = false,
-                            isGhost = false,
-                            isList = false,
-                            isEnum = true,
-                            enumValues = enumValues
-                        ))
-                    } else it
+                .let {
+                    it.ifEmpty {
+                        listOf(
+                            GhostPropertyModel(
+                                kotlinName = "name",
+                                jsonName = "name",
+                                type = classDeclaration.asType(emptyList()),
+                                typeName = classDeclaration.toClassName(),
+                                isNullable = false,
+                                isGhost = false,
+                                isList = false,
+                                isEnum = true,
+                                enumValues = enumValues
+                            )
+                        )
+                    }
                 }
         } else {
             properties.map { prop -> 
@@ -196,14 +198,14 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         // 2. SerialName (kotlinx compatibility)
         val serialName = annotations.find { 
             val name = it.shortName.asString()
-            name == SERIAL_NAME || name.endsWith("SerialName")
+            name == SERIAL_NAME || name.endsWith(STR_SERIAL_NAME_SUFFIX)
         }
         if (serialName != null) {
-            val arg = serialName.arguments.find { it.name?.asString() == "value" } ?: serialName.arguments.firstOrNull()
-            return arg?.value?.toString() ?: (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString() ?: ""
+            val arg = serialName.arguments.find { it.name?.asString() == STR_VALUE_ARG } ?: serialName.arguments.firstOrNull()
+            return arg?.value?.toString() ?: (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString() ?: STR_EMPTY
         }
 
-        return (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString() ?: ""
+        return (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString() ?: STR_EMPTY
     }
 
     private fun isEnumType(type: KSType): Boolean {
@@ -244,6 +246,9 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         private const val LIST_QUALIFIED = "kotlin.collections.List"
         private const val MAP_QUALIFIED = "kotlin.collections.Map"
         private const val STRING_QUALIFIED = "kotlin.String"
+        private const val STR_VALUE_ARG = "value"
+        private const val STR_SERIAL_NAME_SUFFIX = "SerialName"
+        private const val STR_EMPTY = ""
         private val PRIMITIVE_ARRAYS = setOf(
             STR_TYPE_INT_ARRAY,
             STR_TYPE_LONG_ARRAY,

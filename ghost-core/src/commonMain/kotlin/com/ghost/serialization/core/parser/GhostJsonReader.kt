@@ -15,7 +15,7 @@ class GhostJsonReader(
     @PublishedApi internal var line = 1
     @PublishedApi internal var column = 1
     @PublishedApi internal var depth = 0
-    val path: String get() = "$" 
+    val path: String get() = GhostJsonConstants.PATH_ROOT
     internal val stringPool = arrayOfNulls<String>(GhostJsonConstants.STR_POOL_SIZE)
 
     class Options private constructor(
@@ -146,7 +146,7 @@ class GhostJsonReader(
         
         if (strictMode) {
             val fileNameBody = readStringBody()
-            throwError("Unknown field in strict mode: '$fileNameBody'")
+            throwError("${GhostJsonConstants.STRICT_MODE_UNKNOWN_FIELD}'$fileNameBody'")
         }
         
         skipQuotedStringBody()
@@ -192,7 +192,7 @@ class GhostJsonReader(
 
     fun nextBoolean(): Boolean {
         skipWhitespace()
-        if (pos + 4 > data.size) throwError("Truncated literal at end of source")
+        if (pos + 4 > data.size) throwError(GhostJsonConstants.TRUNCATED_LITERAL_ERROR)
         val b = data[pos]
         if (b == GhostJsonConstants.TRUE_CHAR) {
             if (data[pos + 1] == 'r'.code.toByte() && 
@@ -201,7 +201,7 @@ class GhostJsonReader(
                 internalSkip(4); return true
             }
         } else if (b == GhostJsonConstants.FALSE_CHAR) {
-            if (pos + 5 > data.size) throwError("Truncated literal at end of source")
+            if (pos + 5 > data.size) throwError(GhostJsonConstants.TRUNCATED_LITERAL_ERROR)
             if (data[pos + 1] == 'a'.code.toByte() && 
                 data[pos + 2] == 'l'.code.toByte() && 
                 data[pos + 3] == 's'.code.toByte() && 
@@ -214,7 +214,7 @@ class GhostJsonReader(
 
     fun nextNull(): Nothing? {
         skipWhitespace()
-        if (pos + 4 > data.size) throwError("Truncated literal at end of source")
+        if (pos + 4 > data.size) throwError(GhostJsonConstants.TRUNCATED_LITERAL_ERROR)
         if (data[pos] == 'n'.code.toByte() && 
             data[pos + 1] == 'u'.code.toByte() && 
             data[pos + 2] == 'l'.code.toByte() && 
@@ -237,7 +237,7 @@ class GhostJsonReader(
                 val len = pos - start
                 return readPooledString(start, len)
             }
-            if (b.toInt() in 0..31) throwError("Unescaped control character in string")
+            if (b.toInt() in 0..31) throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             if (b == GhostJsonConstants.BACKSLASH) return readStringWithEscapes(start)
             pos++
         }
@@ -291,7 +291,7 @@ class GhostJsonReader(
             if (b == GhostJsonConstants.QUOTE) {
                 pos++; column++; return out.toString()
             }
-            if (b.toInt() in 0..31) throwError("Unescaped control character in string")
+            if (b.toInt() in 0..31) throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             if (b == GhostJsonConstants.BACKSLASH) {
                 pos++; column++
                 val c = readEscapeCode()
@@ -316,7 +316,7 @@ class GhostJsonReader(
     }
 
     private fun readEscapeCode(): Int {
-        if (pos >= data.size) throwError("Unterminated escape sequence")
+        if (pos >= data.size) throwError(GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR)
         val b = data[pos++]; column++
         return when (b.toInt().toChar()) {
             'n' -> '\n'.code; 't' -> '\t'.code; 'r' -> '\r'.code
@@ -328,7 +328,7 @@ class GhostJsonReader(
     }
 
     private fun readUnicodeCode(): Int {
-        if (pos + 4 > data.size) throwError("Unterminated unicode escape")
+        if (pos + 4 > data.size) throwError(GhostJsonConstants.UNTERMINATED_UNICODE_ERROR)
         val hex = data.decodeToString(pos, pos + 4)
         pos += 4; column += 4
         val code = try {
@@ -377,7 +377,7 @@ class GhostJsonReader(
                     }
                 }
             } else if (b.toInt() in 0..31) {
-                throwError("Unescaped control character in string")
+                throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
             }
         }
         throwError(GhostJsonConstants.UNTERMINATED_STRING_ERROR)
@@ -405,7 +405,7 @@ class GhostJsonReader(
     }
 
     internal fun peekByte(): Byte {
-        if (pos >= data.size) throwError("Unexpected EOF")
+        if (pos >= data.size) throwError(GhostJsonConstants.UNEXPECTED_EOF_ERROR)
         return data[pos]
     }
 
@@ -420,6 +420,6 @@ class GhostJsonReader(
     }
 
     private fun checkDepth() {
-        if (depth >= maxDepth) throwError("Reached maximum recursion depth ($maxDepth)")
+        if (depth >= maxDepth) throwError("${GhostJsonConstants.ERR_MAX_DEPTH} ($maxDepth)")
     }
 }

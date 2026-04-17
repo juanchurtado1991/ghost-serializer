@@ -45,7 +45,7 @@ internal class DeserializeCodeEmitter(
             val subClassName = subclass.toClassName()
             val serializerName = ClassName(
                 subClassName.packageName,
-                "${subClassName.simpleNames.joinToString("_")}$STR_SERIALIZER"
+                "${subClassName.simpleNames.joinToString(STR_UNDERSCORE)}$STR_SERIALIZER"
             )
             body.addStatement(
                 STR_DESERIALIZE_BRANCH,
@@ -72,8 +72,8 @@ internal class DeserializeCodeEmitter(
             body.addStatement("$i -> %T.${entry.key}", originalClassName)
         }
         
-        body.addStatement("-1 -> reader.throwError(\"Invalid enum value at path \${reader.path}\")")
-        body.addStatement("else -> throw GhostJsonException(\"Unexpected index: \$index\")")
+        body.addStatement(STR_ERR_INVALID_ENUM_INDEX)
+        body.addStatement(STR_ERR_UNEXPECTED_INDEX)
         body.endControlFlow()
     }
 
@@ -321,7 +321,7 @@ internal class DeserializeCodeEmitter(
 
     private fun serializerName(type: KSType): ClassName = with(type.declaration as KSClassDeclaration) {
         val className = toClassName()
-        return ClassName(className.packageName, "${className.simpleNames.joinToString("_")}$STR_SERIALIZER")
+        return ClassName(className.packageName, "${className.simpleNames.joinToString(STR_UNDERSCORE)}$STR_SERIALIZER")
     }
 
     companion object {
@@ -432,5 +432,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_ELSE = "else"
         private const val STR_RETURN_RESULT_FINAL = "return _result"
         private const val STR_SET = "Set"
+        private const val STR_ERR_INVALID_ENUM_INDEX = "-1 -> reader.throwError(\"Invalid enum value at path \${reader.path}\")"
+        private const val STR_ERR_UNEXPECTED_INDEX = "else -> throw GhostJsonException(\"Unexpected index: \$index\")"
     }
 }

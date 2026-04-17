@@ -47,8 +47,8 @@ class GhostSerializationProcessor(
         val firstClass = classToSerializer.keys.firstOrNull()
         val suffix = firstClass
             ?.packageName
-            ?.replace(".", "_")
-            ?.replace("-", "_")
+            ?.replace(STR_DOT, STR_UNDERSCORE)
+            ?.replace(STR_DASH, STR_UNDERSCORE)
             ?: STR_DEFAULT
 
         "${REGISTRY_CLASS_NAME}$STR_UNDERSCORE$suffix"
@@ -230,7 +230,7 @@ class GhostSerializationProcessor(
      */
     private fun generateServiceFile() {
         val serviceName = STR_SERVICE_NAME
-        val implementationName = "$PACKAGE_NAME.$registryClassName"
+        val implementationName = "$PACKAGE_NAME$STR_DOT$registryClassName"
 
         try {
             codeGenerator.createNewFile(
@@ -251,6 +251,8 @@ class GhostSerializationProcessor(
         private const val STR_SUFFIX_N = "n"
         private const val STR_DEFAULT = "Default"
         private const val STR_UNDERSCORE = "_"
+        private const val STR_DOT = "."
+        private const val STR_DASH = "-"
         private const val STR_LOG_MOSHI_SKIPPED =
             " ghost.generateMoshiAdapters=false: Moshi JsonAdapter generation skipped. Binary footprint reduced to 1 class per model."
         private const val STR_LOG_OPTIMIZED = " Successfully optimized: "

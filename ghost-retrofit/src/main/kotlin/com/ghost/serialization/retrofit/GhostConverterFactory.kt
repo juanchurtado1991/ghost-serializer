@@ -93,7 +93,8 @@ class GhostConverterFactory private constructor(
     }
 
     companion object {
-        private val MEDIA_TYPE = "application/json; charset=UTF-8".toMediaType()
+        private const val STR_MEDIA_TYPE = "application/json; charset=UTF-8"
+        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
 
         private val PRIMITIVES = mapOf<Class<*>, GhostSerializer<*>>(
             String::class.java to StringSerializer,

@@ -60,7 +60,6 @@ fun GhostSampleApp() {
     var moshiMemBytes by remember { mutableStateOf(0L) }
     var kserMemBytes by remember { mutableStateOf(0L) }
     var pageCount by remember { mutableStateOf(1f) }
-    var lastResponse by remember { mutableStateOf<List<GhostCharacter>>(emptyList()) }
     var sessionHistory by remember { mutableStateOf(listOf<String>()) }
 
     Box(
@@ -78,13 +77,13 @@ fun GhostSampleApp() {
 
             // Header Section
             IndustrialText(
-                text = "GHOST SERIALIZATION",
+                text = Constants.STR_APP_TITLE,
                 isBold = true,
                 fontSize = 28,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             IndustrialText(
-                text = "Industrial Multiplatform Performance Laboratory",
+                text = Constants.STR_APP_SUBTITLE,
                 isSecondary = true,
                 fontSize = 14,
                 modifier = Modifier.padding(bottom = 32.dp)
@@ -98,9 +97,9 @@ fun GhostSampleApp() {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IndustrialText(text = "STRESS LOAD (PAGES)", isBold = true, fontSize = 12)
+                        IndustrialText(text = Constants.STR_STRESS_LOAD, isBold = true, fontSize = 12)
                         IndustrialText(
-                            text = "${pageCount.toInt()} PAGES (~${pageCount.toInt() * 20} ITEMS)",
+                            text = "${pageCount.toInt()} ${Constants.STR_PAGES} (~${pageCount.toInt() * 20} ${Constants.STR_ITEMS})",
                             overrideColor = IndustrialDesignSystem.AccentGlow,
                             isBold = true,
                             fontSize = 12
@@ -122,7 +121,7 @@ fun GhostSampleApp() {
 
             // Action Section
             IndustrialButton(
-                text = "FETCH RICK AND MORTY",
+                text = Constants.STR_BTN_FETCH,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     if (isLoading) return@IndustrialButton
@@ -142,7 +141,7 @@ fun GhostSampleApp() {
                             kserMemBytes = res.kserMemoryBytes
 
                             // Record in session history
-                            val timestamp = "Log #${sessionHistory.size + 1}"
+                            val timestamp = "${Constants.STR_LOG_PREFIX}${sessionHistory.size + 1}"
                             val logEntry =
                                 "$timestamp, ${formatMs(ghostTimeMs)}, ${formatMs(moshiTimeMs)}, ${
                                     formatMs(kserTimeMs)
@@ -173,7 +172,7 @@ fun GhostSampleApp() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IndustrialText(
-                                text = "TRIPLE-CORE BENCHMARK",
+                                text = Constants.STR_BENCHMARK_TITLE,
                                 isBold = true,
                                 fontSize = 11,
                                 isSecondary = true
@@ -182,8 +181,8 @@ fun GhostSampleApp() {
                                 onClick = {
                                     if (sessionHistory.isEmpty()) return@TextButton
                                     val logText =
-                                        "SESSION METRICS HISTORY (Ghost vs Moshi vs KSer)\n" +
-                                                "TIMESTAMP, GHOST (ms), MOSHI (ms), KSER (ms), GHOST MEM (KB), MOSHI MEM (KB), KSER MEM (KB)\n" +
+                                        Constants.STR_EXPORT_HEADER +
+                                                Constants.STR_EXPORT_COLUMNS +
                                                 sessionHistory.joinToString("\n")
                                     copyToClipboard(logText)
                                 },
@@ -191,7 +190,7 @@ fun GhostSampleApp() {
                                 modifier = Modifier.height(24.dp)
                             ) {
                                 IndustrialText(
-                                    text = "EXPORT LOGS",
+                                    text = Constants.STR_BTN_EXPORT,
                                     fontSize = 10,
                                     isSecondary = true
                                 )
@@ -266,7 +265,7 @@ fun GhostSampleApp() {
                     )
                 } else if (errorMessage != null) {
                     IndustrialText(
-                        text = "HYPER-ENGINE ERROR:\n$errorMessage",
+                        text = "${Constants.STR_ERR_PREFIX}\n$errorMessage",
                         isBold = true,
                         fontSize = 14,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -347,6 +346,22 @@ private fun MetricItem(
 }
 
 private fun formatMs(value: Double): String {
-    return if (value < 0.01 && value > 0) "<0.01ms"
+    return if (value < 0.01 && value > 0) Constants.STR_LOW_LATENCY
     else "${(value * 100).toInt() / 100.0}ms"
+}
+
+private object Constants {
+    const val STR_APP_TITLE = "GHOST SERIALIZATION"
+    const val STR_APP_SUBTITLE = "Industrial Multiplatform Performance Laboratory"
+    const val STR_STRESS_LOAD = "STRESS LOAD (PAGES)"
+    const val STR_PAGES = "PAGES"
+    const val STR_ITEMS = "ITEMS"
+    const val STR_BTN_FETCH = "FETCH RICK AND MORTY"
+    const val STR_LOG_PREFIX = "Log #"
+    const val STR_BENCHMARK_TITLE = "TRIPLE-CORE BENCHMARK"
+    const val STR_EXPORT_HEADER = "SESSION METRICS HISTORY (Ghost vs Moshi vs KSer)\n"
+    const val STR_EXPORT_COLUMNS = "TIMESTAMP, GHOST (ms), MOSHI (ms), KSER (ms), GHOST MEM (KB), MOSHI MEM (KB), KSER MEM (KB)\n"
+    const val STR_BTN_EXPORT = "EXPORT LOGS"
+    const val STR_ERR_PREFIX = "HYPER-ENGINE ERROR:"
+    const val STR_LOW_LATENCY = "<0.01ms"
 }
