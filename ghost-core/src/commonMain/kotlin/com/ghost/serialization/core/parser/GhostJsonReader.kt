@@ -31,8 +31,10 @@ class GhostJsonReader(
             for (i in rawBytes.indices) {
                 val bytes = rawBytes[i]
                 if (bytes.isNotEmpty()) {
-                    val h = (((bytes[0].toInt() and 0xFF) * multiplier) shr shift) and 1023
-                    if (dispatch[h] == -1) dispatch[h] = i
+                    val h = (((bytes[0].toInt() and 0xFF) * multiplier + bytes.size) shr shift) and 1023
+                    if (dispatch[h] == -1) {
+                        dispatch[h] = i
+                    }
                 }
             }
         }
@@ -85,7 +87,7 @@ class GhostJsonReader(
         if (pos + len >= data.size) return -2
 
         val firstByte = data[pos].toInt() and 0xFF
-        val h = ((firstByte * options.multiplier) shr options.shift) and 1023
+        val h = (((firstByte * options.multiplier) + len) shr options.shift) and 1023
         val hint = options.dispatch[h]
         
         if (hint != -1) {
