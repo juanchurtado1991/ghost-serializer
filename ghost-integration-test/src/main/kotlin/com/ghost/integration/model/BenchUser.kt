@@ -1,4 +1,4 @@
-package com.ghost.benchmark.model
+package com.ghost.integration.model
 
 import com.ghost.serialization.annotations.GhostSerialization
 import com.squareup.moshi.JsonClass

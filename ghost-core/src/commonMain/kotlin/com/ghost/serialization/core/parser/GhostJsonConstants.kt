@@ -77,4 +77,10 @@ import kotlin.math.pow
     val IS_TERMINATOR = BooleanArray(128).apply {
         ",}] \n\r\t:".forEach { this[it.code] = true }
     }
+
+    val IS_STRING_TERMINATOR = BooleanArray(256).apply {
+        for (i in 0..31) this[i] = true
+        this['"'.code] = true
+        this['\\'.code] = true
+    }
 }

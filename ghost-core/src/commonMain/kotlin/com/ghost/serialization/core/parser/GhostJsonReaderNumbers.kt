@@ -24,26 +24,32 @@ fun GhostJsonReader.nextLong(): Long {
         if (i >= data.size) throwError("Isolated minus sign")
     }
 
-    // Leading zero check
-    if (data[i] == 48.toByte() && i + 1 < data.size) {
-        val next = data[i + 1].toInt()
-        if (next in 48..57) throwError("Leading zeros are not allowed")
-    }
-
-    // Overdrive Path: Pure integer parsing
+    // Hot Path: Integer parsing (Optimized Zenith)
     var value = 0L
     var hasDigits = false
-    while (i < data.size) {
-        val b = data[i].toInt()
-        val digit = b - 48
-        if (digit in 0..9) {
-            value = value * 10 + digit
-            hasDigits = true
-            i++
-        } else if (b == GhostJsonConstants.DOT.toInt() || b == GhostJsonConstants.EXP_LOWER.toInt() || b == GhostJsonConstants.EXP_UPPER.toInt()) {
-            // Defer to double parsing for complex numbers
-            return nextDouble().toLong()
-        } else break
+    
+    // Check first digit for leading zero (Rule: leading zeros only allowed if it's JUST '0')
+    val first = data[i].toInt()
+    if (first == 48) { // '0'
+        i++
+        hasDigits = true
+        if (i < data.size) {
+            val next = data[i].toInt()
+            if (next in 48..57) throwError("Leading zeros are not allowed")
+        }
+    } else {
+        // Unroll common case: Positive integer
+        while (i < data.size) {
+            val b = data[i].toInt()
+            val digit = b - 48
+            if (digit in 0..9) {
+                value = value * 10 + digit
+                hasDigits = true
+                i++
+            } else if (b == GhostJsonConstants.DOT.toInt() || b == GhostJsonConstants.EXP_LOWER.toInt() || b == GhostJsonConstants.EXP_UPPER.toInt()) {
+                return nextDouble().toLong()
+            } else break
+        }
     }
 
     if (!hasDigits) throwError("Expected digits but found ${data[i].toInt().toChar()}")

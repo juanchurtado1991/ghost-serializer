@@ -217,7 +217,7 @@ internal class DeserializeCodeEmitter(
         return CodeBlock.of("""
             run {
               reader.beginArray()
-              val list = %T<%T>(1024)
+              val list = %T<%T>()
               if (reader.hasNext()) {
                 list.add($innerCall)
                 while (reader.hasNext()) {

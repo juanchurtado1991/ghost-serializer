@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
     application
 }
@@ -24,8 +23,10 @@ kotlin {
 dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-core"))
+    implementation(project(":ghost-integration-test"))
     implementation(libs.gson)
     implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okio)
     
@@ -45,8 +46,7 @@ dependencies {
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/kotlin"))
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/resources"))
     
-    ksp(project(":ghost-compiler"))
-    ksp(libs.moshi.kotlin.codegen)
+    // ksp(libs.moshi.kotlin.codegen)
 }
 
 // Industrial Resource Propagation: Include KSP generated resources

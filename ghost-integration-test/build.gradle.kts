@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -10,6 +11,7 @@ kotlin {
 dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-core"))
+    implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
     ksp(project(":ghost-compiler"))
 

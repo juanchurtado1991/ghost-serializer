@@ -1,15 +1,13 @@
 package com.ghost.benchmark
 
+import com.ghost.integration.model.*
+
 private const val W = 100
 
 internal fun printBenchmarkReport(
     count: Int,
     payloadMb: String,
-    cold: BenchmarkMetrics,
-    m: BenchmarkMetrics,
-    ser: BenchmarkMetrics,
-    s: StressMetrics,
-    f: BenchmarkMetrics
+    metrics: GhostMetrics
 ) {
     val line = { println("─".repeat(W)) }
     val thick = { println("═".repeat(W)) }
@@ -19,13 +17,13 @@ internal fun printBenchmarkReport(
     title("GHOST SERIALIZATION ENGINE — PERFORMANCE AUDIT REPORT")
 
     printEnvironment(count, payloadMb)
-    printDeserialization(m, count, payloadMb, line)
-    printSerialization(ser, count, line)
-    printMemory(m, line)
-    printReliability(cold, f, line)
-    printStress(s, line)
+    printDeserialization(metrics.steady, count, payloadMb, line)
+    printSerialization(metrics.serialization, count, line)
+    printMemory(metrics.steady, line)
+    printReliability(metrics.cold, metrics.failure, line)
+    printStress(metrics.stress, line)
     printArchMatrix(line)
-    printTradeOffs(m, thick)
+    printTradeOffs(metrics.steady, thick)
 }
 
 private fun printEnvironment(count: Int, payloadMb: String) {
@@ -54,10 +52,11 @@ private fun badge(ghost: Long, others: List<Long>, lowerBetter: Boolean): String
     val isBest = if (lowerBetter) ghost <= best else ghost >= best
     return if (isBest) "★ GHOST" else {
         val names = listOf("GSON", "Moshi", "K-Ser")
-        val idx = if (lowerBetter) others.indexOf(others.min()) else others.indexOf(others.max())
+        val idx = others.indexOf(best)
         names.getOrElse(idx) { "—" }
     }
 }
+
 private fun printDeserialization(m: BenchmarkMetrics, count: Int, payloadMb: String, line: () -> Unit) {
     val ops = { ns: Long -> (count.toLong() * 1_000_000_000L) / ns.coerceAtLeast(1) }
     println("\n  1. DESERIALIZATION PERFORMANCE (JSON → Objects)")
@@ -67,15 +66,15 @@ private fun printDeserialization(m: BenchmarkMetrics, count: Int, payloadMb: Str
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %9dms %9dms %9dms %9dms   %s".format(
-        "Latency (lower = better)", m.gson.ms / 1_000_000, m.moshi.ms / 1_000_000, m.kser.ms / 1_000_000, m.ghost.ms / 1_000_000,
-        badge(m.ghost.ms, listOf(m.gson.ms, m.moshi.ms, m.kser.ms), true)))
+        "Latency (lower = better)", m.gson.nanos / 1_000_000, m.moshi.nanos / 1_000_000, m.kser.nanos / 1_000_000, m.ghost.nanos / 1_000_000,
+        badge(m.ghost.nanos, listOf(m.gson.nanos, m.moshi.nanos, m.kser.nanos), true)))
     println("  %-28s %10d %10d %10d %10d   %s".format(
-        "Throughput (ops/s, higher)", ops(m.gson.ms), ops(m.moshi.ms), ops(m.kser.ms), ops(m.ghost.ms),
-        badge(ops(m.ghost.ms), listOf(ops(m.gson.ms), ops(m.moshi.ms), ops(m.kser.ms)), false)))
+        "Throughput (ops/s, higher)", ops(m.gson.nanos), ops(m.moshi.nanos), ops(m.kser.nanos), ops(m.ghost.nanos),
+        badge(ops(m.ghost.nanos), listOf(ops(m.gson.nanos), ops(m.moshi.nanos), ops(m.kser.nanos)), false)))
     line()
-    println("  Ghost vs GSON     : ${delta(m.ghost.ms, m.gson.ms)}")
-    println("  Ghost vs Moshi    : ${delta(m.ghost.ms, m.moshi.ms)}")
-    println("  Ghost vs K-Ser    : ${delta(m.ghost.ms, m.kser.ms)}")
+    println("  Ghost vs GSON     : ${delta(m.ghost.nanos, m.gson.nanos)}")
+    println("  Ghost vs Moshi    : ${delta(m.ghost.nanos, m.moshi.nanos)}")
+    println("  Ghost vs K-Ser    : ${delta(m.ghost.nanos, m.kser.nanos)}")
 }
 
 private fun printSerialization(ser: BenchmarkMetrics, count: Int, line: () -> Unit) {
@@ -86,12 +85,12 @@ private fun printSerialization(ser: BenchmarkMetrics, count: Int, line: () -> Un
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %9dms %9dms %9dms %9dms   %s".format(
-        "Latency (lower = better)", ser.gson.ms / 1_000_000, ser.moshi.ms / 1_000_000, ser.kser.ms / 1_000_000, ser.ghost.ms / 1_000_000,
-        badge(ser.ghost.ms, listOf(ser.gson.ms, ser.moshi.ms, ser.kser.ms), true)))
+        "Latency (lower = better)", ser.gson.nanos / 1_000_000, ser.moshi.nanos / 1_000_000, ser.kser.nanos / 1_000_000, ser.ghost.nanos / 1_000_000,
+        badge(ser.ghost.nanos, listOf(ser.gson.nanos, ser.moshi.nanos, ser.kser.nanos), true)))
     line()
-    println("  Ghost vs GSON     : ${delta(ser.ghost.ms, ser.gson.ms)}")
-    println("  Ghost vs Moshi    : ${delta(ser.ghost.ms, ser.moshi.ms)}")
-    println("  Ghost vs K-Ser    : ${delta(ser.ghost.ms, ser.kser.ms)}")
+    println("  Ghost vs GSON     : ${delta(ser.ghost.nanos, ser.gson.nanos)}")
+    println("  Ghost vs Moshi    : ${delta(ser.ghost.nanos, ser.moshi.nanos)}")
+    println("  Ghost vs K-Ser    : ${delta(ser.ghost.nanos, ser.kser.nanos)}")
 }
 
 private fun printMemory(m: BenchmarkMetrics, line: () -> Unit) {
@@ -105,17 +104,17 @@ private fun printMemory(m: BenchmarkMetrics, line: () -> Unit) {
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %8d KB %8d KB %8d KB %8d KB   %s".format(
-        "Heap Allocated (lower=better)", m.gson.alloc, m.moshi.alloc, m.kser.alloc, m.ghost.alloc,
-        badge(m.ghost.alloc, listOf(m.gson.alloc, m.moshi.alloc, m.kser.alloc), true)))
+        "Heap Allocated (lower=better)", m.gson.allocBytes / 1024, m.moshi.allocBytes / 1024, m.kser.allocBytes / 1024, m.ghost.allocBytes / 1024,
+        badge(m.ghost.allocBytes, listOf(m.gson.allocBytes, m.moshi.allocBytes, m.kser.allocBytes), true)))
     line()
     println("  Ghost vs GSON     : %d%% less heap → %,d KB saved per call".format(
-        pct(m.gson.alloc, m.ghost.alloc), m.gson.alloc - m.ghost.alloc))
+        pct(m.gson.allocBytes, m.ghost.allocBytes), (m.gson.allocBytes - m.ghost.allocBytes) / 1024))
     println("  Ghost vs Moshi    : %d%% less heap → %,d KB saved per call".format(
-        pct(m.moshi.alloc, m.ghost.alloc), m.moshi.alloc - m.ghost.alloc))
+        pct(m.moshi.allocBytes, m.ghost.allocBytes), (m.moshi.allocBytes - m.ghost.allocBytes) / 1024))
     println("  Ghost vs K-Ser    : %d%% less heap → %,d KB saved per call".format(
-        pct(m.kser.alloc, m.ghost.alloc), m.kser.alloc - m.ghost.alloc))
+        pct(m.kser.allocBytes, m.ghost.allocBytes), (m.kser.allocBytes - m.ghost.allocBytes) / 1024))
     println("  Avg GC Reduction  : ~%d%% less garbage collection pressure".format(
-        (pct(m.gson.alloc, m.ghost.alloc) + pct(m.moshi.alloc, m.ghost.alloc) + pct(m.kser.alloc, m.ghost.alloc)) / 3))
+        (pct(m.gson.allocBytes, m.ghost.allocBytes) + pct(m.moshi.allocBytes, m.ghost.allocBytes) + pct(m.kser.allocBytes, m.ghost.allocBytes)) / 3))
 }
 
 private fun printReliability(cold: BenchmarkMetrics, f: BenchmarkMetrics, line: () -> Unit) {
@@ -125,16 +124,16 @@ private fun printReliability(cold: BenchmarkMetrics, f: BenchmarkMetrics, line: 
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %9dms %9dms %9dms %9dms   %s".format(
-        "Cold Start (1st call)", cold.gson.ms, cold.moshi.ms, cold.kser.ms, cold.ghost.ms,
-        badge(cold.ghost.ms, listOf(cold.gson.ms, cold.moshi.ms, cold.kser.ms), true)))
+        "Cold Start (1st call)", cold.gson.nanos / 1_000_000, cold.moshi.nanos / 1_000_000, cold.kser.nanos / 1_000_000, cold.ghost.nanos / 1_000_000,
+        badge(cold.ghost.nanos, listOf(cold.gson.nanos, cold.moshi.nanos, cold.kser.nanos), true)))
     println("  %-28s %8dns %8dns %8dns %8dns   %s".format(
-        "Fail Detection (avg of 100)", f.gson.ms, f.moshi.ms, f.kser.ms, f.ghost.ms,
-        badge(f.ghost.ms, listOf(f.gson.ms, f.moshi.ms, f.kser.ms), true)))
+        "Fail Detection (avg of 100)", f.gson.nanos, f.moshi.nanos, f.kser.nanos, f.ghost.nanos,
+        badge(f.ghost.nanos, listOf(f.gson.nanos, f.moshi.nanos, f.kser.nanos), true)))
     line()
-    val bestCold = minOf(cold.gson.ms, cold.moshi.ms, cold.kser.ms)
-    println("  Cold Start    : ${delta(cold.ghost.ms, bestCold)} than next fastest")
-    val bestFail = minOf(f.gson.ms, f.moshi.ms, f.kser.ms)
-    println("  Fail Detect   : ${delta(f.ghost.ms, bestFail)} than next fastest")
+    val bestCold = minOf(cold.gson.nanos, cold.moshi.nanos, cold.kser.nanos)
+    println("  Cold Start    : ${delta(cold.ghost.nanos, bestCold)} than next fastest")
+    val bestFail = minOf(f.gson.nanos, f.moshi.nanos, f.kser.nanos)
+    println("  Fail Detect   : ${delta(f.ghost.nanos, bestFail)} than next fastest")
 }
 
 private fun printStress(s: StressMetrics, line: () -> Unit) {
@@ -144,8 +143,8 @@ private fun printStress(s: StressMetrics, line: () -> Unit) {
         "", "GSON", "Moshi", "K-Ser", "Ghost", "Winner"))
     line()
     println("  %-28s %9dms %9dms %9dms %9dms   %s".format(
-        "Deep Nesting Parse", s.nesting.gson.ms, s.nesting.moshi.ms, s.nesting.kser.ms, s.nesting.ghost.ms,
-        badge(s.nesting.ghost.ms, listOf(s.nesting.gson.ms, s.nesting.moshi.ms, s.nesting.kser.ms), true)))
+        "Deep Nesting Parse", s.nesting.gson.nanos / 1_000_000, s.nesting.moshi.nanos / 1_000_000, s.nesting.kser.nanos / 1_000_000, s.nesting.ghost.nanos / 1_000_000,
+        badge(s.nesting.ghost.nanos, listOf(s.nesting.gson.nanos, s.nesting.moshi.nanos, s.nesting.kser.nanos), true)))
     line()
 }
 

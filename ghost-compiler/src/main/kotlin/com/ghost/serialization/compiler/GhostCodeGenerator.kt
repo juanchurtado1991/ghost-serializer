@@ -159,20 +159,23 @@ internal class GhostCodeGenerator(
 
     private fun findPerfectHash(names: List<String>): Pair<Int, Int> {
         if (names.isEmpty()) return 0 to 31
-        val firstBytes = names.map { it.firstOrNull()?.code?.toByte() ?: 0 }
-        val lengths = names.map { it.length }
         val rawBytes = names.map { it.encodeToByteArray() }
         
-        // Brute force search for a collision-free multiplier and shift
+        // Brute force search for a collision-free multiplier and shift for 4-byte Zenith Hash
         for (m in 31..2000 step 2) {
             for (s in 0..16) {
-                val seen = mutableSetOf<Int>()
-                var collision = false
                 val dispatch = IntArray(1024) { -1 }
+                var collision = false
                 for (i in rawBytes.indices) {
                     val bytes = rawBytes[i]
                     if (bytes.isNotEmpty()) {
-                        val h = (((bytes[0].toInt() and 0xFF) * m + bytes.size) shr s) and 1023
+                        var key = 0
+                        if (bytes.size >= 1) key = key or (bytes[0].toInt() and 0xFF)
+                        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and 0xFF) shl 8)
+                        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and 0xFF) shl 16)
+                        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and 0xFF) shl 24)
+                        
+                        val h = ((key * m + bytes.size) shr s) and 1023
                         if (dispatch[h] == -1) {
                             dispatch[h] = i
                         } else {
@@ -184,7 +187,7 @@ internal class GhostCodeGenerator(
                 if (!collision) return s to m
             }
         }
-        return 0 to 31 // Fallback to default if not found
+        return 0 to 31 // Fallback
     }
 
     companion object {

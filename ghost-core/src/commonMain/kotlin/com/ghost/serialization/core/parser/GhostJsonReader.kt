@@ -18,7 +18,14 @@ class Options(
         for (i in rawBytes.indices) {
             val bytes = rawBytes[i]
             if (bytes.isNotEmpty()) {
-                val h = (((bytes[0].toInt() and 0xFF) * multiplier + bytes.size) shr shift) and 1023
+                // Ghost Zenith Hash: Use up to 4 bytes for the dispatch key
+                var key = 0
+                if (bytes.size >= 1) key = key or (bytes[0].toInt() and 0xFF)
+                if (bytes.size >= 2) key = key or ((bytes[1].toInt() and 0xFF) shl 8)
+                if (bytes.size >= 3) key = key or ((bytes[2].toInt() and 0xFF) shl 16)
+                if (bytes.size >= 4) key = key or ((bytes[3].toInt() and 0xFF) shl 24)
+                
+                val h = ((key * multiplier + bytes.size) shr shift) and 1023
                 if (dispatch[h] == -1) {
                     dispatch[h] = i
                 }
@@ -30,9 +37,7 @@ class Options(
         fun of(vararg names: String): Options = of(0, 31, *names)
 
         fun of(shift: Int, multiplier: Int, vararg names: String): Options {
-            val byteStrings = Array(names.size) {
-                okio.ByteString.Companion.run { names[it].encodeUtf8() }
-            }
+            val byteStrings = Array(names.size) { names[it].encodeToByteArray() }
             val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
             val strings = Array(names.size) { names[it] }
 
@@ -44,7 +49,7 @@ class Options(
             }
 
             return Options(
-                strings, byteStrings, rawBytes, writerHeaders, writerHeadersWithComma,
+                strings, emptyArray(), rawBytes, writerHeaders, writerHeadersWithComma,
                 shift, multiplier
             )
         }
@@ -99,21 +104,31 @@ class GhostJsonReader(
         if (remaining <= 0) return -2
 
         var len = 0
-        // Vectorized Scan for field name end
-        while (pos + len + 3 < data.size) {
+        // Ghost Zenith Vectorized Scan: Find quote faster
+        while (pos + len + 7 < data.size) {
             if (data[pos + len] == 34.toByte()) break
             if (data[pos + len + 1] == 34.toByte()) { len += 1; break }
             if (data[pos + len + 2] == 34.toByte()) { len += 2; break }
             if (data[pos + len + 3] == 34.toByte()) { len += 3; break }
-            len += 4
+            if (data[pos + len + 4] == 34.toByte()) { len += 4; break }
+            if (data[pos + len + 5] == 34.toByte()) { len += 5; break }
+            if (data[pos + len + 6] == 34.toByte()) { len += 6; break }
+            if (data[pos + len + 7] == 34.toByte()) { len += 7; break }
+            len += 8
         }
         while (pos + len < data.size && data[pos + len] != 34.toByte()) {
             len++
         }
         if (pos + len >= data.size) return -2
 
-        val firstByte = data[pos].toInt() and 0xFF
-        val h = (((firstByte * options.multiplier) + len) shr options.shift) and 1023
+        // Zenith Hash Calculation
+        var key = 0
+        if (len >= 1) key = key or (data[pos].toInt() and 0xFF)
+        if (len >= 2) key = key or ((data[pos + 1].toInt() and 0xFF) shl 8)
+        if (len >= 3) key = key or ((data[pos + 2].toInt() and 0xFF) shl 16)
+        if (len >= 4) key = key or ((data[pos + 3].toInt() and 0xFF) shl 24)
+
+        val h = ((key * options.multiplier) + len) shr options.shift and 1023
         val hint = options.dispatch[h]
         
         if (hint != -1) {
@@ -138,6 +153,7 @@ class GhostJsonReader(
             }
         }
 
+        // Collision recovery
         for (idx in options.rawBytes.indices) {
             if (idx == hint) continue
             val opt = options.rawBytes[idx]
@@ -237,12 +253,6 @@ class GhostJsonReader(
             throwError("${GhostJsonConstants.STRICT_MODE_UNKNOWN_FIELD}'$name'")
         }
         skipQuotedStringBody()
-        skipWhitespace()
-        if (pos < data.size && data[pos] == 58.toByte()) {
-            pos++; nextTokenByte = -1
-            skipWhitespace()
-            if (pos < data.size) nextTokenByte = data[pos].toInt() and 0xFF
-        }
         return -2
     }
 
@@ -323,18 +333,17 @@ class GhostJsonReader(
 
     internal fun readStringBody(): String {
         val start = pos
-        // Ghost Vectorized Scan: Find quote or escape faster
+        // Ghost Vectorized Scan: Find quote or escape faster using Lookup Table
         while (pos + 3 < data.size) {
-            val b1 = data[pos]
-            val b2 = data[pos + 1]
-            val b3 = data[pos + 2]
-            val b4 = data[pos + 3]
+            val b1 = data[pos].toInt() and 0xFF
+            val b2 = data[pos + 1].toInt() and 0xFF
+            val b3 = data[pos + 2].toInt() and 0xFF
+            val b4 = data[pos + 3].toInt() and 0xFF
             
-            // Check for Quote (34) or Backslash (92)
-            if (b1 == 34.toByte() || b1 == 92.toByte() || b1.toInt() in 0..31) break
-            if (b2 == 34.toByte() || b2 == 92.toByte() || b2.toInt() in 0..31) { pos += 1; break }
-            if (b3 == 34.toByte() || b3 == 92.toByte() || b3.toInt() in 0..31) { pos += 2; break }
-            if (b4 == 34.toByte() || b4 == 92.toByte() || b4.toInt() in 0..31) { pos += 3; break }
+            if (GhostJsonConstants.IS_STRING_TERMINATOR[b1]) break
+            if (GhostJsonConstants.IS_STRING_TERMINATOR[b2]) { pos += 1; break }
+            if (GhostJsonConstants.IS_STRING_TERMINATOR[b3]) { pos += 2; break }
+            if (GhostJsonConstants.IS_STRING_TERMINATOR[b4]) { pos += 3; break }
             pos += 4
         }
         
@@ -359,10 +368,18 @@ class GhostJsonReader(
             val result = data.decodeToString(start, start + len)
             internalSkip(1); return result
         }
-        // Fast Hash Zenith: Process bytes in blocks or optimized shifts
+        // Fast Hash Zenith: Optimized Rolling Hash with Unrolling
         var hash = 0
         var i = start
         val end = start + len
+        
+        while (i + 3 < end) {
+            hash = (hash shl 5) - hash + (data[i].toInt() and 0xFF)
+            hash = (hash shl 5) - hash + (data[i + 1].toInt() and 0xFF)
+            hash = (hash shl 5) - hash + (data[i + 2].toInt() and 0xFF)
+            hash = (hash shl 5) - hash + (data[i + 3].toInt() and 0xFF)
+            i += 4
+        }
         while (i < end) {
             hash = (hash shl 5) - hash + (data[i].toInt() and 0xFF)
             i++
@@ -503,26 +520,25 @@ class GhostJsonReader(
         
         while (pos < data.size) {
             val b = data[pos].toInt() and 0xFF
-            // Ghost Universal Overdrive: Bitmask check for 0x20, 0x0A, 0x0D, 0x09
-            // b <= 32 and (1L << b) and 0x100002600 != 0
-            if (b > 32) return
             
-            if (b == 32 || b == 10 || b == 13 || b == 9) {
-                pos++
-                // Word-skipping Overdrive
-                while (pos + 3 < data.size) {
-                    val w1 = data[pos].toInt() and 0xFF
-                    val w2 = data[pos + 1].toInt() and 0xFF
-                    val w3 = data[pos + 2].toInt() and 0xFF
-                    val w4 = data[pos + 3].toInt() and 0xFF
-                    
-                    // Check if all 4 are whitespace
-                    if (w1 <= 32 && w2 <= 32 && w3 <= 32 && w4 <= 32) {
-                        pos += 4
-                    } else break
-                }
-            } else {
-                pos++
+            // Ghost Universal Overdrive: Bitmask check for 0x20 (space), 0x0A (LF), 0x0D (CR), 0x09 (TAB)
+            // (1L << 32) | (1L << 10) | (1L << 13) | (1L << 9) = 0x100002600
+            if (b > 32 || (0x100002600L and (1L shl b)) == 0L) return
+            
+            pos++
+            // Word-skipping Overdrive
+            while (pos + 3 < data.size) {
+                val w1 = data[pos].toInt() and 0xFF
+                val w2 = data[pos + 1].toInt() and 0xFF
+                val w3 = data[pos + 2].toInt() and 0xFF
+                val w4 = data[pos + 3].toInt() and 0xFF
+                
+                if (w1 <= 32 && (0x100002600L and (1L shl w1)) != 0L &&
+                    w2 <= 32 && (0x100002600L and (1L shl w2)) != 0L &&
+                    w3 <= 32 && (0x100002600L and (1L shl w3)) != 0L &&
+                    w4 <= 32 && (0x100002600L and (1L shl w4)) != 0L) {
+                    pos += 4
+                } else break
             }
         }
     }
