@@ -1,7 +1,11 @@
 [versions]
 # Build Tools & Languages
 agp = "8.7.3"
+junit-platform-engine = "1.11.3"
+junit-vintage-engine = "5.11.3"
 kotlin = "2.1.10"
+kotlin-test-junit5 = "2.1.0"
+kotlinx-coroutines-test = "1.10.1"
 ksp = "2.1.10-1.0.30"
 compose-plugin = "1.7.3"
 ktor = "3.0.0"
@@ -17,11 +21,21 @@ kotlinx-serialization = "1.7.3"
 ktorfit = "2.3.0"
 
 # Sample App UI
-appcompat = "1.7.1"
-material = "1.13.0"
 coil = "3.0.4"
+ghost = "1.0.0"
 
 [libraries]
+# Ghost Serialization (Industrial 1.0.0)
+ghost-api = { group = "com.ghost", name = "serialization-api", version.ref = "ghost" }
+ghost-core = { group = "com.ghost", name = "serialization", version.ref = "ghost" }
+ghost-compiler = { group = "com.ghost", name = "serialization-compiler", version.ref = "ghost" }
+ghost-ktor = { group = "com.ghost", name = "serialization-ktor", version.ref = "ghost" }
+ghost-retrofit = { group = "com.ghost", name = "serialization-retrofit", version.ref = "ghost" }
+
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform-engine" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-vintage-engine" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin-test-junit5" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 
 # Compiler & KSP
@@ -35,7 +49,6 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
 moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
-moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 # Testing
@@ -43,9 +56,6 @@ kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.re
 junit-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "6.0.3" }
 junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "6.0.3" }
 
-# Sample App Only
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }

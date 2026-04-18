@@ -22,3 +22,5 @@ subprojects {
         }
     }
 }
+
+apply(from = "publish.gradle.kts")

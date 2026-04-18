@@ -11,19 +11,21 @@ plugins {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
 }
 
 rootProject.name = "GhostSerialization"
-include(":ghost-api")
-include(":ghost-core")
-include(":ghost-compiler")
-include(":ghost-retrofit")
-include(":ghost-ktor")
-include(":ghost-sample")
-include(":ghost-benchmark")
-include(":ghost-integration-test")
+
+include(":serialization-api")
+include(":serialization")
+include(":serialization-compiler")
+include(":serialization-retrofit")
+include(":serialization-ktor")
+include(":serialization-sample")
+include(":serialization-benchmark")
+include(":serialization-integration-test")

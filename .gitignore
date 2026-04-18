@@ -28,3 +28,7 @@ trace_log.txt
 # Native/KMP
 .externalNativeBuild
 .cxx
+
+# Explicitly keep critical project meta
+!LICENSE
+!.github/
