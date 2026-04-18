@@ -22,7 +22,7 @@ ktorfit = "2.3.0"
 
 # Sample App UI
 coil = "3.0.4"
-ghost = "1.0.0"
+ghost = "1.1.0"
 
 [libraries]
 # Ghost Serialization (Industrial 1.0.0)

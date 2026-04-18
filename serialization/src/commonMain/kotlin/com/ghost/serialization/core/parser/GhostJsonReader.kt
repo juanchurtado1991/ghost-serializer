@@ -17,16 +17,21 @@ import okio.BufferedSource
  */
 class GhostJsonReader(
     @PublishedApi internal var data: ByteArray,
+    @PublishedApi internal var limit: Int = data.size,
     @PublishedApi
     internal val maxDepth: Int = 255,
-    internal val strictMode: Boolean = false,
+    internal var strictMode: Boolean = false,
     var coerceStringsToNumbers: Boolean = false
 ) {
-    fun reset(newData: ByteArray) {
+    fun reset(newData: ByteArray, newLimit: Int = newData.size) {
         this.data = newData
+        this.limit = newLimit
         this.positon = 0
         this.depth = 0
         this.nextTokenByte = -1
+        // Restore industrial strictness defaults on reset
+        this.strictMode = false
+        this.coerceStringsToNumbers = false
     }
 
     /**
@@ -34,6 +39,7 @@ class GhostJsonReader(
      */
     fun clear() {
         this.data = byteArrayOf()
+        this.limit = 0
         this.positon = 0
         this.nextTokenByte = -1
     }
@@ -43,9 +49,9 @@ class GhostJsonReader(
         maxDepth: Int = 255,
         strictMode: Boolean = false
     ) : this(
-        source.readByteArray(),
-        maxDepth,
-        strictMode
+        data = source.readByteArray(),
+        maxDepth = maxDepth,
+        strictMode = strictMode
     )
 
     private var _position = 0
@@ -81,7 +87,7 @@ class GhostJsonReader(
     }
 
     internal fun expectByte(expected: Byte) {
-        if (positon >= data.size) {
+        if (positon >= limit) {
             throwError("Expected '${expected.toInt().toChar()}' but reached end")
         }
 
@@ -96,12 +102,12 @@ class GhostJsonReader(
     }
 
     internal fun internalSelect(options: JsonReaderOptions): Int {
-        val remaining = data.size - positon
+        val remaining = limit - positon
         if (remaining <= 0) return -2
 
         var length = 0
         // Vectorized scan for the closing quote
-        while (positon + length + 7 < data.size) {
+        while (positon + length + 7 < limit) {
             if (data[positon + length] == 34.toByte()) break
             if (data[positon + length + 1] == 34.toByte()) {
                 length += 1; break
@@ -127,11 +133,11 @@ class GhostJsonReader(
             length += 8
         }
 
-        while (positon + length < data.size && data[positon + length] != 34.toByte()) {
+        while (positon + length < limit && data[positon + length] != 34.toByte()) {
             length++
         }
 
-        if (positon + length >= data.size) return -2
+        if (positon + length >= limit) return -2
 
         // Multi-byte hash calculation
         var key = 0
@@ -216,7 +222,7 @@ class GhostJsonReader(
      */
     fun selectString(options: JsonReaderOptions): Int {
         if (nextTokenByte == -1) skipWhitespace()
-        if (positon >= data.size) return -1
+        if (positon >= limit) return -1
 
         var currentByte = if (nextTokenByte != -1) {
             nextTokenByte
@@ -226,7 +232,7 @@ class GhostJsonReader(
 
         if (currentByte == 44) { // COMMA
             positon++; nextTokenByte = -1; skipWhitespace()
-            if (positon >= data.size) return -1
+            if (positon >= limit) return -1
             currentByte = data[positon].toInt() and 0xFF
         }
 
@@ -240,7 +246,7 @@ class GhostJsonReader(
 
         val index = internalSelect(options)
         if (index >= 0) {
-            if (positon < data.size && data[positon] == 34.toByte()) {
+            if (positon < limit && data[positon] == 34.toByte()) {
                 positon++; nextTokenByte = -1
                 return index
             }
@@ -270,7 +276,7 @@ class GhostJsonReader(
      */
     fun selectNameAndConsume(options: JsonReaderOptions): Int {
         if (nextTokenByte == -1) skipWhitespace()
-        if (positon >= data.size) return -1
+        if (positon >= limit) return -1
 
         var currentByte = if (nextTokenByte != -1) {
             nextTokenByte
@@ -280,7 +286,7 @@ class GhostJsonReader(
 
         if (currentByte == 44) { // COMMA
             positon++; nextTokenByte = -1; skipWhitespace()
-            if (positon >= data.size) return -1
+            if (positon >= limit) return -1
             currentByte = data[positon].toInt() and 0xFF
         }
 
@@ -292,14 +298,14 @@ class GhostJsonReader(
         val index = internalSelect(options)
         if (index >= 0) {
             // Found it. Skip closing quote and separator
-            if (positon < data.size && data[positon] == 34.toByte()) {
+            if (positon < limit && data[positon] == 34.toByte()) {
                 positon++
                 // Fused consumeKeySeparator
                 skipWhitespace()
-                if (positon < data.size && data[positon] == 58.toByte()) {
+                if (positon < limit && data[positon] == 58.toByte()) {
                     positon++; nextTokenByte = -1
                     skipWhitespace()
-                    if (positon < data.size) nextTokenByte = data[positon].toInt() and 0xFF
+                    if (positon < limit) nextTokenByte = data[positon].toInt() and 0xFF
                     return index
                 }
                 throwError("Expected ':'")
@@ -358,7 +364,7 @@ class GhostJsonReader(
     /** Reads a boolean value (true/false) without intermediate allocations. */
     fun nextBoolean(): Boolean {
         if (nextTokenByte == -1) skipWhitespace()
-        if (positon + 4 > data.size) {
+        if (positon + 4 > limit) {
             throwError(GhostJsonConstants.TRUNCATED_LITERAL_ERROR)
         }
         val currentByte = data[positon]
@@ -370,7 +376,7 @@ class GhostJsonReader(
                 internalSkip(4); return true
             }
         } else if (currentByte == GhostJsonConstants.FALSE_CHAR) {
-            if (positon + 5 > data.size) {
+            if (positon + 5 > limit) {
                 throwError(GhostJsonConstants.TRUNCATED_LITERAL_ERROR)
             }
             if (data[positon + 1] == 'a'.code.toByte() &&
@@ -392,7 +398,7 @@ class GhostJsonReader(
     internal fun readStringBody(): String {
         val start = positon
         // Ghost Vectorized Scan: Find quote or escape faster using Lookup Table
-        while (positon + 3 < data.size) {
+        while (positon + 3 < limit) {
             val byte1 = data[positon].toInt() and 0xFF
             val byte2 = data[positon + 1].toInt() and 0xFF
             val byte3 = data[positon + 2].toInt() and 0xFF
@@ -411,7 +417,7 @@ class GhostJsonReader(
             positon += 4
         }
 
-        while (positon < data.size) {
+        while (positon < limit) {
             val currentByte = data[positon]
             if (currentByte == GhostJsonConstants.QUOTE) {
                 val length = positon - start
@@ -492,7 +498,7 @@ class GhostJsonReader(
         if (positon > start) {
             output.append(data.decodeToString(start, positon))
         }
-        while (positon < data.size) {
+        while (positon < limit) {
             val currentByte = data[positon]
             if (currentByte == GhostJsonConstants.QUOTE) {
                 internalSkip(1); return output.toString()
@@ -511,7 +517,7 @@ class GhostJsonReader(
                 }
             } else {
                 val scanStart = positon
-                while (positon < data.size) {
+                while (positon < limit) {
                     val subByte = data[positon]
                     if (
                         subByte == GhostJsonConstants.QUOTE ||
@@ -529,7 +535,7 @@ class GhostJsonReader(
     }
 
     private fun readEscapeCode(): Int {
-        if (positon >= data.size) {
+        if (positon >= limit) {
             throwError(GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR)
         }
 
@@ -545,7 +551,7 @@ class GhostJsonReader(
     }
 
     private fun readUnicodeCode(): Int {
-        if (positon + 4 > data.size) {
+        if (positon + 4 > limit) {
             throwError(GhostJsonConstants.UNTERMINATED_UNICODE_ERROR)
         }
 
@@ -557,8 +563,7 @@ class GhostJsonReader(
             throwError("Invalid unicode escape: \\u$hex")
         }
         if (code in 0xD800..0xDBFF) {
-            if (
-                positon + 6 > data.size || data[positon] != GhostJsonConstants.BACKSLASH ||
+            if (positon + 6 > limit || data[positon] != GhostJsonConstants.BACKSLASH ||
                 data[positon + 1] != 'u'.code.toByte()
             ) {
                 throwError("Lone high surrogate: \\u$hex")
@@ -588,17 +593,17 @@ class GhostJsonReader(
     }
 
     internal fun skipQuotedStringBody() {
-        while (positon < data.size) {
+        while (positon < limit) {
             val currentByte = data[positon]
             internalSkip(1)
             if (currentByte == GhostJsonConstants.QUOTE) return
             if (currentByte == GhostJsonConstants.BACKSLASH) {
                 if (strictMode) {
                     readEscapeCode()
-                } else if (positon < data.size) {
+                } else if (positon < limit) {
                     if (data[positon] == 'u'.code.toByte()) {
                         internalSkip(1);
-                        val skipLength = minOf(4, data.size - positon)
+                        val skipLength = minOf(4, limit - positon)
                         internalSkip(skipLength)
                     } else {
                         internalSkip(1)
@@ -616,7 +621,7 @@ class GhostJsonReader(
     internal inline fun skipWhitespace() {
         if (nextTokenByte != -1) return
 
-        while (positon < data.size) {
+        while (positon < limit) {
             val currentByte = data[positon].toInt() and 0xFF
 
             // Bitmask check for 0x20 (space), 0x0A (LF), 0x0D (CR), 0x09 (TAB)
@@ -625,7 +630,7 @@ class GhostJsonReader(
 
             positon++
             // Word-skipping Overdrive
-            while (positon + 3 < data.size) {
+            while (positon + 3 < limit) {
                 val word1 = data[positon].toInt() and 0xFF
                 val word2 = data[positon + 1].toInt() and 0xFF
                 val word3 = data[positon + 2].toInt() and 0xFF
@@ -643,7 +648,7 @@ class GhostJsonReader(
     }
 
     internal fun peekByte(): Byte {
-        if (positon >= data.size) {
+        if (positon >= limit) {
             throwError(GhostJsonConstants.UNEXPECTED_EOF_ERROR)
         }
         return data[positon]
@@ -651,7 +656,7 @@ class GhostJsonReader(
 
     internal fun peekNextByte(offset: Long): Byte? {
         val index = positon + offset.toInt()
-        if (index >= data.size) return null
+        if (index >= limit) return null
         return data[index]
     }
 

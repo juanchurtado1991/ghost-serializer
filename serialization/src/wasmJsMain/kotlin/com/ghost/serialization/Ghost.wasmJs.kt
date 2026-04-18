@@ -21,3 +21,16 @@ actual fun <T> __ghost_internal_use_reader__(
         reader.clear()
     }
 }
+
+actual fun <T> __ghost_internal_use_source__(
+    source: okio.BufferedSource,
+    block: (GhostJsonReader) -> T
+): T {
+    val bytes = source.readByteArray()
+    val reader = GhostJsonReader(bytes)
+    try {
+        return block(reader)
+    } finally {
+        reader.clear()
+    }
+}

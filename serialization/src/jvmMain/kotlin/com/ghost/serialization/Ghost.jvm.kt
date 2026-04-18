@@ -41,19 +41,70 @@ actual fun discoverRegistries(): List<GhostRegistry> {
     return registries
 }
 
-private val readerThreadLocal = ThreadLocal<GhostJsonReader>()
+@PublishedApi
+internal class GhostReaderStorage {
+    val reader: GhostJsonReader = GhostJsonReader(byteArrayOf())
+    val buffer: ByteArray = ByteArray(512 * 1024) // 512KB Recycled Buffer
+}
+
+private val storageThreadLocal = ThreadLocal<GhostReaderStorage>()
 
 actual fun <T> __ghost_internal_use_reader__(
     bytes: ByteArray,
     block: (GhostJsonReader) -> T
 ): T {
-    var reader = readerThreadLocal.get()
-    if (reader == null) {
-        reader = GhostJsonReader(bytes)
-        readerThreadLocal.set(reader)
-    } else {
-        reader.reset(bytes)
+    var storage = storageThreadLocal.get()
+    if (storage == null) {
+        storage = GhostReaderStorage()
+        storageThreadLocal.set(storage)
     }
+    
+    val reader = storage.reader
+    reader.reset(bytes)
+    
+    try {
+        return block(reader)
+    } finally {
+        reader.clear()
+    }
+}
+
+actual fun <T> __ghost_internal_use_source__(
+    source: okio.BufferedSource,
+    block: (GhostJsonReader) -> T
+): T {
+    var storage = storageThreadLocal.get()
+    if (storage == null) {
+        storage = GhostReaderStorage()
+        storageThreadLocal.set(storage)
+    }
+
+    val buffer = storage.buffer
+    val reader = storage.reader
+
+    // Zero-Allocation Load: Read directly into the recycled buffer
+    val readCount = source.read(buffer)
+    
+    // Check if the source is fully consumed within the 512KB buffer
+    if (source.exhausted()) {
+        val limit = if (readCount == -1) 0 else readCount
+        reader.reset(buffer, limit)
+        try {
+            return block(reader)
+        } finally {
+            reader.clear()
+        }
+    }
+    
+    // Industrial Fallback: Payload exceeds 512KB, fallback to readByteArray
+    // To DO: Implement segmented windowed streaming for massive payloads
+    val remainingBytes = source.readByteArray()
+    val fullBytes = if (readCount == -1) remainingBytes else {
+        val initialPart = buffer.copyOfRange(0, readCount)
+        initialPart + remainingBytes
+    }
+    
+    reader.reset(fullBytes)
     try {
         return block(reader)
     } finally {

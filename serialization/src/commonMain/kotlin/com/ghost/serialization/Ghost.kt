@@ -32,6 +32,7 @@ internal val serializerCache = mutableMapOf<KClass<*>, GhostSerializer<*>>()
 expect fun discoverRegistries(): List<GhostRegistry>
 
 expect fun <T> __ghost_internal_use_reader__(bytes: ByteArray, block: (GhostJsonReader) -> T): T
+expect fun <T> __ghost_internal_use_source__(source: okio.BufferedSource, block: (GhostJsonReader) -> T): T
 
 object Ghost {
 
@@ -149,13 +150,12 @@ object Ghost {
 
     inline fun <reified T : Any> deserialize(
         source: BufferedSource,
-        options: (GhostJsonReader) -> Unit = {}
+        crossinline options: (GhostJsonReader) -> Unit = {}
     ): T {
-        val reader = GhostJsonReader(source)
-        options(reader)
-        val serializer = getSerializer(T::class)
-            ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")
-        return serializer.deserialize(reader)
+        return __ghost_internal_use_source__(source) { reader ->
+            options(reader)
+            deserialize(reader)
+        }
     }
 
     inline fun <reified T : Any> deserialize(

@@ -3,7 +3,7 @@ import org.gradle.api.publish.maven.MavenPublication
 // coordinates
 allprojects {
     group = "com.ghost"
-    version = "1.0.0"
+    version = "1.1.0"
 }
 
 subprojects {

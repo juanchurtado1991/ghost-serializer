@@ -60,9 +60,9 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             
-            implementation(libs.ghost.api)
-            implementation(libs.ghost.core)
-            implementation(libs.ghost.ktor)
+            implementation(project(":serialization-api"))
+            implementation(project(":serialization"))
+            implementation(project(":serialization-ktor"))
             implementation(libs.ktorfit.lib)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
@@ -76,6 +76,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.moshi)
             implementation(libs.moshi.kotlin)
+            implementation(libs.gson)
         }
         
         iosMain.dependencies {
@@ -87,6 +88,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.moshi)
             implementation(libs.moshi.kotlin)
+            implementation(libs.gson)
         }
 
         val wasmJsMain by getting {
@@ -141,11 +143,11 @@ ksp {
 
 dependencies {
     // Ghost KSP - Using catalog dependency for industrial consistency
-    add("kspJvm", libs.ghost.compiler)
-    add("kspAndroid", libs.ghost.compiler)
-    add("kspIosArm64", libs.ghost.compiler)
-    add("kspIosSimulatorArm64", libs.ghost.compiler)
-    add("kspWasmJs", libs.ghost.compiler)
+    add("kspJvm", project(":serialization-compiler"))
+    add("kspAndroid", project(":serialization-compiler"))
+    add("kspIosArm64", project(":serialization-compiler"))
+    add("kspIosSimulatorArm64", project(":serialization-compiler"))
+    add("kspWasmJs", project(":serialization-compiler"))
     
     // Ktorfit KSP
     add("kspJvm", libs.ktorfit.ksp)

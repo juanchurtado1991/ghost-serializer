@@ -22,12 +22,9 @@ class RickAndMortyApi {
         return try {
             var totalNetworkTime = 0.0
             var totalGhostTime = 0.0
-            var totalMoshiTime = 0.0
-            var totalKserTime = 0.0
-
             var totalGhostMem = 0L
-            var totalMoshiMem = 0L
-            var totalKserMem = 0L
+            
+            val engineAggregates = mutableMapOf<String, Pair<Double, Long>>()
 
             val allCharacters = mutableListOf<GhostCharacter>()
 
@@ -44,12 +41,13 @@ class RickAndMortyApi {
                 val netEnd = TimeSource.Monotonic.markNow()
                 totalNetworkTime += (netEnd - netStart).inWholeMicroseconds / 1000.0
 
-                // Silent Warm-up (20 iterations to induce JIT)
-                repeat(20) {
-                    Ghost.deserialize<CharacterResponse>(rawBytes)
-                    parseWithMoshi(rawBytes)
-                    parseWithKSer(rawBytes)
-                }
+                // Silent Warm-up (20 iterations)
+                    repeat(20) {
+                        Ghost.deserialize<CharacterResponse>(rawBytes)
+                        parseWithMoshi(rawBytes)
+                        parseWithKSer(rawBytes)
+                        parseWithGson(rawBytes)
+                    }
 
                 // GHOST Benchmark
                 val ghostStart = TimeSource.Monotonic.markNow()
@@ -62,15 +60,24 @@ class RickAndMortyApi {
                 totalGhostMem += if (ghostMemStart >= 0 && ghostMemEnd >= 0) ghostMemEnd - ghostMemStart else 0L
                 allCharacters.addAll(ghostData.results)
 
-                // MOSHI Benchmark
-                val moshiRes = parseWithMoshi(rawBytes)
-                totalMoshiTime += moshiRes.timeMs
-                totalMoshiMem += moshiRes.allocatedBytes
+                // Benchmark other engines
+                val engines = mapOf(
+                    "MOSHI" to { parseWithMoshi(rawBytes) },
+                    "K-SER" to { parseWithKSer(rawBytes) },
+                    "GSON"  to { parseWithGson(rawBytes) }
+                )
 
-                // KSER Benchmark
-                val kserRes = parseWithKSer(rawBytes)
-                totalKserTime += kserRes.timeMs
-                totalKserMem += kserRes.allocatedBytes
+                engines.forEach { (name, benchmark) ->
+                    val res = benchmark()
+                    if (res.isSupported) {
+                        val current = engineAggregates.getOrPut(name) { 0.0 to 0L }
+                        engineAggregates[name] = (current.first + res.timeMs) to (current.second + res.allocatedBytes)
+                    }
+                }
+            }
+
+            val engineResults = engineAggregates.map { (name, data) ->
+                EngineResult(name, data.first, data.second, true)
             }
 
             Result.success(
@@ -78,11 +85,8 @@ class RickAndMortyApi {
                     data = allCharacters,
                     networkTimeMs = totalNetworkTime,
                     parseTimeMs = totalGhostTime,
-                    moshiTimeMs = totalMoshiTime,
-                    kserTimeMs = totalKserTime,
                     ghostMemoryBytes = totalGhostMem,
-                    moshiMemoryBytes = totalMoshiMem,
-                    kserMemoryBytes = totalKserMem
+                    engineResults = engineResults
                 )
             )
         } catch (e: Exception) {

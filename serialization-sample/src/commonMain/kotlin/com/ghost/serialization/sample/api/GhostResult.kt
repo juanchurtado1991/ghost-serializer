@@ -1,12 +1,16 @@
 package com.ghost.serialization.sample.api
 
+data class EngineResult(
+    val name: String,
+    val timeMs: Double,
+    val memoryBytes: Long,
+    val isSupported: Boolean
+)
+
 data class GhostResult<T>(
     val data: T,
     val networkTimeMs: Double,
-    val parseTimeMs: Double,
-    val moshiTimeMs: Double,
-    val kserTimeMs: Double = -1.0,
+    val parseTimeMs: Double, // This remains for Ghost's specific benchmark logic
     val ghostMemoryBytes: Long,
-    val moshiMemoryBytes: Long,
-    val kserMemoryBytes: Long = 0L
+    val engineResults: List<EngineResult>
 )

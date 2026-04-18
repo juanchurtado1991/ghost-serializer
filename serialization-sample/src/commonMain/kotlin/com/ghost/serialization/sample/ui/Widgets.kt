@@ -20,31 +20,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 object DesignSystem {
-    val BackgroundGradient = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF0F172A),
-            Color(0xFF020617)
-        )
-    )
+    val PrimaryDark = Color(0xFF0F172A)
+    val SurfaceColor = Color(0xFF1E293B)
+    val AccentGlow = Color(0xFF34D399) // Back to Emerald Zenith
+    val PrimaryAccent = Color(0xFF10B981)
     
-    // Zenith Glassmorphism
-    val GlassColor = Color(0xFF1E293B).copy(alpha = 0.6f)
-    val GlassBorder = Color(0xFF334155).copy(alpha = 0.4f)
-    val GlassGlow = Color(0xFF34D399).copy(alpha = 0.1f)
+    val GlassColor = Color(0xFFFFFFFF).copy(alpha = 0.05f)
+    val GlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.1f)
+    val TextPrimary = Color(0xFFF8FAFC)
+    val TextSecondary = Color(0xFF94A3B8)
+    val ErrorColor = Color(0xFFEF4444)
+
+    val BackgroundGradient = Brush.verticalGradient(
+        colors = listOf(PrimaryDark, Color(0xFF020617))
+    )
 
     val CardGradient = Brush.linearGradient(
         colors = listOf(
-            Color(0xFF1E293B).copy(alpha = 0.7f),
-            Color(0xFF0F172A).copy(alpha = 0.7f)
+            SurfaceColor.copy(alpha = 0.7f),
+            PrimaryDark.copy(alpha = 0.7f)
         )
     )
-    
-    val PrimaryAccent = Color(0xFF10B981)
-    val AccentGlow = Color(0xFF34D399)
-    val TextPrimary = Color(0xFFF8FAFC)
-    val TextSecondary = Color(0xFF94A3B8)
-    val BorderColor = Color(0xFF334155).copy(alpha = 0.5f)
-    val ErrorColor = Color(0xFFEF4444)
     
     val StatusAlive = Color(0xFF10B981)
     val StatusDead = Color(0xFFEF4444)
@@ -77,39 +73,34 @@ fun Card(
 }
 
 @Composable
-fun IndustrialButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+fun MetricItem(
+    title: String,
+    value: String,
+    overrideColor: Color? = null
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(
-                        DesignSystem.PrimaryAccent.copy(alpha = 0.2f),
-                        DesignSystem.AccentGlow.copy(alpha = 0.1f)
-                    )
-                )
-            )
-            .border(
-                1.dp,
-                DesignSystem.AccentGlow.copy(alpha = 0.4f),
-                RoundedCornerShape(12.dp)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = 32.dp, vertical = 16.dp),
-        contentAlignment = Alignment.Center
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(8.dp)
     ) {
-        Text(
-            text = text.uppercase(),
-            color = DesignSystem.AccentGlow,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 2.sp,
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center
+        SampleText(
+            text = title.uppercase(),
+            isSecondary = true,
+            fontSize = 10,
+            isBold = true,
+            modifier = Modifier.padding(bottom = 6.dp)
         )
+        Box(
+            modifier = Modifier
+                .background(DesignSystem.GlassColor, RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        ) {
+            SampleText(
+                text = value,
+                fontSize = 17,
+                isBold = true,
+                overrideColor = overrideColor ?: DesignSystem.TextPrimary
+            )
+        }
     }
 }
 
