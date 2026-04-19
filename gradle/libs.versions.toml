@@ -26,11 +26,11 @@ ghost = "1.1.0"
 
 [libraries]
 # Ghost Serialization (Industrial 1.1.0)
-ghost-api = { group = "com.ghostserializer", name = "serialization-api", version.ref = "ghost" }
-ghost-core = { group = "com.ghostserializer", name = "serialization", version.ref = "ghost" }
-ghost-compiler = { group = "com.ghostserializer", name = "serialization-compiler", version.ref = "ghost" }
-ghost-ktor = { group = "com.ghostserializer", name = "serialization-ktor", version.ref = "ghost" }
-ghost-retrofit = { group = "com.ghostserializer", name = "serialization-retrofit", version.ref = "ghost" }
+ghost-api = { group = "com.ghost.serialization", name = "serialization-api", version.ref = "ghost" }
+ghost-core = { group = "com.ghost.serialization", name = "serialization", version.ref = "ghost" }
+ghost-compiler = { group = "com.ghost.serialization", name = "serialization-compiler", version.ref = "ghost" }
+ghost-ktor = { group = "com.ghost.serialization", name = "serialization-ktor", version.ref = "ghost" }
+ghost-retrofit = { group = "com.ghost.serialization", name = "serialization-retrofit", version.ref = "ghost" }
 
 junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform-engine" }
 junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-vintage-engine" }

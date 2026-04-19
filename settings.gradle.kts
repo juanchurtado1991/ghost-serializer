@@ -21,11 +21,11 @@ dependencyResolutionManagement {
 
 rootProject.name = "GhostSerialization"
 
-include(":serialization-api")
-include(":serialization")
-include(":serialization-compiler")
-include(":serialization-retrofit")
-include(":serialization-ktor")
-include(":serialization-sample")
-include(":serialization-benchmark")
-include(":serialization-integration-test")
+include(":ghost-api")
+include(":ghost-serialization")
+include(":ghost-compiler")
+include(":ghost-retrofit")
+include(":ghost-ktor")
+include(":ghost-sample")
+include(":ghost-benchmark")
+include(":ghost-integration-test")

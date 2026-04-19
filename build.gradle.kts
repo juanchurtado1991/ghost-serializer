@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.ksp) apply false
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    id("org.jetbrains.dokka") version "2.0.0"
 }
 
 subprojects {
