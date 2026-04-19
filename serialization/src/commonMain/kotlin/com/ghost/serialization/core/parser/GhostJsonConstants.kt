@@ -52,6 +52,7 @@ internal object GhostJsonConstants {
     const val MINUS = '-'.code.toByte()
     const val PLUS = '+'.code.toByte()
     const val DOT = '.'.code.toByte()
+    const val ZERO = '0'.code.toByte()
     const val EXP_LOWER = 'e'.code.toByte()
     const val EXP_UPPER = 'E'.code.toByte()
 
@@ -81,5 +82,17 @@ internal object GhostJsonConstants {
         for (i in 0..31) this[i] = true
         this['"'.code] = true
         this['\\'.code] = true
+    }
+
+    internal object FormatUtils {
+        val DIGIT_TENS = ByteArray(100)
+        val DIGIT_ONES = ByteArray(100)
+
+        init {
+            for (i in 0 until 100) {
+                DIGIT_TENS[i] = ((i / 10) + 48).toByte()
+                DIGIT_ONES[i] = ((i % 10) + 48).toByte()
+            }
+        }
     }
 }

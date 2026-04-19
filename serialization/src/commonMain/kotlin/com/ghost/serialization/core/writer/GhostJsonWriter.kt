@@ -192,73 +192,44 @@ class GhostJsonWriter(
             sink.writeByte('0'.code)
             return
         }
-        var i = 20
-        while (v > 0) {
-            scratch[--i] = ((v % 10) + 48).toByte()
-            v /= 10
+        var i = 40
+        while (v >= 100) {
+            val remainder = (v % 100).toInt()
+            v /= 100
+            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_ONES[remainder]
+            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_TENS[remainder]
         }
-        sink.write(scratch, i, 20 - i)
+        if (v >= 10) {
+            val remainder = v.toInt()
+            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_ONES[remainder]
+            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_TENS[remainder]
+        } else {
+            scratch[--i] = (v.toInt() + 48).toByte()
+        }
+        sink.write(scratch, i, 40 - i)
     }
 
     fun value(number: Double): GhostJsonWriter {
-        if (!number.isFinite()) {
-            throw GhostJsonException(
-                GhostJsonConstants.ERR_NON_FINITE,
-                0,
-                0
-            )
-        }
         appendSeparator()
 
-        var count = 0
-        val n = if (number < 0) {
-            scratch[count++] = '-'.code.toByte()
-            -number
-        } else number
+        val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
+            value = number,
+            scratch = scratch,
+            offset = 0,
+            fallback = { fallbackNum ->
+                if (!fallbackNum.isFinite()) {
+                    throw GhostJsonException(GhostJsonConstants.ERR_NON_FINITE, 0, 0)
+                }
+                val str = fallbackNum.toString()
+                sink.writeUtf8(str)
+                -1
+            }
+        )
 
-        val i = n.toLong()
-        val intStart = count
-        var tempI = i
-        if (tempI == 0L) {
-            scratch[count++] = '0'.code.toByte()
-        } else {
-            while (tempI > 0) {
-                scratch[count++] = ('0'.code.toLong() + (tempI % 10)).toByte()
-                tempI /= 10
-            }
-            var left = intStart
-            var right = count - 1
-            while (left < right) {
-                val tmp = scratch[left]
-                scratch[left] = scratch[right]
-                scratch[right] = tmp
-                left++; right--
-            }
+        if (bytesWrittenLength > 0) {
+            sink.write(scratch, 0, bytesWrittenLength)
         }
 
-        val f = n - i
-        if (f > 0.0) {
-            scratch[count++] = '.'.code.toByte()
-            val fracStart = count
-            var fraction = f
-            for (step in 1..15) {
-                fraction *= 10
-                val digit = fraction.toInt()
-                scratch[count++] = ('0'.code + digit).toByte()
-                fraction -= digit
-                if (fraction < 1e-15) break
-            }
-            // Trim trailing zeros; keep at least one digit after the decimal point
-            while (count > fracStart + 1 && scratch[count - 1] == '0'.code.toByte()) {
-                count--
-            }
-        } else {
-            // Always emit ".0" so 0.0 is distinguishable from integer 0
-            scratch[count++] = '.'.code.toByte()
-            scratch[count++] = '0'.code.toByte()
-        }
-
-        sink.write(scratch, 0, count)
         needsComma = true
         return this
     }
@@ -297,21 +268,6 @@ class GhostJsonWriter(
     private fun writeEscaped(text: String) {
         val length = text.length
         if (length == 0) return
-
-        // Fast Path: Check if any character needs escaping
-        var needsEscape = false
-        for (i in 0 until length) {
-            val c = text[i].code
-            if (c < 32 || c == 34 || c == 92) {
-                needsEscape = true
-                break
-            }
-        }
-
-        if (!needsEscape) {
-            sink.writeUtf8(text)
-            return
-        }
 
         var last = 0
         val escapeTable = GhostJsonConstants.BLOCK_ESCAPE

@@ -108,32 +108,32 @@ class GhostJsonReader(
         var length = 0
         // Vectorized scan for the closing quote
         while (positon + length + 7 < limit) {
-            if (data[positon + length] == 34.toByte()) break
-            if (data[positon + length + 1] == 34.toByte()) {
+            if (data[positon + length] == GhostJsonConstants.QUOTE) break
+            if (data[positon + length + 1] == GhostJsonConstants.QUOTE) {
                 length += 1; break
             }
-            if (data[positon + length + 2] == 34.toByte()) {
+            if (data[positon + length + 2] == GhostJsonConstants.QUOTE) {
                 length += 2; break
             }
-            if (data[positon + length + 3] == 34.toByte()) {
+            if (data[positon + length + 3] == GhostJsonConstants.QUOTE) {
                 length += 3; break
             }
-            if (data[positon + length + 4] == 34.toByte()) {
+            if (data[positon + length + 4] == GhostJsonConstants.QUOTE) {
                 length += 4; break
             }
-            if (data[positon + length + 5] == 34.toByte()) {
+            if (data[positon + length + 5] == GhostJsonConstants.QUOTE) {
                 length += 5; break
             }
-            if (data[positon + length + 6] == 34.toByte()) {
+            if (data[positon + length + 6] == GhostJsonConstants.QUOTE) {
                 length += 6; break
             }
-            if (data[positon + length + 7] == 34.toByte()) {
+            if (data[positon + length + 7] == GhostJsonConstants.QUOTE) {
                 length += 7; break
             }
             length += 8
         }
 
-        while (positon + length < limit && data[positon + length] != 34.toByte()) {
+        while (positon + length < limit && data[positon + length] != GhostJsonConstants.QUOTE) {
             length++
         }
 
@@ -246,7 +246,7 @@ class GhostJsonReader(
 
         val index = internalSelect(options)
         if (index >= 0) {
-            if (positon < limit && data[positon] == 34.toByte()) {
+            if (positon < limit && data[positon] == GhostJsonConstants.QUOTE) {
                 positon++; nextTokenByte = -1
                 return index
             }
@@ -298,7 +298,7 @@ class GhostJsonReader(
         val index = internalSelect(options)
         if (index >= 0) {
             // Found it. Skip closing quote and separator
-            if (positon < limit && data[positon] == 34.toByte()) {
+            if (positon < limit && data[positon] == GhostJsonConstants.QUOTE) {
                 positon++
                 // Fused consumeKeySeparator
                 skipWhitespace()
