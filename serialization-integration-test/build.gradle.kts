@@ -9,11 +9,11 @@ kotlin {
 }
 
 dependencies {
-    implementation(libs.ghost.api)
-    implementation(libs.ghost.core)
+    implementation(project(":serialization-api"))
+    implementation(project(":serialization"))
     implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
-    ksp(libs.ghost.compiler)
+    ksp(project(":serialization-compiler"))
 
     testImplementation(libs.kotlin.test)
 }

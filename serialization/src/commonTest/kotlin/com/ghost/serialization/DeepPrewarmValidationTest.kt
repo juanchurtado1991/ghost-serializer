@@ -1,8 +1,8 @@
-package com.ghost.serialization
+package com.ghostserializer
 import kotlin.test.assertTrue
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghostserializer.core.contract.GhostRegistry
+import com.ghostserializer.core.contract.GhostSerializer
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,7 +18,7 @@ class DeepPrewarmValidationTest {
             
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
                 return mapOf(
-                    String::class to com.ghost.serialization.serializers.StringSerializer as GhostSerializer<*>
+                    String::class to com.ghostserializer.serializers.StringSerializer as GhostSerializer<*>
                 )
             }
         }
@@ -36,6 +36,6 @@ class DeepPrewarmValidationTest {
         // 5. Verify the type is now in the cache
         val serializer = Ghost.getSerializer(String::class)
         assertTrue(serializerCache.containsKey(String::class), "Cache should contain String::class after deep prewarm")
-        assertEquals(com.ghost.serialization.serializers.StringSerializer, serializer)
+        assertEquals(com.ghostserializer.serializers.StringSerializer, serializer)
     }
 }

@@ -1,14 +1,14 @@
-package com.ghost.serialization.sample
+package com.ghostserializer.sample
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.ghost.serialization.sample.ui.GhostSampleApp
+import com.ghostserializer.sample.ui.GhostSampleApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.ghost.serialization.sample.util.AndroidContext.init(this)
+        com.ghostserializer.sample.util.AndroidContext.init(this)
         setContent {
             GhostSampleApp()
         }

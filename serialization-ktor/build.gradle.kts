@@ -25,7 +25,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.ghost.core)
+            api(project(":serialization"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
         }
@@ -37,7 +37,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.ghost.serialization.ktor"
+    namespace = "com.ghostserializer.ktor"
     compileSdk = 35
 
     compileOptions {
@@ -47,7 +47,7 @@ android {
 }
 
 dependencies {
-    add("kspCommonMainMetadata", libs.ghost.compiler)
-    add("kspJvm", libs.ghost.compiler)
-    add("kspAndroid", libs.ghost.compiler)
+    add("kspCommonMainMetadata", project(":serialization-compiler"))
+    add("kspJvm", project(":serialization-compiler"))
+    add("kspAndroid", project(":serialization-compiler"))
 }

@@ -1,10 +1,10 @@
-package com.ghost.serialization.core
+package com.ghostserializer.core
 import kotlin.test.assertTrue
 
-import com.ghost.serialization.serializers.IntArraySerializer
-import com.ghost.serialization.serializers.LongArraySerializer
+import com.ghostserializer.serializers.IntArraySerializer
+import com.ghostserializer.serializers.LongArraySerializer
 
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghostserializer.core.parser.GhostJsonReader
 
 import okio.Buffer
 import kotlin.test.Test

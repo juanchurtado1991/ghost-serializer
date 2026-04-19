@@ -26,7 +26,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.ghost.api)
+            api(project(":serialization-api"))
             api(libs.okio)
         }
         commonTest.dependencies {
@@ -40,13 +40,13 @@ kotlin {
 }
 
 dependencies {
-    add("kspCommonMainMetadata", libs.ghost.compiler)
-    add("kspJvm", libs.ghost.compiler)
-    add("kspAndroid", libs.ghost.compiler)
+    add("kspCommonMainMetadata", project(":serialization-compiler"))
+    add("kspJvm", project(":serialization-compiler"))
+    add("kspAndroid", project(":serialization-compiler"))
 }
 
 android {
-    namespace = "com.ghost.serialization.core"
+    namespace = "com.ghostserializer.core"
     compileSdk = 36
 
     compileOptions {

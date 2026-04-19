@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
 data class BenchmarkResult(
     val timeMs: Double,

@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.ui
+package com.ghostserializer.sample.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -39,12 +39,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.sample.api.EngineResult
-import com.ghost.serialization.sample.api.PlatformCapabilities
-import com.ghost.serialization.sample.api.RickAndMortyApi
-import com.ghost.serialization.sample.domain.GhostCharacter
-import com.ghost.serialization.sample.util.copyToClipboard
+import com.ghostserializer.Ghost
+import com.ghostserializer.sample.api.EngineResult
+import com.ghostserializer.sample.api.PlatformCapabilities
+import com.ghostserializer.sample.api.RickAndMortyApi
+import com.ghostserializer.sample.domain.GhostCharacter
+import com.ghostserializer.sample.util.copyToClipboard
 import kotlinx.coroutines.launch
 
 @Composable

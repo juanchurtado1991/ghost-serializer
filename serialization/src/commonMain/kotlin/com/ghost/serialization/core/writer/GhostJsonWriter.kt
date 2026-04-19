@@ -1,8 +1,8 @@
-package com.ghost.serialization.core.writer
+package com.ghostserializer.core.writer
 
-import com.ghost.serialization.core.exception.GhostJsonException
-import com.ghost.serialization.core.parser.GhostJsonConstants
-import com.ghost.serialization.core.parser.JsonReaderOptions
+import com.ghostserializer.core.exception.GhostJsonException
+import com.ghostserializer.core.parser.GhostJsonConstants
+import com.ghostserializer.core.parser.JsonReaderOptions
 import okio.BufferedSink
 
 /**

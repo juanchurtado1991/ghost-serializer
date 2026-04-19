@@ -1,7 +1,7 @@
 package com.ghost.integration
 
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghostserializer.Ghost
+import com.ghostserializer.core.exception.GhostJsonException
 import com.ghost.integration.model.MaliceModel
 import com.ghost.integration.model.DecimalStress
 import com.ghost.integration.model.CollisionModel

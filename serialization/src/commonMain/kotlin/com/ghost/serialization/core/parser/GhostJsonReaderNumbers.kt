@@ -1,4 +1,4 @@
-package com.ghost.serialization.core.parser
+package com.ghostserializer.core.parser
 
 import kotlin.math.pow
 

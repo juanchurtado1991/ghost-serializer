@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.util
+package com.ghostserializer.sample.util
 
 import android.content.Context
 import java.lang.ref.WeakReference

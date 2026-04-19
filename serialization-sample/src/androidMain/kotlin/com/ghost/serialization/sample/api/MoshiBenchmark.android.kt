@@ -1,6 +1,6 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
-import com.ghost.serialization.sample.domain.CharacterResponse
+import com.ghostserializer.sample.domain.CharacterResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okio.Buffer
@@ -10,15 +10,15 @@ actual fun parseWithMoshi(bytes: ByteArray): BenchmarkResult {
     return try {
         val moshi = Moshi.Builder()
             .add(object {
-                @com.squareup.moshi.ToJson fun toJson(status: com.ghost.serialization.sample.domain.CharacterStatus): String = when(status) {
-                    com.ghost.serialization.sample.domain.CharacterStatus.Alive -> "Alive"
-                    com.ghost.serialization.sample.domain.CharacterStatus.Dead -> "Dead"
-                    com.ghost.serialization.sample.domain.CharacterStatus.Unknown -> "unknown"
+                @com.squareup.moshi.ToJson fun toJson(status: com.ghostserializer.sample.domain.CharacterStatus): String = when(status) {
+                    com.ghostserializer.sample.domain.CharacterStatus.Alive -> "Alive"
+                    com.ghostserializer.sample.domain.CharacterStatus.Dead -> "Dead"
+                    com.ghostserializer.sample.domain.CharacterStatus.Unknown -> "unknown"
                 }
-                @com.squareup.moshi.FromJson fun fromJson(name: String): com.ghost.serialization.sample.domain.CharacterStatus = when(name) {
-                    "Alive" -> com.ghost.serialization.sample.domain.CharacterStatus.Alive
-                    "Dead" -> com.ghost.serialization.sample.domain.CharacterStatus.Dead
-                    else -> com.ghost.serialization.sample.domain.CharacterStatus.Unknown
+                @com.squareup.moshi.FromJson fun fromJson(name: String): com.ghostserializer.sample.domain.CharacterStatus = when(name) {
+                    "Alive" -> com.ghostserializer.sample.domain.CharacterStatus.Alive
+                    "Dead" -> com.ghostserializer.sample.domain.CharacterStatus.Dead
+                    else -> com.ghostserializer.sample.domain.CharacterStatus.Unknown
                 }
             })
             .addLast(KotlinJsonAdapterFactory()).build()

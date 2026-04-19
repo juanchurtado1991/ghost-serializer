@@ -10,8 +10,8 @@ import com.ghost.integration.model.Category
 import com.ghost.integration.model.ComplexResponse
 import com.ghost.integration.model.ExtremeMetadata
 import com.ghost.integration.model.UserRole
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghostserializer.Ghost
+import com.ghostserializer.core.parser.GhostJsonReader
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter

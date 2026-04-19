@@ -1,7 +1,7 @@
-package com.ghost.serialization.ktor
+package com.ghostserializer.ktor
 
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghostserializer.Ghost
+import com.ghostserializer.core.parser.GhostJsonReader
 import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
 import io.ktor.serialization.ContentConverter

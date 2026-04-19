@@ -1,6 +1,6 @@
-package com.ghost.serialization.core.writer
+package com.ghostserializer.core.writer
 
-import com.ghost.serialization.core.parser.GhostJsonConstants
+import com.ghostserializer.core.parser.GhostJsonConstants
 import kotlin.math.round
 
 /**

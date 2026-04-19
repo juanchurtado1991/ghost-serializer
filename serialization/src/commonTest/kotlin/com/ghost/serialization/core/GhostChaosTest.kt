@@ -1,16 +1,16 @@
-package com.ghost.serialization.core
+package com.ghostserializer.core
 import kotlin.test.assertTrue
 
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.exception.GhostJsonException
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.skipValue
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.exception.GhostJsonException
+import com.ghostserializer.core.parser.nextKey
+import com.ghostserializer.core.parser.consumeKeySeparator
+import com.ghostserializer.core.parser.nextDouble
+import com.ghostserializer.core.parser.skipValue
 
 /**
  * Chaos Engineering Suite (TDD). 

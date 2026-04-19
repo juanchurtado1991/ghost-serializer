@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.ui
+package com.ghostserializer.sample.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

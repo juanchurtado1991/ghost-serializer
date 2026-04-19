@@ -1,14 +1,14 @@
-package com.ghost.serialization.retrofit
+package com.ghostserializer.retrofit
 
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.serializers.ListSerializer
-import com.ghost.serialization.serializers.MapSerializer
-import com.ghost.serialization.serializers.StringSerializer
-import com.ghost.serialization.serializers.IntSerializer
-import com.ghost.serialization.serializers.LongSerializer
-import com.ghost.serialization.serializers.BooleanSerializer
-import com.ghost.serialization.serializers.DoubleSerializer
+import com.ghostserializer.core.contract.GhostSerializer
+import com.ghostserializer.core.contract.GhostRegistry
+import com.ghostserializer.serializers.ListSerializer
+import com.ghostserializer.serializers.MapSerializer
+import com.ghostserializer.serializers.StringSerializer
+import com.ghostserializer.serializers.IntSerializer
+import com.ghostserializer.serializers.LongSerializer
+import com.ghostserializer.serializers.BooleanSerializer
+import com.ghostserializer.serializers.DoubleSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody

@@ -1,7 +1,7 @@
-package com.ghost.serialization
+package com.ghostserializer
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghostserializer.core.contract.GhostRegistry
+import com.ghostserializer.core.parser.GhostJsonReader
 
 /**
  * Wasm Discovery: Absolute Control.

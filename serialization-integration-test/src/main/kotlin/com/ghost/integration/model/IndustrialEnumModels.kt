@@ -1,7 +1,7 @@
 package com.ghost.integration.model
 
-import com.ghost.serialization.annotations.GhostName
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostName
+import com.ghostserializer.annotations.GhostSerialization
 import kotlinx.serialization.SerialName
 
 @GhostSerialization

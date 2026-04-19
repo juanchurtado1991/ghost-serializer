@@ -1,8 +1,8 @@
-package com.ghost.serialization.core
+package com.ghostserializer.core
 import kotlin.test.assertTrue
 
-import com.ghost.serialization.core.writer.GhostJsonWriter
-import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghostserializer.core.writer.GhostJsonWriter
+import com.ghostserializer.core.exception.GhostJsonException
 
 import okio.Buffer
 import kotlin.test.Test

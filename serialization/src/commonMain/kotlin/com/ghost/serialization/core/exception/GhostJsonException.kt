@@ -1,4 +1,4 @@
-package com.ghost.serialization.core.exception
+package com.ghostserializer.core.exception
 
 class GhostJsonException(
     message: String,

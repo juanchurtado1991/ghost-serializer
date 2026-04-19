@@ -1,6 +1,6 @@
-package com.ghost.serialization.sample.domain
+package com.ghostserializer.sample.domain
 
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostSerialization
 
 @GhostSerialization
 data class BenchUser(

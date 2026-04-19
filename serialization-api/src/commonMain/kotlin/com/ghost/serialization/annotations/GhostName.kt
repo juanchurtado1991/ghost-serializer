@@ -1,4 +1,4 @@
-package com.ghost.serialization.annotations
+package com.ghostserializer.annotations
 
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)

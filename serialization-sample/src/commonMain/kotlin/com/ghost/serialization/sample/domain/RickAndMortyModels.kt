@@ -1,12 +1,12 @@
-package com.ghost.serialization.sample.domain
+package com.ghostserializer.sample.domain
 
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostSerialization
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 
 /**
  * @Serializable for kotlinx.serialization support
- * @GhostSerialization for com.ghost.serialization support
+ * @GhostSerialization for com.ghostserializer support
  */
 
 @GhostSerialization

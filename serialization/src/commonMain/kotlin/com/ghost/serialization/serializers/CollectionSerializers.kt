@@ -1,14 +1,14 @@
-package com.ghost.serialization.serializers
+package com.ghostserializer.serializers
 
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonConstants
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.consumeArraySeparator
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.nextLong
-import com.ghost.serialization.core.parser.readList
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghostserializer.core.contract.GhostSerializer
+import com.ghostserializer.core.parser.GhostJsonConstants
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.parser.consumeArraySeparator
+import com.ghostserializer.core.parser.nextInt
+import com.ghostserializer.core.parser.nextKey
+import com.ghostserializer.core.parser.nextLong
+import com.ghostserializer.core.parser.readList
+import com.ghostserializer.core.writer.GhostJsonWriter
 
 class ListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>

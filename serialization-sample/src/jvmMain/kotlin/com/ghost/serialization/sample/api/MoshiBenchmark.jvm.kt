@@ -1,7 +1,7 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
-import com.ghost.serialization.sample.domain.CharacterResponse
-import com.ghost.serialization.sample.domain.CharacterStatus
+import com.ghostserializer.sample.domain.CharacterResponse
+import com.ghostserializer.sample.domain.CharacterStatus
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.ToJson

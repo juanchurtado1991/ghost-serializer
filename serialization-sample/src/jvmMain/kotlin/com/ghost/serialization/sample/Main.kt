@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample
+package com.ghostserializer.sample
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
@@ -7,9 +7,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.sample.ui.GhostSampleApp
-import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
+import com.ghostserializer.Ghost
+import com.ghostserializer.sample.ui.GhostSampleApp
+import com.ghostserializer.generated.GhostModuleRegistry_serialization_sample
 
 fun main() {
     // Manual registration for JVM

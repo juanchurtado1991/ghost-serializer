@@ -5,6 +5,8 @@
 local.properties
 .kotlin/
 .vscode/
+*.gpg
+*.asc
 
 # Build outputs (Recursive)
 **/build/

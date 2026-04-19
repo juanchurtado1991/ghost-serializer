@@ -1,6 +1,6 @@
 package com.ghost.integration
 
-import com.ghost.serialization.Ghost
+import com.ghostserializer.Ghost
 import com.ghost.integration.model.GodObject
 import kotlin.test.Test
 import kotlin.test.assertEquals

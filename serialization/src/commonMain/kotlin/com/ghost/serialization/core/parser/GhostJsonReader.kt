@@ -1,6 +1,6 @@
-package com.ghost.serialization.core.parser
+package com.ghostserializer.core.parser
 
-import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghostserializer.core.exception.GhostJsonException
 import okio.BufferedSource
 
 

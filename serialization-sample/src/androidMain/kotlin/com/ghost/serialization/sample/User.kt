@@ -1,6 +1,6 @@
-package com.ghost.serialization.sample
+package com.ghostserializer.sample
 
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostSerialization
 
 @GhostSerialization
 data class User(

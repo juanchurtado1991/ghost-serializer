@@ -1,6 +1,6 @@
 package com.ghost.integration
 
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostSerialization
 
 @GhostSerialization
 enum class Priority { LOW, MEDIUM, HIGH, CRITICAL }

@@ -1,4 +1,4 @@
-package com.ghost.serialization.compiler
+package com.ghostserializer.compiler
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind

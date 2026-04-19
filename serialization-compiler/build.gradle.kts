@@ -7,7 +7,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(libs.ghost.api)
+    implementation(project(":serialization-api"))
     implementation(libs.ksp.api)
     implementation(libs.kotlinpoet)
     implementation(libs.kotlinpoet.ksp)

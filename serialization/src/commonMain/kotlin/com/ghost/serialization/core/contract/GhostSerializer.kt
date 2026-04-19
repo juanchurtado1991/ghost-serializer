@@ -1,9 +1,9 @@
-package com.ghost.serialization.core.contract
+package com.ghostserializer.core.contract
 
 import okio.BufferedSink
 import okio.BufferedSource
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.writer.GhostJsonWriter
 
 /**
  * Base contract for high-performance JSON serializers.

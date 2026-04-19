@@ -108,11 +108,11 @@ tasks.withType<ProcessResources> {
 }
 
 android {
-    namespace = "com.ghost.serialization.sample"
+    namespace = "com.ghostserializer.sample"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.ghost.serialization.sample"
+        applicationId = "com.ghostserializer.sample"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -159,6 +159,6 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.ghost.serialization.sample.MainKt"
+        mainClass = "com.ghostserializer.sample.MainKt"
     }
 }

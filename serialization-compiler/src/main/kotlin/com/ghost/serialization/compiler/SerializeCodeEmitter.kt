@@ -1,4 +1,4 @@
-package com.ghost.serialization.compiler
+package com.ghostserializer.compiler
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -201,7 +201,7 @@ internal class SerializeCodeEmitter(
         private const val STR_WRITER_VALUE_VALUE_NAME = "writer.value(value.name)"
         private const val STR_WRITER_VALUE_ACC_NAME = "writer.value(%L.name)"
         private const val STR_WRITER_VALUE_ACC = "writer.value(%L)"
-        private const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"
+        private const val STR_SERIALIZERS_PKG = "com.ghostserializer.serializers"
         private const val STR_WRITER_BEGIN_ARR = "writer.beginArray()"
         private const val STR_FOR_ITEM_IN_ACC = "for (item in %L)"
         private const val STR_T_SERIALIZE_WRITER_ITEM = "%T.serialize(writer, item)"

@@ -1,4 +1,4 @@
-package com.ghost.serialization.compiler
+package com.ghostserializer.compiler
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -206,7 +206,7 @@ class GhostSerializationProcessor(
                 public static ** INSTANCE;
                 public *** getSerializer(...);
             }
-            -keep class * implements com.ghost.serialization.core.contract.GhostSerializer {
+            -keep class * implements com.ghostserializer.core.contract.GhostSerializer {
                 *;
             }
         """.trimIndent()
@@ -257,7 +257,7 @@ class GhostSerializationProcessor(
         private const val STR_LOG_OPTIMIZED = " Successfully optimized: "
         private const val STR_LOG_CRITICAL = " Critical error processing "
         private const val STR_COLON_SPACE = ": "
-        private const val STR_CONTRACT_PKG = "com.ghost.serialization.core.contract"
+        private const val STR_CONTRACT_PKG = "com.ghostserializer.core.contract"
         private const val STR_GHOST_SERIALIZER = "GhostSerializer"
         private const val STR_REFLECT_PKG = "kotlin.reflect"
         private const val STR_KCLASS = "KClass"
@@ -289,13 +289,13 @@ class GhostSerializationProcessor(
         private const val STR_GHOST_SERIALIZATION_FILE = "ghost-serialization"
         private const val STR_EXT_PRO = "pro"
         private const val STR_LOG_PROGUARD_WARN = " Could not generate ProGuard rules: "
-        private const val STR_SERVICE_NAME = "com.ghost.serialization.core.contract.GhostRegistry"
+        private const val STR_SERVICE_NAME = "com.ghostserializer.core.contract.GhostRegistry"
         private const val STR_META_INF_SERVICES = "META-INF.services"
         private const val STR_EMPTY = ""
         private const val STR_LOG_SERVICE_WARN = " Could not generate ServiceLoader file: "
         private const val STR_FORMAT_S = "%S"
-        private const val ANNOTATION_NAME = "com.ghost.serialization.annotations.GhostSerialization"
-        private const val PACKAGE_NAME = "com.ghost.serialization.generated"
+        private const val ANNOTATION_NAME = "com.ghostserializer.annotations.GhostSerialization"
+        private const val PACKAGE_NAME = "com.ghostserializer.generated"
         private const val REGISTRY_CLASS_NAME = "GhostModuleRegistry"
         private const val LOG_PREFIX = ">>> [GhostSerialization]"
         const val OPTION_GENERATE_MOSHI_ADAPTERS = "ghost.generateMoshiAdapters"

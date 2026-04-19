@@ -1,4 +1,4 @@
-package com.ghost.serialization.compiler
+package com.ghostserializer.compiler
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -567,7 +567,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_NEXT_LONG = "reader.nextLong()"
         private const val STR_NEXT_DOUBLE = "reader.nextDouble()"
         private const val STR_NEXT_FLOAT = "reader.nextFloat()"
-        private const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"
+        private const val STR_SERIALIZERS_PKG = "com.ghostserializer.serializers"
         private const val STR_NEXT_STRING = "reader.nextString()"
         private const val STR_NULL_CHECK_1 = "if (reader.isNextNullValue()) { reader.consumeNull(); null } "
         private const val STR_NULL_CHECK_2 = "else %T.deserialize(reader)"
@@ -605,7 +605,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_BUILD_MAP_7 = "  }\n"
         private const val STR_BUILD_MAP_8 = "  reader.endObject()\n"
         private const val STR_BUILD_MAP_9 = "}"
-        private const val STR_CORE_EXC_PKG = "com.ghost.serialization.core.exception"
+        private const val STR_CORE_EXC_PKG = "com.ghostserializer.core.exception"
         private const val STR_GHOST_JSON_EXC = "GhostJsonException"
         private const val STR_IF_NOT_SET = "if (!_"
         private const val STR_SET_PAREN = "Set)"

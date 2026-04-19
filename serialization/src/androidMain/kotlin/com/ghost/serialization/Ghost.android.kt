@@ -1,7 +1,7 @@
-package com.ghost.serialization
+package com.ghostserializer
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghostserializer.core.contract.GhostRegistry
+import com.ghostserializer.core.parser.GhostJsonReader
 
 /**
  * Android/JVM Implementation of Ghost Registry Discovery.
@@ -19,9 +19,9 @@ actual fun discoverRegistries(): List<GhostRegistry> {
     // 2. Reflective Fallback for complex KMP environments or R8 issues
     val registries = mutableListOf<GhostRegistry>()
     val patterns = listOf(
-        "com.ghost.serialization.generated.GhostModuleRegistry_Default",
-        "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_serialization_sample_domain",
-        "com.ghost.serialization.generated.GhostModuleRegistry_com_ghost_integration"
+        "com.ghostserializer.generated.GhostModuleRegistry_Default",
+        "com.ghostserializer.generated.GhostModuleRegistry_com.ghostserializer_sample_domain",
+        "com.ghostserializer.generated.GhostModuleRegistry_com_ghost_integration"
     )
 
     patterns.forEach { className ->

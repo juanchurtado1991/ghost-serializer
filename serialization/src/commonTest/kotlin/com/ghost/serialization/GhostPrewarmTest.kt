@@ -1,9 +1,9 @@
-package com.ghost.serialization
+package com.ghostserializer
 import kotlin.test.assertTrue
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghostserializer.core.contract.GhostRegistry
+import com.ghostserializer.core.contract.GhostSerializer
+import com.ghostserializer.core.parser.GhostJsonReader
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -15,7 +15,7 @@ class GhostPrewarmTest {
 
     class MockUserSerializer : GhostSerializer<MockUser> {
         var warmupCalled = false
-        override fun serialize(writer: com.ghost.serialization.core.writer.GhostJsonWriter, value: MockUser) {}
+        override fun serialize(writer: com.ghostserializer.core.writer.GhostJsonWriter, value: MockUser) {}
         override fun deserialize(reader: GhostJsonReader): MockUser {
             return MockUser(1, "test")
         }

@@ -1,8 +1,8 @@
-package com.ghost.serialization.integration
+package com.ghostserializer.integration
 
 import com.ghost.integration.model.GhostEnumWrapper
 import com.ghost.integration.model.GhostSovereigntyEnum
-import com.ghost.serialization.Ghost
+import com.ghostserializer.Ghost
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -31,7 +31,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.ghost.serialization.api"
+    namespace = "com.ghostserializer.api"
     compileSdk = 36
 
     compileOptions {

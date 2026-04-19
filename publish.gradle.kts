@@ -2,7 +2,7 @@ import org.gradle.api.publish.maven.MavenPublication
 
 // coordinates
 allprojects {
-    group = "com.ghost"
+    group = "com.ghostserializer"
     version = "1.1.0"
 }
 
@@ -60,14 +60,25 @@ subprojects {
                     }
                 }
             }
+            repositories {
+                maven {
+                    name = "OSSRH"
+                    url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                    credentials {
+                        username = project.findProperty("sonatypeUsername") as String?
+                        password = project.findProperty("sonatypePassword") as String?
+                    }
+                }
+            }
         }
 
         // Signing logic
         configure<SigningExtension> {
-            val key = project.findProperty("signing.key") as String?
+            val keyId = project.findProperty("signing.keyId") as String?
             val password = project.findProperty("signing.password") as String?
-            if (key != null && password != null) {
-                useInMemoryPgpKeys(key, password)
+            val secretKeyRingFile = project.findProperty("signing.secretKeyRingFile") as String?
+            
+            if (keyId != null && password != null && secretKeyRingFile != null) {
                 sign(extensions.getByType<PublishingExtension>().publications)
             }
         }

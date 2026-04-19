@@ -1,6 +1,6 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
-import com.ghost.serialization.sample.domain.CharacterResponse
+import com.ghostserializer.sample.domain.CharacterResponse
 import kotlinx.serialization.json.Json
 import kotlin.time.TimeSource
 

@@ -1,11 +1,11 @@
-package com.ghost.serialization.serializers
+package com.ghostserializer.serializers
 
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextLong
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghostserializer.core.contract.GhostSerializer
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.parser.nextDouble
+import com.ghostserializer.core.parser.nextInt
+import com.ghostserializer.core.parser.nextLong
+import com.ghostserializer.core.writer.GhostJsonWriter
 
 object StringSerializer : GhostSerializer<String> {
     override fun serialize(writer: GhostJsonWriter, value: String) {

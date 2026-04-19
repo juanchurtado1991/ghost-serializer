@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
 actual object PlatformCapabilities {
     actual val isMemoryTrackingSupported: Boolean = true

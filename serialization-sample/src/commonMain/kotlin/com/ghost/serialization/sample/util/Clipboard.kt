@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.util
+package com.ghostserializer.sample.util
 
 /**
  * Industrial Multiplatform Clipboard Bridge.

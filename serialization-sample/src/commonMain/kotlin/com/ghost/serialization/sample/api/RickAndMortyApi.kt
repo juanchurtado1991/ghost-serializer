@@ -1,9 +1,9 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.ktor.ghost
-import com.ghost.serialization.sample.domain.CharacterResponse
-import com.ghost.serialization.sample.domain.GhostCharacter
+import com.ghostserializer.Ghost
+import com.ghostserializer.ktor.ghost
+import com.ghostserializer.sample.domain.CharacterResponse
+import com.ghostserializer.sample.domain.GhostCharacter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation

@@ -1,4 +1,4 @@
-package com.ghost.serialization.compiler
+package com.ghostserializer.compiler
 
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.BOOLEAN

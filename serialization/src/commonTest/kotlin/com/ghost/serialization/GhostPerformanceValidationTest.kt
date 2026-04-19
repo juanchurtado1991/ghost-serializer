@@ -1,11 +1,11 @@
-package com.ghost.serialization
+package com.ghostserializer
 import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
+import com.ghostserializer.core.parser.JsonReaderOptions
 
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.parser.consumeKeySeparator
+import com.ghostserializer.core.contract.GhostRegistry
+import com.ghostserializer.core.contract.GhostSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 class GhostPerformanceValidationTest {
 
     private class MockSerializer : GhostSerializer<String> {
-        override fun serialize(writer: com.ghost.serialization.core.writer.GhostJsonWriter, value: String) {}
+        override fun serialize(writer: com.ghostserializer.core.writer.GhostJsonWriter, value: String) {}
         override fun deserialize(reader: GhostJsonReader): String = ""
     }
 

@@ -1,15 +1,15 @@
-package com.ghost.serialization.core.parser
+package com.ghostserializer.core.parser
 
-import com.ghost.serialization.core.parser.GhostJsonConstants.CLOSE_ARR
-import com.ghost.serialization.core.parser.GhostJsonConstants.CLOSE_OBJ
-import com.ghost.serialization.core.parser.GhostJsonConstants.COLON
-import com.ghost.serialization.core.parser.GhostJsonConstants.COMMA
-import com.ghost.serialization.core.parser.GhostJsonConstants.FALSE_CHAR
-import com.ghost.serialization.core.parser.GhostJsonConstants.NULL_CHAR
-import com.ghost.serialization.core.parser.GhostJsonConstants.OPEN_ARR
-import com.ghost.serialization.core.parser.GhostJsonConstants.OPEN_OBJ
-import com.ghost.serialization.core.parser.GhostJsonConstants.QUOTE
-import com.ghost.serialization.core.parser.GhostJsonConstants.TRUE_CHAR
+import com.ghostserializer.core.parser.GhostJsonConstants.CLOSE_ARR
+import com.ghostserializer.core.parser.GhostJsonConstants.CLOSE_OBJ
+import com.ghostserializer.core.parser.GhostJsonConstants.COLON
+import com.ghostserializer.core.parser.GhostJsonConstants.COMMA
+import com.ghostserializer.core.parser.GhostJsonConstants.FALSE_CHAR
+import com.ghostserializer.core.parser.GhostJsonConstants.NULL_CHAR
+import com.ghostserializer.core.parser.GhostJsonConstants.OPEN_ARR
+import com.ghostserializer.core.parser.GhostJsonConstants.OPEN_OBJ
+import com.ghostserializer.core.parser.GhostJsonConstants.QUOTE
+import com.ghostserializer.core.parser.GhostJsonConstants.TRUE_CHAR
 
 
 /**

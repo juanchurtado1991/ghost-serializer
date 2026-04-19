@@ -21,8 +21,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(libs.ghost.api)
-    implementation(libs.ghost.core)
+    implementation(project(":serialization-api"))
+    implementation(project(":serialization"))
     implementation(project(":serialization-integration-test"))
     implementation(libs.gson)
     implementation(libs.moshi)

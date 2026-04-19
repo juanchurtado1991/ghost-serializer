@@ -52,16 +52,16 @@ plugins {
 
 dependencies {
     // 1. Add the KSP Compiler plugin
-    ksp("com.ghost.serialization:ghost-compiler:1.0.0")
+    ksp("com.ghostserializer:ghost-compiler:1.0.0")
 
     // 2. Add the Ghost Core Runtime
-    implementation("com.ghost.serialization:ghost-core:1.0.0")
+    implementation("com.ghostserializer:ghost-core:1.0.0")
     
     // (Optional) For Network Layer Integration (Retrofit)
-    implementation("com.ghost.serialization:ghost-retrofit:1.0.0")
+    implementation("com.ghostserializer:ghost-retrofit:1.0.0")
 
     // (Optional) For Ktor 3.0 / Ktorfit 2.3.0 Integration
-    implementation("com.ghost.serialization:ghost-ktor:1.0.0")
+    implementation("com.ghostserializer:ghost-ktor:1.0.0")
 }
 ```
 
@@ -73,7 +73,7 @@ dependencies {
 Simply decorate any Data Class, Sealed Class, Enum, or Value Class with `@GhostSerialization`. Ghost will automatically compute and generate the optimum path to serialize/deserialize it.
 
 ```kotlin
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostSerialization
 
 @GhostSerialization
 data class UserProfile(
@@ -93,7 +93,7 @@ enum class UserRole {
 The singleton `Ghost` instance works as the central facade for streaming APIs and string manipulations.
 
 ```kotlin
-import com.ghost.serialization.Ghost
+import com.ghostserializer.Ghost
 
 val profile = UserProfile(id = "U-199", alias = "GhostProtocol")
 
@@ -112,7 +112,7 @@ val restoredProfile = Ghost.deserialize<UserProfile>(jsonPayload)
 Ghost comes with a fully native Converter Factory specifically optimized for OkHttp transport layers ensuring memory streaming from the Socket to the Data Class, bypassing RAM buildup.
 
 ```kotlin
-import com.ghost.serialization.retrofit.GhostConverterFactory
+import com.ghostserializer.retrofit.GhostConverterFactory
 
 val retrofit = Retrofit.Builder()
     .baseUrl("https://api.ghost.dev/")

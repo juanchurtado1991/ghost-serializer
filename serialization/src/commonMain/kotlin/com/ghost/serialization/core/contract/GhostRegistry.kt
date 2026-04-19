@@ -1,4 +1,4 @@
-package com.ghost.serialization.core.contract
+package com.ghostserializer.core.contract
 
 import kotlin.reflect.KClass
 

@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
 import java.lang.management.ManagementFactory
 

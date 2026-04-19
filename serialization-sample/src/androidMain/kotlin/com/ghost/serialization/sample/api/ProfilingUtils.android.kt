@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.api
+package com.ghostserializer.sample.api
 
 actual fun getCurrentThreadAllocatedBytes(): Long {
     return try {

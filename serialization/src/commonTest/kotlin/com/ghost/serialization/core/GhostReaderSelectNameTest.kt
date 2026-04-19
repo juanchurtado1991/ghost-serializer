@@ -1,19 +1,19 @@
-package com.ghost.serialization.core
+package com.ghostserializer.core
 import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
+import com.ghostserializer.core.parser.JsonReaderOptions
 
-import com.ghost.serialization.core.parser.skipCommaIfPresent
+import com.ghostserializer.core.parser.skipCommaIfPresent
 
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.isNextNullValue
-import com.ghost.serialization.core.parser.skipValue
-import com.ghost.serialization.core.parser.readList
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.consumeNull
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.writer.GhostJsonWriter
+import com.ghostserializer.core.parser.nextKey
+import com.ghostserializer.core.parser.consumeKeySeparator
+import com.ghostserializer.core.parser.isNextNullValue
+import com.ghostserializer.core.parser.skipValue
+import com.ghostserializer.core.parser.readList
+import com.ghostserializer.core.parser.nextInt
+import com.ghostserializer.core.parser.nextDouble
+import com.ghostserializer.core.parser.consumeNull
 
 import okio.Buffer
 import kotlin.test.Test

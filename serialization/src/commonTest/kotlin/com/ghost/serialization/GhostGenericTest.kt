@@ -1,9 +1,9 @@
-package com.ghost.serialization
+package com.ghostserializer
 import kotlin.test.assertTrue
 
-import com.ghost.serialization.annotations.GhostSerialization
-import com.ghost.serialization.serializers.ListSerializer
-import com.ghost.serialization.serializers.MapSerializer
+import com.ghostserializer.annotations.GhostSerialization
+import com.ghostserializer.serializers.ListSerializer
+import com.ghostserializer.serializers.MapSerializer
 import kotlin.reflect.typeOf
 import kotlin.test.*
 

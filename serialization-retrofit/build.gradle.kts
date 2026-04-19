@@ -7,7 +7,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(libs.ghost.core)
+    implementation(project(":serialization"))
     implementation(libs.retrofit)
     implementation(libs.okhttp)
 }

@@ -1,4 +1,4 @@
-package com.ghost.serialization.compiler
+package com.ghostserializer.compiler
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
@@ -193,10 +193,10 @@ internal class GhostCodeGenerator(
     }
 
     companion object {
-        private const val PKG_PARSER = "com.ghost.serialization.core.parser"
-        private const val PKG_WRITER = "com.ghost.serialization.core.writer"
-        private const val PKG_CONTRACT = "com.ghost.serialization.core.contract"
-        private const val PKG_EXCEPTION = "com.ghost.serialization.core.exception"
+        private const val PKG_PARSER = "com.ghostserializer.core.parser"
+        private const val PKG_WRITER = "com.ghostserializer.core.writer"
+        private const val PKG_CONTRACT = "com.ghostserializer.core.contract"
+        private const val PKG_EXCEPTION = "com.ghostserializer.core.exception"
         private const val OKIO_PACKAGE = "okio"
         private const val STR_GHOST_SERIALIZER = "GhostSerializer"
         private const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"

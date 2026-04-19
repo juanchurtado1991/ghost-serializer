@@ -2,7 +2,7 @@
 
 package com.ghost.integration.model
 
-import com.ghost.serialization.annotations.GhostSerialization
+import com.ghostserializer.annotations.GhostSerialization
 import com.squareup.moshi.JsonClass
 import kotlinx.serialization.Serializable
 

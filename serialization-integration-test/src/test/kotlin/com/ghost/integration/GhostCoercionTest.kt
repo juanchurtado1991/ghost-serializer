@@ -1,6 +1,6 @@
 package com.ghost.integration
 
-import com.ghost.serialization.Ghost
+import com.ghostserializer.Ghost
 import com.ghost.integration.model.UserWithValueClass
 import com.ghost.integration.model.UserId
 import kotlin.test.Test

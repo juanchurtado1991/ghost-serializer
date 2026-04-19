@@ -1,4 +1,4 @@
-package com.ghost.serialization.annotations
+package com.ghostserializer.annotations
 
 /**
  * Triggers the automatic generation of high-performance serializers for the annotated class.

@@ -1,4 +1,4 @@
-package com.ghost.serialization.ktor
+package com.ghostserializer.ktor
 
 import io.ktor.http.ContentType
 import io.ktor.serialization.Configuration

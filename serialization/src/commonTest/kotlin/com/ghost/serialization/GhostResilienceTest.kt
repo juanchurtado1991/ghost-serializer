@@ -1,11 +1,11 @@
-package com.ghost.serialization
+package com.ghostserializer
 import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
+import com.ghostserializer.core.parser.JsonReaderOptions
 
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghostserializer.core.parser.GhostJsonReader
+import com.ghostserializer.core.parser.consumeKeySeparator
+import com.ghostserializer.core.parser.nextInt
+import com.ghostserializer.core.exception.GhostJsonException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
