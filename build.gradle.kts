@@ -25,4 +25,16 @@ subprojects {
     }
 }
 
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
+            username.set(project.findProperty("sonatypeUsername") as String?)
+            password.set(project.findProperty("sonatypePassword") as String?)
+            packageGroup.set("com.ghostserializer")
+        }
+    }
+}
+
 apply(from = "publish.gradle.kts")

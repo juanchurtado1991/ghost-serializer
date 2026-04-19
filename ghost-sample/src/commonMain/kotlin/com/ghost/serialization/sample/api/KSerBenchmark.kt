@@ -9,11 +9,11 @@ private val json = Json {
     coerceInputValues = true
 }
 
-fun parseWithKSer(bytes: ByteArray): BenchmarkResult {
+fun parseWithKSer(jsonString: String): BenchmarkResult {
     val start = TimeSource.Monotonic.markNow()
     val startMem = getCurrentThreadAllocatedBytes()
     
-    val jsonString = bytes.decodeToString()
+    // Normalization: KSer receives the String already decoded
     json.decodeFromString<CharacterResponse>(jsonString)
     
     val end = TimeSource.Monotonic.markNow()

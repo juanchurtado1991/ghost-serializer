@@ -1,5 +1,8 @@
 package com.ghost.serialization.sample.api
 
-actual fun parseWithGson(bytes: ByteArray): BenchmarkResult {
-    return BenchmarkResult(timeMs = -1.0, allocatedBytes = 0L, isSupported = false)
+import kotlin.time.TimeSource
+
+actual fun parseWithGson(jsonString: String): BenchmarkResult {
+    // GSON is not native to iOS, so it returns unsupported
+    return BenchmarkResult(0.0, 0L, false)
 }

@@ -1,5 +1,6 @@
 package com.ghost.serialization.sample.domain
 
+import com.ghost.serialization.annotations.GhostName
 import com.ghost.serialization.annotations.GhostSerialization
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
@@ -30,7 +31,7 @@ data class PageInfo(
 data class GhostCharacter(
     val id: Int,
     val name: String,
-    val status: CharacterStatus = CharacterStatus.Unknown,
+    val status: CharacterStatus = CharacterStatus.unknown,
     val species: String = "",
     val type: String = "",
     val gender: String = "",
@@ -45,9 +46,9 @@ data class GhostCharacter(
 @GhostSerialization
 @Serializable
 enum class CharacterStatus {
-    @SerialName("Alive") Alive, 
-    @SerialName("Dead") Dead, 
-    @SerialName("unknown") Unknown
+    @SerialName("Alive") @GhostName("Alive") Alive, 
+    @SerialName("Dead") @GhostName("Dead") Dead, 
+    @SerialName("unknown") @GhostName("unknown") unknown
 }
 
 @GhostSerialization

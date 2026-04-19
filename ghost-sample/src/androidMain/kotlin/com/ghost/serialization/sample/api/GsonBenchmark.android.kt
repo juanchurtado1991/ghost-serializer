@@ -6,23 +6,17 @@ import kotlin.time.TimeSource
 
 private val gson = Gson()
 
-actual fun parseWithGson(bytes: ByteArray): BenchmarkResult {
-    return try {
-        val jsonString = bytes.decodeToString()
-        
-        val startMem = getCurrentThreadAllocatedBytes()
-        val start = TimeSource.Monotonic.markNow()
-        
-        gson.fromJson(jsonString, CharacterResponse::class.java)
-        
-        val end = TimeSource.Monotonic.markNow()
-        val endMem = getCurrentThreadAllocatedBytes()
-        
-        BenchmarkResult(
-            timeMs = (end - start).inWholeMicroseconds / 1000.0,
-            allocatedBytes = if (startMem >= 0 && endMem >= 0) endMem - startMem else 0L
-        )
-    } catch (e: Exception) {
-        BenchmarkResult(-1.0, 0L)
-    }
+actual fun parseWithGson(jsonString: String): BenchmarkResult {
+    val start = TimeSource.Monotonic.markNow()
+    val startMem = getCurrentThreadAllocatedBytes()
+    
+    gson.fromJson(jsonString, CharacterResponse::class.java)
+    
+    val end = TimeSource.Monotonic.markNow()
+    val endMem = getCurrentThreadAllocatedBytes()
+    
+    val time = (end - start).inWholeMicroseconds / 1000.0
+    val mem = if (startMem >= 0 && endMem >= 0) endMem - startMem else 0L
+    
+    return BenchmarkResult(time, mem)
 }

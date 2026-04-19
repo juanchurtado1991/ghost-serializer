@@ -22,8 +22,7 @@ import androidx.compose.ui.unit.sp
 object DesignSystem {
     val PrimaryDark = Color(0xFF0F172A)
     val SurfaceColor = Color(0xFF1E293B)
-    val AccentGlow = Color(0xFF34D399) // Back to Emerald Zenith
-    val PrimaryAccent = Color(0xFF10B981)
+    val AccentGlow = Color(0xFF34D399)
     
     val GlassColor = Color(0xFFFFFFFF).copy(alpha = 0.05f)
     val GlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.1f)
@@ -45,31 +44,6 @@ object DesignSystem {
     val StatusAlive = Color(0xFF10B981)
     val StatusDead = Color(0xFFEF4444)
     val StatusUnknown = Color(0xFF64748B)
-}
-
-@Composable
-fun Card(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(DesignSystem.CardGradient)
-            .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        DesignSystem.GlassBorder,
-                        Color.Transparent
-                    )
-                ),
-                shape = RoundedCornerShape(20.dp)
-            )
-            .padding(20.dp)
-    ) {
-        content()
-    }
 }
 
 @Composable

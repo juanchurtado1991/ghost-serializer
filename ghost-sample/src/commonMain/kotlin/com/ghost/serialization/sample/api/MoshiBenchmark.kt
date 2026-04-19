@@ -1,3 +1,3 @@
 package com.ghost.serialization.sample.api
 
-expect fun parseWithMoshi(bytes: ByteArray): BenchmarkResult
+expect fun parseWithMoshi(jsonString: String): BenchmarkResult

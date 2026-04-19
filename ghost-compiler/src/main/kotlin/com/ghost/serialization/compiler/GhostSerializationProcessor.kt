@@ -38,18 +38,17 @@ class GhostSerializationProcessor(
         ?.toBoolean()
         ?: false
 
-    // Map of Class -> Its Serializer Name (Flattened)
     private val classToSerializer = mutableMapOf<ClassName, ClassName>()
     private val originatingFiles = mutableSetOf<com.google.devtools.ksp.symbol.KSFile>()
     private val analyzer = GhostAnalyzer(logger)
 
     private val registryClassName: String by lazy {
         // Use the module name provided by KSP or fallback to a stable suffix
-        val moduleName = options["ghost.moduleName"] 
+        val moduleName = options["ghost.moduleName"]
             ?.replace(STR_DASH, STR_UNDERSCORE)
             ?.replace(STR_DOT, STR_UNDERSCORE)
             ?: STR_DEFAULT
-        
+
         "${REGISTRY_CLASS_NAME}_$moduleName"
     }
 
@@ -95,7 +94,6 @@ class GhostSerializationProcessor(
             )
             classToSerializer[classDeclaration.toClassName()] = serializerClassName
 
-            // Industrial Advancement: Automatically register sealed subclasses to the same serializer
             if (classDeclaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.SEALED)) {
                 classDeclaration.getSealedSubclasses().forEach { subclass ->
                     classToSerializer[subclass.toClassName()] = serializerClassName

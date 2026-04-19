@@ -30,7 +30,6 @@ internal class DeserializeCodeEmitter(
             isEnum -> emitEnumDeserialization(body)
             properties.size > 40 -> {
                 emitFragmentedDeserialization(body, typeSpecBuilder)
-                // We return here because emitFragmentedDeserialization adds the function itself
                 return
             }
             else -> emitStandardDeserialization(body)

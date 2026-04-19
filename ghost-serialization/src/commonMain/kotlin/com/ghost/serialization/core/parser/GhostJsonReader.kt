@@ -29,7 +29,6 @@ class GhostJsonReader(
         this.positon = 0
         this.depth = 0
         this.nextTokenByte = -1
-        // Restore industrial strictness defaults on reset
         this.strictMode = false
         this.coerceStringsToNumbers = false
     }

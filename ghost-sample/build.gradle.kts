@@ -73,6 +73,7 @@ kotlin {
         
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.metrics)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.moshi)
             implementation(libs.moshi.kotlin)

@@ -1,10 +1,9 @@
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 
-// Coordinates and Project Info
 allprojects {
     group = "com.ghostserializer"
-    version = "1.1.0"
+    version = "1.1.1"
 
     // Load local.properties if it exists
     val localProperties = java.util.Properties()
@@ -15,30 +14,6 @@ allprojects {
             project.extensions.extraProperties.set(key as String, value)
         }
     }
-}
-
-// Configuration for the Nexus Publishing plugin (Staging Management)
-extensions.findByName("nexusPublishing")?.let { _ ->
-    val configureAction: Action<Any> = Action {
-        val repositoriesMethod = this.javaClass.getMethod("repositories", Action::class.java)
-        repositoriesMethod.invoke(this, Action<Any> {
-            val sonatypeMethod = this.javaClass.getMethod("sonatype", Action::class.java)
-            sonatypeMethod.invoke(this, Action<Any> {
-                val setNexusUrl = this.javaClass.getMethod("getNexusUrl")
-                val setSnapshotUrl = this.javaClass.getMethod("getSnapshotRepositoryUrl")
-                val getUsername = this.javaClass.getMethod("getUsername")
-                val getPassword = this.javaClass.getMethod("getPassword")
-                val getPackageGroup = this.javaClass.getMethod("getPackageGroup")
-
-                (setNexusUrl.invoke(this) as Property<java.net.URI>).set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-                (setSnapshotUrl.invoke(this) as Property<java.net.URI>).set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
-                (getUsername.invoke(this) as Property<String>).set(project.findProperty("sonatypeUsername") as String?)
-                (getPassword.invoke(this) as Property<String>).set(project.findProperty("sonatypePassword") as String?)
-                (getPackageGroup.invoke(this) as Property<String>).set("com.ghostserializer")
-            })
-        })
-    }
-    project.extensions.configure("nexusPublishing", configureAction)
 }
 
 subprojects {
@@ -55,7 +30,8 @@ subprojects {
         // Create Javadoc JAR using Dokka 2.x
         val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
             archiveClassifier.set("javadoc")
-            from(tasks.named("dokkaHtml"))
+            val dokkaHtmlTask = tasks.matching { it.name == "dokkaHtml" }
+            from(dokkaHtmlTask)
         }
 
         afterEvaluate {
@@ -81,7 +57,6 @@ subprojects {
             // Publication configuration
             configure<PublishingExtension> {
                 publications.withType<MavenPublication>().configureEach {
-                    // Attach Dokka Javadoc JAR
                     artifact(dokkaJavadocJar)
 
                     if (name == "kotlinMultiplatform" && project.name == "ghost-serialization") {
@@ -133,12 +108,10 @@ subprojects {
                 }
             }
 
-            // Fix for implicit dependencies and signing order
             tasks.withType<AbstractPublishToMaven>().configureEach {
                 dependsOn(dokkaJavadocJar)
             }
-            
-            // Resolve signing order issues
+
             val signingTasks = tasks.withType<Sign>()
             tasks.withType<AbstractPublishToMaven>().configureEach {
                 mustRunAfter(signingTasks)

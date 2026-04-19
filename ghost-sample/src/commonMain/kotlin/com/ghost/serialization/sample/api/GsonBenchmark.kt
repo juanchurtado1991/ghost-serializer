@@ -1,3 +1,3 @@
 package com.ghost.serialization.sample.api
 
-expect fun parseWithGson(bytes: ByteArray): BenchmarkResult
+expect fun parseWithGson(jsonString: String): BenchmarkResult

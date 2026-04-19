@@ -22,7 +22,7 @@ kotlin {
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
-        binaries.executable() // API usually doesn't need this, but for KMP consistency
+        binaries.executable()
     }
 
     sourceSets {
@@ -37,7 +37,7 @@ android {
     compileSdk = 36
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17 // FIXED: Standardized
+        sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 }

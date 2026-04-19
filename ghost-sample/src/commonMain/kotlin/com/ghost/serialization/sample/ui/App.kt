@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +52,7 @@ import kotlinx.coroutines.launch
 fun GhostSampleApp() {
     val api = remember { RickAndMortyApi() }
     val scope = rememberCoroutineScope()
+    val jankTracker = rememberJankTracker()
 
     LaunchedEffect(Unit) { Ghost.prewarm() }
 
@@ -60,7 +62,9 @@ fun GhostSampleApp() {
 
     var ghostTimeMs by remember { mutableStateOf(0.0) }
     var ghostMemBytes by remember { mutableStateOf(0L) }
+    var ghostJankCount by remember { mutableStateOf(0) }
     var engineResults by remember { mutableStateOf<List<EngineResult>>(emptyList()) }
+    var loadingStatus by remember { mutableStateOf("") }
 
     var pageCount by remember { mutableStateOf(1f) }
     var sessionHistory by remember { mutableStateOf(listOf<String>()) }
@@ -149,8 +153,8 @@ fun GhostSampleApp() {
                         Slider(
                             value = pageCount,
                             onValueChange = { pageCount = it },
-                            valueRange = 1f..20f,
-                            steps = 19,
+                            valueRange = 1f..10f,
+                            steps = 9,
                             modifier = Modifier.padding(vertical = 12.dp),
                             colors = SliderDefaults.colors(
                                 thumbColor = DesignSystem.AccentGlow,
@@ -164,56 +168,65 @@ fun GhostSampleApp() {
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Action Button
+            // Benchmark Trigger
             item {
                 Button(
                     onClick = {
-                        if (isLoading) return@Button
                         isLoading = true
                         errorMessage = null
+                        loadingStatus = "Initiating..."
                         scope.launch {
-                            val result = api.getCharacters(pageCount.toInt())
-                            result.onSuccess { res ->
-                                characters = res.data
-                                ghostTimeMs = res.parseTimeMs
-                                ghostMemBytes = res.ghostMemoryBytes
-                                engineResults = res.engineResults
-
-                                val timestamp =
-                                    "${Constants.STR_LOG_PREFIX}${sessionHistory.size + 1}"
-                                val logParts = mutableListOf<String>()
-                                logParts.add(timestamp)
-                                logParts.add(formatMs(ghostTimeMs))
-                                res.engineResults.forEach { logParts.add(formatMs(it.timeMs)) }
-
-                                if (capabilities.isMemoryTrackingSupported) {
-                                    logParts.add(formatMem(ghostMemBytes))
-                                    res.engineResults.forEach { logParts.add(formatMem(it.memoryBytes)) }
-                                }
-
-                                sessionHistory = sessionHistory + logParts.joinToString(", ")
-                            }.onFailure { err ->
-                                errorMessage = err.message
+                            api.getCharacters(pageCount.toInt(), jankTracker) { status ->
+                                loadingStatus = status
                             }
-                            isLoading = false
+                                .onSuccess { result ->
+                                    characters = result.data
+                                    ghostTimeMs = result.parseTimeMs
+                                    ghostMemBytes = result.ghostMemoryBytes
+                                    ghostJankCount = result.ghostJankCount
+                                    engineResults = result.engineResults
+                                    isLoading = false
+
+                                    // Add to history
+                                    val timestamp = "Session ${sessionHistory.size + 1}"
+                                    val historyLine = "$timestamp, ${result.parseTimeMs}ms, ${
+                                        engineResults.joinToString { "${it.name}: ${it.timeMs}ms" }
+                                    }"
+                                    sessionHistory = sessionHistory + historyLine
+                                }
+                                .onFailure {
+                                    errorMessage = it.message
+                                    isLoading = false
+                                }
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .heightIn(min = 56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = DesignSystem.SurfaceColor),
                     border = BorderStroke(1.dp, DesignSystem.AccentGlow)
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = DesignSystem.AccentGlow,
-                            strokeWidth = 2.dp
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = DesignSystem.AccentGlow,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SampleText(
+                                text = loadingStatus,
+                                overrideColor = DesignSystem.AccentGlow,
+                                fontSize = 10
+                            )
+                        }
                     } else {
                         SampleText(
-                            text = Constants.STR_BTN_FETCH,
+                            text = "RUN STRESS COMPARISON",
                             overrideColor = DesignSystem.AccentGlow,
                             isBold = true
                         )
@@ -223,9 +236,28 @@ fun GhostSampleApp() {
                 Spacer(modifier = Modifier.height(40.dp))
             }
 
-            // Benchmark Dashboard
+            // Error Message Section
             item {
-                if (ghostTimeMs > 0 && !isLoading) {
+                errorMessage?.let { msg ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = DesignSystem.ErrorColor.copy(alpha = 0.1f),
+                        border = BorderStroke(1.dp, DesignSystem.ErrorColor)
+                    ) {
+                        SampleText(
+                            text = "ERROR: $msg",
+                            overrideColor = DesignSystem.ErrorColor,
+                            fontSize = 12,
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            item {
+                if (!isLoading && (engineResults.isNotEmpty() || ghostTimeMs > 0)) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
@@ -236,33 +268,35 @@ fun GhostSampleApp() {
                             modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            // Title row (Centered)
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SampleText(
-                                    text = Constants.STR_BENCHMARK_TITLE,
-                                    isBold = true,
-                                    fontSize = 12,
-                                    isSecondary = true,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            SampleText(
+                                text = "STRESS TEST RESULTS (ms / JANK)",
+                                isBold = true,
+                                fontSize = 12,
+                                isSecondary = true,
+                                textAlign = TextAlign.Center
+                            )
+                            
+                            SampleText(
+                                text = "JANK = UI stutters. Lower is better (0 = Perfect)",
+                                fontSize = 10,
+                                isSecondary = true,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
 
                             Spacer(modifier = Modifier.height(32.dp))
 
+                            // Main Comparison Grid
                             val allEngines = listOf(
                                 EngineResult(
                                     "GHOST",
                                     ghostTimeMs,
                                     ghostMemBytes,
-                                    true
-                                )
+                                    true,
+                                    ghostJankCount
+                                ) // Ghost is always supported
                             ) + engineResults
 
-                            // Metrics grid
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 allEngines.chunked(2).forEach { rowEngines ->
                                     Row(
@@ -273,8 +307,8 @@ fun GhostSampleApp() {
                                         rowEngines.forEach { res ->
                                             Box(modifier = Modifier.padding(horizontal = 12.dp)) {
                                                 MetricItem(
-                                                    res.name,
-                                                    formatMs(res.timeMs),
+                                                    "${res.name} (J:${res.jankCount})",
+                                                    "${(res.timeMs * 100).toInt() / 100.0}ms",
                                                     when (res.name) {
                                                         "GHOST" -> DesignSystem.AccentGlow
                                                         "MOSHI" -> DesignSystem.ErrorColor
@@ -325,7 +359,7 @@ fun GhostSampleApp() {
                                 }
                             }
 
-                            // New Export Section at the bottom of the card
+                            // Export Section
                             Spacer(modifier = Modifier.height(16.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -344,22 +378,22 @@ fun GhostSampleApp() {
                                             columns.add("GHOST MEM (KB)")
                                             engines.forEach { columns.add("$it MEM (KB)") }
                                         }
+                                        // Add Jank columns
+                                        columns.add("GHOST JANK")
+                                        engines.forEach { columns.add("$it JANK") }
+                                        
                                         val logText =
                                             header + columns.joinToString(", ") + "\n" + sessionHistory.joinToString(
                                                 "\n"
                                             )
                                         copyToClipboard(logText)
-                                    },
-                                    contentPadding = PaddingValues(
-                                        horizontal = 16.dp,
-                                        vertical = 8.dp
-                                    )
+                                    }
                                 ) {
                                     SampleText(
-                                        text = Constants.STR_BTN_EXPORT,
-                                        fontSize = 12,
+                                        text = "COPY SESSION LOGS",
+                                        overrideColor = DesignSystem.AccentGlow,
                                         isBold = true,
-                                        overrideColor = DesignSystem.AccentGlow
+                                        fontSize = 12
                                     )
                                 }
                             }
@@ -369,38 +403,7 @@ fun GhostSampleApp() {
                 }
             }
 
-            // Error Message
-            item {
-                if (errorMessage != null) {
-                    SampleText(
-                        text = "HYPER-ENGINE ERROR:\n$errorMessage",
-                        overrideColor = DesignSystem.ErrorColor,
-                        isBold = true,
-                        fontSize = 14,
-                        modifier = Modifier.padding(vertical = 24.dp)
-                    )
-                }
-            }
-
-            // API Results Label
-            item {
-                if (characters.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SampleText(text = "API RESULTS", isBold = true, fontSize = 14)
-                        SampleText(
-                            text = "${characters.size} ITEMS",
-                            isSecondary = true,
-                            fontSize = 12
-                        )
-                    }
-                }
-            }
-
-            // Characters List
+            // Character List Section
             items(characters, key = { it.id }) { character ->
                 CharacterCard(character)
                 Spacer(modifier = Modifier.height(12.dp))
@@ -409,13 +412,25 @@ fun GhostSampleApp() {
     }
 }
 
+private fun formatMem(bytes: Long): String {
+    val b = if (bytes < 0) 0L else bytes
+    return when {
+        b >= 1024 * 1024 -> "${(b / (1024 * 1024.0) * 100).toInt() / 100.0} MB"
+        b >= 1024 -> "${(b / 1024.0 * 100).toInt() / 100.0} KB"
+        else -> "$b B"
+    }
+}
+
 @Composable
 private fun CharacterCard(character: GhostCharacter) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = DesignSystem.SurfaceColor,
+        border = BorderStroke(1.dp, DesignSystem.GlassBorder)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -447,26 +462,4 @@ private fun CharacterCard(character: GhostCharacter) {
             }
         }
     }
-}
-
-private fun formatMs(value: Double): String {
-    if (value < 0) return "N/A"
-    return if (value < 0.01 && value > 0) Constants.STR_LOW_LATENCY
-    else "${(value * 100).toInt() / 100.0}ms"
-}
-
-private fun formatMem(value: Long): String {
-    if (value < 0) return "N/A"
-    if (value == 0L) return "0 KB"
-    return if (value < 1024) "${value}B"
-    else if (value < 1024 * 1024) "${value / 1024}KB"
-    else "${(value / 1024.0 / 1024.0 * 100.0).toInt() / 100.0}MB"
-}
-
-private object Constants {
-    const val STR_LOG_PREFIX = "Log #"
-    const val STR_BENCHMARK_TITLE = "DYNAMIC MULTIPLATFORM BENCHMARK"
-    const val STR_BTN_EXPORT = "EXPORT LOGS"
-    const val STR_BTN_FETCH = "FETCH RICK AND MORTY"
-    const val STR_LOW_LATENCY = "<0.01ms"
 }

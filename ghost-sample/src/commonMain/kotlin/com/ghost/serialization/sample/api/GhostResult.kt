@@ -4,7 +4,8 @@ data class EngineResult(
     val name: String,
     val timeMs: Double,
     val memoryBytes: Long,
-    val isSupported: Boolean
+    val isSupported: Boolean,
+    val jankCount: Int = 0
 )
 
 data class GhostResult<T>(
@@ -12,5 +13,6 @@ data class GhostResult<T>(
     val networkTimeMs: Double,
     val parseTimeMs: Double, // This remains for Ghost's specific benchmark logic
     val ghostMemoryBytes: Long,
+    val ghostJankCount: Int = 0,
     val engineResults: List<EngineResult>
 )

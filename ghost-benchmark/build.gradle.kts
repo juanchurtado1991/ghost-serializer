@@ -29,8 +29,7 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okio)
-    
-    // JUnit for Automated Safety Audit (Separated according to Senior Audit)
+
     implementation(libs.junit.launcher)
     implementation(libs.junit.platform.engine)
     runtimeOnly(libs.junit.engine)

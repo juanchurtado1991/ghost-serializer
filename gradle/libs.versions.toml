@@ -22,15 +22,8 @@ ktorfit = "2.3.0"
 
 # Sample App UI
 coil = "3.0.4"
-ghost = "1.1.0"
 
 [libraries]
-# Ghost Serialization (Industrial 1.1.0)
-ghost-api = { group = "com.ghost.serialization", name = "serialization-api", version.ref = "ghost" }
-ghost-core = { group = "com.ghost.serialization", name = "serialization", version.ref = "ghost" }
-ghost-compiler = { group = "com.ghost.serialization", name = "serialization-compiler", version.ref = "ghost" }
-ghost-ktor = { group = "com.ghost.serialization", name = "serialization-ktor", version.ref = "ghost" }
-ghost-retrofit = { group = "com.ghost.serialization", name = "serialization-retrofit", version.ref = "ghost" }
 
 junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform-engine" }
 junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-vintage-engine" }
@@ -60,6 +53,7 @@ ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref =
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.9.1" }
+androidx-metrics = { group = "androidx.metrics", name = "metrics-performance", version = "1.0.0-beta01" }
 ktorfit-lib = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-lib", version.ref = "ktorfit" }
 ktorfit-ksp = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-ksp", version.ref = "ktorfit" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }

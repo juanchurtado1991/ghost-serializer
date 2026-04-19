@@ -1,4 +1,8 @@
 package com.ghost.serialization.sample.api
 
-actual fun parseWithMoshi(bytes: ByteArray): BenchmarkResult = 
-    BenchmarkResult(timeMs = -1.0, allocatedBytes = 0L, isSupported = false)
+import kotlin.time.TimeSource
+
+actual fun parseWithMoshi(jsonString: String): BenchmarkResult {
+    // Moshi is not native to WASM
+    return BenchmarkResult(0.0, 0L, false)
+}
