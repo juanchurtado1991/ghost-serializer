@@ -1,6 +1,6 @@
 <div align="center">
   <h1>👻 Ghost Serialization</h1>
-  <p><b>An industrial-grade, zero-reflection, multi-platform JSON Serialization Engine for Kotlin.</b></p>
+  <p><b>A high-performance, zero-reflection, multi-platform JSON Serialization Engine for Kotlin.</b></p>
 
   <p>
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin 2.1.10"></a>

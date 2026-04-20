@@ -4,7 +4,7 @@ All notable changes to the Ghost Serialization project will be documented in thi
 ## [1.1.3] - 2026-04-20
 
 ### Added
-- **Adaptive Heuristics System (L6 Staff Level):** ghost-serialization now automatically adjusts internal collection capacities and string pool limits based on the target platform (Android, JVM, iOS, Web).
+- **Adaptive Heuristics System:** ghost-serialization now automatically adjusts internal collection capacities and string pool limits based on the target platform (Android, JVM, iOS, Web).
 - **Jank Performance Tracking:** Added frame-drop detection (Jank) to benchmarks to measure UI smoothness during deserialization.
 - **UI Performance Insights:** Added real-time speed factor comparison (e.g., "1.18x faster") against baseline engines (KSER).
 - **Dynamic Load Control:** Integrated a 1-10 page slider in sample apps for stress testing.
@@ -21,4 +21,4 @@ All notable changes to the Ghost Serialization project will be documented in thi
 - **Benchmark Warm-up:** Unified JIT warm-up cycles to 100 iterations across all platforms for scientific consistency.
 
 ## [1.1.1] - 2026-04-19
-- Initial industrial release with Dokka 2.x support and Maven Central publishing.
+- Initial release with Dokka 2.x support, Maven Central, and NPM distribution.

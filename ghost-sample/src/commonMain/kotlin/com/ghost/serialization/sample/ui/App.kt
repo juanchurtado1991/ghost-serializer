@@ -85,7 +85,7 @@ fun GhostSampleApp(vm: MainViewModel = viewModel { MainViewModel() }) {
                     }
                 }
                 SampleText(
-                    text = "Industrial Multiplatform Performance Laboratory",
+                    text = "Multiplatform Performance Laboratory",
                     fontSize = 14,
                     isSecondary = true,
                     modifier = Modifier.padding(top = 8.dp)
