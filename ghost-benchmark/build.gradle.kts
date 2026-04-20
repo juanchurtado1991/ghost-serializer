@@ -29,6 +29,8 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okio)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.test)
 
     implementation(libs.junit.launcher)
     implementation(libs.junit.platform.engine)

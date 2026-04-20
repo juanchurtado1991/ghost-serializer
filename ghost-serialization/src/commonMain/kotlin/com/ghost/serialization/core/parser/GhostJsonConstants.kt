@@ -5,7 +5,7 @@ import kotlin.math.pow
 
 @PublishedApi
 internal object GhostJsonConstants {
-    const val STRING_BUILDER_CAPACITY = 64
+    const val STRING_BUILDER_CAPACITY = 128
     const val UNTERMINATED_STRING_ERROR = "Unterminated string"
     const val TRUNCATED_LITERAL_ERROR = "Truncated literal at end of source"
     const val UNEXPECTED_EOF_ERROR = "Unexpected EOF"
@@ -57,8 +57,8 @@ internal object GhostJsonConstants {
     const val EXP_UPPER = 'E'.code.toByte()
 
     // --- STR POOL METRICS ---
-    const val STR_POOL_SIZE = 512
-    const val MAX_POOL_STRING_LENGTH = 64
+    const val STR_POOL_SIZE = 2048
+    val MAX_POOL_STRING_LENGTH get() = GhostHeuristics.maxStringPoolLength
 
     val POWERS_OF_TEN = DoubleArray(309).apply {
         for (i in indices) this[i] = 10.0.pow(i.toDouble())

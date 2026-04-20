@@ -59,6 +59,8 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
             
             implementation(project(":ghost-api"))
             implementation(project(":ghost-serialization"))
@@ -66,6 +68,7 @@ kotlin {
             implementation(libs.ktorfit.lib)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.serialization.json)
@@ -74,10 +77,11 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.metrics)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.moshi)
-            implementation(libs.moshi.kotlin)
-            implementation(libs.gson)
+            implementation(libs.bundles.serialization.engines)
         }
         
         iosMain.dependencies {
@@ -86,10 +90,9 @@ kotlin {
         
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.moshi)
-            implementation(libs.moshi.kotlin)
-            implementation(libs.gson)
+            implementation(libs.bundles.serialization.engines)
         }
 
         val wasmJsMain by getting {
@@ -143,12 +146,8 @@ ksp {
 }
 
 dependencies {
-    // Ghost KSP - Using catalog dependency for industrial consistency
-    add("kspJvm", project(":ghost-compiler"))
-    add("kspAndroid", project(":ghost-compiler"))
-    add("kspIosArm64", project(":ghost-compiler"))
-    add("kspIosSimulatorArm64", project(":ghost-compiler"))
-    add("kspWasmJs", project(":ghost-compiler"))
+    // Ghost KSP - Generating registry only once in Common to avoid redeclaration 
+    add("kspCommonMainMetadata", project(":ghost-compiler"))
     
     // Ktorfit KSP
     add("kspJvm", libs.ktorfit.ksp)

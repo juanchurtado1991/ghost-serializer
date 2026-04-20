@@ -3,7 +3,7 @@ import org.gradle.api.tasks.bundling.Jar
 
 allprojects {
     group = "com.ghostserializer"
-    version = "1.1.1"
+    version = "1.1.2"
 
     // Load local.properties if it exists
     val localProperties = java.util.Properties()

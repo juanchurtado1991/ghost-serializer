@@ -1,10 +1,11 @@
 package com.ghost.serialization.sample.api
 
 import com.ghost.serialization.sample.domain.CharacterResponse
+import com.ghost.serialization.sample.util.getCurrentThreadAllocatedBytes
 import kotlinx.serialization.json.Json
 import kotlin.time.TimeSource
 
-private val json = Json {
+private val kserJson = Json {
     ignoreUnknownKeys = true
     coerceInputValues = true
 }
@@ -14,7 +15,7 @@ fun parseWithKSer(jsonString: String): BenchmarkResult {
     val startMem = getCurrentThreadAllocatedBytes()
     
     // Normalization: KSer receives the String already decoded
-    json.decodeFromString<CharacterResponse>(jsonString)
+    kserJson.decodeFromString<CharacterResponse>(jsonString)
     
     val end = TimeSource.Monotonic.markNow()
     val endMem = getCurrentThreadAllocatedBytes()

@@ -1,73 +1,96 @@
 [versions]
-# Build Tools & Languages
-agp = "8.7.3"
-junit-platform-engine = "1.11.3"
-junit-vintage-engine = "5.11.3"
-kotlin = "2.1.10"
-kotlin-test-junit5 = "2.1.0"
-kotlinx-coroutines-test = "1.10.1"
-ksp = "2.1.10-1.0.30"
-compose-plugin = "1.7.3"
-ktor = "3.0.0"
+# Core Ecosystem
+kotlin                  = "2.1.10"
+agp                     = "8.7.3"
+ksp                     = "2.1.10-1.0.30"
+compose-plugin          = "1.7.3"
 
-# Libraries
-okio = "3.9.1"
-kotlinpoet = "1.16.0"
-retrofit = "2.11.0"
-okhttp = "4.12.0"
-gson = "2.11.0"
-moshi = "1.15.2"
-kotlinx-serialization = "1.7.3"
-ktorfit = "2.3.0"
+# Networking & Serialization
+ktor                    = "3.0.0"
+ktorfit                 = "2.3.0"
+kotlinx-serialization   = "1.7.3"
+okio                    = "3.9.1"
+okhttp                  = "4.12.0"
+retrofit                = "2.11.0"
 
-# Sample App UI
-coil = "3.0.4"
+# Serialization Engines (Benchmark)
+gson                    = "2.11.0"
+moshi                   = "1.15.2"
 
-[libraries]
+# Tooling & Generation
+kotlinpoet              = "1.16.0"
 
-junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform-engine" }
-junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-vintage-engine" }
-kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin-test-junit5" }
-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
-okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
-
-# Compiler & KSP
-kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
-kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
-ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
-
-# Optional Integrations (For separate modules)
-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
-moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
-moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+# UI & Sample App
+coil                    = "3.0.4"
+androidx-activity       = "1.9.1"
+androidx-metrics        = "1.0.0-beta01"
+androidx-lifecycle      = "2.8.4"
 
 # Testing
-kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
-junit-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "6.0.3" }
-junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "6.0.3" }
+junit-jupiter           = "5.11.3"
+junit-platform          = "1.11.3"
+kotlinx-coroutines-test = "1.10.1"
 
-ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
-ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
-ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.9.1" }
-androidx-metrics = { group = "androidx.metrics", name = "metrics-performance", version = "1.0.0-beta01" }
-ktorfit-lib = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-lib", version.ref = "ktorfit" }
-ktorfit-ksp = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-ksp", version.ref = "ktorfit" }
+[libraries]
+# Kotlin & Build
+kotlin-test             = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit5      = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit5", version.ref = "kotlin" }
+ksp-api                 = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
+
+# Serialization Core (Ghost)
+okio                    = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
+kotlinpoet              = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp          = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
+retrofit                = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+okhttp                  = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+
+# Ktor & Ktorfit
+ktor-client-core        = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp      = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin      = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
-coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
-coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktorfit-lib             = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-lib", version.ref = "ktorfit" }
+ktorfit-ksp             = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-ksp", version.ref = "ktorfit" }
+
+# Serialization Engines (Benchmarks)
+gson                    = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+moshi                   = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
+moshi-kotlin            = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+# UI Components
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
+androidx-metrics        = { group = "androidx.metrics", name = "metrics-performance", version.ref = "androidx-metrics" }
+androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+coil-compose            = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-ktor       = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
+
+# Testing
+junit-jupiter-engine    = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
+junit-engine            = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-vintage-engine    = { group = "org.junit.vintage", name = "junit-vintage-engine", version = "5.11.3" }
+junit-launcher          = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
+junit-platform-engine   = { group = "org.junit.platform", name = "junit-platform-engine", version.ref = "junit-platform" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-test" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
+kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-test" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines-test" }
+
+[bundles]
+ktor-common             = ["ktor-client-core", "ktor-client-content-negotiation"]
+serialization-engines   = ["gson", "moshi", "moshi-kotlin", "kotlinx-serialization-json"]
 
 [plugins]
-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
-android-application = { id = "com.android.application", version.ref = "agp" }
-android-library = { id = "com.android.library", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
+kotlin-multiplatform    = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-android          = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm              = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization    = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+android-application     = { id = "com.android.application", version.ref = "agp" }
+android-library         = { id = "com.android.library", version.ref = "agp" }
+compose-compiler        = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrains-compose       = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+ksp                     = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+ktorfit                 = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }

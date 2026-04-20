@@ -140,10 +140,8 @@ inline fun <T> GhostJsonReader.readList(itemParser: () -> T): List<T> {
         endArray()
         return emptyList()
     }
-    // Heuristic: estimate capacity based on data size (assuming avg element is ~64 bytes)
-    // Max initial capacity capped at 1024 to avoid huge allocations.
-    val capacity = minOf(1024, data.size / 64).coerceAtLeast(10)
-    val list = ArrayList<T>(capacity)
+    // FAANG-level optimization: Use adaptive initial capacity based on platform.
+    val list = ArrayList<T>(GhostHeuristics.initialCollectionCapacity)
     list.add(itemParser())
     while (true) {
         val nextToken = peekNextToken()
@@ -159,9 +157,8 @@ inline fun <T> GhostJsonReader.readList(itemParser: () -> T): List<T> {
 
 inline fun <V> GhostJsonReader.readMap(valueParser: () -> V): Map<String, V> {
     beginObject()
-    // Heuristic for Map capacity
-    val capacity = minOf(512, data.size / 128).coerceAtLeast(10)
-    val map = LinkedHashMap<String, V>(capacity)
+    // Adaptive initial capacity for Maps
+    val map = LinkedHashMap<String, V>(GhostHeuristics.initialCollectionCapacity)
     while (true) {
         val key = nextKey() ?: break
         consumeKeySeparator()
