@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to the Ghost Serialization project will be documented in this file.
 
-## [1.1.2] - 2026-04-20
+## [1.1.3] - 2026-04-20
 
 ### Added
 - **Adaptive Heuristics System (L6 Staff Level):** ghost-serialization now automatically adjusts internal collection capacities and string pool limits based on the target platform (Android, JVM, iOS, Web).

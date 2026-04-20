@@ -31,8 +31,8 @@ Generates static, deterministic code at compile time.
 - Uses `ServiceLoader` and a hashed registry `GhostRegistry` to locate serializers.
 - Immune to runtime crashes caused by minification (R8/ProGuard). No `@Keep` rules needed for internals.
 
-### 3. Production-Ready WASM (WebAssembly)
-Version 1.1.1 stabilizes the WASM-JS target, ensuring full compatibility with the K2 compiler and Next.js environments. High-performance serialization is now a reality for the modern web.
+### 3. Adaptive Heuristics & WASM Stable
+Version 1.1.3 introduces **Adaptive Heuristics**, allowing Ghost to auto-tune its memory consumption and performance per platform (Android, iOS, JVM, Web). It also ensures full compatibility with the K2 compiler and Next.js environments via the WASM-JS target.
 
 ### 4. Native Kotlin Support
 Understand Kotlin's complex type-system natively without boilerplate adapters.
@@ -53,7 +53,7 @@ plugins {
 }
 
 dependencies {
-    val ghostVersion = "1.1.1"
+    val ghostVersion = "1.1.3"
 
     // 1. Add the KSP Compiler plugin
     add("kspCommonMainMetadata", "com.ghostserializer:ghost-compiler:$ghostVersion")
@@ -158,4 +158,4 @@ The project adheres to strict architectural separation:
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.1 Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.3 Stable.*
