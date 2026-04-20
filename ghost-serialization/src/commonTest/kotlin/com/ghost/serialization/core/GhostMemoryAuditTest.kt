@@ -53,7 +53,7 @@ class GhostMemoryAuditTest {
     @Test
     fun testPoolCorrectlyFallsBackForLongStrings() {
         // Given
-        val longString = "A".repeat(200) // greater than 128 (new pool limit)
+        val longString = "A".repeat(1000) // greater than max pool limit (512 on JVM, 64 on Web)
         val json = """{"key1": "$longString", "key2": "$longString"}"""
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
 

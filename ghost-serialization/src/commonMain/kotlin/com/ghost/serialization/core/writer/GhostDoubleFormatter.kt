@@ -96,7 +96,7 @@ internal object GhostDoubleFormatter {
         }
 
         var v = value
-        // Use industrial LUT optimization for the integer part
+        // Use optimized LUT optimization for the integer part
         var i = 48
         val tempBuffer = scratch // We use the same scratch but from the end to avoid extra allocations
         

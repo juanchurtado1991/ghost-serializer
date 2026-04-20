@@ -45,7 +45,7 @@ class MainViewModel : ViewModel() {
                 return@launch
             }
 
-            // 2. Run the professional comparison
+            // 2. Run the comparison
             repository.runBenchmark(_uiState.value.pageCount.toInt(), jankTracker) { status ->
                 _uiState.update { it.copy(loadingStatus = status) }
             }

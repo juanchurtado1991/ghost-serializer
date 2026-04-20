@@ -46,9 +46,15 @@ data class GhostCharacter(
 @GhostSerialization
 @Serializable
 enum class CharacterStatus {
-    @SerialName("Alive") @GhostName("Alive") Alive, 
-    @SerialName("Dead") @GhostName("Dead") Dead, 
-    @SerialName("unknown") @GhostName("unknown") unknown
+    @SerialName("Alive")
+    @GhostName("Alive")
+    Alive,
+    @SerialName("Dead")
+    @GhostName("Dead")
+    Dead,
+    @SerialName("unknown")
+    @GhostName("unknown")
+    unknown
 }
 
 @GhostSerialization

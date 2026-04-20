@@ -102,10 +102,10 @@ class RickAndMortyRepository {
             }
             val rawBytes = jsonString.encodeToByteArray()
 
-            // 1. INTENSIVE WARM-UP (100 iterations)
+            // 1. INTENSIVE WARM-UP (50 iterations)
             // Ensures JIT is hot and Ghost's internal buffers are ready
-            onStatusChange("Warming up engines (100x)...")
-            repeat(100) {
+            onStatusChange("Warming up engines (50x)...")
+            repeat(50) {
                 Ghost.deserialize<CharacterResponse>(rawBytes)
                 kserJson.decodeFromString<CharacterResponse>(jsonString)
             }
@@ -140,7 +140,7 @@ class RickAndMortyRepository {
             Result.success(
                 GhostResult(
                     data = allCharacters,
-                    networkTimeMs = 0.0, // Network is not part of this atomic benchmark
+                    networkTimeMs = 0.0, // Network is not part of this benchmark
                     parseTimeMs = ghostResult.timeMs,
                     ghostMemoryBytes = ghostResult.memoryBytes,
                     ghostJankCount = ghostResult.jankCount,

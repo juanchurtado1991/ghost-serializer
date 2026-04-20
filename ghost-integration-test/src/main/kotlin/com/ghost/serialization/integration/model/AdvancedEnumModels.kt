@@ -5,14 +5,14 @@ import com.ghost.serialization.annotations.GhostSerialization
 import kotlinx.serialization.SerialName
 
 @GhostSerialization
-enum class GhostSovereigntyEnum {
-    @SerialName("industrial_match") Match,
+enum class GhostStandardsEnum {
+    @SerialName("advanced_match") Match,
     @GhostName("ghost_match") GhostMatch,
     Standard
 }
 
 @GhostSerialization
 data class GhostEnumWrapper(
-    val status: GhostSovereigntyEnum,
-    val optionalStatus: GhostSovereigntyEnum? = null
+    val status: GhostStandardsEnum,
+    val optionalStatus: GhostStandardsEnum? = null
 )

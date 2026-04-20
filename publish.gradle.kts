@@ -5,7 +5,6 @@ allprojects {
     group = "com.ghostserializer"
     version = "1.1.3"
 
-    // Load local.properties if it exists
     val localProperties = java.util.Properties()
     val localPropertiesFile = project.rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -27,7 +26,6 @@ subprojects {
         apply(plugin = "signing")
         apply(plugin = "org.jetbrains.dokka")
 
-        // Create Javadoc JAR using Dokka 2.x
         val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
             archiveClassifier.set("javadoc")
             val dokkaHtmlTask = tasks.matching { it.name == "dokkaHtml" }
@@ -35,7 +33,6 @@ subprojects {
         }
 
         afterEvaluate {
-            // JVM-only modules
             if (!plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
                 configure<JavaPluginExtension> {
                     withSourcesJar()
@@ -54,7 +51,6 @@ subprojects {
                 }
             }
 
-            // Publication configuration
             configure<PublishingExtension> {
                 publications.withType<MavenPublication>().configureEach {
                     artifact(dokkaJavadocJar)
@@ -72,7 +68,7 @@ subprojects {
                         }
                         
                         name.set(displayName)
-                        description.set("Industrial-grade, zero-allocation serialization engine for Kotlin Multiplatform.")
+                        description.set("Production-ready, zero-allocation serialization engine for Kotlin Multiplatform.")
                         url.set("https://github.com/juanchurtado1991/GhostSerialization")
                         
                         licenses {
@@ -97,7 +93,6 @@ subprojects {
                 }
             }
 
-            // Signing configuration
             configure<SigningExtension> {
                 val keyId = project.findProperty("signing.keyId") as String?
                 val password = project.findProperty("signing.password") as String?

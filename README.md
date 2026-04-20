@@ -141,7 +141,7 @@ import { Ghost } from "ghost-serialization";
 const profile = Ghost.deserialize(rawBytes);
 ```
 
-### 3. Industrial Optimization: Pre-warming
+### 3.Performance Optimization: Pre-warming
 To achieve absolute zero-latency on the first call, use `prewarm()`.
 
 ```kotlin

@@ -628,7 +628,7 @@ class GhostJsonReader(
             if (currentByte > 32 || (0x100002600L and (1L shl currentByte)) == 0L) return
 
             positon++
-            // Word-skipping Overdrive
+            // Word-skipping Optimization
             while (positon + 3 < limit) {
                 val word1 = data[positon].toInt() and 0xFF
                 val word2 = data[positon + 1].toInt() and 0xFF

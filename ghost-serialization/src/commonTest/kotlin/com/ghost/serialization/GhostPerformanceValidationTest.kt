@@ -43,7 +43,7 @@ class GhostPerformanceValidationTest {
         
         ghost.prewarm()
         
-        assertNotNull(serializerCache[String::class], "Prewarm must populate the cache with industrial serializers")
+        assertNotNull(serializerCache[String::class], "Prewarm must populate the cache with production-ready serializers")
     }
 
     @Test

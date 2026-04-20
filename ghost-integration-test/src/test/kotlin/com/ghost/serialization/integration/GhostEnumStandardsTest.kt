@@ -1,30 +1,30 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.integration.model.GhostEnumWrapper
-import com.ghost.serialization.integration.model.GhostSovereigntyEnum
+import com.ghost.serialization.integration.model.GhostStandardsEnum
 import com.ghost.serialization.Ghost
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class GhostEnumSovereigntyTest {
+class GhostEnumStandardsTest {
 
     @Test
-    fun testEnumSerialNameSovereignty() {
-        val json = """{"status":"industrial_match"}"""
+    fun testEnumSerialNameStandards() {
+        val json = """{"status":"advanced_match"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
         
-        assertEquals(GhostSovereigntyEnum.Match, decoded.status)
+        assertEquals(GhostStandardsEnum.Match, decoded.status)
         
         val reSerialized = Ghost.serialize(decoded)
         assertEquals(json, reSerialized)
     }
 
     @Test
-    fun testEnumGhostNameSovereignty() {
+    fun testEnumGhostNameStandards() {
         val json = """{"status":"ghost_match"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
         
-        assertEquals(GhostSovereigntyEnum.GhostMatch, decoded.status)
+        assertEquals(GhostStandardsEnum.GhostMatch, decoded.status)
         
         val reSerialized = Ghost.serialize(decoded)
         assertEquals(json, reSerialized)
@@ -35,18 +35,18 @@ class GhostEnumSovereigntyTest {
         val json = """{"status":"Standard"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
         
-        assertEquals(GhostSovereigntyEnum.Standard, decoded.status)
+        assertEquals(GhostStandardsEnum.Standard, decoded.status)
         
         val reSerialized = Ghost.serialize(decoded)
         assertEquals(json, reSerialized)
     }
 
     @Test
-    fun testNullableEnumSovereignty() {
-        val json = """{"status":"Standard","optionalStatus":"industrial_match"}"""
+    fun testNullableEnumStandards() {
+        val json = """{"status":"Standard","optionalStatus":"advanced_match"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
         
-        assertEquals(GhostSovereigntyEnum.Standard, decoded.status)
-        assertEquals(GhostSovereigntyEnum.Match, decoded.optionalStatus)
+        assertEquals(GhostStandardsEnum.Standard, decoded.status)
+        assertEquals(GhostStandardsEnum.Match, decoded.optionalStatus)
     }
 }

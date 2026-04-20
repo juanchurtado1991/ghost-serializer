@@ -11,7 +11,7 @@ data class EngineResult(
 data class GhostResult<T>(
     val data: T,
     val networkTimeMs: Double,
-    val parseTimeMs: Double, // This remains for Ghost's specific benchmark logic
+    val parseTimeMs: Double,
     val ghostMemoryBytes: Long,
     val ghostJankCount: Int = 0,
     val engineResults: List<EngineResult>
