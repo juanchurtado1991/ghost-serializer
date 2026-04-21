@@ -1,6 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+apply(from = "publish.gradle.kts")
+
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
@@ -37,4 +39,4 @@ nexusPublishing {
     }
 }
 
-apply(from = "publish.gradle.kts")
+

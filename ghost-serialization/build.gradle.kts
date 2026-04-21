@@ -71,16 +71,4 @@ android {
     }
 }
 
-tasks.named("wasmJsPublicPackageJson") {
-    doLast {
-        val packageJsonFile = file("build/tmp/wasmJsPublicPackageJson/package.json")
-        if (packageJsonFile.exists()) {
-            val content = packageJsonFile.readText()
-            val updatedContent = content.replace(
-                "\"name\": \"GhostSerialization-ghost-serialization-wasm-js\"",
-                "\"name\": \"ghost-serialization\""
-            )
-            packageJsonFile.writeText(updatedContent)
-        }
-    }
-}
+// No longer needed: version is handled by global project.version and apply(from) at the top

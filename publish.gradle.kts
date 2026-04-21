@@ -3,7 +3,7 @@ import org.gradle.api.tasks.bundling.Jar
 
 allprojects {
     group = "com.ghostserializer"
-    version = "1.1.3"
+    version = "1.1.5"
 
     val localProperties = java.util.Properties()
     val localPropertiesFile = project.rootProject.file("local.properties")

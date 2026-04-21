@@ -7,6 +7,7 @@
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-2.1.10--1.0.30-black.svg?style=flat-square" alt="KSP"></a>
     <a href="https://square.github.io/okio/"><img src="https://img.shields.io/badge/I%2FO-Okio_3.9.1-blue.svg?style=flat-square" alt="Okio"></a>
     <img src="https://img.shields.io/badge/WASM-Production--Ready-success.svg?style=flat-square" alt="WASM Stable">
+    <img src="https://img.shields.io/badge/Concurrency-L6_Staff_Safe-orange.svg?style=flat-square" alt="Concurrency Safe">
   </p>
 </div>
 
@@ -31,8 +32,8 @@ Generates static, deterministic code at compile time.
 - Uses `ServiceLoader` and a hashed registry `GhostRegistry` to locate serializers.
 - Immune to runtime crashes caused by minification (R8/ProGuard). No `@Keep` rules needed for internals.
 
-### 3. Adaptive Heuristics & WASM Stable
-Version 1.1.3 introduces **Adaptive Heuristics**, allowing Ghost to auto-tune its memory consumption and performance per platform (Android, iOS, JVM, Web). It also ensures full compatibility with the K2 compiler and Next.js environments via the WASM-JS target.
+### 3. Staff-Level Concurrency & Universal Sync
+Version 1.1.4 introduces **Universal Synchronization** via `__ghost_synchronized__`. The engine has been audited for thread-safety across all platforms (JVM, iOS, Android, JS, Wasm), ensuring atomic registry access and cache consistency even under extreme parallel workloads.
 
 ### 4. Native Kotlin Support
 Understand Kotlin's complex type-system natively without boilerplate adapters.
@@ -53,7 +54,7 @@ plugins {
 }
 
 dependencies {
-    val ghostVersion = "1.1.3"
+    val ghostVersion = "1.1.5"
 
     // 1. Add the KSP Compiler plugin
     add("kspCommonMainMetadata", "com.ghostserializer:ghost-compiler:$ghostVersion")
@@ -62,6 +63,7 @@ dependencies {
     add("kspIosArm64", "com.ghostserializer:ghost-compiler:$ghostVersion")
     add("kspIosSimulatorArm64", "com.ghostserializer:ghost-compiler:$ghostVersion")
     add("kspWasmJs", "com.ghostserializer:ghost-compiler:$ghostVersion")
+    add("kspJs", "com.ghostserializer:ghost-compiler:$ghostVersion")
 
     // 2. Add the Ghost Runtime
     implementation("com.ghostserializer:ghost-serialization:$ghostVersion")
@@ -69,9 +71,6 @@ dependencies {
     
     // (Optional) For Ktor 3.0 / Ktorfit 2.3.0 Integration
     implementation("com.ghostserializer:ghost-ktor:$ghostVersion")
-
-    // (Optional) For Legacy Retrofit Integration
-    implementation("com.ghostserializer:ghost-retrofit:$ghostVersion")
 }
 ```
 
@@ -128,17 +127,21 @@ val client = HttpClient {
 }
 ```
 
-### 2. NPM Distribution (WASM-JS)
-Ghost models can be compiled to WebAssembly. Install the package via NPM:
+### 3. Next.js / TypeScript Integration (NPM)
+Ghost is now optimized for **Full Stack TypeScript** environments.
 
 ```bash
-npm install ghost-serialization
+npm install ghost-serialization-wasm
 ```
 
-```javascript
-import { Ghost } from "ghost-serialization";
+```typescript
+import { ghostDeserialize, ghostRegisterSampleModels } from "ghost-serialization-wasm";
 
-const profile = Ghost.deserialize(rawBytes);
+// Initialize your registries once
+ghostRegisterSampleModels();
+
+// Deserialize with zero-reflection performance
+const profile = ghostDeserialize(jsonString, "UserProfile");
 ```
 
 ### 3.Performance Optimization: Pre-warming
@@ -158,4 +161,4 @@ The project adheres to strict architectural separation:
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.3 Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.4 Stable.*

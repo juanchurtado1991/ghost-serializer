@@ -174,14 +174,16 @@ object Ghost {
      * Deep Prewarm: Pull all serializers and induce JIT/ART optimization
      */
     fun prewarm() {
-        registries.forEach { registry ->
-            registry.prewarm()
-            registry
-                .getAllSerializers()
-                .forEach { (kclass, serializer) ->
-                    serializerCache[kclass] = serializer
-                    serializer.warmUp()
-                }
+        __ghost_synchronized__(lock) {
+            registries.forEach { registry ->
+                registry.prewarm()
+                registry
+                    .getAllSerializers()
+                    .forEach { (kclass, serializer) ->
+                        serializerCache[kclass] = serializer
+                        serializer.warmUp()
+                    }
+            }
         }
     }
 }

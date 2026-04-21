@@ -1,7 +1,13 @@
 # Changelog
 All notable changes to the Ghost Serialization project will be documented in this file.
 
-## [1.1.3] - 2026-04-20
+## [1.1.5] - 2026-04-21
+
+### Fixed
+- **JS/Wasm Bridge Visibility:** Restored missing `@JsExport` for `ghostDeserialize` and `ghostSerialize` in the WASM target.
+- **Next.js Integration:** Adjusted WASM bridge return types to ensure full compatibility with TypeScript/Next.js client-side execution.
+
+## [1.1.4] - 2026-04-20
 
 ### Added
 - **Universal JS/Wasm Compatibility:** Enabled `js(IR)` and `wasmJs` targets across all core modules (`ghost-api`, `ghost-serialization`, `ghost-ktor`), providing full Node.js and Browser support.
@@ -16,7 +22,7 @@ All notable changes to the Ghost Serialization project will be documented in thi
 - **Zero-Allocation String Parsing (JS/Wasm):** Optimized String-to-ByteArray conversion in the JS bridge to minimize memory overhead.
 - **O(1) Serializer Lookup:** Replaced String-based type comparisons with direct `KClass` lookups for maximum throughput.
 
-## [1.1.2] - 2026-04-20
+## [1.1.3] - 2026-04-20
 
 ### Added
 - **Adaptive Heuristics System:** ghost-serialization now automatically adjusts internal collection capacities and string pool limits based on the target platform (Android, JVM, iOS, Web).
@@ -35,5 +41,5 @@ All notable changes to the Ghost Serialization project will be documented in thi
 - **Memory Footprint:** Further reduced baseline memory usage on Android to ~190KB for standard payloads.
 - **Benchmark Warm-up:** Unified JIT warm-up cycles to 100 iterations across all platforms for scientific consistency.
 
-## [1.1.1] - 2026-04-19
+## [1.1.2] - 2026-04-19
 - Initial release with Dokka 2.x support, Maven Central, and NPM distribution.

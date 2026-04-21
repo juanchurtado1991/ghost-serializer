@@ -95,7 +95,8 @@ fun main() {
     val failureMetrics = runFailureTests(smallBytes)
     printRankedTable("FAILURE RESILIENCE (Malformed JSON)", failureMetrics)
 
-    println("\n✅ AUDIT COMPLETE. Ghost is precision. Ghost is fluidity. Ghost is the standard.")
+    println("\n✅ AUDIT COMPLETE. Ghost Status OK")
+    System.exit(0)
 }
 
 private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
