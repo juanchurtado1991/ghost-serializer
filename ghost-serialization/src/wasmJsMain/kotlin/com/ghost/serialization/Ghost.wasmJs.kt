@@ -10,11 +10,11 @@ import com.ghost.serialization.core.parser.GhostJsonReader
  */
 actual fun discoverRegistries(): List<GhostRegistry> = emptyList()
 
-actual fun <T> __ghost_synchronized__(lock: Any, block: () -> T): T {
+actual fun <T> runSynchronized(lock: Any, block: () -> T): T {
     return block()
 }
 
-actual fun <T> __ghost_internal_use_reader__(
+actual fun <T> ghostIternalUseReader(
     bytes: ByteArray,
     block: (GhostJsonReader) -> T
 ): T {
@@ -26,7 +26,7 @@ actual fun <T> __ghost_internal_use_reader__(
     }
 }
 
-actual fun <T> __ghost_internal_use_source__(
+actual fun <T> ghostInternalUseSource(
     source: okio.BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {

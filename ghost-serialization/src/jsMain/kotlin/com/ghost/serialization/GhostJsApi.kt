@@ -1,5 +1,6 @@
 package com.ghost.serialization
 
+import com.ghost.serialization.core.contract.GhostRegistry
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -7,21 +8,21 @@ import kotlin.js.JsName
  * JS/Wasm Bridge for Ghost Serialization.
  * Provides a high-performance entry point for JavaScript.
  */
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostAddRegistry")
-fun ghostAddRegistry(registry: com.ghost.serialization.core.contract.GhostRegistry) {
+fun ghostAddRegistry(registry: GhostRegistry) {
     Ghost.addRegistry(registry)
 }
 
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostPrewarm")
 fun ghostPrewarm() {
     Ghost.prewarm()
 }
 
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostSerialize")
 fun ghostSerialize(value: Any): String {
@@ -34,7 +35,7 @@ fun ghostSerialize(value: Any): String {
  * The actual implementation will need to be linked to a registry that knows 
  * how to map "CharacterResponse" to its serializer.
  */
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostDeserialize")
 fun ghostDeserialize(json: String, typeName: String): Any? {

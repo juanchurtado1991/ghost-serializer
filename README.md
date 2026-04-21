@@ -32,8 +32,8 @@ Generates static, deterministic code at compile time.
 - Uses `ServiceLoader` and a hashed registry `GhostRegistry` to locate serializers.
 - Immune to runtime crashes caused by minification (R8/ProGuard). No `@Keep` rules needed for internals.
 
-### 3. Staff-Level Concurrency & Universal Sync
-Version 1.1.4 introduces **Universal Synchronization** via `__ghost_synchronized__`. The engine has been audited for thread-safety across all platforms (JVM, iOS, Android, JS, Wasm), ensuring atomic registry access and cache consistency even under extreme parallel workloads.
+### 3. Concurrency & Universal Sync
+Version 1.1.5 introduces **Universal Synchronization** via `__ghost_synchronized__`. The engine has been audited for thread-safety across all platforms (JVM, iOS, Android, JS, Wasm), ensuring atomic registry access and cache consistency even under extreme parallel workloads.
 
 ### 4. Native Kotlin Support
 Understand Kotlin's complex type-system natively without boilerplate adapters.

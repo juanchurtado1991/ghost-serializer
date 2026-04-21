@@ -1,17 +1,19 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
 
 import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.*
-
+import com.ghost.serialization.core.parser.consumeKeySeparator
+import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.util.isJvm
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertSame
 import kotlin.test.assertNotSame
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class GhostMemoryAuditTest {
 
@@ -45,9 +47,12 @@ class GhostMemoryAuditTest {
         assertEquals("key", key3)
         assertEquals("success", val3)
 
-        // MEMORY AUDIT: Strict JVM reference equality check.
-        assertSame(val1, val2, "Memory leak: Duplicate string allocation detected for 'success'")
-        assertSame(val2, val3, "Memory leak: Duplicate string allocation detected for 'success'")
+        // MEMORY AUDIT: Only check reference equality on platforms that guarantee it (JVM/Android)
+        // JS engine often interns strings automatically, making this check pass even without pooling.
+        if (isJvm) {
+            assertSame(val1, val2, "Memory leak: Duplicate string allocation detected for 'success'")
+            assertSame(val2, val3, "Memory leak: Duplicate string allocation detected for 'success'")
+        }
     }
 
     @Test
@@ -71,7 +76,10 @@ class GhostMemoryAuditTest {
         assertEquals(longString, val2)
 
         // MEMORY AUDIT: Overly long strings should bypass the pool entirely.
-        assertNotSame(val1, val2)
+        // On JS, we skip this check because identical strings are often the same object in memory.
+        if (isJvm) {
+            assertNotSame(val1, val2)
+        }
     }
 
     @Test

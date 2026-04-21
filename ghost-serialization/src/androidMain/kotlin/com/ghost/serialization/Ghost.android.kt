@@ -1,120 +1,47 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.parser.GhostJsonReader
+import java.util.ServiceLoader
 
 /**
- * Android/JVM Implementation of Ghost Registry Discovery.
- * Superiority: Zero-config automatic discovery.
+ * Android-specific implementation for Ghost Serialization discovery.
+ * Hybrid approach for maximum startup performance.
  */
 actual fun discoverRegistries(): List<GhostRegistry> {
-    // 1. Try ServiceLoader (High Performance Industrial Standard)
-    try {
-        val discovered = java.util.ServiceLoader.load(GhostRegistry::class.java).toList()
-        if (discovered.isNotEmpty()) return discovered
-    } catch (e: Exception) {
-        // Fallback to reflection if ServiceLoader fails on older Android versions
-    }
-
-    // 2. Reflective Fallback for complex KMP environments or R8 issues
     val registries = mutableListOf<GhostRegistry>()
-    val patterns = listOf(
-        "com.ghost.serialization.generated.GhostModuleRegistry_Default",
-        "com.ghost.serialization.generated.GhostModuleRegistry_com.ghost.serialization_sample_domain",
-        "com.ghost.serialization.generated.GhostModuleRegistry_com.ghost.serialization.integration"
-    )
-
-    patterns.forEach { className ->
-        try {
-            val clazz = Class.forName(className)
-            val registry = try {
-                // Try direct Singleton (object) behavior first
-                clazz.getDeclaredField("INSTANCE").get(null) as? GhostRegistry
-            } catch (_: Exception) {
-                // Fallback to Companion object behavior
-                try {
-                    val companion = clazz.getDeclaredField("Companion").get(null)
-                    companion.javaClass.getDeclaredField("INSTANCE").get(companion) as? GhostRegistry
-                } catch (_: Exception) {
-                    null
-                }
-            }
-            if (registry != null) registries.add(registry)
-        } catch (_: Exception) { }
+    
+    // 1. Direct bypass (Zero latency for core)
+    try {
+        val registryClass = Class.forName("com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization")
+        val instance = registryClass.getDeclaredField("INSTANCE").get(null) as GhostRegistry
+        registries.add(instance)
+    } catch (e: Exception) {
     }
+
+    // 2. ServiceLoader fallback
+    try {
+        val loader = ServiceLoader.load(GhostRegistry::class.java)
+        for (registry in loader) {
+            if (!registries.contains(registry)) {
+                registries.add(registry)
+            }
+        }
+    } catch (e: Exception) {
+    }
+    
     return registries
 }
 
-actual fun <T> __ghost_synchronized__(lock: Any, block: () -> T): T {
+actual fun <T> runSynchronized(lock: Any, block: () -> T): T {
     return synchronized(lock, block)
 }
 
-@PublishedApi
-internal class GhostReaderStorage {
-    val reader: GhostJsonReader = GhostJsonReader(byteArrayOf())
-    val buffer: ByteArray = ByteArray(512 * 1024) // 512KB Recycled Buffer
+actual fun <T> ghostIternalUseReader(bytes: ByteArray, block: (com.ghost.serialization.core.parser.GhostJsonReader) -> T): T {
+    val reader = com.ghost.serialization.core.parser.GhostJsonReader(bytes)
+    return block(reader)
 }
 
-private val storageThreadLocal = ThreadLocal<GhostReaderStorage>()
-
-actual fun <T> __ghost_internal_use_reader__(
-    bytes: ByteArray,
-    block: (GhostJsonReader) -> T
-): T {
-    var storage = storageThreadLocal.get()
-    if (storage == null) {
-        storage = GhostReaderStorage()
-        storageThreadLocal.set(storage)
-    }
-    
-    val reader = storage.reader
-    reader.reset(bytes)
-    
-    try {
-        return block(reader)
-    } finally {
-        reader.clear()
-    }
-}
-
-actual fun <T> __ghost_internal_use_source__(
-    source: okio.BufferedSource,
-    block: (GhostJsonReader) -> T
-): T {
-    var storage = storageThreadLocal.get()
-    if (storage == null) {
-        storage = GhostReaderStorage()
-        storageThreadLocal.set(storage)
-    }
-
-    val buffer = storage.buffer
-    val reader = storage.reader
-
-    // Zero-Allocation Load: Read directly into the recycled buffer
-    val readCount = source.read(buffer)
-    
-    // Check if the source is fully consumed within the 512KB buffer
-    if (source.exhausted()) {
-        val limit = if (readCount == -1) 0 else readCount
-        reader.reset(buffer, limit)
-        try {
-            return block(reader)
-        } finally {
-            reader.clear()
-        }
-    }
-    
-    // Industrial Fallback: Payload exceeds 512KB, fallback to readByteArray
-    val remainingBytes = source.readByteArray()
-    val fullBytes = if (readCount == -1) remainingBytes else {
-        val initialPart = buffer.copyOfRange(0, readCount)
-        initialPart + remainingBytes
-    }
-    
-    reader.reset(fullBytes)
-    try {
-        return block(reader)
-    } finally {
-        reader.clear()
-    }
+actual fun <T> ghostInternalUseSource(source: okio.BufferedSource, block: (com.ghost.serialization.core.parser.GhostJsonReader) -> T): T {
+    val reader = com.ghost.serialization.core.parser.GhostJsonReader(source.readByteArray())
+    return block(reader)
 }

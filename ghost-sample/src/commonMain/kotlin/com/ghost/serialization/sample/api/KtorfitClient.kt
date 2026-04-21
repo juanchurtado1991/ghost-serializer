@@ -1,6 +1,6 @@
 package com.ghost.serialization.sample.api
 
-import com.ghost.serialization.sample.domain.CharacterResponse
+import com.ghost.serialization.benchmark.CharacterResponse
 import de.jensklingenberg.ktorfit.Ktorfit
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Query

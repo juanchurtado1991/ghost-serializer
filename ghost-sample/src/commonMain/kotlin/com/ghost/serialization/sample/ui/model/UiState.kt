@@ -1,7 +1,7 @@
 package com.ghost.serialization.sample.ui.model
 
 import com.ghost.serialization.sample.api.EngineResult
-import com.ghost.serialization.sample.domain.GhostCharacter
+import com.ghost.serialization.benchmark.GhostCharacter
 
 enum class NetworkStack(val title: String, val description: String, val engineName: String) {
     GHOST_KTOR(

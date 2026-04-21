@@ -2,27 +2,39 @@ package com.ghost.serialization
 
 import kotlin.js.JsExport
 import kotlin.js.JsName
-import kotlin.js.JsAny
-
+import kotlin.js.ExperimentalJsExport
+import com.ghost.serialization.core.contract.GhostRegistry
 /**
  * JS/Wasm Bridge for Ghost Serialization.
  * Provides a high-performance entry point for JavaScript.
  */
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
-@JsName("ghostAddRegistry")
-fun ghostAddRegistry(registry: com.ghost.serialization.core.contract.GhostRegistry) {
+internal fun ghostAddRegistry(registry: GhostRegistry) {
     Ghost.addRegistry(registry)
 }
 
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostPrewarm")
 fun ghostPrewarm() {
     Ghost.prewarm()
 }
 
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@JsName("ghostRegisterSampleModels")
+fun ghostRegisterSampleModels() {
+    // We register the core registry which now contains the benchmark models
+    try {
+        // We use full name to avoid unresolved import during KSP generation phase
+        ghostAddRegistry(com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization.INSTANCE)
+    } catch (e: Exception) {
+        println(">>> [Ghost] Registry Error: ${e.message}")
+    }
+}
+
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostSerialize")
 fun ghostSerialize(value: String): String {
@@ -35,7 +47,7 @@ fun ghostSerialize(value: String): String {
  * To support Wasm, we return a String (JSON) that can be parsed in JS.
  * This ensures the export is visible and functional.
  */
-@OptIn(kotlin.js.ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostDeserialize")
 fun ghostDeserialize(json: String, typeName: String): String? {

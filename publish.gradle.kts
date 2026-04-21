@@ -2,9 +2,8 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 
 allprojects {
-    group = "com.ghostserializer"
-    version = "1.1.5"
-
+    // group and version are inherited from root build.gradle.kts
+    
     val localProperties = java.util.Properties()
     val localPropertiesFile = project.rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {

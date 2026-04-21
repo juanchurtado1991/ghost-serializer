@@ -293,7 +293,7 @@ class GhostSerializationProcessor(
         private const val STR_LOG_SERVICE_WARN = " Could not generate ServiceLoader file: "
         private const val STR_FORMAT_S = "%S"
         private const val ANNOTATION_NAME = "com.ghost.serialization.annotations.GhostSerialization"
-        private const val PACKAGE_NAME = "com.ghost.serialization.generated"
+        private const val PACKAGE_NAME = "com.ghost.serialization.benchmark"
         private const val REGISTRY_CLASS_NAME = "GhostModuleRegistry"
         private const val LOG_PREFIX = ">>> [GhostSerialization]"
         const val OPTION_GENERATE_MOSHI_ADAPTERS = "ghost.generateMoshiAdapters"

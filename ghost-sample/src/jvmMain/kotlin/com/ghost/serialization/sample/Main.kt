@@ -8,12 +8,12 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
+import com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization
 import com.ghost.serialization.sample.ui.GhostSampleApp
 
 fun main() {
     // Manual registration for JVM
-    Ghost.addRegistry(GhostModuleRegistry_serialization_sample())
+    Ghost.addRegistry(GhostModuleRegistry_ghost_serialization.INSTANCE)
 
     application {
         val windowState = rememberWindowState(

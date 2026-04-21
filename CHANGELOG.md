@@ -3,7 +3,19 @@ All notable changes to the Ghost Serialization project will be documented in thi
 
 ## [1.1.5] - 2026-04-21
 
+### Added
+- **Modular Discovery System:** Implemented `ServiceLoader` support on JVM/Android, enabling automatic discovery of generated registries across multi-module projects without manual configuration.
+- **Smart Platform Abstraction:** Added internal `isJvm` utility for intelligent platform-aware logic in common code, improving test reliability and runtime performance.
+
 ### Fixed
+- **Industrial Build Stabilization:** Resolved persistent KSP metadata conflicts and Gradle task dependency race conditions by enforcing a Single Source of Truth (SSOT) generation model in `commonMain`.
+- **Registry Collision Errors:** Fixed "Redeclaration" errors in Multiplatform builds by isolating KSP outputs and linking them correctly to compile tasks.
+- **Memory Audit Integrity:** Resolved false-positive failures in JS/Wasm memory tests by adapting identity checks to native JS engine behavior.
+- **Android Runtime Discovery:** Fixed `UnresolvedReference` for generated registries in Android by aligning the runtime discovery with the new modular FQCN architecture.
+
+### Optimized
+- **Zero-Latency Core Startup:** Implemented a direct-load bypass for the core registry on JVM/Android, bypassing ServiceLoader overhead for the main library module.
+- **Benchmark High-Fidelity:** Calibrated the Rick & Morty benchmark for a fair "Bytes-to-Object" comparison, revealing the true performance gap between Ghost and string-based serializers in Web environments.
 - **JS/Wasm Bridge Visibility:** Restored missing `@JsExport` for `ghostDeserialize` and `ghostSerialize` in the WASM target.
 - **Next.js Integration:** Adjusted WASM bridge return types to ensure full compatibility with TypeScript/Next.js client-side execution.
 

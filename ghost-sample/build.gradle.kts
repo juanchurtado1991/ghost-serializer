@@ -70,7 +70,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             
             implementation(project(":ghost-api"))
-            implementation(project(":ghost-serialization"))
+            api(project(":ghost-serialization"))
             implementation(project(":ghost-ktor"))
             implementation(libs.ktorfit.lib)
             implementation(libs.ktor.client.core)
@@ -163,9 +163,6 @@ ksp {
 }
 
 dependencies {
-    // Ghost KSP - Generating registry only once in Common to avoid redeclaration 
-    add("kspCommonMainMetadata", project(":ghost-compiler"))
-    
     // Ktorfit KSP
     add("kspJvm", libs.ktorfit.ksp)
     add("kspAndroid", libs.ktorfit.ksp)

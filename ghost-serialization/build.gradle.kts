@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -20,6 +21,10 @@ kotlin {
     jvm {
         withSourcesJar()
     }
+    androidTarget {
+        publishLibraryVariants("release")
+    }
+    
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         moduleName = "ghost-serialization-wasm"
@@ -34,9 +39,14 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            api(project(":ghost-api"))
-            api(libs.okio)
+        commonMain {
+            // Add KSP output to commonMain so all platforms inherit it
+            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+            dependencies {
+                api(project(":ghost-api"))
+                api(libs.okio)
+                implementation(libs.kotlinx.serialization.json)
+            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -44,16 +54,24 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
     }
+}
 
-    sourceSets.configureEach {
-        kotlin.srcDir("build/generated/ksp/$name/kotlin")
-    }
+ksp {
+    arg("ghost.moduleName", "ghost_serialization")
 }
 
 dependencies {
+    // Generate KSP ONLY once for common metadata
+    // ALL platform targets will inherit the generated code from commonMain
     add("kspCommonMainMetadata", project(":ghost-compiler"))
-    add("kspJvm", project(":ghost-compiler"))
-    add("kspAndroid", project(":ghost-compiler"))
+}
+
+// Fix implicit dependency issues globally and lazily
+tasks.configureEach {
+    val isSourcesJar = name.contains("sourcesJar", ignoreCase = true)
+    if ((name.startsWith("compile") || name.startsWith("ksp") || isSourcesJar) && name != "kspCommonMainKotlinMetadata") {
+        dependsOn(tasks.matching { it.name == "kspCommonMainKotlinMetadata" })
+    }
 }
 
 android {
@@ -70,5 +88,3 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 }
-
-// No longer needed: version is handled by global project.version and apply(from) at the top

@@ -3,6 +3,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 apply(from = "publish.gradle.kts")
 
+val ghostGroup = libs.versions.ghost.group.get()
+val ghostVersion = libs.versions.ghost.version.get()
+
+group = ghostGroup
+version = ghostVersion
+
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
@@ -12,6 +18,11 @@ plugins {
     alias(libs.plugins.ksp) apply false
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
     id("org.jetbrains.dokka") version "2.0.0"
+}
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
 }
 
 subprojects {
@@ -34,7 +45,7 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
             username.set(project.findProperty("sonatypeUsername") as String?)
             password.set(project.findProperty("sonatypePassword") as String?)
-            packageGroup.set("com.ghostserializer")
+            packageGroup.set(libs.versions.ghost.group.get())
         }
     }
 }

@@ -1,10 +1,10 @@
 package com.ghost.serialization.sample.api
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
 import com.ghost.serialization.ktor.ghost
-import com.ghost.serialization.sample.domain.CharacterResponse
-import com.ghost.serialization.sample.domain.GhostCharacter
+import com.ghost.serialization.benchmark.CharacterResponse
+import com.ghost.serialization.benchmark.GhostCharacter
+import com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization
 import com.ghost.serialization.sample.ui.JankTracker
 import com.ghost.serialization.sample.ui.model.NetworkStack
 import com.ghost.serialization.sample.util.forceGC
@@ -26,7 +26,7 @@ import kotlin.time.TimeSource
 class RickAndMortyRepository {
 
     init {
-        Ghost.addRegistry(GhostModuleRegistry_serialization_sample.INSTANCE)
+        Ghost.addRegistry(GhostModuleRegistry_ghost_serialization.INSTANCE)
     }
 
     private val kserJson = Json { ignoreUnknownKeys = true }
@@ -44,7 +44,9 @@ class RickAndMortyRepository {
     /**
      * Fetches characters using the specified network stack.
      */
-    suspend fun fetchCharacters(stack: NetworkStack, page: Int): CharacterResponse = withContext(Dispatchers.Default) {
+    suspend fun fetchCharacters(
+        stack: NetworkStack, page: Int
+    ): CharacterResponse = withContext(Dispatchers.Default) {
         when (stack) {
             NetworkStack.GHOST_KTOR -> {
                 ghostKtorClient.get("https://rickandmortyapi.com/api/character") {
@@ -118,7 +120,7 @@ class RickAndMortyRepository {
 
             // 3. MEASURE KSER
             val kserResult = measureEngine("KSER", jankTracker, onStatusChange) {
-                kserJson.decodeFromString<CharacterResponse>(jsonString)
+                kserJson.decodeFromString<CharacterResponse>(rawBytes.decodeToString())
             }
 
             // 4. MEASURE BASELINE (Blank block)
@@ -131,7 +133,7 @@ class RickAndMortyRepository {
             
             // This will show up in Logcat under "System.out" tag
             println(">>> [GHOST_DEBUG] Active Serializer: $serializerName")
-            println(">>> [GHOST_DEBUG] Registry Instance: ${GhostModuleRegistry_serialization_sample.INSTANCE}")
+            println(">>> [GHOST_DEBUG] Registry Instance: ${GhostModuleRegistry_ghost_serialization.INSTANCE}")
             
             onStatusChange("Finalizing... Serializer: $serializerName")
 

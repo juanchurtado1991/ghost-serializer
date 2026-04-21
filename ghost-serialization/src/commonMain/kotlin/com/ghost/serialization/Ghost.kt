@@ -3,15 +3,6 @@ package com.ghost.serialization
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonConstants.BOOLEAN
-import com.ghost.serialization.core.parser.GhostJsonConstants.KOTLIN_LIST
-import com.ghost.serialization.core.parser.GhostJsonConstants.DOUBLE
-import com.ghost.serialization.core.parser.GhostJsonConstants.INT
-import com.ghost.serialization.core.parser.GhostJsonConstants.JAVA_LIST
-import com.ghost.serialization.core.parser.GhostJsonConstants.JAVA_MAP
-import com.ghost.serialization.core.parser.GhostJsonConstants.KOTLIN_MAP
-import com.ghost.serialization.core.parser.GhostJsonConstants.LONG
-import com.ghost.serialization.core.parser.GhostJsonConstants.STRING
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.DoubleSerializer
 import com.ghost.serialization.serializers.IntSerializer
@@ -32,10 +23,10 @@ internal val serializerCache = mutableMapOf<KClass<*>, GhostSerializer<*>>()
 expect fun discoverRegistries(): List<GhostRegistry>
 
 // Platform-specific lock implementation
-expect fun <T> __ghost_synchronized__(lock: Any, block: () -> T): T
+expect fun <T> runSynchronized(lock: Any, block: () -> T): T
 
-expect fun <T> __ghost_internal_use_reader__(bytes: ByteArray, block: (GhostJsonReader) -> T): T
-expect fun <T> __ghost_internal_use_source__(source: BufferedSource, block: (GhostJsonReader) -> T): T
+expect fun <T> ghostIternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
+expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 object Ghost {
     private val lock = Any()
@@ -46,7 +37,7 @@ object Ghost {
     }
 
     private val registries: List<GhostRegistry>
-        get() = __ghost_synchronized__(lock) { mutableRegistries + discoveredRegistries }
+        get() = runSynchronized(lock) { mutableRegistries + discoveredRegistries }
 
     private val serializerByName = mutableMapOf<String, GhostSerializer<*>>()
 
@@ -55,7 +46,7 @@ object Ghost {
      * via ServiceLoader is not available.
      */
     fun addRegistry(registry: GhostRegistry) {
-        __ghost_synchronized__(lock) {
+        runSynchronized(lock) {
             if (!mutableRegistries.contains(registry)) {
                 mutableRegistries.add(registry)
                 registry
@@ -72,12 +63,12 @@ object Ghost {
     }
 
     fun getSerializerByName(name: String): GhostSerializer<*>? {
-        return __ghost_synchronized__(lock) { serializerByName[name] }
+        return runSynchronized(lock) { serializerByName[name] }
     }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
-        return __ghost_synchronized__(lock) {
+        return runSynchronized(lock) {
             val cached = serializerCache[clazz]
             if (cached != null) {
                 cached as GhostSerializer<T>
@@ -148,7 +139,7 @@ object Ghost {
         source: BufferedSource,
         crossinline options: (GhostJsonReader) -> Unit = {}
     ): T {
-        return __ghost_internal_use_source__(source) { reader ->
+        return ghostInternalUseSource(source) { reader ->
             options(reader)
             deserialize(reader)
         }
@@ -158,7 +149,7 @@ object Ghost {
         bytes: ByteArray,
         crossinline options: (GhostJsonReader) -> Unit = {}
     ): T {
-        return __ghost_internal_use_reader__(bytes) { reader ->
+        return ghostIternalUseReader(bytes) { reader ->
             options(reader)
             deserialize(reader)
         }
@@ -174,7 +165,7 @@ object Ghost {
      * Deep Prewarm: Pull all serializers and induce JIT/ART optimization
      */
     fun prewarm() {
-        __ghost_synchronized__(lock) {
+        runSynchronized(lock) {
             registries.forEach { registry ->
                 registry.prewarm()
                 registry
