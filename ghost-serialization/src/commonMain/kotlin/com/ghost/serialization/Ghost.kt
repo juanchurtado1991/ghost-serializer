@@ -31,11 +31,14 @@ import kotlin.reflect.KClass
 internal val serializerCache = mutableMapOf<KClass<*>, GhostSerializer<*>>()
 expect fun discoverRegistries(): List<GhostRegistry>
 
+// Platform-specific lock implementation
+expect fun <T> __ghost_synchronized__(lock: Any, block: () -> T): T
+
 expect fun <T> __ghost_internal_use_reader__(bytes: ByteArray, block: (GhostJsonReader) -> T): T
-expect fun <T> __ghost_internal_use_source__(source: okio.BufferedSource, block: (GhostJsonReader) -> T): T
+expect fun <T> __ghost_internal_use_source__(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 object Ghost {
-
+    private val lock = Any()
     private val mutableRegistries = mutableListOf<GhostRegistry>()
 
     private val discoveredRegistries: List<GhostRegistry> by lazy {
@@ -43,78 +46,69 @@ object Ghost {
     }
 
     private val registries: List<GhostRegistry>
-        get() = mutableRegistries + discoveredRegistries
+        get() = __ghost_synchronized__(lock) { mutableRegistries + discoveredRegistries }
+
+    private val serializerByName = mutableMapOf<String, GhostSerializer<*>>()
 
     /**
-     * Manual Registration: Essential for iOS (K/N) where auto-discovery
+     * Manual Registration: Essential for iOS (K/N) and JS/Wasm where auto-discovery
      * via ServiceLoader is not available.
      */
     fun addRegistry(registry: GhostRegistry) {
-        if (!mutableRegistries.contains(registry)) {
-            mutableRegistries.add(registry)
-            registry
-                .getAllSerializers()
-                .forEach { (kclass, serializer) ->
-                    serializerCache[kclass] = serializer
-                }
+        __ghost_synchronized__(lock) {
+            if (!mutableRegistries.contains(registry)) {
+                mutableRegistries.add(registry)
+                registry
+                    .getAllSerializers()
+                    .forEach { (kclass, serializer) ->
+                        serializerCache[kclass] = serializer
+                        val name = kclass.simpleName
+                        if (name != null) {
+                            serializerByName[name] = serializer
+                        }
+                    }
+            }
         }
+    }
+
+    fun getSerializerByName(name: String): GhostSerializer<*>? {
+        return __ghost_synchronized__(lock) { serializerByName[name] }
     }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
-        val cached = serializerCache[clazz]
-        if (cached != null) return cached as GhostSerializer<T>
-
-        val found = registries.firstNotNullOfOrNull { it.getSerializer(clazz) }
-        if (found != null) serializerCache[clazz] = found
-        return found
+        return __ghost_synchronized__(lock) {
+            val cached = serializerCache[clazz]
+            if (cached != null) {
+                cached as GhostSerializer<T>
+            } else {
+                val found = registries.firstNotNullOfOrNull { it.getSerializer(clazz) }
+                if (found != null) serializerCache[clazz] = found
+                found as? GhostSerializer<T>
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
     fun getSerializer(type: kotlin.reflect.KType): GhostSerializer<Any>? {
         val classifier = type.classifier
-        val classifierStr = classifier?.toString() ?: ""
 
-        when {
-            classifier == String::class ||
-                    classifierStr.contains(STRING) ->
-                return StringSerializer as GhostSerializer<Any>
-
-            classifier == Int::class ||
-                    classifierStr.contains(INT) ->
-                return IntSerializer as GhostSerializer<Any>
-
-            classifier == Long::class ||
-                    classifierStr.contains(LONG) ->
-                return LongSerializer as GhostSerializer<Any>
-
-            classifier == Boolean::class ||
-                    classifierStr.contains(BOOLEAN) ->
-                return BooleanSerializer as GhostSerializer<Any>
-
-            classifier == Double::class ||
-                    classifierStr.contains(DOUBLE) ->
-                return DoubleSerializer as GhostSerializer<Any>
-        }
-
-        val isList = classifier == List::class ||
-                classifierStr.contains(KOTLIN_LIST) ||
-                classifierStr.contains(JAVA_LIST)
-
-        if (isList) {
-            val itemType = type.arguments.getOrNull(0)?.type ?: return null
-            val itemSerializer = getSerializer(itemType) ?: return null
-            return ListSerializer(itemSerializer) as GhostSerializer<Any>
-        }
-
-        val isMap = classifier == Map::class ||
-                classifierStr.contains(KOTLIN_MAP) ||
-                classifierStr.contains(JAVA_MAP)
-
-        if (isMap) {
-            val valueType = type.arguments.getOrNull(1)?.type ?: return null
-            val valueSerializer = getSerializer(valueType) ?: return null
-            return MapSerializer(valueSerializer) as GhostSerializer<Any>
+        when (classifier) {
+            String::class -> return StringSerializer as GhostSerializer<Any>
+            Int::class -> return IntSerializer as GhostSerializer<Any>
+            Long::class -> return LongSerializer as GhostSerializer<Any>
+            Boolean::class -> return BooleanSerializer as GhostSerializer<Any>
+            Double::class -> return DoubleSerializer as GhostSerializer<Any>
+            List::class -> {
+                val itemType = type.arguments.getOrNull(0)?.type ?: return null
+                val itemSerializer = getSerializer(itemType) ?: return null
+                return ListSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+            Map::class -> {
+                val valueType = type.arguments.getOrNull(1)?.type ?: return null
+                val valueSerializer = getSerializer(valueType) ?: return null
+                return MapSerializer(valueSerializer) as GhostSerializer<Any>
+            }
         }
 
         // Fallback to class-based resolution
@@ -141,7 +135,9 @@ object Ghost {
         json: String,
         options: (GhostJsonReader) -> Unit = {}
     ): T {
-        val reader = GhostJsonReader(okio.Buffer().writeUtf8(json))
+        // Optimization: Use direct ByteArray conversion to avoid okio.Buffer overhead in JS/Wasm
+        val bytes = json.encodeToByteArray()
+        val reader = GhostJsonReader(bytes)
         options(reader)
         val serializer = getSerializer(T::class)
             ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")

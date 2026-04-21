@@ -22,8 +22,14 @@ kotlin {
     }
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
+        moduleName = "ghost-serialization-wasm"
+        browser()
+        binaries.library()
+    }
+    js(IR) {
         moduleName = "ghost-serialization"
         browser()
+        nodejs()
         binaries.library()
     }
 

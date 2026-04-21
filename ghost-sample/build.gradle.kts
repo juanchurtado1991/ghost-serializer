@@ -33,7 +33,7 @@ kotlin {
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "ghost-sample"
+        moduleName = "ghost-sample-wasm"
         browser {
             val projectDir = project.projectDir
             commonWebpackConfig {
@@ -45,6 +45,13 @@ kotlin {
                 )
             }
         }
+        binaries.executable()
+    }
+
+    js(IR) {
+        moduleName = "ghost-sample"
+        browser()
+        nodejs()
         binaries.executable()
     }
     
@@ -104,6 +111,16 @@ kotlin {
                 implementation(libs.ktor.client.core)
             }
         }
+
+        val jsMain by getting {
+            dependencies {
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(libs.ktor.client.core)
+            }
+        }
     }
 }
 
@@ -155,6 +172,7 @@ dependencies {
     add("kspIosArm64", libs.ktorfit.ksp)
     add("kspIosSimulatorArm64", libs.ktorfit.ksp)
     add("kspWasmJs", libs.ktorfit.ksp)
+    add("kspJs", libs.ktorfit.ksp)
 }
 
 compose.desktop {

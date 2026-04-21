@@ -4,9 +4,7 @@ import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.parser.GhostJsonReader
 
 /**
- * Wasm Discovery: Absolute Control.
- * Automated discovery via ServiceLoader is not available in Wasm (Web).
- * Registries must be added manually using Ghost.addRegistry().
+ * JS Discovery.
  */
 actual fun discoverRegistries(): List<GhostRegistry> = emptyList()
 

@@ -11,6 +11,15 @@ actual fun discoverRegistries(): List<GhostRegistry> {
     return emptyList()
 }
 
+actual fun <T> __ghost_synchronized__(lock: Any, block: () -> T): T {
+    platform.objc.objc_sync_enter(lock)
+    try {
+        return block()
+    } finally {
+        platform.objc.objc_sync_exit(lock)
+    }
+}
+
 actual fun <T> __ghost_internal_use_reader__(
     bytes: ByteArray,
     block: (GhostJsonReader) -> T

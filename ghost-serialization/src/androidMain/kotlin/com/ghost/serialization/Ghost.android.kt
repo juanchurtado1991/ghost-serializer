@@ -45,6 +45,10 @@ actual fun discoverRegistries(): List<GhostRegistry> {
     return registries
 }
 
+actual fun <T> __ghost_synchronized__(lock: Any, block: () -> T): T {
+    return synchronized(lock, block)
+}
+
 @PublishedApi
 internal class GhostReaderStorage {
     val reader: GhostJsonReader = GhostJsonReader(byteArrayOf())
