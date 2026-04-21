@@ -10,13 +10,6 @@ import kotlin.js.JsName
  */
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-@JsName("ghostAddRegistry")
-fun ghostAddRegistry(registry: GhostRegistry) {
-    Ghost.addRegistry(registry)
-}
-
-@OptIn(ExperimentalJsExport::class)
-@JsExport
 @JsName("ghostPrewarm")
 fun ghostPrewarm() {
     Ghost.prewarm()

@@ -38,6 +38,16 @@ kotlin {
         binaries.library()
     }
 
+    // Official NPM Tools Distribution
+    val copyNpmTools by tasks.registering(Copy::class) {
+        from("npm-tools")
+        into(layout.buildDirectory.dir("dist/wasmJs/productionLibrary/tools"))
+    }
+
+    tasks.named("wasmJsBrowserProductionLibraryDistribution") {
+        finalizedBy(copyNpmTools)
+    }
+
     sourceSets {
         commonMain {
             // Add KSP output to commonMain so all platforms inherit it

@@ -32,7 +32,7 @@ class GhostPerformanceValidationTest {
     @Test
     fun testDeepPrewarmLogic() {
         // Reset cache for pure test
-        serializerCache.clear()
+        Ghost.serializerCache.clear()
         
         val ghost = Ghost
         ghost.addRegistry(MockRegistry())
@@ -43,7 +43,7 @@ class GhostPerformanceValidationTest {
         
         ghost.prewarm()
         
-        assertNotNull(serializerCache[String::class], "Prewarm must populate the cache with production-ready serializers")
+        assertNotNull(Ghost.serializerCache[String::class], "Prewarm must populate the cache with production-ready serializers")
     }
 
     @Test

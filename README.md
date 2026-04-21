@@ -7,7 +7,7 @@
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-2.1.10--1.0.30-black.svg?style=flat-square" alt="KSP"></a>
     <a href="https://square.github.io/okio/"><img src="https://img.shields.io/badge/I%2FO-Okio_3.9.1-blue.svg?style=flat-square" alt="Okio"></a>
     <img src="https://img.shields.io/badge/WASM-Production--Ready-success.svg?style=flat-square" alt="WASM Stable">
-    <img src="https://img.shields.io/badge/Concurrency-L6_Staff_Safe-orange.svg?style=flat-square" alt="Concurrency Safe">
+    <img src="https://img.shields.io/badge/Concurrency-Thread_Safe-blue.svg?style=flat-square" alt="Thread Safe">
   </p>
 </div>
 
@@ -32,8 +32,12 @@ Generates static, deterministic code at compile time.
 - Uses `ServiceLoader` and a hashed registry `GhostRegistry` to locate serializers.
 - Immune to runtime crashes caused by minification (R8/ProGuard). No `@Keep` rules needed for internals.
 
-### 3. Concurrency & Universal Sync
-Version 1.1.5 introduces **Universal Synchronization** via `__ghost_synchronized__`. The engine has been audited for thread-safety across all platforms (JVM, iOS, Android, JS, Wasm), ensuring atomic registry access and cache consistency even under extreme parallel workloads.
+### 3. Industrial Concurrency & Security
+The engine has been audited for zero-compromise stability across all platforms (JVM, iOS, Android, JS, Wasm).
+- **Thread Safety**: Hashed registry and serializer cache are fully synchronized, ensuring consistency under extreme parallel workloads.
+- **Arithmetic Safety**: Built-in overflow detection for `Long` and `Int` parsing to prevent silent data corruption.
+- **Resource Guarding**: Configurable `maxCollectionSize` (via `GhostHeuristics`) protects against memory exhaustion (DoS) from malicious payloads.
+- **Memory Hygiene**: Automatic string pool wiping during reader recycling to prevent sensitive data exposure.
 
 ### 4. Native Kotlin Support
 Understand Kotlin's complex type-system natively without boilerplate adapters.
@@ -54,7 +58,7 @@ plugins {
 }
 
 dependencies {
-    val ghostVersion = "1.1.5"
+    val ghostVersion = "1.1.6"
 
     // 1. Add the KSP Compiler plugin
     add("kspCommonMainMetadata", "com.ghostserializer:ghost-compiler:$ghostVersion")
@@ -127,24 +131,37 @@ val client = HttpClient {
 }
 ```
 
-### 3. Next.js / TypeScript Integration (NPM)
-Ghost is now optimized for **Full Stack TypeScript** environments.
+### 🌍 Web & Next.js (WASM)
+Ghost provides a **Zero-Kotlin** workflow for web developers. You can define your models in TypeScript and sync them automatically with the high-performance WASM engine.
 
-```bash
-npm install ghost-serialization-wasm
-```
+1. **Install**: `npm install ghost-serialization-wasm`
+2. **Define Models**: Create a `ghost-models/` directory in your project root and add your TS interfaces:
+   ```typescript
+   export interface User {
+       id: number;
+       name: string;
+   }
+   ```
+3. **Sync**: Run the sync tool to generate the optimized WASM bridge:
+   ```bash
+   node node_modules/ghost-serialization-wasm/tools/ghost-transpiler.js
+   # Then rebuild/sync your local bridge
+   ```
+4. **Use**:
+   ```typescript
+   import { ghostPrewarm } from "ghost-serialization-wasm";
+   import { deserializeModel } from "./ghost-generated-types/ghost-bridge";
 
-```typescript
-import { ghostDeserialize, ghostRegisterSampleModels } from "ghost-serialization-wasm";
+   // Initialize (Automatic model registration)
+   ghostPrewarm();
 
-// Initialize your registries once
-ghostRegisterSampleModels();
+   // High-performance, fully-typed deserialization
+   const user = deserializeModel(json, "User"); // 'user' is now typed as User!
+   ```
 
-// Deserialize with zero-reflection performance
-const profile = ghostDeserialize(jsonString, "UserProfile");
-```
+## 🚀 Performance Audit
 
-### 3.Performance Optimization: Pre-warming
+### Performance Optimization: Pre-warming
 To achieve absolute zero-latency on the first call, use `prewarm()`.
 
 ```kotlin
@@ -161,4 +178,4 @@ The project adheres to strict architectural separation:
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.4 Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.6 Stable.*

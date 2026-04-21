@@ -140,7 +140,7 @@ inline fun <T> GhostJsonReader.readList(itemParser: () -> T): List<T> {
         endArray()
         return emptyList()
     }
-    // FAANG-level optimization: Use adaptive initial capacity based on platform.
+    // Adaptive Strategy: Use platform-aware initial capacity to optimize memory allocation.
     val list = ArrayList<T>(GhostHeuristics.initialCollectionCapacity)
     list.add(itemParser())
     while (true) {
@@ -149,6 +149,7 @@ inline fun <T> GhostJsonReader.readList(itemParser: () -> T): List<T> {
         if (nextToken.toByte() == CLOSE_ARR) break
         if (nextToken.toByte() != COMMA) throwError("Expected ',' or ']' but found ${nextToken.toChar()}")
         internalSkip(1)
+        checkCollectionSize(list.size)
         list.add(itemParser())
     }
     endArray()
@@ -162,6 +163,7 @@ inline fun <V> GhostJsonReader.readMap(valueParser: () -> V): Map<String, V> {
     while (true) {
         val key = nextKey() ?: break
         consumeKeySeparator()
+        checkCollectionSize(map.size)
         map[key] = valueParser()
     }
     endObject()

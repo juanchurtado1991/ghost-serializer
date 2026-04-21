@@ -52,6 +52,21 @@ fun GhostJsonReader.nextLong(): Long {
             val currentByte = data[cursor].toInt()
             val digitValue = currentByte - 48
             if (digitValue in 0..9) {
+                // Overflow check: value * 10 + digitValue > Long.MAX_VALUE
+                if (value > 922337203685477580L || (value == 922337203685477580L && digitValue > 7)) {
+                    // Potential overflow. Check if it's the special MIN_VALUE case
+                    if (negative && value == 922337203685477580L && digitValue == 8) {
+                        value = Long.MIN_VALUE
+                        hasDigits = true
+                        cursor++
+                        // Ensure no more digits follow
+                        if (cursor < data.size && data[cursor].toInt() - 48 in 0..9) {
+                            throwError("Long overflow")
+                        }
+                        break
+                    }
+                    throwError("Long overflow")
+                }
                 value = value * 10 + digitValue
                 hasDigits = true
                 cursor++
@@ -70,7 +85,7 @@ fun GhostJsonReader.nextLong(): Long {
     }
 
     internalSkip(cursor - positon)
-    val result = if (negative) -value else value
+    val result = if (value == Long.MIN_VALUE) value else (if (negative) -value else value)
 
     if (isQuoted) {
         if (positon >= data.size || data[positon] != GhostJsonConstants.QUOTE) {

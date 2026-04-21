@@ -21,8 +21,17 @@ class GhostJsonReader(
     @PublishedApi
     internal val maxDepth: Int = 255,
     internal var strictMode: Boolean = false,
-    var coerceStringsToNumbers: Boolean = false
+    var coerceStringsToNumbers: Boolean = false,
+    @PublishedApi
+    internal val maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
 ) {
+    @PublishedApi
+    internal fun checkCollectionSize(currentSize: Int) {
+        if (currentSize >= maxCollectionSize) {
+            throwError("Reached maximum collection size limit ($maxCollectionSize)")
+        }
+    }
+
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
         this.data = newData
         this.limit = newLimit
@@ -41,6 +50,7 @@ class GhostJsonReader(
         this.limit = 0
         this.positon = 0
         this.nextTokenByte = -1
+        this.stringPool.fill(null)
     }
 
     constructor(

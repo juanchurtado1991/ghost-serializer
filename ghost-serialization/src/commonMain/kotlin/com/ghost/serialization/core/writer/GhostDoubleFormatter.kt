@@ -47,6 +47,9 @@ internal object GhostDoubleFormatter {
         var fracInt = round(fracPart * PRECISION_MULTIPLIER).toLong()
 
         if (fracInt >= 1_000_000_000L) {
+            if (intPart == Long.MAX_VALUE) {
+                return fallback(value)
+            }
             return writeLongDirect(intPart + 1, scratch, pos, writeDecimalZero = true)
         }
 

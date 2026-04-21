@@ -38,7 +38,7 @@ actual fun <T> runSynchronized(lock: Any, block: () -> T): T {
     return synchronized(lock, block)
 }
 
-actual fun <T> ghostIternalUseReader(bytes: ByteArray, block: (com.ghost.serialization.core.parser.GhostJsonReader) -> T): T {
+actual fun <T> ghostInternalUseReader(bytes: ByteArray, block: (com.ghost.serialization.core.parser.GhostJsonReader) -> T): T {
     val reader = com.ghost.serialization.core.parser.GhostJsonReader(bytes)
     return block(reader)
 }

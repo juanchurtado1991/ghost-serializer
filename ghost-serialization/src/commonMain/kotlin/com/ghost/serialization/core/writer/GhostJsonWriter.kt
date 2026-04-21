@@ -325,7 +325,7 @@ class GhostJsonWriter(
     }
 
     companion object {
-        private const val MAX_DEPTH = 100
+        private const val MAX_DEPTH = 255
         private const val HEX_RADIX = 16
         private const val UNICODE_PAD_LENGTH = 4
     }

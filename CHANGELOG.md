@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to the Ghost Serialization project will be documented in this file.
 
+## [1.1.6] - 2026-04-21
+### Added
+- **Security Hardening (Arithmetic)**: Implemented built-in overflow detection for `Long` and `Int` parsing to prevent silent data corruption.
+- **DoS Protection (Resource Guarding)**: Integrated platform-aware `maxCollectionSize` limits (JVM, Android, Native, Web) to prevent memory exhaustion attacks.
+- **Type-Safe Next.js Bridge**: Enhanced the transpiler to generate `ghost-bridge.ts`, providing `deserializeModel` with full TypeScript IntelliSense.
+- **Memory Hygiene**: Automated string pool wiping during reader recycling to prevent sensitive data persistence.
+- **Ghost CLI (Beta)**: Added automated TypeScript-to-Kotlin model transpiler for Next.js.
+- **Wasm Auto-Registry**: Implemented an automated registry discovery hook in `ghostPrewarm()` for WASM targets.
+
+### Fixed
+- **Double Formatter Overflow**: Resolved a critical edge-case bug where rounding `Long.MAX_VALUE` could cause an arithmetic overflow in the JSON writer.
+- **Depth Consistency**: Synchronized `MAX_DEPTH` (255) between `GhostJsonReader` and `GhostJsonWriter` for uniform structural support.
+- **Gradle Stability**: Fixed case-sensitive task dependencies that caused intermittent `SourcesJar` failures.
+- **WASM Interop**: Replaced unsafe `!!` assertions in the JS bridge with resilient null-handling.
+- **Turbopack Compatibility**: Optimized WASM bridge visibility for Next.js development servers.
+
 ## [1.1.5] - 2026-04-21
 
 ### Added

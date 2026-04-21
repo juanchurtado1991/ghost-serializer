@@ -1,4 +1,4 @@
-# Ghost Serialization: Transparency & Performance Report v1.1.1
+# Ghost Serialization: Transparency & Performance Report v1.1.6
 
 This report documents the real-world performance characteristics of Ghost Serialization across different platforms, specifically comparing it against industry standards like GSON, Moshi, and Kotlin Serialization (KSer).
 
@@ -40,8 +40,30 @@ Moshi/GSON occasionally report 0KB allocations in benchmarks. This is due to the
 
 ---
 
+## 🛠️ Design Philosophy & Strategic Limitations
+
+Ghost is engineered for extreme performance and absolute stability. Achieving these goals requires deliberate design trade-offs that developers should understand:
+
+### 1. Zero-Reflection & AOT Requirement
+*   **Trade-off**: Ghost requires a compile-time step (KSP). You cannot deserialize classes that were not annotated with `@GhostSerialization`.
+*   **Industrial Benefit**: Absolute safety against R8/ProGuard minification crashes and significantly reduced attack surface (no runtime introspection).
+
+### 2. Strict Schema Enforcement
+*   **Trade-off**: Ghost follows RFC 8259 strictly. It does not support trailing commas, leading zeros, or unquoted keys often accepted by "forgiving" browsers.
+*   **Industrial Benefit**: Guaranteed data integrity and predictable cross-platform interoperability.
+
+### 3. Structural Security (DoS Immunity)
+*   **Trade-off**: Hard limits on recursion depth (`maxDepth`) and collection sizes (`maxCollectionSize`) are enforced by default.
+*   **Industrial Benefit**: Active protection against "JSON Bomb" attacks and memory exhaustion vulnerabilities in production environments.
+
+### 4. UTF-8 Specialization
+*   **Trade-off**: The engine is hyper-optimized for UTF-8 byte processing.
+*   **Industrial Benefit**: Maximum throughput for modern web and mobile networking, which is almost exclusively UTF-8.
+
+---
+
 ## 💡 Recommendation for Developers
 *   **For Mobile/Frontend:** Use **Ghost** to ensure a "Butter-Smooth" UX with zero frame drops.
 *   **For Backend/Server:** Use **Ghost** to maximize scalability and reduce cloud infrastructure costs through lower CPU and RAM usage.
 
-*Report generated on April 19, 2026, based on Ghost Multi-Platform Benchmark Suite.*
+*Report generated on April 21, 2026, based on Ghost Multi-Platform Benchmark Suite.*

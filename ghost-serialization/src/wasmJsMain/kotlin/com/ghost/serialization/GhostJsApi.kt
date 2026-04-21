@@ -8,8 +8,6 @@ import com.ghost.serialization.core.contract.GhostRegistry
  * JS/Wasm Bridge for Ghost Serialization.
  * Provides a high-performance entry point for JavaScript.
  */
-@OptIn(ExperimentalJsExport::class)
-@JsExport
 internal fun ghostAddRegistry(registry: GhostRegistry) {
     Ghost.addRegistry(registry)
 }
@@ -18,27 +16,20 @@ internal fun ghostAddRegistry(registry: GhostRegistry) {
 @JsExport
 @JsName("ghostPrewarm")
 fun ghostPrewarm() {
-    Ghost.prewarm()
-}
-
-@OptIn(ExperimentalJsExport::class)
-@JsExport
-@JsName("ghostRegisterSampleModels")
-fun ghostRegisterSampleModels() {
-    // We register the core registry which now contains the benchmark models
+    // Automated model registration hook
     try {
-        // We use full name to avoid unresolved import during KSP generation phase
-        ghostAddRegistry(com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization.INSTANCE)
+        com.ghost.serialization.generated.GhostAutoRegistry.registerAll()
     } catch (e: Exception) {
-        println(">>> [Ghost] Registry Error: ${e.message}")
+        // Fallback for non-generated environments
     }
+    Ghost.prewarm()
 }
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("ghostSerialize")
 fun ghostSerialize(value: String): String {
-    // In Wasm, we keep it simple for now
+    // Direct serialization to string for WASM-JS interoperability.
     return Ghost.serialize(value)
 }
 
@@ -57,11 +48,11 @@ fun ghostDeserialize(json: String, typeName: String): String? {
             return null
         }
         val reader = com.ghost.serialization.core.parser.GhostJsonReader(json.encodeToByteArray())
-        val result = serializer.deserialize(reader)
+        val result = serializer.deserialize(reader) ?: return null
         
-        // For Wasm interop, we return as JSON string for now
-        // This is a bridge until we implement direct JS-Object writing
-        Ghost.serialize(result!!)
+        // WASM-JS Bridge: Return result as JSON string.
+        // Direct JS-Object writing is planned for future iterations.
+        Ghost.serialize(result)
     } catch (e: Exception) {
         println(">>> [Ghost] Critical Deserialization Error ($typeName): ${e.message}")
         null

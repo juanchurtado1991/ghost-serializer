@@ -24,7 +24,7 @@ class DeepPrewarmValidationTest {
         }
 
         // 2. Clear cache and register
-        serializerCache.clear()
+        Ghost.serializerCache.clear()
         Ghost.addRegistry(mockRegistry)
 
         // 3. Verify cache is empty before prewarm (discovered registries are lazy)
@@ -35,7 +35,7 @@ class DeepPrewarmValidationTest {
 
         // 5. Verify the type is now in the cache
         val serializer = Ghost.getSerializer(String::class)
-        assertTrue(serializerCache.containsKey(String::class), "Cache should contain String::class after deep prewarm")
+        assertTrue(Ghost.serializerCache.containsKey(String::class), "Cache should contain String::class after deep prewarm")
         assertEquals(com.ghost.serialization.serializers.StringSerializer, serializer)
     }
 }

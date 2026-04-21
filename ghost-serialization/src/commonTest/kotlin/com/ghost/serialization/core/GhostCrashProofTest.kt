@@ -1,6 +1,7 @@
 package com.ghost.serialization.core
 import kotlin.test.assertTrue
 import com.ghost.serialization.core.parser.JsonReaderOptions
+import com.ghost.serialization.core.exception.GhostJsonException
 
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
@@ -128,13 +129,15 @@ class GhostCrashProofTest {
     // ══════════════════════════════════════════════════════════════════
 
     @Test
-    fun veryLargeNumberDoesNotCrash() {
+    fun veryLargeNumberThrowsOverflowException() {
         val huge = "99999999999999999999"
         val reader = readerOf("{\"v\":$huge}")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        reader.nextLong()
+        assertFailsWith<GhostJsonException> {
+            reader.nextLong()
+        }
     }
 
     @Test

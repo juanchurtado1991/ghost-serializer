@@ -3,7 +3,7 @@ package com.ghost.serialization.core.parser
 /**
  * Platform-specific heuristics for Ghost Serialization.
  * Implements an adaptive strategy to balance memory vs performance
- * based on the execution environment. (L6 Staff Implementation)
+ * based on the execution environment.
  */
 expect object GhostHeuristics {
     /**
@@ -17,4 +17,10 @@ expect object GhostHeuristics {
      * Prevents large payloads from polluting the heap on constrained devices.
      */
     val maxStringPoolLength: Int
+
+    /**
+     * The maximum number of items allowed in a collection (List/Map) during deserialization.
+     * Prevents DoS attacks via memory exhaustion.
+     */
+    val maxCollectionSize: Int
 }

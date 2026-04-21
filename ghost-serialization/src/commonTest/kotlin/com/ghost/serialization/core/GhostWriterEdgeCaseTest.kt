@@ -209,7 +209,7 @@ class GhostWriterEdgeCaseTest {
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
         assertThrowsGhostException {
-            repeat(150) { writer.beginObject().name("a") }
+            repeat(300) { writer.beginObject().name("a") }
         }
     }
 

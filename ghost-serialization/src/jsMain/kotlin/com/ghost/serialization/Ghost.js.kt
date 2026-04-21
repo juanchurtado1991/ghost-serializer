@@ -12,7 +12,7 @@ actual fun <T> runSynchronized(lock: Any, block: () -> T): T {
     return block()
 }
 
-actual fun <T> ghostIternalUseReader(
+actual fun <T> ghostInternalUseReader(
     bytes: ByteArray,
     block: (GhostJsonReader) -> T
 ): T {

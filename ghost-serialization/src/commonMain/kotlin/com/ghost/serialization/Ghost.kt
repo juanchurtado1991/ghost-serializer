@@ -15,22 +15,23 @@ import okio.BufferedSource
 import kotlin.reflect.KClass
 
 /**
- * High-level Industrial Entry Point for Ghost Serialization.
- * Absolute Superiority: Modular Discovery via expect/actual.
+ * Core entry point for Ghost Serialization.
+ * Provides modular discovery and serialization management across platforms.
  */
 
-internal val serializerCache = mutableMapOf<KClass<*>, GhostSerializer<*>>()
+
 expect fun discoverRegistries(): List<GhostRegistry>
 
 // Platform-specific lock implementation
 expect fun <T> runSynchronized(lock: Any, block: () -> T): T
 
-expect fun <T> ghostIternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
+expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 object Ghost {
     private val lock = Any()
     private val mutableRegistries = mutableListOf<GhostRegistry>()
+    @PublishedApi internal val serializerCache = mutableMapOf<KClass<*>, GhostSerializer<*>>()
 
     private val discoveredRegistries: List<GhostRegistry> by lazy {
         discoverRegistries()
@@ -149,7 +150,7 @@ object Ghost {
         bytes: ByteArray,
         crossinline options: (GhostJsonReader) -> Unit = {}
     ): T {
-        return ghostIternalUseReader(bytes) { reader ->
+        return ghostInternalUseReader(bytes) { reader ->
             options(reader)
             deserialize(reader)
         }
