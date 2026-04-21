@@ -30,6 +30,7 @@ kotlin {
         moduleName = "ghost-serialization-wasm"
         browser()
         binaries.library()
+        generateTypeScriptDefinitions()
     }
     js(IR) {
         moduleName = "ghost-serialization"

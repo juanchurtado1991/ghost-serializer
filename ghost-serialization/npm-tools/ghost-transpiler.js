@@ -23,7 +23,7 @@ const OUTPUT_DIR = isDev
     : './node_modules/ghost-serialization-wasm/generated-sources';
 const TS_OUTPUT_DIR = isDev
     ? '../GhostSerialization/ghost-serialization/npm-tools/generated-types'
-    : './ghost-generated-types';
+    : './src/ghost-generated-types';
 
 if (!fs.existsSync(INPUT_DIR)) fs.mkdirSync(INPUT_DIR, { recursive: true });
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -113,16 +113,17 @@ try {
  * Ghost Serialization - Type Safety Bridge
  * Generated automatically. Do not edit.
  */
-import { ghostDeserialize } from "ghost-serialization-wasm";
 
 export interface GhostModels {
 ${files.filter(f => f.endsWith('.ts')).map(f => {
     const name = f.replace('.ts', '');
-    return `    ${name}: import("./ghost-models/${name}").${name};`;
+    return `    ${name}: import("../../ghost-models/${name}").${name};`;
 }).join('\n')}
 }
 
-export function deserializeModel<K extends keyof GhostModels>(json: string, type: K): GhostModels[K] {
+export async function deserializeModel<K extends keyof GhostModels>(json: string, type: K): Promise<GhostModels[K]> {
+    // Dynamic import to avoid SSR crashes
+    const { ghostDeserialize } = await import("ghost-serialization-wasm");
     const result = ghostDeserialize(json, type as string);
     if (!result) {
         throw new Error(\`[Ghost] Failed to deserialize "\${type}". This usually means the model was not synchronized or the WASM engine needs to be rebuilt. Run "npm run ghost:sync" to fix this.\`);
@@ -145,8 +146,30 @@ object GhostAutoRegistry {
 }
 `;
     fs.writeFileSync(path.join(OUTPUT_DIR, `GhostAutoRegistry.kt`), autoRegistryKt);
+    
+    // Patch Kotlin/Wasm glue code for Next.js compatibility
+    sanitizeWasmGlueCode();
+    
     console.log("[Ghost] Synchronization orchestrated successfully.");
 } catch (e) {
     console.error(`[Ghost] Error during transpilation: ${e.message}`);
     process.exit(1);
+}
+
+function sanitizeWasmGlueCode() {
+    const libDir = './libs/ghost-serialization-wasm';
+    if (!fs.existsSync(libDir)) return;
+
+    const files = fs.readdirSync(libDir);
+    files.forEach(file => {
+        if (file.endsWith('.mjs')) {
+            const filePath = path.join(libDir, file);
+            let content = fs.readFileSync(filePath, 'utf8');
+            if (content.includes('process.release.name')) {
+                console.log(`[Ghost] Patching WASM glue code for Next.js compatibility: ${file}`);
+                content = content.replace(/process\.release\.name/g, '(process.release && process.release.name)');
+                fs.writeFileSync(filePath, content);
+            }
+        }
+    });
 }

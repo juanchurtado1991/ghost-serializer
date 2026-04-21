@@ -34,3 +34,4 @@ trace_log.txt
 # Explicitly keep critical project meta
 !LICENSE
 !.github/
+node_modules/

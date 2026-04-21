@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 object AppDesign {
     val PrimaryDark = Color(0xFF0F172A)
     val SurfaceColor = Color(0xFF1E293B)
-    val AccentGlow = Color(0xFF34D399)
+    val AccentGlow = Color(0xFFA855F7) // Ghost Purple
 
     val GlassColor = Color(0xFFFFFFFF).copy(alpha = 0.05f)
     val GlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.1f)
