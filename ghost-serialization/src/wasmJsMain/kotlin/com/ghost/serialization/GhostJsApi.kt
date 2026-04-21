@@ -44,7 +44,8 @@ fun ghostSerialize(value: String): String {
 fun ghostDeserialize(json: String, typeName: String): String? {
     return try {
         val serializer = Ghost.getSerializerByName(typeName) ?: run {
-            println(">>> [Ghost] Serializer not found for type: $typeName")
+            println(">>> [Ghost] CRITICAL: Serializer not found for type: $typeName")
+            println(">>> [Ghost] HINT: Ensure you ran the sync tool and the model is annotated with @GhostSerialization.")
             return null
         }
         val reader = com.ghost.serialization.core.parser.GhostJsonReader(json.encodeToByteArray())

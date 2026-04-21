@@ -58,7 +58,7 @@ plugins {
 }
 
 dependencies {
-    val ghostVersion = "1.1.6"
+    val ghostVersion = "1.1.7"
 
     // 1. Add the KSP Compiler plugin
     add("kspCommonMainMetadata", "com.ghostserializer:ghost-compiler:$ghostVersion")
@@ -178,4 +178,4 @@ The project adheres to strict architectural separation:
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.6 Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.7 Stable.*

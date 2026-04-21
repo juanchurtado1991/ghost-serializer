@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to the Ghost Serialization project will be documented in this file.
 
+## [1.1.7] - 2026-04-21
+### Added
+- **Descriptive Telemetry**: Enhanced WASM/JS bridge with critical hints for missing serializers.
+- **Actionable Errors**: Improved `deserializeModel` with explicit instructions on synchronization failures.
+- **Type-Safe Bridge (Next.js)**: Finalized the automatic TS-to-Kotlin synchronization flow.
+
 ## [1.1.6] - 2026-04-21
 ### Added
 - **Security Hardening (Arithmetic)**: Implemented built-in overflow detection for `Long` and `Int` parsing to prevent silent data corruption.
