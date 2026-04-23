@@ -13,6 +13,7 @@ import com.ghost.serialization.core.writer.GhostJsonWriter
 class ListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>
 ) : GhostSerializer<List<T>> {
+    override val typeName: String get() = "List<${itemSerializer.typeName}>"
     override fun serialize(writer: GhostJsonWriter, value: List<T>) {
         writer.beginArray()
         for (i in 0 until value.size) {
@@ -29,6 +30,7 @@ class ListSerializer<T>(
 class MapSerializer<V>(
     private val valueSerializer: GhostSerializer<V>
 ) : GhostSerializer<Map<String, V>> {
+    override val typeName: String get() = "Map<String, ${valueSerializer.typeName}>"
     override fun serialize(
         writer: GhostJsonWriter,
         value: Map<String, V>
@@ -59,6 +61,7 @@ class MapSerializer<V>(
 }
 
 object IntArraySerializer : GhostSerializer<IntArray> {
+    override val typeName: String = "IntArray"
     override fun serialize(
         writer: GhostJsonWriter,
         value: IntArray
@@ -87,6 +90,7 @@ object IntArraySerializer : GhostSerializer<IntArray> {
 }
 
 object LongArraySerializer : GhostSerializer<LongArray> {
+    override val typeName: String = "LongArray"
     override fun serialize(
         writer: GhostJsonWriter,
         value: LongArray

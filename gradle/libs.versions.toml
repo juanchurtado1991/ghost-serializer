@@ -4,7 +4,7 @@ kotlin                          = "2.1.10"
 agp                             = "8.7.3"
 ksp                             = "2.1.10-1.0.30"
 compose-plugin                  = "1.7.3"
-ghost-version                   = "1.1.6"
+ghost-version                   = "1.1.7"
 ghost-group                     = "com.ghostserializer"
 
 # Networking & Serialization
@@ -70,8 +70,6 @@ coil-compose                    = { group = "io.coil-kt.coil3", name = "coil-com
 coil-network-ktor               = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
 
 # Testing
-junit-jupiter-engine            = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
-junit-platform-launcher         = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
 junit-engine                    = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-vintage-engine            = { group = "org.junit.vintage", name = "junit-vintage-engine", version = "5.11.3" }
 junit-launcher                  = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }

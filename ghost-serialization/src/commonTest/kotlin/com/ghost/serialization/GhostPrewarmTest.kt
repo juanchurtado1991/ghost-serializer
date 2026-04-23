@@ -14,6 +14,7 @@ class GhostPrewarmTest {
     class MockUser(val id: Int, val name: String)
 
     class MockUserSerializer : GhostSerializer<MockUser> {
+        override val typeName: String = "MockUser"
         var warmupCalled = false
         override fun serialize(writer: com.ghost.serialization.core.writer.GhostJsonWriter, value: MockUser) {}
         override fun deserialize(reader: GhostJsonReader): MockUser {

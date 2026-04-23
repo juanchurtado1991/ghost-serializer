@@ -13,7 +13,8 @@ tasks.withType<org.gradle.jvm.application.tasks.CreateStartScripts> {
 }
 
 tasks.named<JavaExec>("run") {
-    dependsOn(":ghost-serialization:jvmTestClasses", ":ghost-integration-test:testClasses")
+    // Force the execution of all test suites (JVM, WASM, Integration) before running the benchmark UI
+    dependsOn(":ghost-serialization:jvmTest", ":ghost-serialization:wasmJsBrowserTest", ":ghost-integration-test:test")
 }
 
 kotlin {

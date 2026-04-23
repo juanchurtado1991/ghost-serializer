@@ -42,6 +42,14 @@ internal class GhostCodeGenerator(
         null
     }
 
+    private val customTypeName: String = classDeclaration.annotations
+        .find { it.shortName.asString() == "GhostSerialization" }
+        ?.arguments
+        ?.find { it.name?.asString() == "name" }
+        ?.value as? String ?: ""
+
+    private val finalTypeName: String = if (customTypeName.isNotEmpty()) customTypeName else classDeclaration.simpleName.asString()
+
     private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
 
     private val serializerInterface = ClassName(PKG_CONTRACT, STR_GHOST_SERIALIZER)
@@ -115,6 +123,12 @@ internal class GhostCodeGenerator(
             .addSuperinterface(
                 serializerInterface
                     .parameterizedBy(originalClassName)
+            )
+            .addProperty(
+                PropertySpec.builder("typeName", String::class)
+                    .addModifiers(KModifier.OVERRIDE)
+                    .initializer("%S", finalTypeName)
+                    .build()
             )
             .addProperty(
                 PropertySpec.builder(

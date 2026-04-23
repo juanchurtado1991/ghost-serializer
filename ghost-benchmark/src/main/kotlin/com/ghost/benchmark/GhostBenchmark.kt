@@ -3,6 +3,8 @@
 
 package com.ghost.benchmark
 
+import com.ghost.serialization.Ghost
+import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.integration.model.BenchResult
 import com.ghost.serialization.integration.model.BenchUser
 import com.ghost.serialization.integration.model.BenchmarkMetrics
@@ -10,8 +12,6 @@ import com.ghost.serialization.integration.model.Category
 import com.ghost.serialization.integration.model.ComplexResponse
 import com.ghost.serialization.integration.model.ExtremeMetadata
 import com.ghost.serialization.integration.model.UserRole
-import com.ghost.serialization.Ghost
-import com.ghost.serialization.core.parser.GhostJsonReader
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
@@ -29,34 +29,34 @@ import java.lang.management.ManagementFactory
 import com.google.gson.stream.JsonReader as GsonReader
 
 /**
- * Robust Performance Audit Suite for GhostSerialization.
- * Industrial Grade Console Benchmark.
+ * Performance Benchmark Suite for GhostSerialization.
+ * Console-based throughput comparison.
  */
 @OptIn(
     ExperimentalSerializationApi::class,
     ExperimentalStdlibApi::class
 )
 fun main() {
-    println("\n🚀 INITIALIZING GHOST HYPER-PERFORMANCE AUDIT...")
-    executeSafetyAudit()
+    println("\n--- INITIALIZING GHOST SERIALIZATION BENCHMARK ---")
+    executeDynamicTestRunner()
     val threadBean = initializePlatformDiagnostics() ?: return
 
     val gson = Gson()
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val kJson = Json { ignoreUnknownKeys = true }
 
-    // 1. Cold Start Audit (The "First Hit" impact)
+    // 1. Cold Start
     val smallComplex = generateComplexData(20)
     val smallJson = generateNeutralJson(smallComplex)
     val smallBytes = smallJson.encodeUtf8()
 
     val coldMetrics = runColdStart(smallBytes)
-    printRankedTable("COLD START AUDIT (First Run)", coldMetrics)
+    printRankedTable("COLD START (First Run Allocation)", coldMetrics)
 
     // 2. Warmup Phase (Ensuring JIT optimization)
     runWarmup(gson, moshi, kJson, smallBytes, smallComplex)
 
-    // 3. Steady-State Workloads (Focusing on heavy lifting)
+    // 3. Steady-State Workloads
     val workloads = listOf(
         "LIST_MEDIUM" to 200,
         "SYNC_FULL_LARGE" to 2000
@@ -75,7 +75,7 @@ fun main() {
         )
     }
 
-    // 4. Serialization Audit (Writing path)
+    // 4. Serialization (Writing path)
     val countSer = 1000
     val largeComplex = generateComplexData(countSer)
     val serJson = generateNeutralJson(largeComplex)
@@ -87,21 +87,21 @@ fun main() {
         serMetrics
     )
 
-    // 5. Stress Test: Deep Nesting (Recursion Impact)
+    // 5. Stress Test: Deep Nesting
     val stressMetrics = runStressTests(gson, moshi, kJson)
     printRankedTable("STRESS TEST: DEEP NESTING (20 Levels)", stressMetrics.nesting)
 
-    // 6. Failure Resilience (Speed of error detection)
+    // 6. Failure Resilience
     val failureMetrics = runFailureTests(smallBytes)
     printRankedTable("FAILURE RESILIENCE (Malformed JSON)", failureMetrics)
 
-    println("\n✅ AUDIT COMPLETE. Ghost Status OK")
+    println("\n[COMPLETE] Benchmark execution finished.")
     System.exit(0)
 }
 
 private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
     println("\n========================================================")
-    println("AUDIT: $title")
+    println("BENCHMARK: $title")
     println("========================================================")
 
     data class EngineRank(val name: String, val nanos: Long, val mem: Long)
@@ -131,7 +131,7 @@ private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
     if (winner.nanos > 0 && slowest.nanos > 0) {
         val speedVsSlowest = ((slowest.nanos.toDouble() / winner.nanos.toDouble()) - 1.0) * 100.0
         println(
-            "🏆 WINNER: ${winner.name} (%.1f%% faster than ${slowest.name})".format(
+            "   WINNER: ${winner.name} (%.1f%% faster than ${slowest.name})".format(
                 speedVsSlowest
             )
         )
@@ -374,12 +374,12 @@ private fun createTree(d: Int): Category = if (d <= 0) Category(name = "L") else
     subCategories = listOf(createTree(d - 1))
 )
 
-private fun executeSafetyAudit() {
+private fun executeDynamicTestRunner() {
     try {
-        println("\n--- AUTOMATED SAFETY AUDIT ---")
+        println("\n--- RUNNING DYNAMIC JVM TEST SUITE ---")
         ParsingTestBenchmark.runSafetyAudit()
     } catch (e: Exception) {
-        println("Audit error: ${e.message}")
+        println("Test runner error: ${e.message}")
     }
 }
 

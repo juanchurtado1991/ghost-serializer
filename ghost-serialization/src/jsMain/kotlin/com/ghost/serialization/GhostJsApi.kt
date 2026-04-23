@@ -1,6 +1,7 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.core.contract.GhostRegistry
+import com.ghost.serialization.core.parser.GhostJsonReader
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -19,7 +20,6 @@ fun ghostPrewarm() {
 @JsExport
 @JsName("ghostSerialize")
 fun ghostSerialize(value: Any): String {
-    // Note: In Wasm, Any might need specific handling depending on the registry
     return Ghost.serialize(value)
 }
 
@@ -37,7 +37,7 @@ fun ghostDeserialize(json: String, typeName: String): Any? {
             println(">>> [Ghost] Serializer not found for type: $typeName")
             return null
         }
-        val reader = com.ghost.serialization.core.parser.GhostJsonReader(json.encodeToByteArray())
+        val reader = GhostJsonReader(json.encodeToByteArray())
         serializer.deserialize(reader)
     } catch (e: Exception) {
         println(">>> [Ghost] Critical Deserialization Error ($typeName): ${e.message}")

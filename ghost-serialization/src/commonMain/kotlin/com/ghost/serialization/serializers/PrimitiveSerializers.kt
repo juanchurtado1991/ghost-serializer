@@ -8,6 +8,7 @@ import com.ghost.serialization.core.parser.nextLong
 import com.ghost.serialization.core.writer.GhostJsonWriter
 
 object StringSerializer : GhostSerializer<String> {
+    override val typeName: String = "String"
     override fun serialize(writer: GhostJsonWriter, value: String) {
         writer.value(value)
     }
@@ -16,6 +17,7 @@ object StringSerializer : GhostSerializer<String> {
 }
 
 object IntSerializer : GhostSerializer<Int> {
+    override val typeName: String = "Int"
     override fun serialize(writer: GhostJsonWriter, value: Int) {
         writer.value(value.toLong())
     }
@@ -24,6 +26,7 @@ object IntSerializer : GhostSerializer<Int> {
 }
 
 object LongSerializer : GhostSerializer<Long> {
+    override val typeName: String = "Long"
     override fun serialize(writer: GhostJsonWriter, value: Long) {
         writer.value(value)
     }
@@ -32,6 +35,7 @@ object LongSerializer : GhostSerializer<Long> {
 }
 
 object BooleanSerializer : GhostSerializer<Boolean> {
+    override val typeName: String = "Boolean"
     override fun serialize(writer: GhostJsonWriter, value: Boolean) {
         writer.value(value)
     }
@@ -40,6 +44,7 @@ object BooleanSerializer : GhostSerializer<Boolean> {
 }
 
 object DoubleSerializer : GhostSerializer<Double> {
+    override val typeName: String = "Double"
     override fun serialize(writer: GhostJsonWriter, value: Double) {
         writer.value(value)
     }

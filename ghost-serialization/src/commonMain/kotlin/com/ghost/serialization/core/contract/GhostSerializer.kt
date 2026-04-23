@@ -12,6 +12,9 @@ import com.ghost.serialization.core.writer.GhostJsonWriter
  * to provide reflection-free serialization and deserialization.
  */
 interface GhostSerializer<T> {
+    /** The unique name of the model in the Ghost registry. */
+    val typeName: String
+
 
     /** Serializes [value] directly into the provided [sink]. */
     fun serialize(sink: BufferedSink, value: T) {

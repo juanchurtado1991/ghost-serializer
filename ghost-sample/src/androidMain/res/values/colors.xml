@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Ghost Design System Sync -->
+    <color name="primary_dark">#0F172A</color>
+    <color name="surface_color">#1E293B</color>
+    <color name="accent_glow">#A855F7</color>
+    
+    <!-- Legacy Mappings (Redirected to Ghost Palette) -->
+    <color name="purple_200">#C084FC</color> <!-- Tailwind Purple 400 -->
+    <color name="purple_500">#A855F7</color> <!-- Ghost Purple -->
+    <color name="purple_700">#7E22CE</color> <!-- Tailwind Purple 700 -->
+    <color name="teal_200">#818CF8</color>  <!-- Using Indigo 400 for consistency -->
+    <color name="teal_700">#4338CA</color>
+    <color name="black">#020617</color>
+    <color name="white">#F8FAFC</color>
 </resources>

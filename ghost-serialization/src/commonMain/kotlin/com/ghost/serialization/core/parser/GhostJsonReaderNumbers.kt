@@ -14,16 +14,16 @@ fun GhostJsonReader.nextInt(): Int {
 
 fun GhostJsonReader.nextLong(): Long {
     if (nextTokenByte == -1) skipWhitespace()
-    if (positon >= data.size) throwError("Expected number but reached EOF")
+    if (position >= data.size) throwError("Expected number but reached EOF")
 
-    val isQuoted = data[positon] == GhostJsonConstants.QUOTE
+    val isQuoted = data[position] == GhostJsonConstants.QUOTE
     if (isQuoted) {
         if (!coerceStringsToNumbers) throwError("Unexpected string for numeric type (coercion disabled)")
         internalSkip(1)
         peekNextToken()
     }
 
-    var cursor = positon
+    var cursor = position
     var negative = false
     if (cursor < data.size && data[cursor] == GhostJsonConstants.MINUS) {
         negative = true
@@ -84,11 +84,11 @@ fun GhostJsonReader.nextLong(): Long {
         throwError("Expected digits but found ${data[cursor].toInt().toChar()}")
     }
 
-    internalSkip(cursor - positon)
+    internalSkip(cursor - position)
     val result = if (value == Long.MIN_VALUE) value else (if (negative) -value else value)
 
     if (isQuoted) {
-        if (positon >= data.size || data[positon] != GhostJsonConstants.QUOTE) {
+        if (position >= data.size || data[position] != GhostJsonConstants.QUOTE) {
             throwError("Expected closing quote for coerced number")
         }
         internalSkip(1)
@@ -100,16 +100,16 @@ fun GhostJsonReader.nextLong(): Long {
 
 fun GhostJsonReader.nextDouble(): Double {
     if (nextTokenByte == -1) skipWhitespace()
-    if (positon >= data.size) throwError("Expected number but reached EOF")
+    if (position >= data.size) throwError("Expected number but reached EOF")
 
-    val isQuoted = data[positon] == GhostJsonConstants.QUOTE
+    val isQuoted = data[position] == GhostJsonConstants.QUOTE
     if (isQuoted) {
         if (!coerceStringsToNumbers) throwError("Unexpected string for numeric type (coercion disabled)")
         internalSkip(1)
         peekNextToken()
     }
 
-    var cursor = positon
+    var cursor = position
     var negative = false
     if (cursor < data.size && data[cursor] == GhostJsonConstants.MINUS) {
         negative = true
@@ -229,12 +229,12 @@ fun GhostJsonReader.nextDouble(): Double {
         throwError("Numeric overflow or NaN is not allowed in JSON")
     }
 
-    val consumedBytes = cursor - positon
+    val consumedBytes = cursor - position
     internalSkip(consumedBytes)
     val finalResult = result
 
     if (isQuoted) {
-        if (positon >= data.size || data[positon] != GhostJsonConstants.QUOTE) {
+        if (position >= data.size || data[position] != GhostJsonConstants.QUOTE) {
             throwError("Expected closing quote for coerced number")
         }
         internalSkip(1)
@@ -246,9 +246,9 @@ fun GhostJsonReader.nextDouble(): Double {
 
 internal fun GhostJsonReader.skipRawNumber() {
     skipWhitespace()
-    if (positon >= data.size) throwError("Expected number but reached EOF")
+    if (position >= data.size) throwError("Expected number but reached EOF")
 
-    var cursor = positon
+    var cursor = position
     if (data[cursor] == GhostJsonConstants.MINUS) cursor++
 
     var hasDot = false
@@ -306,6 +306,6 @@ internal fun GhostJsonReader.skipRawNumber() {
     }
 
     if (!hasDigits) throwError("Empty number")
-    val consumedBytes = cursor - positon
+    val consumedBytes = cursor - position
     internalSkip(consumedBytes)
 }

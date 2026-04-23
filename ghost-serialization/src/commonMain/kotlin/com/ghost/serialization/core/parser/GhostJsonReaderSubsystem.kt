@@ -19,8 +19,8 @@ import com.ghost.serialization.core.parser.GhostJsonConstants.TRUE_CHAR
 internal fun GhostJsonReader.peekNextToken(): Int {
     if (nextTokenByte != -1) return nextTokenByte
     skipWhitespace()
-    if (positon >= data.size) return -1
-    val tokenByte = data[positon].toInt() and 0xFF
+    if (position >= data.size) return -1
+    val tokenByte = data[position].toInt() and 0xFF
     nextTokenByte = tokenByte
     return tokenByte
 }
@@ -61,8 +61,8 @@ fun GhostJsonReader.consumeKeySeparator() {
 /** Consumes the ',' array separator. */
 fun GhostJsonReader.consumeArraySeparator() {
     skipWhitespace()
-    if (positon >= data.size) throwError("Unexpected EOF")
-    val arraySeparatorByte = data[positon]
+    if (position >= data.size) throwError("Unexpected EOF")
+    val arraySeparatorByte = data[position]
     if (arraySeparatorByte == COMMA) {
         internalSkip(1)
     } else if (arraySeparatorByte != CLOSE_ARR) {
@@ -76,7 +76,7 @@ fun GhostJsonReader.isNextNullValue(): Boolean = peekNextToken() == NULL_CHAR.to
 /** Consumes a JSON 'null' literal. */
 fun GhostJsonReader.consumeNull() {
     val length = GhostJsonConstants.NULL_BYTES.size
-    if (positon + length > data.size) throwError("Truncated 'null' literal")
+    if (position + length > data.size) throwError("Truncated 'null' literal")
     internalSkip(length)
 }
 
@@ -103,13 +103,13 @@ fun GhostJsonReader.skipAnyValue() {
 
 internal fun GhostJsonReader.skipAndValidateLiteral(expected: okio.ByteString) {
     val length = expected.size
-    if (positon + length > data.size) throwError("Unexpected EOF during literal")
+    if (position + length > data.size) throwError("Unexpected EOF during literal")
     for (i in 0 until length) {
-        if (data[positon + i] != expected[i]) {
+        if (data[position + i] != expected[i]) {
             throwError("Expected literal but found mismatch")
         }
     }
-    val afterPos = positon + length
+    val afterPos = position + length
     if (afterPos < data.size) {
         val nextByte = data[afterPos]
         val byteCode = nextByte.toInt() and 0xFF
@@ -193,11 +193,11 @@ internal fun GhostJsonReader.skipCommaIfPresent() {
 
 internal fun GhostJsonReader.skipBalanced(open: Byte, close: Byte) {
     var balance = 1
-    while (balance > 0 && positon < data.size) {
+    while (balance > 0 && position < data.size) {
         if (depth + balance > maxDepth) {
             throwError("Reached maximum recursion depth ($maxDepth) during skip")
         }
-        val currentByte = data[positon]
+        val currentByte = data[position]
         internalSkip(1)
         if (currentByte == open) balance++
         else if (currentByte == close) balance--
@@ -214,22 +214,22 @@ internal fun GhostJsonReader.skipBalanced(open: Byte, close: Byte) {
  * @return The string value if found, or null otherwise.
  */
 fun GhostJsonReader.peekStringField(keyName: String): String? {
-    val savedPos = positon
+    val savedPos = position
     try {
         skipWhitespace()
-        if (positon >= data.size || data[positon] != OPEN_OBJ) return null
+        if (position >= data.size || data[position] != OPEN_OBJ) return null
         internalSkip(1)
 
         val tempReader = GhostJsonReader(data, maxDepth = this.maxDepth, strictMode = false)
-        tempReader.positon = positon
+        tempReader.position = position
         
         // Safeguard: Limit the search to prevent DoS with massive JSONs
-        val startPos = positon
+        val startPos = position
         var fieldsChecked = 0
         val maxSearchBytes = 64 * 1024 // 64KB limit
         val maxSearchFields = 100
 
-        while (fieldsChecked < maxSearchFields && (tempReader.positon - startPos) < maxSearchBytes) {
+        while (fieldsChecked < maxSearchFields && (tempReader.position - startPos) < maxSearchBytes) {
             val currentKey = tempReader.nextKey() ?: break
             tempReader.consumeKeySeparator()
             if (currentKey == keyName) return tempReader.nextString()
@@ -239,7 +239,7 @@ fun GhostJsonReader.peekStringField(keyName: String): String? {
         }
     } catch (_: Exception) {
     } finally {
-        positon = savedPos
+        position = savedPos
     }
     return null
 }

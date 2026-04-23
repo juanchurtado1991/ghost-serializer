@@ -1,10 +1,24 @@
 # Changelog
 All notable changes to the Ghost Serialization project will be documented in this file.
 
-## [1.1.7] - 2026-04-21
+## [1.1.7] - 2026-04-23
 ### Added
+- **Collision-Safe Model Registry**: Added `val name: String = ""` parameter to `@GhostSerialization` annotation. When set, the KSP compiler uses this name as the unique registry key, allowing two models with the same class name in different packages to coexist without collision.
+- **`typeName` Contract on `GhostSerializer`**: Added mandatory `val typeName: String` to the `GhostSerializer` interface. The registry now uses this static, compile-time-resolved string instead of runtime reflection (`KClass.simpleName`), ensuring O(1) lookup stability on all platforms including WasmJs where `qualifiedName` is unavailable.
+- **Full `typeName` Coverage**: Implemented `typeName` across all built-in serializers: `PrimitiveSerializers`, `CollectionSerializers` (`List<T>`, `Map<String,V>`, `IntArray`, `LongArray`), and all test mock serializers.
+- **Scientific Benchmark Engine (v2.0)**: Rewrote the Next.js benchmark engine with professional methodology: randomized engine order to eliminate JIT bias, median latency (most statistically robust metric), 100-iteration warmup per engine, GC yield between engines, and dead-code elimination prevention via `keepAlive` arrays.
+- **Fair Field Coverage in Benchmark**: Expanded `GhostCharacter` model to match the full Zod schema field-for-field (`origin`, `location`, `episode[]`, `type`, `gender`, `url`, `created`). Previously Ghost was deserializing 5 fields while Zod validated 12 — an unfair comparison.
+- **Honest Memory Reporting**: Replaced unreliable `performance.memory` heap-delta approach with engine-specific APIs: Ghost reports `WebAssembly.Memory.buffer.byteLength` (exact WASM linear memory), JS engines use `performance.measureUserAgentSpecificMemory()` (requires COOP/COEP, already configured).
+- **Network/CPU Separation in Benchmark**: Real API fetch now happens before the benchmark timer starts. Network time is logged separately to the console. All engines compete only on CPU deserialization of identical in-memory payloads.
+- **Fixed Transpiler Template Bug**: Corrected a nested template-literal syntax error in `ghost-transpiler.js` that produced a malformed `ghost-bridge.ts` with an extra closing brace, causing a Next.js/Turbopack parse failure.
+
+### Fixed
+- **WASM Graceful Failure (Falla Elegante)**: Hardened WASM boundaries with `try/catch(Throwable)` to prevent browser crashes (WASM Traps) during catastrophic engine errors or malformed JSON payloads.
+- **Next.js & TypeScript Bridge Resilience**: The synchronous API (`deserializeModelSync`) now safely intercepts `null` engine states and throws standard JavaScript `Error` exceptions, acting as a robust drop-in replacement for `JSON.parse`.
+- **Comprehensive E2E Integration Tests**: Added a suite of +200 cross-platform tests validating unicode, missing fields, malformed JSON, un-registered models, and VM stress edge cases directly inside Headless Chrome.
+- **Industrial Performance Profiling**: Purged all heavy `console.log` / `println` operations from the fast-path execution loop to ensure zero-allocation I/O overhead, maintaining strict sub-millisecond execution times.
+- **NPM Publication Automation**: Automated the inclusion of `README.md` and `LICENSE` files within the NPM Wasm production library bundle.
 - **Descriptive Telemetry**: Enhanced WASM/JS bridge with critical hints for missing serializers.
-- **Actionable Errors**: Improved `deserializeModel` with explicit instructions on synchronization failures.
 - **Type-Safe Bridge (Next.js)**: Finalized the automatic TS-to-Kotlin synchronization flow.
 
 ## [1.1.6] - 2026-04-21

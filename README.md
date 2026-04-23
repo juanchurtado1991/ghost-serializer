@@ -21,11 +21,32 @@ For a detailed cross-platform analysis and performance transparency report, see 
 
 ## 🚀 Why Ghost Serialization?
 
-### 1. Absolute Hyper-Performance
-Ghost parses JSON directly across `ByteArray` buffers accessing values fundamentally at O(1) complexity.
-- **Latency**: Benchmarked at ~8ms for complex payloads.
-- **Throughput**: Peaking at **7.5M operations/sec** — a massive improvement over traditional parsers.
-- **Memory Footprint**: Memory allocations are consistently **-70% lower** due to structural peeking, eliminating intermediate `String` object instances entirely.
+### 1. Platform-Differentiated Performance
+
+Ghost's advantages vary by platform. Here are the **real, measured numbers**:
+
+#### Android / JVM (Server, Desktop)
+Ghost was purpose-built for JVM and dominates here:
+
+| Engine | Latency (2000 objects) | Memory Allocation |
+|---|---|---|
+| **Ghost** | **1.45 ms** 🏆 | **216 KB** 🏆 |
+| Kotlin Serialization | 3.40 ms | 1,106 KB |
+| Moshi | 4.08 ms | 950 KB |
+| Gson | 3.22 ms | 1,159 KB |
+
+> ~**180% faster** than Moshi. ~**80% less memory** than Kotlin Serialization.
+
+#### Browser / WASM (Next.js, React)
+In the browser, Ghost's advantage shifts to **memory efficiency**. The WASM bridge introduces per-call overhead that makes raw latency higher than native JS parsers on small payloads:
+
+| Engine | Latency (per page) | JS Heap Allocation |
+|---|---|---|
+| JSON.parse | 0.013 ms (fastest) | ~12 MB |
+| Zod + JSON.parse | 0.031 ms | ~24 MB |
+| **Ghost WASM** | 0.12 ms | **~0–5 MB** 🏆 |
+
+> Ghost allocates **~5x less JS heap** than Zod. Its speed advantage emerges at large payloads and batch processing where the WASM bridge cost amortizes. For latency-critical, small-payload endpoints, prefer `JSON.parse` or Zod.
 
 ### 2. Zero-Reflection & ProGuard Safe
 Generates static, deterministic code at compile time.
@@ -132,31 +153,53 @@ val client = HttpClient {
 ```
 
 ### 🌍 Web & Next.js (WASM)
-Ghost provides a **Zero-Kotlin** workflow for web developers. You can define your models in TypeScript and sync them automatically with the high-performance WASM engine.
+Ghost provides a **Zero-Kotlin** workflow for web developers. You can define your models in TypeScript and the engine will cross-compile an optimized WebAssembly bridge in the background.
 
-1. **Install**: `npm install ghost-serialization-wasm`
-2. **Define Models**: Create a `ghost-models/` directory in your project root and add your TS interfaces:
+> [!IMPORTANT]
+> **Prerequisite:** The cross-compilation sync tool requires the **Java Virtual Machine (JVM)** to be installed on your development machine (Java 17+ recommended).
+> 
+> **How to install the JVM (for Node.js/Next.js Developers):**
+> - **macOS (Homebrew):** `brew install openjdk@17`
+> - **Windows/Linux (SDKMAN!):** `curl -s "https://get.sdkman.io" | bash` then `sdk install java 17.0.12-tem`
+> - Or download installers directly from [Adoptium](https://adoptium.net/).
+
+1. **Install**: 
+   ```bash
+   npm install ghost-serialization-wasm
+   ```
+   Add a script to your `package.json` to easily run the sync tool:
+   ```json
+   "scripts": {
+     "ghost:sync": "ghost-sync"
+   }
+   ```
+2. **Define Models**: Create a `ghost-models/` directory in your project root and add your standard TypeScript interfaces:
    ```typescript
+   // ghost-models/User.ts
    export interface User {
        id: number;
        name: string;
    }
    ```
-3. **Sync**: Run the sync tool to generate the optimized WASM bridge:
+3. **Sync**: Run the sync tool to generate the highly optimized WASM bridge. *(This is where the JVM is used locally).*
    ```bash
-   node node_modules/ghost-serialization-wasm/tools/ghost-transpiler.js
-   # Then rebuild/sync your local bridge
+   npm run ghost:sync
    ```
-4. **Use**:
+4. **Use in Next.js/React**:
    ```typescript
-   import { ghostPrewarm } from "ghost-serialization-wasm";
-   import { deserializeModel } from "./ghost-generated-types/ghost-bridge";
+   import { ensureGhostReady, deserializeModelSync } from "@/ghost-generated-types/ghost-bridge";
 
-   // Initialize (Automatic model registration)
-   ghostPrewarm();
+   async function fetchAndParseUser() {
+       // 1. Initialize the WASM engine (call this once on app load)
+       await ensureGhostReady();
+       
+       const response = await fetch("...");
+       const jsonText = await response.text();
 
-   // High-performance, fully-typed deserialization
-   const user = deserializeModel(json, "User"); // 'user' is now typed as User!
+       // 2. High-performance, fully-typed synchronous deserialization!
+       const user = deserializeModelSync(jsonText, "User"); 
+       console.log(user.name);
+   }
    ```
 
 ## 🚀 Performance Audit

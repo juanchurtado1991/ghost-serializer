@@ -36,6 +36,48 @@ subprojects {
             }
         }
     }
+
+    // Configure test logging across all modules to show up in the console UI
+    tasks.withType<org.gradle.api.tasks.testing.AbstractTestTask>().configureEach {
+        // Disable caching so tests always run and print their names to the console
+        outputs.upToDateWhen { false }
+        
+        testLogging {
+            // Disable default event logging to avoid duplicate prints and double line breaks
+            // We handle the UI purely via the TestListener below
+            showStandardStreams = false
+            showExceptions = false
+            showCauses = false
+            showStackTraces = false
+        }
+
+        addTestListener(object : org.gradle.api.tasks.testing.TestListener {
+            override fun beforeSuite(suite: org.gradle.api.tasks.testing.TestDescriptor) {}
+            override fun beforeTest(testDescriptor: org.gradle.api.tasks.testing.TestDescriptor) {}
+            override fun afterTest(testDescriptor: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
+                val status = when(result.resultType) {
+                    org.gradle.api.tasks.testing.TestResult.ResultType.SUCCESS -> "✅ [PASS]"
+                    org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE -> "❌ [FAIL]"
+                    org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED -> "⏭️ [SKIP]"
+                }
+                // Clean browser/platform boilerplate (e.g., "[wasmJs, browser, ChromeHeadless...]")
+                val cleanName = testDescriptor.name.substringBefore("[")
+                println("\r$status $cleanName".padEnd(80))
+            }
+            override fun afterSuite(suite: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
+                if (suite.parent == null) {
+                    println("\n" + "=".repeat(93))
+                    println("| TEST SUITE SUMMARY: ${this@configureEach.name.toUpperCase()} ".padEnd(92) + "|")
+                    println("=".repeat(93))
+                    println("Total Tests: ${result.testCount}")
+                    println("Succeeded  : ${result.successfulTestCount}")
+                    println("Failed     : ${result.failedTestCount}")
+                    println("Skipped    : ${result.skippedTestCount}")
+                    println("=".repeat(93) + "\n")
+                }
+            }
+        })
+    }
 }
 
 nexusPublishing {

@@ -31,6 +31,19 @@ kotlin {
         browser()
         binaries.library()
         generateTypeScriptDefinitions()
+        
+        // Industrial NPM Package Configuration
+        val ghostVersion = rootProject.version.toString()
+        compilations.named("main") {
+            packageJson {
+                customField("version", ghostVersion)
+                customField("description", "Ghost Serialization WASM Engine - High Performance Multiplatform Serialization")
+                customField("author", "Ghost Team")
+                customField("license", "Apache-2.0")
+                customField("repository", mapOf("type" to "git", "url" to "https://github.com/juanchurtado1991/GhostSerialization"))
+                customField("bin", mapOf("ghost-sync" to "./tools/ghost-transpiler.js"))
+            }
+        }
     }
     js(IR) {
         moduleName = "ghost-serialization"
@@ -39,14 +52,29 @@ kotlin {
         binaries.library()
     }
 
-    // Official NPM Tools Distribution
-    val copyNpmTools by tasks.registering(Copy::class) {
+    // Official NPM Tools & Meta Distribution
+    val copyNpmMeta by tasks.registering(Copy::class) {
         from("npm-tools")
         into(layout.buildDirectory.dir("dist/wasmJs/productionLibrary/tools"))
+        
+        // Ensure transpiler is executable
+        doLast {
+            val transpiler = File("${layout.buildDirectory.get().asFile}/dist/wasmJs/productionLibrary/tools/ghost-transpiler.js")
+            if (transpiler.exists()) {
+                transpiler.setExecutable(true)
+            }
+        }
+    }
+    
+    val copyNpmDocs by tasks.registering(Copy::class) {
+        from(rootProject.file("README.md"))
+        from(rootProject.file("CHANGELOG.md"))
+        from(rootProject.file("LICENSE"))
+        into(layout.buildDirectory.dir("dist/wasmJs/productionLibrary"))
     }
 
     tasks.named("wasmJsBrowserProductionLibraryDistribution") {
-        finalizedBy(copyNpmTools)
+        finalizedBy(copyNpmMeta, copyNpmDocs)
     }
 
     sourceSets {

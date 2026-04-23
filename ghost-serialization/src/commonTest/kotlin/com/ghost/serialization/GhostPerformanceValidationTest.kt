@@ -14,6 +14,7 @@ import kotlin.reflect.KClass
 class GhostPerformanceValidationTest {
 
     private class MockSerializer : GhostSerializer<String> {
+        override val typeName: String = "Mock"
         override fun serialize(writer: com.ghost.serialization.core.writer.GhostJsonWriter, value: String) {}
         override fun deserialize(reader: GhostJsonReader): String = ""
     }

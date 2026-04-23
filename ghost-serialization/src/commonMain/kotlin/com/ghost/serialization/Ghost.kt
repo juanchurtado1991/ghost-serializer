@@ -54,10 +54,7 @@ object Ghost {
                     .getAllSerializers()
                     .forEach { (kclass, serializer) ->
                         serializerCache[kclass] = serializer
-                        val name = kclass.simpleName
-                        if (name != null) {
-                            serializerByName[name] = serializer
-                        }
+                        serializerByName[serializer.typeName] = serializer
                     }
             }
         }

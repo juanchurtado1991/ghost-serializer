@@ -10,10 +10,10 @@ const path = require('path');
 
 // 1. Configuration (Prioritize Env Vars > CLI Args > Defaults)
 const CWD = process.cwd();
-const INPUT_DIR = process.env.GHOST_INPUT || process.argv[2] || path.join(CWD, 'ghost-models');
-const OUTPUT_KOTLIN_DIR = process.env.GHOST_OUTPUT_KT || process.argv[3] || path.join(CWD, 'src/commonMain/kotlin/com/ghost/serialization/generated');
-const OUTPUT_TS_DIR = process.env.GHOST_OUTPUT_TS || process.argv[4] || path.join(CWD, 'src/ghost-generated-types');
-const OUTPUT_WASM_KT_DIR = process.env.GHOST_OUTPUT_WASM_KT || path.join(OUTPUT_KOTLIN_DIR, '..', '..', '..', '..', 'wasmJsMain', 'kotlin', 'com', 'ghost', 'serialization', 'generated');
+const INPUT_DIR = "/home/juan/AndroidStudioProjects/GhostSerialization/ghost-serialization/npm-tools/.test-env/ghost-models";
+const OUTPUT_KOTLIN_DIR = "/home/juan/AndroidStudioProjects/GhostSerialization/ghost-serialization/npm-tools/.test-env/kotlin-out";
+const OUTPUT_TS_DIR = "/home/juan/AndroidStudioProjects/GhostSerialization/ghost-serialization/npm-tools/.test-env/ts-out";
+const OUTPUT_WASM_KT_DIR = "/home/juan/AndroidStudioProjects/GhostSerialization/ghost-serialization/npm-tools/.test-env/wasm-kotlin-out";
 
 console.log(`[Ghost] Syncing models...`);
 console.log(`[Ghost] Input: ${INPUT_DIR}`);
@@ -39,10 +39,8 @@ function mapTsTypeToKotlin(tsType, contextName = "") {
     if (type.startsWith('{')) return contextName;
     switch (type.toLowerCase()) {
         case 'number': return 'Int';
-        case 'long': return 'Long';
         case 'string': return 'String';
         case 'boolean': return 'Boolean';
-        case 'double': return 'Double';
         default: return type;
     }
 }
@@ -71,8 +69,7 @@ function ktIdent(name) {
 function listElementMapper(elemTsType) {
     const et = elemTsType.toLowerCase().replace(/\s/g, '');
     if (et === 'string') return '{ stringToJs(it) }';
-    if (et === 'number' || et === 'int') return '{ intToJs(it) }';
-    if (et === 'long' || et === 'double') return '{ doubleToJs(it.toDouble()) }';
+    if (et === 'number') return '{ intToJs(it) }';
     if (et === 'boolean') return '{ boolToJs(it) }';
     return '{ it.toJsAny() }';
 }
@@ -175,14 +172,12 @@ function generateToJsAny(className, body) {
         }
         if (f.nullable) {
             if (t === 'string')  return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", stringToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
-            if (t === 'number' || t === 'int')  return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", intToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
-            if (t === 'long' || t === 'double') return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", doubleToJs(it.toDouble())) } ?: setJsProperty(obj, "${jsonKey}", null)`;
+            if (t === 'number')  return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", intToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
             if (t === 'boolean') return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", boolToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
             return `    setJsProperty(obj, "${jsonKey}", ${ktProp}?.toJsAny())`;
         }
         if (t === 'string')  return `    setJsProperty(obj, "${jsonKey}", stringToJs(${ktProp}))`;
-        if (t === 'number' || t === 'int')  return `    setJsProperty(obj, "${jsonKey}", intToJs(${ktProp}))`;
-        if (t === 'long' || t === 'double') return `    setJsProperty(obj, "${jsonKey}", doubleToJs(${ktProp}.toDouble()))`;
+        if (t === 'number')  return `    setJsProperty(obj, "${jsonKey}", intToJs(${ktProp}))`;
         if (t === 'boolean') return `    setJsProperty(obj, "${jsonKey}", boolToJs(${ktProp}))`;
         return `    setJsProperty(obj, "${jsonKey}", ${ktProp}.toJsAny())`;
     };
@@ -191,6 +186,35 @@ function generateToJsAny(className, body) {
     code += fields.map(toJsField).join('\n') + '\n';
     code += `    return obj\n}\n`;
     for (const nested of nestedTypes) code += generateToJsAny(nested.name, nested.body);
+    return code;
+}
+
+// Also fix generateClassBody to pick up ktIdent for field names in nested type parsing
+function generateToJsAnyFromFields(className, fields, nestedTypes) {
+    const toJsField = (f) => {
+        const ktProp = `this.${ktIdent(f.name)}`;
+        const jsonKey = f.name;
+        const t = f.tsType.toLowerCase().replace(/\s/g, '');
+        const elemType = listElemType(f.tsType);
+        if (elemType !== null) {
+            const mapper = listElementMapper(elemType);
+            if (f.nullable) return `    setJsProperty(obj, "${jsonKey}", ${ktProp}?.toJsAny ${mapper} ?: null)`;
+            return `    setJsProperty(obj, "${jsonKey}", ${ktProp}.toJsAny ${mapper})`;
+        }
+        if (f.nullable) {
+            if (t === 'string')  return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", stringToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
+            if (t === 'number')  return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", intToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
+            if (t === 'boolean') return `    ${ktProp}?.let { setJsProperty(obj, "${jsonKey}", boolToJs(it)) } ?: setJsProperty(obj, "${jsonKey}", null)`;
+            return `    setJsProperty(obj, "${jsonKey}", ${ktProp}?.toJsAny())`;
+        }
+        if (t === 'string')  return `    setJsProperty(obj, "${jsonKey}", stringToJs(${ktProp}))`;
+        if (t === 'number')  return `    setJsProperty(obj, "${jsonKey}", intToJs(${ktProp}))`;
+        if (t === 'boolean') return `    setJsProperty(obj, "${jsonKey}", boolToJs(${ktProp}))`;
+        return `    setJsProperty(obj, "${jsonKey}", ${ktProp}.toJsAny())`;
+    };
+    let code = `\nfun ${className}.toJsAny(): JsAny {\n    val obj = createJsObject()\n`;
+    code += fields.map(toJsField).join('\n') + '\n';
+    code += `    return obj\n}\n`;
     return code;
 }
 
@@ -224,13 +248,8 @@ try {
         }
     });
 
-    // Cleanup: Remove any stale JsAny files that may have ended up in commonMain from a previous run.
-    ['GhostJsExtensions.kt', 'GhostJsObjectRegistry_Generated.kt'].forEach(f => {
-        const stale = path.join(OUTPUT_KOTLIN_DIR, f);
-        if (fs.existsSync(stale)) { fs.unlinkSync(stale); }
-    });
-
     // GhostJsExtensions.kt and GhostJsObjectRegistry_Generated.kt go to wasmJsMain
+    // because they import kotlin.js.JsAny which is not available in commonMain.
     const jsExtHeader = `package com.ghost.serialization.generated\n\nimport com.ghost.serialization.createJsObject\nimport com.ghost.serialization.setJsProperty\nimport com.ghost.serialization.stringToJs\nimport com.ghost.serialization.intToJs\nimport com.ghost.serialization.boolToJs\nimport com.ghost.serialization.createJsArray\nimport com.ghost.serialization.pushJsArray\nimport kotlin.js.JsAny\n`;
     let jsExtBody = '';
     for (const [className, body] of Object.entries(modelBodies)) {
@@ -241,71 +260,72 @@ try {
 
     const regHeader = `package com.ghost.serialization.generated\n\nimport com.ghost.serialization.GhostJsObjectRegistry\nimport kotlin.js.JsAny\n\nobject GhostJsRegistryInitializer {\n    fun register() {\n`;
     const regEntries = Object.keys(modelBodies).map(n =>
-        `        GhostJsObjectRegistry.register("${n}", { obj -> (obj as ${n}).toJsAny() })`
+        `        GhostJsObjectRegistry.register("${n}") { obj -> (obj as ${n}).toJsAny() }`
     ).join('\n');
     const regFooter = `\n    }\n}\n`;
     fs.writeFileSync(path.join(OUTPUT_WASM_KT_DIR, 'GhostJsObjectRegistry_Generated.kt'), regHeader + regEntries + regFooter);
     console.log(`[Ghost] Generated JS object registry for ${Object.keys(modelBodies).length} models.`);
 
-    // GhostAutoRegistry.kt stays in commonMain
+    // GhostAutoRegistry.kt stays in commonMain — no JsAny imports, works on all platforms.
+    // ghostPrewarm() in GhostJsApi.kt (wasmJsMain) is responsible for calling GhostJsRegistryInitializer.
     const autoRegistry = `package com.ghost.serialization.generated\nimport com.ghost.serialization.Ghost\n\nobject GhostAutoRegistry {\n    fun registerAll() {\n        try {\n            Ghost.addRegistry(com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization.INSTANCE)\n        } catch (e: Throwable) {}\n    }\n}\n`;
     fs.writeFileSync(path.join(OUTPUT_KOTLIN_DIR, 'GhostAutoRegistry.kt'), autoRegistry);
 
 
     const relPathToModels = path.relative(OUTPUT_TS_DIR, INPUT_DIR);
     const relPathToNodeModules = path.relative(OUTPUT_TS_DIR, path.join(CWD, 'node_modules'));
-    
-    // We use standard strings to avoid template nesting issues during sync
-    const tsBridge = "/**\n" +
-" * Generated by Ghost Serialization (v1.1.7)\n" +
-" * DO NOT EDIT MANUALLY.\n" +
-" */\n\n" +
-"import type * as GhostWasm from \"ghost-serialization-wasm\";\n\n" +
-"export interface GhostModels {\n" +
-Object.keys(modelToFiles).map(name => `    ${name}: import("${relPathToModels}/${modelToFiles[name]}").${name};`).join('\n') + "\n" +
-"}\n\n" +
-"type GhostEngine = typeof GhostWasm;\n\n" +
-"interface GhostInstantiateResult {\n" +
-"    instance: WebAssembly.Instance;\n" +
-"    exports: GhostEngine;\n" +
-"}\n\n" +
-"interface GhostUninstantiatedModule {\n" +
-"    instantiate(imports?: WebAssembly.Imports, runInitializer?: boolean): Promise<GhostInstantiateResult>;\n" +
-"}\n\n" +
-"let _engine: GhostEngine | null = null;\n\n" +
-"async function getGhostEngine(): Promise<GhostEngine> {\n" +
-"    if (_engine) return _engine;\n" +
-"    // @ts-ignore\n" +
-"    const mod = (await import(\"" + relPathToNodeModules + "/ghost-serialization-wasm/ghost-serialization-wasm.uninstantiated.mjs\")) as GhostUninstantiatedModule;\n" +
-"    const { exports } = await mod.instantiate();\n" +
-"    exports.ghostPrewarm();\n" +
-"    _engine = exports;\n" +
-"    return _engine;\n" +
-"}\n\n" +
-"export async function ensureGhostReady(): Promise<void> {\n" +
-"    await getGhostEngine();\n" +
-"}\n\n" +
-"export async function deserializeModel<K extends keyof GhostModels>(json: string, type: K): Promise<GhostModels[K]> {\n" +
-"    const wasm = await getGhostEngine();\n" +
-"    const result = wasm.ghostDeserializeJs(json, type as string);\n" +
-"    if (result === undefined || result === null) throw new Error(`[Ghost] Failed to deserialize \"${type}\".`);\n" +
-"    return result as unknown as GhostModels[K];\n" +
-"}\n\n" +
-"export function deserializeModelSync<K extends keyof GhostModels>(json: string, type: K): GhostModels[K] {\n" +
-"    if (!_engine) throw new Error(\"[Ghost] Engine not ready. Await ensureGhostReady() before calling deserializeModelSync.\");\n" +
-"    const result = _engine.ghostDeserializeJs(json, type as string);\n" +
-"    if (result === undefined || result === null) throw new Error(`[Ghost] Failed to deserialize \"${type}\".`);\n" +
-"    return result as unknown as GhostModels[K];\n" +
-"}\n\n" +
-"export function deserializeModelFromBytesSync<K extends keyof GhostModels>(bytes: Uint8Array, type: K): GhostModels[K] {\n" +
-"    if (!_engine) throw new Error(\"[Ghost] Engine not ready. Await ensureGhostReady() before calling deserializeModelFromBytesSync.\");\n" +
-"    // @ts-ignore - wasm.ghostDeserializeBytesJs is added in the latest version\n" +
-"    const result = _engine.ghostDeserializeBytesJs(bytes, type as string);\n" +
-"    if (result === undefined || result === null) throw new Error(`[Ghost] Failed to deserialize \"${type}\" from bytes.`);\n" +
-"    return result as unknown as GhostModels[K];\n" +
-"}\n";
+    const tsBridge = `/**
+ * Generated by Ghost Serialization (v1.1.7)
+ * DO NOT EDIT MANUALLY.
+ */
 
-    fs.writeFileSync(path.join(OUTPUT_TS_DIR, 'ghost-bridge.ts'), tsBridge);
+import type * as GhostWasm from "ghost-serialization-wasm";
+
+export interface GhostModels {
+${Object.keys(modelToFiles).map(name => `    ${name}: import("${relPathToModels}/${modelToFiles[name]}").${name};`).join('\n')}
+}
+
+type GhostEngine = typeof GhostWasm;
+
+interface GhostInstantiateResult {
+    instance: WebAssembly.Instance;
+    exports: GhostEngine;
+}
+
+interface GhostUninstantiatedModule {
+    instantiate(imports?: WebAssembly.Imports, runInitializer?: boolean): Promise<GhostInstantiateResult>;
+}
+
+let _engine: GhostEngine | null = null;
+
+async function getGhostEngine(): Promise<GhostEngine> {
+    if (_engine) return _engine;
+    const mod = (await import("${relPathToNodeModules}/ghost-serialization-wasm/ghost-serialization-wasm.uninstantiated.mjs")) as GhostUninstantiatedModule;
+    const { exports } = await mod.instantiate();
+    exports.ghostPrewarm();
+    _engine = exports;
+    return _engine;
+}
+
+export async function ensureGhostReady(): Promise<void> {
+    await getGhostEngine();
+}
+
+export async function deserializeModel<K extends keyof GhostModels>(json: string, type: K): Promise<GhostModels[K]> {
+    const wasm = await getGhostEngine();
+    const result = wasm.ghostDeserialize(json, type as string);
+    if (!result) throw new Error(\`[Ghost] Failed to deserialize "\${type}".\`);
+    return JSON.parse(result) as GhostModels[K];
+}
+
+export function deserializeModelSync<K extends keyof GhostModels>(json: string, type: K): GhostModels[K] {
+    if (!_engine) throw new Error("[Ghost] Engine not ready. Await ensureGhostReady() before calling deserializeModelSync.");
+    const result = _engine.ghostDeserialize(json, type as string);
+    if (!result) throw new Error(\`[Ghost] Failed to deserialize "\${type}".\`);
+    return JSON.parse(result) as GhostModels[K];
+}
+`;
+    fs.writeFileSync(path.join(OUTPUT_TS_DIR, `ghost-bridge.ts`), tsBridge);
 
     console.log("[Ghost] Synchronization complete.");
 
@@ -316,10 +336,14 @@ Object.keys(modelToFiles).map(name => `    ${name}: import("${relPathToModels}/$
     if (LIB_SRC && fs.existsSync(LIB_SRC)) {
         console.log(`[Ghost] Physically syncing library from ${LIB_SRC}...`);
         
+        // Force delete if it's a symlink or exists
         if (fs.existsSync(LIB_DEST)) {
             const stats = fs.lstatSync(LIB_DEST);
             if (stats.isSymbolicLink()) {
                 fs.unlinkSync(LIB_DEST);
+            } else {
+                // If it's a directory, we might want to clean it or just copy over
+                // For safety with symlinks, we already handled the link case
             }
         }
 
@@ -338,6 +362,7 @@ Object.keys(modelToFiles).map(name => `    ${name}: import("${relPathToModels}/$
         if (fs.existsSync(uninstantiatedPath)) {
             console.log("[Ghost] Patching bridge for Next.js compatibility...");
             let content = fs.readFileSync(uninstantiatedPath, 'utf8');
+            // Fix unsafe Node.js detection that crashes in Next.js browser polyfills
             content = content.replace(
                 "(typeof process !== 'undefined') && (process.release.name === 'node')",
                 "(typeof process !== 'undefined') && process.release && (process.release.name === 'node')"
@@ -346,6 +371,7 @@ Object.keys(modelToFiles).map(name => `    ${name}: import("${relPathToModels}/$
             console.log("[Ghost] Patching successful.");
         }
 
+        // Also copy the tools if they exist
         const toolsSrc = path.join(LIB_SRC, 'tools');
         const toolsDest = path.join(LIB_DEST, 'tools');
         if (fs.existsSync(toolsSrc)) {

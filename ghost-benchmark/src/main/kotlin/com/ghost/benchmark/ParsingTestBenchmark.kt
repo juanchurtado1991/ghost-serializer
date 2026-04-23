@@ -10,9 +10,8 @@ import org.junit.platform.launcher.TestIdentifier
 import org.junit.platform.engine.TestExecutionResult
 
 /**
- * Objective Safety Audit Engine.
- * Refactored to eliminate hardcoded safety descriptions (Rule #10: Zero Ghost Code).
- * Prints dynamic execution status for every project test.
+ * Dynamic JVM Test Runner.
+ * Executes JVM core tests at runtime to verify parsing stability.
  */
 object ParsingTestBenchmark {
 
@@ -54,7 +53,7 @@ object ParsingTestBenchmark {
         launcher.registerTestExecutionListeners(summaryListener, objectiveListener)
         
         println("\n" + "=".repeat(93))
-        println("| OBJECTIVE SAFETY AUDIT: DYNAMIC TEST EXECUTION LOG                                        |")
+        println("| DYNAMIC JVM TEST EXECUTION LOG                                                            |")
         println("=".repeat(93))
 
         launcher.execute(request)
@@ -62,7 +61,7 @@ object ParsingTestBenchmark {
         val summary = summaryListener.summary
         
         println("\n" + "=".repeat(93))
-        println("| AUDIT SUMMARY (H): TEST RESULTS                                                           |")
+        println("| TEST SUMMARY                                                                              |")
         println("=".repeat(93))
         println("Total Verifications: ${summary.testsFoundCount}")
         println("Succeeded          : ${summary.testsSucceededCount}")
@@ -71,9 +70,9 @@ object ParsingTestBenchmark {
         println("=".repeat(93))
 
         if (summary.testsFailedCount > 0) {
-            println("\n[CRITICAL] Audit failed with ${summary.testsFailedCount} errors. Industrial integrity compromised.")
+            println("\n[FAILED] Test suite execution failed with ${summary.testsFailedCount} errors.")
         } else {
-            println("\n[SECURE] All security and performance guards passed. System integrity: 100%.")
+            println("\n[SUCCESS] All JVM core tests passed.")
         }
     }
 }

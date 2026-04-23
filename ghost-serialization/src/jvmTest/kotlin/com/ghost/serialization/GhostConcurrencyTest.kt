@@ -14,6 +14,7 @@ import kotlin.test.assertNotNull
 class GhostConcurrencyTest {
 
     private class MockSerializer(val id: Int) : GhostSerializer<String> {
+        override val typeName: String = "MockString"
         override fun deserialize(reader: GhostJsonReader): String = ""
         override fun serialize(writer: GhostJsonWriter, value: String) {}
     }
