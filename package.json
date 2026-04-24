@@ -1,5 +1,0 @@
-{
-  "dependencies": {
-    "ghost-serialization-wasm": "file:ghost-serialization/build/dist/wasmJs/productionLibrary"
-  }
-}
