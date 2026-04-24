@@ -272,15 +272,25 @@ Object.keys(modelToFiles).map(name => `    ${name}: import("${relPathToModels}/$
 "interface GhostUninstantiatedModule {\n" +
 "    instantiate(imports?: WebAssembly.Imports, runInitializer?: boolean): Promise<GhostInstantiateResult>;\n" +
 "}\n\n" +
-"let _engine: GhostEngine | null = null;\n\n" +
+"let _engine: GhostEngine | null = null;\n" +
+"let _wasmInstance: WebAssembly.Instance | null = null;\n\n" +
 "async function getGhostEngine(): Promise<GhostEngine> {\n" +
 "    if (_engine) return _engine;\n" +
 "    // @ts-ignore\n" +
 "    const mod = (await import(\"" + relPathToNodeModules + "/ghost-serialization-wasm/ghost-serialization-wasm.uninstantiated.mjs\")) as GhostUninstantiatedModule;\n" +
-"    const { exports } = await mod.instantiate();\n" +
+"    const { instance, exports } = await mod.instantiate();\n" +
 "    exports.ghostPrewarm();\n" +
 "    _engine = exports;\n" +
+"    _wasmInstance = instance;\n" +
 "    return _engine;\n" +
+"}\n\n" +
+"export function getGhostWasmMemoryByteLength(): number {\n" +
+"    if (!_wasmInstance) return 0;\n" +
+"    const memory = _wasmInstance.exports.memory;\n" +
+"    if (memory instanceof WebAssembly.Memory) {\n" +
+"        return memory.buffer.byteLength;\n" +
+"    }\n" +
+"    return 0;\n" +
 "}\n\n" +
 "export async function ensureGhostReady(): Promise<void> {\n" +
 "    await getGhostEngine();\n" +

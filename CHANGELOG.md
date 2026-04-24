@@ -1,4 +1,10 @@
 # Changelog
+
+## [1.1.9] - 2026-04-23
+
+### Changed
+- **Advanced WASM Memory Profiling**: Enhanced the `ghost-sync` CLI transpiler template to automatically intercept and preserve the `WebAssembly.Instance` reference.
+- **Benchmark Integration**: Exposed `getGhostWasmMemoryByteLength()` in the generated `ghost-bridge.ts`, allowing consuming web frameworks (like Next.js/Webpack) to accurately measure the raw WASM linear memory footprint bypassing JavaScript Garbage Collection noise and bundler encapsulation.
 All notable changes to the Ghost Serialization project will be documented in this file.
 
 ## [1.1.8] - 2026-04-23
