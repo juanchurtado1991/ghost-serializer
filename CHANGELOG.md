@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to the Ghost Serialization project will be documented in this file.
 
+## [1.1.8] - 2026-04-23
+### Added
+- **Ghost Gradle Plugin (Smart Auto-Configurator)**: Introduced `com.ghostserializer.ghost` Gradle plugin. Reduces installation to a single line `id("com.ghostserializer.ghost") version "1.1.8"`. Automatically detects Android, JVM, and KMP projects, configures KSP, and handles complex multiplatform dependency injection autonomously.
+- **Custom Sealed Discriminators**: Added `discriminator` parameter to `@GhostSerialization(discriminator = "kind")`. Enables seamless integration with third-party polymorphic APIs (Stripe, JSON-LD `@type`, Kubernetes) without custom parsing logic.
+- **Auto-Networking Injection**: The Gradle Plugin automatically detects `ktor-client` and `retrofit2` in the host project and injects `ghost-ktor` / `ghost-retrofit` bridges transparently.
+- **R8 / ProGuard Resilience**: Shipped `consumerProguardFiles` within the `ghost-api` module to automatically protect `@GhostSerialization` annotated models from aggressive minification during Release builds.
+
+### Fixed
+- **Polymorphic Parent Resolution**: Hardened the KSP compiler to guarantee that subclass serializers strictly inherit dynamic discriminator keys declared in the parent interface/sealed class.
+- **Test Infrastructure Safety**: Wrapped the plugin KSP application logic in a protective `try/catch` block to gracefully degrade (emitting warnings instead of crashes) when users have misconfigured Gradle Plugin Portal repositories.
+
 ## [1.1.7] - 2026-04-23
 ### Added
 - **Collision-Safe Model Registry**: Added `val name: String = ""` parameter to `@GhostSerialization` annotation. When set, the KSP compiler uses this name as the unique registry key, allowing two models with the same class name in different packages to coexist without collision.

@@ -18,7 +18,8 @@ internal class DeserializeCodeEmitter(
     private val isSealed: Boolean,
     private val isValue: Boolean,
     private val isEnum: Boolean,
-    private val sealedSubclasses: List<KSClassDeclaration>
+    private val sealedSubclasses: List<KSClassDeclaration>,
+    private val discriminatorKey: String = "type"
 ) {
 
     fun build(typeSpecBuilder: TypeSpec.Builder) {
@@ -47,7 +48,7 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitSealedDeserialization(body: CodeBlock.Builder) {
-        body.addStatement(STR_PEEK_TYPE, STR_TYPE, STR_MISSING_TYPE)
+        body.addStatement(STR_PEEK_TYPE, discriminatorKey, STR_MISSING_TYPE)
         body.beginControlFlow(STR_WHEN_TYPENAME)
         sealedSubclasses.forEach { subclass ->
             val subClassName = subclass.toClassName()
@@ -528,8 +529,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_READER = "reader"
         private const val STR_PEEK_TYPE =
             "val typeName = reader.peekStringField(%S) ?: reader.throwError(%S)"
-        private const val STR_TYPE = "type"
-        private const val STR_MISSING_TYPE = "Missing 'type' discriminator for sealed class"
+        private const val STR_MISSING_TYPE = "Missing discriminator field for sealed class"
         private const val STR_WHEN_TYPENAME = "val result = when (typeName)"
         private const val STR_SERIALIZER = "Serializer"
         private const val STR_DESERIALIZE_BRANCH = "%S -> %T.deserialize(reader)"

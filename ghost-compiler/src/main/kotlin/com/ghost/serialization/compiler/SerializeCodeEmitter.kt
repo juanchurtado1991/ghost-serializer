@@ -16,7 +16,8 @@ internal class SerializeCodeEmitter(
     private val isValue: Boolean,
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
-    private val discriminator: String? = null
+    private val discriminator: String? = null,
+    private val sealedDiscriminatorKey: String = "type"
 ) {
 
     fun build(): FunSpec {
@@ -29,7 +30,7 @@ internal class SerializeCodeEmitter(
             else -> {
                 code.addStatement(STR_WRITER_BEGIN_OBJ)
                 if (discriminator != null) {
-                    code.addStatement(STR_WRITER_NAME_TYPE_VAL, STR_TYPE_KEY, discriminator)
+                    code.addStatement(STR_WRITER_NAME_TYPE_VAL, sealedDiscriminatorKey, discriminator)
                 }
                 properties.forEach { prop -> emitProperty(code, prop) }
                 code.addStatement(STR_WRITER_END_OBJ)
@@ -181,7 +182,6 @@ internal class SerializeCodeEmitter(
     companion object {
         private const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
         private const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
-        private const val STR_TYPE_KEY = "type"
         private const val STR_WRITER_END_OBJ = "writer.endObject()"
         private const val STR_FUN_SERIALIZE = "serialize"
         private const val STR_PARAM_WRITER = "writer"

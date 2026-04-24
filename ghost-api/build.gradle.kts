@@ -41,6 +41,10 @@ android {
     namespace = "com.ghost.serialization.api"
     compileSdk = 36
 
+    defaultConfig {
+        consumerProguardFiles("ghost-proguard-rules.pro")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

@@ -31,6 +31,8 @@ internal class GhostCodeGenerator(
     private val originalClassName = classDeclaration.toClassName()
     private val baseClassName = originalClassName.simpleNames.joinToString("_")
 
+    // For a sealed subclass, this is the value written as the discriminator (i.e. the subclass name).
+    // This is different from sealedDiscriminatorKey which is the JSON field name on the parent sealed class.
     private val discriminator = if (
         !isSealed &&
         !isValue &&
@@ -40,6 +42,26 @@ internal class GhostCodeGenerator(
         classDeclaration.simpleName.asString()
     } else {
         null
+    }
+
+    // Reads the discriminator key from @GhostSerialization(discriminator = "...").
+    // When the current class is a sealed subclass, the discriminator key lives on the PARENT
+    // sealed class annotation, not on the subclass. When the current class IS the sealed class,
+    // it reads from its own annotation. Defaults to "type" if not set.
+    private val sealedDiscriminatorKey: String = run {
+        val annotationSource = if (discriminator != null) {
+            // Current class is a subclass — look at the parent sealed class
+            classDeclaration.parentDeclaration as? KSClassDeclaration
+        } else {
+            // Current class is the sealed class itself
+            classDeclaration
+        }
+        annotationSource?.annotations
+            ?.find { it.shortName.asString() == "GhostSerialization" }
+            ?.arguments
+            ?.find { it.name?.asString() == "discriminator" }
+            ?.value as? String
+            ?: "type"
     }
 
     private val customTypeName: String = classDeclaration.annotations
@@ -105,11 +127,13 @@ internal class GhostCodeGenerator(
             isValue,
             isEnum,
             sealedSubclasses,
-            discriminator
+            discriminator,
+            sealedDiscriminatorKey
         )
         val deserializeEmitter = DeserializeCodeEmitter(
-            properties, originalClassName, readerClass, isSealed, isValue, isEnum, sealedSubclasses
-		)
+            properties, originalClassName, readerClass, isSealed, isValue, isEnum, sealedSubclasses,
+            sealedDiscriminatorKey
+        )
 
         val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
         val fileSpecBuilder = FileSpec.builder(packageName, serializerName)

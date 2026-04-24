@@ -62,7 +62,7 @@ The engine has been audited for zero-compromise stability across all platforms (
 
 ### 4. Native Kotlin Support
 Understand Kotlin's complex type-system natively without boilerplate adapters.
-- **Sealed Classes** (Polymorphism out-of-the-box).
+- **Sealed Classes** — Full polymorphism with configurable discriminator key (`discriminator = "kind"`, `"object"`, `"@type"`, etc.). Compatible with Stripe, Google, JSON-LD APIs out of the box.
 - **Value Classes** (`@JvmInline` unboxed mapping logic).
 - **Enums** with robust fallback mechanisms.
 - **Default Arguments**: Safely falls back to default constructor parameters when keys are missing.
@@ -71,31 +71,34 @@ Understand Kotlin's complex type-system natively without boilerplate adapters.
 
 ## 📦 Setup & Installation
 
-Add the dependencies to your `build.gradle.kts` modules. 
+Ghost features a **Smart Auto-Configurator Plugin** that reduces installation to a single line. It automatically detects if your project is Android, JVM, or Kotlin Multiplatform, configures KSP for all your active targets, and dynamically injects the necessary runtime and networking dependencies.
+
+In your module's `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "2.1.10-1.0.30"
+    // 1-line setup: Automatically applies KSP, detects targets, and injects runtime libs
+    id("com.ghostserializer.ghost") version "1.1.8"
 }
+```
 
-dependencies {
-    val ghostVersion = "1.1.7"
+> [!NOTE]
+> **Important Maven Central configuration**: Because Ghost's plugin is published to Maven Central instead of the Gradle Plugin Portal, you must ensure `mavenCentral()` is present in your project's `pluginManagement` block in `settings.gradle.kts`:
+> ```kotlin
+> pluginManagement {
+>     repositories {
+>         gradlePluginPortal()
+>         mavenCentral() // <-- Required for com.ghostserializer.ghost
+>     }
+> }
+> ```
 
-    // 1. Add the KSP Compiler plugin
-    add("kspCommonMainMetadata", "com.ghostserializer:ghost-compiler:$ghostVersion")
-    add("kspJvm", "com.ghostserializer:ghost-compiler:$ghostVersion")
-    add("kspAndroid", "com.ghostserializer:ghost-compiler:$ghostVersion")
-    add("kspIosArm64", "com.ghostserializer:ghost-compiler:$ghostVersion")
-    add("kspIosSimulatorArm64", "com.ghostserializer:ghost-compiler:$ghostVersion")
-    add("kspWasmJs", "com.ghostserializer:ghost-compiler:$ghostVersion")
-    add("kspJs", "com.ghostserializer:ghost-compiler:$ghostVersion")
-
-    // 2. Add the Ghost Runtime
-    implementation("com.ghostserializer:ghost-serialization:$ghostVersion")
-    implementation("com.ghostserializer:ghost-api:$ghostVersion")
-    
-    // (Optional) For Ktor 3.0 / Ktorfit 2.3.0 Integration
-    implementation("com.ghostserializer:ghost-ktor:$ghostVersion")
+### Advanced Configuration (Optional)
+If you want to disable automatic network adapter injection:
+```kotlin
+ghost {
+    autoInjectKtor = false     // Defaults to true if ktor-client is detected
+    autoInjectRetrofit = false // Defaults to true if retrofit is detected
 }
 ```
 
@@ -152,7 +155,65 @@ val client = HttpClient {
 }
 ```
 
-### 🌍 Web & Next.js (WASM)
+### 2. Sealed Classes & Custom Discriminators
+
+Ghost supports Kotlin `sealed class` polymorphism out of the box. By default, it uses a `"type"` field as the discriminator:
+
+```kotlin
+@GhostSerialization
+sealed class ApiEvent {
+    @GhostSerialization
+    data class Login(val userId: String) : ApiEvent()
+    @GhostSerialization
+    data class Logout(val sessionId: String) : ApiEvent()
+}
+
+// Serializes to: {"type": "Login", "userId": "u_001"}
+// Deserializes from the same format automatically
+val event: ApiEvent = Ghost.deserialize<ApiEvent>(json)
+```
+
+#### Custom Discriminator Key
+
+When consuming **third-party APIs** that use a different field name, override it with the `discriminator` parameter on `@GhostSerialization`. This is resolved **at compile time** — zero runtime cost:
+
+```kotlin
+// Google APIs / Kubernetes style
+@GhostSerialization(discriminator = "kind")
+sealed class GhostKindEvent {
+    @GhostSerialization data class Created(val id: String, val name: String) : GhostKindEvent()
+    @GhostSerialization data class Deleted(val id: String) : GhostKindEvent()
+}
+// {"kind": "Created", "id": "e_1", "name": "Ghost"} ✅
+
+// Stripe API style
+@GhostSerialization(discriminator = "object")
+sealed class StripeObject {
+    @GhostSerialization data class Charge(val amount: Long, val currency: String) : StripeObject()
+    @GhostSerialization data class Refund(val chargeId: String, val amount: Long) : StripeObject()
+}
+// {"object": "Charge", "amount": 2000, "currency": "usd"} ✅
+
+// JSON-LD / schema.org style
+@GhostSerialization(discriminator = "@type")
+sealed class JsonLdNode {
+    @GhostSerialization data class Person(val name: String, val email: String) : JsonLdNode()
+    @GhostSerialization data class Organization(val name: String, val url: String) : JsonLdNode()
+}
+// {"@type": "Person", "name": "Juan", "email": "..."} ✅
+```
+
+#### Error Behavior
+
+| Scenario | Behavior |
+|---|---|
+| Discriminator field missing in JSON | Throws `GhostJsonException` — no silent corruption |
+| Discriminator value doesn't match any subclass | Throws `GhostJsonException` with the unknown value |
+| Discriminator field present but `null` | Throws `GhostJsonException` |
+
+> [!NOTE]
+> The discriminator value in JSON must match the **simple class name** of the subclass (e.g. `"Created"` for `GhostKindEvent.Created`). Ghost writes the discriminator as the **first field** in the serialized object, which is optimal for streaming parsers that need to know the type before reading the payload.
+
 Ghost provides a **Zero-Kotlin** workflow for web developers. You can define your models in TypeScript and the engine will cross-compile an optimized WebAssembly bridge in the background.
 
 > [!IMPORTANT]
