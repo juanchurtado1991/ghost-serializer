@@ -33,13 +33,13 @@ class GhostMemoryEditionTest {
         assertNotNull(result, "Deserialization should return a valid object")
         assertEquals(1, result.results.size)
         assertEquals("Rick Sanchez", result.results[0].name)
-        assertEquals("Alive", result.results[0].status)
+        assertEquals("Alive", result.results[0].status.name)
     }
 
     @Test
     fun testSpecialCharactersInRawBytes() {
         // Test with UTF-8 characters to ensure TextEncoder -> WASM bridge is safe
-        val json = """{"results":[{"id":42,"name":"Mörty Smith 🧪","status":"Unknown"}]}"""
+        val json = """{"results":[{"id":42,"name":"Mörty Smith 🧪","status":"unknown"}]}"""
         val bytes = json.encodeToByteArray()
         
         val serializer = Ghost.getSerializerByName("CharacterResponse") as? com.ghost.serialization.core.contract.GhostSerializer<CharacterResponse>
@@ -47,6 +47,7 @@ class GhostMemoryEditionTest {
         
         assertNotNull(result)
         assertEquals("Mörty Smith 🧪", result.results[0].name)
+        assertEquals("unknown", result.results[0].status.name)
     }
 
     @Test

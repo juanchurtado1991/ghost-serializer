@@ -49,6 +49,12 @@ function mapTsType(tsType, contextName = '') {
 // Default Values
 // ---------------------------------------------------------------------------
 
+const ENUMS = new Set();
+
+function registerEnum(name) {
+    ENUMS.add(name);
+}
+
 function defaultValue(ktType) {
     if (ktType.startsWith('List')) return 'emptyList()';
     if (ktType === 'Int')     return '0';
@@ -57,6 +63,7 @@ function defaultValue(ktType) {
     if (ktType === 'Boolean') return 'false';
     if (ktType === 'String')  return '""';
     if (ktType.endsWith('?')) return 'null';
+    if (ENUMS.has(ktType))    return `${ktType}.unknown`;
     return `${ktType}()`;
 }
 
@@ -104,4 +111,4 @@ function parseFields(className, body) {
     return fields;
 }
 
-module.exports = { mapTsType, defaultValue, parseFields };
+module.exports = { mapTsType, defaultValue, parseFields, registerEnum };

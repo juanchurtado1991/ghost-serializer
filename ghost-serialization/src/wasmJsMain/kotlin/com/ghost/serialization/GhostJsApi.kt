@@ -13,7 +13,7 @@ import com.ghost.serialization.generated.GhostJsRegistryInitializer
  * JS/Wasm Bridge for Ghost Serialization.
  * Provides a high-performance entry point for JavaScript.
  */
-@OptIn(ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class, InternalGhostApi::class)
 @JsExport
 @JsName("ghostPrewarm")
 fun ghostPrewarm() {
@@ -62,7 +62,7 @@ fun ghostDeserialize(json: String, typeName: String): String? {
     }
 }
 
-@OptIn(ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class, InternalGhostApi::class)
 @JsExport
 @JsName("ghostDeserializeBytes")
 fun ghostDeserializeBytes(bytes: JsAny, typeName: String): String? {
@@ -76,7 +76,7 @@ fun ghostDeserializeBytes(bytes: JsAny, typeName: String): String? {
     }
 }
 
-@OptIn(ExperimentalJsExport::class)
+@OptIn(ExperimentalJsExport::class, InternalGhostApi::class)
 @JsExport
 @JsName("ghostDeserializeBytesJs")
 @Suppress("UNCHECKED_CAST")

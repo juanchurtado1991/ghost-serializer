@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.ghost.serialization
 
 import kotlin.test.Test
@@ -6,7 +8,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import com.ghost.serialization.generated.GhostCharacter
-import com.ghost.serialization.generated.CharacterResponse
 import com.ghost.serialization.generated.GhostAutoRegistry
 import com.ghost.serialization.generated.GhostJsRegistryInitializer
 import kotlin.js.JsAny
@@ -26,10 +27,10 @@ class GhostWasmIntegrationTest {
     private fun setupEnvironment() {
         try {
             GhostAutoRegistry.registerAll()
-        } catch (e: Throwable) {}
+        } catch (_: Throwable) {}
         try {
             GhostJsRegistryInitializer.register()
-        } catch (e: Throwable) {}
+        } catch (_: Throwable) {}
     }
 
     @Test

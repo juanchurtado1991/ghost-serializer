@@ -2,7 +2,7 @@ package com.ghost.serialization.generated
 
 @com.ghost.serialization.annotations.GhostSerialization
 data class CharacterResponse(
-    val info: CharacterResponseInfo = CharacterResponseInfo(),
+    val info: PageInfo = PageInfo(),
     val results: List<GhostCharacter> = emptyList()
 )
 

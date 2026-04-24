@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.12] - 2026-04-24
+### Added
+- **Invisible Bridge (Auto-Tooling)**: Ghost now automatically downloads and installs OpenJDK 21 and Gradle 8.13 to `~/.ghost/` if they are missing. Developers no longer need to manually install Java or Gradle to use the Wasm engine.
+- **Zero-Config UX**: Default models directory moved to `./src/ghost-models`. If the directory doesn't exist, Ghost creates it automatically.
+- **Smart Project Discovery**: Improved logic to distinguish between pure web projects and KMP projects, ensuring Standalone Mode (Invisible Bridge) is triggered reliably in web environments.
+- **Native Enum Support (JS/Wasm)**: The transpiler now generates Kotlin Enums and correctly links them with TypeScript, using `.name` for property mapping in the JS bridge.
+
+### Fixed
+- **API Visibility Hardening**: Internal Wasm interop functions are now protected with `@InternalGhostApi(Level.WARNING)`, preventing accidental usage by end-users while allowing the generated bridge to link correctly.
+- **Standalone IR Collisions**: Fixed a critical compiler error where infrastructure files were colliding with library internals by moving generated code to a dedicated `com.ghost.serialization.standalone` package.
+- **Transpiler Input Validation**: Fixed a bug where the transpiler would crash instead of guiding the user when the models directory was missing or empty.
+
+
 ## [1.1.11] - 2026-04-24
 ### Fixed
 - **CLI Binary Execution**: Added missing node shebang to the transpiler to prevent syntax errors when running `ghost-sync` via NPM.

@@ -78,7 +78,7 @@ In your module's `build.gradle.kts`:
 ```kotlin
 plugins {
     // 1-line setup: Automatically applies KSP, detects targets, and injects runtime libs
-    id("com.ghostserializer.ghost") version "1.1.8"
+    id("com.ghostserializer.ghost") version "1.1.12"
 }
 ```
 
@@ -93,20 +93,62 @@ plugins {
 > }
 > ```
 
-### Advanced Configuration (Optional)
-If you want to disable automatic network adapter injection:
-```kotlin
-ghost {
-    autoInjectKtor = false     // Defaults to true if ktor-client is detected
-    autoInjectRetrofit = false // Defaults to true if retrofit is detected
+---
+
+## 🌐 Web & Node.js: The Invisible Bridge
+
+Ghost is the only serialization engine that provides a **Zero-Friction** experience for Web developers. You don't need to know Kotlin, and you don't even need to have Java or Gradle installed on your machine.
+
+### ⚡ Zero-Config Synchronization
+If you are a frontend developer (React, Next.js, Vue), simply follow these steps:
+
+1. **Install**: 
+   ```bash
+   npm install ghost-serialization-wasm
+   ```
+2. **Define Models**: Create a `src/ghost-models/` directory in your project root and add your TypeScript interfaces:
+   ```typescript
+   // src/ghost-models/User.ts
+   export interface User {
+       id: number;
+       username: string;
+       role: UserRole;
+   }
+   export enum UserRole { Admin, User }
+   ```
+3. **Sync**: Run the sync tool. 
+   ```bash
+   npx ghost-sync
+   ```
+
+### 🪄 How the "Invisible Bridge" works:
+When you run `ghost-sync`, the engine performs a **Smart Environment Audit**:
+- **Automatic Tooling**: If you don't have Java or Gradle, Ghost will **automatically download** a portable OpenJDK 21 and Gradle 8.13 to a hidden `~/.ghost` directory.
+- **Ephemeral Compilation**: It creates a temporary, invisible Kotlin project in the background, compiles your TypeScript models into a highly optimized WebAssembly binary, and delivers the ready-to-use bridge to your `src/` folder.
+- **Zero Impact**: Your system remains clean. No environment variables are changed, and no global software is installed.
+
+### ⚙️ Custom Configuration (Optional)
+Ghost works out-of-the-box with sensible defaults. You only need a `ghost.config.json` if you want to use non-standard paths:
+
+```json
+{
+  "input": "./custom-models",
+  "outputTs": "./src/generated/ghost",
+  "standalone": true
 }
 ```
+
+| Property | Description | Default |
+|---|---|---|
+| `input` | Where your `.ts` interfaces live. | `./src/ghost-models` |
+| `outputTs` | Where the generated TS bridge goes. | `./src/ghost-generated-types` |
+| `standalone` | Forces the use of the Invisible Bridge (auto-tooling). | `true` (if no KMP project found) |
 
 ---
 
 ## 💻 Usage
 
-### 1. Annotate Your Models
+### 1. Annotate Your Models (Kotlin)
 Simply decorate any Data Class, Sealed Class, Enum, or Value Class with `@GhostSerialization`.
 
 ```kotlin
@@ -116,177 +158,40 @@ import com.ghost.serialization.api.GhostSerialization
 data class UserProfile(
     val id: String,
     val alias: String,
-    val isActive: Boolean = true,
-    val role: UserRole = UserRole.GUEST
+    val isActive: Boolean = true
 )
-
-@GhostSerialization(fallback = "GUEST")
-enum class UserRole {
-    ADMIN, MODERATOR, GUEST
-}
 ```
 
-### 2. Using the Serialization Engine
+### 2. Use in Next.js / React (TypeScript)
+```typescript
+import { ensureGhostReady, deserializeModelSync } from "@/ghost-generated-types/ghost-bridge";
 
-```kotlin
-import com.ghost.serialization.Ghost
-
-val profile = UserProfile(id = "U-199", alias = "GhostProtocol")
-
-// Serialize to JSON string
-val jsonPayload = Ghost.serialize(profile)
-
-// Deserialize back to Domain Object
-val restoredProfile = Ghost.deserialize<UserProfile>(jsonPayload)
+async function init() {
+    // 1. Initialize the WASM engine (one-time)
+    await ensureGhostReady();
+    
+    // 2. High-performance synchronous deserialization
+    const user = deserializeModelSync(jsonText, "User"); 
+    console.log(user.username);
+}
 ```
 
 ---
 
-## 🔥 Advanced Features
-
-### 1. KMP Ktor 3.0 Integration
-Ghost is a first-class citizen in the **KMP** networking stack.
-
-```kotlin
-val client = HttpClient {
-    install(ContentNegotiation) {
-        ghost() // High-performance streaming converter
-    }
-}
-```
-
-### 2. Sealed Classes & Custom Discriminators
-
-Ghost supports Kotlin `sealed class` polymorphism out of the box. By default, it uses a `"type"` field as the discriminator:
-
-```kotlin
-@GhostSerialization
-sealed class ApiEvent {
-    @GhostSerialization
-    data class Login(val userId: String) : ApiEvent()
-    @GhostSerialization
-    data class Logout(val sessionId: String) : ApiEvent()
-}
-
-// Serializes to: {"type": "Login", "userId": "u_001"}
-// Deserializes from the same format automatically
-val event: ApiEvent = Ghost.deserialize<ApiEvent>(json)
-```
-
-#### Custom Discriminator Key
-
-When consuming **third-party APIs** that use a different field name, override it with the `discriminator` parameter on `@GhostSerialization`. This is resolved **at compile time** — zero runtime cost:
-
-```kotlin
-// Google APIs / Kubernetes style
-@GhostSerialization(discriminator = "kind")
-sealed class GhostKindEvent {
-    @GhostSerialization data class Created(val id: String, val name: String) : GhostKindEvent()
-    @GhostSerialization data class Deleted(val id: String) : GhostKindEvent()
-}
-// {"kind": "Created", "id": "e_1", "name": "Ghost"} ✅
-
-// Stripe API style
-@GhostSerialization(discriminator = "object")
-sealed class StripeObject {
-    @GhostSerialization data class Charge(val amount: Long, val currency: String) : StripeObject()
-    @GhostSerialization data class Refund(val chargeId: String, val amount: Long) : StripeObject()
-}
-// {"object": "Charge", "amount": 2000, "currency": "usd"} ✅
-
-// JSON-LD / schema.org style
-@GhostSerialization(discriminator = "@type")
-sealed class JsonLdNode {
-    @GhostSerialization data class Person(val name: String, val email: String) : JsonLdNode()
-    @GhostSerialization data class Organization(val name: String, val url: String) : JsonLdNode()
-}
-// {"@type": "Person", "name": "Juan", "email": "..."} ✅
-```
-
-#### Error Behavior
-
-| Scenario | Behavior |
-|---|---|
-| Discriminator field missing in JSON | Throws `GhostJsonException` — no silent corruption |
-| Discriminator value doesn't match any subclass | Throws `GhostJsonException` with the unknown value |
-| Discriminator field present but `null` | Throws `GhostJsonException` |
-
-> [!NOTE]
-> The discriminator value in JSON must match the **simple class name** of the subclass (e.g. `"Created"` for `GhostKindEvent.Created`). Ghost writes the discriminator as the **first field** in the serialized object, which is optimal for streaming parsers that need to know the type before reading the payload.
-
-Ghost provides a **Zero-Kotlin** workflow for web developers. You can define your models in TypeScript and the engine will cross-compile an optimized WebAssembly bridge in the background.
-
-> [!IMPORTANT]
-> **Prerequisite:** The cross-compilation sync tool requires the **Java Virtual Machine (JVM)** to be installed on your development machine (Java 17+ recommended).
-> 
-> **How to install the JVM (for Node.js/Next.js Developers):**
-> - **macOS (Homebrew):** `brew install openjdk@17`
-> - **Windows/Linux (SDKMAN!):** `curl -s "https://get.sdkman.io" | bash` then `sdk install java 17.0.12-tem`
-> - Or download installers directly from [Adoptium](https://adoptium.net/).
-
-1. **Install**: 
-   ```bash
-   npm install ghost-serialization-wasm
-   ```
-   Add a script to your `package.json` to easily run the sync tool:
-   ```json
-   "scripts": {
-     "ghost:sync": "ghost-sync"
-   }
-   ```
-2. **Define Models**: Create a `ghost-models/` directory in your project root and add your standard TypeScript interfaces:
-   ```typescript
-   // ghost-models/User.ts
-   export interface User {
-       id: number;
-       name: string;
-   }
-   ```
-3. **Sync**: Run the sync tool to generate the highly optimized WASM bridge. *(This is where the JVM is used locally).*
-   ```bash
-   npm run ghost:sync
-   ```
-4. **Use in Next.js/React**:
-   ```typescript
-   import { ensureGhostReady, deserializeModelSync } from "@/ghost-generated-types/ghost-bridge";
-
-   async function fetchAndParseUser() {
-       // 1. Initialize the WASM engine (call this once on app load)
-       await ensureGhostReady();
-       
-       const response = await fetch("...");
-       const jsonText = await response.text();
-
-       // 2. High-performance, fully-typed synchronous deserialization!
-       const user = deserializeModelSync(jsonText, "User"); 
-       console.log(user.name);
-   }
-   ```
-
 ## 🚀 Performance Audit
 
-Ghost is engineered for **Memory Efficiency** first. In modern web environments (Next.js/React), JavaScript heap pressure is the primary cause of UI jank and background tab eviction.
+Ghost is engineered for **Memory Efficiency** first. In modern web environments, JavaScript heap pressure is the primary cause of UI jank.
 
-### Key Benchmark Findings (Next.js vs. Zod/JSON.parse)
-- **Memory Reduction**: **~33% lower Heap Memory usage**. By offloading the deserialization structure to WebAssembly linear memory and using a Single-Crossing Factory, Ghost bypasses the massive object allocation churn of `JSON.parse`.
-- **Latency Trade-off**: Raw deserialization time is approximately **15% higher (in ms)** compared to native `JSON.parse`. 
-- **The Verdict**: Ghost is the optimal choice for apps managing large datasets, complex state trees (Redux/Zustand), or running on memory-constrained mobile browsers where RAM is more expensive than CPU cycles.
-
-### Performance Optimization: Pre-warming
-To achieve absolute zero-latency on the first call, use `prewarm()`.
-
-```kotlin
-Ghost.prewarm()
-```
+- **Memory Reduction**: **~33% lower Heap Memory usage** compared to `JSON.parse` + Zod.
+- **Performance Optimization**: To achieve absolute zero-latency on the first call, use `prewarm()`.
 
 ---
 
 ## 🏗️ Architecture
-The project adheres to strict architectural separation:
 * **`ghost-api`**: High-level annotations and contracts.
 * **`ghost-serialization`**: Core parsing and writing engine.
 * **`ghost-compiler`**: Single-pass KSP generator.
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.10 Industrial Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.12 Industrial Stable.*

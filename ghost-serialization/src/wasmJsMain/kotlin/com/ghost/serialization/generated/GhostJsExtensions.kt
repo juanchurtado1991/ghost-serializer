@@ -1,31 +1,32 @@
 package com.ghost.serialization.generated
 
-import com.ghost.serialization.toJsAny
-import com.ghost.serialization.setJsProperty
-import com.ghost.serialization.createJsObject
-import com.ghost.serialization.stringToJs
-import com.ghost.serialization.intToJs
-import com.ghost.serialization.boolToJs
-import com.ghost.serialization.doubleToJs
+import com.ghost.serialization.*
+import kotlin.js.JsAny
 
-
-@JsFun("(p0, p1) => ({ name: p0, url: p1 })")
-private external fun createJs_GhostCharacterOrigin_Raw(p0: JsAny?, p1: JsAny?): JsAny
-
-internal fun createJs_GhostCharacterOrigin(p0: JsAny?, p1: JsAny?): JsAny = createJs_GhostCharacterOrigin_Raw(p0, p1)
-
-fun GhostCharacterOrigin.toJsAny(): JsAny {
-    return createJs_GhostCharacterOrigin(
-        stringToJs(this.name),
-        stringToJs(this.url)
-    )
+@OptIn(InternalGhostApi::class)
+fun PageInfo.toJsAny(): JsAny {
+    val obj = createJsObject()
+    setJsProperty(obj, "count", intToJs(this.count))
+    setJsProperty(obj, "pages", intToJs(this.pages))
+    setJsProperty(obj, "next", this.next?.let { stringToJs(it) })
+    setJsProperty(obj, "prev", this.prev?.let { stringToJs(it) })
+    return obj
 }
 
+@OptIn(InternalGhostApi::class)
+fun LocationRef.toJsAny(): JsAny {
+    val obj = createJsObject()
+    setJsProperty(obj, "name", stringToJs(this.name))
+    setJsProperty(obj, "url", stringToJs(this.url))
+    return obj
+}
+
+@OptIn(InternalGhostApi::class)
 fun GhostCharacter.toJsAny(): JsAny {
     val obj = createJsObject()
     setJsProperty(obj, "id", intToJs(this.id))
     setJsProperty(obj, "name", stringToJs(this.name))
-    setJsProperty(obj, "status", stringToJs(this.status))
+    setJsProperty(obj, "status", stringToJs(this.status.name))
     setJsProperty(obj, "species", stringToJs(this.species))
     setJsProperty(obj, "type", stringToJs(this.type))
     setJsProperty(obj, "gender", stringToJs(this.gender))
@@ -38,18 +39,10 @@ fun GhostCharacter.toJsAny(): JsAny {
     return obj
 }
 
-fun CharacterResponseInfo.toJsAny(): JsAny {
-    val obj = createJsObject()
-    setJsProperty(obj, "count", intToJs(this.count))
-    setJsProperty(obj, "pages", intToJs(this.pages))
-    this.next?.let { setJsProperty(obj, "next", stringToJs(it)) } ?: setJsProperty(obj, "next", null)
-    this.prev?.let { setJsProperty(obj, "prev", stringToJs(it)) } ?: setJsProperty(obj, "prev", null)
-    return obj
-}
-
+@OptIn(InternalGhostApi::class)
 fun CharacterResponse.toJsAny(): JsAny {
     val obj = createJsObject()
     setJsProperty(obj, "info", this.info.toJsAny())
-    setJsProperty(obj, "results", this.results.toJsAny { it.toJsAny() })
+    setJsProperty(obj, "results", this.results.toJsAny { (it as GhostCharacter).toJsAny() })
     return obj
 }

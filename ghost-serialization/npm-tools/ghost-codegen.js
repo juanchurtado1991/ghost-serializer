@@ -7,6 +7,12 @@
 const { LOG, ktIdent } = require('./ghost-config');
 const { mapTsType, defaultValue, parseFields } = require('./ghost-parser');
 
+const ENUMS = new Set();
+
+function registerGeneratedEnum(name) {
+    ENUMS.add(name);
+}
+
 // ---------------------------------------------------------------------------
 // Kotlin Data Class Generator
 // ---------------------------------------------------------------------------
@@ -26,6 +32,17 @@ function genKotlinClass(className, fields) {
     return code;
 }
 
+function genKotlinEnum(enumName, values) {
+    registerGeneratedEnum(enumName);
+    let code = `@com.ghost.serialization.annotations.GhostSerialization\nenum class ${enumName} {\n`;
+    code += values.map(v => `    ${v}`).join(',\n');
+    if (!values.includes('unknown')) {
+        code += ',\n    unknown';
+    }
+    code += '\n}\n\n';
+    return code;
+}
+
 // ---------------------------------------------------------------------------
 // Single-Crossing Factory (Fast Path / Safe Path)
 // ---------------------------------------------------------------------------
@@ -33,10 +50,6 @@ function genKotlinClass(className, fields) {
 const FAST_PATH_THRESHOLD = 10;
 const PRIMITIVE_TYPES = new Set(['string', 'number', 'int', 'boolean', 'double', 'long', 'float']);
 
-/**
- * Determines if a field is a simple primitive that can be passed directly
- * through the @JsFun factory without intermediate conversion.
- */
 function isSimplePrimitive(field) {
     if (field.optional || field.nestedBody) return false;
     const t = field.tsType.toLowerCase().replace(/\s/g, '');
@@ -45,18 +58,11 @@ function isSimplePrimitive(field) {
     return PRIMITIVE_TYPES.has(t);
 }
 
-/**
- * Returns true if the model qualifies for the Fast Path (Single-Crossing Factory).
- * Criteria: <= FAST_PATH_THRESHOLD fields AND all fields are simple primitives.
- */
 function qualifiesForFastPath(fields) {
     if (fields.length === 0 || fields.length > FAST_PATH_THRESHOLD) return false;
     return fields.every(f => isSimplePrimitive(f));
 }
 
-/**
- * Maps a TS type to the Kotlin-to-JsAny conversion helper name.
- */
 function primitiveToJsHelper(tsType) {
     const t = tsType.toLowerCase().replace(/\s/g, '');
     switch (t) {
@@ -71,10 +77,6 @@ function primitiveToJsHelper(tsType) {
     }
 }
 
-/**
- * Generate a @JsFun factory function for a single bridge crossing.
- * Uses a private external function + internal wrapper to avoid name mangling issues.
- */
 function genJsFactory(className, fields) {
     const params = fields.map((_, i) => `p${i}`).join(', ');
     const jsBody = fields.map((f, i) => `${f.name}: p${i}`).join(', ');
@@ -91,15 +93,11 @@ function genJsFactory(className, fields) {
 // JS Extension Generator (toJsAny)
 // ---------------------------------------------------------------------------
 
-/**
- * Generate toJsAny() using the Fast Path (single crossing) or Safe Path (multi crossing).
- */
 function genJsExtension(className, fields) {
     let code = '';
     const useFastPath = qualifiesForFastPath(fields);
 
     if (useFastPath) {
-        // --- FAST PATH: Single-Crossing Factory ---
         code += genJsFactory(className, fields);
         code += `\nfun ${className}.toJsAny(): JsAny {\n`;
         code += `    return createJs_${className}(\n`;
@@ -112,26 +110,38 @@ function genJsExtension(className, fields) {
         code += `    )\n}\n`;
         LOG.info(`  ⚡ Fast Path (Single-Crossing): ${className} (${fields.length} fields)`);
     } else {
-        // --- SAFE PATH: Multi-Crossing Builder (existing pattern) ---
         code += `\nfun ${className}.toJsAny(): JsAny {\n    val obj = createJsObject()\n`;
         fields.forEach(f => {
             const prop = `this.${ktIdent(f.name)}`;
             const key  = `"${f.name}"`;
+            const ktType = mapTsType(f.tsType, f.tsType);
             const t    = f.tsType.toLowerCase().replace(/\s/g, '');
             const isList = f.tsType.endsWith('[]') || /^Array</i.test(f.tsType);
 
             if (isList) {
-                const elemType = f.tsType.replace(/^Array<|>$|\[\]$/gi, '').toLowerCase();
+                const elemTypeRaw = f.tsType.replace(/^Array<|>$|\[\]$/gi, '');
+                const elemTypeKt = mapTsType(elemTypeRaw, elemTypeRaw);
+                const elemTypeLower = elemTypeRaw.toLowerCase();
+                
                 let mapper = 'it.toJsAny()';
-                if (elemType === 'string') mapper = 'stringToJs(it)';
-                else if (elemType === 'number' || elemType === 'int') mapper = 'intToJs(it)';
-                else if (elemType === 'boolean') mapper = 'boolToJs(it)';
-                else if (elemType === 'double' || elemType === 'float') mapper = 'doubleToJs(it)';
-                else if (elemType === 'long') mapper = 'intToJs(it.toInt())';
+                if (elemTypeLower === 'string') mapper = 'stringToJs(it)';
+                else if (elemTypeLower === 'number' || elemTypeLower === 'int') mapper = 'intToJs(it)';
+                else if (elemTypeLower === 'boolean') mapper = 'boolToJs(it)';
+                else if (elemTypeLower === 'double' || elemTypeLower === 'float') mapper = 'doubleToJs(it)';
+                else if (elemTypeLower === 'long') mapper = 'intToJs(it.toInt())';
+                else if (ENUMS.has(elemTypeKt)) mapper = 'stringToJs(it.name)';
+
                 if (f.optional) {
                     code += `    ${prop}?.let { setJsProperty(obj, ${key}, it.toJsAny { ${mapper} }) } ?: setJsProperty(obj, ${key}, null)\n`;
                 } else {
                     code += `    setJsProperty(obj, ${key}, ${prop}.toJsAny { ${mapper} })\n`;
+                }
+            } else if (ENUMS.has(ktType)) {
+                // ENUM Path
+                if (f.optional) {
+                    code += `    ${prop}?.let { setJsProperty(obj, ${key}, stringToJs(it.name)) } ?: setJsProperty(obj, ${key}, null)\n`;
+                } else {
+                    code += `    setJsProperty(obj, ${key}, stringToJs(${prop}.name))\n`;
                 }
             } else if (f.optional) {
                 if (t === 'string') code += `    ${prop}?.let { setJsProperty(obj, ${key}, stringToJs(it)) } ?: setJsProperty(obj, ${key}, null)\n`;
@@ -153,11 +163,10 @@ function genJsExtension(className, fields) {
         LOG.info(`  🛡️ Safe Path (Multi-Crossing): ${className} (${fields.length} fields)`);
     }
 
-    // Recurse into nested types
     fields.filter(f => f.nestedBody).forEach(f => {
         code += genJsExtension(f.tsType, parseFields(f.tsType, f.nestedBody));
     });
     return code;
 }
 
-module.exports = { genKotlinClass, genJsExtension };
+module.exports = { genKotlinClass, genKotlinEnum, genJsExtension };

@@ -3,15 +3,39 @@ package com.ghost.serialization
 import kotlin.js.JsAny
 import kotlin.js.toJsString
 
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING, message = "This is an internal Ghost API. Do not use it directly.")
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
+annotation class InternalGhostApi
+
+/** Helper to convert collections to JS arrays with a mapper */
+@InternalGhostApi
+fun <T> Collection<T>.toJsAny(mapper: (T) -> JsAny?): JsAny {
+    val arr = createJsArray()
+    this.forEach { pushJsArray(arr, mapper(it)) }
+    return arr
+}
+
+@InternalGhostApi
+fun <T> Array<T>.toJsAny(mapper: (T) -> JsAny?): JsAny {
+    val arr = createJsArray()
+    this.forEach { pushJsArray(arr, mapper(it)) }
+    return arr
+}
+
 @JsFun("() => ({})")
 private external fun createJsObjectRaw(): JsAny
-internal fun createJsObject(): JsAny = createJsObjectRaw()
+
+@InternalGhostApi
+fun createJsObject(): JsAny = createJsObjectRaw()
 
 @JsFun("() => []")
 private external fun createJsArrayRaw(): JsAny
-internal fun createJsArray(): JsAny = createJsArrayRaw()
+@InternalGhostApi
+fun createJsArray(): JsAny = createJsArrayRaw()
 
-internal fun setJsProperty(obj: JsAny, key: String, value: JsAny?) {
+@InternalGhostApi
+fun setJsProperty(obj: JsAny, key: String, value: JsAny?) {
     setJsPropertyRaw(obj, key.toJsString(), value)
 }
 
@@ -20,29 +44,36 @@ private external fun setJsPropertyRaw(obj: JsAny, key: JsAny, value: JsAny?)
 
 @JsFun("(arr, value) => { arr.push(value); }")
 private external fun pushJsArrayRaw(arr: JsAny, value: JsAny?)
-internal fun pushJsArray(arr: JsAny, value: JsAny?) = pushJsArrayRaw(arr, value)
+@InternalGhostApi
+fun pushJsArray(arr: JsAny, value: JsAny?) = pushJsArrayRaw(arr, value)
 
 @JsFun("(v) => v")
 private external fun intToJsRaw(v: Int): JsAny
-internal fun intToJs(v: Int): JsAny = intToJsRaw(v)
+@InternalGhostApi
+fun intToJs(v: Int): JsAny = intToJsRaw(v)
 
 @JsFun("(v) => v")
 private external fun doubleToJsRaw(v: Double): JsAny
-internal fun doubleToJs(v: Double): JsAny = doubleToJsRaw(v)
+@InternalGhostApi
+fun doubleToJs(v: Double): JsAny = doubleToJsRaw(v)
 
 @JsFun("(v) => v")
 private external fun boolToJsRaw(v: Boolean): JsAny
-internal fun boolToJs(v: Boolean): JsAny = boolToJsRaw(v)
+@InternalGhostApi
+fun boolToJs(v: Boolean): JsAny = boolToJsRaw(v)
 
-internal fun stringToJs(v: String): JsAny = v.toJsString()
+@InternalGhostApi
+fun stringToJs(v: String): JsAny = v.toJsString()
 
 @JsFun("(arr) => arr.length")
 private external fun getJsArrayLengthRaw(arr: JsAny): Int
-internal fun getJsArrayLength(arr: JsAny): Int = getJsArrayLengthRaw(arr)
+@InternalGhostApi
+fun getJsArrayLength(arr: JsAny): Int = getJsArrayLengthRaw(arr)
 
 @JsFun("(arr, index) => arr[index]")
 private external fun getJsArrayByteRaw(arr: JsAny, index: Int): Byte
-internal fun getJsArrayByte(arr: JsAny, index: Int): Byte = getJsArrayByteRaw(arr, index)
+@InternalGhostApi
+fun getJsArrayByte(arr: JsAny, index: Int): Byte = getJsArrayByteRaw(arr, index)
 
 // ---------------------------------------------------------------------------
 // Int32 Chunking Bridge (4x fewer FFI crossings)
@@ -70,7 +101,8 @@ private external fun getJsInt32Raw(arr: JsAny, index: Int): Int
  * Assumes Little-Endian byte order (standard on all modern web platforms:
  * x86, ARM, Apple Silicon).
  */
-internal fun jsToByteArray(jsArray: JsAny): ByteArray {
+@InternalGhostApi
+fun jsToByteArray(jsArray: JsAny): ByteArray {
     val length = getJsArrayLength(jsArray)
     val result = ByteArray(length)
 
@@ -104,7 +136,8 @@ internal fun jsToByteArray(jsArray: JsAny): ByteArray {
 /** Global TextDecoder instance (reused across all calls) */
 @JsFun("() => new TextDecoder('utf-8')")
 private external fun createTextDecoderRaw(): JsAny
-internal fun createTextDecoder(): JsAny = createTextDecoderRaw()
+@InternalGhostApi
+fun createTextDecoder(): JsAny = createTextDecoderRaw()
 
 /**
  * Decodes a UTF-8 string directly from a JS byte buffer without ever
@@ -113,7 +146,8 @@ internal fun createTextDecoder(): JsAny = createTextDecoderRaw()
  */
 @JsFun("(decoder, arr, start, length) => decoder.decode(arr.subarray(start, start + length))")
 private external fun decodeJsStringDirectRaw(decoder: JsAny, arr: JsAny, start: Int, length: Int): JsAny
-internal fun decodeJsStringDirect(decoder: JsAny, arr: JsAny, start: Int, length: Int): JsAny = 
+@InternalGhostApi
+fun decodeJsStringDirect(decoder: JsAny, arr: JsAny, start: Int, length: Int): JsAny = 
     decodeJsStringDirectRaw(decoder, arr, start, length)
 
 /**
@@ -121,12 +155,14 @@ internal fun decodeJsStringDirect(decoder: JsAny, arr: JsAny, start: Int, length
  */
 @JsFun("(arr) => new Uint8Array(arr)")
 private external fun byteArrayToJsUint8ArrayRaw(arr: JsAny): JsAny
-internal fun byteArrayToJsUint8Array(arr: JsAny): JsAny = byteArrayToJsUint8ArrayRaw(arr)
+@InternalGhostApi
+fun byteArrayToJsUint8Array(arr: JsAny): JsAny = byteArrayToJsUint8ArrayRaw(arr)
 
 // ---------------------------------------------------------------------------
 // JS String Interning (Cross-Reference Cache)
 // ---------------------------------------------------------------------------
 
+@OptIn(InternalGhostApi::class)
 internal object GhostJsStringIntern {
     private val cache = HashMap<Int, JsAny>(64)
     private var decoder: JsAny? = null
