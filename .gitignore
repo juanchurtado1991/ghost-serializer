@@ -34,4 +34,9 @@ trace_log.txt
 # Explicitly keep critical project meta
 !LICENSE
 !.github/
+
+# Local/Workspace
+*.code-workspace
+*.local
 node_modules/
+dist/

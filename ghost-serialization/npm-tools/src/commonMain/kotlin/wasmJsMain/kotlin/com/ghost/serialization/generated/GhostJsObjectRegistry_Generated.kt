@@ -3,7 +3,6 @@ import kotlin.js.JsAny
 
 object GhostJsObjectRegistry_Generated {
     fun toJsAny(obj: Any): JsAny? = when(obj) {
-        is Model -> obj.toJsAny()
         else -> null
     }
 }

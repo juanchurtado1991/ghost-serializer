@@ -1,1 +1,0 @@
-export interface BridgeModel { id: number; label: string; }

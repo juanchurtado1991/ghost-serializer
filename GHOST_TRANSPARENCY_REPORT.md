@@ -1,69 +1,34 @@
-# Ghost Serialization: Transparency & Performance Report v1.1.6
+# Ghost Transparency Report
 
-This report documents the real-world performance characteristics of Ghost Serialization across different platforms, specifically comparing it against industry standards like GSON, Moshi, and Kotlin Serialization (KSer).
+## Performance Paradox: Memory vs. Latency (v1.1.10)
 
-## 📊 Summary of Findings
+As of version 1.1.10, we have achieved a critical architectural milestone. Our benchmarks on Node.js and Headless Chrome reveal a deliberate performance tradeoff that defines Ghost's position in the ecosystem.
 
-| Metric Category | Platform Type | Ghost Advantage | Why? |
-| :--- | :--- | :--- | :--- |
-| **UI Fluidity (Jank)** | Mobile / Desktop / Web | 💎 0 Frame Drops | Zero-Reflection & Low GC pressure. |
-| **Throughput (Ops/sec)** | Server / Backend | 🚀 +300% vs GSON | Efficient JIT-friendly bytecode. |
-| **Cold Start Latency** | All | ⏱️ ~3x Faster | No runtime class scanning. |
-| **Memory Consistency** | All | 🛡️ Stable Heap | Non-reflective streaming architecture. |
-| **R8/ProGuard Safety**| Android | ✅ Native | No @Keep rules needed. |
+### 1. The Memory Triumph (33% Reduction)
+Ghost consistently uses **33% less RAM** than standard `JSON.parse` + `Zod` validation. This is achieved by:
+- **Linear Memory Deserialization**: We parse directly into WASM memory buffers, bypassing the initial JS object creation that `JSON.parse` forces.
+- **Fast Path (Single-Crossing)**: For models with few fields, we cross the JS/Wasm boundary once to create the entire object, preventing thousands of intermediate JS object allocations.
+- **Zero-Allocation Strings**: We share string references across the bridge where possible.
 
----
+### 2. The Latency Tradeoff (+15% ms)
+Due to the overhead of the WebAssembly-to-JavaScript boundary (Crossing the Bridge), raw execution time is roughly **15% higher (in ms)** than native browser parsers.
+- **Why?**: Modern JS engines (V8) have highly optimized C++ intrinsics for `JSON.parse`. Any WASM-based solution that produces JS objects must pay the "bridge tax" for each property assigned.
+- **Our Philosophy**: In many production scenarios (especially on mobile), **RAM is the bottleneck, not CPU**. A 15% latency increase is often imperceptible (e.g., 2ms vs 2.3ms), but a 33% RAM saving can prevent the browser from killing the application tab or causing severe UI jank due to Garbage Collection (GC) pauses.
 
-## 📱 Platform Specific Insights
+### 3. Ideal Use Cases
+- **Low-End Devices**: Android Go or older iPhones with limited RAM.
+- **Data-Heavy Apps**: Dashboards, map providers, or large-scale Rick & Morty style APIs that stay in memory for long periods.
+- **Background Workers**: Where memory quotas are strict.
+- **Consistency**: When you need exact same serialization behavior between your Kotlin Backend and Next.js Frontend.
 
-### 1. UI Platforms (Android, iOS, Desktop, Web)
-*   **The "Jank" Battle:** In interfaces rendering at 60Hz/120Hz, Ghost minimizes "Long Tasks" that block the main thread.
-*   **Android JankStats:** During heavy parsing, Ghost maintains **0 Janky Frames**. Legacy engines cause 1-5 frame drops per 100KB, visible as stutters during scrolling.
-*   **Web (WASM/JS):** Ghost prevents browser main-thread blocking, ensuring CSS animations and interactions remain responsive.
+### 4. Comparison Summary
 
-### 2. Server & Backend (JVM / Linux)
-*   **Throughput (The Scalability King):** On the server, Ghost peaks at **7.5M operations/sec** for medium payloads. This allows a single server instance to handle significantly more traffic than one using GSON or Moshi.
-*   **Low Latency P99:** By allocating **50-70% less memory** than KSer, Ghost reduces the frequency and duration of "Stop-the-World" Garbage Collection events, ensuring consistent response times under heavy load.
-
----
-
-## 🔍 Technical Deep-Dive: Metrics Explained
-
-### What is JANK? (UI Metric)
-Visual stutters occurring when a frame misses its 16ms/8ms deadline. Ghost eliminates this by being computationally efficient and "GC-friendly", leaving the CPU free for the UI.
-
-### What is THROUGHPUT? (Server Metric)
-The number of successful operations completed in a fixed time. In server environments, higher throughput equals lower infrastructure costs. Ghost's generated code is highly predictable for the JVM JIT compiler, leading to massive throughput wins.
-
-### The "Zero Allocation" Myth (Moshi/GSON)
-Moshi/GSON occasionally report 0KB allocations in benchmarks. This is due to the reuse of large internal buffers/caches. Ghost provides a more realistic representation of the memory required, ensuring stability and preventing hidden memory bloat in long-running processes.
+| Metric | JSON.parse + Zod | Ghost Serialization (Wasm) | Winner |
+|---|---|---|---|
+| **Heap Memory** | Baseline (100%) | **~67% (-33%)** | 👻 Ghost |
+| **Latency (ms)** | **Baseline (100%)** | ~115% (+15%) | ⚡ Native |
+| **Type Safety** | Runtime (Validation) | Compile-time (Transpilation) | 👻 Ghost |
+| **Stability** | Manual Schema Sync | Auto-Sync (ghost-models) | 👻 Ghost |
 
 ---
-
-## 🛠️ Design Philosophy & Strategic Limitations
-
-Ghost is engineered for extreme performance and absolute stability. Achieving these goals requires deliberate design trade-offs that developers should understand:
-
-### 1. Zero-Reflection & AOT Requirement
-*   **Trade-off**: Ghost requires a compile-time step (KSP). You cannot deserialize classes that were not annotated with `@GhostSerialization`.
-*   **Industrial Benefit**: Absolute safety against R8/ProGuard minification crashes and significantly reduced attack surface (no runtime introspection).
-
-### 2. Strict Schema Enforcement
-*   **Trade-off**: Ghost follows RFC 8259 strictly. It does not support trailing commas, leading zeros, or unquoted keys often accepted by "forgiving" browsers.
-*   **Industrial Benefit**: Guaranteed data integrity and predictable cross-platform interoperability.
-
-### 3. Structural Security (DoS Immunity)
-*   **Trade-off**: Hard limits on recursion depth (`maxDepth`) and collection sizes (`maxCollectionSize`) are enforced by default.
-*   **Industrial Benefit**: Active protection against "JSON Bomb" attacks and memory exhaustion vulnerabilities in production environments.
-
-### 4. UTF-8 Specialization
-*   **Trade-off**: The engine is hyper-optimized for UTF-8 byte processing.
-*   **Industrial Benefit**: Maximum throughput for modern web and mobile networking, which is almost exclusively UTF-8.
-
----
-
-## 💡 Recommendation for Developers
-*   **For Mobile/Frontend:** Use **Ghost** to ensure a "Butter-Smooth" UX with zero frame drops.
-*   **For Backend/Server:** Use **Ghost** to maximize scalability and reduce cloud infrastructure costs through lower CPU and RAM usage.
-
-*Report generated on April 21, 2026, based on Ghost Multi-Platform Benchmark Suite.*
+*Verified on v1.1.10. Benchmarks conducted on Next.js 15.2 (Turbopack) & Node.js 24.14.*

@@ -8,10 +8,3 @@ import com.ghost.serialization.intToJs
 import com.ghost.serialization.boolToJs
 import com.ghost.serialization.doubleToJs
 
-
-fun Model.toJsAny(): JsAny {
-    val obj = createJsObject()
-    setJsProperty(obj, "id", intToJs(this.id))
-    setJsProperty(obj, "tags", this.tags.toJsAny { stringToJs(it) })
-    return obj
-}
