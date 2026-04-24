@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.11] - 2026-04-24
+### Fixed
+- **CLI Binary Execution**: Added missing node shebang to the transpiler to prevent syntax errors when running `ghost-sync` via NPM.
+
 ## [1.1.10] - 2026-04-24
 ### Added
 - **Industrial-Grade Transpiler (v2.0)**: Complete rewrite of the Node.js transpiler with a robust parser supporting nested models, list of objects, and Kotlin keyword escaping (including soft keywords like `value`).

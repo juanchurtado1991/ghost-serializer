@@ -1,20 +1,13 @@
 package com.ghost.serialization.generated
 
-import com.ghost.serialization.createJsObject
+import com.ghost.serialization.toJsAny
 import com.ghost.serialization.setJsProperty
+import com.ghost.serialization.createJsObject
 import com.ghost.serialization.stringToJs
 import com.ghost.serialization.intToJs
-import com.ghost.serialization.doubleToJs
 import com.ghost.serialization.boolToJs
-import com.ghost.serialization.createJsArray
-import com.ghost.serialization.pushJsArray
-import kotlin.js.JsAny
+import com.ghost.serialization.doubleToJs
 
-fun <T : Any> List<T>.toJsAny(mapper: (T) -> JsAny?): JsAny {
-    val arr = createJsArray()
-    forEach { pushJsArray(arr, mapper(it)) }
-    return arr
-}
 
 @JsFun("(p0, p1) => ({ name: p0, url: p1 })")
 private external fun createJs_GhostCharacterOrigin_Raw(p0: JsAny?, p1: JsAny?): JsAny
@@ -27,7 +20,6 @@ fun GhostCharacterOrigin.toJsAny(): JsAny {
         stringToJs(this.url)
     )
 }
-
 
 fun GhostCharacter.toJsAny(): JsAny {
     val obj = createJsObject()
@@ -46,7 +38,6 @@ fun GhostCharacter.toJsAny(): JsAny {
     return obj
 }
 
-
 fun CharacterResponseInfo.toJsAny(): JsAny {
     val obj = createJsObject()
     setJsProperty(obj, "count", intToJs(this.count))
@@ -55,7 +46,6 @@ fun CharacterResponseInfo.toJsAny(): JsAny {
     this.prev?.let { setJsProperty(obj, "prev", stringToJs(it)) } ?: setJsProperty(obj, "prev", null)
     return obj
 }
-
 
 fun CharacterResponse.toJsAny(): JsAny {
     val obj = createJsObject()

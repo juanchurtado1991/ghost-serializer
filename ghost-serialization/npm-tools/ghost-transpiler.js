@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 const { LOG, CONFIG: DEFAULT_CONFIG } = require('./ghost-config');
