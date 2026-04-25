@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package com.ghost.serialization.generated
 
 import com.ghost.serialization.*
+import com.ghost.serialization.benchmark.*
 import kotlin.js.JsAny
 
 @OptIn(InternalGhostApi::class)
@@ -43,6 +46,6 @@ fun GhostCharacter.toJsAny(): JsAny {
 fun CharacterResponse.toJsAny(): JsAny {
     val obj = createJsObject()
     setJsProperty(obj, "info", this.info.toJsAny())
-    setJsProperty(obj, "results", this.results.toJsAny { (it as GhostCharacter).toJsAny() })
+    setJsProperty(obj, "results", this.results.toJsAny { it.toJsAny() })
     return obj
 }

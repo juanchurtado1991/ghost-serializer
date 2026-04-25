@@ -1,12 +1,11 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package com.ghost.serialization
 
 import kotlin.js.JsAny
 import kotlin.js.toJsString
 
-@RequiresOptIn(level = RequiresOptIn.Level.WARNING, message = "This is an internal Ghost API. Do not use it directly.")
-@Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
-annotation class InternalGhostApi
+
 
 /** Helper to convert collections to JS arrays with a mapper */
 @InternalGhostApi

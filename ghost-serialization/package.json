@@ -1,0 +1,24 @@
+{
+  "name": "ghost-serialization",
+  "version": "1.1.14",
+  "description": "High-performance, zero-reflection JSON serialization engine for Kotlin Multiplatform, JS, and Wasm.",
+  "author": "Ghost Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juanchurtado1991/GhostSerialization"
+  },
+  "keywords": [
+    "kotlin",
+    "wasm",
+    "serialization",
+    "json",
+    "performance",
+    "kmp"
+  ],
+  "main": "kotlin/ghost-serialization.js",
+  "types": "kotlin/ghost-serialization.d.ts",
+  "bin": {
+    "ghost-sync": "./npm-tools/ghost-standalone.js"
+  }
+}

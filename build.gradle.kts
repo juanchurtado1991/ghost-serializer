@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply(from = "publish.gradle.kts")
 
@@ -17,7 +17,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.ksp) apply false
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("org.jetbrains.dokka") version "2.0.0"
+    id("org.jetbrains.dokka") version "2.2.0"
 }
 
 allprojects {
@@ -31,31 +31,34 @@ subprojects {
             tasks.withType<KotlinCompile>().configureEach {
                 compilerOptions {
                     jvmTarget.set(JvmTarget.JVM_17)
-                    freeCompilerArgs.add("-Xexpect-actual-classes")
+                    freeCompilerArgs.addAll(
+                        "-Xexpect-actual-classes",
+                        "-Xexplicit-backing-fields",
+                        "-Xreturn-value-checker=full"
+                    )
                 }
             }
         }
     }
 
-    // Configure test logging across all modules to show up in the console UI
-    tasks.withType<org.gradle.api.tasks.testing.AbstractTestTask>().configureEach {
-        // Disable caching so tests always run and print their names to the console
+    tasks.withType<AbstractTestTask>().configureEach {
         outputs.upToDateWhen { false }
-        
+
         testLogging {
-            // Disable default event logging to avoid duplicate prints and double line breaks
-            // We handle the UI purely via the TestListener below
             showStandardStreams = false
             showExceptions = false
             showCauses = false
             showStackTraces = false
         }
 
-        addTestListener(object : org.gradle.api.tasks.testing.TestListener {
-            override fun beforeSuite(suite: org.gradle.api.tasks.testing.TestDescriptor) {}
-            override fun beforeTest(testDescriptor: org.gradle.api.tasks.testing.TestDescriptor) {}
-            override fun afterTest(testDescriptor: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
-                if (result.resultType == org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE) {
+        addTestListener(object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {}
+            override fun beforeTest(testDescriptor: TestDescriptor) {}
+            override fun afterTest(
+                testDescriptor: TestDescriptor,
+                result: TestResult
+            ) {
+                if (result.resultType == TestResult.ResultType.FAILURE) {
                     val cleanName = testDescriptor.name.substringBefore("[")
                     println("\n  ❌ [FAIL] $cleanName")
                     result.exception?.let { e ->
@@ -63,7 +66,11 @@ subprojects {
                     }
                 }
             }
-            override fun afterSuite(suite: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
+
+            override fun afterSuite(
+                suite: TestDescriptor,
+                result: TestResult
+            ) {
                 // Silenced: we use the Unified Table instead
             }
         })

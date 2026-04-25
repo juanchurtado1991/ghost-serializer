@@ -1,16 +1,14 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
 
-import com.ghost.serialization.core.writer.GhostJsonWriter
 import com.ghost.serialization.core.exception.GhostJsonException
-
+import com.ghost.serialization.core.writer.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class GhostWriterEdgeCaseTest {
 
-    private fun writerToString(block: (GhostJsonWriter) -> Unit): String {
+    private fun writerToString(block: (GhostJsonWriter) -> Any?): String {
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
         block(writer)
@@ -257,7 +255,7 @@ class GhostWriterEdgeCaseTest {
             w.beginArray()
                 .beginObject().name("id").value(1).endObject()
                 .beginObject().name("id").value(2).endObject()
-            .endArray()
+                .endArray()
         }
         assertEquals("[{\"id\":1},{\"id\":2}]", json)
     }
@@ -268,7 +266,7 @@ class GhostWriterEdgeCaseTest {
             w.beginArray()
                 .beginArray().value(1).value(2).endArray()
                 .beginArray().value(3).value(4).endArray()
-            .endArray()
+                .endArray()
         }
         assertEquals("[[1,2],[3,4]]", json)
     }
@@ -280,7 +278,7 @@ class GhostWriterEdgeCaseTest {
                 .name("a").nullValue()
                 .name("b").nullValue()
                 .name("c").nullValue()
-            .endObject()
+                .endObject()
         }
         assertEquals("{\"a\":null,\"b\":null,\"c\":null}", json)
     }
@@ -294,7 +292,7 @@ class GhostWriterEdgeCaseTest {
                 .name("c").value("text")
                 .name("d").nullValue()
                 .name("e").value(true)
-            .endObject()
+                .endObject()
         }
         assertEquals("{\"a\":1,\"b\":null,\"c\":\"text\",\"d\":null,\"e\":true}", json)
     }
@@ -310,7 +308,7 @@ class GhostWriterEdgeCaseTest {
                 .endObject()
                 .endObject()
                 .endObject()
-            .endObject()
+                .endObject()
         }
         assertEquals(
             "{\"l1\":{\"l2\":{\"l3\":{\"leaf\":\"deep\"}}}}",

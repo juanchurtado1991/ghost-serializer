@@ -1,20 +1,17 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
-
-import com.ghost.serialization.core.parser.skipCommaIfPresent
 
 import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
-import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.JsonReaderOptions
 import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.isNextNullValue
-import com.ghost.serialization.core.parser.skipValue
-import com.ghost.serialization.core.parser.readList
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextDouble
 import com.ghost.serialization.core.parser.consumeNull
-
+import com.ghost.serialization.core.parser.isNextNullValue
+import com.ghost.serialization.core.parser.nextDouble
+import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.readList
+import com.ghost.serialization.core.parser.skipCommaIfPresent
+import com.ghost.serialization.core.parser.skipValue
+import com.ghost.serialization.core.writer.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -109,7 +106,7 @@ class GhostReaderSelectNameTest {
     fun readsNegativeDouble() {
         val reader = readerOf("{\"v\":-123.456}")
         reader.beginObject()
-        reader.nextKey()
+        reader.nextKey().unused()
         reader.consumeKeySeparator()
         assertEquals(-123.456, reader.nextDouble(), 0.001)
     }
@@ -118,7 +115,7 @@ class GhostReaderSelectNameTest {
     fun readsVerySmallDouble() {
         val reader = readerOf("{\"v\":0.000001}")
         reader.beginObject()
-        reader.nextKey()
+        reader.nextKey().unused()
         reader.consumeKeySeparator()
         assertEquals(0.000001, reader.nextDouble(), 1e-10)
     }
@@ -136,35 +133,35 @@ class GhostReaderSelectNameTest {
             .name("score").value(3.14)
             .name("nothing").nullValue()
             .name("items")
-            .beginArray().value(1).value(2).value(3).endArray()
-        writer.endObject()
+            .beginArray().value(1).value(2).value(3).endArray().unused()
+        writer.endObject().unused()
 
         val json = buffer.readUtf8()
         val reader = readerOf(json)
 
         reader.beginObject()
-        reader.nextKey(); reader.consumeKeySeparator()
+        reader.nextKey().unused(); reader.consumeKeySeparator()
         assertEquals(42, reader.nextInt())
 
         reader.skipCommaIfPresent()
-        reader.nextKey(); reader.consumeKeySeparator()
+        reader.nextKey().unused(); reader.consumeKeySeparator()
         assertEquals("hello\nworld", reader.nextString())
 
         reader.skipCommaIfPresent()
-        reader.nextKey(); reader.consumeKeySeparator()
+        reader.nextKey().unused(); reader.consumeKeySeparator()
         assertEquals(true, reader.nextBoolean())
 
         reader.skipCommaIfPresent()
-        reader.nextKey(); reader.consumeKeySeparator()
+        reader.nextKey().unused(); reader.consumeKeySeparator()
         assertEquals(3.14, reader.nextDouble(), 0.001)
 
         reader.skipCommaIfPresent()
-        reader.nextKey(); reader.consumeKeySeparator()
+        reader.nextKey().unused(); reader.consumeKeySeparator()
         assertTrue(reader.isNextNullValue())
         reader.consumeNull()
 
         reader.skipCommaIfPresent()
-        reader.nextKey(); reader.consumeKeySeparator()
+        reader.nextKey().unused(); reader.consumeKeySeparator()
         val items = reader.readList { reader.nextInt() }
         assertEquals(listOf(1, 2, 3), items)
 

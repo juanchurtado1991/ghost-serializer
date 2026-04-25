@@ -12,7 +12,7 @@ const { ensureJdk, ensureGradle } = require('./ghost-downloader');
 
 const GHOST_HOME = path.join(os.homedir(), '.ghost');
 const PROJECT_DIR = path.join(GHOST_HOME, 'standalone');
-const KOTLIN_VERSION = '2.1.10';
+const KOTLIN_VERSION = '2.3.10';
 const GHOST_LIB_VERSION = '1.1.14';
 
 function ensureDir(dir) {

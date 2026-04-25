@@ -1,19 +1,18 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
 
+import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.parser.consumeKeySeparator
+import com.ghost.serialization.core.parser.nextDouble
+import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.skipValue
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.exception.GhostJsonException
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.skipValue
 
 /**
- * Chaos Engineering Suite (TDD). 
+ * Chaos Engineering Suite (TDD).
  * Target: Undetected crashes and spec violations.
  */
 class GhostChaosTest {
@@ -73,7 +72,7 @@ class GhostChaosTest {
             reader.skipValue()
         }
     }
-    
+
     @Test
     fun segmentedUtf8Boundary() {
         // Test reading deep characters exactly at 8192 byte boundary

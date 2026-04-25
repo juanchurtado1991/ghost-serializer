@@ -24,7 +24,7 @@ data class TestResult(
  */
 object ParsingTestBenchmark {
 
-    private val W = 93
+    private const val W = 93
 
     // Called from GhostBenchmark.main() – returns all test results for the unified table
     fun runAllTests(): List<TestResult> {

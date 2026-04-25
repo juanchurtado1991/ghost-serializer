@@ -9,6 +9,7 @@ const { execSync } = require('child_process');
 const { LOG, TEST_MODE } = require('./ghost-config');
 
 const GHOST_HOME = path.join(os.homedir(), '.ghost');
+const KOTLIN_VERSION = "2.3.21";
 const JDK_DIR = path.join(GHOST_HOME, 'jdk');
 const GRADLE_DIR = path.join(GHOST_HOME, 'gradle');
 
@@ -50,10 +51,10 @@ function ensureJdk() {
     }
 
     // Auto-download JDK
-    LOG.info('Java not found on your system. Auto-installing OpenJDK 21...');
+    LOG.info('Java not found on your system. Auto-installing OpenJDK 25...');
     LOG.info('(This is a one-time download of ~180MB, stored at ~/.ghost/jdk/)');
     const { osName, archName, ext } = getPlatformInfo();
-    const url = `https://api.adoptium.net/v3/binary/latest/21/ga/${osName}/${archName}/jdk/hotspot/normal/eclipse`;
+    const url = `https://api.adoptium.net/v3/binary/latest/25/ga/${osName}/${archName}/jdk/hotspot/normal/eclipse`;
     const tmpFile = path.join(GHOST_HOME, `jdk-tmp.${ext}`);
 
     ensureDir(GHOST_HOME);
@@ -85,7 +86,7 @@ function ensureJdk() {
     try { fs.unlinkSync(tmpFile); } catch {}
     try { fs.rmSync(extractDir, { recursive: true }); } catch {}
 
-    LOG.success('OpenJDK 21 installed to ~/.ghost/jdk/');
+    LOG.success('OpenJDK 25 installed to ~/.ghost/jdk/');
     return path.join(JDK_DIR, 'bin');
 }
 
@@ -106,9 +107,9 @@ function ensureGradle() {
     }
 
     // Auto-download Gradle
-    LOG.info('Gradle not found on your system. Auto-installing Gradle 8.13...');
+    LOG.info('Gradle not found on your system. Auto-installing Gradle 9.0...');
     LOG.info('(This is a one-time download of ~150MB, stored at ~/.ghost/gradle/)');
-    const url = 'https://services.gradle.org/distributions/gradle-8.13-bin.zip';
+    const url = 'https://services.gradle.org/distributions/gradle-9.0-bin.zip';
     const tmpFile = path.join(GHOST_HOME, 'gradle-tmp.zip');
 
     ensureDir(GHOST_HOME);
@@ -128,7 +129,7 @@ function ensureGradle() {
     try { fs.unlinkSync(tmpFile); } catch {}
     try { fs.rmSync(extractDir, { recursive: true }); } catch {}
 
-    LOG.success('Gradle 8.13 installed to ~/.ghost/gradle/');
+    LOG.success('Gradle 9.0 installed to ~/.ghost/gradle/');
     return gradleBin;
 }
 

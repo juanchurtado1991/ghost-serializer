@@ -3,9 +3,9 @@
   <p><b>A high-performance, zero-reflection, multi-platform JSON Serialization Engine for Kotlin.</b></p>
 
   <p>
-    <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin 2.1.10"></a>
-    <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-2.1.10--1.0.30-black.svg?style=flat-square" alt="KSP"></a>
-    <a href="https://square.github.io/okio/"><img src="https://img.shields.io/badge/I%2FO-Okio_3.9.1-blue.svg?style=flat-square" alt="Okio"></a>
+    <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.3.21-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin 2.3.21"></a>
+    <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-2.3.6-black.svg?style=flat-square" alt="KSP"></a>
+    <a href="https://square.github.io/okio/"><img src="https://img.shields.io/badge/I%2FO-Okio_3.16.4-blue.svg?style=flat-square" alt="Okio"></a>
     <img src="https://img.shields.io/badge/WASM-Production--Ready-success.svg?style=flat-square" alt="WASM Stable">
     <img src="https://img.shields.io/badge/Concurrency-Thread_Safe-blue.svg?style=flat-square" alt="Thread Safe">
   </p>
@@ -13,7 +13,7 @@
 
 ---
 
-**Ghost Serialization** is a next-generation serialization library designed for extreme performance and absolute stability. Built from the ground up to replace legacy reflection-based engines, Ghost uses compile-time **KSP (Kotlin Symbol Processing)** and the **Kotlin 2.1.10 K2 Compiler** to generate highly optimized, zero-copy byte serializers.
+**Ghost Serialization** is a next-generation serialization library designed for extreme performance and absolute stability. Built from the ground up to replace legacy reflection-based engines, Ghost uses compile-time **KSP (Kotlin Symbol Processing)** and the **Kotlin 2.3.21 K2 Compiler** to generate highly optimized, zero-copy byte serializers.
 
 It natively supports all Kotlin multiplatform targets (**Android, iOS, JVM, and WASM-JS**) and includes battle-hardened features meant for production environments such as implicit default values, null-safety guards, and direct Ktor 3.0/Retrofit integration.
 
@@ -53,7 +53,7 @@ Generates static, deterministic code at compile time.
 - Uses `ServiceLoader` and a hashed registry `GhostRegistry` to locate serializers.
 - Immune to runtime crashes caused by minification (R8/ProGuard). No `@Keep` rules needed for internals.
 
-### 3. Industrial Concurrency & Security
+### 3. Concurrency & Security
 The engine has been audited for zero-compromise stability across all platforms (JVM, iOS, Android, JS, Wasm).
 - **Thread Safety**: Hashed registry and serializer cache are fully synchronized, ensuring consistency under extreme parallel workloads.
 - **Arithmetic Safety**: Built-in overflow detection for `Long` and `Int` parsing to prevent silent data corruption.
@@ -194,4 +194,4 @@ Ghost is engineered for **Memory Efficiency** first. In modern web environments,
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.14 Industrial Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.14 Stable.*

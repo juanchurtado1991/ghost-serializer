@@ -1,5 +1,8 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.core.parser
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.core.parser.GhostJsonConstants.CLOSE_ARR
 import com.ghost.serialization.core.parser.GhostJsonConstants.CLOSE_OBJ
 import com.ghost.serialization.core.parser.GhostJsonConstants.COLON
@@ -19,8 +22,8 @@ import com.ghost.serialization.core.parser.GhostJsonConstants.TRUE_CHAR
 internal fun GhostJsonReader.peekNextToken(): Int {
     if (nextTokenByte != -1) return nextTokenByte
     skipWhitespace()
-    if (position >= data.size) return -1
-    val tokenByte = data[position].toInt() and 0xFF
+    if (position >= limit) return -1
+    val tokenByte = source[position].toInt() and 0xFF
     nextTokenByte = tokenByte
     return tokenByte
 }
@@ -61,8 +64,8 @@ fun GhostJsonReader.consumeKeySeparator() {
 /** Consumes the ',' array separator. */
 fun GhostJsonReader.consumeArraySeparator() {
     skipWhitespace()
-    if (position >= data.size) throwError("Unexpected EOF")
-    val arraySeparatorByte = data[position]
+    if (position >= limit) throwError("Unexpected EOF")
+    val arraySeparatorByte = source[position]
     if (arraySeparatorByte == COMMA) {
         internalSkip(1)
     } else if (arraySeparatorByte != CLOSE_ARR) {
@@ -76,7 +79,7 @@ fun GhostJsonReader.isNextNullValue(): Boolean = peekNextToken() == NULL_CHAR.to
 /** Consumes a JSON 'null' literal. */
 fun GhostJsonReader.consumeNull() {
     val length = GhostJsonConstants.NULL_BYTES.size
-    if (position + length > data.size) throwError("Truncated 'null' literal")
+    if (position + length > limit) throwError("Truncated 'null' literal")
     internalSkip(length)
 }
 
@@ -103,15 +106,15 @@ fun GhostJsonReader.skipAnyValue() {
 
 internal fun GhostJsonReader.skipAndValidateLiteral(expected: okio.ByteString) {
     val length = expected.size
-    if (position + length > data.size) throwError("Unexpected EOF during literal")
+    if (position + length > limit) throwError("Unexpected EOF during literal")
     for (i in 0 until length) {
-        if (data[position + i] != expected[i]) {
+        if (source[position + i] != expected[i]) {
             throwError("Expected literal but found mismatch")
         }
     }
     val afterPos = position + length
-    if (afterPos < data.size) {
-        val nextByte = data[afterPos]
+    if (afterPos < limit) {
+        val nextByte = source[afterPos]
         val byteCode = nextByte.toInt() and 0xFF
         if (byteCode < 128 && !GhostJsonConstants.IS_TERMINATOR[byteCode]) {
             throwError("Unexpected character after literal: ${nextByte.toInt().toChar()}")
@@ -193,11 +196,11 @@ internal fun GhostJsonReader.skipCommaIfPresent() {
 
 internal fun GhostJsonReader.skipBalanced(open: Byte, close: Byte) {
     var balance = 1
-    while (balance > 0 && position < data.size) {
+    while (balance > 0 && position < limit) {
         if (depth + balance > maxDepth) {
             throwError("Reached maximum recursion depth ($maxDepth) during skip")
         }
-        val currentByte = data[position]
+        val currentByte = source[position]
         internalSkip(1)
         if (currentByte == open) balance++
         else if (currentByte == close) balance--
@@ -217,10 +220,10 @@ fun GhostJsonReader.peekStringField(keyName: String): String? {
     val savedPos = position
     try {
         skipWhitespace()
-        if (position >= data.size || data[position] != OPEN_OBJ) return null
+        if (position >= limit || source[position] != OPEN_OBJ) return null
         internalSkip(1)
 
-        val tempReader = GhostJsonReader(data, maxDepth = this.maxDepth, strictMode = false)
+        val tempReader = GhostJsonReader(source, limit = this.limit, maxDepth = this.maxDepth, strictMode = false)
         tempReader.position = position
         
         // Safeguard: Limit the search to prevent DoS with massive JSONs

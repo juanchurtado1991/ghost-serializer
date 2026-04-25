@@ -1,8 +1,6 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
 
 import com.ghost.serialization.core.exception.GhostJsonException
-
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

@@ -113,8 +113,8 @@ internal class SerializeCodeEmitter(
     private fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: String) {
         when {
             prop.isValueClass && prop.valueClassProperty != null -> {
-                val innerAccessor = "$accessor$STR_DOT${prop.valueClassProperty!!.kotlinName}"
-                emitValue(code, prop.valueClassProperty!!, innerAccessor)
+                val innerAccessor = "$accessor$STR_DOT${prop.valueClassProperty.kotlinName}"
+                emitValue(code, prop.valueClassProperty, innerAccessor)
             }
 
             prop.isSealedClass -> {

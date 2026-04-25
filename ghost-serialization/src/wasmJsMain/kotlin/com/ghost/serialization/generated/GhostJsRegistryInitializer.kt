@@ -2,8 +2,9 @@ package com.ghost.serialization.generated
 import kotlin.js.JsAny
 import com.ghost.serialization.GhostJsObjectRegistry
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.benchmark.*
 
-@OptIn(InternalGhostApi::class)
+@OptIn(InternalGhostApi::class, ExperimentalWasmJsInterop::class)
 object GhostJsRegistryInitializer {
     fun register() {
         GhostJsObjectRegistry.register("PageInfo") { (it as PageInfo).toJsAny() }

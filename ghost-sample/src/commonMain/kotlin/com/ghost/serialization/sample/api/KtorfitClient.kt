@@ -1,5 +1,6 @@
 package com.ghost.serialization.sample.api
 
+// Ktorfit is temporarily disabled due to Kotlin 2.3.10 compatibility issues
 import com.ghost.serialization.benchmark.CharacterResponse
 import de.jensklingenberg.ktorfit.Ktorfit
 import de.jensklingenberg.ktorfit.http.GET

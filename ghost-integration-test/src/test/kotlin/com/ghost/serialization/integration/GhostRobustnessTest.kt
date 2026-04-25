@@ -1,8 +1,6 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
-import com.ghost.serialization.core.exception.GhostJsonException
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -99,7 +97,8 @@ class GhostRobustnessTest {
 
     @Test
     fun nullOnNonNullableFieldThrows() {
-        val json = """{"id": null, "userId": 1, "name": "x", "email": "x", "score": 1.0, "rating": 1.0, "isActive": true, "biography": "x", "priority": "LOW", "tags": [], "scores": [], "metadata": {}, "address": {"street": "x", "city": "x", "zipCode": "x"}, "tagObjects": [], "nestedTree": {"label": "x"}}"""
+        val json =
+            """{"id": null, "userId": 1, "name": "x", "email": "x", "score": 1.0, "rating": 1.0, "isActive": true, "biography": "x", "priority": "LOW", "tags": [], "scores": [], "metadata": {}, "address": {"street": "x", "city": "x", "zipCode": "x"}, "tagObjects": [], "nestedTree": {"label": "x"}}"""
         assertFailsWith<Exception> {
             GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
         }
@@ -126,7 +125,8 @@ class GhostRobustnessTest {
         GodObjectSerializer.serialize(buffer, original)
         val json = buffer.readUtf8()
 
-        val deserialized = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val deserialized =
+            GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
 
         assertEquals(original.id, deserialized.id)
         assertEquals(original.userId, deserialized.userId)

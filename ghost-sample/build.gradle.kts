@@ -33,23 +33,21 @@ kotlin {
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "ghost-sample-wasm"
+        outputModuleName.set("ghost-sample-wasm")
         browser {
             val projectDir = project.projectDir
             commonWebpackConfig {
                 outputFileName = "ghost-sample.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(
-                    static = (devServer?.static ?: mutableListOf()).apply {
-                        add(projectDir.path)
-                    }
-                )
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                    static(projectDir.path)
+                }
             }
         }
         binaries.executable()
     }
 
     js(IR) {
-        moduleName = "ghost-sample"
+        outputModuleName.set("ghost-sample")
         browser()
         nodejs()
         binaries.executable()
@@ -130,12 +128,12 @@ tasks.withType<ProcessResources> {
 
 android {
     namespace = "com.ghost.serialization.sample"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ghost.serialization.sample"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -160,6 +158,10 @@ android {
 
 ksp {
     arg("ghost.moduleName", "serialization_sample")
+}
+
+ktorfit {
+    compilerPluginVersion.set("2.3.3")
 }
 
 dependencies {

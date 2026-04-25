@@ -18,7 +18,6 @@ import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okio.Buffer
 import okio.ByteString
@@ -26,6 +25,7 @@ import okio.ByteString.Companion.encodeUtf8
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
 import java.lang.management.ManagementFactory
+import kotlin.system.exitProcess
 import com.google.gson.stream.JsonReader as GsonReader
 
 /**
@@ -102,7 +102,7 @@ fun main() {
     printRankedTable("FAILURE RESILIENCE (Malformed JSON)", failureMetrics)
 
     println("\n[COMPLETE] Benchmark execution finished.")
-    System.exit(0)
+    exitProcess(0)
 }
 
 private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
@@ -379,7 +379,6 @@ private fun createTree(d: Int): Category = if (d <= 0) Category(name = "L") else
     name = "N",
     subCategories = listOf(createTree(d - 1))
 )
-
 
 
 private inline fun measureTimeNanos(block: () -> Unit): Long {

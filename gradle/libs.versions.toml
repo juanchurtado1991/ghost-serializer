@@ -1,38 +1,38 @@
 [versions]
 # Core Ecosystem
-kotlin                          = "2.1.10"
-agp                             = "8.7.3"
-ksp                             = "2.1.10-1.0.30"
-compose-plugin                  = "1.7.3"
+kotlin                          = "2.3.21"
+agp                             = "8.13.2"
+ksp                             = "2.3.6"
+compose-plugin                  = "1.10.3"
 ghost-version                   = "1.1.14"
 ghost-group                     = "com.ghostserializer"
 
 # Networking & Serialization
-ktor                            = "3.0.0"
-ktorfit                         = "2.3.0"
-kotlinx-serialization           = "1.7.3"
-okio                            = "3.9.1"
-okhttp                          = "4.12.0"
-mockwebserver                   = "4.12.0"
-retrofit                        = "2.11.0"
+ktor                            = "3.4.3"
+ktorfit                         = "2.7.2"
+kotlinx-serialization           = "1.11.0"
+okio                            = "3.17.0"
+okhttp                          = "5.3.2"
+mockwebserver                   = "5.3.2"
+retrofit                        = "3.0.0"
 
 # Serialization Engines (Benchmark)
-gson                            = "2.11.0"
+gson                            = "2.13.2"
 moshi                           = "1.15.2"
 
 # Tooling & Generation
-kotlinpoet                      = "1.16.0"
+kotlinpoet                      = "2.3.0"
 
 # UI & Sample App
-coil                            = "3.0.4"
-androidx-activity               = "1.9.1"
+coil                            = "3.4.0"
+androidx-activity               = "1.13.0"
 androidx-metrics                = "1.0.0"
-androidx-lifecycle              = "2.8.4"
+androidx-lifecycle              = "2.10.0"
 
 # Testing
-junit-jupiter                   = "5.11.3"
-junit-platform                  = "1.11.3"
-kotlinx-coroutines-test         = "1.10.1"
+junit-jupiter                   = "6.0.3"
+junit-platform                  = "6.0.3"
+kotlinx-coroutines-test         = "1.10.2"
 
 [libraries]
 # Kotlin & Build

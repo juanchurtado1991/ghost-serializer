@@ -1,5 +1,4 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
 
 import kotlin.test.Test
 import kotlin.test.assertTrue

@@ -70,7 +70,7 @@ internal class GhostCodeGenerator(
         ?.find { it.name?.asString() == "name" }
         ?.value as? String ?: ""
 
-    private val finalTypeName: String = if (customTypeName.isNotEmpty()) customTypeName else classDeclaration.simpleName.asString()
+    private val finalTypeName: String = customTypeName.ifEmpty { classDeclaration.simpleName.asString() }
 
     private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
 
@@ -82,6 +82,18 @@ internal class GhostCodeGenerator(
     fun createSpec(): FileSpec {
         val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
         return FileSpec.builder(packageName, serializerName)
+            .addAnnotation(
+                com.squareup.kotlinpoet.AnnotationSpec.builder(Suppress::class)
+                    .addMember("%S, %S, %S, %S, %S, %S, %S", 
+                        "UNUSED_VARIABLE", "UNUSED_EXPRESSION", "UNCHECKED_CAST", 
+                        "USELESS_CAST", "UNNECESSARY_NOT_NULL_ASSERTION", "unused", "NAME_SHADOWING")
+                    .build()
+            )
+            .addAnnotation(
+                com.squareup.kotlinpoet.AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+                    .addMember("%T::class", ClassName("com.ghost.serialization", "InternalGhostApi"))
+                    .build()
+            )
             .addImport(
                 PKG_PARSER,
                 STR_IS_NEXT_NULL_VALUE,

@@ -2,11 +2,11 @@
  
 ## [1.1.14] - 2026-04-25
 ### Added
-- **Industrial Resilience Suite**: Successfully passed the "FAANG-grade" validation suite with **505 tests** covering memory leaks, deep recursion (255 levels), and malicious payload protection.
+- **Resilience Suite**: Successfully passed the "FAANG-grade" validation suite with **505 tests** covering memory leaks, deep recursion (255 levels), and malicious payload protection.
 - **Advanced Type Support**: Native support for deeply nested generics (recursive resolution), Value Classes (`@JvmInline`), and Custom Discriminators (e.g., `kind`, `@type`) in sealed classes.
 - **Official Networking Adapters**: Shipped production-ready bridges for **Ktor 3.0** and **Retrofit 2.11**, with automatic adapter injection via the Gradle Plugin.
 - **O(1) Registry Hardening**: Rewrote the internal lookup engine to use a hashed `GhostRegistry`, ensuring 100% R8/ProGuard safety and constant-time serializer lookup without reflection.
-- **Gradle Plugin Industrialization**: Full **Configuration Cache** support and **Incremental Build** validation, ensuring zero-latency dev loops and CI/CD compliance.
+- **Gradle Plugin Hardening**: Full **Configuration Cache** support and **Incremental Build** validation, ensuring zero-latency dev loops and CI/CD compliance.
 
 ### Fixed
 - **Map Serialization Integrity**: Resolved a critical corruption bug in `MapSerializer` where the parser failed to consume separators correctly in complex nested maps.
@@ -16,7 +16,7 @@
 ## [1.1.13] - 2026-04-24
 ### Fixed
 - **Turbopack & Next.js 16 Resilience**: Applied architecture-grade fixes to the Kotlin-generated `.mjs` Wasm loader to prevent `TypeError: Cannot read properties of undefined (reading 'name')` and `ReferenceError: import.meta.resolve is not a function`.
-- **Isomorphic Node.js Pathing**: Removed the experimental `import.meta.resolve()` and replaced it with industry-standard isomorphic ES module path resolution (`fs.readFileSync(path.join(path.dirname(url.fileURLToPath(import.meta.url)), ...))`).
+- **Isomorphic Node.js Pathing**: Removed the experimental `import.meta.resolve()` and replaced it with standard isomorphic ES module path resolution (`fs.readFileSync(path.join(path.dirname(url.fileURLToPath(import.meta.url)), ...))`).
 - **Memory Export Patch**: Fixed `ReferenceError: getGhostWasmInstance is not defined` by directly exporting and accessing the WebAssembly `memory` object from the generated bridge, removing the dependency on deprecated factory functions.
 
 ## [1.1.12] - 2026-04-24
@@ -38,7 +38,7 @@
 
 ## [1.1.10] - 2026-04-24
 ### Added
-- **Industrial-Grade Transpiler (v2.0)**: Complete rewrite of the Node.js transpiler with a robust parser supporting nested models, list of objects, and Kotlin keyword escaping (including soft keywords like `value`).
+- **Resilience Transpiler (v2.0)**: Complete rewrite of the Node.js transpiler with a robust parser supporting nested models, list of objects, and Kotlin keyword escaping (including soft keywords like `value`).
 - **Single-Crossing Factory (Fast Path)**: Optimized the JS-to-Wasm bridge for small models (< 10 fields). It now generates a dedicated `@JsFun` factory that creates the entire JS object in a single crossing, reducing bridge latency.
 - **Self-Validating Test Suite**: Shipped a comprehensive test suite with **250+ assertions** covering edge cases, stress payloads, and paranoid naming collisions.
 - **Type-Safe Union Fallbacks**: Implemented smart fallback logic for TypeScript union types (`string | number`) and Literal types (`'a' | 'b'`) ensuring they map safely to Kotlin `String`.
@@ -85,7 +85,7 @@ All notable changes to the Ghost Serialization project will be documented in thi
 - **WASM Graceful Failure (Falla Elegante)**: Hardened WASM boundaries with `try/catch(Throwable)` to prevent browser crashes (WASM Traps) during catastrophic engine errors or malformed JSON payloads.
 - **Next.js & TypeScript Bridge Resilience**: The synchronous API (`deserializeModelSync`) now safely intercepts `null` engine states and throws standard JavaScript `Error` exceptions, acting as a robust drop-in replacement for `JSON.parse`.
 - **Comprehensive E2E Integration Tests**: Added a suite of +200 cross-platform tests validating unicode, missing fields, malformed JSON, un-registered models, and VM stress edge cases directly inside Headless Chrome.
-- **Industrial Performance Profiling**: Purged all heavy `console.log` / `println` operations from the fast-path execution loop to ensure zero-allocation I/O overhead, maintaining strict sub-millisecond execution times.
+- **Performance Profiling**: Purged all heavy `console.log` / `println` operations from the fast-path execution loop to ensure zero-allocation I/O overhead, maintaining strict sub-millisecond execution times.
 - **NPM Publication Automation**: Automated the inclusion of `README.md` and `LICENSE` files within the NPM Wasm production library bundle.
 - **Descriptive Telemetry**: Enhanced WASM/JS bridge with critical hints for missing serializers.
 - **Type-Safe Bridge (Next.js)**: Finalized the automatic TS-to-Kotlin synchronization flow.
@@ -113,7 +113,7 @@ All notable changes to the Ghost Serialization project will be documented in thi
 - **Smart Platform Abstraction:** Added internal `isJvm` utility for intelligent platform-aware logic in common code, improving test reliability and runtime performance.
 
 ### Fixed
-- **Industrial Build Stabilization:** Resolved persistent KSP metadata conflicts and Gradle task dependency race conditions by enforcing a Single Source of Truth (SSOT) generation model in `commonMain`.
+- **Build Stabilization:** Resolved persistent KSP metadata conflicts and Gradle task dependency race conditions by enforcing a Single Source of Truth (SSOT) generation model in `commonMain`.
 - **Registry Collision Errors:** Fixed "Redeclaration" errors in Multiplatform builds by isolating KSP outputs and linking them correctly to compile tasks.
 - **Memory Audit Integrity:** Resolved false-positive failures in JS/Wasm memory tests by adapting identity checks to native JS engine behavior.
 - **Android Runtime Discovery:** Fixed `UnresolvedReference` for generated registries in Android by aligning the runtime discovery with the new modular FQCN architecture.

@@ -4,16 +4,15 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
 import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.parser.nextInt
 import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.skipAnyValue
-import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.writer.GhostJsonWriter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.client.engine.mock.respondError
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -24,7 +23,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.headersOf
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -40,7 +38,7 @@ data class KtorUser(val id: Int, val name: String, val isActive: Boolean)
 // --- Manual Serializer for Testing ---
 object KtorUserSerializer : GhostSerializer<KtorUser> {
     override val typeName: String = "com.ghost.serialization.ktor.KtorUser"
-    
+
     override fun serialize(writer: GhostJsonWriter, value: KtorUser) {
         writer.beginObject()
         writer.name("id")
@@ -82,6 +80,7 @@ class GhostKtorTest {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
                 return mapOf(KtorUser::class to KtorUserSerializer)
             }
+
             @Suppress("UNCHECKED_CAST")
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
                 if (clazz == KtorUser::class) return KtorUserSerializer as GhostSerializer<T>

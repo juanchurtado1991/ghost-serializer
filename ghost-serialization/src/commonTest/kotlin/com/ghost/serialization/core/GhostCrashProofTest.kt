@@ -1,11 +1,22 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
-import com.ghost.serialization.core.exception.GhostJsonException
 
 import com.ghost.serialization.core.contract.GhostRegistry
 import com.ghost.serialization.core.contract.GhostSerializer
-
+import com.ghost.serialization.core.exception.GhostJsonException
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.parser.JsonReaderOptions
+import com.ghost.serialization.core.parser.JsonToken
+import com.ghost.serialization.core.parser.consumeKeySeparator
+import com.ghost.serialization.core.parser.consumeNull
+import com.ghost.serialization.core.parser.isNextNullValue
+import com.ghost.serialization.core.parser.nextDouble
+import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.nextLong
+import com.ghost.serialization.core.parser.peekJsonToken
+import com.ghost.serialization.core.parser.readList
+import com.ghost.serialization.core.parser.skipValue
+import com.ghost.serialization.core.writer.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,19 +24,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.isNextNullValue
-import com.ghost.serialization.core.parser.skipValue
-import com.ghost.serialization.core.parser.JsonToken
-import com.ghost.serialization.core.parser.peekJsonToken
-import com.ghost.serialization.core.parser.readList
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextDouble
-import com.ghost.serialization.core.parser.nextLong
-import com.ghost.serialization.core.parser.consumeNull
-import com.ghost.serialization.core.writer.GhostJsonWriter
 
 class GhostCrashProofTest {
 
@@ -233,12 +231,12 @@ class GhostCrashProofTest {
         val json = "{\"a\":[1,2],\"b\":[3,4]}"
         val reader = readerOf(json)
         reader.beginObject()
-        
+
         assertEquals(0, reader.selectString(options))
         reader.consumeKeySeparator()
         val list1 = reader.readList { reader.nextInt() }
         assertEquals(listOf(1, 2), list1)
-        
+
         assertEquals(1, reader.selectString(options))
         reader.consumeKeySeparator()
         val list2 = reader.readList { reader.nextInt() }

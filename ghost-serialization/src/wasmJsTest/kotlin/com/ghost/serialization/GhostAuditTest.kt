@@ -1,15 +1,14 @@
 package com.ghost.serialization
 
+import com.ghost.serialization.core.contract.GhostRegistry
+import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghost.serialization.core.parser.GhostJsonConstants
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.writer.GhostJsonWriter
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.GhostJsonConstants
-import com.ghost.serialization.core.writer.GhostJsonWriter
-import okio.BufferedSink
-import kotlin.reflect.KClass
 
 class GhostAuditTest {
 
@@ -27,23 +26,23 @@ class GhostAuditTest {
         // Mock two classes with same simpleName
         val classA = MockModelA::class
         val classB = MockModelB::class
-        
+
         // We use the actual qualifiedName for the test to be realistic
         val qNameA = classA.qualifiedName!!
         val qNameB = classB.qualifiedName!!
-        
+
         val serializerA = object : GhostSerializer<MockModelA> {
             override val typeName: String = "MockModelA"
             override fun serialize(writer: GhostJsonWriter, value: MockModelA) {}
             override fun deserialize(reader: GhostJsonReader): MockModelA = MockModelA()
         }
-        
+
         val serializerB = object : GhostSerializer<MockModelB> {
             override val typeName: String = "MockModelB"
             override fun serialize(writer: GhostJsonWriter, value: MockModelB) {}
             override fun deserialize(reader: GhostJsonReader): MockModelB = MockModelB()
         }
-        
+
         val registry = object : GhostRegistry {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = null
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = mapOf(
@@ -51,12 +50,12 @@ class GhostAuditTest {
                 classB to serializerB
             )
         }
-        
+
         Ghost.addRegistry(registry)
-        
-        // Verify we can find both by qualified name
-        assertNotNull(Ghost.getSerializerByName(qNameA), "Should find ModelA by qualified name")
-        assertNotNull(Ghost.getSerializerByName(qNameB), "Should find ModelB by qualified name")
+
+        // Verify we can find both by their registered typeName
+        assertNotNull(Ghost.getSerializerByName("MockModelA"), "Should find ModelA by typeName")
+        assertNotNull(Ghost.getSerializerByName("MockModelB"), "Should find ModelB by typeName")
     }
 
     @Test

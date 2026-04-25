@@ -1,17 +1,14 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
 
-import com.ghost.serialization.core.parser.nextNonWhitespace
-import com.ghost.serialization.core.parser.skipAnyValue
-
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
 import com.ghost.serialization.core.exception.GhostJsonException
-import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.core.parser.JsonReaderOptions
 import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.parser.nextInt
-
+import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.nextNonWhitespace
+import com.ghost.serialization.core.parser.skipAnyValue
+import com.ghost.serialization.core.writer.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,13 +24,13 @@ class GhostStressAuditTest {
     fun testSegmentBoundarySplitting() {
         // Okio segments are 8192 bytes. We want to test tokens crossing this boundary.
         val segmentSize = 8192
-        
+
         // 1. Split a String
         val stringPadding = "a".repeat(segmentSize - 5)
         val jsonString = "{\"k\":\"${stringPadding}BC\"}"
         // "k":"aaaa... (8187 chars) BC"
         // The closing quote or part of the string will cross the boundary.
-        
+
         val reader1 = GhostJsonReader(Buffer().writeUtf8(jsonString))
         reader1.beginObject()
         assertEquals(0, reader1.selectString(JsonReaderOptions.of("k")))
@@ -63,7 +60,7 @@ class GhostStressAuditTest {
     fun testDeepNestingLimit() {
         val maxDepth = 100
         val nestedJson = "{".repeat(maxDepth + 1) + "}".repeat(maxDepth + 1)
-        
+
         val reader = GhostJsonReader(Buffer().writeUtf8(nestedJson), maxDepth = maxDepth)
         assertFailsWith<GhostJsonException> {
             repeat(maxDepth + 1) {
@@ -90,8 +87,8 @@ class GhostStressAuditTest {
             assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
                 recursiveSkip(reader)
                 reader.skipWhitespace()
-                if (reader.position < reader.data.size) {
-                    val leftover = reader.data.decodeToString(reader.position, reader.data.size)
+                if (reader.position < reader.limit) {
+                    val leftover = reader.source.decodeToString(reader.position, reader.limit)
                     if (leftover.trim().isNotEmpty()) {
                         throw GhostJsonException("Unconsumed input: $leftover", 0, 0)
                     }
@@ -102,7 +99,7 @@ class GhostStressAuditTest {
 
     private fun recursiveSkip(reader: GhostJsonReader) {
         reader.skipWhitespace()
-        if (reader.position >= reader.data.size) return
+        if (reader.position >= reader.limit) return
         when (val b = reader.peekByte()) {
             '{'.code.toByte() -> {
                 reader.beginObject()
@@ -113,6 +110,7 @@ class GhostStressAuditTest {
                 }
                 reader.endObject()
             }
+
             '['.code.toByte() -> {
                 reader.beginArray()
                 if (reader.peekByte() != ']'.code.toByte()) {
@@ -123,7 +121,11 @@ class GhostStressAuditTest {
                             reader.endArray()
                             break
                         }
-                        if (next != ','.code.toByte()) throw GhostJsonException("Expected ','", 0, 0)
+                        if (next != ','.code.toByte()) throw GhostJsonException(
+                            "Expected ','",
+                            0,
+                            0
+                        )
                         reader.internalSkip(1)
                         if (reader.peekNextByte(0) == ']'.code.toByte()) {
                             throw GhostJsonException("Trailing comma", 0, 0)
@@ -133,6 +135,7 @@ class GhostStressAuditTest {
                     reader.endArray()
                 }
             }
+
             else -> {
                 reader.skipAnyValue()
             }
@@ -142,15 +145,15 @@ class GhostStressAuditTest {
     @Test
     fun testFloatingPointValidation() {
         val writer = GhostJsonWriter(Buffer())
-        
+
         assertFailsWith<GhostJsonException> {
             writer.beginArray().value(Double.NaN).endArray()
         }
-        
+
         assertFailsWith<GhostJsonException> {
             writer.beginArray().value(Double.POSITIVE_INFINITY).endArray()
         }
-        
+
         assertFailsWith<GhostJsonException> {
             writer.beginArray().value(Float.NEGATIVE_INFINITY).endArray()
         }

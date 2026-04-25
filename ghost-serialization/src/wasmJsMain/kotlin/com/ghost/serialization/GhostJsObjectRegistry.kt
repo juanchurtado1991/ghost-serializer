@@ -6,6 +6,7 @@ import kotlin.js.JsAny
  * Registry for direct JS object construction.
  * Populated by ghost-transpiler via GhostJsObjectRegistry generated code.
  */
+@OptIn(ExperimentalWasmJsInterop::class)
 object GhostJsObjectRegistry {
     private val builders = mutableMapOf<String, (Any) -> JsAny?>()
 

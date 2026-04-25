@@ -1,15 +1,15 @@
 package com.ghost.serialization
 
+import com.ghost.serialization.core.contract.GhostSerializer
 import com.ghost.serialization.core.exception.GhostJsonException
 import com.ghost.serialization.core.parser.GhostJsonReader
-import kotlinx.coroutines.test.runTest
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.writer.GhostJsonWriter
 import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.writer.GhostJsonWriter
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
+
 class GhostMemoryTest {
 
     // --- Recursive Serializer for testing depth ---
@@ -33,7 +33,7 @@ class GhostMemoryTest {
         // Create a deeply nested JSON string: [[[[...]]]]
         val depth = 300
         val json = "[".repeat(depth) + "1" + "]".repeat(depth)
-        
+
         // This should throw GhostJsonException because depth > 255
         assertFailsWith<GhostJsonException> {
             RecursiveSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
@@ -54,7 +54,7 @@ class GhostMemoryTest {
         // 10MB JSON string
         val largeString = "a".repeat(10 * 1024 * 1024)
         val json = "\"$largeString\""
-        
+
         val result = Ghost.deserialize<String>(json)
         assertEquals(largeString.length, result.length)
         assertEquals(largeString, result)

@@ -1,19 +1,17 @@
 package com.ghost.serialization.core
-import kotlin.test.assertTrue
 
-import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.exception.GhostJsonException
-import com.ghost.serialization.core.parser.nextKey
+import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextInt
 import com.ghost.serialization.core.parser.nextDouble
-
+import com.ghost.serialization.core.parser.nextInt
+import com.ghost.serialization.core.parser.nextKey
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 /**
- * Spec Integrity hardening tests (TDD). 
+ * Spec Integrity hardening tests (TDD).
  * These tests ensure compliance with RFC 8259.
  */
 class GhostHardeningTest {

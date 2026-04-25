@@ -27,7 +27,7 @@ kotlin {
     
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "ghost-serialization-wasm"
+        outputModuleName.set("ghost-serialization-wasm")
         browser()
         binaries.library()
         generateTypeScriptDefinitions()
@@ -46,7 +46,7 @@ kotlin {
         }
     }
     js(IR) {
-        moduleName = "ghost-serialization"
+        outputModuleName.set("ghost-serialization")
         browser()
         nodejs()
         binaries.library()

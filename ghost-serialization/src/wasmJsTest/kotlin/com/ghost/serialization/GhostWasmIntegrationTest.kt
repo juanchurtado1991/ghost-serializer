@@ -1,4 +1,5 @@
 @file:Suppress("unused")
+@file:OptIn(ExperimentalWasmJsInterop::class)
 
 package com.ghost.serialization
 
@@ -7,7 +8,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import com.ghost.serialization.generated.GhostCharacter
+import com.ghost.serialization.benchmark.GhostCharacter
 import com.ghost.serialization.generated.GhostAutoRegistry
 import com.ghost.serialization.generated.GhostJsRegistryInitializer
 import kotlin.js.JsAny
@@ -43,7 +44,7 @@ class GhostWasmIntegrationTest {
     @Test
     fun testFullDeserializationPipeline() {
         setupEnvironment()
-        val json = """{"id": 42, "name": "Rick", "status": "Alive", "species": "Human", "image": "url"}"""
+        val json = """{"id": 42, "name": "Rick", "status": "Alive", "species": "Human", "origin": {"name": "Earth", "url": ""}, "location": {"name": "Earth", "url": ""}, "image": "url"}"""
         val result = ghostDeserializeJs(json, "GhostCharacter")
         assertNotNull(result)
         assertEquals(42, getNumberField(result, "id"))
@@ -101,22 +102,19 @@ class GhostWasmIntegrationTest {
     @Test
     fun testMissingRequiredFieldHandling() {
         setupEnvironment()
-        // Missing the required 'id' field
-        val json = """{"name": "Rick", "status": "Alive", "species": "Human", "image": "url"}"""
+        // Missing the required 'id' field (which has no default in BenchmarkModels)
+        val json = """{"name": "Rick", "status": "Alive", "species": "Human", "origin": {"name": "Earth", "url": ""}, "location": {"name": "Earth", "url": ""}, "image": "url"}"""
         val result = ghostDeserializeJs(json, "GhostCharacter")
         
-        // GhostSerialization's KSP processor often uses robust default-value strategies (0 for Int, "" for String)
-        // instead of crashing. Let's assert it gracefully creates the object with the default primitive values.
-        assertNotNull(result, "Missing required field should be safely handled by KSP defaults")
-        assertEquals(0, getNumberField(result, "id"), "Missing Int field should default to 0")
-        assertEquals("Rick", getStringField(result, "name"))
+        // With strict validation, missing a non-nullable field without default SHOULD return null (caught error)
+        assertNull(result, "Missing required field without default MUST return null for safety")
     }
 
     @Test
     fun testExtraUnknownFieldHandling() {
         setupEnvironment()
         // Contains "unknown_field" which should be ignored
-        val json = """{"id": 42, "name": "Rick", "status": "Alive", "species": "Human", "image": "url", "unknown_field": 999}"""
+        val json = """{"id": 42, "name": "Rick", "status": "Alive", "species": "Human", "origin": {"name": "Earth", "url": ""}, "location": {"name": "Earth", "url": ""}, "image": "url", "unknown_field": 999}"""
         val result = ghostDeserializeJs(json, "GhostCharacter")
         
         assertNotNull(result, "Extra fields should be safely ignored")
@@ -150,7 +148,7 @@ class GhostWasmIntegrationTest {
         setupEnvironment()
         val json = """{
             "info": {"count": 1, "pages": 1, "next": "url"},
-            "results": [{"id": 1, "name": "Rick", "status": "Alive", "species": "Human", "image": "url"}]
+            "results": [{"id": 1, "name": "Rick", "status": "Alive", "species": "Human", "origin": {"name": "Earth", "url": ""}, "location": {"name": "Earth", "url": ""}, "image": "url"}]
         }"""
         val result = ghostDeserializeJs(json, "CharacterResponse")
         assertNotNull(result)
@@ -167,9 +165,7 @@ class GhostWasmIntegrationTest {
     fun testSpecialCharactersAndUnicodeHandling() {
         setupEnvironment()
         // Test JSON with escaped quotes, newlines, tabs, and Unicode (emojis)
-        // Note: Kotlin raw strings (""") do not process escape sequences unless explicitly written,
-        // so we must pass the literal backslashes that a raw JSON string would have.
-        val json = """{"id": 99, "name": "Rick \"The Genius\" Sanchez \n\t \uD83D\uDE80"}"""
+        val json = """{"id": 99, "name": "Rick \"The Genius\" Sanchez \n\t \uD83D\uDE80", "origin": {"name": "Earth", "url": ""}, "location": {"name": "Earth", "url": ""}}"""
         val result = ghostDeserializeJs(json, "GhostCharacter")
         
         assertNotNull(result, "Should successfully parse special characters and unicode")

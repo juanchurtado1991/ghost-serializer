@@ -1,10 +1,10 @@
+@file:OptIn(ExperimentalWasmJsInterop::class, InternalGhostApi::class)
+
 package com.ghost.serialization
 
 import kotlin.test.Test
-import kotlin.test.assertNotNull
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.js.JsAny
 
 // In Kotlin/Wasm, js() must be a single expression in a top-level or member function.
 private fun hasTestKey(obj: JsAny): Boolean = js("obj.testKey === 'testValue'")
@@ -31,7 +31,7 @@ class GhostJsInteropTest {
     fun testCreateJsArray() {
         val arr = createJsArray()
         pushJsArray(arr, intToJs(42))
-        
+
         assertEquals(1, getArrayLength(arr), "Array should have length 1 after pushing")
         assertEquals(42, getFirstElement(arr), "First element should be 42")
     }
