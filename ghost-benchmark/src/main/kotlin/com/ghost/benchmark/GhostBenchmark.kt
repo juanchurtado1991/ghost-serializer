@@ -37,8 +37,14 @@ import com.google.gson.stream.JsonReader as GsonReader
     ExperimentalStdlibApi::class
 )
 fun main() {
-    println("\n--- INITIALIZING GHOST SERIALIZATION BENCHMARK ---")
-    executeDynamicTestRunner()
+    // ── Phase 1: Run all tests and collect results ─────────────────────────────
+    val testResults = ParsingTestBenchmark.runAllTests()
+
+    // ── Phase 2: Unified classified table ─────────────────────────────────────
+    ParsingTestBenchmark.printUnifiedSummaryTable(testResults)
+
+    // ── Phase 3: Benchmarks ────────────────────────────────────────────────────
+    println("\n--- INITIALIZING PERFORMANCE BENCHMARKS ---")
     val threadBean = initializePlatformDiagnostics() ?: return
 
     val gson = Gson()
@@ -374,14 +380,7 @@ private fun createTree(d: Int): Category = if (d <= 0) Category(name = "L") else
     subCategories = listOf(createTree(d - 1))
 )
 
-private fun executeDynamicTestRunner() {
-    try {
-        println("\n--- RUNNING DYNAMIC JVM TEST SUITE ---")
-        ParsingTestBenchmark.runSafetyAudit()
-    } catch (e: Exception) {
-        println("Test runner error: ${e.message}")
-    }
-}
+
 
 private inline fun measureTimeNanos(block: () -> Unit): Long {
     val s = System.nanoTime(); block(); return (System.nanoTime() - s)

@@ -40,4 +40,5 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    systemProperty("kotlinVersion", libs.versions.kotlin.get())
 }

@@ -324,31 +324,17 @@ internal class DeserializeCodeEmitter(
         if (prop.isNullable) return buildNullableCall(prop)
 
         return when {
-            prop.isValueClass && prop.valueClassProperty != null && !prop.isNullable -> {
+            prop.isValueClass && prop.valueClassProperty != null -> {
                 buildCall(prop.valueClassProperty)
             }
-            prop.isValueClass && prop.valueClassProperty != null -> {
-                CodeBlock.of(STR_T_L, prop.typeName, buildCall(prop.valueClassProperty))
-            }
-
             prop.isSealedClass -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(prop.type))
-            prop.isEnum -> buildEnumCall(prop)
-            prop.type.isPrimitiveInt() -> CodeBlock.of(STR_NEXT_INT)
-            prop.type.isPrimitiveBoolean() -> CodeBlock.of(STR_NEXT_BOOLEAN)
-            prop.type.isPrimitiveLong() -> CodeBlock.of(STR_NEXT_LONG)
-            prop.type.isPrimitiveDouble() -> CodeBlock.of(STR_NEXT_DOUBLE)
-            prop.type.isPrimitiveFloat() -> CodeBlock.of(STR_NEXT_FLOAT)
-            prop.isGhost -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(prop.type))
             prop.isPrimitiveArray -> CodeBlock.of(
                 STR_T_DESERIALIZE,
                 ClassName(STR_SERIALIZERS_PKG,
                     "${prop.primitiveArrayType}$STR_SERIALIZER"
                 )
             )
-
-            prop.isList -> buildListCall(prop)
-            prop.isMap -> buildMapCall(prop)
-            else -> CodeBlock.of(STR_NEXT_STRING)
+            else -> buildTypeReaderCall(prop.type)
         }
     }
 
@@ -372,8 +358,6 @@ internal class DeserializeCodeEmitter(
             prop.type.isPrimitiveDouble() -> CodeBlock.of(STR_NULL_CHECK_DOUBLE)
             prop.type.isPrimitiveFloat() -> CodeBlock.of(STR_NULL_CHECK_FLOAT)
             prop.type.isPrimitiveBoolean() -> CodeBlock.of(STR_NULL_CHECK_BOOLEAN)
-            prop.isList -> nullGuarded(buildListCall(prop))
-            prop.isMap -> nullGuarded(buildMapCall(prop))
             prop.isPrimitiveArray -> nullGuarded(
                 CodeBlock.of(
                     STR_T_DESERIALIZE,
@@ -381,7 +365,28 @@ internal class DeserializeCodeEmitter(
                 )
             )
 
-            else -> CodeBlock.of(STR_NULL_CHECK_STRING)
+            else -> nullGuarded(buildTypeReaderCall(prop.type))
+        }
+    }
+
+    private fun buildTypeReaderCall(type: KSType): CodeBlock {
+        return when {
+            type.isGhost() -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(type))
+            type.isEnum() -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(type))
+            type.isPrimitiveInt() -> CodeBlock.of(STR_NEXT_INT)
+            type.isPrimitiveBoolean() -> CodeBlock.of(STR_NEXT_BOOLEAN)
+            type.isPrimitiveLong() -> CodeBlock.of(STR_NEXT_LONG)
+            type.isPrimitiveDouble() -> CodeBlock.of(STR_NEXT_DOUBLE)
+            type.isPrimitiveFloat() -> CodeBlock.of(STR_NEXT_FLOAT)
+            type.isList() -> {
+                val inner = type.arguments.firstOrNull()?.type?.resolve() ?: return CodeBlock.of(STR_NEXT_STRING)
+                CodeBlock.of("reader.readList { %L }", buildTypeReaderCall(inner))
+            }
+            type.isMap() -> {
+                val valueType = type.arguments.getOrNull(1)?.type?.resolve() ?: return CodeBlock.of(STR_NEXT_STRING)
+                CodeBlock.of("reader.readMap { %L }", buildTypeReaderCall(valueType))
+            }
+            else -> CodeBlock.of(STR_NEXT_STRING)
         }
     }
 
@@ -389,42 +394,6 @@ internal class DeserializeCodeEmitter(
         return CodeBlock.of(
             STR_NULL_CHECK_L, inner
         )
-    }
-
-    private fun buildEnumCall(prop: GhostPropertyModel): CodeBlock {
-        return CodeBlock.of(
-            STR_T_DESERIALIZE,
-            serializerName(prop.type)
-        )
-    }
-
-    private fun buildListCall(prop: GhostPropertyModel): CodeBlock {
-        val innerType = prop.listInnerType!!
-        val innerCall = when {
-            prop.listInnerIsGhost -> "${serializerName(innerType)}.deserialize(reader)"
-            innerType.isPrimitiveInt() -> "reader.nextInt()"
-            innerType.isPrimitiveLong() -> "reader.nextLong()"
-            innerType.isPrimitiveDouble() -> "reader.nextDouble()"
-            innerType.isPrimitiveFloat() -> "reader.nextFloat()"
-            innerType.isPrimitiveBoolean() -> "reader.nextBoolean()"
-            else -> "reader.nextString()"
-        }
-        
-        return CodeBlock.of("reader.readList { $innerCall }")
-    }
-
-    private fun buildMapCall(prop: GhostPropertyModel): CodeBlock {
-        val valueType = prop.mapValueType!!
-        val valueReader = when {
-            prop.mapValueIsGhost -> "${serializerName(valueType)}.deserialize(reader)"
-            valueType.isPrimitiveInt() -> "reader.nextInt()"
-            valueType.isPrimitiveLong() -> "reader.nextLong()"
-            valueType.isPrimitiveDouble() -> "reader.nextDouble()"
-            valueType.isPrimitiveBoolean() -> "reader.nextBoolean()"
-            else -> "reader.nextString()"
-        }
-
-        return CodeBlock.of("reader.readMap { $valueReader }")
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder) {

@@ -66,6 +66,17 @@ object Ghost {
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
+        // Fast path for primitives and common types
+        val primitive = when (clazz) {
+            String::class -> StringSerializer
+            Int::class -> IntSerializer
+            Long::class -> LongSerializer
+            Boolean::class -> BooleanSerializer
+            Double::class -> DoubleSerializer
+            else -> null
+        }
+        if (primitive != null) return primitive as GhostSerializer<T>
+
         return runSynchronized(lock) {
             val cached = serializerCache[clazz]
             if (cached != null) {

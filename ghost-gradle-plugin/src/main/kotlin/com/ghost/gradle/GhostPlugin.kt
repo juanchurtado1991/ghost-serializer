@@ -2,19 +2,40 @@ package com.ghost.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class GhostPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         val extension = createExtension(project)
-        applyKspPlugin(project)
+        val ghostVersion = extension.version
 
+        // 1. Core & KSP (Reactive)
+        project.plugins.withId(PLUGIN_KSP) { setupKsp(project, ghostVersion) }
+        project.plugins.withId(PLUGIN_KMP) { setupKmp(project, extension, ghostVersion) }
+        
+        var coreApplied = false
+        listOf(PLUGIN_ANDROID_APP, PLUGIN_ANDROID_LIB, PLUGIN_JVM).forEach { pluginId ->
+            project.plugins.withId(pluginId) {
+                if (!coreApplied) {
+                    setupAndroidOrJvmCore(project, ghostVersion)
+                    coreApplied = true
+                }
+            }
+        }
+
+        // 2. Network Adapters (Safe afterEvaluate)
+        // We use afterEvaluate to perform the check ONCE after all dependencies are declared,
+        // avoiding the circularity of providers and the variant resolution issues of configurations.all.
         project.afterEvaluate {
-            val ghostVersion = extension.version.get()
-            injectCoreDependencies(project, ghostVersion)
-            injectKspCompiler(project, ghostVersion)
-            injectNetworkAdapters(project, extension, ghostVersion)
+            val version = ghostVersion.get()
+            if (extension.autoInjectKtor.get() && hasKtorDependency(project)) {
+                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_KTOR:$version")
+            }
+            if (extension.autoInjectRetrofit.get() && hasRetrofitDependency(project)) {
+                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_RETROFIT:$version")
+            }
         }
     }
 
@@ -26,84 +47,67 @@ class GhostPlugin : Plugin<Project> {
         }
     }
 
-    private fun applyKspPlugin(project: Project) {
-        if (!project.pluginManager.hasPlugin(PLUGIN_KSP)) {
-            try {
-                project.pluginManager.apply(PLUGIN_KSP)
-            } catch (_: Exception) {
-                project.logger.warn("GhostPlugin: Could not automatically " +
-                        "apply KSP. Ensure '$PLUGIN_KSP' is in your plugin classpath.")
-            }
-        }
+    private fun setupKmp(project: Project, extension: GhostExtension, version: Provider<String>) {
+        val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
+        val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
+        
+        project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, runtimeDep)
+        project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, apiDep)
     }
 
-    private fun injectCoreDependencies(project: Project, version: String) {
-        val runtimeDependency = "$GROUP_ID:$ARTIFACT_RUNTIME:$version"
-        val apiDependency = "$GROUP_ID:$ARTIFACT_API:$version"
-
-        if (isMultiplatform(project)) {
-            project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, runtimeDependency)
-            project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, apiDependency)
-        } else if (isAndroidOrJvm(project)) {
-            project.dependencies.add(CONFIG_IMPL, runtimeDependency)
-            project.dependencies.add(CONFIG_IMPL, apiDependency)
-        }
+    private fun setupAndroidOrJvmCore(project: Project, version: Provider<String>) {
+        val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
+        val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
+        project.dependencies.add(CONFIG_IMPL, runtimeDep)
+        project.dependencies.add(CONFIG_IMPL, apiDep)
     }
 
-    private fun injectKspCompiler(project: Project, version: String) {
-        if (!project.pluginManager.hasPlugin(PLUGIN_KSP)) {
-            return
-        }
-
-        val compilerDependency = "$GROUP_ID:$ARTIFACT_COMPILER:$version"
-
+    private fun setupKsp(project: Project, version: Provider<String>) {
+        val compilerDep = version.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
+        
         if (isMultiplatform(project)) {
             val kotlinExtension = project.extensions.findByType(KotlinMultiplatformExtension::class.java)
-            kotlinExtension?.targets?.forEach { target ->
-                if (target.name == TARGET_METADATA) {
-                    project.dependencies.add(CONFIG_KSP_COMMON, compilerDependency)
+            kotlinExtension?.targets?.configureEach {
+                if (name == TARGET_METADATA) {
+                    project.dependencies.add(CONFIG_KSP_COMMON, compilerDep)
                 } else {
-                    val capitalizedTarget = target.name.replaceFirstChar { it.uppercase() }
-                    project.dependencies.add("$PREFIX_KSP$capitalizedTarget", compilerDependency)
+                    val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
+                    project.dependencies.add("$PREFIX_KSP$capitalizedTarget", compilerDep)
                 }
             }
-        } else if (isAndroidOrJvm(project)) {
-            project.dependencies.add(PREFIX_KSP, compilerDependency)
-        }
-    }
-
-    private fun injectNetworkAdapters(project: Project, extension: GhostExtension, version: String) {
-        if (extension.autoInjectKtor.get() && hasKtorDependency(project)) {
-            injectDependency(project, "$GROUP_ID:$ARTIFACT_KTOR:$version")
-        }
-
-        if (extension.autoInjectRetrofit.get() && hasRetrofitDependency(project)) {
-            injectDependency(project, "$GROUP_ID:$ARTIFACT_RETROFIT:$version", forceImplementation = true)
-        }
-    }
-
-    private fun injectDependency(project: Project, dependency: String, forceImplementation: Boolean = false) {
-        if (isMultiplatform(project) && !forceImplementation) {
-            project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, dependency)
         } else {
-            project.dependencies.add(CONFIG_IMPL, dependency)
+            project.dependencies.add(PREFIX_KSP, compilerDep)
         }
+    }
+
+
+
+    private fun isMultiplatform(project: Project): Boolean {
+        return project.pluginManager.hasPlugin(PLUGIN_KMP)
     }
 
     private fun hasKtorDependency(project: Project): Boolean {
-        return project.configurations.any { config ->
-            config.dependencies.any { it.group == GROUP_KTOR && it.name.startsWith(PREFIX_KTOR_CLIENT) }
+        return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
+            val config = project.configurations.findByName(name)
+            config?.dependencies?.any { it.group == GROUP_KTOR && it.name.startsWith(PREFIX_KTOR_CLIENT) } ?: false
         }
     }
 
     private fun hasRetrofitDependency(project: Project): Boolean {
-        return project.configurations.any { config ->
-            config.dependencies.any { it.group == GROUP_RETROFIT && it.name == NAME_RETROFIT }
+        return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
+            val config = project.configurations.findByName(name)
+            config?.dependencies?.any { it.group == GROUP_RETROFIT && it.name == NAME_RETROFIT } ?: false
         }
     }
 
-    private fun isMultiplatform(project: Project): Boolean {
-        return project.pluginManager.hasPlugin(PLUGIN_KMP)
+
+
+    private fun injectNetworkDependency(project: Project, dep: String) {
+        if (project.pluginManager.hasPlugin(PLUGIN_KMP)) {
+            project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, dep)
+        } else {
+            project.dependencies.add(CONFIG_IMPL, dep)
+        }
     }
 
     private fun isAndroidOrJvm(project: Project): Boolean {

@@ -120,56 +120,51 @@ internal class SerializeCodeEmitter(
             prop.isSealedClass -> {
                 code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(prop.type), accessor)
             }
-
-            prop.isEnum -> code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(prop.type), accessor)
-            prop.type.isPrimitive() -> code.addStatement(STR_WRITER_VALUE_ACC, accessor)
-            prop.isGhost -> emitGhost(code, prop, accessor)
+            
             prop.isPrimitiveArray -> code.addStatement(
                 STR_T_SERIALIZE_WRITER_ACC,
                 ClassName(STR_SERIALIZERS_PKG, "${prop.primitiveArrayType}$STR_SERIALIZER_SUFFIX"),
                 accessor
             )
 
-            prop.isList -> emitList(code, prop, accessor)
-            prop.isMap -> emitMap(code, prop, accessor)
+            else -> emitTypeValue(code, prop.type, accessor)
+        }
+    }
+
+    private fun emitTypeValue(code: CodeBlock.Builder, type: KSType, accessor: String) {
+        when {
+            type.isGhost() -> code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(type), accessor)
+            type.isEnum() -> code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(type), accessor)
+            type.isPrimitive() -> code.addStatement(STR_WRITER_VALUE_ACC, accessor)
+            type.isList() -> emitList(code, type, accessor)
+            type.isMap() -> emitMap(code, type, accessor)
             else -> code.addStatement(STR_WRITER_VALUE_ACC, accessor)
         }
     }
 
-    private fun emitGhost(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: String) {
-        code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(prop.type), accessor)
-    }
-
-    private fun emitList(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: String) {
+    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: String) {
         code.addStatement(STR_WRITER_BEGIN_ARR)
         code.beginControlFlow(STR_FOR_ITEM_IN_ACC, accessor)
-
-        when {
-            prop.listInnerIsGhost -> code.addStatement(
-                STR_T_SERIALIZE_WRITER_ITEM, serializerName(prop.listInnerType!!)
-            )
-
-            prop.listInnerIsEnum -> code.addStatement(STR_T_SERIALIZE_WRITER_ITEM, serializerName(prop.listInnerType!!))
-            else -> code.addStatement(STR_WRITER_VALUE_ITEM)
+        val innerType = type.arguments.firstOrNull()?.type?.resolve()
+        if (innerType != null) {
+            emitTypeValue(code, innerType, "item")
+        } else {
+            code.addStatement(STR_WRITER_VALUE_ITEM)
         }
-
         code.endControlFlow()
         code.addStatement(STR_WRITER_END_ARR)
     }
 
-    private fun emitMap(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: String) {
+    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: String) {
         code.addStatement(STR_WRITER_BEGIN_OBJ)
         code.beginControlFlow(STR_FOR_MAP_IN_ACC, accessor)
         code.addStatement(STR_WRITER_NAME_MAPKEY)
-
-        when {
-            prop.mapValueIsGhost -> code.addStatement(
-                STR_T_SERIALIZE_WRITER_MAPVAL, serializerName(prop.mapValueType!!)
-            )
-
-            else -> code.addStatement(STR_WRITER_VALUE_MAPVAL)
+        val valueType = type.arguments.getOrNull(1)?.type?.resolve()
+        if (valueType != null) {
+            emitTypeValue(code, valueType, "mapVal")
+        } else {
+            code.addStatement(STR_WRITER_VALUE_MAPVAL)
         }
-
         code.endControlFlow()
         code.addStatement(STR_WRITER_END_OBJ)
     }

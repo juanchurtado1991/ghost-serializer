@@ -9,12 +9,23 @@ application {
 }
 
 tasks.withType<org.gradle.jvm.application.tasks.CreateStartScripts> {
-    dependsOn(":ghost-serialization:jvmTestClasses", ":ghost-integration-test:testClasses")
+    dependsOn(
+        ":ghost-serialization:jvmTestClasses",
+        ":ghost-integration-test:testClasses",
+        ":ghost-ktor:jvmTestClasses",
+        ":ghost-gradle-plugin:testClasses"
+    )
 }
 
 tasks.named<JavaExec>("run") {
-    // Force the execution of all test suites (JVM, WASM, Integration) before running the benchmark UI
-    dependsOn(":ghost-serialization:jvmTest", ":ghost-serialization:wasmJsBrowserTest", ":ghost-integration-test:test")
+    // Run ALL test suites before benchmark: JVM, WASM, Integration, Ktor, Plugin
+    dependsOn(
+        ":ghost-serialization:jvmTest",
+        ":ghost-serialization:wasmJsBrowserTest",
+        ":ghost-integration-test:test",
+        ":ghost-ktor:jvmTest",
+        ":ghost-gradle-plugin:test"
+    )
 }
 
 kotlin {
@@ -39,7 +50,7 @@ dependencies {
     runtimeOnly(libs.junit.vintage.engine)
     runtimeOnly(libs.kotlin.test.junit5)
     runtimeOnly(libs.kotlin.test)
-    
+
     // Include test classes for auto-detection (Safe Root-Relative paths)
     runtimeOnly(files("${rootDir.absolutePath}/ghost-serialization/build/classes/kotlin/jvm/test"))
     runtimeOnly(files("${rootDir.absolutePath}/ghost-serialization/build/generated/ksp/jvm/kotlin"))
@@ -47,6 +58,10 @@ dependencies {
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/classes/kotlin/main"))
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/kotlin"))
     runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/resources"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-ktor/build/classes/kotlin/jvm/test"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-ktor/build/classes/kotlin/jvm/main"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-gradle-plugin/build/classes/kotlin/test"))
+    runtimeOnly(files("${rootDir.absolutePath}/ghost-gradle-plugin/build/classes/kotlin/main"))
 }
 
 // Include KSP generated resources

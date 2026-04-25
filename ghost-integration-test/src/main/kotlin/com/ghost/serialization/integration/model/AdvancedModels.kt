@@ -88,3 +88,28 @@ data class GhostDiscriminatorTestPayload(
     val kindEvent: GhostKindEvent,
     val stripeObject: StripeObject
 )
+@GhostSerialization
+data class NestedGenericModel(
+    val data: Map<String, List<Map<String, Int>>>
+)
+
+@GhostSerialization
+data class EmojiKeyModel(
+    val familyName: String,
+    val rocketCount: Int,
+    val emojiMap: Map<String, String> = emptyMap()
+)
+
+@GhostSerialization
+data class OverlappingKeyModel(
+    val id: Int,
+    val id_internal: Int,
+    val identity: String
+)
+
+@GhostSerialization
+data class DecimalStress(
+    val big: Double,
+    val small: Float,
+    val precise: Double
+)

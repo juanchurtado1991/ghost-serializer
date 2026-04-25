@@ -55,26 +55,16 @@ subprojects {
             override fun beforeSuite(suite: org.gradle.api.tasks.testing.TestDescriptor) {}
             override fun beforeTest(testDescriptor: org.gradle.api.tasks.testing.TestDescriptor) {}
             override fun afterTest(testDescriptor: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
-                val status = when(result.resultType) {
-                    org.gradle.api.tasks.testing.TestResult.ResultType.SUCCESS -> "✅ [PASS]"
-                    org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE -> "❌ [FAIL]"
-                    org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED -> "⏭️ [SKIP]"
+                if (result.resultType == org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE) {
+                    val cleanName = testDescriptor.name.substringBefore("[")
+                    println("\n  ❌ [FAIL] $cleanName")
+                    result.exception?.let { e ->
+                        println("       ↳ ${e.message}")
+                    }
                 }
-                // Clean browser/platform boilerplate (e.g., "[wasmJs, browser, ChromeHeadless...]")
-                val cleanName = testDescriptor.name.substringBefore("[")
-                println("\r$status $cleanName".padEnd(80))
             }
             override fun afterSuite(suite: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
-                if (suite.parent == null) {
-                    println("\n" + "=".repeat(93))
-                    println("| TEST SUITE SUMMARY: ${this@configureEach.name.toUpperCase()} ".padEnd(92) + "|")
-                    println("=".repeat(93))
-                    println("Total Tests: ${result.testCount}")
-                    println("Succeeded  : ${result.successfulTestCount}")
-                    println("Failed     : ${result.failedTestCount}")
-                    println("Skipped    : ${result.skippedTestCount}")
-                    println("=".repeat(93) + "\n")
-                }
+                // Silenced: we use the Unified Table instead
             }
         })
     }

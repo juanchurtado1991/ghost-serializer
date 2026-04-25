@@ -10,9 +10,3 @@ data class MaliceModel(
     val nested: MaliceModel? = null
 )
 
-@GhostSerialization
-@Serializable
-data class DecimalStress(
-    val value: Double = 0.0,
-    val text: String = ""
-)

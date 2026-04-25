@@ -40,6 +40,7 @@ class GhostSerializationProcessor(
 
     private val classToSerializer = mutableMapOf<ClassName, ClassName>()
     private val originatingFiles = mutableSetOf<com.google.devtools.ksp.symbol.KSFile>()
+    private val processedFiles = mutableSetOf<String>()
     private val analyzer = GhostAnalyzer(logger)
 
     private val registryClassName: String by lazy {
@@ -80,7 +81,15 @@ class GhostSerializationProcessor(
                 properties = propertiesModel
             )
 
-            fileGenerator.createSpec().writeTo(
+            val fileSpec = fileGenerator.createSpec()
+            val fullFileName = "${classDeclaration.packageName.asString()}.${fileSpec.name}"
+            
+            if (processedFiles.contains(fullFileName)) {
+                return
+            }
+            processedFiles.add(fullFileName)
+
+            fileSpec.writeTo(
                 codeGenerator = codeGenerator,
                 dependencies = Dependencies(
                     aggregating = false,

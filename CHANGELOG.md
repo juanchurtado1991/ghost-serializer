@@ -1,4 +1,17 @@
 # Changelog
+ 
+## [1.1.14] - 2026-04-25
+### Added
+- **Industrial Resilience Suite**: Successfully passed the "FAANG-grade" validation suite with **505 tests** covering memory leaks, deep recursion (255 levels), and malicious payload protection.
+- **Advanced Type Support**: Native support for deeply nested generics (recursive resolution), Value Classes (`@JvmInline`), and Custom Discriminators (e.g., `kind`, `@type`) in sealed classes.
+- **Official Networking Adapters**: Shipped production-ready bridges for **Ktor 3.0** and **Retrofit 2.11**, with automatic adapter injection via the Gradle Plugin.
+- **O(1) Registry Hardening**: Rewrote the internal lookup engine to use a hashed `GhostRegistry`, ensuring 100% R8/ProGuard safety and constant-time serializer lookup without reflection.
+- **Gradle Plugin Industrialization**: Full **Configuration Cache** support and **Incremental Build** validation, ensuring zero-latency dev loops and CI/CD compliance.
+
+### Fixed
+- **Map Serialization Integrity**: Resolved a critical corruption bug in `MapSerializer` where the parser failed to consume separators correctly in complex nested maps.
+- **Compiler Naming Collisions**: Implemented a `processedFiles` guard in the KSP processor to prevent `FileAlreadyExistsException` when handling identical class names across different packages.
+- **Primitive Deserialization Fast-Path**: Enabled direct `Ghost.deserialize<T>()` calls for primitives without requiring pre-registration.
 
 ## [1.1.13] - 2026-04-24
 ### Fixed

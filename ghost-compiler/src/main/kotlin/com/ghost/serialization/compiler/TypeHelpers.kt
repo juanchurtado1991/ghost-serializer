@@ -1,5 +1,7 @@
 package com.ghost.serialization.compiler
 
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.DOUBLE
@@ -20,3 +22,17 @@ internal fun KSType.isPrimitive(): Boolean = isPrimitiveInt() ||
         isPrimitiveLong() ||
         isPrimitiveDouble() ||
         isPrimitiveFloat()
+
+internal fun KSType.isList(): Boolean = declaration.qualifiedName?.asString() == "kotlin.collections.List"
+internal fun KSType.isMap(): Boolean = declaration.qualifiedName?.asString() == "kotlin.collections.Map"
+internal fun KSType.isString(): Boolean = declaration.qualifiedName?.asString() == "kotlin.String"
+
+internal fun KSType.isGhost(): Boolean {
+    return declaration.annotations.any {
+        it.shortName.asString() == "GhostSerialization"
+    }
+}
+
+internal fun KSType.isEnum(): Boolean {
+    return (declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
+}

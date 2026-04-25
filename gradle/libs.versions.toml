@@ -4,7 +4,7 @@ kotlin                          = "2.1.10"
 agp                             = "8.7.3"
 ksp                             = "2.1.10-1.0.30"
 compose-plugin                  = "1.7.3"
-ghost-version                   = "1.1.13"
+ghost-version                   = "1.1.14"
 ghost-group                     = "com.ghostserializer"
 
 # Networking & Serialization
@@ -13,6 +13,7 @@ ktorfit                         = "2.3.0"
 kotlinx-serialization           = "1.7.3"
 okio                            = "3.9.1"
 okhttp                          = "4.12.0"
+mockwebserver                   = "4.12.0"
 retrofit                        = "2.11.0"
 
 # Serialization Engines (Benchmark)
@@ -25,7 +26,7 @@ kotlinpoet                      = "1.16.0"
 # UI & Sample App
 coil                            = "3.0.4"
 androidx-activity               = "1.9.1"
-androidx-metrics                = "1.0.0-beta01"
+androidx-metrics                = "1.0.0"
 androidx-lifecycle              = "2.8.4"
 
 # Testing
@@ -45,12 +46,14 @@ kotlinpoet                      = { group = "com.squareup", name = "kotlinpoet",
 kotlinpoet-ksp                  = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
 retrofit                        = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 okhttp                          = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+mockwebserver                   = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "mockwebserver" }
 
 # Ktor & Ktorfit
 ktor-client-core                = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp              = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin              = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-mock                = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktorfit-lib                     = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-lib", version.ref = "ktorfit" }
 ktorfit-ksp                     = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-ksp", version.ref = "ktorfit" }

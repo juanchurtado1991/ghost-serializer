@@ -28,7 +28,7 @@ class GhostMaliceTest {
     fun testPrecisionInjection() {
         // Test with a massive number of decimals (500+)
         val massiveDecimal = "0." + "1".repeat(500)
-        val json = """{"value": $massiveDecimal, "text": "massive"}"""
+        val json = """{"big": $massiveDecimal, "small": 0.1, "precise": 0.2}"""
         
         // This should not throw NumberFormatException, but parse as much as possible or fail gracefully
         Ghost.deserialize<DecimalStress>(json.encodeToByteArray())

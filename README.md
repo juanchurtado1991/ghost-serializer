@@ -78,7 +78,7 @@ In your module's `build.gradle.kts`:
 ```kotlin
 plugins {
     // 1-line setup: Automatically applies KSP, detects targets, and injects runtime libs
-    id("com.ghostserializer.ghost") version "1.1.12"
+    id("com.ghostserializer.ghost") version "1.1.14"
 }
 ```
 
@@ -104,7 +104,7 @@ If you are a frontend developer (React, Next.js, Vue), simply follow these steps
 
 1. **Install**: 
    ```bash
-   npm install ghost-serialization-wasm@1.1.13
+   npm install ghost-serialization-wasm@1.1.14
    ```
 2. **Define Models**: Create a `src/ghost-models/` directory in your project root and add your TypeScript interfaces:
    ```typescript
@@ -194,4 +194,4 @@ Ghost is engineered for **Memory Efficiency** first. In modern web environments,
 * **`ghost-ktor`**: Official Ktor 3.0 integration.
 
 ---
-*Maintained under Ghost Protocol Principles. Version 1.1.12 Industrial Stable.*
+*Maintained under Ghost Protocol Principles. Version 1.1.14 Industrial Stable.*

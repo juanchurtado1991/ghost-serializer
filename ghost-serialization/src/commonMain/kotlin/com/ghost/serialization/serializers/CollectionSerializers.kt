@@ -4,6 +4,7 @@ import com.ghost.serialization.core.contract.GhostSerializer
 import com.ghost.serialization.core.parser.GhostJsonConstants
 import com.ghost.serialization.core.parser.GhostJsonReader
 import com.ghost.serialization.core.parser.consumeArraySeparator
+import com.ghost.serialization.core.parser.consumeKeySeparator
 import com.ghost.serialization.core.parser.nextInt
 import com.ghost.serialization.core.parser.nextKey
 import com.ghost.serialization.core.parser.nextLong
@@ -53,6 +54,7 @@ class MapSerializer<V>(
         return buildMap {
             while (true) {
                 val key = reader.nextKey() ?: break
+                reader.consumeKeySeparator()
                 put(key, valueSerializer.deserialize(reader))
             }
             reader.endObject()
