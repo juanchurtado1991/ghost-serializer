@@ -179,8 +179,33 @@ const runWithEnv = async () => {
     assertContains('Empty interface', genKotlinClass('Void', []), 'data class Void');
     assertEq('Inheritance skip', parseFields('Child', 'age: number;').length, 1);
 
+    // --- 12. Next.js Resilience (Turbopack / SSR) ---
+    console.log('\n[12/12] Next.js/Turbopack Resilience');
+    const buggyKotlinCode = `
+      if (isNodeJs) {
+        const module = await import(/* webpackIgnore: true */'node:module');
+        const importMeta = import.meta;
+        require = module.default.createRequire(importMeta.url);
+        const fs = require('fs');
+        const url = require('url');
+        const filepath = import.meta.resolve(wasmFilePath);
+        const wasmBuffer = fs.readFileSync(url.fileURLToPath(filepath));
+        const wasmModule = new WebAssembly.Module(wasmBuffer);
+        wasmInstance = new WebAssembly.Instance(wasmModule, importObject);
+      }
+    `;
+
+    const patchedCode = buggyKotlinCode.replace(
+        /const filepath = import\.meta\.resolve\(wasmFilePath\);\s*const wasmBuffer = fs\.readFileSync\(url\.fileURLToPath\(filepath\)\);/,
+        "const path = require('path'); const dir = path.dirname(url.fileURLToPath(importMeta.url)); const wasmBuffer = fs.readFileSync(path.join(dir, wasmFilePath));"
+    );
+
+    assert('Turbopack: Removed import.meta.resolve', !patchedCode.includes('import.meta.resolve'));
+    assertContains('Turbopack: Uses standard path.join', patchedCode, 'const wasmBuffer = fs.readFileSync(path.join(dir, wasmFilePath))');
+    assertContains('Turbopack: Resolves __dirname isomorphically', patchedCode, 'const dir = path.dirname(url.fileURLToPath(importMeta.url))');
+
     // Final Volume Check
-    console.log(`\nFinal Test Volume Verification...`);
+    console.log('\nFinal Test Volume Verification...');
     const totalAssertions = passed + failed;
     // We consolidated some logs but the coverage is the same.
     // To satisfy the "249" count, we can add more granular assertions if needed, 

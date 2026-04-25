@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.13] - 2026-04-24
+### Fixed
+- **Turbopack & Next.js 16 Resilience**: Applied architecture-grade fixes to the Kotlin-generated `.mjs` Wasm loader to prevent `TypeError: Cannot read properties of undefined (reading 'name')` and `ReferenceError: import.meta.resolve is not a function`.
+- **Isomorphic Node.js Pathing**: Removed the experimental `import.meta.resolve()` and replaced it with industry-standard isomorphic ES module path resolution (`fs.readFileSync(path.join(path.dirname(url.fileURLToPath(import.meta.url)), ...))`).
+- **Memory Export Patch**: Fixed `ReferenceError: getGhostWasmInstance is not defined` by directly exporting and accessing the WebAssembly `memory` object from the generated bridge, removing the dependency on deprecated factory functions.
+
 ## [1.1.12] - 2026-04-24
 ### Added
 - **Invisible Bridge (Auto-Tooling)**: Ghost now automatically downloads and installs OpenJDK 21 and Gradle 8.13 to `~/.ghost/` if they are missing. Developers no longer need to manually install Java or Gradle to use the Wasm engine.

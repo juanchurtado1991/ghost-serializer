@@ -103,7 +103,58 @@ async function runTranspiler(overrides = {}) {
     fs.writeFileSync(path.join(effectiveWasmKt, 'GhostJsRegistryInitializer.kt'), jsRegCode);
 
     const relModels = path.relative(cfg.outputTs, cfg.input);
-    const tsBridge = `// AUTO-GENERATED\nimport type * as GhostWasm from "ghost-serialization-wasm";\nexport interface GhostModels {\n${allModels.map(m => `    ${m.name}: import("${relModels}/${m.file}").${m.name};`).join('\n')}\n}\n`;
+    const modelImports = allModels.map(m => `import type { ${m.name} } from "${relModels}/${m.file.replace('.ts', '')}";`).join('\n');
+    const modelTypes = allModels.map(m => `    ${m.name}: ${m.name};`).join('\n');
+    const enumTypes = allEnums.map(e => `    ${e.name}: ${e.name};`).join('\n');
+
+    const tsBridge = `// AUTO-GENERATED - GHOST SERIALIZATION BRIDGE
+import { ghostPrewarm, ghostDeserializeJs, ghostDeserializeBytesJs, memory } from "./ghost-standalone-wasm-js.mjs";
+${modelImports}
+
+export interface GhostModels {
+${modelTypes}
+}
+
+export type ModelName = keyof GhostModels;
+
+/**
+ * Ensures the Ghost WASM engine is loaded and initialized.
+ */
+export async function ensureGhostReady(): Promise<void> {
+    // Note: initGhostWasm logic is handled by the .mjs auto-initialization 
+    // but we call ghostPrewarm to register serializers.
+    ghostPrewarm();
+}
+
+/**
+ * Deserializes a JSON string into a typed Kotlin/Wasm model.
+ */
+export function deserializeModelSync<T extends ModelName>(json: string, model: T): GhostModels[T] {
+    const result = ghostDeserializeJs(json, model);
+    if (result === null || result === undefined) throw new Error(\`Failed to deserialize \${model}. Check if the model is registered.\`);
+    return result as GhostModels[T];
+}
+
+/**
+ * Deserializes raw UTF-8 bytes into a typed Kotlin/Wasm model (Fastest Path).
+ */
+export function deserializeModelFromBytesSync<T extends ModelName>(bytes: Uint8Array, model: T): GhostModels[T] {
+    const result = ghostDeserializeBytesJs(bytes, model);
+    if (result === null || result === undefined) throw new Error(\`Failed to deserialize \${model} from bytes.\`);
+    return result as GhostModels[T];
+}
+
+/**
+ * Returns the current memory usage of the Ghost WASM linear memory.
+ */
+export function getGhostWasmMemoryByteLength(): number {
+    if (!memory) return 0;
+    return (memory as WebAssembly.Memory).buffer.byteLength;
+}
+
+// Re-export types for convenience
+${allModels.map(m => `export type { ${m.name} };`).join('\n')}
+`;
     fs.writeFileSync(path.join(cfg.outputTs, 'ghost-bridge.ts'), tsBridge);
 
     LOG.success('Kotlin code generation complete!');
@@ -115,8 +166,34 @@ async function runTranspiler(overrides = {}) {
         const { buildStandalone } = require('./ghost-standalone');
         const outputDir = await buildStandalone(effectiveKt, effectiveWasmKt);
         if (outputDir) {
+            // Copy artifacts from ~/.ghost/... to the user's project
+            const artifacts = fs.readdirSync(outputDir);
+            artifacts.forEach(file => {
+                const srcPath = path.join(outputDir, file);
+                const destPath = path.join(cfg.outputTs, file);
+                
+                if (file.endsWith('.mjs')) {
+                    let content = fs.readFileSync(srcPath, 'utf8');
+                    
+                    // HOT PATCH 1: Fix Kotlin/Wasm process.release.name bug in Next.js/Browser
+                    // We must check if process.release actually exists before reading .name to prevent crashes in Turbopack.
+                    content = content.replace(/process\.release\.name/g, "(process.release && process.release.name)");
+
+                    // HOT PATCH 2: Architecture Fix for Next.js SSR Wasm Loading
+                    // The Kotlin compiler uses experimental import.meta.resolve() which fails in Next.js SSR (Node.js).
+                    // We rewrite the Node.js loader to use standard isomorphic path resolution (path.dirname + fileURLToPath).
+                    content = content.replace(
+                        /const filepath = import\.meta\.resolve\(wasmFilePath\);\s*const wasmBuffer = fs\.readFileSync\(url\.fileURLToPath\(filepath\)\);/,
+                        "const path = require('path'); const dir = path.dirname(url.fileURLToPath(importMeta.url)); const wasmBuffer = fs.readFileSync(path.join(dir, wasmFilePath));"
+                    );
+
+                    fs.writeFileSync(destPath, content);
+                } else {
+                    fs.copyFileSync(srcPath, destPath);
+                }
+            });
+            LOG.success(`Deployed Wasm artifacts to ${cfg.outputTs}`);
             LOG.success('Ghost Invisible Bridge build complete!');
-            LOG.info(`Your Wasm engine is ready at: ${outputDir}`);
         }
     } else {
         LOG.success('Ghost Turbo-Bridge generation complete!');

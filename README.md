@@ -104,7 +104,7 @@ If you are a frontend developer (React, Next.js, Vue), simply follow these steps
 
 1. **Install**: 
    ```bash
-   npm install ghost-serialization-wasm
+   npm install ghost-serialization-wasm@1.1.13
    ```
 2. **Define Models**: Create a `src/ghost-models/` directory in your project root and add your TypeScript interfaces:
    ```typescript

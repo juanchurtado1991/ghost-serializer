@@ -1,13 +1,10 @@
-package com.ghost.serialization.generated
+package com.ghost.serialization.standalone
 
-import com.ghost.serialization.toJsAny
-import com.ghost.serialization.setJsProperty
-import com.ghost.serialization.createJsObject
-import com.ghost.serialization.stringToJs
-import com.ghost.serialization.intToJs
-import com.ghost.serialization.boolToJs
-import com.ghost.serialization.doubleToJs
+import com.ghost.serialization.*
+import com.ghost.serialization.InternalGhostApi
+import kotlin.js.JsAny
 
+@OptIn(InternalGhostApi::class)
 
 fun Model.toJsAny(): JsAny {
     val obj = createJsObject()

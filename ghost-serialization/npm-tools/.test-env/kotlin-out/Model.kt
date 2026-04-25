@@ -1,4 +1,4 @@
-package com.ghost.serialization.generated
+package com.ghost.serialization.standalone
 
 @com.ghost.serialization.annotations.GhostSerialization
 data class Model(

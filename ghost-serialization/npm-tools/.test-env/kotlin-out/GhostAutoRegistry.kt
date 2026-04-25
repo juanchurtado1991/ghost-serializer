@@ -1,10 +1,10 @@
-package com.ghost.serialization.generated
+package com.ghost.serialization.standalone
 import com.ghost.serialization.Ghost
 
 object GhostAutoRegistry {
     fun registerAll() {
         try {
-            Ghost.addRegistry(com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization.INSTANCE)
+            // Auto-discover core registries if they exist
         } catch (e: Throwable) {}
     }
 }
