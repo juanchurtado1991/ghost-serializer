@@ -1,10 +1,14 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization
 
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.exception.GhostJsonException
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.beginArray
+import com.ghost.serialization.parser.endArray
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.writer.GhostJsonWriter
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

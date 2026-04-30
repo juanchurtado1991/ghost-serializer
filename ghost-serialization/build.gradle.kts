@@ -41,15 +41,8 @@ kotlin {
                 customField("author", "Ghost Team")
                 customField("license", "Apache-2.0")
                 customField("repository", mapOf("type" to "git", "url" to "https://github.com/juanchurtado1991/GhostSerialization"))
-                customField("bin", mapOf("ghost-sync" to "./tools/ghost-transpiler.js"))
             }
         }
-    }
-    js(IR) {
-        outputModuleName.set("ghost-serialization")
-        browser()
-        nodejs()
-        binaries.library()
     }
 
     // Official NPM Tools & Meta Distribution
@@ -114,7 +107,7 @@ tasks.configureEach {
 }
 
 android {
-    namespace = "com.ghost.serialization.core"
+    namespace = "com.ghost.serialization"
     compileSdk = 36
 
     compileOptions {

@@ -75,7 +75,7 @@ class GhostPluginFunctionalTest {
             }
             
             dependencies {
-                implementation("com.ghostserializer:ghost-serialization:1.2.0-NEXT")
+                implementation("com.ghostserializer:ghost-serialization:1.1.14")
             }
         """.trimIndent())
 

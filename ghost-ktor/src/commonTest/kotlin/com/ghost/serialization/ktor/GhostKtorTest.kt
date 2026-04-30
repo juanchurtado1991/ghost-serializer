@@ -1,14 +1,22 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.skipAnyValue
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.parser.nextKey
+import com.ghost.serialization.parser.beginObject
+import com.ghost.serialization.parser.endObject
+import com.ghost.serialization.parser.ignore
+import com.ghost.serialization.parser.nextString
+import com.ghost.serialization.parser.nextBoolean
+import com.ghost.serialization.parser.skipValue
+import com.ghost.serialization.writer.GhostJsonWriter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.mock.MockEngine
@@ -40,14 +48,14 @@ object KtorUserSerializer : GhostSerializer<KtorUser> {
     override val typeName: String = "com.ghost.serialization.ktor.KtorUser"
 
     override fun serialize(writer: GhostJsonWriter, value: KtorUser) {
-        writer.beginObject()
-        writer.name("id")
-        writer.value(value.id.toLong())
-        writer.name("name")
-        writer.value(value.name)
-        writer.name("isActive")
-        writer.value(value.isActive)
-        writer.endObject()
+        writer.beginObject().ignore()
+        writer.name("id").ignore()
+        writer.value(value.id.toLong()).ignore()
+        writer.name("name").ignore()
+        writer.value(value.name).ignore()
+        writer.name("isActive").ignore()
+        writer.value(value.isActive).ignore()
+        writer.endObject().ignore()
     }
 
     override fun deserialize(reader: GhostJsonReader): KtorUser {
@@ -62,7 +70,7 @@ object KtorUserSerializer : GhostSerializer<KtorUser> {
                 "id" -> id = reader.nextInt()
                 "name" -> name = reader.nextString()
                 "isActive" -> isActive = reader.nextBoolean()
-                else -> reader.skipAnyValue()
+                else -> reader.skipValue()
             }
         }
         reader.endObject()

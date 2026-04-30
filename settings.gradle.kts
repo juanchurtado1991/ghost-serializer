@@ -11,11 +11,9 @@ plugins {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
     }
 }
 
@@ -30,3 +28,4 @@ include(":ghost-sample")
 include(":ghost-benchmark")
 include(":ghost-integration-test")
 include(":ghost-gradle-plugin")
+include(":ghost-spring-boot-starter")

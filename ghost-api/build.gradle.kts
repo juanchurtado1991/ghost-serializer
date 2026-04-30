@@ -24,11 +24,6 @@ kotlin {
         browser()
         binaries.executable()
     }
-    js(IR) {
-        browser()
-        nodejs()
-        binaries.executable()
-    }
 
     sourceSets {
         commonMain.dependencies { 

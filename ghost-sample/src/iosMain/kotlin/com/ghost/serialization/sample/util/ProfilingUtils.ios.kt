@@ -1,9 +1,11 @@
+@file:OptIn(NativeRuntimeApi::class)
+
 package com.ghost.serialization.sample.util
 
-import kotlin.native.internal.GC
+import kotlin.native.runtime.NativeRuntimeApi
 
 actual fun forceGC() {
-    GC.collect()
+    kotlin.native.runtime.GC.collect()
 }
 
 actual fun getCurrentThreadAllocatedBytes(): Long {

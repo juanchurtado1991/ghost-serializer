@@ -19,8 +19,8 @@ data class TestResult(
 
 /**
  * Unified test runner for all Ghost modules.
- * Runs JVM tests dynamically, JS transpiler via subprocess,
- * and accumulates results for the final classified table.
+ * Runs JVM tests dynamically and accumulates results
+ * for the final classified table.
  */
 object ParsingTestBenchmark {
 
@@ -34,9 +34,6 @@ object ParsingTestBenchmark {
 
         // ── 1. JVM Tests (dynamic discovery) ──────────────────────────────────
         allResults += runJvmTests()
-
-        // ── 2. JS Transpiler Tests (Node.js subprocess) ────────────────────────
-        allResults += runTranspilerTests()
 
         return allResults
     }
@@ -194,61 +191,6 @@ object ParsingTestBenchmark {
         }
     }
 
-    // ── Node.js transpiler tests ───────────────────────────────────────────────
-
-    private fun runTranspilerTests(): List<TestResult> {
-        val scriptPath = resolveTranspilerTestPath()
-        if (scriptPath == null) {
-            println("  ⚠️  test-transpiler.js not found — skipping")
-            return emptyList()
-        }
-
-        return try {
-            val process = ProcessBuilder("node", scriptPath)
-                .redirectErrorStream(true)
-                .start()
-
-            val output = process.inputStream.bufferedReader().readText()
-            val exitCode = process.waitFor()
-
-            if (exitCode != 0) {
-                println("\n  ❌ Transpiler tests FAILED (exit code $exitCode)")
-                output.lines().forEach { line ->
-                    if (line.isNotBlank()) println("  $line")
-                }
-            }
-
-            if (exitCode == 0) {
-                // Parse passed/failed counts from transpiler output
-                val passedMatch = Regex("""(\d+) passed""").find(output)
-                val failedMatch = Regex("""(\d+) failed""").find(output)
-                val passed = passedMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                val failed = failedMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
-
-                val results = mutableListOf<TestResult>()
-                repeat(passed) { i -> results += TestResult("Transpiler assertion #${i+1}", "Transpiler (JS)", true) }
-                repeat(failed) { i -> results += TestResult("Transpiler FAILED assertion #${i+1}", "Transpiler (JS)", false) }
-                results
-            } else {
-                println("  ❌ Transpiler tests FAILED (exit code $exitCode)")
-                listOf(TestResult("Transpiler suite", "Transpiler (JS)", false, "Process exited with code $exitCode"))
-            }
-        } catch (e: Exception) {
-            println("  ⚠️  Could not run Node.js: ${e.message}")
-            emptyList()
-        }
-    }
-
-    private fun resolveTranspilerTestPath(): String? {
-        // Try to locate test-transpiler.js relative to the project root
-        val candidates = listOf(
-            System.getProperty("user.dir") + "/../ghost-serialization/npm-tools/test-transpiler.js",
-            System.getProperty("user.dir") + "/ghost-serialization/npm-tools/test-transpiler.js",
-        )
-        return candidates.map { java.io.File(it).canonicalFile }
-            .firstOrNull { it.exists() }
-            ?.absolutePath
-    }
 
     // ── Unified summary table ──────────────────────────────────────────────────
 

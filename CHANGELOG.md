@@ -9,6 +9,9 @@
 - **Gradle Plugin Hardening**: Full **Configuration Cache** support and **Incremental Build** validation, ensuring zero-latency dev loops and CI/CD compliance.
 
 ### Fixed
+- **Architectural Stabilization**: Standardized the package structure by removing the redundant `.core` level (e.g., `com.ghost.serialization.core.*` -> `com.ghost.serialization.*`), improving API ergonomics and resolving resolution ambiguities in multi-module projects.
+- **Android Compatibility (API 21)**: Resolved a critical `NewApi` error in the Android byte source implementation. Replaced API 33+ `Arrays.equals` range comparison with a manual loop compatible with Android API 21, ensuring full backward compatibility.
+- **Gradle Plugin Stability**: Fixed a binary incompatibility between the `kotlin-dsl` plugin and the newer Kotlin 2.3.21 compiler by explicitly locking the plugin module to Kotlin 2.0.21 while allowing the rest of the project to leverage the latest compiler features.
 - **Map Serialization Integrity**: Resolved a critical corruption bug in `MapSerializer` where the parser failed to consume separators correctly in complex nested maps.
 - **Compiler Naming Collisions**: Implemented a `processedFiles` guard in the KSP processor to prevent `FileAlreadyExistsException` when handling identical class names across different packages.
 - **Primitive Deserialization Fast-Path**: Enabled direct `Ghost.deserialize<T>()` calls for primitives without requiring pre-registration.

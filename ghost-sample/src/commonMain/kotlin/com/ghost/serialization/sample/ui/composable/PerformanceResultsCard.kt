@@ -26,20 +26,19 @@ fun PerformanceResultsCard(
     uiState: UiState,
     onCopyLogs: () -> Unit
 ) {
-    val selectedEngineName = uiState.selectedStack.engineName
-    val ghostRes = uiState.results.find { it.name == "GHOST" }
-    val comparisonEngineName = if (selectedEngineName == "GHOST"){
-        "KSER"
-    } else {
-        selectedEngineName
-    }
-    val currentRes = uiState
-        .results.find { it.name == comparisonEngineName }
-        ?: uiState.results.find { it.name == "KSER" }
+    val ghostPure = uiState.results.find { it.name == "GHOST PURE" }
+    val kserPure = uiState.results.find { it.name == "KSER PURE" }
+    val ghostFull = uiState.results.find { it.name == "GHOST + KTOR" }
+    val kserFull = uiState.results.find { it.name == "KTOR + KSER" }
 
-    val speedFactor =
-        if (ghostRes != null && currentRes != null && ghostRes.timeMs > 0) {
-            (currentRes.timeMs / ghostRes.timeMs)
+    val engineSpeedFactor =
+        if (ghostPure != null && kserPure != null && ghostPure.timeMs > 0) {
+            (kserPure.timeMs / ghostPure.timeMs)
+        } else 1.0
+
+    val stackSpeedFactor =
+        if (ghostFull != null && kserFull != null && ghostFull.timeMs > 0) {
+            (kserFull.timeMs / ghostFull.timeMs)
         } else 1.0
 
     Surface(
@@ -59,17 +58,23 @@ fun PerformanceResultsCard(
                 overrideColor = AppDesign.AccentGlow
             )
 
-            val insightText = if (selectedEngineName == "GHOST") {
-                "Peak performance detected. Pure KMP power."
-            } else {
-                "Ghost is ${(speedFactor * 100).toInt() / 100.0}x faster than your current stack."
-            }
+            val insightText = "Ghost Engine is ${(engineSpeedFactor * 100).toInt() / 100.0}x faster."
             SampleText(
                 text = insightText,
                 fontSize = 16,
                 isBold = true,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(top = 12.dp)
+            )
+
+            val stackText = "Ghost + Ktor is ${(stackSpeedFactor * 100).toInt() / 100.0}x faster E2E."
+            SampleText(
+                text = stackText,
+                fontSize = 12,
+                isBold = false,
+                isSecondary = true,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             HorizontalDivider(
@@ -105,25 +110,16 @@ fun PerformanceResultsCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     row.forEach { res ->
-                        val isCurrent = res.name == selectedEngineName
-                        val color = when (res.name) {
-                            "GHOST" -> AppDesign.AccentGlow
+                        val color = when {
+                            res.name.contains("GHOST") -> AppDesign.AccentGlow
                             else -> Color(0xFF818CF8)
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (isCurrent) SampleText(
-                                text = "YOUR STACK",
-                                fontSize = 8,
-                                isBold = true,
-                                overrideColor = color
-                            )
                             MetricItem(
                                 title = res.name + " (JANK:${res.jankCount})",
                                 value = "${(res.timeMs * 100).toInt() / 100.0}ms",
-                                overrideColor = if (isCurrent) color else color.copy(
-                                    alpha = 0.6f
-                                )
+                                overrideColor = color
                             )
                         }
                     }
@@ -148,18 +144,15 @@ fun PerformanceResultsCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         row.forEach { res ->
-                            val isCurrent = res.name == selectedEngineName
-                            val color = when (res.name) {
-                                "GHOST" -> AppDesign.AccentGlow
+                            val color = when {
+                                res.name.contains("GHOST") -> AppDesign.AccentGlow
                                 else -> Color(0xFF818CF8)
                             }
 
                             MetricItem(
                                 title = res.name + " MEM",
                                 value = (res.memoryBytes / 1024).toString() + " KB",
-                                overrideColor = if (isCurrent) color else color.copy(
-                                    alpha = 0.6f
-                                )
+                                overrideColor = color
                             )
                         }
                     }

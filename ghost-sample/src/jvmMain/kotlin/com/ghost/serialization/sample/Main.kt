@@ -8,7 +8,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization
+import com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization
 import com.ghost.serialization.sample.ui.GhostSampleApp
 
 fun main() {

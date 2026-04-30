@@ -84,9 +84,9 @@ internal class GhostCodeGenerator(
         return FileSpec.builder(packageName, serializerName)
             .addAnnotation(
                 com.squareup.kotlinpoet.AnnotationSpec.builder(Suppress::class)
-                    .addMember("%S, %S, %S, %S, %S, %S, %S", 
+                    .addMember("%S, %S, %S, %S, %S, %S, %S, %S", 
                         "UNUSED_VARIABLE", "UNUSED_EXPRESSION", "UNCHECKED_CAST", 
-                        "USELESS_CAST", "UNNECESSARY_NOT_NULL_ASSERTION", "unused", "NAME_SHADOWING")
+                        "USELESS_CAST", "UNNECESSARY_NOT_NULL_ASSERTION", "unused", "NAME_SHADOWING", "UNUSED_RESULT")
                     .build()
             )
             .addAnnotation(
@@ -96,8 +96,11 @@ internal class GhostCodeGenerator(
             )
             .addImport(
                 PKG_PARSER,
-                STR_IS_NEXT_NULL_VALUE,
-                STR_CONSUME_NULL,
+                STR_BEGIN_OBJECT,
+                STR_END_OBJECT,
+                STR_BEGIN_ARRAY,
+                STR_END_ARRAY,
+                STR_HAS_NEXT,
                 STR_SKIP_VALUE,
                 STR_READ_LIST,
                 STR_READ_MAP,
@@ -105,10 +108,17 @@ internal class GhostCodeGenerator(
                 STR_NEXT_INT,
                 STR_NEXT_LONG,
                 STR_NEXT_DOUBLE,
+                STR_NEXT_STRING,
+                STR_NEXT_BOOLEAN,
+                STR_SELECT_NAME_AND_CONSUME,
+                STR_SELECT_STRING,
                 STR_CONSUME_KEY_SEPARATOR,
                 STR_CONSUME_ARRAY_SEPARATOR,
                 STR_NEXT_FLOAT,
-                STR_PEEK_STRING_FIELD
+                STR_PEEK_STRING_FIELD,
+                STR_IS_NEXT_NULL_VALUE,
+                STR_CONSUME_NULL,
+                STR_IGNORE
             )
             .addImport(PKG_EXCEPTION, STR_GHOST_JSON_EXCEPTION)
             .addImport(OKIO_PACKAGE, STR_BYTESTRING_IMPORT)
@@ -243,16 +253,21 @@ internal class GhostCodeGenerator(
     }
 
     companion object {
-        private const val PKG_PARSER = "com.ghost.serialization.core.parser"
-        private const val PKG_WRITER = "com.ghost.serialization.core.writer"
-        private const val PKG_CONTRACT = "com.ghost.serialization.core.contract"
-        private const val PKG_EXCEPTION = "com.ghost.serialization.core.exception"
+        private const val PKG_PARSER = "com.ghost.serialization.parser"
+        private const val PKG_WRITER = "com.ghost.serialization.writer"
+        private const val PKG_CONTRACT = "com.ghost.serialization.contract"
+        private const val PKG_EXCEPTION = "com.ghost.serialization.exception"
         private const val OKIO_PACKAGE = "okio"
         private const val STR_GHOST_SERIALIZER = "GhostSerializer"
         private const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"
         private const val STR_GHOST_JSON_READER = "GhostJsonReader"
         private const val STR_BUFFERED_SINK = "BufferedSink"
         private const val STR_SERIALIZER_SUFFIX = "Serializer"
+        private const val STR_BEGIN_OBJECT = "beginObject"
+        private const val STR_END_OBJECT = "endObject"
+        private const val STR_BEGIN_ARRAY = "beginArray"
+        private const val STR_END_ARRAY = "endArray"
+        private const val STR_HAS_NEXT = "hasNext"
         private const val STR_IS_NEXT_NULL_VALUE = "isNextNullValue"
         private const val STR_CONSUME_NULL = "consumeNull"
         private const val STR_SKIP_VALUE = "skipValue"
@@ -262,11 +277,15 @@ internal class GhostCodeGenerator(
         private const val STR_NEXT_INT = "nextInt"
         private const val STR_NEXT_LONG = "nextLong"
         private const val STR_NEXT_DOUBLE = "nextDouble"
+        private const val STR_NEXT_STRING = "nextString"
+        private const val STR_NEXT_BOOLEAN = "nextBoolean"
+        private const val STR_SELECT_NAME_AND_CONSUME = "selectNameAndConsume"
         private const val STR_SELECT_STRING = "selectString"
         private const val STR_CONSUME_KEY_SEPARATOR = "consumeKeySeparator"
         private const val STR_CONSUME_ARRAY_SEPARATOR = "consumeArraySeparator"
         private const val STR_NEXT_FLOAT = "nextFloat"
         private const val STR_PEEK_STRING_FIELD = "peekStringField"
+        private const val STR_IGNORE = "ignore"
         private const val STR_GHOST_JSON_EXCEPTION = "GhostJsonException"
         private const val STR_BYTESTRING_IMPORT = "ByteString.Companion.encodeUtf8"
         private const val STR_OPTIONS_OF = "%T.of(\n"
@@ -285,7 +304,7 @@ internal class GhostCodeGenerator(
         private val STR_WARM_UP_BODY = """
             |try {
             |  val reader = %T("{}".encodeToByteArray())
-            |  deserialize(reader)
+            |  deserialize(reader).ignore()
             |} catch (e: Exception) {}
         """.trimMargin()
     }

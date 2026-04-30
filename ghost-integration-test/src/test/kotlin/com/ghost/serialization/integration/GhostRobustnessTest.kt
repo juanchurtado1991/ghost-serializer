@@ -1,6 +1,10 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration
 
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.writer.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,7 +43,7 @@ class GhostRobustnessTest {
 
     @Test
     fun fullDeserializationOfGodObject() {
-        val reader = GhostJsonReader(Buffer().writeUtf8(FULL_GOD_OBJECT_JSON))
+        val reader = GhostJsonReader(FULL_GOD_OBJECT_JSON.encodeToByteArray())
         val result = GodObjectSerializer.deserialize(reader)
 
         assertEquals(42, result.id)
@@ -84,7 +88,7 @@ class GhostRobustnessTest {
             "tagObjects": [], "nestedTree": {"label": "solo"}
         }
         """
-        val result = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val result = GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
 
         assertNull(result.nullableAge)
         assertNull(result.nullableName)
@@ -100,7 +104,7 @@ class GhostRobustnessTest {
         val json =
             """{"id": null, "userId": 1, "name": "x", "email": "x", "score": 1.0, "rating": 1.0, "isActive": true, "biography": "x", "priority": "LOW", "tags": [], "scores": [], "metadata": {}, "address": {"street": "x", "city": "x", "zipCode": "x"}, "tagObjects": [], "nestedTree": {"label": "x"}}"""
         assertFailsWith<Exception> {
-            GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+            GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         }
     }
 
@@ -122,11 +126,11 @@ class GhostRobustnessTest {
         )
 
         val buffer = Buffer()
-        GodObjectSerializer.serialize(buffer, original)
+        GodObjectSerializer.serialize(GhostJsonWriter(buffer), original)
         val json = buffer.readUtf8()
 
         val deserialized =
-            GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+            GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
 
         assertEquals(original.id, deserialized.id)
         assertEquals(original.userId, deserialized.userId)
@@ -154,7 +158,7 @@ class GhostRobustnessTest {
             "tagObjects": [], "nestedTree": {"label": "empty"}
         }
         """
-        val result = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val result = GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(emptyList(), result.tags)
         assertEquals(emptyList(), result.scores)
         assertEquals(emptyMap(), result.metadata)
@@ -174,7 +178,7 @@ class GhostRobustnessTest {
             "tagObjects": [], "nestedTree": {"label": "🌍"}
         }
         """
-        val result = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val result = GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals("漢字テスト🚀", result.name)
         assertEquals(listOf("日本語", "中文"), result.tags)
         assertEquals("🌍", result.nestedTree.label)
@@ -196,7 +200,7 @@ class GhostRobustnessTest {
             }
         }
         """
-        val result = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val result = GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         val deepest = result.nestedTree
             .children!![0].children!![0].children!![0].children!![0]
         assertEquals("L4", deepest.label)
@@ -217,7 +221,7 @@ class GhostRobustnessTest {
             "tagObjects": [], "nestedTree": {"label": "x"}
         }
         """
-        val result = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val result = GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(1, result.id)
         assertEquals("Skip", result.name)
     }
@@ -235,7 +239,7 @@ class GhostRobustnessTest {
             "email": "rev@g.io", "name": "Reversed", "userId": 999, "id": 55
         }
         """
-        val result = GodObjectSerializer.deserialize(GhostJsonReader(Buffer().writeUtf8(json)))
+        val result = GodObjectSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(55, result.id)
         assertEquals("Reversed", result.name)
         assertEquals(77.7, result.score, 0.001)

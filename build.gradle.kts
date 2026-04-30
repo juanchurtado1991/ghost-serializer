@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply(from = "publish.gradle.kts")
 
-val ghostGroup = libs.versions.ghost.group.get()
-val ghostVersion = libs.versions.ghost.version.get()
+val ghostGroup = libs.versions.publish.group.get()
+val ghostVersion = libs.versions.publish.version.get()
 
 group = ghostGroup
 version = ghostVersion
@@ -27,15 +27,16 @@ allprojects {
 
 subprojects {
     afterEvaluate {
-        if (name != "ghostsample") {
-            tasks.withType<KotlinCompile>().configureEach {
-                compilerOptions {
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+            compilerOptions {
+                if (this is org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions) {
                     jvmTarget.set(JvmTarget.JVM_17)
-                    freeCompilerArgs.addAll(
-                        "-Xexpect-actual-classes",
-                        "-Xexplicit-backing-fields",
-                        "-Xreturn-value-checker=full"
-                    )
+                }
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+                freeCompilerArgs.add("-Xexplicit-backing-fields")
+                
+                if (project.name != "ghost-gradle-plugin") {
+                    freeCompilerArgs.add("-Xreturn-value-checker=full")
                 }
             }
         }
@@ -84,7 +85,7 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
             username.set(project.findProperty("sonatypeUsername") as String?)
             password.set(project.findProperty("sonatypePassword") as String?)
-            packageGroup.set(libs.versions.ghost.group.get())
+            packageGroup.set(libs.versions.publish.group.get())
         }
     }
 }

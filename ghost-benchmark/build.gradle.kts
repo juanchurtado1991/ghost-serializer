@@ -21,7 +21,6 @@ tasks.named<JavaExec>("run") {
     // Run ALL test suites before benchmark: JVM, WASM, Integration, Ktor, Plugin
     dependsOn(
         ":ghost-serialization:jvmTest",
-        ":ghost-serialization:wasmJsBrowserTest",
         ":ghost-integration-test:test",
         ":ghost-ktor:jvmTest",
         ":ghost-gradle-plugin:test"
@@ -40,6 +39,8 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.module.kotlin)
     implementation(libs.okio)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.test)

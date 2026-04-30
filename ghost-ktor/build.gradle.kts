@@ -24,10 +24,6 @@ kotlin {
     wasmJs {
         browser()
     }
-    js(IR) {
-        browser()
-        nodejs()
-    }
 
     sourceSets {
         commonMain.dependencies {

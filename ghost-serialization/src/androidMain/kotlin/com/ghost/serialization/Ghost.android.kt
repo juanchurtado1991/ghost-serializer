@@ -1,47 +1,70 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization
 
-import com.ghost.serialization.core.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.parser.GhostJsonReader
+import okio.BufferedSource
 import java.util.ServiceLoader
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Android-specific implementation for Ghost Serialization discovery.
  * Hybrid approach for maximum startup performance.
  */
+
+private const val REGISTRY_CLASS =
+    "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
+private const val INSTANCE_FILED = "INSTANCE"
+
+private val readerPool = ThreadLocal<GhostJsonReader>()
+
 actual fun discoverRegistries(): List<GhostRegistry> {
-    val registries = mutableListOf<GhostRegistry>()
-    
+    val registries = linkedSetOf<GhostRegistry>()
+
     // 1. Direct bypass (Zero latency for core)
-    try {
-        val registryClass = Class.forName("com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization")
-        val instance = registryClass.getDeclaredField("INSTANCE").get(null) as GhostRegistry
+    runCatching {
+        val instance = Class
+            .forName(REGISTRY_CLASS)
+            .getDeclaredField(INSTANCE_FILED)
+            .get(null) as GhostRegistry
+
         registries.add(instance)
-    } catch (e: Exception) {
     }
 
-    // 2. ServiceLoader fallback
-    try {
-        val loader = ServiceLoader.load(GhostRegistry::class.java)
-        for (registry in loader) {
-            if (!registries.contains(registry)) {
-                registries.add(registry)
-            }
-        }
-    } catch (e: Exception) {
+    runCatching {
+        val loader = ServiceLoader
+            .load(GhostRegistry::class.java)
+
+        registries.addAll(loader)
     }
-    
-    return registries
+
+    return registries.toList()
 }
 
-actual fun <T> runSynchronized(lock: Any, block: () -> T): T {
-    return synchronized(lock, block)
-}
+actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
 
-actual fun <T> ghostInternalUseReader(bytes: ByteArray, block: (com.ghost.serialization.core.parser.GhostJsonReader) -> T): T {
-    val reader = com.ghost.serialization.core.parser.GhostJsonReader(bytes)
+actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
+
+actual fun <T> ghostInternalUseReader(
+    bytes: ByteArray, block: (GhostJsonReader) -> T
+): T {
+    val reader = readerPool.get()
+        ?: GhostJsonReader(bytes)
+            .also { readerPool.set(it) }
+
+    reader.reset(bytes)
     return block(reader)
 }
 
-actual fun <T> ghostInternalUseSource(source: okio.BufferedSource, block: (com.ghost.serialization.core.parser.GhostJsonReader) -> T): T {
-    val reader = com.ghost.serialization.core.parser.GhostJsonReader(source.readByteArray())
+actual fun <T> ghostInternalUseSource(
+    source: BufferedSource,
+    block: (GhostJsonReader) -> T
+): T {
+    val reader = readerPool.get()
+        ?: GhostJsonReader(source)
+            .also { readerPool.set(it) }
+
+    reader.reset(source)
     return block(reader)
 }

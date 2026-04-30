@@ -1,11 +1,14 @@
-package com.ghost.serialization
+@file:OptIn(InternalGhostApi::class)
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.JsonReaderOptions
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.writer.GhostJsonWriter
+package com.ghost.serialization
+import com.ghost.serialization.parser.*
+
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.JsonReaderOptions
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.writer.GhostJsonWriter
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -74,6 +77,6 @@ class GhostPerformanceValidationTest {
 
         // Search for 'id'
         val index2 = reader.selectString(options)
-        assertEquals(0, index2, "Trie must match 'id' with index 0")
+        assertEquals<Int>(0, index2, "Trie must match 'id' with index 0")
     }
 }
