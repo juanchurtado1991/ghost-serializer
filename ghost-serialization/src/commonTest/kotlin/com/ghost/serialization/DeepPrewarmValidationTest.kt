@@ -1,7 +1,7 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,46 +1,49 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.parser.GhostJsonReader
+import okio.BufferedSource
+import platform.objc.objc_sync_enter
+import platform.objc.objc_sync_exit
+import kotlin.native.concurrent.ThreadLocal
 
-/**
- * iOS Implementation of Ghost Registry Discovery.
- * Stub for build completeness.
- */
-actual fun discoverRegistries(): List<GhostRegistry> {
-    return emptyList()
-}
+@ThreadLocal
+private var cachedReader: GhostJsonReader? = null
+
+actual fun discoverRegistries(): List<GhostRegistry> = emptyList()
+
+actual fun <K, V> createAtomicMap(): MutableMap<K, V> = mutableMapOf()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T {
-    platform.objc.objc_sync_enter(lock)
+    objc_sync_enter(lock)
     try {
         return block()
     } finally {
-        platform.objc.objc_sync_exit(lock)
+        objc_sync_exit(lock)
     }
 }
 
 actual fun <T> ghostInternalUseReader(
-    bytes: ByteArray,
-    block: (GhostJsonReader) -> T
+    bytes: ByteArray, block: (GhostJsonReader) -> T
 ): T {
-    val reader = GhostJsonReader(bytes)
-    try {
-        return block(reader)
-    } finally {
-        reader.clear()
-    }
+    val reader = cachedReader
+        ?: GhostJsonReader(bytes)
+            .also { cachedReader = it }
+
+    reader.reset(bytes)
+    return block(reader)
 }
 
 actual fun <T> ghostInternalUseSource(
-    source: okio.BufferedSource,
+    source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    val bytes = source.readByteArray()
-    val reader = GhostJsonReader(bytes)
-    try {
-        return block(reader)
-    } finally {
-        reader.clear()
-    }
+    val reader = cachedReader
+        ?: GhostJsonReader(source
+        )
+            .also { cachedReader = it }
+    reader.reset(source)
+    return block(reader)
 }

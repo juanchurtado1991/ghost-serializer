@@ -1,0 +1,158 @@
+package com.ghost.serialization
+import com.ghost.serialization.parser.*
+
+import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.JsonReaderOptions
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.parser.nextKey
+import com.ghost.serialization.writer.GhostJsonWriter
+import okio.Buffer
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+
+/**
+ * Hyper-Performance Stress Audit.
+ * Designed to break the parser/writer at physical boundaries and extreme conditions.
+ */
+@OptIn(InternalGhostApi::class)
+class GhostStressAuditTest {
+
+    @Test
+    fun testSegmentBoundarySplitting() {
+        // Okio segments are 8192 bytes. We want to test tokens crossing this boundary.
+        val segmentSize = 8192
+
+        // 1. Split a String
+        val stringPadding = "a".repeat(segmentSize - 5)
+        val jsonString = "{\"k\":\"${stringPadding}BC\"}"
+
+        val reader1 = GhostJsonReader(jsonString.encodeToByteArray())
+        reader1.beginObject()
+        assertEquals(0, reader1.selectString(JsonReaderOptions.of("k")))
+        reader1.consumeKeySeparator()
+        assertEquals(stringPadding + "BC", reader1.nextString())
+        reader1.endObject()
+
+        // 2. Split a Number
+        val numPadding = " ".repeat(segmentSize - 3)
+        val jsonNum = "[$numPadding 12345]"
+        val reader2 = GhostJsonReader(jsonNum.encodeToByteArray())
+        reader2.beginArray()
+        assertEquals(12345, reader2.nextInt())
+        reader2.endArray()
+
+        // 3. Split a Boolean
+        val boolPadding = " ".repeat(segmentSize - 2)
+        val jsonBool = "[$boolPadding true]"
+        val reader3 = GhostJsonReader(jsonBool.encodeToByteArray())
+        reader3.beginArray()
+        assertEquals(true, reader3.hasNext())
+        assertEquals(true, reader3.nextBoolean())
+        reader3.endArray()
+    }
+
+    @Test
+    fun testDeepNestingLimit() {
+        val maxDepth = 100
+        val nestedJson = "{".repeat(maxDepth + 1) + "}".repeat(maxDepth + 1)
+        val bytes = nestedJson.encodeToByteArray()
+
+        val reader = GhostJsonReader(createByteArraySource(bytes), maxDepth = maxDepth)
+        assertFailsWith<GhostJsonException> {
+            repeat(maxDepth + 1) {
+                reader.beginObject()
+            }
+        }
+    }
+
+    @Test
+    fun testMalformedJsonFuzzing() {
+        val malformedInputs = listOf(
+            "{ \"k\": }",
+            "[1, 2, ]",
+            "{\"k\": \"v\"",
+            "true-false",
+            "null123",
+            "\"escaped\\u123z\"",
+            "{\"k\": \"v\"} extra",
+            "0.0.0"
+        )
+
+        malformedInputs.forEach { input ->
+            val reader = GhostJsonReader(createByteArraySource(input.encodeToByteArray()), strictMode = true)
+            assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
+                recursiveSkip(reader)
+                reader.skipWhitespace()
+                if (reader.position < reader.limit) {
+                    val leftover = reader.source.decodeToString(reader.position, reader.limit)
+                    if (leftover.trim().isNotEmpty()) {
+                        throw GhostJsonException("Unconsumed input: $leftover", 0, 0)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun recursiveSkip(reader: GhostJsonReader) {
+        reader.skipWhitespace()
+        if (reader.position >= reader.limit) return
+        when (val b = reader.peekByte()) {
+            '{'.code.toByte() -> {
+                reader.beginObject()
+                while (reader.hasNext()) {
+                    reader.nextKey().ignore()
+                    reader.consumeKeySeparator()
+                    recursiveSkip(reader)
+                }
+                reader.endObject()
+            }
+
+            '['.code.toByte() -> {
+                reader.beginArray()
+                if (reader.peekByte() != ']'.code.toByte()) {
+                    while (true) {
+                        recursiveSkip(reader)
+                        val next = reader.nextNonWhitespace()
+                        if (next == ']'.code) {
+                            break
+                        }
+                        if (next != ','.code) throw GhostJsonException(
+                            "Expected ','",
+                            0,
+                            0
+                        )
+                        if (reader.peekByte() == ']'.code.toByte()) {
+                            throw GhostJsonException("Trailing comma", 0, 0)
+                        }
+                    }
+                } else {
+                    reader.endArray()
+                }
+            }
+
+            else -> {
+                reader.skipValue()
+            }
+        }
+    }
+
+    @Test
+    fun testFloatingPointValidation() {
+        val writer = GhostJsonWriter(Buffer())
+
+        assertFailsWith<GhostJsonException> {
+            writer.beginArray().value(Double.NaN).endArray()
+        }
+
+        assertFailsWith<GhostJsonException> {
+            writer.beginArray().value(Double.POSITIVE_INFINITY).endArray()
+        }
+
+        assertFailsWith<GhostJsonException> {
+            writer.beginArray().value(Float.NEGATIVE_INFINITY).endArray()
+        }
+    }
+}

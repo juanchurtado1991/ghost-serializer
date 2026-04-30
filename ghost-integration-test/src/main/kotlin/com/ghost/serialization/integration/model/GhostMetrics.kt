@@ -10,6 +10,7 @@ data class BenchmarkMetrics(
     val gson: BenchResult,
     val moshi: BenchResult,
     val kser: BenchResult,
+    val jackson: BenchResult,
     val ghost: BenchResult
 )
 

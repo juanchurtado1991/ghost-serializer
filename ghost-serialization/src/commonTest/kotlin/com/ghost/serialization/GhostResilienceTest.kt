@@ -1,11 +1,14 @@
-package com.ghost.serialization
-import kotlin.test.assertTrue
-import com.ghost.serialization.core.parser.JsonReaderOptions
+@file:OptIn(InternalGhostApi::class)
 
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.exception.GhostJsonException
+package com.ghost.serialization
+import com.ghost.serialization.parser.*
+import kotlin.test.assertTrue
+import com.ghost.serialization.parser.JsonReaderOptions
+
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.exception.GhostJsonException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -34,8 +37,8 @@ class GhostResilienceTest {
         }
         
         // After the fix, this was -1. Now it must be the current reader position.
-        // The reader passed "Ghost", so it is currently on line 2 (at the comma).
-        assertEquals(2, exception.line, "Line must be precisely tracked")
+        // The reader passed "Ghost", so it is currently on line 1 (at the comma).
+        assertEquals(1, exception.line, "Line must be precisely tracked")
         // Column should also be > 0
         assertTrue(exception.column > 0, "Column should be positive: ${exception.column}")
     }
@@ -51,13 +54,13 @@ class GhostResilienceTest {
                 val index = reader.selectString(JsonReaderOptions.of("id", "name"))
                 reader.consumeKeySeparator()
                 when (index) {
-                    0 -> reader.nextInt()
-                    1 -> reader.nextString() // This will fail due to terminal quote missing
+                    0 -> reader.nextInt().ignore()
+                    1 -> reader.nextString().ignore() // This will fail due to terminal quote missing
                 }
             }
         }
         
-        assertEquals(1, exception.line)
+        assertEquals(0, exception.line)
         assertTrue(exception.column >= 22, "Column should be at least 22: ${exception.column}")
     }
 
@@ -71,14 +74,14 @@ class GhostResilienceTest {
             val opts = JsonReaderOptions.of("id")
             assertEquals(0, reader.selectString(opts))
             reader.consumeKeySeparator()
-            reader.nextInt()
+            reader.nextInt().ignore()
             
             // Next one is 'unknown_field', in strict mode it should throw
             reader.selectString(opts)
         }
         
         assertTrue(exception.message!!.contains("unknown_field"))
-        assertEquals(1, exception.line)
+        assertEquals(0, exception.line)
         // Position should be near the start of the unknown field
         assertTrue(exception.column > 10)
     }

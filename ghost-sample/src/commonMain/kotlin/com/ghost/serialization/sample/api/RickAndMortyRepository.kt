@@ -1,12 +1,15 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.sample.api
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ktor.ghost
 import com.ghost.serialization.benchmark.CharacterResponse
 import com.ghost.serialization.benchmark.GhostCharacter
-import com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization
+import com.ghost.serialization.benchmark.PageInfo
+import com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization
 import com.ghost.serialization.sample.ui.JankTracker
-import com.ghost.serialization.sample.ui.model.NetworkStack
 import com.ghost.serialization.sample.util.forceGC
 import com.ghost.serialization.sample.util.getCurrentThreadAllocatedBytes
 import io.ktor.client.HttpClient
@@ -42,26 +45,14 @@ class RickAndMortyRepository {
     }
 
     /**
-     * Fetches characters using the specified network stack.
+     * Fetches characters using Ghost + Ktor.
      */
     suspend fun fetchCharacters(
-        stack: NetworkStack, page: Int
+        page: Int
     ): CharacterResponse = withContext(Dispatchers.Default) {
-        when (stack) {
-            NetworkStack.GHOST_KTOR -> {
-                ghostKtorClient.get("https://rickandmortyapi.com/api/character") {
-                    parameter("page", page)
-                }.body()
-            }
-            NetworkStack.KTOR_KOTLINX -> {
-                kserKtorClient.get("https://rickandmortyapi.com/api/character") {
-                    parameter("page", page)
-                }.body()
-            }
-            NetworkStack.KTORFIT_KOTLINX -> {
-                KtorfitClient.service.getCharacters(page)
-            }
-        }
+        ghostKtorClient.get("https://rickandmortyapi.com/api/character") {
+            parameter("page", page)
+        }.body()
     }
 
     /**
@@ -83,24 +74,36 @@ class RickAndMortyRepository {
                 }
                 if (!response.status.isSuccess()) throw Exception("Network Error on Page $i")
                 allBytes.add(response.body<ByteArray>())
+                delay(200) // Respect the API during setup
             }
 
-            // We simulate a large contiguous payload by joining results
-            // This ensures we keep the CharacterResponse schema valid
-            val jsonString = if (pageCount == 1) {
-                allBytes[0].decodeToString()
-            } else {
-                val firstPage = allBytes[0].decodeToString()
-                val infoPart = firstPage.substringBefore("\"results\":")
-                val resultsList = allBytes.joinToString(",") { 
-                    val s = it.decodeToString()
-                    s.substringAfter("\"results\":")
-                     .substringBeforeLast("}")
-                     .trim()
-                     .removePrefix("[")
-                     .removeSuffix("]")
+            // We simulate a large contiguous payload by joining results correctly
+            val jsonString = try {
+                if (pageCount == 1) {
+                    allBytes[0].decodeToString()
+                } else {
+                    onStatusChange("Merging $pageCount pages...")
+                    val responses = allBytes.mapIndexed { index, bytes ->
+                        try {
+                            kserJson.decodeFromString<CharacterResponse>(bytes.decodeToString())
+                        } catch (e: Exception) {
+                            throw Exception("Error parsing page ${index + 1}: ${e.message}")
+                        }
+                    }
+                    val mergedResults = responses.flatMap { it.results }
+                    val mergedResponse = CharacterResponse(
+                        info = PageInfo(
+                            count = mergedResults.size,
+                            pages = responses.size,
+                            next = null,
+                            prev = null
+                        ),
+                        results = mergedResults
+                    )
+                    kserJson.encodeToString(CharacterResponse.serializer(), mergedResponse)
                 }
-                "$infoPart\"results\": [$resultsList]}"
+            } catch (e: Exception) {
+                return@withContext Result.failure(Exception("Benchmark Error: ${e.message}"))
             }
             val rawBytes = jsonString.encodeToByteArray()
 
@@ -113,20 +116,47 @@ class RickAndMortyRepository {
             }
             forceGC()
             
-            // 2. MEASURE GHOST
-            val ghostResult = measureEngine("GHOST", jankTracker, onStatusChange) {
+            // ─── SUITE 1: PURE ENGINE BATTLE (In-Memory Parsing) ───
+            onStatusChange("Engine Battle: GHOST vs KSER (Pure Parsing)...")
+            
+            val ghostPure = measureEngine("GHOST PURE", jankTracker, onStatusChange) {
                 Ghost.deserialize<CharacterResponse>(rawBytes)
             }
 
-            // 3. MEASURE KSER
-            val kserResult = measureEngine("KSER", jankTracker, onStatusChange) {
-                kserJson.decodeFromString<CharacterResponse>(rawBytes.decodeToString())
+            val kserPure = measureEngine("KSER PURE", jankTracker, onStatusChange) {
+                kserJson.decodeFromString<CharacterResponse>(jsonString)
             }
 
-            // 4. MEASURE BASELINE (Blank block)
-            val baselineResult = measureEngine("BLANK", jankTracker, onStatusChange) {
-                // Empty block
+            // ─── SUITE 2: FULL STACK BATTLE (Network + Integration) ───
+            // We use a smaller loop (10 iterations) to avoid network ban but get a real average
+            onStatusChange("Full Stack: GHOST+KTOR vs KSER+KTOR (Real Network)...")
+            
+            val ghostFull = measureEngine("GHOST + KTOR", jankTracker, onStatusChange, iterations = 3) {
+                for (i in 1..pageCount) {
+                    val response = ghostKtorClient.get("https://rickandmortyapi.com/api/character") {
+                        parameter("page", i)
+                    }
+                    if (!response.status.isSuccess()) {
+                        throw Exception("API Error ${response.status.value}: ${response.status.description}")
+                    }
+                    response.body<CharacterResponse>()
+                    delay(50) // Respectful delay
+                }
             }
+
+            val kserFull = measureEngine("KTOR + KSER", jankTracker, onStatusChange, iterations = 3) {
+                for (p in 1..pageCount) {
+                    val response = kserKtorClient.get("https://rickandmortyapi.com/api/character") {
+                        parameter("page", p)
+                    }
+                    if (!response.status.isSuccess()) {
+                        throw Exception("API Error ${response.status.value}: ${response.status.description}")
+                    }
+                    response.body<CharacterResponse>()
+                    delay(50) // Respectful delay
+                }
+            }
+
 
             val serializer = Ghost.getSerializer(CharacterResponse::class)
             val serializerName = serializer?.let { it::class.simpleName } ?: "None"
@@ -142,11 +172,11 @@ class RickAndMortyRepository {
             Result.success(
                 GhostResult(
                     data = allCharacters,
-                    networkTimeMs = 0.0, // Network is not part of this benchmark
-                    parseTimeMs = ghostResult.timeMs,
-                    ghostMemoryBytes = ghostResult.memoryBytes,
-                    ghostJankCount = ghostResult.jankCount,
-                    engineResults = listOf(kserResult, baselineResult)
+                    networkTimeMs = ghostFull.timeMs, 
+                    parseTimeMs = ghostPure.timeMs,
+                    ghostMemoryBytes = ghostPure.memoryBytes,
+                    ghostJankCount = ghostPure.jankCount,
+                    engineResults = listOf(kserPure, ghostFull, kserFull)
                 )
             )
         } catch (e: Exception) {
@@ -158,9 +188,9 @@ class RickAndMortyRepository {
         name: String,
         jankTracker: JankTracker?,
         onStatusChange: (String) -> Unit,
-        crossinline block: () -> T
+        iterations: Int = 100,
+        crossinline block: suspend () -> T
     ): EngineResult {
-        val iterations = 100
         var totalTimeMs = 0.0
         var totalMemBytes = 0L
         var totalJank = 0
@@ -169,8 +199,8 @@ class RickAndMortyRepository {
         forceGC()
         delay(500)
 
-        onStatusChange("Benchmarking $name (100 iterations)...")
-        repeat(iterations) {
+        onStatusChange("Benchmarking $name ($iterations iterations)...")
+        for (i in 0 until iterations) {
             jankTracker?.startTracking(name)
             
             // 1. Precise Memory Start

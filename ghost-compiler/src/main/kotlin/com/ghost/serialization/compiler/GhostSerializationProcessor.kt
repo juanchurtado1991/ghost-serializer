@@ -33,6 +33,7 @@ class GhostSerializationProcessor(
     private val logger: KSPLogger,
     options: Map<String, String> = emptyMap()
 ) : SymbolProcessor {
+    
 
     private val generateMoshiAdapters: Boolean = options[OPTION_GENERATE_MOSHI_ADAPTERS]
         ?.toBoolean()
@@ -153,7 +154,7 @@ class GhostSerializationProcessor(
 
         val prewarmMethod = FunSpec.builder(STR_FUN_PREWARM)
             .addModifiers(KModifier.OVERRIDE)
-            .addStatement(STR_SERIALIZERS_SIZE)
+            .addStatement("%L.ignore()", STR_SERIALIZERS_SIZE)
             .build()
 
         val registeredCountMethod = FunSpec.builder(STR_FUN_REG_COUNT)
@@ -194,6 +195,7 @@ class GhostSerializationProcessor(
             .build()
 
         FileSpec.builder(PACKAGE_NAME, registryClassName)
+            .addImport("com.ghost.serialization.parser", "ignore")
             .addType(registrySpec)
             .build()
             .writeTo(
@@ -213,7 +215,7 @@ class GhostSerializationProcessor(
                 public static ** INSTANCE;
                 public *** getSerializer(...);
             }
-            -keep class * implements com.ghost.serialization.core.contract.GhostSerializer {
+            -keep class * implements com.ghost.serialization.contract.GhostSerializer {
                 *;
             }
         """.trimIndent()
@@ -264,7 +266,7 @@ class GhostSerializationProcessor(
         private const val STR_LOG_OPTIMIZED = " Successfully optimized: "
         private const val STR_LOG_CRITICAL = " Critical error processing "
         private const val STR_COLON_SPACE = ": "
-        private const val STR_CONTRACT_PKG = "com.ghost.serialization.core.contract"
+        private const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
         private const val STR_GHOST_SERIALIZER = "GhostSerializer"
         private const val STR_REFLECT_PKG = "kotlin.reflect"
         private const val STR_KCLASS = "KClass"
@@ -296,13 +298,13 @@ class GhostSerializationProcessor(
         private const val STR_GHOST_SERIALIZATION_FILE = "ghost-serialization"
         private const val STR_EXT_PRO = "pro"
         private const val STR_LOG_PROGUARD_WARN = " Could not generate ProGuard rules: "
-        private const val STR_SERVICE_NAME = "com.ghost.serialization.core.contract.GhostRegistry"
+        private const val STR_SERVICE_NAME = "com.ghost.serialization.contract.GhostRegistry"
         private const val STR_META_INF_SERVICES = "META-INF.services"
         private const val STR_EMPTY = ""
         private const val STR_LOG_SERVICE_WARN = " Could not generate ServiceLoader file: "
         private const val STR_FORMAT_S = "%S"
         private const val ANNOTATION_NAME = "com.ghost.serialization.annotations.GhostSerialization"
-        private const val PACKAGE_NAME = "com.ghost.serialization.benchmark"
+        private const val PACKAGE_NAME = "com.ghost.serialization.generated"
         private const val REGISTRY_CLASS_NAME = "GhostModuleRegistry"
         private const val LOG_PREFIX = ">>> [GhostSerialization]"
         const val OPTION_GENERATE_MOSHI_ADAPTERS = "ghost.generateMoshiAdapters"

@@ -38,7 +38,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ghost.serialization.sample.ui.composable.CharacterCard
 import com.ghost.serialization.sample.ui.composable.PerformanceResultsCard
 import com.ghost.serialization.sample.ui.composable.SampleText
-import com.ghost.serialization.sample.ui.composable.StackSelectorDialog
 import com.ghost.serialization.sample.ui.model.UiState
 import com.ghost.serialization.sample.ui.viewmodel.MainViewModel
 import com.ghost.serialization.sample.util.copyToClipboard
@@ -48,13 +47,6 @@ fun GhostSampleApp(viewModel: MainViewModel = viewModel { MainViewModel() }) {
     val uiState by viewModel.uiState.collectAsState()
     val jankTracker = rememberJankTracker()
 
-    if (uiState.isStackDialogVisible) {
-        StackSelectorDialog(
-            current = uiState.selectedStack,
-            onSelect = { viewModel.selectStack(it) },
-            onDismiss = { viewModel.showStackDialog(false) }
-        )
-    }
 
     LazyColumn(
         modifier = Modifier
@@ -187,10 +179,10 @@ private fun BenchmarkConfigCard(
             ) {
                 SampleText(text = "STRESS LOAD", isBold = true, fontSize = 12)
                 SampleText(
-                    text = "${uiState.pageCount.toInt()} PAGES (x100)",
+                    text = "${uiState.pageCount.toInt()} PAGES (Pure 100x / Stack 3x)",
                     overrideColor = AppDesign.AccentGlow,
                     isBold = true,
-                    fontSize = 12
+                    fontSize = 10
                 )
             }
 
@@ -207,38 +199,6 @@ private fun BenchmarkConfigCard(
                 )
             )
 
-            HorizontalDivider(
-                color = AppDesign.GlassBorder,
-                thickness = 1.dp,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { viewModel.showStackDialog(true) }
-            ) {
-                SampleText(
-                    text = "SELECTED NETWORK STACK",
-                    isBold = true,
-                    fontSize = 10,
-                    isSecondary = true
-                )
-
-                Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                    SampleText(
-                        text = uiState.selectedStack.title,
-                        isBold = true,
-                        fontSize = 16,
-                        overrideColor = AppDesign.AccentGlow
-                    )
-                    SampleText(
-                        text = uiState.selectedStack.description,
-                        fontSize = 10,
-                        isSecondary = true
-                    )
-                }
-            }
         }
     }
 }

@@ -1,8 +1,10 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.GhostJsonReader
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -16,7 +18,7 @@ class GhostPrewarmTest {
         override val typeName: String = "MockUser"
         var warmupCalled = false
         override fun serialize(
-            writer: com.ghost.serialization.core.writer.GhostJsonWriter,
+            writer: com.ghost.serialization.writer.GhostJsonWriter,
             value: MockUser
         ) {
         }

@@ -1,9 +1,12 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization
 
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.ignore
+import com.ghost.serialization.writer.GhostJsonWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -25,7 +28,7 @@ class GhostConcurrencyTest {
         override val typeName: String = "Int_$id"
         override fun deserialize(reader: GhostJsonReader): Int = id
         override fun serialize(writer: GhostJsonWriter, value: Int) {
-            writer.value(value.toLong())
+            writer.value(value.toLong()).ignore()
         }
     }
 

@@ -1,8 +1,12 @@
+@file:OptIn(InternalGhostApi::class)
+@file:Suppress("UNCHECKED_CAST")
+
 package com.ghost.serialization
 
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.contract.GhostSerializer
+import com.ghost.serialization.annotations.MustUseReturnValues
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.DoubleSerializer
 import com.ghost.serialization.serializers.IntSerializer
@@ -10,47 +14,67 @@ import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.StringSerializer
-import com.ghost.serialization.annotations.MustUseReturnValues
 import okio.BufferedSink
 import okio.BufferedSource
+import com.ghost.serialization.writer.GhostJsonWriter
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Core entry point for Ghost Serialization.
  * Provides modular discovery and serialization management across platforms.
  */
 
+expect fun <T> runSynchronized(lock: Any, block: () -> T): T
+
+expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
 expect fun discoverRegistries(): List<GhostRegistry>
 
-// Platform-specific lock implementation
-expect fun <T> runSynchronized(lock: Any, block: () -> T): T
+expect fun <T> ghostInternalUseReader(
+    bytes: ByteArray, block: (GhostJsonReader) -> T
+): T
 
-expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
-expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
+expect fun <T> ghostInternalUseSource(
+    source: BufferedSource,
+    block: (GhostJsonReader) -> T
+): T
 
 object Ghost {
-    private val lock = Any()
-    private val mutableRegistries = mutableListOf<GhostRegistry>()
-    @PublishedApi internal val serializerCache = mutableMapOf<KClass<*>, GhostSerializer<*>>()
+    @PublishedApi
+    internal val serializerCache = createAtomicMap<KClass<*>, GhostSerializer<*>>()
 
+    @PublishedApi
+    internal val typeCache = createAtomicMap<KType, GhostSerializer<*>>()
+
+    private val lock = Any()
+    private val mutableRegistries = mutableSetOf<GhostRegistry>()
     private var _discoveredRegistries: List<GhostRegistry>? = null
-    private val discoveredRegistries: List<GhostRegistry>
-        get() {
-            if (_discoveredRegistries == null) {
-                runSynchronized(lock) {
-                    if (_discoveredRegistries == null) {
-                        _discoveredRegistries = discoverRegistries()
-                    }
-                }
-            }
-            return _discoveredRegistries!!
+    private var _consolidatedRegistries: List<GhostRegistry> = emptyList()
+
+    private fun updateConsolidatedRegistries() {
+        val discovered = if (_discoveredRegistries == null) {
+            _discoveredRegistries = discoverRegistries()
+            _discoveredRegistries!!
+        } else {
+            _discoveredRegistries!!
         }
+        _consolidatedRegistries = mutableRegistries.toList() + discovered
+    }
 
     private val registries: List<GhostRegistry>
-        get() = runSynchronized(lock) { mutableRegistries + discoveredRegistries }
+        get() = runSynchronized(lock) {
+            if (_discoveredRegistries == null) {
+                updateConsolidatedRegistries()
+            }
+            _consolidatedRegistries
+        }
 
     private val serializerByName = mutableMapOf<String, GhostSerializer<*>>()
+
+    fun throwError(message: String): Nothing {
+        throw IllegalArgumentException(message)
+    }
 
     /**
      * Manual Registration: Essential for iOS (K/N) and JS/Wasm where auto-discovery
@@ -58,8 +82,8 @@ object Ghost {
      */
     fun addRegistry(registry: GhostRegistry) {
         runSynchronized(lock) {
-            if (!mutableRegistries.contains(registry)) {
-                mutableRegistries.add(registry)
+            if (mutableRegistries.add(registry)) {
+                updateConsolidatedRegistries()
                 registry
                     .getAllSerializers()
                     .forEach { (kclass, serializer) ->
@@ -74,89 +98,118 @@ object Ghost {
         return runSynchronized(lock) { serializerByName[name] }
     }
 
+    /**
+     * Internal: Used by compiler-generated code to verify registered serializers.
+     */
+    @Suppress("unused")
     fun getSerializerNames(): List<String> {
         return runSynchronized(lock) { serializerByName.keys.toList() }
     }
 
-    @Suppress("UNCHECKED_CAST")
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
-        // Fast path for primitives and common types
-        val primitive = when (clazz) {
-            String::class -> StringSerializer
-            Int::class -> IntSerializer
-            Long::class -> LongSerializer
-            Boolean::class -> BooleanSerializer
-            Double::class -> DoubleSerializer
-            else -> null
-        }
-        if (primitive != null) return primitive as GhostSerializer<T>
+        // Fast path for primitives
+        getPrimitiveSerializer(clazz)?.let { return it }
+
+        // Atomic lookup (Lock-free on JVM/Android)
+        val cached = serializerCache[clazz] as? GhostSerializer<T>
+        if (cached != null) return cached
 
         return runSynchronized(lock) {
-            val cached = serializerCache[clazz]
-            if (cached != null) {
-                cached as GhostSerializer<T>
-            } else {
-                val found = registries.firstNotNullOfOrNull { it.getSerializer(clazz) }
-                if (found != null) serializerCache[clazz] = found
-                found
+            val doubleCheck = serializerCache[clazz] as? GhostSerializer<T>
+            if (doubleCheck != null) return@runSynchronized doubleCheck
+
+            val found = registries.firstNotNullOfOrNull { it.getSerializer(clazz) }
+            if (found != null) {
+                serializerCache[clazz] = found as GhostSerializer<Any>
             }
+            found as? GhostSerializer<T>
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun getSerializer(type: kotlin.reflect.KType): GhostSerializer<Any>? {
+    private fun <T : Any> getPrimitiveSerializer(clazz: KClass<T>): GhostSerializer<T>? = when (clazz) {
+        String::class -> StringSerializer as GhostSerializer<T>
+        Int::class -> IntSerializer as GhostSerializer<T>
+        Long::class -> LongSerializer as GhostSerializer<T>
+        Boolean::class -> BooleanSerializer as GhostSerializer<T>
+        Double::class -> DoubleSerializer as GhostSerializer<T>
+        else -> null
+    }
+
+    fun getSerializer(type: KType): GhostSerializer<Any>? {
         val classifier = type.classifier
 
-        when (classifier) {
-            String::class -> return StringSerializer as GhostSerializer<Any>
-            Int::class -> return IntSerializer as GhostSerializer<Any>
-            Long::class -> return LongSerializer as GhostSerializer<Any>
-            Boolean::class -> return BooleanSerializer as GhostSerializer<Any>
-            Double::class -> return DoubleSerializer as GhostSerializer<Any>
-            List::class -> {
-                val itemType = type.arguments.getOrNull(0)?.type ?: return null
-                val itemSerializer = getSerializer(itemType) ?: return null
-                return ListSerializer(itemSerializer) as GhostSerializer<Any>
+        // Special handling for parameterized collections
+        if (classifier == List::class || classifier == Map::class) {
+            val cached = runSynchronized(lock) { typeCache[type] }
+            if (cached != null) return cached as GhostSerializer<Any>
+
+            val created = when (classifier) {
+                List::class -> {
+                    val itemType = type.arguments.getOrNull(0)?.type ?: return null
+                    val itemSerializer = getSerializer(itemType) ?: return null
+                    ListSerializer(itemSerializer)
+                }
+
+                Map::class -> {
+                    val valueType = type.arguments.getOrNull(1)?.type ?: return null
+                    val valueSerializer = getSerializer(valueType) ?: return null
+                    MapSerializer(valueSerializer)
+                }
+
+                else -> null
             }
-            Map::class -> {
-                val valueType = type.arguments.getOrNull(1)?.type ?: return null
-                val valueSerializer = getSerializer(valueType) ?: return null
-                return MapSerializer(valueSerializer) as GhostSerializer<Any>
+
+            if (created != null) {
+                runSynchronized(lock) { typeCache[type] = created }
             }
+            return created as? GhostSerializer<Any>
         }
 
-        // Fallback to class-based resolution
+        // Delegate to class-based resolution (handles primitives and caching)
         val kClass = classifier as? KClass<Any> ?: return null
         return getSerializer(kClass)
     }
 
-    fun <T : Any> serialize(sink: BufferedSink, value: T) {
-        @Suppress("UNCHECKED_CAST")
-        val serializer = getSerializer(value::class as KClass<T>)
-            ?: throw IllegalArgumentException(
-                "No Ghost serializer found for ${value::class.simpleName}." +
-                        " Did you annotate it with @GhostSerialization?"
-            )
-        serializer.serialize(sink, value)
+    inline fun <reified T : Any> serialize(sink: BufferedSink, value: T) {
+        // High-speed path for known classes
+        val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
+            ?: run {
+                val type = kotlin.reflect.typeOf<T>()
+                getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
+            } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
+            
+        val writer = GhostJsonWriter(sink)
+        try {
+            serializer.serialize(writer, value)
+        } finally {
+            writer.release()
+        }
     }
 
-    fun <T : Any> serialize(value: T): String {
+    /** Convenience alias for [encodeToString] to maintain API compatibility. */
+    inline fun <reified T : Any> serialize(value: T): String = encodeToString(value)
+
+    inline fun <reified T : Any> encodeToString(value: T): String {
         val buffer = okio.Buffer()
         serialize(buffer, value)
         return buffer.readUtf8()
     }
 
+    inline fun <reified T : Any> encodeToBytes(value: T): ByteArray {
+        val buffer = okio.Buffer()
+        serialize(buffer, value)
+        return buffer.readByteArray()
+    }
+
     inline fun <reified T : Any> deserialize(
         json: String,
-        options: (GhostJsonReader) -> Unit = {}
+        crossinline options: (GhostJsonReader) -> Unit = {}
     ): T {
-        // Optimization: Use direct ByteArray conversion to avoid okio.Buffer overhead in JS/Wasm
         val bytes = json.encodeToByteArray()
-        val reader = GhostJsonReader(bytes)
-        options(reader)
-        val serializer = getSerializer(T::class)
-            ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")
-        return serializer.deserialize(reader)
+        return ghostInternalUseReader(bytes) { reader ->
+            options(reader)
+            deserialize(reader)
+        }
     }
 
     inline fun <reified T : Any> deserialize(
@@ -179,10 +232,31 @@ object Ghost {
         }
     }
 
+    fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>): T {
+        return ghostInternalUseReader(bytes) { reader ->
+            val serializer = getSerializer(clazz)
+                ?: throwError("$NOT_FOUND ${clazz.simpleName}")
+            serializer.deserialize(reader) as T
+        }
+    }
+
+    fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
+        return ghostInternalUseSource(source) { reader ->
+            val serializer = getSerializer(clazz)
+                ?: throwError("$NOT_FOUND ${clazz.simpleName}")
+            serializer.deserialize(reader) as T
+        }
+    }
+
+    inline fun <reified T : Any> encodeToSink(sink: BufferedSink, value: T) {
+        serialize(sink, value)
+    }
+
     @MustUseReturnValues
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
         val serializer = getSerializer(T::class)
-            ?: throw IllegalArgumentException("No Ghost serializer found for ${T::class.simpleName}")
+            ?: throwError("$NOT_FOUND ${T::class.simpleName}")
+
         return serializer.deserialize(reader)
     }
 
@@ -202,4 +276,7 @@ object Ghost {
             }
         }
     }
+
+    const val MISSING_ANN = "Did you annotate it with @GhostSerialization?"
+    const val NOT_FOUND = "No Ghost serializer found for"
 }

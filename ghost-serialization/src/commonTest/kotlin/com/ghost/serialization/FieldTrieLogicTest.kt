@@ -1,7 +1,10 @@
-package com.ghost.serialization
+@file:OptIn(InternalGhostApi::class)
 
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.JsonReaderOptions
+package com.ghost.serialization
+import com.ghost.serialization.parser.*
+
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.JsonReaderOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -22,9 +25,9 @@ class FieldTrieLogicTest {
         assertEquals(0, index1, "Should match 'id' at index 0")
 
         // Consume value and separator
-        reader.expectByte(':'.code.toByte())
+        reader.expectByte(':'.code)
         reader.internalSkip(1) // skip '1'
-        reader.expectByte(','.code.toByte())
+        reader.expectByte(','.code)
 
         // 2. Select "name"
         val index2 = reader.selectString(options)

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.sample.api.RickAndMortyRepository
 import com.ghost.serialization.sample.ui.JankTracker
-import com.ghost.serialization.sample.ui.model.NetworkStack
 import com.ghost.serialization.sample.ui.model.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,13 +19,6 @@ class MainViewModel : ViewModel() {
 
     init { Ghost.prewarm() }
 
-    fun showStackDialog(show: Boolean) {
-        _uiState.update { it.copy(isStackDialogVisible = show) }
-    }
-
-    fun selectStack(stack: NetworkStack) {
-        _uiState.update { it.copy(selectedStack = stack, isStackDialogVisible = false) }
-    }
 
     fun updatePageCount(count: Float) {
         _uiState.update { it.copy(pageCount = count) }
@@ -36,9 +28,9 @@ class MainViewModel : ViewModel() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null, loadingStatus = "Initiating...") }
         
         viewModelScope.launch {
-            // 1. Fetch current data for the UI using the selected stack
+            // 1. Fetch current data for the UI using Ghost
             try {
-                val characters = repository.fetchCharacters(_uiState.value.selectedStack, _uiState.value.pageCount.toInt())
+                val characters = repository.fetchCharacters(1) // Always use Ghost for initial fetch
                 _uiState.update { it.copy(characters = characters.results) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Fetch Error: ${e.message}", isLoading = false) }
@@ -52,10 +44,9 @@ class MainViewModel : ViewModel() {
                 .onSuccess { result ->
                     _uiState.update { it.copy(
                         isLoading = false,
-                        // We also include Ghost in the results list for the UI logic
                         results = listOf(
                             com.ghost.serialization.sample.api.EngineResult(
-                                "GHOST", 
+                                "GHOST PURE", 
                                 result.parseTimeMs, 
                                 result.ghostMemoryBytes, 
                                 true, 

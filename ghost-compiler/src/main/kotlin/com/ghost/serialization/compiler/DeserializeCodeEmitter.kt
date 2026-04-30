@@ -103,7 +103,7 @@ internal class DeserializeCodeEmitter(
                 else -> it.typeName.copy(nullable = true)
             }
 
-            val targetProp = if (isUnboxedValueClass) it.valueClassProperty!! else it
+            val targetProp = if (isUnboxedValueClass) it.valueClassProperty else it
 
             val initialValue = when {
                 it.isNullable -> STR_NULL
@@ -152,7 +152,7 @@ internal class DeserializeCodeEmitter(
 
                 else -> it.typeName.copy(nullable = true)
             }
-            val targetProp = if (isUnboxedValueClass) it.valueClassProperty!! else it
+            val targetProp = if (isUnboxedValueClass) it.valueClassProperty else it
             val initialValue = when {
                 it.isNullable -> STR_NULL
                 targetProp.type.isPrimitiveInt() -> STR_ZERO
@@ -223,7 +223,6 @@ internal class DeserializeCodeEmitter(
         }
         mainBody.addStatement("-1 -> break")
         mainBody.beginControlFlow("-2 ->")
-        mainBody.addStatement("reader.consumeKeySeparator()")
         mainBody.addStatement("reader.skipValue()")
         mainBody.endControlFlow()
         mainBody.endControlFlow() // when
@@ -324,7 +323,6 @@ internal class DeserializeCodeEmitter(
 
         body.addStatement(STR_MINUS_ONE_BREAK)
         body.beginControlFlow(STR_MINUS_TWO_ARROW)
-        body.addStatement(STR_CONSUME_KEY_SEP)
         body.addStatement(STR_SKIP_VALUE)
         body.endControlFlow()
         body.endControlFlow()
@@ -404,7 +402,7 @@ internal class DeserializeCodeEmitter(
                 val valueType = type.arguments.getOrNull(1)?.type?.resolve() ?: return CodeBlock.of(
                     STR_NEXT_STRING
                 )
-                CodeBlock.of("reader.readMap { %L }", buildTypeReaderCall(valueType))
+                CodeBlock.of("reader.readMap({ reader.nextKey()!! }) { %L }", buildTypeReaderCall(valueType))
             }
 
             else -> CodeBlock.of(STR_NEXT_STRING)
@@ -606,7 +604,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_BUILD_MAP_7 = "  }\n"
         private const val STR_BUILD_MAP_8 = "  reader.endObject()\n"
         private const val STR_BUILD_MAP_9 = "}"
-        private const val STR_CORE_EXC_PKG = "com.ghost.serialization.core.exception"
+        private const val STR_CORE_EXC_PKG = "com.ghost.serialization.exception"
         private const val STR_GHOST_JSON_EXC = "GhostJsonException"
         private const val STR_IF_NOT_SET = "if (!_"
         private const val STR_SET_PAREN = "Set)"
@@ -633,7 +631,7 @@ internal class DeserializeCodeEmitter(
         private const val STR_RETURN_RESULT_FINAL = "return _result"
         private const val STR_SET = "Set"
         private const val STR_ERR_INVALID_ENUM_INDEX =
-            "-1 -> reader.throwError(\"Invalid enum value at path \${reader.path}\")"
+            "-1 -> reader.throwError(\"Invalid enum value\")"
         private const val STR_ERR_UNEXPECTED_INDEX =
             "else -> throw GhostJsonException(\"Unexpected index: \$index\")"
     }

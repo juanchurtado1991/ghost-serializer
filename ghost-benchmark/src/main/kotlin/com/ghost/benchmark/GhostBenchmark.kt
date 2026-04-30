@@ -1,10 +1,14 @@
-@file:OptIn(ExperimentalStdlibApi::class)
+@file:OptIn(ExperimentalStdlibApi::class, InternalGhostApi::class)
 @file:Suppress("SameParameterValue")
 
 package com.ghost.benchmark
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.core.parser.GhostJsonReader
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.integration.model.BenchResult
 import com.ghost.serialization.integration.model.BenchUser
 import com.ghost.serialization.integration.model.BenchmarkMetrics
@@ -12,6 +16,7 @@ import com.ghost.serialization.integration.model.Category
 import com.ghost.serialization.integration.model.ComplexResponse
 import com.ghost.serialization.integration.model.ExtremeMetadata
 import com.ghost.serialization.integration.model.UserRole
+import com.ghost.serialization.integration.model.StressMetrics
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
@@ -50,17 +55,18 @@ fun main() {
     val gson = Gson()
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val kJson = Json { ignoreUnknownKeys = true }
+    val jackson = ObjectMapper().registerModule(KotlinModule.Builder().build())
 
     // 1. Cold Start
     val smallComplex = generateComplexData(20)
     val smallJson = generateNeutralJson(smallComplex)
     val smallBytes = smallJson.encodeUtf8()
 
-    val coldMetrics = runColdStart(smallBytes)
+    val coldMetrics = runColdStart(smallBytes, jackson)
     printRankedTable("COLD START (First Run Allocation)", coldMetrics)
 
     // 2. Warmup Phase (Ensuring JIT optimization)
-    runWarmup(gson, moshi, kJson, smallBytes, smallComplex)
+    runWarmup(gson, moshi, kJson, jackson, smallBytes, smallComplex)
 
     // 3. Steady-State Workloads
     val workloads = listOf(
@@ -74,7 +80,7 @@ fun main() {
         val byteData = jsonString.encodeUtf8()
         val payloadSize = "%.2f KB".format(jsonString.length / 1024.0)
 
-        val metrics = runSteadyState(count, threadBean, gson, moshi, kJson, byteData)
+        val metrics = runSteadyState(count, threadBean, gson, moshi, kJson, jackson, byteData)
         printRankedTable(
             "STEADY-STATE DESERIALIZATION: $label ($count objects | $payloadSize)",
             metrics
@@ -87,14 +93,14 @@ fun main() {
     val serJson = generateNeutralJson(largeComplex)
     val serSize = "%.2f KB".format(serJson.length / 1024.0)
 
-    val serMetrics = runSerializationSteadyState(threadBean, gson, moshi, kJson, largeComplex)
+    val serMetrics = runSerializationSteadyState(threadBean, gson, moshi, kJson, jackson, largeComplex)
     printRankedTable(
         "STEADY-STATE SERIALIZATION: WRITING ($countSer objects | $serSize)",
         serMetrics
     )
 
     // 5. Stress Test: Deep Nesting
-    val stressMetrics = runStressTests(gson, moshi, kJson)
+    val stressMetrics = runStressTests(gson, moshi, kJson, jackson)
     printRankedTable("STRESS TEST: DEEP NESTING (20 Levels)", stressMetrics.nesting)
 
     // 6. Failure Resilience
@@ -114,6 +120,7 @@ private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
 
     val rankings = listOf(
         EngineRank("GHOST", metrics.ghost.nanos, metrics.ghost.allocBytes),
+        EngineRank("JACKSON", metrics.jackson.nanos, metrics.jackson.allocBytes),
         EngineRank("MOSHI", metrics.moshi.nanos, metrics.moshi.allocBytes),
         EngineRank("KSER", metrics.kser.nanos, metrics.kser.allocBytes),
         EngineRank("GSON", metrics.gson.nanos, metrics.gson.allocBytes)
@@ -147,9 +154,9 @@ private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
 /**
  * Neutral Data Generation
  */
-private fun generateNeutralJson(data: ComplexResponse): String {
+private inline fun <reified T : Any> generateNeutralJson(data: T): String {
     return Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-        .adapter<ComplexResponse>().toJson(data)
+        .adapter<T>().toJson(data)
 }
 
 private fun initializePlatformDiagnostics(): ThreadMXBean? {
@@ -176,7 +183,7 @@ private fun generateComplexData(count: Int): ComplexResponse {
 }
 
 @Suppress("CheckResult")
-private fun runColdStart(data: ByteString): BenchmarkMetrics {
+private fun runColdStart(data: ByteString, jackson: ObjectMapper): BenchmarkMetrics {
     val coldGson = Gson()
     val coldMoshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val coldKser = Json { ignoreUnknownKeys = true }
@@ -193,6 +200,9 @@ private fun runColdStart(data: ByteString): BenchmarkMetrics {
     val kSerializationTime = measureTimeNanos {
         coldKser.decodeFromString<ComplexResponse>(data.utf8())
     }
+    val jacksonTime = measureTimeNanos {
+        jackson.readValue<ComplexResponse>(data.utf8())
+    }
     val ghostTime = measureTimeNanos {
         Ghost.deserialize<ComplexResponse>(data.toByteArray())
     }
@@ -201,6 +211,7 @@ private fun runColdStart(data: ByteString): BenchmarkMetrics {
         gson = BenchResult(gsonTime, 0),
         moshi = BenchResult(moshiTime, 0),
         kser = BenchResult(kSerializationTime, 0),
+        jackson = BenchResult(jacksonTime, 0),
         ghost = BenchResult(ghostTime, 0)
     )
 }
@@ -210,23 +221,27 @@ private fun runWarmup(
     gson: Gson,
     moshi: Moshi,
     kJson: Json,
+    jackson: ObjectMapper,
     data: ByteString,
     complex: ComplexResponse
 ) {
-    println("\n🔥 Warming up JIT (50 iterations)...")
-    repeat(50) {
+    val iters = System.getProperty("ghost.warmup")?.toIntOrNull() ?: 100
+    println("\n🔥 Warming up JIT ($iters iterations)...")
+    repeat(iters) {
         gson.fromJson<ComplexResponse>(
             GsonReader(InputStreamReader(ByteArrayInputStream(data.toByteArray()))),
             ComplexResponse::class.java
         )
         moshi.adapter<ComplexResponse>().fromJson(Buffer().write(data.toByteArray()))
         kJson.decodeFromString<ComplexResponse>(data.utf8())
+        jackson.readValue<ComplexResponse>(data.utf8())
         Ghost.deserialize<ComplexResponse>(data.toByteArray())
 
         gson.toJson(complex)
         moshi.adapter<ComplexResponse>().toJson(complex)
         kJson.encodeToString(complex)
-        Ghost.serialize(complex)
+        jackson.writeValueAsString(complex)
+        Ghost.encodeToString(complex)
     }
 }
 
@@ -235,19 +250,22 @@ private fun runSerializationSteadyState(
     gson: Gson,
     moshi: Moshi,
     kJson: Json,
+    jackson: ObjectMapper,
     complex: ComplexResponse
 ): BenchmarkMetrics {
     val gsonTime = measurePerf(threadBean) { gson.toJson(complex) }
     val moshiTime = measurePerf(threadBean) { moshi.adapter<ComplexResponse>().toJson(complex) }
     val kserTime = measurePerf(threadBean) { kJson.encodeToString(complex) }
+    val jacksonTime = measurePerf(threadBean) { jackson.writeValueAsString(complex) }
     val ghostTime = measurePerf(threadBean) {
-        val buf = Buffer(); Ghost.serialize(buf, complex)
+        val buf = Buffer(); Ghost.serialize<ComplexResponse>(buf, complex)
     }
     return BenchmarkMetrics(
-        BenchResult(gsonTime.second, gsonTime.third),
-        BenchResult(moshiTime.second, moshiTime.third),
-        BenchResult(kserTime.second, kserTime.third),
-        BenchResult(ghostTime.second, ghostTime.third)
+        gson = BenchResult(gsonTime.second, gsonTime.third),
+        moshi = BenchResult(moshiTime.second, moshiTime.third),
+        kser = BenchResult(kserTime.second, kserTime.third),
+        jackson = BenchResult(jacksonTime.second, jacksonTime.third),
+        ghost = BenchResult(ghostTime.second, ghostTime.third)
     )
 }
 
@@ -257,6 +275,7 @@ private fun runSteadyState(
     gson: Gson,
     moshi: Moshi,
     kJson: Json,
+    jackson: ObjectMapper,
     data: ByteString
 ): BenchmarkMetrics {
     val rawBytes = data.toByteArray()
@@ -272,6 +291,9 @@ private fun runSteadyState(
     val kserTime = measurePerf(threadBean) {
         kJson.decodeFromString<ComplexResponse>(data.utf8())
     }
+    val jacksonTime = measurePerf(threadBean) {
+        jackson.readValue<ComplexResponse>(data.utf8())
+    }
     val ghostReader = GhostJsonReader(rawBytes)
     val ghostTime = measurePerf(threadBean) {
         ghostReader.reset(rawBytes)
@@ -279,21 +301,19 @@ private fun runSteadyState(
     }
 
     return BenchmarkMetrics(
-        BenchResult(gsonTime.second, gsonTime.third),
-        BenchResult(moshiTime.second, moshiTime.third),
-        BenchResult(kserTime.second, kserTime.third),
-        BenchResult(ghostTime.second, ghostTime.third)
+        gson = BenchResult(gsonTime.second, gsonTime.third),
+        moshi = BenchResult(moshiTime.second, moshiTime.third),
+        kser = BenchResult(kserTime.second, kserTime.third),
+        jackson = BenchResult(jacksonTime.second, jacksonTime.third),
+        ghost = BenchResult(ghostTime.second, ghostTime.third)
     )
 }
 
 @Suppress("CheckResult")
-private fun runStressTests(
-    gson: Gson,
-    moshi: Moshi,
-    kJson: Json
-): com.ghost.serialization.integration.model.StressMetrics {
+private fun runStressTests(gson: Gson, moshi: Moshi, kJson: Json, jackson: ObjectMapper): StressMetrics {
     val tree = createTree(20)
-    val treeBytes = gson.toJson(tree).encodeUtf8()
+    val treeJson = generateNeutralJson(tree)
+    val treeBytes = treeJson.encodeUtf8()
 
     val gsonTree = measurePerfSimpleNanos {
         gson.fromJson<Category>(
@@ -307,22 +327,27 @@ private fun runStressTests(
     val kSerTree = measurePerfSimpleNanos {
         kJson.decodeFromString<Category>(treeBytes.utf8())
     }
+    val jacksonTree = measurePerfSimpleNanos {
+        jackson.readValue<Category>(treeBytes.utf8())
+    }
     val ghostTree = measurePerfSimpleNanos {
         Ghost.deserialize<Category>(treeBytes.toByteArray())
     }
 
-    return com.ghost.serialization.integration.model.StressMetrics(
+    return StressMetrics(
         nesting = BenchmarkMetrics(
             gson = BenchResult(gsonTree, 0),
             moshi = BenchResult(moshiTree, 0),
             kser = BenchResult(kSerTree, 0),
+            jackson = BenchResult(jacksonTree, 0),
             ghost = BenchResult(ghostTree, 0)
         ),
         large = BenchmarkMetrics(
-            BenchResult(0, 0),
-            BenchResult(0, 0),
-            BenchResult(0, 0),
-            BenchResult(0, 0)
+            gson = BenchResult(0, 0),
+            moshi = BenchResult(0, 0),
+            kser = BenchResult(0, 0),
+            jackson = BenchResult(0, 0),
+            ghost = BenchResult(0, 0)
         )
     )
 }
@@ -335,6 +360,7 @@ private fun runFailureTests(data: ByteString): BenchmarkMetrics {
     val gson = Gson()
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val kser = Json { ignoreUnknownKeys = true }
+    val jackson = ObjectMapper().registerModule(KotlinModule.Builder().build())
 
     val gsonTime = measureAvgFailSpeed {
         try {
@@ -354,6 +380,12 @@ private fun runFailureTests(data: ByteString): BenchmarkMetrics {
         } catch (_: Exception) {
         }
     }
+    val jacksonTime = measureAvgFailSpeed {
+        try {
+            jackson.readValue<ComplexResponse>(malformed)
+        } catch (_: Exception) {
+        }
+    }
     val ghostTime = measureAvgFailSpeed {
         try {
             Ghost.deserialize<ComplexResponse>(bytes.toByteArray())
@@ -365,6 +397,7 @@ private fun runFailureTests(data: ByteString): BenchmarkMetrics {
         gson = BenchResult(gsonTime, 0),
         moshi = BenchResult(moshiTime, 0),
         kser = BenchResult(kserTime, 0),
+        jackson = BenchResult(jacksonTime, 0),
         ghost = BenchResult(ghostTime, 0)
     )
 }
@@ -381,6 +414,16 @@ private fun createTree(d: Int): Category = if (d <= 0) Category(name = "L") else
 )
 
 
+@Volatile
+var blackHoleSink: Any? = null
+
+fun consume(obj: Any?) {
+    if (obj == blackHoleSink) {
+        println("Match!")
+    }
+    blackHoleSink = obj
+}
+
 private inline fun measureTimeNanos(block: () -> Unit): Long {
     val s = System.nanoTime(); block(); return (System.nanoTime() - s)
 }
@@ -391,6 +434,7 @@ private inline fun <T> measurePerf(bean: ThreadMXBean, block: () -> T): Triple<T
     val result = block()
     val e = System.nanoTime()
     val eA = bean.getThreadAllocatedBytes(Thread.currentThread().id)
+    consume(result)
     return Triple(result, (e - s), (eA - sA))
 }
 

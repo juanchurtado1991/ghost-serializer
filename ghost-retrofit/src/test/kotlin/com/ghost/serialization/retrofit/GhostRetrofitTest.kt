@@ -1,13 +1,21 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.retrofit
 
-import com.ghost.serialization.core.contract.GhostSerializer
-import com.ghost.serialization.core.contract.GhostRegistry
-import com.ghost.serialization.core.parser.GhostJsonReader
-import com.ghost.serialization.core.parser.consumeKeySeparator
-import com.ghost.serialization.core.parser.nextInt
-import com.ghost.serialization.core.parser.nextKey
-import com.ghost.serialization.core.parser.skipAnyValue
-import com.ghost.serialization.core.writer.GhostJsonWriter
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.beginObject
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.endObject
+import com.ghost.serialization.parser.ignore
+import com.ghost.serialization.parser.nextBoolean
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.parser.nextKey
+import com.ghost.serialization.parser.nextString
+import com.ghost.serialization.parser.skipValue
+import com.ghost.serialization.writer.GhostJsonWriter
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -27,18 +35,19 @@ import kotlin.test.assertTrue
 data class RetrofitUser(val id: Int, val name: String, val isActive: Boolean)
 
 // --- Manual Serializer for Testing (avoiding KSP in this module) ---
+@InternalGhostApi
 object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
     override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
     
     override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
-        writer.beginObject()
-        writer.name("id")
-        writer.value(value.id.toLong())
-        writer.name("name")
-        writer.value(value.name)
-        writer.name("isActive")
-        writer.value(value.isActive)
-        writer.endObject()
+        writer.beginObject().ignore()
+        writer.name("id").ignore()
+        writer.value(value.id.toLong()).ignore()
+        writer.name("name").ignore()
+        writer.value(value.name).ignore()
+        writer.name("isActive").ignore()
+        writer.value(value.isActive).ignore()
+        writer.endObject().ignore()
     }
 
     override fun deserialize(reader: GhostJsonReader): RetrofitUser {
@@ -53,7 +62,7 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
                 "id" -> id = reader.nextInt()
                 "name" -> name = reader.nextString()
                 "isActive" -> isActive = reader.nextBoolean()
-                else -> reader.skipAnyValue()
+                else -> reader.skipValue()
             }
         }
         reader.endObject()

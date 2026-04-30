@@ -1,7 +1,7 @@
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.benchmark.GhostModuleRegistry_ghost_serialization
+import com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization
 import com.ghost.serialization.sample.ui.GhostSampleApp
 import kotlinx.browser.document
 

@@ -1,9 +1,14 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.integration.model.GhostAdvancedProfile
 import com.ghost.serialization.integration.model.GhostShape
 import com.ghost.serialization.integration.model.GhostUserToken
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.integration.model.EmojiKeyModel
+import com.ghost.serialization.integration.model.OverlappingKeyModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -66,7 +71,7 @@ class GhostAdvancedTypesTest {
 
     @Test
     fun testEmojiKeys() {
-        val original = com.ghost.serialization.integration.model.EmojiKeyModel(
+        val original = EmojiKeyModel(
             familyName = "family",
             rocketCount = 100,
             emojiMap = mapOf("👨‍👩‍👧‍👦" to "family", "🚀" to "rocket")
@@ -75,19 +80,19 @@ class GhostAdvancedTypesTest {
         assertTrue(json.contains("👨‍👩‍👧‍👦"))
         assertTrue(json.contains("🚀"))
         
-        val decoded = Ghost.deserialize<com.ghost.serialization.integration.model.EmojiKeyModel>(json)
+        val decoded = Ghost.deserialize<EmojiKeyModel>(json)
         assertEquals(original, decoded)
     }
 
     @Test
     fun testOverlappingKeys() {
-        val original = com.ghost.serialization.integration.model.OverlappingKeyModel(
+        val original = OverlappingKeyModel(
             id = 1,
             id_internal = 2,
             identity = "secret"
         )
         val json = Ghost.serialize(original)
-        val decoded = Ghost.deserialize<com.ghost.serialization.integration.model.OverlappingKeyModel>(json)
+        val decoded = Ghost.deserialize<OverlappingKeyModel>(json)
         assertEquals(original, decoded)
     }
 
@@ -128,7 +133,7 @@ class GhostAdvancedTypesTest {
         val nestedJson = "{\"next\":".repeat(depth) + "null" + "}".repeat(depth)
         
         // This should fail with GhostJsonException due to depth limit
-        kotlin.test.assertFailsWith<com.ghost.serialization.core.exception.GhostJsonException> {
+        kotlin.test.assertFailsWith<com.ghost.serialization.exception.GhostJsonException> {
             Ghost.deserialize<com.ghost.serialization.integration.model.GodObject>(nestedJson)
         }
     }

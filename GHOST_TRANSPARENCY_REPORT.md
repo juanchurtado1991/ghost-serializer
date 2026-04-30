@@ -2,7 +2,7 @@
 
 This report documents the real-world performance characteristics of Ghost Serialization across different platforms, specifically comparing it against industry standards like Zod, GSON, Moshi, and Kotlin Serialization (KSer).
 
-## 🚀 The Performance Paradox: Next.js Memory vs. Latency (v1.1.10)
+## 🚀 The Performance Paradox: Web Memory vs. Latency (v1.1.14)
 
 As of version 1.1.10, we have achieved a critical architectural milestone for the Web. Our benchmarks on Node.js and Headless Chrome reveal a deliberate performance tradeoff that defines Ghost's position in the modern web ecosystem.
 
@@ -24,7 +24,7 @@ Due to the overhead of the WebAssembly-to-JavaScript boundary (Crossing the Brid
 | Metric Category | Platform Type | Ghost Advantage | Why? |
 | :--- | :--- | :--- | :--- |
 | **UI Fluidity (Jank)** | Mobile / Desktop / Web | 💎 0 Frame Drops | Zero-Reflection & Low GC pressure. |
-| **Memory Heap** | Web (Next.js) | 🧠 -33% RAM usage | Native WASM Linear Memory bypass. |
+| **Memory Heap** | Web (WasmJs) | 🧠 -33% RAM usage | Native WASM Linear Memory bypass. |
 | **Throughput (Ops/sec)** | Server / Backend | 🚀 +300% vs GSON | Efficient JIT-friendly bytecode. |
 | **Cold Start Latency** | All | ⏱️ ~3x Faster | No runtime class scanning. |
 | **R8/ProGuard Safety**| Android | ✅ Native | No @Keep rules needed. |
@@ -76,4 +76,4 @@ Ghost is engineered for extreme performance and absolute stability. Achieving th
 *   **For Mobile/Frontend:** Use **Ghost** to ensure a "Butter-Smooth" UX with zero frame drops and minimal RAM footprint.
 *   **For Backend/Server:** Use **Ghost** to maximize scalability and reduce cloud infrastructure costs through lower CPU and RAM usage.
 
-*Verified on v1.1.10. Benchmarks conducted on Next.js 15.2 (Turbopack) & Node.js 24.14.*
+*Verified on v1.1.14. Benchmarks conducted on WasmJs & Node.js environment.*

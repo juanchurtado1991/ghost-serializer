@@ -5,7 +5,7 @@
   <p>
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.3.21-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin 2.3.21"></a>
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-2.3.6-black.svg?style=flat-square" alt="KSP"></a>
-    <a href="https://square.github.io/okio/"><img src="https://img.shields.io/badge/I%2FO-Okio_3.16.4-blue.svg?style=flat-square" alt="Okio"></a>
+    <a href="https://square.github.io/okio/"><img src="https://img.shields.io/badge/I%2FO-Okio_3.17.0-blue.svg?style=flat-square" alt="Okio"></a>
     <img src="https://img.shields.io/badge/WASM-Production--Ready-success.svg?style=flat-square" alt="WASM Stable">
     <img src="https://img.shields.io/badge/Concurrency-Thread_Safe-blue.svg?style=flat-square" alt="Thread Safe">
   </p>
@@ -36,8 +36,11 @@ Ghost was purpose-built for JVM and dominates here:
 | Gson | 3.22 ms | 1,159 KB |
 
 > ~**180% faster** than Moshi. ~**80% less memory** than Kotlin Serialization.
+> 
+> [!IMPORTANT]
+> **Performance Note**: The results above were measured in **Debug mode**. In a production **Release build**, you can expect an additional significant boost in both speed and memory efficiency, as the Kotlin compiler optimizations and R8/ProGuard are fully enabled to further streamline the generated serializers.
 
-#### Browser / WASM (Next.js, React)
+#### Browser / WASM (React, Vue, Web)
 In the browser, Ghost's advantage shifts to **memory efficiency**. The WASM bridge introduces per-call overhead that makes raw latency higher than native JS parsers on small payloads:
 
 | Engine | Latency (per page) | JS Heap Allocation |
@@ -100,7 +103,7 @@ plugins {
 Ghost is the only serialization engine that provides a **Zero-Friction** experience for Web developers. You don't need to know Kotlin, and you don't even need to have Java or Gradle installed on your machine.
 
 ### ⚡ Zero-Config Synchronization
-If you are a frontend developer (React, Next.js, Vue), simply follow these steps:
+If you are a frontend developer (React, Vue, Svelte), simply follow these steps:
 
 1. **Install**: 
    ```bash
@@ -162,7 +165,7 @@ data class UserProfile(
 )
 ```
 
-### 2. Use in Next.js / React (TypeScript)
+### 2. Use in Web / React (TypeScript)
 ```typescript
 import { ensureGhostReady, deserializeModelSync } from "@/ghost-generated-types/ghost-bridge";
 

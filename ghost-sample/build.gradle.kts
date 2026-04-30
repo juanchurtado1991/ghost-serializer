@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.ktorfit)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -45,13 +44,6 @@ kotlin {
         }
         binaries.executable()
     }
-
-    js(IR) {
-        outputModuleName.set("ghost-sample")
-        browser()
-        nodejs()
-        binaries.executable()
-    }
     
     // KSP automatically adds generated sources to the corresponding source sets.
     // Manual srcDir configuration is removed to prevent redeclaration errors.
@@ -67,10 +59,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             
-            implementation(project(":ghost-api"))
-            api(project(":ghost-serialization"))
+            // Ghost (Local Project for Development/Benchmark)
+            implementation(project(":ghost-serialization"))
             implementation(project(":ghost-ktor"))
-            implementation(libs.ktorfit.lib)
+            
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -109,16 +101,6 @@ kotlin {
                 implementation(libs.ktor.client.core)
             }
         }
-
-        val jsMain by getting {
-            dependencies {
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
-                implementation(libs.ktor.client.core)
-            }
-        }
     }
 }
 
@@ -130,6 +112,14 @@ android {
     namespace = "com.ghost.serialization.sample"
     compileSdk = 36
 
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    
     defaultConfig {
         applicationId = "com.ghost.serialization.sample"
         minSdk = 24
@@ -160,18 +150,30 @@ ksp {
     arg("ghost.moduleName", "serialization_sample")
 }
 
-ktorfit {
-    compilerPluginVersion.set("2.3.3")
+
+configurations.all {
+    resolutionStrategy {
+        // Force JetBrains version of Lifecycle & SavedState to avoid KLIB conflicts with Google's version
+        force(libs.androidx.lifecycle.common)
+        force(libs.androidx.lifecycle.runtime)
+        force(libs.androidx.lifecycle.runtime.compose)
+        force(libs.androidx.lifecycle.viewmodel)
+        force(libs.androidx.lifecycle.viewmodel.compose)
+        force(libs.androidx.lifecycle.viewmodel.savedstate)
+        force(libs.androidx.savedstate)
+        force(libs.androidx.savedstate.compose)
+    }
 }
 
 dependencies {
-    // Ktorfit KSP
-    add("kspJvm", libs.ktorfit.ksp)
-    add("kspAndroid", libs.ktorfit.ksp)
-    add("kspIosArm64", libs.ktorfit.ksp)
-    add("kspIosSimulatorArm64", libs.ktorfit.ksp)
-    add("kspWasmJs", libs.ktorfit.ksp)
-    add("kspJs", libs.ktorfit.ksp)
+    // Ghost KSP (Local Project for Development/Benchmark)
+    add("kspCommonMainMetadata", project(":ghost-compiler"))
+    add("kspJvm", project(":ghost-compiler"))
+    add("kspAndroid", project(":ghost-compiler"))
+    add("kspIosArm64", project(":ghost-compiler"))
+    add("kspIosSimulatorArm64", project(":ghost-compiler"))
+    add("kspWasmJs", project(":ghost-compiler"))
+
 }
 
 compose.desktop {

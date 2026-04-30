@@ -94,3 +94,4 @@ data class LocationRef(
     val name: String,
     val url: String
 )
+
