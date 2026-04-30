@@ -86,21 +86,45 @@ class AndroidByteArraySource(val data: ByteArray) : GhostSource {
     }
 
     override fun scanString(start: Int, limit: Int, reader: GhostJsonReader): Int {
-        val sourceData = data
-        var currentPos = start
-        var hashResult = 0
+        val d = data
+        var pos = start
+        var hash = 0
         
-        while (currentPos < limit) {
-            val byteValue = sourceData[currentPos]
-            if (byteValue == GhostJsonConstants.QUOTE_BYTE) {
-                reader.position = currentPos
-                return hashResult
+        while (pos + 3 < limit) {
+            val b0 = d[pos]
+            if (b0 == GhostJsonConstants.QUOTE_BYTE) { reader.position = pos; return hash }
+            if (b0 == GhostJsonConstants.BACKSLASH_BYTE || b0 in GhostJsonConstants.CONTROL_CHAR_START..GhostJsonConstants.CONTROL_CHAR_LIMIT) return -1
+            hash = (hash shl GhostJsonConstants.HASH_SHIFT) - hash + b0
+            
+            val b1 = d[pos + 1]
+            if (b1 == GhostJsonConstants.QUOTE_BYTE) { reader.position = pos + 1; return hash }
+            if (b1 == GhostJsonConstants.BACKSLASH_BYTE || b1 in GhostJsonConstants.CONTROL_CHAR_START..GhostJsonConstants.CONTROL_CHAR_LIMIT) return -1
+            hash = (hash shl GhostJsonConstants.HASH_SHIFT) - hash + b1
+            
+            val b2 = d[pos + 2]
+            if (b2 == GhostJsonConstants.QUOTE_BYTE) { reader.position = pos + 2; return hash }
+            if (b2 == GhostJsonConstants.BACKSLASH_BYTE || b2 in GhostJsonConstants.CONTROL_CHAR_START..GhostJsonConstants.CONTROL_CHAR_LIMIT) return -1
+            hash = (hash shl GhostJsonConstants.HASH_SHIFT) - hash + b2
+            
+            val b3 = d[pos + 3]
+            if (b3 == GhostJsonConstants.QUOTE_BYTE) { reader.position = pos + 3; return hash }
+            if (b3 == GhostJsonConstants.BACKSLASH_BYTE || b3 in GhostJsonConstants.CONTROL_CHAR_START..GhostJsonConstants.CONTROL_CHAR_LIMIT) return -1
+            hash = (hash shl GhostJsonConstants.HASH_SHIFT) - hash + b3
+            
+            pos += 4
+        }
+        
+        while (pos < limit) {
+            val b = d[pos]
+            if (b == GhostJsonConstants.QUOTE_BYTE) {
+                reader.position = pos
+                return hash
             }
-            if (byteValue == GhostJsonConstants.BACKSLASH_BYTE || byteValue in GhostJsonConstants.CONTROL_CHAR_START..GhostJsonConstants.CONTROL_CHAR_LIMIT) {
+            if (b == GhostJsonConstants.BACKSLASH_BYTE || b in GhostJsonConstants.CONTROL_CHAR_START..GhostJsonConstants.CONTROL_CHAR_LIMIT) {
                 return -1
             }
-            hashResult = (hashResult shl GhostJsonConstants.HASH_SHIFT) - hashResult + byteValue
-            currentPos++
+            hash = (hash shl GhostJsonConstants.HASH_SHIFT) - hash + b
+            pos++
         }
         return -1
     }
