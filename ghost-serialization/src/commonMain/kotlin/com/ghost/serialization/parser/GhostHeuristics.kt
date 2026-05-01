@@ -25,4 +25,10 @@ expect object GhostHeuristics {
      * Prevents DoS attacks via memory exhaustion.
      */
     val maxCollectionSize: Int
+
+    /**
+     * The maximum distance to scan for a discriminator before giving up.
+     * Prevents quadratic behavior in complex objects.
+     */
+    val maxDiscriminatorPeekDistance: Int
 }

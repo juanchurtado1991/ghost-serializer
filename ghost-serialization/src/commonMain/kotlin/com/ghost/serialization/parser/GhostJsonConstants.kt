@@ -110,6 +110,9 @@ internal object GhostJsonConstants {
     const val EXP_UPPER_INT = 'E'.code
     const val BYTE_MASK = 0xFF
 
+    @PublishedApi
+    internal val TYPE_BS = "type".encodeUtf8()
+
     // --- STR POOL METRICS ---
     const val STR_POOL_SIZE = 2048
     const val SHIFT_32 = 32
@@ -221,10 +224,15 @@ internal object GhostJsonConstants {
     const val F_BYTE_INT = 102
 
     const val BYTE_LF: Byte = 10
+    const val BYTE_LF_INT = 10
     const val BYTE_CR: Byte = 13
+    const val BYTE_CR_INT = 13
     const val BYTE_TAB: Byte = 9
+    const val BYTE_TAB_INT = 9
     const val BYTE_BS: Byte = 8
+    const val BYTE_BS_INT = 8
     const val BYTE_FF: Byte = 12
+    const val BYTE_FF_INT = 12
 
     const val UTF8_ONE_BYTE_LIMIT = 0x7F
     const val UTF8_TWO_BYTE_LIMIT = 0x7FF
