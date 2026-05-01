@@ -113,13 +113,26 @@ internal object GhostJsonConstants {
     @PublishedApi
     internal val TYPE_BS = "type".encodeUtf8()
 
+    /** Bitmask for JSON whitespace: Space (32), LF (10), CR (13), HT (9) */
+    const val WHITESPACE_MASK = (1L shl 32) or (1L shl 10) or (1L shl 13) or (1L shl 9)
+
     // --- STR POOL METRICS ---
     const val STR_POOL_SIZE = 2048
     const val SHIFT_32 = 32
     const val MASK_32 = 0xFFFFFFFFL
+    // --- HASHING & PRECISION ---
     const val HASH_SHIFT = 5
     const val DOUBLE_PRECISION_LIMIT = 17
     const val FLOAT_PRECISION_LIMIT = 9
+
+    // --- POOLING & BUFFERING ---
+    const val TIER_SMALL_INT = 1024
+    const val TIER_MEDIUM_INT = 16384
+    const val TIER_LARGE_INT = 65536
+    const val BUFFER_SCALE_FACTOR = 2
+    const val SINGLE_CHAR_SIZE = 1
+    const val SURROGATE_PAIR_SIZE = 2
+    const val UNICODE_ESCAPE_PREFIX_SIZE = 2
 
     val POWERS_OF_TEN = DoubleArray(309).apply {
         for (i in indices) this[i] = 10.0.pow(i.toDouble())

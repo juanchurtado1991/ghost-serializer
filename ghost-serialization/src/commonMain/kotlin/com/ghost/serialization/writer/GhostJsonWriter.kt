@@ -26,8 +26,14 @@ class GhostJsonWriter(
     @PublishedApi
     internal var bytes: ByteArray? = null
 
-    private fun getScratch(): ByteArray {
-        val s = bytes ?: acquireScratchBuffer()
+    private fun getScratch(minSize: Int = 48): ByteArray {
+        val current = bytes
+        if (current != null && current.size >= minSize) return current
+        
+        // If we need a larger buffer, release old one and get new one
+        if (current != null) releaseScratchBuffer(current)
+        
+        val s = acquireScratchBuffer(minSize)
         bytes = s
         return s
     }
@@ -318,7 +324,7 @@ class GhostJsonWriter(
     }
 
     private fun writeLongValueRawInternal(value: Long) {
-        val scratch = getScratch()
+        val scratch = getScratch(24) // Longs need ~20 chars
         var pos = 20 // Long.MIN_VALUE is 20 chars
         var v = value
         val isNegative = v < 0
@@ -358,7 +364,7 @@ class GhostJsonWriter(
 
         val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
             value = number,
-            scratch = getScratch(),
+            scratch = getScratch(32), // Doubles need ~24 chars
             offset = 0,
             fallback = { fallbackNum ->
                 if (!fallbackNum.isFinite()) {
