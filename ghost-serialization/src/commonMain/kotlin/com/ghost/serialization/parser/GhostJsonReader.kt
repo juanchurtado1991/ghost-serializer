@@ -1,10 +1,12 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.acquireCharBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERROR
+import com.ghost.serialization.releaseCharBuffer
 import okio.BufferedSource
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
@@ -274,71 +276,89 @@ class GhostJsonReader(
         }
 
         // Slow path: manual string building for escapes (Zero-Allocation approach)
-        val stringBuilder = StringBuilder()
-
-        while (position < limit) {
-            val byteValue = getByte(position++)
-            if (byteValue == QUOTE_INT) {
-                nextTokenByte = -1
-                return stringBuilder.toString()
+        var outBuffer = acquireCharBuffer(GhostJsonConstants.TIER_SMALL_INT)
+        var outPos = 0
+        
+        fun ensureCapacity(extra: Int) {
+            if (outPos + extra > outBuffer.size) {
+                val newBuffer = acquireCharBuffer(outBuffer.size * GhostJsonConstants.BUFFER_SCALE_FACTOR)
+                outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                releaseCharBuffer(outBuffer)
+                outBuffer = newBuffer
             }
+        }
 
-            if (byteValue in GhostJsonConstants.CONTROL_CHAR_START_INT..GhostJsonConstants.CONTROL_CHAR_LIMIT_INT) {
-                throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
-            }
-
-            if (byteValue == GhostJsonConstants.BACKSLASH_INT) {
-                if (position >= limit) throwError(GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR)
-                val escaped = getByte(position++)
-                when (escaped) {
-                    GhostJsonConstants.UNICODE_PREFIX_U_INT -> {
-                        if (position + GhostJsonConstants.UNICODE_HEX_LENGTH > limit) {
-                            throwError(GhostJsonConstants.UNTERMINATED_UNICODE_ERROR)
-                        }
-
-                        var code = parseUnicodeHex(position)
-                        position += GhostJsonConstants.UNICODE_HEX_LENGTH
-
-                        if (code in GhostJsonConstants.HIGH_SURROGATE_START..GhostJsonConstants.HIGH_SURROGATE_END) {
-                            if (
-                                position + GhostJsonConstants.SURROGATE_OFFSET > limit ||
-                                source[position] != GhostJsonConstants.BACKSLASH_INT ||
-                                source[position + 1] != GhostJsonConstants.UNICODE_PREFIX_U_INT
-                            ) {
-                                throwError("Lone high surrogate")
-                            }
-                            position += 2
-                            val lowCode = parseUnicodeHex(position)
-
-                            if (lowCode !in GhostJsonConstants.LOW_SURROGATE_START..GhostJsonConstants.LOW_SURROGATE_END) {
-                                throwError("Lone high surrogate")
-                            }
-
-                            position += GhostJsonConstants.UNICODE_HEX_LENGTH
-                            code = GhostJsonConstants.UNICODE_BASE +
-                                    ((code - GhostJsonConstants.HIGH_SURROGATE_START) shl GhostJsonConstants.SHIFT_10) +
-                                    (lowCode - GhostJsonConstants.LOW_SURROGATE_START)
-                        }
-
-                        if (code <= GhostJsonConstants.BMP_LIMIT) {
-                            stringBuilder.append(code.toChar())
-                        } else {
-                            val base = code - GhostJsonConstants.UNICODE_BASE
-                            stringBuilder.append((GhostJsonConstants.HIGH_SURROGATE_START or (base shr GhostJsonConstants.SHIFT_10)).toChar())
-                            stringBuilder.append((GhostJsonConstants.LOW_SURROGATE_START or (base and GhostJsonConstants.SURROGATE_LOW_BITS_MASK)).toChar())
-                        }
-                    }
-
-                    GhostJsonConstants.N_BYTE_INT -> stringBuilder.append('\n')
-                    GhostJsonConstants.R_BYTE_INT -> stringBuilder.append('\r')
-                    GhostJsonConstants.T_BYTE_INT -> stringBuilder.append('\t')
-                    GhostJsonConstants.B_BYTE_INT -> stringBuilder.append('\b')
-                    GhostJsonConstants.F_BYTE_INT -> stringBuilder.append('\u000C')
-                    else -> stringBuilder.append(escaped.toChar())
+        try {
+            while (position < limit) {
+                val byteValue = getByte(position++)
+                if (byteValue == QUOTE_INT) {
+                    nextTokenByte = -1
+                    return String(outBuffer, 0, outPos)
                 }
-            } else {
-                stringBuilder.append(byteValue.toChar())
+
+                if (byteValue in GhostJsonConstants.CONTROL_CHAR_START_INT..GhostJsonConstants.CONTROL_CHAR_LIMIT_INT) {
+                    throwError(GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR)
+                }
+
+                if (byteValue == GhostJsonConstants.BACKSLASH_INT) {
+                    if (position >= limit) throwError(GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR)
+                    val escaped = getByte(position++)
+                    when (escaped) {
+                        GhostJsonConstants.UNICODE_PREFIX_U_INT -> {
+                            if (position + GhostJsonConstants.UNICODE_HEX_LENGTH > limit) {
+                                throwError(GhostJsonConstants.UNTERMINATED_UNICODE_ERROR)
+                            }
+
+                            var code = parseUnicodeHex(position)
+                            position += GhostJsonConstants.UNICODE_HEX_LENGTH
+
+                            if (code in GhostJsonConstants.HIGH_SURROGATE_START..GhostJsonConstants.HIGH_SURROGATE_END) {
+                                if (
+                                    position + GhostJsonConstants.SURROGATE_OFFSET > limit ||
+                                    getByte(position) == GhostJsonConstants.BACKSLASH_INT &&
+                                    getByte(position + GhostJsonConstants.SINGLE_CHAR_SIZE) == GhostJsonConstants.UNICODE_PREFIX_U_INT
+                                ) {
+                                    // Valid surrogate pair check
+                                    position += GhostJsonConstants.UNICODE_ESCAPE_PREFIX_SIZE
+                                    val lowCode = parseUnicodeHex(position)
+                                    if (lowCode in GhostJsonConstants.LOW_SURROGATE_START..GhostJsonConstants.LOW_SURROGATE_END) {
+                                        position += GhostJsonConstants.UNICODE_HEX_LENGTH
+                                        code = GhostJsonConstants.UNICODE_BASE +
+                                                ((code - GhostJsonConstants.HIGH_SURROGATE_START) shl GhostJsonConstants.SHIFT_10) +
+                                                (lowCode - GhostJsonConstants.LOW_SURROGATE_START)
+                                    } else {
+                                        throwError("Lone high surrogate")
+                                    }
+                                } else {
+                                    throwError("Lone high surrogate")
+                                }
+                            }
+
+                            if (code <= GhostJsonConstants.BMP_LIMIT) {
+                                ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE)
+                                outBuffer[outPos++] = code.toChar()
+                            } else {
+                                ensureCapacity(GhostJsonConstants.SURROGATE_PAIR_SIZE)
+                                val base = code - GhostJsonConstants.UNICODE_BASE
+                                outBuffer[outPos++] = (GhostJsonConstants.HIGH_SURROGATE_START or (base shr GhostJsonConstants.SHIFT_10)).toChar()
+                                outBuffer[outPos++] = (GhostJsonConstants.LOW_SURROGATE_START or (base and GhostJsonConstants.SURROGATE_LOW_BITS_MASK)).toChar()
+                            }
+                        }
+
+                        GhostJsonConstants.N_BYTE_INT -> { ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE); outBuffer[outPos++] = '\n' }
+                        GhostJsonConstants.R_BYTE_INT -> { ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE); outBuffer[outPos++] = '\r' }
+                        GhostJsonConstants.T_BYTE_INT -> { ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE); outBuffer[outPos++] = '\t' }
+                        GhostJsonConstants.B_BYTE_INT -> { ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE); outBuffer[outPos++] = '\b' }
+                        GhostJsonConstants.F_BYTE_INT -> { ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE); outBuffer[outPos++] = '\u000C' }
+                        else -> { ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE); outBuffer[outPos++] = escaped.toChar() }
+                    }
+                } else {
+                    ensureCapacity(GhostJsonConstants.SINGLE_CHAR_SIZE)
+                    outBuffer[outPos++] = byteValue.toChar()
+                }
             }
+        } finally {
+            releaseCharBuffer(outBuffer)
         }
         throwError(UNTERMINATED_STRING_ERROR)
     }

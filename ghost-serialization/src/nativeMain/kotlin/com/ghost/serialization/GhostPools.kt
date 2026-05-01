@@ -3,22 +3,82 @@ package com.ghost.serialization
 import com.ghost.serialization.parser.GhostJsonConstants
 import kotlin.native.concurrent.ThreadLocal
 
+private const val TIER_SMALL = 1024
+private const val TIER_MEDIUM = 16384
+private const val TIER_LARGE = 65536
+
 @ThreadLocal
-private var pool: ByteArray? = null
+private var small: ByteArray? = null
+@ThreadLocal
+private var medium: ByteArray? = null
+@ThreadLocal
+private var large: ByteArray? = null
+@ThreadLocal
+private var charSmall: CharArray? = null
+@ThreadLocal
+private var charMedium: CharArray? = null
 
 @InternalGhostApi
-actual fun acquireScratchBuffer(): ByteArray {
-    val existing = pool
-    if (existing != null) {
-        pool = null
-        return existing
+actual fun acquireScratchBuffer(minSize: Int): ByteArray {
+    return when {
+        minSize <= GhostJsonConstants.SCRATCH_BUFFER_SIZE -> {
+            val b = small
+            if (b != null && b.size >= GhostJsonConstants.SCRATCH_BUFFER_SIZE) {
+                small = null
+                b
+            } else ByteArray(GhostJsonConstants.SCRATCH_BUFFER_SIZE)
+        }
+        minSize <= TIER_SMALL -> {
+            val b = small
+            small = null
+            b ?: ByteArray(TIER_SMALL)
+        }
+        minSize <= TIER_MEDIUM -> {
+            val b = medium
+            medium = null
+            b ?: ByteArray(TIER_MEDIUM)
+        }
+        minSize <= TIER_LARGE -> {
+            val b = large
+            large = null
+            b ?: ByteArray(TIER_LARGE)
+        }
+        else -> ByteArray(minSize)
     }
-    return ByteArray(GhostJsonConstants.SCRATCH_BUFFER_SIZE)
 }
 
 @InternalGhostApi
 actual fun releaseScratchBuffer(buffer: ByteArray) {
-    if (buffer.size == GhostJsonConstants.SCRATCH_BUFFER_SIZE) {
-        pool = buffer
+    val size = buffer.size
+    when {
+        size == GhostJsonConstants.SCRATCH_BUFFER_SIZE || size == TIER_SMALL -> small = buffer
+        size == TIER_MEDIUM -> medium = buffer
+        size == TIER_LARGE -> large = buffer
+    }
+}
+
+@InternalGhostApi
+actual fun acquireCharBuffer(minSize: Int): CharArray {
+    return when {
+        minSize <= TIER_SMALL -> {
+            val b = charSmall
+            charSmall = null
+            b ?: CharArray(TIER_SMALL)
+        }
+        minSize <= TIER_MEDIUM -> {
+            val b = charMedium
+            charMedium = null
+            b ?: CharArray(TIER_MEDIUM)
+        }
+        else -> CharArray(minSize)
+    }
+}
+
+@InternalGhostApi
+actual fun releaseCharBuffer(buffer: CharArray) {
+    val size = buffer.size
+    when {
+        size == TIER_SMALL -> charSmall = buffer
+        size == TIER_MEDIUM -> charMedium = buffer
     }
 }
