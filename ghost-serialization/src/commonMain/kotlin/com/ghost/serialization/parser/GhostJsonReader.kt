@@ -7,6 +7,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERROR
 import okio.BufferedSource
 import okio.ByteString
+import okio.ByteString.Companion.encodeUtf8
 
 /**
  * High-performance, zero-allocation JSON reader designed for machine-generated code.
@@ -146,6 +147,37 @@ class GhostJsonReader(
             position = limit
             nextTokenByte = -1
         }
+    }
+
+    /**
+     * Attempts to peek at the discriminator value (e.g. "type") of the current object.
+     * Does not advance the reader's position.
+     * Returns null if not found or if the current token is not an object start.
+     */
+    fun peekDiscriminator(key: String = "type"): String? {
+        if (key == "type") return peekDiscriminator(GhostJsonConstants.TYPE_BS)
+        return peekDiscriminator(key.encodeUtf8())
+    }
+
+    /**
+     * Internal version that takes a [ByteString] for maximum performance.
+     */
+    fun peekDiscriminator(key: ByteString): String? {
+        return GhostDiscriminatorPeeker.peek(source, rawData, position, limit, key)
+    }
+
+    /**
+     * Consumes the current token and returns it.
+     */
+    fun nextToken(): Int {
+        if (nextTokenByte != -1) {
+            val token = nextTokenByte
+            nextTokenByte = -1
+            return token
+        }
+        skipWhitespace()
+        if (position >= limit) return GhostJsonConstants.MATCH_END
+        return getByte(position)
     }
 
     fun peekNextToken(): Int {

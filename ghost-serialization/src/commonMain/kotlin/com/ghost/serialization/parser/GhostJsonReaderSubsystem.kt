@@ -62,21 +62,23 @@ fun GhostJsonReader.nextKey(): String? {
     if (token == CLOSE_OBJ_INT) return null
     if (token == COMMA_INT) {
         internalSkip(1)
-        if (peekNextToken() == CLOSE_OBJ_INT) throwError(GhostJsonConstants.ERR_TRAILING_COMMA)
+        if (peekNextToken() == CLOSE_OBJ_INT) {
+            throwError(GhostJsonConstants.ERR_TRAILING_COMMA)
+        }
     }
     return readQuotedString()
 }
 
 
 fun GhostJsonReader.consumeKeySeparator() {
-    if (nextNonWhitespace() != COLON_INT) throwError(GhostJsonConstants.ERR_EXPECTED_COLON)
+    if (nextNonWhitespace() != COLON_INT) {
+        throwError(GhostJsonConstants.ERR_EXPECTED_COLON)
+    }
 }
 
 
 fun GhostJsonReader.consumeArraySeparator() {
-    if (peekNextToken() == COMMA_INT) {
-        internalSkip(1)
-    }
+    if (peekNextToken() == COMMA_INT) internalSkip(1)
 }
 
 
@@ -234,28 +236,7 @@ fun GhostJsonReader.selectString(options: JsonReaderOptions): Int {
  * Highly optimized to avoid unnecessary allocations.
  */
 fun GhostJsonReader.peekStringField(name: String): String? {
-    val savedPos = position
-    val savedToken = nextTokenByte
-
-    try {
-        if (peekNextToken() != OPEN_OBJ_INT) return null
-        internalSkip(1)
-
-        while (hasNext()) {
-            val key = nextKey() ?: break
-            consumeKeySeparator()
-            if (key == name) {
-                return if (peekNextToken() == QUOTE_INT) readQuotedString() else null
-            }
-            skipValue()
-        }
-    } catch (_: Exception) {
-        // Silently fail and restore
-    } finally {
-        position = savedPos
-        nextTokenByte = savedToken
-    }
-    return null
+    return peekDiscriminator(name)
 }
 
 fun GhostJsonReader.skipValue() {
