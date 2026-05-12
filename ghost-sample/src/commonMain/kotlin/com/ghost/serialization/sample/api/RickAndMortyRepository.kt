@@ -1,232 +1,338 @@
-@file:OptIn(InternalGhostApi::class)
+@file:OptIn(InternalGhostApi::class, ExperimentalSerializationApi::class)
 
 package com.ghost.serialization.sample.api
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
 import com.ghost.serialization.ktor.ghost
 import com.ghost.serialization.sample.model.CharacterResponse
-import com.ghost.serialization.sample.model.GhostCharacter
 import com.ghost.serialization.sample.model.PageInfo
-import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
-import com.ghost.serialization.sample.ui.JankTracker
 import com.ghost.serialization.sample.util.forceGC
 import com.ghost.serialization.sample.util.getCurrentThreadAllocatedBytes
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.okio.decodeFromBufferedSource
+import kotlinx.serialization.json.okio.encodeToBufferedSink
+import okio.Buffer
 import kotlin.time.TimeSource
 
 class RickAndMortyRepository {
 
     init {
         Ghost.addRegistry(GhostModuleRegistry_serialization_sample.INSTANCE)
+        Ghost.prewarm()
     }
 
     private val kserJson = Json { ignoreUnknownKeys = true }
-    
-    private val ghostKtorClient = HttpClient {
+
+    // Real client for downloading stress data (used once)
+    private val downloadClient = HttpClient {
         install(ContentNegotiation) { ghost() }
     }
 
-    private val kserKtorClient = HttpClient {
-        install(ContentNegotiation) { 
-            json(Json { ignoreUnknownKeys = true }) 
-        }
-    }
+    // ── Public API ──────────────────────────────────────────────────────────────
 
-    /**
-     * Fetches characters using Ghost + Ktor.
-     */
-    suspend fun fetchCharacters(
-        page: Int
-    ): CharacterResponse = withContext(Dispatchers.Default) {
-        ghostKtorClient.get("https://rickandmortyapi.com/api/character") {
-            parameter("page", page)
-        }.body()
-    }
-
-    /**
-     * Runs a professional head-to-head benchmark.
-     */
     suspend fun runBenchmark(
         pageCount: Int,
-        jankTracker: JankTracker?,
         onStatusChange: (String) -> Unit
-    ): Result<GhostResult<List<GhostCharacter>>> = withContext(Dispatchers.Default) {
+    ): Result<List<EngineResult>> = withContext(Dispatchers.Default) {
         try {
-            onStatusChange("Downloading Stress Data ($pageCount pages)...")
-            
-            val allBytes = mutableListOf<ByteArray>()
-            for (i in 1..pageCount) {
-                onStatusChange("Downloading Page $i/$pageCount...")
-                val response: HttpResponse = ghostKtorClient.get("https://rickandmortyapi.com/api/character/") {
-                    parameter("page", i)
-                }
-                if (!response.status.isSuccess()) throw Exception("Network Error on Page $i")
-                allBytes.add(response.body<ByteArray>())
-                delay(200) // Respect the API during setup
-            }
+            val stressData = downloadStressData(pageCount, onStatusChange)
+            warmUpEngines(stressData, onStatusChange)
 
-            // We simulate a large contiguous payload by joining results correctly
-            val jsonString = try {
-                if (pageCount == 1) {
-                    allBytes[0].decodeToString()
-                } else {
-                    onStatusChange("Merging $pageCount pages...")
-                    val responses = allBytes.mapIndexed { index, bytes ->
-                        try {
-                            kserJson.decodeFromString<CharacterResponse>(bytes.decodeToString())
-                        } catch (e: Exception) {
-                            throw Exception("Error parsing page ${index + 1}: ${e.message}")
-                        }
-                    }
-                    val mergedResults = responses.flatMap { it.results }
-                    val mergedResponse = CharacterResponse(
-                        info = PageInfo(
-                            count = mergedResults.size,
-                            pages = responses.size,
-                            next = null,
-                            prev = null
-                        ),
-                        results = mergedResults
-                    )
-                    kserJson.encodeToString(CharacterResponse.serializer(), mergedResponse)
-                }
-            } catch (e: Exception) {
-                return@withContext Result.failure(Exception("Benchmark Error: ${e.message}"))
-            }
-            val rawBytes = jsonString.encodeToByteArray()
+            val networkResults = benchmarkNetworkStack(stressData.bytes, onStatusChange)
 
-            // 1. INTENSIVE WARM-UP (50 iterations)
-            // Ensures JIT is hot and Ghost's internal buffers are ready
-            onStatusChange("Warming up engines (50x)...")
-            repeat(50) {
-                Ghost.deserialize<CharacterResponse>(rawBytes)
-                kserJson.decodeFromString<CharacterResponse>(jsonString)
-            }
-            forceGC()
-            
-            // ─── SUITE 1: PURE ENGINE BATTLE (In-Memory Parsing) ───
-            onStatusChange("Engine Battle: GHOST vs KSER (Pure Parsing)...")
-            
-            val ghostPure = measureEngine("GHOST PURE", jankTracker, onStatusChange) {
-                Ghost.deserialize<CharacterResponse>(rawBytes)
-            }
+            val parseStringResults = benchmarkParseString(stressData, onStatusChange)
+            val parseBytesResults = benchmarkParseBytes(stressData, onStatusChange)
+            val parseStreamResults = benchmarkParseStream(stressData, onStatusChange)
 
-            val kserPure = measureEngine("KSER PURE", jankTracker, onStatusChange) {
-                kserJson.decodeFromString<CharacterResponse>(jsonString)
-            }
+            val writeStringResults = benchmarkWriteString(stressData, onStatusChange)
+            val writeBytesResults = benchmarkWriteBytes(stressData, onStatusChange)
+            val writeBufferResults = benchmarkWriteBuffer(stressData, onStatusChange)
 
-            // ─── SUITE 2: FULL STACK BATTLE (Network + Integration) ───
-            // We use a smaller loop (10 iterations) to avoid network ban but get a real average
-            onStatusChange("Full Stack: GHOST+KTOR vs KSER+KTOR (Real Network)...")
-            
-            val ghostFull = measureEngine("GHOST + KTOR", jankTracker, onStatusChange, iterations = 3) {
-                for (i in 1..pageCount) {
-                    val response = ghostKtorClient.get("https://rickandmortyapi.com/api/character") {
-                        parameter("page", i)
-                    }
-                    if (!response.status.isSuccess()) {
-                        throw Exception("API Error ${response.status.value}: ${response.status.description}")
-                    }
-                    response.body<CharacterResponse>()
-                    delay(50) // Respectful delay
-                }
-            }
-
-            val kserFull = measureEngine("KTOR + KSER", jankTracker, onStatusChange, iterations = 3) {
-                for (p in 1..pageCount) {
-                    val response = kserKtorClient.get("https://rickandmortyapi.com/api/character") {
-                        parameter("page", p)
-                    }
-                    if (!response.status.isSuccess()) {
-                        throw Exception("API Error ${response.status.value}: ${response.status.description}")
-                    }
-                    response.body<CharacterResponse>()
-                    delay(50) // Respectful delay
-                }
-            }
-
-
-            val serializer = Ghost.getSerializer(CharacterResponse::class)
-            val serializerName = serializer?.let { it::class.simpleName } ?: "None"
-            
-            // This will show up in Logcat under "System.out" tag
-            println(">>> [GHOST_DEBUG] Active Serializer: $serializerName")
-            println(">>> [GHOST_DEBUG] Registry Instance: ${GhostModuleRegistry_serialization_sample.INSTANCE}")
-            
-            onStatusChange("Finalizing... Serializer: $serializerName")
-
-            val allCharacters = Ghost.deserialize<CharacterResponse>(rawBytes).results
-
+            onStatusChange("Done!")
             Result.success(
-                GhostResult(
-                    data = allCharacters,
-                    networkTimeMs = ghostFull.timeMs, 
-                    parseTimeMs = ghostPure.timeMs,
-                    ghostMemoryBytes = ghostPure.memoryBytes,
-                    ghostJankCount = ghostPure.jankCount,
-                    engineResults = listOf(kserPure, ghostFull, kserFull)
-                )
+                networkResults +
+                    parseStringResults +
+                    parseBytesResults +
+                    parseStreamResults +
+                    writeStringResults +
+                    writeBytesResults +
+                    writeBufferResults
             )
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    private suspend inline fun <T> measureEngine(
-        name: String,
-        jankTracker: JankTracker?,
-        onStatusChange: (String) -> Unit,
-        iterations: Int = 100,
-        crossinline block: suspend () -> T
-    ): EngineResult {
-        var totalTimeMs = 0.0
-        var totalMemBytes = 0L
-        var totalJank = 0
+    // ── Data Download ───────────────────────────────────────────────────────────
 
-        // Stabilization
-        forceGC()
-        delay(500)
-
-        onStatusChange("Benchmarking $name ($iterations iterations)...")
-        for (i in 0 until iterations) {
-            jankTracker?.startTracking(name)
-            
-            // 1. Precise Memory Start
-            val memStart = getCurrentThreadAllocatedBytes()
-            
-            // 2. High Resolution Time Start
-            val start = TimeSource.Monotonic.markNow()
-            
-            block()
-            
-            val end = TimeSource.Monotonic.markNow()
-            val memEnd = getCurrentThreadAllocatedBytes()
-            
-            totalTimeMs += (end - start).inWholeMicroseconds / 1000.0
-            totalMemBytes += if (memEnd >= memStart) memEnd - memStart else 0L
-            
-            delay(50)
-            totalJank += jankTracker?.stopTracking() ?: 0
+    private suspend fun downloadStressData(
+        pageCount: Int,
+        onStatusChange: (String) -> Unit
+    ): StressData {
+        val allBytes = mutableListOf<ByteArray>()
+        onStatusChange("Downloading Stress Data ($pageCount pages)...")
+        for (i in 1..pageCount) {
+            onStatusChange("Downloading Page $i/$pageCount...")
+            val response: HttpResponse = downloadClient.get(
+                "https://rickandmortyapi.com/api/character/"
+            ) { parameter("page", i) }
+            if (!response.status.isSuccess()) throw Exception("Network Error on Page $i")
+            allBytes.add(response.body<ByteArray>())
+            delay(150) // Respect the API rate limit
         }
 
+        val jsonString = mergePages(allBytes, pageCount)
+        val bytes = jsonString.encodeToByteArray()
+        return StressData(jsonString, bytes)
+    }
+
+    private fun mergePages(allBytes: List<ByteArray>, pageCount: Int): String {
+        if (pageCount == 1) return allBytes[0].decodeToString()
+        val responses =
+            allBytes.map { kserJson.decodeFromString<CharacterResponse>(it.decodeToString()) }
+        val mergedResults = responses.flatMap { it.results }
+        val merged = CharacterResponse(
+            info = PageInfo(
+                count = mergedResults.size,
+                pages = responses.size,
+                next = null,
+                prev = null
+            ),
+            results = mergedResults
+        )
+        return kserJson.encodeToString(CharacterResponse.serializer(), merged)
+    }
+
+    // ── Warm-Up (fair: same data, same iterations for everyone) ─────────────────
+
+    private suspend fun warmUpEngines(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ) {
+        onStatusChange("Aggressive JIT Warmup (${WARMUP_ITERATIONS}x)...")
+        repeat(WARMUP_ITERATIONS) {
+            Ghost.deserialize<CharacterResponse>(data.bytes)
+            kserJson.decodeFromString<CharacterResponse>(data.jsonString)
+        }
+        forceGC()
+    }
+
+    // ── Network Stack Benchmarks (MockEngine — measures converter only) ──────────
+    //
+    // Both clients receive the exact same bytes via MockEngine.
+    // This eliminates network variance and 429 errors.
+    // What's measured: content negotiation + JSON parsing overhead.
+
+    private suspend fun benchmarkNetworkStack(
+        networkBytes: ByteArray,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        onStatusChange("Benchmarking NETWORK STACKS (converter only, local replay)...")
+
+        val ghostMockClient = HttpClient(MockEngine { _ ->
+            respond(
+                content = networkBytes,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }) {
+            install(ContentNegotiation) { ghost() }
+        }
+
+        val kserMockClient = HttpClient(MockEngine { _ ->
+            respond(
+                content = networkBytes,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+
+        val ghostNet = measureEngine("[NETWORK] GHOST (Ktor)", onStatusChange) {
+            ghostMockClient.get("https://rickandmortyapi.com/api/character/")
+                .body<CharacterResponse>()
+        }
+        val kserNet = measureEngine("[NETWORK] KSER (Ktor)", onStatusChange) {
+            kserMockClient.get("https://rickandmortyapi.com/api/character/")
+                .body<CharacterResponse>()
+        }
+
+        ghostMockClient.close()
+        kserMockClient.close()
+        return listOf(ghostNet, kserNet)
+    }
+
+    // ── Deserialization: STRING Mode ─────────────────────────────────────────────
+
+    private suspend fun benchmarkParseString(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        val ghost = measureEngine("[PARSE_STRING] GHOST", onStatusChange) {
+            Ghost.deserialize<CharacterResponse>(data.jsonString)
+        }
+        val kser = measureEngine("[PARSE_STRING] KSER", onStatusChange) {
+            kserJson.decodeFromString<CharacterResponse>(data.jsonString)
+        }
+        return listOf(ghost, kser)
+    }
+
+    // ── Deserialization: BYTES Mode ──────────────────────────────────────────────
+
+    private suspend fun benchmarkParseBytes(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        val ghost = measureEngine("[PARSE_BYTES] GHOST", onStatusChange) {
+            Ghost.deserialize<CharacterResponse>(data.bytes)
+        }
+        // KSer doesn't have a native ByteArray decode path — matches real-world usage
+        val kser = measureEngine("[PARSE_BYTES] KSER", onStatusChange) {
+            kserJson.decodeFromString<CharacterResponse>(data.bytes.decodeToString())
+        }
+        return listOf(ghost, kser)
+    }
+
+    // ── Serialization: STRING Mode ───────────────────────────────────────────────
+
+    private suspend fun benchmarkWriteString(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+        val ghost = measureEngine("[WRITE_STRING] GHOST", onStatusChange) {
+            Ghost.serialize(obj)
+        }
+        val kser = measureEngine("[WRITE_STRING] KSER", onStatusChange) {
+            kserJson.encodeToString(CharacterResponse.serializer(), obj)
+        }
+        return listOf(ghost, kser)
+    }
+
+    // ── Serialization: BYTES Mode ────────────────────────────────────────────────
+
+    private suspend fun benchmarkWriteBytes(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+        val ghost = measureEngine("[WRITE_BYTES] GHOST", onStatusChange) {
+            Ghost.encodeToBytes(obj)
+        }
+        val kser = measureEngine("[WRITE_BYTES] KSER", onStatusChange) {
+            kserJson.encodeToString(CharacterResponse.serializer(), obj).encodeToByteArray()
+        }
+        return listOf(ghost, kser)
+    }
+
+    // ── Deserialization: STREAM Mode ─────────────────────────────────────────────
+    //
+    // Ghost reads directly from a BufferedSource (Okio native path — zero copy).
+    // KSer uses kotlinx-serialization-json-okio's decodeFromBufferedSource extension.
+    // Both get a fresh Buffer filled with the same bytes each iteration.
+
+    private suspend fun benchmarkParseStream(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        val ghost = measureEngine("[PARSE_STREAM] GHOST", onStatusChange) {
+            val buf = Buffer().write(data.bytes)
+            Ghost.deserialize<CharacterResponse>(buf)
+        }
+        val kser = measureEngine("[PARSE_STREAM] KSER", onStatusChange) {
+            val buf = Buffer().write(data.bytes)
+            kserJson.decodeFromBufferedSource(CharacterResponse.serializer(), buf)
+        }
+        return listOf(ghost, kser)
+    }
+
+    // ── Serialization: BUFFER (Sink) Mode ────────────────────────────────────────
+    //
+    // Ghost writes directly into an Okio Buffer sink.
+    // KSer uses kotlinx-serialization-json-okio's encodeToSink extension.
+
+    private suspend fun benchmarkWriteBuffer(
+        data: StressData,
+        onStatusChange: (String) -> Unit
+    ): List<EngineResult> {
+        val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+        val ghost = measureEngine("[WRITE_BUFFER] GHOST", onStatusChange) {
+            val buf = Buffer()
+            Ghost.encodeToSink(buf, obj)
+        }
+        val kser = measureEngine("[WRITE_BUFFER] KSER", onStatusChange) {
+            val buf = Buffer()
+            kserJson.encodeToBufferedSink(CharacterResponse.serializer(), obj, buf)
+        }
+        return listOf(ghost, kser)
+    }
+
+    // ── Measurement Utility ──────────────────────────────────────────────────────
+    //
+    // Identical methodology for every engine:
+    //   - Single forceGC() before the run to level the heap
+    //   - 100 iterations averaged
+    //   - Thread-local allocation tracking
+
+    private suspend fun measureEngine(
+        name: String,
+        onStatusChange: (String) -> Unit,
+        block: suspend () -> Unit
+    ): EngineResult {
+        onStatusChange("Benchmarking $name...")
+        forceGC()
+        var totalTimeNs = 0L
+        var totalMem = 0L
+        repeat(BENCHMARK_ITERATIONS) {
+            val memStart = getCurrentThreadAllocatedBytes()
+            val start = TimeSource.Monotonic.markNow()
+            block()
+            val durationNs = start.elapsedNow().inWholeNanoseconds
+            val memEnd = getCurrentThreadAllocatedBytes()
+            totalTimeNs += durationNs
+            totalMem += if (memEnd >= memStart) memEnd - memStart else 0L
+        }
         return EngineResult(
             name = name,
-            timeMs = totalTimeMs / iterations,
-            memoryBytes = totalMemBytes / iterations,
-            isSupported = true,
-            jankCount = totalJank
+            timeMs = (totalTimeNs / BENCHMARK_ITERATIONS.toDouble()) / NANOS_PER_MILLI,
+            memoryBytes = totalMem / BENCHMARK_ITERATIONS
         )
+    }
+
+    // ── Initial data fetch for UI character list ─────────────────────────────────
+
+    suspend fun fetchCharacters(page: Int): CharacterResponse = withContext(Dispatchers.Default) {
+        downloadClient.get("https://rickandmortyapi.com/api/character") {
+            parameter("page", page)
+        }.body()
+    }
+
+    @Suppress("ArrayInDataClass")
+    private data class StressData(val jsonString: String, val bytes: ByteArray)
+
+    companion object {
+        private const val WARMUP_ITERATIONS = 200
+        private const val BENCHMARK_ITERATIONS = 100
+        private const val NANOS_PER_MILLI = 1_000_000.0
     }
 }

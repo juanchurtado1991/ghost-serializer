@@ -8,6 +8,7 @@ import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
 import org.springframework.http.converter.AbstractHttpMessageConverter
+import kotlin.reflect.KClass
 
 /**
  * Spring [org.springframework.http.converter.HttpMessageConverter]
@@ -30,7 +31,8 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
     override fun writeInternal(t: Any, outputMessage: HttpOutputMessage) {
         val sink = outputMessage.body.sink().buffer()
         runCatching {
-            Ghost.encodeToSink(sink, t)
+            @Suppress("UNCHECKED_CAST")
+            Ghost.encodeToSink(sink, t, t::class as KClass<Any>)
             sink.flush()
         }
     }

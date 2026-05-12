@@ -11,10 +11,16 @@ import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.writer.GhostJsonWriter
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class GhostMemoryTest {
+
+    @BeforeTest
+    fun setUp() {
+        Ghost.resetForTest()
+    }
 
     // --- Recursive Serializer for testing depth ---
     private object RecursiveSerializer : GhostSerializer<Any> {

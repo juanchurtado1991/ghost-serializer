@@ -45,8 +45,6 @@ import com.ghost.serialization.sample.util.copyToClipboard
 @Composable
 fun GhostSampleApp(viewModel: MainViewModel = viewModel { MainViewModel() }) {
     val uiState by viewModel.uiState.collectAsState()
-    val jankTracker = rememberJankTracker()
-
 
     LazyColumn(
         modifier = Modifier
@@ -72,7 +70,6 @@ fun GhostSampleApp(viewModel: MainViewModel = viewModel { MainViewModel() }) {
         item {
             RunBenchmarkButton(
                 viewModel = viewModel,
-                jankTracker = jankTracker,
                 uiState = uiState
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -179,18 +176,18 @@ private fun BenchmarkConfigCard(
             ) {
                 SampleText(text = "STRESS LOAD", isBold = true, fontSize = 12)
                 SampleText(
-                    text = "${uiState.pageCount.toInt()} PAGES (Pure 100x / Stack 3x)",
+                    text = "${uiState.pageCount.toInt()} PAGES (x100)",
                     overrideColor = AppDesign.AccentGlow,
                     isBold = true,
-                    fontSize = 10
+                    fontSize = 12
                 )
             }
 
             Slider(
                 value = uiState.pageCount,
                 onValueChange = { viewModel.updatePageCount(it) },
-                valueRange = 1f..10f,
-                steps = 9,
+                valueRange = 1f..20f,
+                steps = 19,
                 modifier = Modifier.padding(top = 8.dp),
                 colors = SliderDefaults.colors(
                     thumbColor = AppDesign.AccentGlow,
@@ -224,11 +221,10 @@ private fun ErrorItem(uiState: UiState) {
 @Composable
 private fun RunBenchmarkButton(
     viewModel: MainViewModel,
-    jankTracker: JankTracker,
     uiState: UiState
 ) {
     Button(
-        onClick = { viewModel.runBenchmark(jankTracker) },
+        onClick = { viewModel.runBenchmark() },
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults

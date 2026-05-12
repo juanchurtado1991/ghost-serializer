@@ -1,11 +1,6 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.application)
-    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
@@ -13,8 +8,10 @@ plugins {
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
         }
     }
     
@@ -28,21 +25,6 @@ kotlin {
             baseName = "GhostSample"
             isStatic = true
         }
-    }
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        outputModuleName.set("ghost-sample-wasm")
-        browser {
-            val projectDir = project.projectDir
-            commonWebpackConfig {
-                outputFileName = "ghost-sample.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static(projectDir.path)
-                }
-            }
-        }
-        binaries.executable()
     }
 
     sourceSets {
@@ -62,11 +44,13 @@ kotlin {
             implementation(project(":ghost-ktor"))
             
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.mock)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.serialization.json.okio)
             }
         }
         
@@ -89,16 +73,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.bundles.serialization.engines)
-        }
-
-        val wasmJsMain by getting {
-            dependencies {
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
-                implementation(libs.ktor.client.core)
-            }
         }
     }
 }
@@ -130,6 +104,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
     
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -147,21 +125,6 @@ android {
 
 ksp {
     arg("ghost.moduleName", "serialization_sample")
-}
-
-
-configurations.all {
-    resolutionStrategy {
-        // Force JetBrains version of Lifecycle & SavedState to avoid KLIB conflicts with Google's version
-        force(libs.androidx.lifecycle.common)
-        force(libs.androidx.lifecycle.runtime)
-        force(libs.androidx.lifecycle.runtime.compose)
-        force(libs.androidx.lifecycle.viewmodel)
-        force(libs.androidx.lifecycle.viewmodel.compose)
-        force(libs.androidx.lifecycle.viewmodel.savedstate)
-        force(libs.androidx.savedstate)
-        force(libs.androidx.savedstate.compose)
-    }
 }
 
 dependencies {

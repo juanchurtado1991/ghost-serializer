@@ -2,8 +2,6 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 
 allprojects {
-    // group and version are inherited from root build.gradle.kts
-    
     val localProperties = java.util.Properties()
     val localPropertiesFile = project.rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -27,12 +25,14 @@ subprojects {
 
         val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
             archiveClassifier.set("javadoc")
-            // Dokka V2: wire to dokkaGeneratePublicationHtml by name, take its outputs.
-            // Avoids a direct type reference to DokkaGeneratePublicationTask which is not
-            // available in the classpath of an applied .kts script.
-            val dokkaTask = tasks.named("dokkaGeneratePublicationHtml")
+
+            val dokkaTask = tasks.named("dokkaHtml")
             dependsOn(dokkaTask)
             from(dokkaTask.map { it.outputs.files })
+        }
+
+        tasks.matching { it.name == "dokkaHtml" }.configureEach {
+            dependsOn(tasks.matching { it.name.startsWith("ksp") })
         }
 
 
@@ -84,7 +84,7 @@ subprojects {
                         developers {
                             developer {
                                 id.set("ghost")
-                                name.set("Juan Carlos Hurtado Giammattei")
+                                name.set("Juan Hurtado")
                                 email.set("juan1402.91@gmail.com")
                             }
                         }

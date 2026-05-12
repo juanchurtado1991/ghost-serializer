@@ -19,10 +19,16 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 import kotlin.test.Test
+import kotlin.test.AfterTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class GhostConcurrencyTest {
+
+    @AfterTest
+    fun tearDown() {
+        Ghost.resetForTest()
+    }
 
     private class ThreadSafeMockSerializer(val id: Int) : GhostSerializer<Int> {
         override val typeName: String = "Int_$id"

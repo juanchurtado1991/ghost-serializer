@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply(from = "publish.gradle.kts")
@@ -26,19 +25,9 @@ allprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
-            compilerOptions {
-                if (this is org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions) {
-                    jvmTarget.set(JvmTarget.JVM_17)
-                }
-                freeCompilerArgs.add("-Xexpect-actual-classes")
-                freeCompilerArgs.add("-Xexplicit-backing-fields")
-                
-                if (project.name != "ghost-gradle-plugin") {
-                    freeCompilerArgs.add("-Xreturn-value-checker=full")
-                }
-            }
+    tasks.withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
         }
     }
 

@@ -1,35 +1,32 @@
-@file:OptIn(InternalGhostApi::class)
-
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.GhostJsonReader
 import io.ktor.http.ContentType
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
 import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
 import okio.Buffer
+import okio.BufferedSource
+import kotlin.reflect.KClass
 
 class GhostContentConverter : ContentConverter {
-    
-    override suspend fun serialize(
+
+    override suspend fun serializeNullable(
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,
         value: Any?
-    ): io.ktor.http.content.OutgoingContent? {
+    ): OutgoingContent? {
         if (value == null) return null
-        val serializer = Ghost.getSerializer(typeInfo.kotlinType ?: return null) ?: return null
-
+        val clazz = typeInfo.type
+        @Suppress("UNCHECKED_CAST")
+        val serializer = Ghost.getSerializer(clazz as KClass<Any>) ?: return null
         val buffer = Buffer()
         serializer.serialize(buffer, value)
-        return TextContent(
-            text = buffer.readUtf8(),
-            contentType = contentType
-        )
+        return TextContent(text = buffer.readUtf8(), contentType = contentType)
     }
 
     override suspend fun deserialize(
@@ -37,10 +34,10 @@ class GhostContentConverter : ContentConverter {
         typeInfo: TypeInfo,
         content: ByteReadChannel
     ): Any? {
-        val serializer = Ghost.getSerializer(typeInfo.kotlinType ?: return null) ?: return null
-        val reader = createReader(content)
-        return serializer.deserialize(reader)
+        val source: BufferedSource = content.toBufferedSource()
+        return Ghost.decodeFromSource(source, typeInfo.type)
     }
 }
 
-internal expect suspend fun createReader(channel: ByteReadChannel): GhostJsonReader
+/** Platform bridge: converts a [ByteReadChannel] to an [okio.BufferedSource] without copying bytes. */
+internal expect suspend fun ByteReadChannel.toBufferedSource(): BufferedSource

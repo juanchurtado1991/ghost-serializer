@@ -19,3 +19,13 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# SLF4J missing classes (Ktor/Networking)
+-dontwarn org.slf4j.**
+
+# Ghost Serialization
+-keep class com.ghost.serialization.generated.** { *; }
+-keep @com.ghost.serialization.annotations.GhostSerialization class * { *; }
+-keepclassmembers class * {
+    @com.ghost.serialization.annotations.GhostSerialization *;
+}

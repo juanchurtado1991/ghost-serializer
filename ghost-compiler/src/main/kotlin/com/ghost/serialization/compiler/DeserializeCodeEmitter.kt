@@ -95,7 +95,7 @@ internal class DeserializeCodeEmitter(
             val varType = when {
                 isPrimitive -> it.typeName
                 isUnboxedValueClass -> {
-                    val underlying = it.valueClassProperty
+                    val underlying = it.valueClassProperty!!
                     if (underlying.type.isPrimitive()) underlying.typeName
                     else underlying.typeName.copy(nullable = true)
                 }
@@ -103,7 +103,7 @@ internal class DeserializeCodeEmitter(
                 else -> it.typeName.copy(nullable = true)
             }
 
-            val targetProp = if (isUnboxedValueClass) it.valueClassProperty else it
+            val targetProp = if (isUnboxedValueClass) it.valueClassProperty!! else it
 
             val initialValue = when {
                 it.isNullable -> STR_NULL
@@ -120,6 +120,7 @@ internal class DeserializeCodeEmitter(
                 initialValue
             )
         }
+
         val maskCount = (properties.size + 63) / 64
         for (i in 0 until maskCount) {
             body.addStatement("var _mask$i = 0L")
@@ -131,6 +132,7 @@ internal class DeserializeCodeEmitter(
     }
 
     private fun emitFragmentedDeserialization(
+        @Suppress("unused")
         body: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder
     ) {
@@ -145,14 +147,14 @@ internal class DeserializeCodeEmitter(
             val varType = when {
                 isPrimitive -> it.typeName
                 isUnboxedValueClass -> {
-                    val underlying = it.valueClassProperty
+                    val underlying = it.valueClassProperty!!
                     if (underlying.type.isPrimitive()) underlying.typeName
                     else underlying.typeName.copy(nullable = true)
                 }
 
                 else -> it.typeName.copy(nullable = true)
             }
-            val targetProp = if (isUnboxedValueClass) it.valueClassProperty else it
+            val targetProp = if (isUnboxedValueClass) it.valueClassProperty!! else it
             val initialValue = when {
                 it.isNullable -> STR_NULL
                 targetProp.type.isPrimitiveInt() -> STR_ZERO
@@ -276,7 +278,7 @@ internal class DeserializeCodeEmitter(
                 prop.isValueClass && prop.valueClassProperty != null && !prop.isNullable
             when {
                 isPrimitive -> "ctx._${prop.kotlinName}"
-                isUnboxedValueClass -> "${prop.typeName}(ctx._${prop.kotlinName}${if (prop.valueClassProperty.type.isPrimitive()) "" else "!!"})"
+                isUnboxedValueClass -> "${prop.typeName}(ctx._${prop.kotlinName}${if (prop.valueClassProperty!!.type.isPrimitive()) "" else "!!"})"
                 else -> "ctx._${prop.kotlinName}!!"
             }
         }
@@ -325,7 +327,7 @@ internal class DeserializeCodeEmitter(
                 val valueExpr = when {
                     prop.isNullable -> "if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${prop.kotlinName} else _result.${prop.kotlinName}"
                     isPrimitive -> "if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${prop.kotlinName} else _result.${prop.kotlinName}"
-                    isUnboxedValueClass -> "${prop.typeName}(if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${prop.kotlinName}${if (prop.valueClassProperty.type.isPrimitive()) "" else "!!"} else _result.${prop.kotlinName})"
+                    isUnboxedValueClass -> "${prop.typeName}(if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${prop.kotlinName}${if (prop.valueClassProperty!!.type.isPrimitive()) "" else "!!"} else _result.${prop.kotlinName})"
                     else -> "if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${prop.kotlinName}!! else _result.${prop.kotlinName}"
                 }
                 mainBody.addStatement("  ${prop.kotlinName} = $valueExpr$comma")
@@ -382,7 +384,7 @@ internal class DeserializeCodeEmitter(
 
         return when {
             prop.isValueClass && prop.valueClassProperty != null -> {
-                buildCall(prop.valueClassProperty)
+                buildCall(prop.valueClassProperty!!)
             }
 
             prop.isSealedClass -> CodeBlock.of(STR_T_DESERIALIZE, serializerName(prop.type))
@@ -511,7 +513,7 @@ internal class DeserializeCodeEmitter(
                 when {
                     isPrimitive -> "$STR_UNDERSCORE${prop.kotlinName}"
                     isUnboxedValueClass -> {
-                        val bang = if (prop.valueClassProperty.type.isPrimitive()) "" else "!!"
+                        val bang = if (prop.valueClassProperty!!.type.isPrimitive()) "" else "!!"
                         "${prop.typeName}(_${prop.kotlinName}$bang)"
                     }
 
@@ -585,7 +587,7 @@ internal class DeserializeCodeEmitter(
                     prop.isNullable -> "if ((_mask$maskIdx and $bitMaskStr) != 0L) _${prop.kotlinName} else _result.${prop.kotlinName}"
                     isPrimitive -> "if ((_mask$maskIdx and $bitMaskStr) != 0L) _${prop.kotlinName} else _result.${prop.kotlinName}"
                     isUnboxedValueClass -> {
-                        val bang = if (prop.valueClassProperty.type.isPrimitive()) "" else "!!"
+                        val bang = if (prop.valueClassProperty!!.type.isPrimitive()) "" else "!!"
                         "if ((_mask$maskIdx and $bitMaskStr) != 0L) ${prop.typeName}(_${prop.kotlinName}$bang) else _result.${prop.kotlinName}"
                     }
 
@@ -633,22 +635,18 @@ internal class DeserializeCodeEmitter(
         private const val STR_FALSE = "false"
         private const val STR_VAR_UNDERSCORE = "var _"
         private const val STR_COLON_T_EQ_L = ": %T = %L"
-        private const val STR_SET_EQ_FALSE = "Set = false"
         private const val STR_BEGIN_OBJECT = "reader.beginObject()"
         private const val STR_WHILE_TRUE = "while (true)"
         private const val STR_SELECT_NAME_AND_CONSUME =
             "val index = reader.selectNameAndConsume(OPTIONS)"
         private const val STR_WHEN_INDEX = "when (index)"
         private const val STR_ARROW = " ->"
-        private const val STR_CONSUME_KEY_SEP = "reader.consumeKeySeparator()"
         private const val STR_UNDERSCORE = "_"
         private const val STR_EQ_L = " = %L"
-        private const val STR_SET_EQ_TRUE = "Set = true"
         private const val STR_MINUS_ONE_BREAK = "-1 -> break"
         private const val STR_MINUS_TWO_ARROW = "-2 ->"
         private const val STR_SKIP_VALUE = "reader.skipValue()"
         private const val STR_END_OBJECT = "reader.endObject()"
-        private const val STR_T_L = "%T(%L)"
         private const val STR_T_DESERIALIZE = "%T.deserialize(reader)"
         private const val STR_NEXT_INT = "reader.nextInt()"
         private const val STR_NEXT_BOOLEAN = "reader.nextBoolean()"
@@ -660,10 +658,6 @@ internal class DeserializeCodeEmitter(
         private const val STR_NULL_CHECK_1 =
             "if (reader.isNextNullValue()) { reader.consumeNull(); null } "
         private const val STR_NULL_CHECK_2 = "else %T.deserialize(reader)"
-        private const val STR_NULL_CHECK_3 =
-            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else { "
-        private const val STR_NULL_CHECK_4 =
-            "val s = reader.nextString(); try { %T.valueOf(s) } catch (_: %T) { null } }"
         private const val STR_NULL_CHECK_INT =
             "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextInt()"
         private const val STR_NULL_CHECK_LONG =
@@ -674,32 +668,8 @@ internal class DeserializeCodeEmitter(
             "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextFloat()"
         private const val STR_NULL_CHECK_BOOLEAN =
             "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextBoolean()"
-        private const val STR_NULL_CHECK_STRING =
-            "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextString()"
         private const val STR_NULL_CHECK_L =
             "if (reader.isNextNullValue()) { reader.consumeNull(); null } else %L"
-        private const val STR_ENUM_EXPR =
-            "reader.nextString().let { s -> try { %T.valueOf(s) } catch (_: %T) { reader.throwError(\"Invalid enum value: \$s\") } }"
-        private const val STR_TRY_ENUM =
-            "val s = reader.nextString(); val result = try { %T.valueOf(s) } "
-        private const val STR_CATCH_ENUM_INVALID =
-            "catch (_: %T) { reader.throwError(\"Invalid enum value: \$s\") }"
-        private const val STR_CATCH_ENUM_FIRST = "catch (_: %T) { %T.entries.first() }"
-        private const val STR_DOUBLE_TO_FLOAT = "reader.nextDouble().toFloat()"
-        private const val STR_READ_LIST = "reader.readList { %L }"
-        private const val STR_BUILD_MAP_1 = "buildMap {\n"
-        private const val STR_BUILD_MAP_2 = "  reader.beginObject()\n"
-        private const val STR_BUILD_MAP_3 = "  while (true) {\n"
-        private const val STR_BUILD_MAP_4 = "    val mapKey = reader.nextKey() ?: break\n"
-        private const val STR_BUILD_MAP_5 = "    reader.consumeKeySeparator()\n"
-        private const val STR_BUILD_MAP_6 = "    put(mapKey, %L)\n"
-        private const val STR_BUILD_MAP_7 = "  }\n"
-        private const val STR_BUILD_MAP_8 = "  reader.endObject()\n"
-        private const val STR_BUILD_MAP_9 = "}"
-        private const val STR_CORE_EXC_PKG = "com.ghost.serialization.exception"
-        private const val STR_GHOST_JSON_EXC = "GhostJsonException"
-        private const val STR_IF_NOT_SET = "if (!_"
-        private const val STR_SET_PAREN = "Set)"
         private const val STR_THROW_S = "reader.throwError(%S)"
         private const val STR_REQ_FIELD_1 = "Required field '"
         private const val STR_REQ_FIELD_2 = "' missing in JSON"
@@ -710,18 +680,12 @@ internal class DeserializeCodeEmitter(
         private const val STR_EQ_SPACE = " = "
         private const val STR_VAL_RESULT = "val _result = %T("
         private const val STR_OR = " || "
-        private const val STR_IF_PAREN = "if ("
         private const val STR_RETURN_RESULT_COPY = "return _result.copy("
         private const val STR_COMMA = ","
         private const val STR_EMPTY = ""
-        private const val STR_IF_UNDERSCORE = "if (_"
-        private const val STR_SET_UNDERSCORE = "Set) _"
-        private const val STR_ELSE_RESULT = " else _result."
-        private const val STR_BANG_ELSE_RESULT = "!! else _result."
         private const val STR_SPACE_SPACE = "  "
         private const val STR_ELSE = "else"
         private const val STR_RETURN_RESULT_FINAL = "return _result"
-        private const val STR_SET = "Set"
         private const val STR_ERR_INVALID_ENUM_INDEX =
             "-1 -> reader.throwError(\"Invalid enum value\")"
         private const val STR_ERR_UNEXPECTED_INDEX =

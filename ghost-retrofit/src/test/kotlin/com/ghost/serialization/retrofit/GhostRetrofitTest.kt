@@ -2,9 +2,10 @@
 
 package com.ghost.serialization.retrofit
 
+import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeKeySeparator
@@ -39,7 +40,7 @@ data class RetrofitUser(val id: Int, val name: String, val isActive: Boolean)
 @InternalGhostApi
 object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
     override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
-    
+
     override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
         writer.beginObject().ignore()
         writer.name("id").ignore()
@@ -82,6 +83,18 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
     }
 }
 
+// --- Test registry that registers RetrofitUserSerializer into Ghost ---
+@InternalGhostApi
+private object RetrofitTestRegistry : GhostRegistry {
+    override fun prewarm() {}
+    override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
+        mapOf(RetrofitUser::class to RetrofitUserSerializer)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+        if (clazz == RetrofitUser::class) RetrofitUserSerializer as GhostSerializer<T> else null
+}
+
 // --- Retrofit API Definition ---
 interface MockApiService {
     @GET("/user")
@@ -95,7 +108,7 @@ interface MockApiService {
 
     @POST("/user")
     suspend fun createUser(@Body user: RetrofitUser): RetrofitUser
-    
+
     @GET("/primitive")
     suspend fun getPrimitive(): Int
 }
@@ -104,29 +117,18 @@ class GhostRetrofitTest {
 
     private lateinit var mockWebServer: MockWebServer
     private lateinit var apiService: MockApiService
-    private lateinit var registry: GhostRegistry
 
     @BeforeEach
     fun setup() {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        // Create a dedicated mock registry for testing
-        registry = object : GhostRegistry {
-            override fun prewarm() {}
-            override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
-                return mapOf(RetrofitUser::class to RetrofitUserSerializer)
-            }
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
-                if (clazz == RetrofitUser::class) return RetrofitUserSerializer as GhostSerializer<T>
-                return null
-            }
-        }
+        // Register the test serializer into the global Ghost instance
+        Ghost.addRegistry(RetrofitTestRegistry)
 
         val retrofit = Retrofit.Builder()
             .baseUrl(mockWebServer.url("/"))
-            .addConverterFactory(GhostConverterFactory.create(registry))
+            .addConverterFactory(GhostConverterFactory.create())
             .build()
 
         apiService = retrofit.create(MockApiService::class.java)
@@ -150,8 +152,7 @@ class GhostRetrofitTest {
         assertEquals(42, user.id)
         assertEquals("John Doe", user.name)
         assertTrue(user.isActive)
-        
-        // Verify that the request was made correctly
+
         val request = mockWebServer.takeRequest()
         assertEquals("/user", request.path)
     }
@@ -200,7 +201,7 @@ class GhostRetrofitTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(200)
-                .setBody("""{"id": 7, "name": "Eve", "isActive": true}""") // Echo back
+                .setBody("""{"id": 7, "name": "Eve", "isActive": true}""")
         )
 
         val newUser = RetrofitUser(7, "Eve", true)

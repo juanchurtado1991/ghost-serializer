@@ -64,14 +64,14 @@ class GhostPluginFunctionalTest {
 
         buildFile.writeText("""
             plugins {
-                kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "2.3.10"}"
-                id("com.google.devtools.ksp") version "2.3.6"
+                kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "1.9.24"}"
+                id("com.google.devtools.ksp") version "1.9.24-1.0.20"
                 id("com.ghostserializer.ghost")
             }
             
             repositories {
-                mavenCentral()
                 mavenLocal()
+                mavenCentral()
             }
             
             dependencies {
