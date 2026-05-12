@@ -1,12 +1,6 @@
 package com.ghost.benchmark
 
-import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
-import org.junit.platform.launcher.core.LauncherFactory
-import org.junit.platform.engine.discovery.DiscoverySelectors
-import org.junit.platform.launcher.listeners.SummaryGeneratingListener
-import org.junit.platform.launcher.TestExecutionListener
-import org.junit.platform.launcher.TestIdentifier
-import org.junit.platform.engine.TestExecutionResult
+import java.io.File
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 
@@ -18,181 +12,117 @@ data class TestResult(
 )
 
 /**
- * Unified test runner for all Ghost modules.
- * Runs JVM tests dynamically and accumulates results
- * for the final classified table.
+ * Unified test summary for all Ghost modules.
+ *
+ * Aggregates JUnit XML emitted by Gradle `test` / `jvmTest` tasks so the benchmark run matches
+ * a full `gradle test` without embedding JUnit Platform (which broke after Vintage removal /
+ * JUnit 6 classpath quirks).
  */
 object ParsingTestBenchmark {
 
     private const val W = 93
 
-    // Called from GhostBenchmark.main() – returns all test results for the unified table
-    fun runAllTests(): List<TestResult> {
-        val allResults = mutableListOf<TestResult>()
-
-        // Silently run tests and collect results
-
-        // ── 1. JVM Tests (dynamic discovery) ──────────────────────────────────
-        allResults += runJvmTests()
-
-        return allResults
-    }
-
-    // ── JVM dynamic runner ─────────────────────────────────────────────────────
-
-    private fun runJvmTests(): List<TestResult> {
-
-        val request = LauncherDiscoveryRequestBuilder
-            .request()
-            // Exclude ghost-gradle-plugin: needs Gradle jars not on benchmark classpath
-            // Exclude ghost-ktor common: needs Android/KMP runtime not on benchmark classpath
-            // Both are run as dependsOn tasks; we read their XML reports instead
-            .selectors(
-                DiscoverySelectors.selectPackage("com.ghost.serialization"),
-                DiscoverySelectors.selectPackage("com.ghost.benchmark")
-            )
-            .filters(
-                org.junit.platform.engine.discovery.PackageNameFilter.excludePackageNames(
-                    "com.ghost.serialization.ktor"
-                )
-            )
-            .build()
-
-        val launcher = LauncherFactory.create()
-        val summaryListener = SummaryGeneratingListener()
-        val results = mutableListOf<TestResult>()
-
-        val liveListener = object : TestExecutionListener {
-            override fun executionStarted(id: TestIdentifier) {
-                // Silent
-            }
-
-            override fun executionFinished(id: TestIdentifier, result: TestExecutionResult) {
-                if (!id.isTest) return
-                val passed = result.status == TestExecutionResult.Status.SUCCESSFUL
-                if (!passed) {
-                    println("\n  ❌ [FAIL] ${id.displayName}")
-                    result.throwable.ifPresent { t -> 
-                        println("       ↳ ${t.message}")
-                        t.printStackTrace(System.out)
-                    }
-                }
-                results += TestResult(
-                    name = id.displayName,
-                    category = resolveCategory(id),
-                    passed = passed,
-                    error = if (!passed) result.throwable.map { it.message }.orElse(null) else null
-                )
-            }
-        }
-
-        launcher.registerTestExecutionListeners(summaryListener, liveListener)
-        launcher.execute(request)
-
-        // Also read results for modules that can't run in-process (Gradle plugin, Ktor)
-        val offProcessResults = readJUnitXmlResults()
-        offProcessResults.forEach { r ->
-            if (!r.passed) {
-                println("\n  ❌ [FAIL] ${r.name}")
-                r.error?.let { println("       ↳ $it") }
-            }
-        }
-
-        return results + offProcessResults
-    }
+    fun runAllTests(): List<TestResult> = readJUnitXmlResults()
 
     /**
-     * Reads JUnit XML test reports for modules that can't run in the benchmark
-     * classpath (e.g. ghost-gradle-plugin which needs Gradle jars,
-     * ghost-ktor which needs KMP/Android runtime).
+     * Reads JUnit XML from each module under `build/test-results/` (same layout Gradle writes).
      */
     private fun readJUnitXmlResults(): List<TestResult> {
-        val rootDir = java.io.File(System.getProperty("user.dir")).let {
-            // benchmark runs from project root; confirm by checking for settings.gradle.kts
-            if (java.io.File(it, "settings.gradle.kts").exists()) it
+        val rootDir = File(System.getProperty("user.dir")).let {
+            if (File(it, "settings.gradle.kts").exists()) it
             else it.parentFile
         }
-        val reportDirs = mapOf(
-            "Gradle Plugin"    to java.io.File(rootDir, "ghost-gradle-plugin/build/test-results/test"),
-            "Ktor Adapter"     to java.io.File(rootDir, "ghost-ktor/build/test-results/jvmTest"),
-            "Retrofit Adapter" to java.io.File(rootDir, "ghost-retrofit/build/test-results/test")
+        val reportRoots = listOf(
+            "Serialization (JVM)" to File(rootDir, "ghost-serialization/build/test-results/jvmTest"),
+            "Integration" to File(rootDir, "ghost-integration-test/build/test-results/test"),
+            "Gradle Plugin" to File(rootDir, "ghost-gradle-plugin/build/test-results/test"),
+            "Ktor Adapter" to File(rootDir, "ghost-ktor/build/test-results/jvmTest"),
+            "Retrofit Adapter" to File(rootDir, "ghost-retrofit/build/test-results/test"),
         )
         val results = mutableListOf<TestResult>()
-        for ((category, dir) in reportDirs) {
+        for ((label, dir) in reportRoots) {
             if (!dir.exists()) {
-                println("  ⚠️  No XML reports found for $category at ${dir.path}")
+                println(
+                    "  ⚠️  No XML reports for $label at ${dir.path} — run the module's test task first."
+                )
                 continue
             }
-            dir.walkTopDown().filter { it.name.endsWith(".xml") }.forEach { file ->
-                parseJUnitXml(file, category, results)
+            dir.walkTopDown().filter { it.isFile && it.name.endsWith(".xml") }.forEach { file ->
+                parseJUnitXml(file, results)
             }
         }
         return results
     }
 
-    private fun parseJUnitXml(
-        file: java.io.File,
-        category: String,
-        results: MutableList<TestResult>
-    ) {
+    private fun parseJUnitXml(file: File, results: MutableList<TestResult>) {
         val text = file.readText()
-        // Simple regex-based parse — avoids adding an XML dependency
-        val testcaseRegex = Regex("""<testcase[^>]*name="([^"]+)"[^>]*(?:/>|>([\s\S]*?)</testcase>)""")
-        for (match in testcaseRegex.findAll(text)) {
-            val name = match.groupValues[1]
+        val testcaseTag =
+            Regex("""<testcase\s+([^/>]+?)(?:/>|>([\s\S]*?)</testcase>)""")
+        for (match in testcaseTag.findAll(text)) {
+            val attrs = match.groupValues[1]
             val body = match.groupValues[2]
+            val name = attr(attrs, "name") ?: continue
+            val className = attr(attrs, "classname").orEmpty()
             val failed = body.contains("<failure") || body.contains("<error")
+            val displayName =
+                if (className.isNotEmpty()) {
+                    val short = className.substringAfterLast('.')
+                    "$short › $name"
+                } else {
+                    name
+                }
             results += TestResult(
-                name = name,
-                category = category,
+                name = displayName,
+                category = resolveCategory(className),
                 passed = !failed,
                 error = if (failed) Regex("""message="([^"]*)""").find(body)?.groupValues?.get(1) else null
             )
         }
     }
 
+    private fun attr(attrs: String, key: String): String? =
+        Regex("""\b$key="([^"]*)"""").find(attrs)?.groupValues?.get(1)
+
     /**
-     * Derives a human-readable category from the test class/package name.
+     * Mirrors the old in-process categorization, using the XML `classname` attribute (fully qualified).
      */
-    private fun resolveCategory(id: TestIdentifier): String {
-        val uid = id.uniqueId
+    private fun resolveCategory(className: String): String {
+        val uid = className
         return when {
-            uid.contains("GhostPluginTest")               -> "Gradle Plugin"
-            uid.contains("GhostKtorTest")                  -> "Ktor Adapter"
-            uid.contains("GhostRetrofitTest")              -> "Retrofit Adapter"
-            uid.contains("integration")                    -> "Integration"
+            uid.contains("GhostPluginTest") ||
+                uid.contains("GhostPluginFunctionalTest") -> "Gradle Plugin"
+            uid.contains("GhostKtorTest") -> "Ktor Adapter"
+            uid.contains("GhostRetrofitTest") -> "Retrofit Adapter"
+            uid.contains("integration") -> "Integration"
             uid.contains("GhostChaosTest")
                 || uid.contains("GhostCrashProof")
                 || uid.contains("GhostHardening")
                 || uid.contains("GhostMalice")
-                || uid.contains("GhostRobustness")        -> "Resilience"
+                || uid.contains("GhostRobustness") -> "Resilience"
             uid.contains("GhostReader")
                 || uid.contains("GhostWriter")
                 || uid.contains("FieldTrie")
                 || uid.contains("OkioTest")
-                || uid.contains("PrimitiveArray")          -> "Parser / Writer"
+                || uid.contains("PrimitiveArray") -> "Parser / Writer"
             uid.contains("GhostMemory")
                 || uid.contains("GhostPerformance")
-                || uid.contains("GhostStressAudit")        -> "Performance"
+                || uid.contains("GhostStressAudit") -> "Performance"
             uid.contains("GhostPrewarm")
-                || uid.contains("DeepPrewarm")             -> "Prewarm"
+                || uid.contains("DeepPrewarm") -> "Prewarm"
             uid.contains("GhostGeneric")
                 || uid.contains("GhostAdvancedTypes")
                 || uid.contains("GhostValueClass")
                 || uid.contains("GhostEnum")
                 || uid.contains("GhostCoercion")
                 || uid.contains("GhostCustomDiscriminator") -> "Type System"
-            uid.contains("GhostFuture")                    -> "Future / Discovery"
-            uid.contains("GhostConcurrency")               -> "Concurrency"
-            uid.contains("GhostException")                 -> "Exceptions"
-            uid.contains("GhostGodObject")                 -> "God Object"
-            uid.contains("GhostResilience")                -> "Resilience"
-            else                                           -> "Core"
+            uid.contains("GhostFuture") -> "Future / Discovery"
+            uid.contains("GhostConcurrency") -> "Concurrency"
+            uid.contains("GhostException") -> "Exceptions"
+            uid.contains("GhostGodObject") -> "God Object"
+            uid.contains("GhostResilience") -> "Resilience"
+            else -> "Core"
         }
     }
-
-
-    // ── Unified summary table ──────────────────────────────────────────────────
 
     fun printUnifiedSummaryTable(results: List<TestResult>) {
         val categories = results.groupBy { it.category }.toSortedMap()
@@ -202,7 +132,7 @@ object ParsingTestBenchmark {
         val total = results.size
 
         println("\n" + "═".repeat(W))
-        println("  UNIFIED TEST RESULTS — ALL MODULES")
+        println("  UNIFIED TEST RESULTS — ALL MODULES (from Gradle JUnit XML)")
         println("═".repeat(W))
         println("  %-40s  %7s  %7s  %7s".format("Category", "Total", "✅ Pass", "❌ Fail"))
         println("  " + "─".repeat(W - 2))

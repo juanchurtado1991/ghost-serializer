@@ -8,6 +8,7 @@ import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.MaliceModel
 import com.ghost.serialization.integration.model.DecimalStress
 import com.ghost.serialization.integration.model.CollisionModel
+import com.ghost.serialization.parser.ignore
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -34,7 +35,7 @@ class GhostMaliceTest {
         val json = """{"big": $massiveDecimal, "small": 0.1, "precise": 0.2}"""
         
         // This should not throw NumberFormatException, but parse as much as possible or fail gracefully
-        Ghost.deserialize<DecimalStress>(json.encodeToByteArray())
+        Ghost.deserialize<DecimalStress>(json.encodeToByteArray()).ignore()
     }
 
     @Test

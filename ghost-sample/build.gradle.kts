@@ -49,7 +49,9 @@ kotlin {
     // Manual srcDir configuration is removed to prevent redeclaration errors.
 
     sourceSets {
-        commonMain.dependencies {
+        commonMain {
+            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+            dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -69,6 +71,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.serialization.json)
+            }
         }
         
         androidMain.dependencies {
@@ -122,7 +125,7 @@ android {
     
     defaultConfig {
         applicationId = "com.ghost.serialization.sample"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -168,16 +171,18 @@ configurations.all {
 dependencies {
     // Ghost KSP (Local Project for Development/Benchmark)
     add("kspCommonMainMetadata", project(":ghost-compiler"))
-    add("kspJvm", project(":ghost-compiler"))
-    add("kspAndroid", project(":ghost-compiler"))
-    add("kspIosArm64", project(":ghost-compiler"))
-    add("kspIosSimulatorArm64", project(":ghost-compiler"))
-    add("kspWasmJs", project(":ghost-compiler"))
-
 }
 
 compose.desktop {
     application {
         mainClass = "com.ghost.serialization.sample.MainKt"
+    }
+}
+
+// Fix implicit dependency issues globally and lazily
+tasks.configureEach {
+    val isSourcesJar = name.contains("sourcesJar", ignoreCase = true)
+    if ((name.startsWith("compile") || name.startsWith("ksp") || isSourcesJar) && name != "kspCommonMainKotlinMetadata") {
+        dependsOn(tasks.matching { it.name == "kspCommonMainKotlinMetadata" })
     }
 }

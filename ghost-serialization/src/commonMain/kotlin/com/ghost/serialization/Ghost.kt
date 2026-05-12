@@ -14,9 +14,10 @@ import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.StringSerializer
+import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonWriter
 import okio.BufferedSink
 import okio.BufferedSource
-import com.ghost.serialization.writer.GhostJsonWriter
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
@@ -31,16 +32,54 @@ expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
 expect fun discoverRegistries(): List<GhostRegistry>
 
-expect fun <T> ghostInternalUseReader(
-    bytes: ByteArray, block: (GhostJsonReader) -> T
-): T
+expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 
-expect fun <T> ghostInternalUseSource(
-    source: BufferedSource,
-    block: (GhostJsonReader) -> T
-): T
+expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
+
+/**
+ * Encodes via the pooled in-memory [GhostJsonFlatWriter] and returns the
+ * result as a [String]. The flat writer holds a contiguous [ByteArray]
+ * (no Okio segments), so the returned string is decoded directly from
+ * the produced byte slice with zero intermediate copies.
+ */
+expect fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String
+
+/**
+ * Pools the in-memory [GhostJsonFlatWriter] per-thread and returns the
+ * encoded bytes. Use this when you need a [ByteArray] result without the
+ * overhead of going through [String].
+ *
+ * The writer is reset (`needsComma=false, depth=0`) before each call; its
+ * scratch buffer is kept warm (not released) to avoid pool round-trips
+ * between requests.
+ */
+expect fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): ByteArray
+
+/**
+ * Serializes via the pooled [GhostJsonFlatWriter] but discards the output
+ * without allocating a result [ByteArray]. Useful for warm-up / JIT priming
+ * where the encoded bytes are not needed.
+ */
+expect fun ghostInternalEncodeAndDiscard(block: (GhostJsonFlatWriter) -> Unit)
+
+/**
+ * Encodes through the pooled [GhostJsonFlatWriter] and drains the resulting
+ * contiguous payload to [sink] in a single bulk write. This is the fast path
+ * for `Ghost.serialize(sink, value)` — every byte-level operation goes
+ * through the monomorphic flat writer (no per-byte Okio segment dispatch),
+ * and the final flush is a single [BufferedSink.write] call which Okio
+ * implements as a few `System.arraycopy`s into its segment buffer.
+ *
+ * Trade-off: the entire encoded payload lives in memory before the bulk
+ * write. For typical request/response sizes (< MB) this is strictly faster
+ * than incremental flushing; if a caller really needs to bound memory while
+ * streaming GBs of JSON they should encode in chunks.
+ */
+expect fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, block: (GhostJsonFlatWriter) -> Unit)
+
 
 object Ghost {
+
     @PublishedApi
     internal val serializerCache = createAtomicMap<KClass<*>, GhostSerializer<*>>()
 
@@ -162,6 +201,7 @@ object Ghost {
             if (created != null) {
                 runSynchronized(lock) { typeCache[type] = created }
             }
+
             return created as? GhostSerializer<Any>
         }
 
@@ -170,35 +210,67 @@ object Ghost {
         return getSerializer(kClass)
     }
 
+    /**
+     * Encodes [value] and writes the resulting JSON payload into [sink].
+     *
+     * Internally this routes through the pooled monomorphic
+     * [GhostJsonFlatWriter] and bulk-copies the produced bytes into [sink] in
+     * a single call. That removes per-byte Okio segment dispatch from the
+     * hot path while still honouring the `BufferedSink` contract — this is
+     * what makes serialize-to-sink the fastest of the three modes in the
+     * Ghost benchmark suite.
+     *
+     * If you need true incremental streaming (e.g. multi-MB payloads where
+     * memory bounds matter more than throughput), prefer encoding in chunks
+     * yourself.
+     */
     inline fun <reified T : Any> serialize(sink: BufferedSink, value: T) {
-        // High-speed path for known classes
         val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
             ?: run {
                 val type = kotlin.reflect.typeOf<T>()
                 getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
             } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
-            
-        val writer = GhostJsonWriter(sink)
-        try {
+
+        ghostInternalEncodeAndDrainTo(sink) { writer ->
             serializer.serialize(writer, value)
-        } finally {
-            writer.release()
         }
     }
 
     /** Convenience alias for [encodeToString] to maintain API compatibility. */
     inline fun <reified T : Any> serialize(value: T): String = encodeToString(value)
 
+    /**
+     * In-memory encode to [String]. Routes through [GhostJsonFlatWriter] so
+     * every byte-level write resolves monomorphically against
+     * [com.ghost.serialization.writer.FlatByteArrayWriter] — no Okio segment
+     * management, no virtual dispatch on the hot path.
+     */
     inline fun <reified T : Any> encodeToString(value: T): String {
-        val buffer = okio.Buffer()
-        serialize(buffer, value)
-        return buffer.readUtf8()
+        val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
+            ?: run {
+                val type = kotlin.reflect.typeOf<T>()
+                getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
+            } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
+
+        return ghostInternalEncodeToString { writer ->
+            serializer.serialize(writer, value)
+        }
     }
 
+    /**
+     * In-memory encode to [ByteArray]. Same routing as [encodeToString] but
+     * skips the UTF-8 decode at the end.
+     */
     inline fun <reified T : Any> encodeToBytes(value: T): ByteArray {
-        val buffer = okio.Buffer()
-        serialize(buffer, value)
-        return buffer.readByteArray()
+        val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
+            ?: run {
+                val type = kotlin.reflect.typeOf<T>()
+                getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
+            } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
+
+        return ghostInternalEncodeWithWriter { writer ->
+            serializer.serialize(writer, value)
+        }
     }
 
     inline fun <reified T : Any> deserialize(
@@ -236,7 +308,8 @@ object Ghost {
         return ghostInternalUseReader(bytes) { reader ->
             val serializer = getSerializer(clazz)
                 ?: throwError("$NOT_FOUND ${clazz.simpleName}")
-            serializer.deserialize(reader) as T
+
+            serializer.deserialize(reader)
         }
     }
 
@@ -244,7 +317,8 @@ object Ghost {
         return ghostInternalUseSource(source) { reader ->
             val serializer = getSerializer(clazz)
                 ?: throwError("$NOT_FOUND ${clazz.simpleName}")
-            serializer.deserialize(reader) as T
+
+            serializer.deserialize(reader)
         }
     }
 

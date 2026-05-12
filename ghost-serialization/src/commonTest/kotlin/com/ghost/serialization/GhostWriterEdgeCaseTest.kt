@@ -15,6 +15,7 @@ class GhostWriterEdgeCaseTest {
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
         block(writer).ignore()
+        writer.flush()
         return buffer.readUtf8()
     }
 

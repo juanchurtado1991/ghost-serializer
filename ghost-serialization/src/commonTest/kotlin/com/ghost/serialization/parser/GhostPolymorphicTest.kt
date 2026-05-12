@@ -1,5 +1,8 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.parser
 
+import com.ghost.serialization.InternalGhostApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

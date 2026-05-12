@@ -117,8 +117,10 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Generates a static registry with O(1) lazy lookup.
-     * Replaces reflection and avoids global Map allocation at startup.
+     * Generates a registry with:
+     * - [getSerializer] as a `when` chain so the JVM only initializes serializers for the branch taken
+     *   (fast cold start vs eager `mapOf` that touches every companion on registry construction).
+     * - A lazy `allSerializers` map for [getAllSerializers] / [prewarm] only when the full graph is needed.
      */
     private fun generateModuleRegistry() {
         val serializerType = ClassName(STR_CONTRACT_PKG, STR_GHOST_SERIALIZER)
@@ -128,18 +130,36 @@ class GhostSerializationProcessor(
         val mapType = ClassName(STR_COLLECTIONS_PKG, STR_MAP)
             .parameterizedBy(kClassType.parameterizedBy(STAR), serializerType.parameterizedBy(STAR))
 
-        val mapBuilder = CodeBlock.builder().add(STR_MAP_OF)
         val entries = classToSerializer.entries.toList()
+            .sortedBy { it.key.canonicalName }
+
+        val mapBuilder = CodeBlock.builder().add(STR_MAP_OF)
         entries.forEachIndexed { index, entry ->
             mapBuilder.add(STR_MAP_ENTRY, entry.key, entry.value)
             if (index < entries.size - 1) mapBuilder.add(STR_COMMA_NEWLINE)
         }
         mapBuilder.add(STR_NEWLINE_PAREN)
 
-        val serializersProperty = PropertySpec.builder(STR_PROP_SERIALIZERS, mapType)
-            .addModifiers(KModifier.PRIVATE)
-            .initializer(mapBuilder.build())
+        val allSerializersDelegate = CodeBlock.builder()
+            .add("lazy {\n")
+            .indent()
+            .add(mapBuilder.build())
+            .unindent()
+            .add("}")
             .build()
+
+        val allSerializersProperty = PropertySpec.builder(STR_PROP_ALL_SERIALIZERS, mapType)
+            .addModifiers(KModifier.PRIVATE)
+            .delegate(allSerializersDelegate)
+            .build()
+
+        val whenBody = CodeBlock.builder()
+            .add("return when (clazz) {\n")
+        entries.forEach { entry ->
+            whenBody.add("    %T::class -> %T\n", entry.key, entry.value)
+        }
+        whenBody.add("    else -> null\n")
+        whenBody.add("} as %T\n", serializerType.parameterizedBy(t).copy(nullable = true))
 
         val getMethod = FunSpec.builder(STR_FUN_GET_SERIALIZER)
             .addTypeVariable(t)
@@ -149,18 +169,18 @@ class GhostSerializationProcessor(
                 AnnotationSpec.builder(Suppress::class).addMember(STR_FORMAT_S, STR_UNCHECKED_CAST)
                     .build()
             )
-            .addStatement(STR_RETURN_SERIALIZERS, serializerType.parameterizedBy(t))
+            .addCode(whenBody.build())
         val registryInterface = ClassName(STR_CONTRACT_PKG, STR_GHOST_REGISTRY)
 
         val prewarmMethod = FunSpec.builder(STR_FUN_PREWARM)
             .addModifiers(KModifier.OVERRIDE)
-            .addStatement("%L.ignore()", STR_SERIALIZERS_SIZE)
+            .addStatement("%L.ignore()", STR_ALL_SERIALIZERS_SIZE)
             .build()
 
         val registeredCountMethod = FunSpec.builder(STR_FUN_REG_COUNT)
             .addModifiers(KModifier.OVERRIDE)
             .returns(Int::class)
-            .addStatement(STR_RETURN_SERIALIZERS_SIZE)
+            .addStatement("return %L", entries.size)
             .build()
 
         val getAllSerializersMethod = FunSpec.builder(STR_FUN_GET_ALL_SERIALIZERS)
@@ -172,7 +192,7 @@ class GhostSerializationProcessor(
         val registrySpec = TypeSpec.classBuilder(registryClassName)
             .addKdoc(STR_KDOC_REGISTRY)
             .addSuperinterface(registryInterface)
-            .addProperty(serializersProperty)
+            .addProperty(allSerializersProperty)
             .addFunction(getMethod.addModifiers(KModifier.OVERRIDE).build())
             .addFunction(prewarmMethod)
             .addFunction(registeredCountMethod)
@@ -278,20 +298,20 @@ class GhostSerializationProcessor(
         private const val STR_MAP_ENTRY = "    %T::class to %T"
         private const val STR_COMMA_NEWLINE = ",\n"
         private const val STR_NEWLINE_PAREN = "\n)"
-        private const val STR_PROP_SERIALIZERS = "serializers"
+        /** Lazy map backing [GhostRegistry.getAllSerializers]; not named `allSerializers` (JVM getter would clash). */
+        private const val STR_PROP_ALL_SERIALIZERS = "serializersByClass"
         private const val STR_FUN_GET_SERIALIZER = "getSerializer"
         private const val STR_PARAM_CLAZZ = "clazz"
         private const val STR_UNCHECKED_CAST = "UNCHECKED_CAST"
-        private const val STR_RETURN_SERIALIZERS = "return serializers[clazz] as? %T"
         private const val STR_GHOST_REGISTRY = "GhostRegistry"
         private const val STR_FUN_PREWARM = "prewarm"
-        private const val STR_SERIALIZERS_SIZE = "serializers.size"
+        private const val STR_ALL_SERIALIZERS_SIZE = "serializersByClass.size"
         private const val STR_FUN_REG_COUNT = "registeredCount"
-        private const val STR_RETURN_SERIALIZERS_SIZE = "return serializers.size"
         private const val STR_FUN_GET_ALL_SERIALIZERS = "getAllSerializers"
-        private const val STR_RETURN_ALL_SERIALIZERS = "return serializers"
+        private const val STR_RETURN_ALL_SERIALIZERS = "return serializersByClass"
         private const val STR_KDOC_REGISTRY =
-            "Generated Registry for GhostSerialization.\nProvides ultra-fast, O(1), and R8-safe serializer lookups."
+            "Generated Registry for GhostSerialization.\n" +
+                "Uses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers."
         private const val STR_INSTANCE = "INSTANCE"
         private const val STR_INIT_INSTANCE = "%T()"
         private const val STR_META_INF_PROGUARD = "META-INF.proguard"

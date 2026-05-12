@@ -1,3 +1,5 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
@@ -28,19 +30,17 @@ class GhostAuditTest {
         val classA = MockModelA::class
         val classB = MockModelB::class
 
-        // We use the actual qualifiedName for the test to be realistic
-        val qNameA = classA.qualifiedName!!
-        val qNameB = classB.qualifiedName!!
-
         val serializerA = object : GhostSerializer<MockModelA> {
             override val typeName: String = "MockModelA"
             override fun serialize(writer: GhostJsonWriter, value: MockModelA) {}
+            override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: MockModelA) {}
             override fun deserialize(reader: GhostJsonReader): MockModelA = MockModelA()
         }
 
         val serializerB = object : GhostSerializer<MockModelB> {
             override val typeName: String = "MockModelB"
             override fun serialize(writer: GhostJsonWriter, value: MockModelB) {}
+            override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: MockModelB) {}
             override fun deserialize(reader: GhostJsonReader): MockModelB = MockModelB()
         }
 

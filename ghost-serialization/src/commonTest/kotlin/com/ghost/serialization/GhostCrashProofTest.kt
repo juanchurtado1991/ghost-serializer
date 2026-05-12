@@ -427,6 +427,7 @@ class GhostCrashProofTest {
         val writer = GhostJsonWriter(buffer)
         writer.beginObject().name("v").value(original).endObject().ignore()
 
+        writer.flush()
         val json = buffer.readUtf8()
         val reader = readerOf(json)
         reader.beginObject()
@@ -442,6 +443,7 @@ class GhostCrashProofTest {
         val writer = GhostJsonWriter(buffer)
         writer.beginObject().name("v").value(original).endObject()
 
+        writer.flush()
         val json = buffer.readUtf8()
         val reader = readerOf(json)
         reader.beginObject()

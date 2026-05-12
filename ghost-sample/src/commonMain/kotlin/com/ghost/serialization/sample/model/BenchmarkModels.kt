@@ -1,4 +1,4 @@
-package com.ghost.serialization.benchmark
+package com.ghost.serialization.sample.model
 
 import com.ghost.serialization.annotations.GhostName
 import com.ghost.serialization.annotations.GhostSerialization

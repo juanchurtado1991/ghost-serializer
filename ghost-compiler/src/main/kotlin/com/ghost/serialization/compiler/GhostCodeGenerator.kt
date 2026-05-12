@@ -75,7 +75,8 @@ internal class GhostCodeGenerator(
     private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
 
     private val serializerInterface = ClassName(PKG_CONTRACT, STR_GHOST_SERIALIZER)
-    private val writerClass = ClassName(PKG_WRITER, STR_GHOST_JSON_WRITER)
+    private val streamingWriterClass = ClassName(PKG_WRITER, STR_GHOST_JSON_WRITER)
+    private val flatWriterClass = ClassName(PKG_WRITER, STR_GHOST_JSON_FLAT_WRITER)
     private val readerClass = ClassName(PKG_PARSER, STR_GHOST_JSON_READER)
     private val bufferedSink = ClassName(OKIO_PACKAGE, STR_BUFFERED_SINK)
 
@@ -144,7 +145,6 @@ internal class GhostCodeGenerator(
         val serializeEmitter = SerializeCodeEmitter(
             properties,
             originalClassName,
-            writerClass,
             isSealed,
             isValue,
             isEnum,
@@ -162,6 +162,7 @@ internal class GhostCodeGenerator(
             .addImport(readerClass.packageName, STR_OPTIONS_CLASS)
             .addImport(PKG_PARSER, STR_GHOST_JSON_READER)
             .addImport(PKG_WRITER, STR_GHOST_JSON_WRITER)
+            .addImport(PKG_WRITER, STR_GHOST_JSON_FLAT_WRITER)
         
         val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
             .addKdoc(STR_KDOC_HIGH_PERF, originalClassName)
@@ -209,7 +210,8 @@ internal class GhostCodeGenerator(
         deserializeEmitter.build(typeSpecBuilder)
 
         return typeSpecBuilder
-            .addFunction(serializeEmitter.build())
+            .addFunction(serializeEmitter.build(streamingWriterClass))
+            .addFunction(serializeEmitter.build(flatWriterClass))
             .addFunction(
                 com.squareup.kotlinpoet.FunSpec.builder(STR_WARM_UP)
                     .addModifiers(KModifier.OVERRIDE)
@@ -260,6 +262,7 @@ internal class GhostCodeGenerator(
         private const val OKIO_PACKAGE = "okio"
         private const val STR_GHOST_SERIALIZER = "GhostSerializer"
         private const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"
+        private const val STR_GHOST_JSON_FLAT_WRITER = "GhostJsonFlatWriter"
         private const val STR_GHOST_JSON_READER = "GhostJsonReader"
         private const val STR_BUFFERED_SINK = "BufferedSink"
         private const val STR_SERIALIZER_SUFFIX = "Serializer"

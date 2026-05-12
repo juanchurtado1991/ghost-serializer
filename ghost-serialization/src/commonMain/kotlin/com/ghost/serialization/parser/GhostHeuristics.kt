@@ -2,33 +2,34 @@
 
 package com.ghost.serialization.parser
 
+import com.ghost.serialization.InternalGhostApi
+
 /**
- * Platform-specific heuristics for Ghost Serialization.
- * Implements an adaptive strategy to balance memory vs performance
- * based on the execution environment.
+ * Platform-specific heuristics to balance performance and memory usage.
+ * Using 'expect' allows us to tune Ghost for different environments (JVM vs Mobile).
  */
+@InternalGhostApi
 expect object GhostHeuristics {
     /**
      * The initial capacity for ArrayLists and HashMaps during deserialization.
-     * Prevents excessive resizing on high-perf platforms and saves memory on mobile.
+     * Prevents excessive resizing.
      */
     val initialCollectionCapacity: Int
 
     /**
      * The maximum length of a string to be pooled.
-     * Prevents large payloads from polluting the heap on constrained devices.
+     * Prevents large payloads from polluting the heap.
      */
     val maxStringPoolLength: Int
 
     /**
      * The maximum number of items allowed in a collection (List/Map) during deserialization.
-     * Prevents DoS attacks via memory exhaustion.
+     * Security limit to prevent DoS via memory exhaustion.
      */
     val maxCollectionSize: Int
 
     /**
      * The maximum distance to scan for a discriminator before giving up.
-     * Prevents quadratic behavior in complex objects.
      */
     val maxDiscriminatorPeekDistance: Int
 }

@@ -1,6 +1,9 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.UserWithValueClass
 import com.ghost.serialization.integration.model.UserId
 import kotlin.test.Test

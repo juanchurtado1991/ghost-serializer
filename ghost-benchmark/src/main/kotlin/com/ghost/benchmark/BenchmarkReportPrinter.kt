@@ -59,7 +59,7 @@ private fun printEnvironment(count: Int, payloadMb: String) {
     println("  ├─ Payload     : %,d objects | ~$payloadMb MB compact JSON | No whitespace".format(count))
     println("  ├─ Warmup      : 50 JIT iterations before measurement")
     println("  ├─ Heap Method : ThreadMXBean.getThreadAllocatedBytes() (per-thread)")
-    println("  └─ Methodology : Single-shot post-JIT steady state, fair cold boot")
+    println("  └─ Methodology : Cold = first parse before JUnit; steady = single-shot post-warmup")
 }
 
 private fun delta(ghost: Long, other: Long): String {

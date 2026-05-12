@@ -1,7 +1,14 @@
 package com.ghost.serialization.writer
 
 import com.ghost.serialization.parser.GhostJsonConstants
-import kotlin.math.round
+import com.ghost.serialization.parser.GhostJsonConstants.ASCII_OFFSET
+import com.ghost.serialization.parser.GhostJsonConstants.BASE_HUNDRED
+import com.ghost.serialization.parser.GhostJsonConstants.BASE_TEN
+import com.ghost.serialization.parser.GhostJsonConstants.FormatUtils.DIGIT_ONES
+import com.ghost.serialization.parser.GhostJsonConstants.FormatUtils.DIGIT_TENS
+import com.ghost.serialization.parser.GhostJsonConstants.MINUS
+import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
+import com.ghost.serialization.parser.GhostJsonConstants.ZERO_DOUBLE
 import kotlin.math.roundToInt
 
 /**
@@ -11,13 +18,12 @@ import kotlin.math.roundToInt
  */
 internal object GhostDoubleFormatter {
 
-    private const val PRECISION_MULTIPLIER = 1_000_000_000.0
-    private const val MAX_DECIMALS = 9
-    private const val FRAC_LIMIT = 1_000_000_000L
     private const val SMALL_WHOLE_THRESHOLD = 1_000_000_000.0
-    private const val MASSIVE_DOUBLE_THRESHOLD = 1e15
+    private const val PRECISION_MULTIPLIER = 1_000_000_000.0
     private const val MICROSCOPIC_DOUBLE_THRESHOLD = 1e-9
-    private const val TEN_LONG = 10L
+    private const val MASSIVE_DOUBLE_THRESHOLD = 1e15
+    private const val FRAC_LIMIT = 1_000_000_000L
+    private const val MAX_DECIMALS = 9
 
     /**
      * Writes a Double directly into the [scratch] buffer.
@@ -29,39 +35,61 @@ internal object GhostDoubleFormatter {
         offset: Int,
         fallback: (Double) -> Int
     ): Int {
-        if (!value.isFinite()) {
-            return fallback(value)
-        }
+        if (!value.isFinite()) return fallback(value)
 
         var pos = offset
-        var v = value
+        var localValue = value
 
-        if (v < 0.0) {
-            scratch[pos++] = GhostJsonConstants.MINUS
-            v = -v
+        if (localValue < 0.0) {
+            scratch[pos++] = MINUS
+            localValue = -localValue
         }
 
         // Fast path for small whole numbers (very common in metrics/coordinates)
-        if (v <= SMALL_WHOLE_THRESHOLD && v % GhostJsonConstants.WHOLE_NUMBER_CHECK == GhostJsonConstants.ZERO_DOUBLE) {
-            return writeLongDirect(v.toLong(), scratch, pos, writeDecimalZero = true) - offset
+        if (
+            localValue <= SMALL_WHOLE_THRESHOLD &&
+            localValue % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
+        ) {
+            return writeLongDirect(
+                localValue.toLong(),
+                scratch,
+                pos,
+                scratchEnd = pos + 32,
+                writeDecimalZero = true
+            ) - offset
         }
 
         // If number is massive or microscopic, delegate to native system
-        if (v > MASSIVE_DOUBLE_THRESHOLD || (v > 0.0 && v < MICROSCOPIC_DOUBLE_THRESHOLD)) {
+        if (
+            localValue > MASSIVE_DOUBLE_THRESHOLD ||
+            (localValue > 0.0 && localValue < MICROSCOPIC_DOUBLE_THRESHOLD)
+        ) {
             return fallback(value)
         }
 
-        val intPart = v.toLong()
-        val fracPart = v - intPart
+        val intPart = localValue.toLong()
+        val fracPart = localValue - intPart
 
-        // Round to eliminate IEEE-754 errors
-        var fracInt = kotlin.math.round(fracPart * PRECISION_MULTIPLIER).toInt()
+        // roundToInt avoids the Double intermediate that round() returns
+        var fracInt = (fracPart * PRECISION_MULTIPLIER).roundToInt()
 
         if (fracInt >= FRAC_LIMIT) {
-            return writeLongDirect(intPart + 1, scratch, pos, writeDecimalZero = true) - offset
+            return writeLongDirect(
+                intPart + 1,
+                scratch,
+                pos,
+                scratchEnd = pos + 32,
+                writeDecimalZero = true
+            ) - offset
         }
 
-        pos = writeLongDirect(intPart, scratch, pos, writeDecimalZero = false)
+        pos = writeLongDirect(
+            intPart,
+            scratch,
+            pos,
+            scratchEnd = pos + 32,
+            writeDecimalZero = false
+        )
 
         scratch[pos++] = GhostJsonConstants.DOT
 
@@ -71,24 +99,22 @@ internal object GhostDoubleFormatter {
         }
 
         var decimalsToPrint = MAX_DECIMALS
-        while (decimalsToPrint > 1) {
-            val q = fracInt / 10
-            if (fracInt - (q * 10) != 0) break
-            fracInt = q
+        // Trim trailing zeros: % instead of multiply-subtract
+        while (decimalsToPrint > 1 && fracInt % 10 == 0) {
+            fracInt /= 10
             decimalsToPrint--
         }
 
-        val fracStartPos = pos
         pos += decimalsToPrint
         var writePos = pos - 1
 
-        var d = decimalsToPrint
-        while (d > 0) {
+        var decimal = decimalsToPrint
+        while (decimal > 0) {
             val q = fracInt / 10
-            val digit = (fracInt - (q * 10))
-            scratch[writePos--] = (GhostJsonConstants.ZERO + digit).toByte()
+            // % avoids the extra multiply in (fracInt - q*10)
+            scratch[writePos--] = (GhostJsonConstants.ZERO_INT + fracInt % 10).toByte()
             fracInt = q
-            d--
+            decimal--
         }
 
         return pos - offset
@@ -98,6 +124,7 @@ internal object GhostDoubleFormatter {
         value: Long,
         scratch: ByteArray,
         offset: Int,
+        scratchEnd: Int,
         writeDecimalZero: Boolean
     ): Int {
         if (value == 0L) {
@@ -110,33 +137,35 @@ internal object GhostDoubleFormatter {
             return offset + 1
         }
 
-        var v = value
-        var i = GhostJsonConstants.SCRATCH_BUFFER_SIZE
-        
-        while (v >= GhostJsonConstants.BASE_HUNDRED) {
-            val q = v / GhostJsonConstants.BASE_HUNDRED
-            val r = (v - (q * GhostJsonConstants.BASE_HUNDRED)).toInt()
-            v = q
-            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_ONES[r]
-            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_TENS[r]
+        var localValue = value
+        // Write digits backward into the scratch zone at the end of our reserved area.
+        // scratchEnd is always offset + 32, safely within FAST_BUF_SCRATCH_ZONE.
+        var end = scratchEnd
+
+        while (localValue >= BASE_HUNDRED) {
+            val q = localValue / BASE_HUNDRED
+            val r = (localValue - (q * BASE_HUNDRED)).toInt()
+            localValue = q
+            scratch[--end] = DIGIT_ONES[r]
+            scratch[--end] = DIGIT_TENS[r]
         }
-        if (v >= GhostJsonConstants.BASE_TEN) {
-            val r = v.toInt()
-            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_ONES[r]
-            scratch[--i] = GhostJsonConstants.FormatUtils.DIGIT_TENS[r]
+        if (localValue >= BASE_TEN) {
+            val r = localValue.toInt()
+            scratch[--end] = DIGIT_ONES[r]
+            scratch[--end] = DIGIT_TENS[r]
         } else {
-            scratch[--i] = (v.toInt() + GhostJsonConstants.ASCII_OFFSET).toByte()
+            scratch[--end] = (localValue.toInt() + ASCII_OFFSET).toByte()
         }
-        
-        val length = GhostJsonConstants.SCRATCH_BUFFER_SIZE - i
-        
-        // Use a simple loop for the shift, but ensure it's tight
-        var j = 0
-        while (j < length) {
-            scratch[offset + j] = scratch[i + j]
-            j++
-        }
-        
+
+        val length = scratchEnd - end
+        // Single System.arraycopy — JVM intrinsic, no per-byte loop
+        scratch.copyInto(
+            scratch,
+            offset,
+            end,
+            end + length
+        )
+
         var nextOffset = offset + length
         if (writeDecimalZero) {
             scratch[nextOffset++] = GhostJsonConstants.DOT

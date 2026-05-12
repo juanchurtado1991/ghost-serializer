@@ -1,51 +1,44 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonConstants
+import com.ghost.serialization.parser.GhostJsonConstants.SCRATCH_BUFFER_SIZE
 
 private const val TIER_SMALL = 1024
 private const val TIER_MEDIUM = 16384
 private const val TIER_LARGE = 65536
 
-private class AndroidPool {
-    var small: ByteArray? = null
-    var medium: ByteArray? = null
-    var large: ByteArray? = null
-    
-    var charSmall: CharArray? = null
-    var charMedium: CharArray? = null
-}
-
 private val pool = ThreadLocal<AndroidPool>()
 
 @InternalGhostApi
 actual fun acquireScratchBuffer(minSize: Int): ByteArray {
-    var p = pool.get()
-    if (p == null) {
-        p = AndroidPool()
-        pool.set(p)
+    var pool = pool.get()
+    if (pool == null) {
+        pool = AndroidPool()
+        com.ghost.serialization.pool.set(pool)
     }
     return when {
-        minSize <= GhostJsonConstants.SCRATCH_BUFFER_SIZE -> {
-            val b = p.small
-            if (b != null && b.size >= GhostJsonConstants.SCRATCH_BUFFER_SIZE) {
-                p.small = null
-                b
-            } else ByteArray(GhostJsonConstants.SCRATCH_BUFFER_SIZE)
+        minSize <= SCRATCH_BUFFER_SIZE -> {
+            val smallLocal = pool.small
+            if (smallLocal != null && smallLocal.size >= SCRATCH_BUFFER_SIZE) {
+                pool.small = null
+                smallLocal
+            } else {
+                ByteArray(SCRATCH_BUFFER_SIZE)
+            }
         }
         minSize <= TIER_SMALL -> {
-            val b = p.small
-            p.small = null
-            b ?: ByteArray(TIER_SMALL)
+            val smallLocal = pool.small
+            pool.small = null
+            smallLocal ?: ByteArray(TIER_SMALL)
         }
         minSize <= TIER_MEDIUM -> {
-            val b = p.medium
-            p.medium = null
-            b ?: ByteArray(TIER_MEDIUM)
+            val mediumLocal = pool.medium
+            pool.medium = null
+            mediumLocal ?: ByteArray(TIER_MEDIUM)
         }
         minSize <= TIER_LARGE -> {
-            val b = p.large
-            p.large = null
-            b ?: ByteArray(TIER_LARGE)
+            val largeLocal = pool.large
+            pool.large = null
+            largeLocal ?: ByteArray(TIER_LARGE)
         }
         else -> ByteArray(minSize)
     }
@@ -53,32 +46,32 @@ actual fun acquireScratchBuffer(minSize: Int): ByteArray {
 
 @InternalGhostApi
 actual fun releaseScratchBuffer(buffer: ByteArray) {
-    val p = pool.get() ?: return
+    val pool = pool.get() ?: return
     val size = buffer.size
-    when {
-        size == GhostJsonConstants.SCRATCH_BUFFER_SIZE || size == TIER_SMALL -> p.small = buffer
-        size == TIER_MEDIUM -> p.medium = buffer
-        size == TIER_LARGE -> p.large = buffer
+    when (size) {
+        SCRATCH_BUFFER_SIZE, TIER_SMALL -> pool.small = buffer
+        TIER_MEDIUM -> pool.medium = buffer
+        TIER_LARGE -> pool.large = buffer
     }
 }
 
 @InternalGhostApi
 actual fun acquireCharBuffer(minSize: Int): CharArray {
-    var p = pool.get()
-    if (p == null) {
-        p = AndroidPool()
-        pool.set(p)
+    var localPool = pool.get()
+    if (localPool == null) {
+        localPool = AndroidPool()
+        pool.set(localPool)
     }
     return when {
         minSize <= TIER_SMALL -> {
-            val b = p.charSmall
-            p.charSmall = null
-            b ?: CharArray(TIER_SMALL)
+            val char = localPool.charSmall
+            localPool.charSmall = null
+            char ?: CharArray(TIER_SMALL)
         }
         minSize <= TIER_MEDIUM -> {
-            val b = p.charMedium
-            p.charMedium = null
-            b ?: CharArray(TIER_MEDIUM)
+            val char = localPool.charMedium
+            localPool.charMedium = null
+            char ?: CharArray(TIER_MEDIUM)
         }
         else -> CharArray(minSize)
     }
@@ -86,10 +79,10 @@ actual fun acquireCharBuffer(minSize: Int): CharArray {
 
 @InternalGhostApi
 actual fun releaseCharBuffer(buffer: CharArray) {
-    val p = pool.get() ?: return
+    val pool = pool.get() ?: return
     val size = buffer.size
-    when {
-        size == TIER_SMALL -> p.charSmall = buffer
-        size == TIER_MEDIUM -> p.charMedium = buffer
+    when (size) {
+        TIER_SMALL -> pool.charSmall = buffer
+        TIER_MEDIUM -> pool.charMedium = buffer
     }
 }

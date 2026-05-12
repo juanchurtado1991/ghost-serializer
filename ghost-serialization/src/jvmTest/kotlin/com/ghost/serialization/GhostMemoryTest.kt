@@ -20,6 +20,7 @@ class GhostMemoryTest {
     private object RecursiveSerializer : GhostSerializer<Any> {
         override val typeName: String = "Recursive"
         override fun serialize(writer: GhostJsonWriter, value: Any) {}
+        override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: Any) {}
         override fun deserialize(reader: GhostJsonReader): Any {
             reader.beginArray()
             val result = if (reader.peekByte() == '['.code.toByte()) {
