@@ -15,64 +15,25 @@ kotlin {
                 compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
             }
         }
+        publishLibraryVariants("release")
     }
     iosArm64()
     iosSimulatorArm64()
     jvm {
         withSourcesJar()
     }
-    androidTarget {
-        publishLibraryVariants("release")
-    }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         outputModuleName.set("ghost-serialization-wasm")
         browser()
         binaries.library()
         generateTypeScriptDefinitions()
-        
-        // Industrial NPM Package Configuration
-        val ghostVersion = rootProject.version.toString()
-        compilations.named("main") {
-            packageJson {
-                customField("version", ghostVersion)
-                customField("description", "Ghost Serialization WASM Engine - High Performance Multiplatform Serialization")
-                customField("author", "Ghost Team")
-                customField("license", "Apache-2.0")
-                customField("repository", mapOf("type" to "git", "url" to "https://github.com/juanchurtado1991/GhostSerialization"))
-            }
-        }
-    }
-
-    // Official NPM Tools & Meta Distribution
-    val copyNpmMeta by tasks.registering(Copy::class) {
-        from("npm-tools")
-        into(layout.buildDirectory.dir("dist/wasmJs/productionLibrary/tools"))
-        
-        // Ensure transpiler is executable
-        doLast {
-            val transpiler = File("${layout.buildDirectory.get().asFile}/dist/wasmJs/productionLibrary/tools/ghost-transpiler.js")
-            if (transpiler.exists()) {
-                transpiler.setExecutable(true)
-            }
-        }
-    }
-    
-    val copyNpmDocs by tasks.registering(Copy::class) {
-        from(rootProject.file("README.md"))
-        from(rootProject.file("CHANGELOG.md"))
-        from(rootProject.file("LICENSE"))
-        into(layout.buildDirectory.dir("dist/wasmJs/productionLibrary"))
-    }
-
-    tasks.named("wasmJsBrowserProductionLibraryDistribution") {
-        finalizedBy(copyNpmMeta, copyNpmDocs)
     }
 
     sourceSets {
         val commonMain by getting {
-            // Add KSP output to commonMain so all platforms inherit it
+            // KSP output for commonMain is inherited by all platform targets
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
                 api(project(":ghost-api"))
@@ -98,6 +59,9 @@ kotlin {
         val jvmMain by getting {
             dependsOn(commonMain)
         }
+        val wasmJsMain by getting {
+            dependsOn(commonMain)
+        }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -112,12 +76,11 @@ ksp {
 }
 
 dependencies {
-    // Generate KSP ONLY once for common metadata
-    // ALL platform targets will inherit the generated code from commonMain
+    // KSP runs once on common metadata; all platform targets inherit the generated code
     add("kspCommonMainMetadata", project(":ghost-compiler"))
 }
 
-// Fix implicit dependency issues globally and lazily
+// Ensure KSP metadata runs before any compile or sourcesJar task
 tasks.configureEach {
     val isSourcesJar = name.contains("sourcesJar", ignoreCase = true)
     if ((name.startsWith("compile") || name.startsWith("ksp") || isSourcesJar) && name != "kspCommonMainKotlinMetadata") {
