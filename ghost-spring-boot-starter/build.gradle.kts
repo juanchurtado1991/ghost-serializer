@@ -5,8 +5,8 @@ plugins {
 dependencies {
     api(project(":ghost-serialization"))
     
-    compileOnly("org.springframework.boot:spring-boot-starter-web:3.4.0")
-    compileOnly("org.springframework.boot:spring-boot-starter-webflux:3.4.0")
+    compileOnly(libs.spring.boot.starter.web)
+    compileOnly(libs.spring.boot.starter.webflux)
     
     implementation(libs.okio)
     

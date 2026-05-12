@@ -71,9 +71,7 @@ kotlin {
     }
 }
 
-ksp {
-    arg("ghost.moduleName", "ghost_serialization")
-}
+ksp { arg("ghost.moduleName", "ghost_serialization") }
 
 dependencies {
     // KSP runs once on common metadata; all platform targets inherit the generated code
