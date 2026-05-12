@@ -35,8 +35,8 @@ androidx-lifecycle              = "2.10.0"
 # Testing
 junit-jupiter                   = "6.0.3"
 junit-platform                  = "6.0.3"
-kotlinx-coroutines-test         = "1.10.2"
-spring-boot-starter-web = "4.0.6"
+kotlinx-coroutines-test         = "1.11.0"
+spring-boot-starter-web         = "4.0.6"
 
 [libraries]
 
@@ -60,8 +60,6 @@ ktor-client-darwin              = { group = "io.ktor", name = "ktor-client-darwi
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-mock                = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
-ktorfit-lib                     = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-lib", version.ref = "ktorfit" }
-ktorfit-ksp                     = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-ksp", version.ref = "ktorfit" }
 
 # Serialization Engines (Benchmarks)
 gson                            = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
@@ -88,9 +86,6 @@ coil-network-ktor               = { group = "io.coil-kt.coil3", name = "coil-net
 
 # Testing
 junit-engine                    = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
-junit-vintage-engine            = { group = "org.junit.vintage", name = "junit-vintage-engine", version = "5.11.3" }
-junit-launcher                  = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
-junit-platform-engine           = { group = "org.junit.platform", name = "junit-platform-engine", version.ref = "junit-platform" }
 kotlinx-coroutines-core         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-swing        = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-test" }
@@ -99,7 +94,6 @@ spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-start
 spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-starter-web" }
 
 [bundles]
-ktor-common                     = ["ktor-client-core", "ktor-client-content-negotiation"]
 serialization-engines           = ["gson", "moshi", "moshi-kotlin", "kotlinx-serialization-json", "jackson-databind", "jackson-module-kotlin"]
 
 [plugins]
@@ -112,6 +106,5 @@ android-library                 = { id = "com.android.library", version.ref = "a
 compose-compiler                = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-ktorfit                         = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
 dokka                           = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 nexus-publish                   = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
