@@ -28,8 +28,9 @@ This README aims to be honest: we explain what Ghost is good at, how it achieves
 5. [Usage — Android](#usage--android)
 6. [Usage — Kotlin Multiplatform (KMP)](#usage--kotlin-multiplatform-kmp)
 7. [Usage — Spring Boot](#usage--spring-boot)
-8. [Features](#features)
-9. [Architecture](#architecture)
+8. [Usage — Kotlin/Wasm](#usage--kotlinwasm)
+9. [Features](#features)
+10. [Architecture](#architecture)
 
 ---
 
@@ -388,6 +389,98 @@ class GhostConfig {
     }
 }
 ```
+
+---
+
+## Usage — Kotlin/Wasm
+
+Ghost ships a `wasmJs` target (`ghost-serialization-wasm`) for use in browser and Node.js environments via Kotlin/Wasm. The API is identical to JVM/Android — the same `@GhostSerialization` annotations and `Ghost.*` calls work without modification.
+
+> **Note:** The WASM target is compiled and published but not officially advertised. It is production-ready for projects already using Kotlin/Wasm. If you are starting a new web project and do not have a Kotlin/Wasm setup, the JVM or Android targets are the better starting point.
+
+### 1. Add the wasmJs target to your KMP module
+
+```kotlin
+// shared/build.gradle.kts
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
+plugins {
+    kotlin("multiplatform")
+    id("com.ghostserializer.ghost") version "1.1.14"
+}
+
+kotlin {
+    androidTarget()
+    iosArm64()
+    jvm()
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        binaries.library()
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.ghost.api)
+            implementation(libs.ghost.serialization)
+        }
+    }
+}
+```
+
+### 2. Annotate your models in `commonMain` (no changes needed)
+
+```kotlin
+// Works identically on all targets including wasmJs
+@GhostSerialization
+data class ApiResponse(
+    val status: String,
+    val data: List<Item>
+)
+
+@GhostSerialization
+data class Item(val id: String, val value: Double)
+```
+
+### 3. Call Ghost from Kotlin/Wasm code
+
+```kotlin
+// src/wasmJsMain/kotlin/App.kt
+import com.ghost.serialization.Ghost
+
+fun parseResponse(json: String): ApiResponse {
+    return Ghost.deserialize(json)
+}
+
+fun encodeResponse(response: ApiResponse): String {
+    return Ghost.serialize(response)
+}
+```
+
+### 4. Expose to JavaScript (optional)
+
+If you need to call Ghost from JavaScript code, annotate your Kotlin entry points with `@JsExport`:
+
+```kotlin
+import kotlin.js.JsExport
+
+@JsExport
+fun parseApiResponse(json: String): ApiResponse = Ghost.deserialize(json)
+
+@JsExport
+fun toJson(response: ApiResponse): String = Ghost.serialize(response)
+```
+
+The WASM module is compiled with `generateTypeScriptDefinitions()`, so the exported functions get TypeScript type definitions automatically.
+
+### Performance characteristics on WASM
+
+The WASM target has different performance trade-offs compared to JVM:
+
+- **Memory**: Ghost still allocates significantly less than alternatives because the same zero-allocation parser runs inside the WASM linear memory.
+- **Latency**: Raw throughput is lower than JVM because WASM lacks JIT optimizations equivalent to HotSpot. For large batch operations the gap closes as the WASM engine optimizes the hot path.
+- **JS boundary**: Every `@JsExport` call crosses the JS↔Wasm boundary. Keep exposed functions coarse-grained (pass the whole JSON string, not individual fields) to minimize crossing cost.
 
 ---
 

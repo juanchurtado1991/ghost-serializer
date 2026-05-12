@@ -36,6 +36,7 @@ androidx-lifecycle              = "2.10.0"
 junit-jupiter                   = "6.0.3"
 junit-platform                  = "6.0.3"
 kotlinx-coroutines-test         = "1.10.2"
+spring-boot-starter-web = "4.0.6"
 
 [libraries]
 
@@ -94,6 +95,8 @@ kotlinx-coroutines-core         = { group = "org.jetbrains.kotlinx", name = "kot
 kotlinx-coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-swing        = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-android      = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines-test" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot-starter-web" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-starter-web" }
 
 [bundles]
 ktor-common                     = ["ktor-client-core", "ktor-client-content-negotiation"]
