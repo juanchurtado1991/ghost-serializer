@@ -23,6 +23,8 @@ jackson                         = "2.21.3"
 
 # Tooling & Generation
 kotlinpoet                      = "2.3.0"
+dokka                           = "2.2.0"
+nexus-publish                   = "2.0.0"
 
 # UI & Sample App
 coil                            = "3.4.0"
@@ -108,3 +110,5 @@ compose-compiler                = { id = "org.jetbrains.kotlin.plugin.compose", 
 jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktorfit                         = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
+dokka                           = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+nexus-publish                   = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
