@@ -6,7 +6,8 @@
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.0.21-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin"></a>
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-2.1.0-black.svg?style=flat-square" alt="KSP"></a>
     <img src="https://img.shields.io/badge/version-1.1.14-brightgreen.svg?style=flat-square" alt="Version">
-    <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
+    <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot%20%7C%20Wasm-blue.svg?style=flat-square" alt="Platforms">
+    <img src="https://img.shields.io/badge/Wasm-production--ready-6E4C9F.svg?style=flat-square&logo=webassembly" alt="WebAssembly">
     <img src="https://img.shields.io/badge/tests-505%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
 </div>
