@@ -27,9 +27,14 @@ subprojects {
 
         val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
             archiveClassifier.set("javadoc")
-            val dokkaHtmlTask = tasks.matching { it.name == "dokkaHtml" }
-            from(dokkaHtmlTask)
+            // Dokka V2: wire to dokkaGeneratePublicationHtml by name, take its outputs.
+            // Avoids a direct type reference to DokkaGeneratePublicationTask which is not
+            // available in the classpath of an applied .kts script.
+            val dokkaTask = tasks.named("dokkaGeneratePublicationHtml")
+            dependsOn(dokkaTask)
+            from(dokkaTask.map { it.outputs.files })
         }
+
 
         afterEvaluate {
             if (!plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {

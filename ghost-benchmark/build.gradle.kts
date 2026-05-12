@@ -28,31 +28,8 @@ tasks.named<JavaExec>("run") {
         )
     }
 
-    /**
-     * Optional Async Profiler (CPU flame graph): download a release from
-     * https://github.com/async-profiler/async-profiler/releases and point to the native library:
-     *
-     *   export GHOST_ASYNC_PROFILER=/path/to/async-profiler/build/libasyncProfiler.so
-     *   ./gradlew :ghost-benchmark:run
-     *
-     * Or: ./gradlew :ghost-benchmark:run -Pghost.asyncProfiler=/path/to/libasyncProfiler.so
-     *
-     * Output: ghost-benchmark/build/async-profiler.html — open in a browser (FlameGraph).
-     * Note: the profile includes tests + benchmark (whole run task). For a cleaner graph of only
-     * the benchmark JVM, run installDist and launch the script with the same -agentpath.
-     */
-    val profilerLib = System.getenv("GHOST_ASYNC_PROFILER")
-        ?: project.findProperty("ghost.asyncProfiler")?.toString()
-    if (profilerLib != null) {
-        val outFile = layout.buildDirectory.get().asFile.resolve("async-profiler.html")
-        jvmArgs(
-            "-agentpath:${file(profilerLib).absolutePath}=start,event=cpu,file=${outFile.absolutePath},interval=500000"
-        )
-        doFirst {
-            logger.lifecycle("Async Profiler enabled → CPU profile will be written to: ${outFile.absolutePath}")
-        }
-    }
 }
+
 
 kotlin {
     jvmToolchain(17)
