@@ -8,7 +8,7 @@ application {
     mainClass.set("com.ghost.benchmark.GhostBenchmarkKt")
 }
 
-tasks.withType<org.gradle.jvm.application.tasks.CreateStartScripts> {
+tasks.withType<CreateStartScripts> {
     dependsOn(
         ":ghost-serialization:jvmTestClasses",
         ":ghost-integration-test:testClasses",
