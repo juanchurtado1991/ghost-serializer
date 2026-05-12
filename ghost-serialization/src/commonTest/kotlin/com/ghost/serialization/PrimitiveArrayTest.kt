@@ -6,6 +6,7 @@ import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.serializers.IntArraySerializer
 import com.ghost.serialization.serializers.LongArraySerializer
 import okio.Buffer
+import com.ghost.serialization.writer.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -16,7 +17,9 @@ class PrimitiveArrayTest {
     fun testIntArrayRoundTrip() {
         val original = intArrayOf(1, 2, 3, 42, 0, -1, Int.MAX_VALUE)
         val buffer = Buffer()
-        IntArraySerializer.serialize(buffer, original)
+        val writer = GhostJsonWriter(buffer)
+        IntArraySerializer.serialize(writer, original)
+        writer.flush()
 
         val json = buffer.readUtf8()
         assertEquals("[1,2,3,42,0,-1,2147483647]", json)
@@ -30,7 +33,9 @@ class PrimitiveArrayTest {
     fun testLongArrayRoundTrip() {
         val original = longArrayOf(1L, 2L, 42L, 0L, -1L, Long.MAX_VALUE)
         val buffer = Buffer()
-        LongArraySerializer.serialize(buffer, original)
+        val writer = GhostJsonWriter(buffer)
+        LongArraySerializer.serialize(writer, original)
+        writer.flush()
 
         val json = buffer.readUtf8()
         assertEquals("[1,2,42,0,-1,9223372036854775807]", json)
@@ -43,7 +48,9 @@ class PrimitiveArrayTest {
     @Test
     fun testEmptyArrays() {
         val buffer = Buffer()
-        IntArraySerializer.serialize(buffer, intArrayOf())
+        val writer = GhostJsonWriter(buffer)
+        IntArraySerializer.serialize(writer, intArrayOf())
+        writer.flush()
         assertEquals("[]", buffer.readUtf8())
 
         val reader = GhostJsonReader("[]".encodeToByteArray())

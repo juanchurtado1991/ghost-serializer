@@ -4,15 +4,62 @@ package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 
 private val readerPool = ThreadLocal<GhostJsonReader>()
+private val writerPool = ThreadLocal<WriterSinkPair>()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
 
 actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
+
+/**
+ * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
+ * and returns it. The pair survives across calls so the underlying
+ * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
+ */
+private fun acquireFlatWriterPair(): WriterSinkPair {
+    val pair = writerPool.get() ?: WriterSinkPair().also { writerPool.set(it) }
+    pair.writer.reset()
+    pair.byteWriter.reset()
+    return pair
+}
+
+actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String {
+    val pair = acquireFlatWriterPair()
+    block(pair.writer)
+    val result = String(pair.byteWriter.array, 0, pair.byteWriter.size, Charsets.UTF_8)
+    pair.byteWriter.reset()
+    return result
+}
+
+actual fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): ByteArray {
+    val pair = acquireFlatWriterPair()
+    block(pair.writer)
+    val result = pair.byteWriter.toByteArray()
+    pair.byteWriter.reset()
+    return result
+}
+
+actual fun ghostInternalEncodeAndDiscard(block: (GhostJsonFlatWriter) -> Unit) {
+    val pair = acquireFlatWriterPair()
+    block(pair.writer)
+    pair.byteWriter.reset()
+}
+
+actual fun ghostInternalEncodeAndDrainTo(
+    sink: okio.BufferedSink,
+    block: (GhostJsonFlatWriter) -> Unit
+) {
+    val pair = acquireFlatWriterPair()
+    block(pair.writer)
+    sink.write(pair.byteWriter.array, 0, pair.byteWriter.size)
+    pair.byteWriter.reset()
+}
 
 actual fun discoverRegistries(): List<GhostRegistry> {
     val registries = linkedSetOf<GhostRegistry>()
@@ -43,10 +90,13 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
+    source.request(Long.MAX_VALUE)
+    val bytes = source.buffer.readByteArray()
+
     val reader = readerPool.get()
-        ?: GhostJsonReader(source)
+        ?: GhostJsonReader(bytes)
             .also { readerPool.set(it) }
 
-    reader.reset(source)
+    reader.reset(bytes)
     return block(reader)
 }

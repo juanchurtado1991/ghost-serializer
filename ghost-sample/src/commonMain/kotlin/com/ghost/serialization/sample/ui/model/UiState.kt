@@ -1,7 +1,7 @@
 package com.ghost.serialization.sample.ui.model
 
 import com.ghost.serialization.sample.api.EngineResult
-import com.ghost.serialization.benchmark.GhostCharacter
+import com.ghost.serialization.sample.model.GhostCharacter
 
 data class UiState(
     val characters: List<GhostCharacter> = emptyList(),

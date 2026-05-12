@@ -8,6 +8,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.JsonReaderOptions
 import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 import kotlin.reflect.KClass
 import kotlin.test.Test
@@ -18,11 +19,8 @@ class GhostPerformanceValidationTest {
 
     private class MockSerializer : GhostSerializer<String> {
         override val typeName: String = "Mock"
-        override fun serialize(
-            writer: GhostJsonWriter,
-            value: String
-        ) {
-        }
+        override fun serialize(writer: GhostJsonWriter, value: String) {}
+        override fun serialize(writer: GhostJsonFlatWriter, value: String) {}
 
         override fun deserialize(reader: GhostJsonReader): String = ""
     }

@@ -15,6 +15,7 @@ import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.parser.nextKey
 import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.parser.skipValue
+import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
@@ -40,6 +41,17 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
     override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
     
     override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
+        writer.beginObject().ignore()
+        writer.name("id").ignore()
+        writer.value(value.id.toLong()).ignore()
+        writer.name("name").ignore()
+        writer.value(value.name).ignore()
+        writer.name("isActive").ignore()
+        writer.value(value.isActive).ignore()
+        writer.endObject().ignore()
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: RetrofitUser) {
         writer.beginObject().ignore()
         writer.name("id").ignore()
         writer.value(value.id.toLong()).ignore()

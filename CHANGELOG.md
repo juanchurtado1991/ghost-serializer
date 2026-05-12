@@ -1,6 +1,6 @@
 # Changelog
  
-## [1.1.14] - 2026-04-25
+## [1.1.14] - 2026-05-11
 ### Added
 - **Resilience Suite**: Successfully passed the "FAANG-grade" validation suite with **505 tests** covering memory leaks, deep recursion (255 levels), and malicious payload protection.
 - **Advanced Type Support**: Native support for deeply nested generics (recursive resolution), Value Classes (`@JvmInline`), and Custom Discriminators (e.g., `kind`, `@type`) in sealed classes.
@@ -9,12 +9,20 @@
 - **Gradle Plugin Hardening**: Full **Configuration Cache** support and **Incremental Build** validation, ensuring zero-latency dev loops and CI/CD compliance.
 
 ### Fixed
-- **Architectural Stabilization**: Standardized the package structure by removing the redundant `.core` level (e.g., `com.ghost.serialization.core.*` -> `com.ghost.serialization.*`), improving API ergonomics and resolving resolution ambiguities in multi-module projects.
-- **Android Compatibility (API 21)**: Resolved a critical `NewApi` error in the Android byte source implementation. Replaced API 33+ `Arrays.equals` range comparison with a manual loop compatible with Android API 21, ensuring full backward compatibility.
-- **Gradle Plugin Stability**: Fixed a binary incompatibility between the `kotlin-dsl` plugin and the newer Kotlin 2.3.21 compiler by explicitly locking the plugin module to Kotlin 2.0.21 while allowing the rest of the project to leverage the latest compiler features.
+- **Architectural Stabilization**: Standardized the package structure by removing the redundant `.core` level, improving API ergonomics across multi-module projects.
+- **Android Compatibility (API 21)**: Resolved a critical `NewApi` error. Replaced API 33+ `Arrays.equals` range comparison with a manual loop compatible with Android API 21.
+- **Gradle Plugin Stability**: Fixed a binary incompatibility between the `kotlin-dsl` plugin and Kotlin 2.3.21 compiler.
 - **Map Serialization Integrity**: Resolved a critical corruption bug in `MapSerializer` where the parser failed to consume separators correctly in complex nested maps.
-- **Compiler Naming Collisions**: Implemented a `processedFiles` guard in the KSP processor to prevent `FileAlreadyExistsException` when handling identical class names across different packages.
+- **Compiler Naming Collisions**: Implemented a `processedFiles` guard in the KSP processor to prevent `FileAlreadyExistsException` for identical class names across different packages.
 - **Primitive Deserialization Fast-Path**: Enabled direct `Ghost.deserialize<T>()` calls for primitives without requiring pre-registration.
+
+### Benchmark & Tooling
+- **Statistical Benchmark Harness**: Rewrote `GhostBenchmark` to run N iterations inside a single JVM process, keeping the JIT hot across all runs. Supports `--runs`, `--warmup`, and `--no-tests` CLI flags.
+- **Multi-Engine Statistical Tables**: All benchmark tables now show `AVG ±STDEV` for every engine, replacing the previous dual-report format.
+- **Conditional Test Execution**: Added `-PskipTests` Gradle property to skip the full validation suite during performance-only runs.
+- **JVM Steady-State Dominance Verified**: At 10,000 runs with 20,000-iteration warmup, Ghost leads **all 11 benchmark categories** — deserialization, serialization, deep nesting, and failure resilience — against GSON, Moshi, Jackson, and KSerialization simultaneously.
+- **Project Cleanup**: Removed `kotlin-js-store/`, `scratch/`, `__pycache__/`, IDE `bin/` directories, and orphaned Python scripts.
+
 
 ## [1.1.13] - 2026-04-24
 ### Fixed

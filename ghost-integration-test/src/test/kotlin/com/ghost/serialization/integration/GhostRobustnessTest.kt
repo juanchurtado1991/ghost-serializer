@@ -74,7 +74,7 @@ class GhostRobustnessTest {
 
         assertEquals("root", result.nestedTree.label)
         assertEquals(2, result.nestedTree.children!!.size)
-        assertEquals("leaf", result.nestedTree.children!![0].children!![0].label)
+        assertEquals("leaf", result.nestedTree.children[0].children!![0].label)
     }
 
     @Test
@@ -126,7 +126,7 @@ class GhostRobustnessTest {
         )
 
         val buffer = Buffer()
-        GodObjectSerializer.serialize(GhostJsonWriter(buffer), original)
+        GodObjectSerializer.serialize(buffer, original)
         val json = buffer.readUtf8()
 
         val deserialized =

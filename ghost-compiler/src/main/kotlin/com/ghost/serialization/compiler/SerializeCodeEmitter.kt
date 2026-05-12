@@ -11,7 +11,6 @@ import com.squareup.kotlinpoet.ksp.toClassName
 internal class SerializeCodeEmitter(
     private val properties: List<GhostPropertyModel>,
     private val originalClassName: ClassName,
-    private val writerClass: ClassName,
     private val isSealed: Boolean,
     private val isValue: Boolean,
     private val isEnum: Boolean,
@@ -20,7 +19,15 @@ internal class SerializeCodeEmitter(
     private val sealedDiscriminatorKey: String = "type"
 ) {
 
-    fun build(): FunSpec {
+    /**
+     * Emits a `serialize(writer: <writerClass>, value: <T>)` function.
+     *
+     * The same body is emitted for both [GhostJsonWriter] and
+     * [GhostJsonFlatWriter] specializations — the byte-write call sites
+     * resolve monomorphically once the parameter type is fixed, so the JVM
+     * JIT (or Kotlin/Native AOT) inlines every byte-level call.
+     */
+    fun build(writerClass: ClassName): FunSpec {
         val code = CodeBlock.builder()
 
         when {
@@ -36,20 +43,26 @@ internal class SerializeCodeEmitter(
                 code.addStatement("val firstHeaders = OPTIONS.writerFirstHeaders")
 
                 if (firstProp != null && !firstProp.isNullable && !hasDiscriminator && isFusedType(firstProp)) {
-                    emitFirstProperty(code, firstProp, "firstHeaders")
-                    val iterator = properties.iterator()
-                    iterator.next() // Skip first
-                    while (iterator.hasNext()) {
-                        emitProperty(code, iterator.next(), "headers")
+                    code.addStatement("val headersWithComma = OPTIONS.writerHeadersWithComma")
+                    emitFirstProperty(code, firstProp, "firstHeaders", 0)
+                    var allPrecedingNonNullable = true
+                    properties.forEachIndexed { idx, prop ->
+                        if (idx > 0) {
+                            if (!prop.isNullable && allPrecedingNonNullable) {
+                                emitPropertyWithComma(code, prop, "headersWithComma", idx)
+                            } else {
+                                emitProperty(code, prop, "headers", idx)
+                            }
+                        }
+                        if (prop.isNullable) allPrecedingNonNullable = false
                     }
                 } else {
                     code.addStatement(STR_WRITER_BEGIN_OBJ)
                     if (hasDiscriminator) {
                         code.addStatement(STR_WRITER_NAME_TYPE_VAL, sealedDiscriminatorKey, discriminator)
                     }
-
-                    properties.forEach { prop ->
-                        emitProperty(code, prop, "headers")
+                    properties.forEachIndexed { idx, prop ->
+                        emitProperty(code, prop, "headers", idx)
                     }
                 }
                 code.addStatement(STR_WRITER_END_OBJ)
@@ -107,9 +120,8 @@ internal class SerializeCodeEmitter(
         }
     }
 
-    private fun emitFirstProperty(code: CodeBlock.Builder, prop: GhostPropertyModel, headersVar: String) {
+    private fun emitFirstProperty(code: CodeBlock.Builder, prop: GhostPropertyModel, headersVar: String, nameIndex: Int) {
         val accessor = "value.${prop.kotlinName}"
-        val nameIndex = properties.indexOf(prop)
         val canUseFused = isFusedType(prop)
 
         if (canUseFused) {
@@ -120,9 +132,20 @@ internal class SerializeCodeEmitter(
         }
     }
 
-    private fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel, headersVar: String) {
+    private fun emitPropertyWithComma(code: CodeBlock.Builder, prop: GhostPropertyModel, headersVar: String, nameIndex: Int) {
+        // Only called for non-nullable fields where all preceding fields are also non-nullable.
+        // The comma is pre-included in the header, so appendSeparator() is skipped.
         val accessor = "value.${prop.kotlinName}"
-        val nameIndex = properties.indexOf(prop)
+        if (isFusedType(prop)) {
+            code.addStatement("writer.writeFieldWithComma(%L[%L], %L)", headersVar, nameIndex, accessor)
+        } else {
+            code.addStatement("writer.writeNameRawWithComma(%L[%L])", headersVar, nameIndex)
+            emitValue(code, prop, accessor)
+        }
+    }
+
+    private fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel, headersVar: String, nameIndex: Int) {
+        val accessor = "value.${prop.kotlinName}"
         val canUseFused = isFusedType(prop)
 
         if (prop.isNullable) {

@@ -295,11 +295,11 @@ class GhostReaderAdvancedTest {
     @Test
     fun nextFloatLosesPrecisionGracefully() {
         val reader = readerOf("""{"v":1.123456789}""")
-        reader.beginObject()
-        reader.nextKey()
-        reader.consumeKeySeparator()
+        reader.beginObject().ignore()
+        reader.nextKey().ignore()
+        reader.consumeKeySeparator().ignore()
         val f = reader.nextFloat()
-        assertEquals(1.1234568f, f, 0.0000001f)
+        assertEquals(1.1234568, f.toDouble(), 0.0000001)
     }
 
     // ── I. SPECIAL FIELD NAME PATTERNS ───────────────────────────────

@@ -5,10 +5,10 @@ package com.ghost.serialization.sample.api
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ktor.ghost
-import com.ghost.serialization.benchmark.CharacterResponse
-import com.ghost.serialization.benchmark.GhostCharacter
-import com.ghost.serialization.benchmark.PageInfo
-import com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization
+import com.ghost.serialization.sample.model.CharacterResponse
+import com.ghost.serialization.sample.model.GhostCharacter
+import com.ghost.serialization.sample.model.PageInfo
+import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
 import com.ghost.serialization.sample.ui.JankTracker
 import com.ghost.serialization.sample.util.forceGC
 import com.ghost.serialization.sample.util.getCurrentThreadAllocatedBytes
@@ -29,7 +29,7 @@ import kotlin.time.TimeSource
 class RickAndMortyRepository {
 
     init {
-        Ghost.addRegistry(GhostModuleRegistry_ghost_serialization.INSTANCE)
+        Ghost.addRegistry(GhostModuleRegistry_serialization_sample.INSTANCE)
     }
 
     private val kserJson = Json { ignoreUnknownKeys = true }
@@ -163,7 +163,7 @@ class RickAndMortyRepository {
             
             // This will show up in Logcat under "System.out" tag
             println(">>> [GHOST_DEBUG] Active Serializer: $serializerName")
-            println(">>> [GHOST_DEBUG] Registry Instance: ${GhostModuleRegistry_ghost_serialization.INSTANCE}")
+            println(">>> [GHOST_DEBUG] Registry Instance: ${GhostModuleRegistry_serialization_sample.INSTANCE}")
             
             onStatusChange("Finalizing... Serializer: $serializerName")
 

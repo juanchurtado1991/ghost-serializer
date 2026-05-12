@@ -16,6 +16,7 @@ import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.parser.nextBoolean
 import com.ghost.serialization.parser.skipValue
+import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -48,6 +49,17 @@ object KtorUserSerializer : GhostSerializer<KtorUser> {
     override val typeName: String = "com.ghost.serialization.ktor.KtorUser"
 
     override fun serialize(writer: GhostJsonWriter, value: KtorUser) {
+        writer.beginObject().ignore()
+        writer.name("id").ignore()
+        writer.value(value.id.toLong()).ignore()
+        writer.name("name").ignore()
+        writer.value(value.name).ignore()
+        writer.name("isActive").ignore()
+        writer.value(value.isActive).ignore()
+        writer.endObject().ignore()
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: KtorUser) {
         writer.beginObject().ignore()
         writer.name("id").ignore()
         writer.value(value.id.toLong()).ignore()

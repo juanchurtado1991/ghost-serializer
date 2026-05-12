@@ -71,7 +71,7 @@ kotlin {
     }
 
     sourceSets {
-        commonMain {
+        val commonMain by getting {
             // Add KSP output to commonMain so all platforms inherit it
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
@@ -80,6 +80,25 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
             }
         }
+        val nativeMain by creating {
+            dependsOn(commonMain)
+        }
+        val iosMain by creating {
+            dependsOn(nativeMain)
+        }
+        val iosArm64Main by getting {
+            dependsOn(iosMain)
+        }
+        val iosSimulatorArm64Main by getting {
+            dependsOn(iosMain)
+        }
+        val androidMain by getting {
+            dependsOn(commonMain)
+        }
+        val jvmMain by getting {
+            dependsOn(commonMain)
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.core)

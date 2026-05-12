@@ -23,6 +23,12 @@ class GhostPrewarmTest {
         ) {
         }
 
+        override fun serialize(
+            writer: com.ghost.serialization.writer.GhostJsonFlatWriter,
+            value: MockUser
+        ) {
+        }
+
         override fun deserialize(reader: GhostJsonReader): MockUser {
             return MockUser(1, "test")
         }

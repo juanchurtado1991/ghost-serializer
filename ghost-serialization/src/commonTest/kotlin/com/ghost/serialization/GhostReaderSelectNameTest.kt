@@ -143,6 +143,7 @@ class GhostReaderSelectNameTest {
             .beginArray().value(1).value(2).value(3).endArray().unused()
         writer.endObject().unused()
 
+        writer.flush()
         val json = buffer.readUtf8()
         val reader = readerOf(json)
 

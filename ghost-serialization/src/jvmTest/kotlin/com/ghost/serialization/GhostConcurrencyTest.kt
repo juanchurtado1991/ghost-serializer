@@ -30,6 +30,9 @@ class GhostConcurrencyTest {
         override fun serialize(writer: GhostJsonWriter, value: Int) {
             writer.value(value.toLong()).ignore()
         }
+        override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: Int) {
+            writer.value(value.toLong()).ignore()
+        }
     }
 
     private class ThreadSafeMockRegistry(val batchId: Int) : GhostRegistry {

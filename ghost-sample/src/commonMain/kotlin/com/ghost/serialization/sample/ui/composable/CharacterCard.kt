@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.ghost.serialization.benchmark.GhostCharacter
+import com.ghost.serialization.sample.model.GhostCharacter
 
 @Composable
 fun CharacterCard(character: GhostCharacter) {

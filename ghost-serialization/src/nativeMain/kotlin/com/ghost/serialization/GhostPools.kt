@@ -1,6 +1,7 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.GhostJsonConstants
+import com.ghost.serialization.parser.GhostJsonConstants.SCRATCH_BUFFER_SIZE
 import kotlin.native.concurrent.ThreadLocal
 
 private const val TIER_SMALL = 1024
@@ -9,40 +10,53 @@ private const val TIER_LARGE = 65536
 
 @ThreadLocal
 private var small: ByteArray? = null
+
 @ThreadLocal
 private var medium: ByteArray? = null
+
 @ThreadLocal
 private var large: ByteArray? = null
+
 @ThreadLocal
 private var charSmall: CharArray? = null
+
 @ThreadLocal
 private var charMedium: CharArray? = null
 
 @InternalGhostApi
 actual fun acquireScratchBuffer(minSize: Int): ByteArray {
     return when {
-        minSize <= GhostJsonConstants.SCRATCH_BUFFER_SIZE -> {
-            val b = small
-            if (b != null && b.size >= GhostJsonConstants.SCRATCH_BUFFER_SIZE) {
+        minSize <= SCRATCH_BUFFER_SIZE -> {
+            val localSmall = small
+            if (
+                localSmall != null &&
+                localSmall.size >= SCRATCH_BUFFER_SIZE
+            ) {
                 small = null
-                b
-            } else ByteArray(GhostJsonConstants.SCRATCH_BUFFER_SIZE)
+                localSmall
+            } else {
+                ByteArray(SCRATCH_BUFFER_SIZE)
+            }
         }
+
         minSize <= TIER_SMALL -> {
-            val b = small
+            val localSmall = small
             small = null
-            b ?: ByteArray(TIER_SMALL)
+            localSmall ?: ByteArray(TIER_SMALL)
         }
+
         minSize <= TIER_MEDIUM -> {
-            val b = medium
+            val localMedium = medium
             medium = null
-            b ?: ByteArray(TIER_MEDIUM)
+            localMedium ?: ByteArray(TIER_MEDIUM)
         }
+
         minSize <= TIER_LARGE -> {
-            val b = large
+            val localLarge = large
             large = null
-            b ?: ByteArray(TIER_LARGE)
+            localLarge ?: ByteArray(TIER_LARGE)
         }
+
         else -> ByteArray(minSize)
     }
 }
@@ -50,10 +64,10 @@ actual fun acquireScratchBuffer(minSize: Int): ByteArray {
 @InternalGhostApi
 actual fun releaseScratchBuffer(buffer: ByteArray) {
     val size = buffer.size
-    when {
-        size == GhostJsonConstants.SCRATCH_BUFFER_SIZE || size == TIER_SMALL -> small = buffer
-        size == TIER_MEDIUM -> medium = buffer
-        size == TIER_LARGE -> large = buffer
+    when (size) {
+        SCRATCH_BUFFER_SIZE, TIER_SMALL -> small = buffer
+        TIER_MEDIUM -> medium = buffer
+        TIER_LARGE -> large = buffer
     }
 }
 
@@ -61,15 +75,17 @@ actual fun releaseScratchBuffer(buffer: ByteArray) {
 actual fun acquireCharBuffer(minSize: Int): CharArray {
     return when {
         minSize <= TIER_SMALL -> {
-            val b = charSmall
+            val localSmall = charSmall
             charSmall = null
-            b ?: CharArray(TIER_SMALL)
+            localSmall ?: CharArray(TIER_SMALL)
         }
+
         minSize <= TIER_MEDIUM -> {
-            val b = charMedium
+            val localMedium = charMedium
             charMedium = null
-            b ?: CharArray(TIER_MEDIUM)
+            localMedium ?: CharArray(TIER_MEDIUM)
         }
+
         else -> CharArray(minSize)
     }
 }
@@ -77,8 +93,8 @@ actual fun acquireCharBuffer(minSize: Int): CharArray {
 @InternalGhostApi
 actual fun releaseCharBuffer(buffer: CharArray) {
     val size = buffer.size
-    when {
-        size == TIER_SMALL -> charSmall = buffer
-        size == TIER_MEDIUM -> charMedium = buffer
+    when (size) {
+        TIER_SMALL -> charSmall = buffer
+        TIER_MEDIUM -> charMedium = buffer
     }
 }

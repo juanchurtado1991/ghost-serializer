@@ -4,12 +4,12 @@ kotlin                          = "2.3.21"
 agp                             = "8.13.2"
 ksp                             = "2.3.6"
 compose-plugin                  = "1.10.3"
-publish-version                 = "1.1.15-SNAPSHOT"
+publish-version                 = "1.1.14"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization
 ktor                            = "3.4.3"
-ktorfit                         = "2.7.2"
+ktorfit                         = "2.7.3"
 kotlinx-serialization           = "1.11.0"
 okio                            = "3.17.0"
 okhttp                          = "5.3.2"
@@ -17,9 +17,9 @@ mockwebserver                   = "5.3.2"
 retrofit                        = "3.0.0"
 
 # Serialization Engines (Benchmark)
-gson                            = "2.13.2"
+gson                            = "2.14.0"
 moshi                           = "1.15.2"
-jackson                         = "2.18.2"
+jackson                         = "2.21.3"
 
 # Tooling & Generation
 kotlinpoet                      = "2.3.0"
@@ -65,6 +65,7 @@ gson                            = { group = "com.google.code.gson", name = "gson
 moshi                           = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
 moshi-kotlin                    = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
 kotlinx-serialization-json      = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json-okio = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json-okio", version.ref = "kotlinx-serialization" }
 jackson-databind                = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jackson-module-kotlin           = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 

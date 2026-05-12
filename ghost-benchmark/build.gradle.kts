@@ -19,12 +19,39 @@ tasks.withType<org.gradle.jvm.application.tasks.CreateStartScripts> {
 
 tasks.named<JavaExec>("run") {
     // Run ALL test suites before benchmark: JVM, WASM, Integration, Ktor, Plugin
-    dependsOn(
-        ":ghost-serialization:jvmTest",
-        ":ghost-integration-test:test",
-        ":ghost-ktor:jvmTest",
-        ":ghost-gradle-plugin:test"
-    )
+    if (!project.hasProperty("skipTests")) {
+        dependsOn(
+            ":ghost-serialization:jvmTest",
+            ":ghost-integration-test:test",
+            ":ghost-ktor:jvmTest",
+            ":ghost-gradle-plugin:test"
+        )
+    }
+
+    /**
+     * Optional Async Profiler (CPU flame graph): download a release from
+     * https://github.com/async-profiler/async-profiler/releases and point to the native library:
+     *
+     *   export GHOST_ASYNC_PROFILER=/path/to/async-profiler/build/libasyncProfiler.so
+     *   ./gradlew :ghost-benchmark:run
+     *
+     * Or: ./gradlew :ghost-benchmark:run -Pghost.asyncProfiler=/path/to/libasyncProfiler.so
+     *
+     * Output: ghost-benchmark/build/async-profiler.html — open in a browser (FlameGraph).
+     * Note: the profile includes tests + benchmark (whole run task). For a cleaner graph of only
+     * the benchmark JVM, run installDist and launch the script with the same -agentpath.
+     */
+    val profilerLib = System.getenv("GHOST_ASYNC_PROFILER")
+        ?: project.findProperty("ghost.asyncProfiler")?.toString()
+    if (profilerLib != null) {
+        val outFile = layout.buildDirectory.get().asFile.resolve("async-profiler.html")
+        jvmArgs(
+            "-agentpath:${file(profilerLib).absolutePath}=start,event=cpu,file=${outFile.absolutePath},interval=500000"
+        )
+        doFirst {
+            logger.lifecycle("Async Profiler enabled → CPU profile will be written to: ${outFile.absolutePath}")
+        }
+    }
 }
 
 kotlin {
@@ -39,30 +66,12 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.json.okio)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.okio)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.test)
-
-    implementation(libs.junit.launcher)
-    implementation(libs.junit.platform.engine)
-    runtimeOnly(libs.junit.engine)
-    runtimeOnly(libs.junit.vintage.engine)
-    runtimeOnly(libs.kotlin.test.junit5)
-    runtimeOnly(libs.kotlin.test)
-
-    // Include test classes for auto-detection (Safe Root-Relative paths)
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-serialization/build/classes/kotlin/jvm/test"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-serialization/build/generated/ksp/jvm/kotlin"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/classes/kotlin/test"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/classes/kotlin/main"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/kotlin"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-integration-test/build/generated/ksp/main/resources"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-ktor/build/classes/kotlin/jvm/test"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-ktor/build/classes/kotlin/jvm/main"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-gradle-plugin/build/classes/kotlin/test"))
-    runtimeOnly(files("${rootDir.absolutePath}/ghost-gradle-plugin/build/classes/kotlin/main"))
 }
 
 // Include KSP generated resources
