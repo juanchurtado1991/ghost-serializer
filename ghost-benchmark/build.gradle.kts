@@ -18,7 +18,7 @@ tasks.withType<CreateStartScripts> {
 }
 
 tasks.named<JavaExec>("run") {
-    // Run ALL test suites before benchmark: JVM, WASM, Integration, Ktor, Plugin
+    // Run ALL test suites before benchmark: JVM, Integration, Ktor, Plugin
     if (!project.hasProperty("skipTests")) {
         dependsOn(
             ":ghost-serialization:jvmTest",

@@ -18,28 +18,28 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ghost.serialization.sample.ui.AppDesign
 import com.ghost.serialization.sample.ui.model.UiState
-import kotlin.collections.chunked
-import kotlin.collections.forEach
+
+private val ACCENT_COMPETITOR = Color(0xFF818CF8)
 
 @Composable
 fun PerformanceResultsCard(
     uiState: UiState,
     onCopyLogs: () -> Unit
 ) {
-    val ghostPure = uiState.results.find { it.name == "GHOST PURE" }
-    val kserPure = uiState.results.find { it.name == "KSER PURE" }
-    val ghostFull = uiState.results.find { it.name == "GHOST + KTOR" }
-    val kserFull = uiState.results.find { it.name == "KTOR + KSER" }
+    // Group results by category prefix, e.g. "[NETWORK]", "[PARSE_STRING]"
+    val grouped = uiState.results.groupBy { result ->
+        result.name.substringBefore("]").removePrefix("[")
+    }
 
-    val engineSpeedFactor =
-        if (ghostPure != null && kserPure != null && ghostPure.timeMs > 0) {
-            (kserPure.timeMs / ghostPure.timeMs)
-        } else 1.0
-
-    val stackSpeedFactor =
-        if (ghostFull != null && kserFull != null && ghostFull.timeMs > 0) {
-            (kserFull.timeMs / ghostFull.timeMs)
-        } else 1.0
+    // Summary insight: compare Ghost vs best competitor per category
+    val ghostResults = uiState.results.filter { it.name.contains("GHOST") }
+    val competitorResults = uiState.results.filter { !it.name.contains("GHOST") }
+    val avgGhostMs = ghostResults.map { it.timeMs }.average().takeIf { !it.isNaN() } ?: 0.0
+    val avgCompetitorMs = competitorResults.map { it.timeMs }.average().takeIf { !it.isNaN() } ?: 0.0
+    val speedFactor = if (avgGhostMs > 0) avgCompetitorMs / avgGhostMs else 1.0
+    val memGhostKb = ghostResults.map { it.memoryBytes }.average().takeIf { !it.isNaN() } ?: 0.0
+    val memCompetitorKb = competitorResults.map { it.memoryBytes }.average().takeIf { !it.isNaN() } ?: 0.0
+    val memFactor = if (memGhostKb > 0) memCompetitorKb / memGhostKb else 1.0
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -51,27 +51,23 @@ fun PerformanceResultsCard(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // ── Header ───────────────────────────────────────────────────────────
             SampleText(
                 text = "PERFORMANCE INSIGHT",
                 isBold = true,
                 fontSize = 12,
                 overrideColor = AppDesign.AccentGlow
             )
-
-            val insightText = "Ghost Engine is ${(engineSpeedFactor * 100).toInt() / 100.0}x faster."
             SampleText(
-                text = insightText,
+                text = "Ghost is ${(speedFactor * 10).toLong() / 10.0}x faster overall.",
                 fontSize = 16,
                 isBold = true,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 12.dp)
             )
-
-            val stackText = "Ghost + Ktor is ${(stackSpeedFactor * 100).toInt() / 100.0}x faster E2E."
             SampleText(
-                text = stackText,
+                text = "Ghost allocates ${(memFactor * 10).toLong() / 10.0}x less memory on average.",
                 fontSize = 12,
-                isBold = false,
                 isSecondary = true,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -80,88 +76,65 @@ fun PerformanceResultsCard(
             HorizontalDivider(
                 color = AppDesign.GlassBorder,
                 thickness = 1.dp,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            SampleText(
-                text = "JSON ➡️ OBJECTS PERFORMANCE (ms / JANK)",
-                isBold = true,
-                fontSize = 12,
-                isSecondary = true,
-                textAlign = TextAlign.Center
-            )
+            // ── Results by category ──────────────────────────────────────────────
+            grouped.forEach { (category, results) ->
+                SampleText(
+                    text = category,
+                    isBold = true,
+                    fontSize = 11,
+                    isSecondary = true,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
 
-            SampleText(
-                text = "Jank represents dropped frames. 0 means perfect fluidity.",
-                fontSize = 10,
-                isSecondary = true,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-            )
-
-            val chunkedResults = uiState.results.chunked(2)
-            chunkedResults.forEach { row ->
+                // Time row
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        16.dp,
-                        Alignment.CenterHorizontally
-                    ),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    row.forEach { res ->
-                        val color = when {
-                            res.name.contains("GHOST") -> AppDesign.AccentGlow
-                            else -> Color(0xFF818CF8)
-                        }
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            MetricItem(
-                                title = res.name + " (JANK:${res.jankCount})",
-                                value = "${(res.timeMs * 100).toInt() / 100.0}ms",
-                                overrideColor = color
-                            )
-                        }
+                    results.forEach { res ->
+                        val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else ACCENT_COMPETITOR
+                        val engineName = res.name.substringAfter("] ").trim()
+                        MetricItem(
+                            title = engineName,
+                            value = "${"%.2f".format(res.timeMs)}ms",
+                            overrideColor = color
+                        )
                     }
                 }
-            }
 
-            if (uiState.results.any { it.memoryBytes > 0 }) {
-                SampleText(
-                    text = "MEMORY ALLOCATION",
-                    isBold = true,
-                    fontSize = 10,
-                    isSecondary = true,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)
+                // Memory row
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    results.forEach { res ->
+                        val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else ACCENT_COMPETITOR
+                        val engineName = res.name.substringAfter("] ").trim()
+                        MetricItem(
+                            title = "$engineName MEM",
+                            value = "${res.memoryBytes / 1024} KB",
+                            overrideColor = color
+                        )
+                    }
+                }
+
+                HorizontalDivider(
+                    color = AppDesign.GlassBorder,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-                chunkedResults.forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            16.dp,
-                            Alignment.CenterHorizontally
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        row.forEach { res ->
-                            val color = when {
-                                res.name.contains("GHOST") -> AppDesign.AccentGlow
-                                else -> Color(0xFF818CF8)
-                            }
-
-                            MetricItem(
-                                title = res.name + " MEM",
-                                value = (res.memoryBytes / 1024).toString() + " KB",
-                                overrideColor = color
-                            )
-                        }
-                    }
-                }
             }
 
+            // ── Copy logs button ─────────────────────────────────────────────────
             TextButton(
                 onClick = onCopyLogs,
-                modifier = Modifier.padding(top = 24.dp)
+                modifier = Modifier.padding(top = 8.dp)
             ) {
                 SampleText(
                     text = "COPY SESSION LOGS",

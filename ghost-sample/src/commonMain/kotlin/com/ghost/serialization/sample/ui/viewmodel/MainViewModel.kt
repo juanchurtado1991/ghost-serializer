@@ -2,9 +2,7 @@ package com.ghost.serialization.sample.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ghost.serialization.Ghost
 import com.ghost.serialization.sample.api.RickAndMortyRepository
-import com.ghost.serialization.sample.ui.JankTracker
 import com.ghost.serialization.sample.ui.model.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,51 +11,52 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
     private val repository = RickAndMortyRepository()
-    
+
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
-
-    init { Ghost.prewarm() }
-
 
     fun updatePageCount(count: Float) {
         _uiState.update { it.copy(pageCount = count) }
     }
 
-    fun runBenchmark(jankTracker: JankTracker) {
-        _uiState.update { it.copy(isLoading = true, errorMessage = null, loadingStatus = "Initiating...") }
-        
+    fun runBenchmark() {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null, results = emptyList(), loadingStatus = "Initiating...") }
+
         viewModelScope.launch {
-            // 1. Fetch current data for the UI using Ghost
+            // Fetch characters for UI display
             try {
-                val characters = repository.fetchCharacters(1) // Always use Ghost for initial fetch
+                val characters = repository.fetchCharacters(1)
                 _uiState.update { it.copy(characters = characters.results) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "Fetch Error: ${e.message}", isLoading = false) }
-                return@launch
+                // Non-fatal: continue benchmark even if UI fetch fails
             }
 
-            // 2. Run the comparison
-            repository.runBenchmark(_uiState.value.pageCount.toInt(), jankTracker) { status ->
-                _uiState.update { it.copy(loadingStatus = status) }
-            }
-                .onSuccess { result ->
-                    _uiState.update { it.copy(
+            repository.runBenchmark(
+                pageCount = _uiState.value.pageCount.toInt(),
+                onStatusChange = { status ->
+                    _uiState.update { it.copy(loadingStatus = status) }
+                }
+            ).onSuccess { results ->
+                val logEntry = buildString {
+                    appendLine("--- RUN (${_uiState.value.pageCount.toInt()} pages x${BENCHMARK_ITERATIONS}) ---")
+                    results.forEach { r ->
+                        appendLine("${r.name}: ${"%.3f".format(r.timeMs)}ms | ${r.memoryBytes / 1024}KB")
+                    }
+                }
+                _uiState.update { state ->
+                    state.copy(
                         isLoading = false,
-                        results = listOf(
-                            com.ghost.serialization.sample.api.EngineResult(
-                                "GHOST PURE", 
-                                result.parseTimeMs, 
-                                result.ghostMemoryBytes, 
-                                true, 
-                                result.ghostJankCount
-                            )
-                        ) + result.engineResults
-                    ) }
+                        results = results,
+                        sessionHistory = state.sessionHistory + logEntry
+                    )
                 }
-                .onFailure { error ->
-                    _uiState.update { it.copy(errorMessage = "Benchmark Error: ${error.message}", isLoading = false) }
-                }
+            }.onFailure { error ->
+                _uiState.update { it.copy(errorMessage = error.message, isLoading = false) }
+            }
         }
+    }
+
+    companion object {
+        private const val BENCHMARK_ITERATIONS = 100
     }
 }

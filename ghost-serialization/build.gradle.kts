@@ -1,6 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
@@ -11,8 +8,8 @@ plugins {
 kotlin {
     androidTarget {
         compilations.all {
-            compileTaskProvider.configure {
-                compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+            kotlinOptions {
+                jvmTarget = "17"
             }
         }
         publishLibraryVariants("release")
@@ -23,17 +20,8 @@ kotlin {
         withSourcesJar()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        outputModuleName.set("ghost-serialization-wasm")
-        browser()
-        binaries.library()
-        generateTypeScriptDefinitions()
-    }
-
     sourceSets {
         val commonMain by getting {
-            // KSP output for commonMain is inherited by all platform targets
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
                 api(project(":ghost-api"))
@@ -57,9 +45,6 @@ kotlin {
             dependsOn(commonMain)
         }
         val jvmMain by getting {
-            dependsOn(commonMain)
-        }
-        val wasmJsMain by getting {
             dependsOn(commonMain)
         }
 

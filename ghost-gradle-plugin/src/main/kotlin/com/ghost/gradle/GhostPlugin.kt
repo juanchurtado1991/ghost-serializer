@@ -13,7 +13,7 @@ class GhostPlugin : Plugin<Project> {
 
         // 1. Core & KSP (Reactive)
         project.plugins.withId(PLUGIN_KSP) { setupKsp(project, ghostVersion) }
-        project.plugins.withId(PLUGIN_KMP) { setupKmp(project, extension, ghostVersion) }
+        project.plugins.withId(PLUGIN_KMP) { setupKmp(project, ghostVersion) }
         
         var coreApplied = false
         listOf(PLUGIN_ANDROID_APP, PLUGIN_ANDROID_LIB, PLUGIN_JVM).forEach { pluginId ->
@@ -47,7 +47,7 @@ class GhostPlugin : Plugin<Project> {
         }
     }
 
-    private fun setupKmp(project: Project, extension: GhostExtension, version: Provider<String>) {
+    private fun setupKmp(project: Project, version: Provider<String>) {
         val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
         val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
         
@@ -118,7 +118,7 @@ class GhostPlugin : Plugin<Project> {
 
     companion object {
         private const val EXTENSION_NAME = "ghost"
-        private const val DEFAULT_VERSION = "1.1.8"
+        private const val DEFAULT_VERSION = "1.1.14"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
         private const val PLUGIN_KMP = "org.jetbrains.kotlin.multiplatform"

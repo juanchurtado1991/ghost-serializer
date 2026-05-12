@@ -365,7 +365,7 @@ private fun GhostJsonReader.parseIntDigits(
         }
     )
 
-    if (earlyExitResult != null) return earlyExitResult
+    if (earlyExitResult != null) return earlyExitResult!!
     if (!hasDigitsFound) throwError(ERR_EXPECTED_INT_PART)
     return accumulatedValue
 }
@@ -402,7 +402,7 @@ private fun GhostJsonReader.parseLongDigits(
         }
     )
 
-    if (earlyExitResult != null) return earlyExitResult
+    if (earlyExitResult != null) return earlyExitResult!!
     if (!hasDigitsFound) throwError(ERR_EXPECTED_INT_PART)
     return accumulatedValue
 }

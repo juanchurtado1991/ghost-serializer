@@ -1,7 +1,6 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
 import okio.buffer
@@ -20,7 +19,6 @@ import reactor.core.publisher.Mono
  * Reactive Decoder for Ghost Serialization.
  * Supports streaming of objects from [DataBuffer]s with Zero-Copy.
  */
-@OptIn(InternalGhostApi::class)
 class GhostReactiveDecoder : AbstractDecoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
     MimeType("application", "x-ndjson")

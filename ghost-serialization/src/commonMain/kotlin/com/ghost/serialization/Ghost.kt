@@ -1,4 +1,3 @@
-@file:OptIn(InternalGhostApi::class)
 @file:Suppress("UNCHECKED_CAST")
 
 package com.ghost.serialization
@@ -15,11 +14,11 @@ import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonWriter
 import okio.BufferedSink
 import okio.BufferedSource
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * Core entry point for Ghost Serialization.
@@ -32,8 +31,10 @@ expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
 expect fun discoverRegistries(): List<GhostRegistry>
 
+@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 
+@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 /**
@@ -210,6 +211,29 @@ object Ghost {
         return getSerializer(kClass)
     }
 
+    @PublishedApi
+    @Suppress("UNCHECKED_CAST")
+    internal fun <T : Any> resolveSerializerByType(
+        kClass: KClass<T>,
+        typeProducer: () -> KType
+    ): GhostSerializer<T> {
+        // Fast path: serializerCache is populated at startup by addRegistry/prewarm.
+        // Safe for all types that were registered as KClass → serializer mappings.
+        (serializerCache[kClass] as? GhostSerializer<T>)?.let { return it }
+        // Slow path (first call for this KType): getSerializer(KType) internally
+        // caches the result in typeCache so subsequent calls are O(1).
+        // No write to serializerCache here — generic types (List<T>, Map<K,V>)
+        // share the same KClass and must NOT pollute that cache.
+        val type = typeProducer()
+        return (getSerializer(type) ?: getSerializer(kClass as KClass<Any>))
+            as? GhostSerializer<T>
+            ?: throwError("$NOT_FOUND $kClass. $MISSING_ANN")
+    }
+
+    @PublishedApi
+    internal inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> =
+        resolveSerializerByType(T::class) { typeOf<T>() }
+
     /**
      * Encodes [value] and writes the resulting JSON payload into [sink].
      *
@@ -225,12 +249,7 @@ object Ghost {
      * yourself.
      */
     inline fun <reified T : Any> serialize(sink: BufferedSink, value: T) {
-        val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
-            ?: run {
-                val type = kotlin.reflect.typeOf<T>()
-                getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
-            } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
-
+        val serializer = resolveSerializer<T>()
         ghostInternalEncodeAndDrainTo(sink) { writer ->
             serializer.serialize(writer, value)
         }
@@ -246,12 +265,7 @@ object Ghost {
      * management, no virtual dispatch on the hot path.
      */
     inline fun <reified T : Any> encodeToString(value: T): String {
-        val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
-            ?: run {
-                val type = kotlin.reflect.typeOf<T>()
-                getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
-            } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
-
+        val serializer = resolveSerializer<T>()
         return ghostInternalEncodeToString { writer ->
             serializer.serialize(writer, value)
         }
@@ -262,20 +276,49 @@ object Ghost {
      * skips the UTF-8 decode at the end.
      */
     inline fun <reified T : Any> encodeToBytes(value: T): ByteArray {
-        val serializer = (serializerCache[T::class] as? GhostSerializer<T>)
-            ?: run {
-                val type = kotlin.reflect.typeOf<T>()
-                getSerializer(type) ?: getSerializer(T::class as KClass<Any>)
-            } as? GhostSerializer<T> ?: throwError("$NOT_FOUND ${T::class}. $MISSING_ANN")
-
+        val serializer = resolveSerializer<T>()
         return ghostInternalEncodeWithWriter { writer ->
             serializer.serialize(writer, value)
         }
     }
 
+    /**
+     * Serializes [value] through the pooled [GhostJsonFlatWriter] and discards
+     * the output. No [BufferedSink] allocation, no Okio wrapper objects.
+     * Use this for stream-mode benchmarks and JIT warm-up where the encoded
+     * bytes are not needed.
+     */
+    inline fun <reified T : Any> encodeAndDiscard(value: T) {
+        val serializer = resolveSerializer<T>()
+        ghostInternalEncodeAndDiscard { writer ->
+            serializer.serialize(writer, value)
+        }
+    }
+
+    // ── Public deserialize API ────────────
+
+    @OptIn(InternalGhostApi::class)
+    inline fun <reified T : Any> deserialize(json: String): T {
+        val bytes = json.encodeToByteArray()
+        return ghostInternalUseReader(bytes) { reader -> deserialize(reader) }
+    }
+
+    @OptIn(InternalGhostApi::class)
+    inline fun <reified T : Any> deserialize(source: BufferedSource): T {
+        return ghostInternalUseSource(source) { reader -> deserialize(reader) }
+    }
+
+    @OptIn(InternalGhostApi::class)
+    inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
+        return ghostInternalUseReader(bytes) { reader -> deserialize(reader) }
+    }
+
+    // ── Advanced overloads: options exposes GhostJsonReader → opt-in required ─
+
+    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         json: String,
-        crossinline options: (GhostJsonReader) -> Unit = {}
+        crossinline options: (GhostJsonReader) -> Unit
     ): T {
         val bytes = json.encodeToByteArray()
         return ghostInternalUseReader(bytes) { reader ->
@@ -284,9 +327,10 @@ object Ghost {
         }
     }
 
+    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         source: BufferedSource,
-        crossinline options: (GhostJsonReader) -> Unit = {}
+        crossinline options: (GhostJsonReader) -> Unit
     ): T {
         return ghostInternalUseSource(source) { reader ->
             options(reader)
@@ -294,9 +338,10 @@ object Ghost {
         }
     }
 
+    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         bytes: ByteArray,
-        crossinline options: (GhostJsonReader) -> Unit = {}
+        crossinline options: (GhostJsonReader) -> Unit
     ): T {
         return ghostInternalUseReader(bytes) { reader ->
             options(reader)
@@ -304,6 +349,7 @@ object Ghost {
         }
     }
 
+    @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>): T {
         return ghostInternalUseReader(bytes) { reader ->
             val serializer = getSerializer(clazz)
@@ -313,6 +359,7 @@ object Ghost {
         }
     }
 
+    @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
         return ghostInternalUseSource(source) { reader ->
             val serializer = getSerializer(clazz)
@@ -326,11 +373,24 @@ object Ghost {
         serialize(sink, value)
     }
 
+    /**
+     * Non-inline variant of [encodeToSink] for contexts where the type is known
+     * only as a [KClass] at runtime (e.g. Spring HttpMessageConverter, Retrofit adapters).
+     */
+    @OptIn(InternalGhostApi::class)
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
+        val serializer = getSerializer(clazz)
+            ?: throwError("$NOT_FOUND ${clazz.simpleName}. $MISSING_ANN")
+        ghostInternalEncodeAndDrainTo(sink) { writer ->
+            serializer.serialize(writer, value)
+        }
+    }
+
+    @OptIn(InternalGhostApi::class)
     @MustUseReturnValues
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
-        val serializer = getSerializer(T::class)
-            ?: throwError("$NOT_FOUND ${T::class.simpleName}")
-
+        val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
     }
 
@@ -353,4 +413,19 @@ object Ghost {
 
     const val MISSING_ANN = "Did you annotate it with @GhostSerialization?"
     const val NOT_FOUND = "No Ghost serializer found for"
+
+    /**
+     * Test-only utility to clear global state and prevent test pollution.
+     */
+    @InternalGhostApi
+    fun resetForTest() {
+        runSynchronized(lock) {
+            mutableRegistries.clear()
+            _discoveredRegistries = null
+            serializerCache.clear()
+            typeCache.clear()
+            serializerByName.clear()
+            updateConsolidatedRegistries()
+        }
+    }
 }
