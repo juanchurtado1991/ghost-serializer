@@ -30,7 +30,6 @@ tasks.named<JavaExec>("run") {
 
 }
 
-
 kotlin {
     jvmToolchain(17)
 }

@@ -44,9 +44,6 @@ kotlin {
         }
         binaries.executable()
     }
-    
-    // KSP automatically adds generated sources to the corresponding source sets.
-    // Manual srcDir configuration is removed to prevent redeclaration errors.
 
     sourceSets {
         commonMain {
@@ -60,8 +57,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
-            
-            // Ghost (Local Project for Development/Benchmark)
+
             implementation(project(":ghost-serialization"))
             implementation(project(":ghost-ktor"))
             
