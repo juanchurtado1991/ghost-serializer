@@ -134,6 +134,10 @@ object Ghost {
         }
     }
 
+    /**
+     * Used by compiler to get serializers by name
+     */
+    @Suppress("unused")
     fun getSerializerByName(name: String): GhostSerializer<*>? {
         return runSynchronized(lock) { serializerByName[name] }
     }

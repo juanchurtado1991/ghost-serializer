@@ -60,6 +60,7 @@ class GhostJsonReader(
     var maxDepth: Int = 255,
     var strictMode: Boolean = false,
     var coerceStringsToNumbers: Boolean = false,
+    var coerceBooleans: Boolean = false,
     var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
 ) {
 
@@ -97,6 +98,7 @@ class GhostJsonReader(
         maxDepth: Int = 255,
         strictMode: Boolean = false,
         coerceStringsToNumbers: Boolean = false,
+        coerceBooleans: Boolean = false,
         maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
     ) : this(
         createByteArraySource(bytes),
@@ -104,6 +106,7 @@ class GhostJsonReader(
         maxDepth,
         strictMode,
         coerceStringsToNumbers,
+        coerceBooleans,
         maxCollectionSize
     )
 
@@ -113,6 +116,7 @@ class GhostJsonReader(
         maxDepth: Int = 255,
         strictMode: Boolean = false,
         coerceStringsToNumbers: Boolean = false,
+        coerceBooleans: Boolean = false,
         maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
     ) : this(
         createSourceBridge(okioSource),
@@ -120,6 +124,7 @@ class GhostJsonReader(
         maxDepth,
         strictMode,
         coerceStringsToNumbers,
+        coerceBooleans,
         maxCollectionSize
     )
 
@@ -516,6 +521,7 @@ class GhostJsonReader(
         this.depth = 0
         this.strictMode = false
         this.coerceStringsToNumbers = false
+        this.coerceBooleans = false
         this.maxDepth = 255
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false

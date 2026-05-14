@@ -1,10 +1,13 @@
 package com.ghost.serialization.compiler
 
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -19,7 +22,8 @@ internal class GhostCodeGenerator(
     private val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
     private val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||
             classDeclaration.modifiers.contains(Modifier.INLINE)
-    private val isEnum = classDeclaration.classKind == com.google.devtools.ksp.symbol.ClassKind.ENUM_CLASS
+
+    private val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
 
     private val sealedSubclasses = if (isSealed) {
         classDeclaration.getSealedSubclasses().toList()
@@ -29,7 +33,7 @@ internal class GhostCodeGenerator(
 
     private val packageName = classDeclaration.packageName.asString()
     private val originalClassName = classDeclaration.toClassName()
-    private val baseClassName = originalClassName.simpleNames.joinToString("_")
+    private val baseClassName = originalClassName.simpleNames.joinToString(STR_UNDERSCORE)
 
     // For a sealed subclass, this is the value written as the discriminator (i.e. the subclass name).
     // This is different from sealedDiscriminatorKey which is the JSON field name on the parent sealed class.
@@ -57,20 +61,21 @@ internal class GhostCodeGenerator(
             classDeclaration
         }
         annotationSource?.annotations
-            ?.find { it.shortName.asString() == "GhostSerialization" }
+            ?.find { it.shortName.asString() == ANNOTATION_GHOST_SERIALIZATION }
             ?.arguments
-            ?.find { it.name?.asString() == "discriminator" }
+            ?.find { it.name?.asString() == ARG_DISCRIMINATOR }
             ?.value as? String
-            ?: "type"
+            ?: STR_DEFAULT_DISCRIMINATOR
     }
 
     private val customTypeName: String = classDeclaration.annotations
-        .find { it.shortName.asString() == "GhostSerialization" }
+        .find { it.shortName.asString() == ANNOTATION_GHOST_SERIALIZATION }
         ?.arguments
-        ?.find { it.name?.asString() == "name" }
+        ?.find { it.name?.asString() == ARG_NAME }
         ?.value as? String ?: ""
 
-    private val finalTypeName: String = customTypeName.ifEmpty { classDeclaration.simpleName.asString() }
+    private val finalTypeName: String =
+        customTypeName.ifEmpty { classDeclaration.simpleName.asString() }
 
     private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
 
@@ -78,21 +83,28 @@ internal class GhostCodeGenerator(
     private val streamingWriterClass = ClassName(PKG_WRITER, STR_GHOST_JSON_WRITER)
     private val flatWriterClass = ClassName(PKG_WRITER, STR_GHOST_JSON_FLAT_WRITER)
     private val readerClass = ClassName(PKG_PARSER, STR_GHOST_JSON_READER)
-    private val bufferedSink = ClassName(OKIO_PACKAGE, STR_BUFFERED_SINK)
 
     fun createSpec(): FileSpec {
         val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
         return FileSpec.builder(packageName, serializerName)
             .addAnnotation(
-                com.squareup.kotlinpoet.AnnotationSpec.builder(Suppress::class)
-                    .addMember("%S, %S, %S, %S, %S, %S, %S, %S", 
-                        "UNUSED_VARIABLE", "UNUSED_EXPRESSION", "UNCHECKED_CAST", 
-                        "USELESS_CAST", "UNNECESSARY_NOT_NULL_ASSERTION", "unused", "NAME_SHADOWING", "UNUSED_RESULT")
+                AnnotationSpec.builder(Suppress::class)
+                    .addMember(
+                        STR_SUPPRESS_FORMAT,
+                        LINT_UNUSED_VARIABLE,
+                        LINT_UNUSED_EXPRESSION,
+                        LINT_UNCHECKED_CAST,
+                        LINT_USELESS_CAST,
+                        LINT_UNNECESSARY_NOT_NULL_ASSERTION,
+                        LINT_UNUSED,
+                        LINT_NAME_SHADOWING,
+                        LINT_UNUSED_RESULT
+                    )
                     .build()
             )
             .addAnnotation(
-                com.squareup.kotlinpoet.AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
-                    .addMember("%T::class", ClassName("com.ghost.serialization", "InternalGhostApi"))
+                AnnotationSpec.builder(ClassName(PKG_KOTLIN, STR_OPT_IN))
+                    .addMember("%T::class", ClassName(PKG_GHOST, STR_INTERNAL_GHOST_API))
                     .build()
             )
             .addImport(
@@ -119,15 +131,16 @@ internal class GhostCodeGenerator(
                 STR_PEEK_STRING_FIELD,
                 STR_IS_NEXT_NULL_VALUE,
                 STR_CONSUME_NULL,
-                STR_IGNORE
+                STR_IGNORE,
+                DECODE_RESILIENT
             )
             .addImport(PKG_EXCEPTION, STR_GHOST_JSON_EXCEPTION)
             .addImport(OKIO_PACKAGE, STR_BYTESTRING_IMPORT)
-            .addType(buildSerializerObject())
+            .addType(buildSerializerObject(serializerName))
             .build()
     }
 
-    private fun buildSerializerObject(): TypeSpec {
+    private fun buildSerializerObject(serializerName: String): TypeSpec {
         val names = properties.map { it.jsonName }
         val (shift, multiplier) = findPerfectHash(names)
 
@@ -152,18 +165,12 @@ internal class GhostCodeGenerator(
             discriminator,
             sealedDiscriminatorKey
         )
+
         val deserializeEmitter = DeserializeCodeEmitter(
             properties, originalClassName, readerClass, isSealed, isValue, isEnum, sealedSubclasses,
             sealedDiscriminatorKey
         )
 
-        val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
-        val fileSpecBuilder = FileSpec.builder(packageName, serializerName)
-            .addImport(readerClass.packageName, STR_OPTIONS_CLASS)
-            .addImport(PKG_PARSER, STR_GHOST_JSON_READER)
-            .addImport(PKG_WRITER, STR_GHOST_JSON_WRITER)
-            .addImport(PKG_WRITER, STR_GHOST_JSON_FLAT_WRITER)
-        
         val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
             .addKdoc(STR_KDOC_HIGH_PERF, originalClassName)
             .addKdoc(STR_KDOC_GENERATED)
@@ -172,9 +179,9 @@ internal class GhostCodeGenerator(
                     .parameterizedBy(originalClassName)
             )
             .addProperty(
-                PropertySpec.builder("typeName", String::class)
+                PropertySpec.builder(STR_TYPE_NAME_PROP, String::class)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer("%S", finalTypeName)
+                    .initializer(MARKER, finalTypeName)
                     .build()
             )
             .addProperty(
@@ -191,7 +198,7 @@ internal class GhostCodeGenerator(
             val enumOptionsBuilder = CodeBlock.builder()
                 .add(STR_OPTIONS_OF, optionsClass)
                 .indent()
-            
+
             val values = enumValues.values.toList()
             values.forEachIndexed { index, serialName ->
                 val comma = if (index < values.size - 1) STR_COMMA else STR_EMPTY
@@ -200,7 +207,10 @@ internal class GhostCodeGenerator(
             enumOptionsBuilder.unindent().add(STR_PAREN_CLOSE)
 
             typeSpecBuilder.addProperty(
-                PropertySpec.builder(STR_ENUM_OPTIONS, readerClass.peerClass(STR_OPTIONS_CLASS))
+                PropertySpec.builder(
+                    STR_ENUM_OPTIONS,
+                    readerClass.peerClass(STR_OPTIONS_CLASS)
+                )
                     .addModifiers(KModifier.PRIVATE)
                     .initializer(enumOptionsBuilder.build())
                     .build()
@@ -213,7 +223,7 @@ internal class GhostCodeGenerator(
             .addFunction(serializeEmitter.build(streamingWriterClass))
             .addFunction(serializeEmitter.build(flatWriterClass))
             .addFunction(
-                com.squareup.kotlinpoet.FunSpec.builder(STR_WARM_UP)
+                FunSpec.builder(STR_WARM_UP)
                     .addModifiers(KModifier.OVERRIDE)
                     .addCode(STR_WARM_UP_BODY, readerClass)
                     .build()
@@ -221,10 +231,11 @@ internal class GhostCodeGenerator(
             .build()
     }
 
+    @Suppress("ReplaceSizeCheckWithIsNotEmpty")
     private fun findPerfectHash(names: List<String>): Pair<Int, Int> {
         if (names.isEmpty()) return 0 to 31
         val rawBytes = names.map { it.encodeToByteArray() }
-        
+
         // Brute force search for a collision-free multiplier and shift for 4-byte hashing
         for (m in 31..2000 step 2) {
             for (s in 0..16) {
@@ -238,7 +249,7 @@ internal class GhostCodeGenerator(
                         if (bytes.size >= 2) key = key or ((bytes[1].toInt() and 0xFF) shl 8)
                         if (bytes.size >= 3) key = key or ((bytes[2].toInt() and 0xFF) shl 16)
                         if (bytes.size >= 4) key = key or ((bytes[3].toInt() and 0xFF) shl 24)
-                        
+
                         val h = ((key * m + bytes.size) shr s) and 1023
                         if (dispatch[h] == -1) {
                             dispatch[h] = i
@@ -259,12 +270,13 @@ internal class GhostCodeGenerator(
         private const val PKG_WRITER = "com.ghost.serialization.writer"
         private const val PKG_CONTRACT = "com.ghost.serialization.contract"
         private const val PKG_EXCEPTION = "com.ghost.serialization.exception"
+        private const val PKG_GHOST = "com.ghost.serialization"
         private const val OKIO_PACKAGE = "okio"
+        private const val DECODE_RESILIENT = "decodeResilient"
         private const val STR_GHOST_SERIALIZER = "GhostSerializer"
         private const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"
         private const val STR_GHOST_JSON_FLAT_WRITER = "GhostJsonFlatWriter"
         private const val STR_GHOST_JSON_READER = "GhostJsonReader"
-        private const val STR_BUFFERED_SINK = "BufferedSink"
         private const val STR_SERIALIZER_SUFFIX = "Serializer"
         private const val STR_BEGIN_OBJECT = "beginObject"
         private const val STR_END_OBJECT = "endObject"
@@ -299,7 +311,8 @@ internal class GhostCodeGenerator(
         private const val STR_NEWLINE = "\n"
         private const val STR_PAREN_CLOSE = ")"
         private const val STR_KDOC_HIGH_PERF = "High-performance serializer for [%T].\n"
-        private const val STR_KDOC_GENERATED = "Generated by GhostSerialization. Do not modify manually.\n"
+        private const val STR_KDOC_GENERATED =
+            "Generated by GhostSerialization. Do not modify manually.\n"
         private const val STR_OPTIONS = "OPTIONS"
         private const val STR_OPTIONS_CLASS = "JsonReaderOptions"
         private const val STR_ENUM_OPTIONS = "ENUM_OPTIONS"
@@ -310,5 +323,25 @@ internal class GhostCodeGenerator(
             |  deserialize(reader).ignore()
             |} catch (e: Exception) {}
         """.trimMargin()
+        private const val MARKER = "%S"
+
+        private const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
+        private const val ARG_DISCRIMINATOR = "discriminator"
+        private const val STR_DEFAULT_DISCRIMINATOR = "type"
+        private const val ARG_NAME = "name"
+        private const val PKG_KOTLIN = "kotlin"
+        private const val STR_OPT_IN = "OptIn"
+        private const val STR_INTERNAL_GHOST_API = "InternalGhostApi"
+        private const val STR_TYPE_NAME_PROP = "typeName"
+        private const val STR_UNDERSCORE = "_"
+        private const val STR_SUPPRESS_FORMAT = "$MARKER, $MARKER, $MARKER, $MARKER, $MARKER, $MARKER, $MARKER, $MARKER"
+        private const val LINT_UNUSED_VARIABLE = "UNUSED_VARIABLE"
+        private const val LINT_UNUSED_EXPRESSION = "UNUSED_EXPRESSION"
+        private const val LINT_UNCHECKED_CAST = "UNCHECKED_CAST"
+        private const val LINT_USELESS_CAST = "USELESS_CAST"
+        private const val LINT_UNNECESSARY_NOT_NULL_ASSERTION = "UNNECESSARY_NOT_NULL_ASSERTION"
+        private const val LINT_UNUSED = "unused"
+        private const val LINT_NAME_SHADOWING = "NAME_SHADOWING"
+        private const val LINT_UNUSED_RESULT = "UNUSED_RESULT"
     }
 }

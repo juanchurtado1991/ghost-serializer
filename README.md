@@ -271,6 +271,44 @@ data class Profile(
 )
 ```
 
+### Resilience & Anti-Explosion
+
+Ghost can be configured to be tolerant of unexpected or malformed data from the server.
+
+#### 1. Polymorphic Fallbacks (`@GhostFallback`)
+If a JSON contains a discriminator value that doesn't match any known subclass, Ghost normally throws an exception. Use `@GhostFallback` to define a default subclass:
+
+```kotlin
+@GhostSerialization
+sealed class DeviceEvent {
+    @GhostFallback
+    @GhostSerialization
+    data class Unknown(val raw: String = "unknown") : DeviceEvent()
+}
+```
+
+#### 2. Field Resilience (`@GhostResilient`)
+When a property is marked with `@GhostResilient`, Ghost will catch type mismatches (e.g., receiving a `String` when an `Int` was expected) or unknown enum values, and assign `null` (for nullable fields) or the default value instead of failing.
+
+```kotlin
+@GhostSerialization
+data class UserConfig(
+    @GhostResilient
+    val theme: Theme?,       // null if server sends unknown theme
+    @GhostResilient
+    val retryCount: Int = 3  // remains 3 if server sends malformed data
+)
+```
+
+#### 3. Boolean Coercion
+Interpret `0` and `1` as `false` and `true` (useful for legacy APIs):
+
+```kotlin
+val user = Ghost.deserialize<User>(json) {
+    it.coerceBooleans = true
+}
+```
+
 ---
 
 ## Usage — Kotlin Multiplatform (KMP)
@@ -321,7 +359,10 @@ val product: Product = Ghost.deserialize(jsonString)
 val json: String = Ghost.serialize(product)
 ```
 
-### 3. Sealed classes and polymorphism
+Ghost supports polymorphic serialization through Kotlin sealed classes. The type is identified by a **discriminator** field in the JSON (default is `"type"`).
+
+#### Standard Sealed Class
+By default, the class name is used as the discriminator value.
 
 ```kotlin
 @GhostSerialization
@@ -332,10 +373,35 @@ sealed class ApiEvent {
     @GhostSerialization
     data class OrderPlaced(val orderId: String, val total: Double) : ApiEvent()
 }
+// JSON: { "type": "UserCreated", "userId": "123", ... }
+```
 
-// With custom discriminator
+#### Custom Discriminator Key
+You can customize the JSON field name used for type identification:
+
+```kotlin
 @GhostSerialization(discriminator = "event_type")
-sealed class AnalyticsEvent { ... }
+sealed class AnalyticsEvent {
+    @GhostSerialization
+    data class Click(val elementId: String) : AnalyticsEvent()
+}
+// JSON: { "event_type": "Click", "elementId": "btn_login" }
+```
+
+#### Unknown Types and Fallbacks (`@GhostFallback`)
+If the server sends a type that the app doesn't know about yet, Ghost will normally throw an exception. Use `@GhostFallback` to define a "safe" default:
+
+```kotlin
+@GhostSerialization
+sealed class DeviceEvent {
+    @GhostSerialization
+    data class Status(val ok: Boolean) : DeviceEvent()
+
+    @GhostFallback
+    @GhostSerialization
+    data class Unknown(val raw: String = "unknown") : DeviceEvent()
+}
+// JSON: { "type": "FutureEvent", ... } -> Decodes to DeviceEvent.Unknown()
 ```
 
 ### 4. Ktor integration (KMP)
@@ -446,6 +512,9 @@ class GhostConfig {
 | **Ktor 2.3** | `ghost()` plugin for `ContentNegotiation`. |
 | **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement. |
 | **Spring Boot** | Auto-configured `GhostHttpMessageConverter` via starter. |
+| **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns `null` instead of crashing. |
+| **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types in sealed hierarchies. |
+| **Boolean Coercion**| Support for `0` and `1` as `false` and `true` (configurable). |
 | **Incremental builds** | KSP only regenerates files for changed models. Unchanged modules are fully cached. |
 
 ---
