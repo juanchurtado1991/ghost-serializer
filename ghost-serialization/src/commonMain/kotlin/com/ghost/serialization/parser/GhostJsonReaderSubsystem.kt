@@ -4,6 +4,7 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR_INT
@@ -30,6 +31,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.MATCH_END
 import com.ghost.serialization.parser.GhostJsonConstants.MATCH_NONE
 import com.ghost.serialization.parser.GhostJsonConstants.NULL_BS
 import com.ghost.serialization.parser.GhostJsonConstants.NULL_CHAR_INT
+import com.ghost.serialization.parser.GhostJsonConstants.ONE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
@@ -40,6 +42,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.STRICT_MODE_UNKNOWN_FIE
 import com.ghost.serialization.parser.GhostJsonConstants.TRUE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.TRUE_CHAR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERROR
+import com.ghost.serialization.parser.GhostJsonConstants.ZERO_INT
 
 fun GhostJsonReader.beginObject() {
     if (nextNonWhitespace() != OPEN_OBJ_INT) throwError(ERR_EXPECTED_BEGIN_OBJ)
@@ -102,7 +105,6 @@ fun GhostJsonReader.consumeArraySeparator() {
     if (peekNextToken() == COMMA_INT) internalSkip(1)
 }
 
-@Suppress("CascadeIf")
 fun GhostJsonReader.nextBoolean(): Boolean {
     val token = peekNextToken()
     return if (token == TRUE_CHAR_INT) {
@@ -111,8 +113,14 @@ fun GhostJsonReader.nextBoolean(): Boolean {
     } else if (token == FALSE_CHAR_INT) {
         skipAndValidateLiteral(FALSE_BS)
         false
+    } else if (coerceBooleans && token == ONE_INT) {
+        internalSkip(1)
+        true
+    } else if (coerceBooleans && token == ZERO_INT) {
+        internalSkip(1)
+        false
     } else {
-        throwError("${ERR_EXPECTED_BOOLEAN}${token.toChar()}")
+        throwError(ERR_EXPECTED_BOOLEAN)
     }
 }
 
@@ -303,12 +311,6 @@ fun GhostJsonReader.skipValue() {
     }
 }
 
-fun GhostJsonReader.checkCollectionSize(size: Int) {
-    if (size > GhostHeuristics.maxCollectionSize) {
-        throwError("$ERR_MAX_COLLECTION_SIZE ($maxCollectionSize)")
-    }
-}
-
 inline fun <T> GhostJsonReader.readList(itemParser: () -> T): List<T> {
     beginArray()
     if (peekNextToken() == CLOSE_ARR_INT) {
@@ -367,4 +369,18 @@ inline fun <K, V> GhostJsonReader.readMap(
         }
     }
     return map
+}
+
+@InternalGhostApi
+inline fun <T> GhostJsonReader.decodeResilient(block: () -> T): T? {
+    val savedPos = this.position
+    val savedToken = this.nextTokenByte
+    try {
+        return block()
+    } catch (_: GhostJsonException) {
+        this.position = savedPos
+        this.nextTokenByte = savedToken
+        this.skipValue()
+        return null
+    }
 }

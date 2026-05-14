@@ -82,11 +82,11 @@ internal class SerializeCodeEmitter(
         if (enumValues != null) {
             code.beginControlFlow("when (value)")
             enumValues.forEach { (kotlinName, serialName) ->
-                code.addStatement("%T.$kotlinName -> writer.value(%S).ignore()", originalClassName, serialName)
+                code.addStatement("%T.$kotlinName -> writer.value(%S)", originalClassName, serialName)
             }
             code.endControlFlow()
         } else {
-            code.addStatement("writer.value(value.name).ignore()")
+            code.addStatement("writer.value(value.name)")
         }
     }
 
@@ -194,12 +194,12 @@ internal class SerializeCodeEmitter(
         when {
             type.isGhost() -> code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(type), accessor)
             type.isEnum() -> code.addStatement(STR_T_SERIALIZE_WRITER_ACC, serializerName(type), accessor)
-            typeName == "kotlin.Int" -> code.addStatement("writer.value(%L).ignore()", accessor)
-            typeName == "kotlin.Long" -> code.addStatement("writer.value(%L).ignore()", accessor)
-            typeName == "kotlin.String" -> code.addStatement("writer.value(%L).ignore()", accessor)
-            typeName == "kotlin.Boolean" -> code.addStatement("writer.value(%L).ignore()", accessor)
-            typeName == "kotlin.Double" -> code.addStatement("writer.value(%L).ignore()", accessor)
-            typeName == "kotlin.Float" -> code.addStatement("writer.value(%L.toDouble()).ignore()", accessor)
+            typeName == "kotlin.Int" -> code.addStatement("writer.value(%L)", accessor)
+            typeName == "kotlin.Long" -> code.addStatement("writer.value(%L)", accessor)
+            typeName == "kotlin.String" -> code.addStatement("writer.value(%L)", accessor)
+            typeName == "kotlin.Boolean" -> code.addStatement("writer.value(%L)", accessor)
+            typeName == "kotlin.Double" -> code.addStatement("writer.value(%L)", accessor)
+            typeName == "kotlin.Float" -> code.addStatement("writer.value(%L.toDouble())", accessor)
             type.isList() -> emitList(code, type, accessor)
             type.isMap() -> emitMap(code, type, accessor)
             else -> code.addStatement(STR_WRITER_VALUE_ACC, accessor)
@@ -239,9 +239,9 @@ internal class SerializeCodeEmitter(
     }
 
     companion object {
-        private const val STR_WRITER_BEGIN_OBJ = "writer.beginObject().ignore()"
-        private const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S).ignore()"
-        private const val STR_WRITER_END_OBJ = "writer.endObject().ignore()"
+        private const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
+        private const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
+        private const val STR_WRITER_END_OBJ = "writer.endObject()"
         private const val STR_FUN_SERIALIZE = "serialize"
         private const val STR_PARAM_WRITER = "writer"
         private const val STR_PARAM_VALUE = "value"
@@ -250,26 +250,26 @@ internal class SerializeCodeEmitter(
         private const val STR_IS_T_ARROW_T_SERIALIZE = "is %T -> %T.serialize(writer, value)"
         private const val STR_VALUE_DOT = "value."
         private const val STR_IF_ACCESSOR_NOT_NULL = "if (%L != null)"
-        private const val STR_WRITER_NAME_OPTIONS_INDEX = "writer.writeName(%L, OPTIONS).ignore()"
+        private const val STR_WRITER_NAME_OPTIONS_INDEX = "writer.writeName(%L, OPTIONS)"
         private const val STR_ELSE = "else"
         private const val STR_WRITER_NAME_OPTIONS_NULL =
-            "writer.name(OPTIONS.byteStrings[%L]).nullValue().ignore()"
+            "writer.name(OPTIONS.byteStrings[%L]).nullValue()"
         private const val STR_DOT = "."
         private const val STR_UNDERSCORE = "_"
         private const val STR_T_SERIALIZE_WRITER_ACC = "%T.serialize(writer, %L)"
-        private const val STR_WRITER_VALUE_VALUE_NAME = "writer.value(value.name).ignore()"
-        private const val STR_WRITER_VALUE_ACC_NAME = "writer.value(%L.name).ignore()"
-        private const val STR_WRITER_VALUE_ACC = "writer.value(%L).ignore()"
+        private const val STR_WRITER_VALUE_VALUE_NAME = "writer.value(value.name)"
+        private const val STR_WRITER_VALUE_ACC_NAME = "writer.value(%L.name)"
+        private const val STR_WRITER_VALUE_ACC = "writer.value(%L)"
         private const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"
-        private const val STR_WRITER_BEGIN_ARR = "writer.beginArray().ignore()"
+        private const val STR_WRITER_BEGIN_ARR = "writer.beginArray()"
         private const val STR_FOR_ITEM_IN_ACC = "for (item in %L)"
         private const val STR_T_SERIALIZE_WRITER_ITEM = "%T.serialize(writer, item)"
-        private const val STR_WRITER_VALUE_ITEM_NAME = "writer.value(item.name).ignore()"
-        private const val STR_WRITER_VALUE_ITEM = "writer.value(item).ignore()"
-        private const val STR_WRITER_END_ARR = "writer.endArray().ignore()"
+        private const val STR_WRITER_VALUE_ITEM_NAME = "writer.value(item.name)"
+        private const val STR_WRITER_VALUE_ITEM = "writer.value(item)"
+        private const val STR_WRITER_END_ARR = "writer.endArray()"
         private const val STR_FOR_MAP_IN_ACC = "for ((mapKey, mapVal) in %L)"
-        private const val STR_WRITER_NAME_MAPKEY = "writer.name(mapKey).ignore()"
+        private const val STR_WRITER_NAME_MAPKEY = "writer.name(mapKey)"
         private const val STR_T_SERIALIZE_WRITER_MAPVAL = "%T.serialize(writer, mapVal)"
-        private const val STR_WRITER_VALUE_MAPVAL = "writer.value(mapVal).ignore()"
+        private const val STR_WRITER_VALUE_MAPVAL = "writer.value(mapVal)"
     }
 }

@@ -1,20 +1,30 @@
 # Changelog
- 
-## [1.1.14] - 2026-05-11
+
+## [1.1.14] - 2026-05-14
+### Refactoring & Modularity
+- **Compiler Decomposition**: Surgically refactored the monolithic `DeserializeCodeEmitter` into 6 specialized modules (`StandardEmitter`, `FragmentedEmitter`, `BaseDeserializeEmitter`, etc.), ensuring all files remain strictly under 300 lines for maximum maintainability.
+- **Elimination of Magic Strings**: Centralized all code templates and identifiers into a unified `GhostEmitterConstants` repository, achieving 100% literal-free compiler logic.
+- **Encapsulated Generation Logic**: Introduced `GhostPropertyExtensions` to handle complex property-level code generation (Value Classes, fragmented mask validation) via clean, type-safe extension methods.
+
 ### Added
-- **Resilience Suite**: Successfully passed the "FAANG-grade" validation suite with **505 tests** covering memory leaks, deep recursion (255 levels), and malicious payload protection.
+- **Resilience Suite**: Successfully passed the validation suite with **505 tests** covering memory leaks, deep recursion (255 levels), and malicious payload protection.
 - **Advanced Type Support**: Native support for deeply nested generics (recursive resolution), Value Classes (`@JvmInline`), and Custom Discriminators (e.g., `kind`, `@type`) in sealed classes.
 - **Official Networking Adapters**: Shipped production-ready bridges for **Ktor 3.0** and **Retrofit 2.11**, with automatic adapter injection via the Gradle Plugin.
 - **O(1) Registry Hardening**: Rewrote the internal lookup engine to use a hashed `GhostRegistry`, ensuring 100% R8/ProGuard safety and constant-time serializer lookup without reflection.
 - **Gradle Plugin Hardening**: Full **Configuration Cache** support and **Incremental Build** validation, ensuring zero-latency dev loops and CI/CD compliance.
 
 ### Fixed
+- **KSP Format Integrity**: Resolved critical `UnknownFormatConversionException` and `IllegalArgumentException` by strictly segregating KotlinPoet templates (`%L`, `%T`) from standard Java format strings (`%s`).
+- **Signature Mismatch**: Fixed a bug in standard mode where the `deserialize` function was omitted from the generated serializer object due to improper delegation.
 - **Architectural Stabilization**: Standardized the package structure by removing the redundant `.core` level, improving API ergonomics across multi-module projects.
 - **Android Compatibility (API 21)**: Resolved a critical `NewApi` error. Replaced API 33+ `Arrays.equals` range comparison with a manual loop compatible with Android API 21.
 - **Gradle Plugin Stability**: Fixed a binary incompatibility between the `kotlin-dsl` plugin and Kotlin 2.3.21 compiler.
 - **Map Serialization Integrity**: Resolved a critical corruption bug in `MapSerializer` where the parser failed to consume separators correctly in complex nested maps.
 - **Compiler Naming Collisions**: Implemented a `processedFiles` guard in the KSP processor to prevent `FileAlreadyExistsException` for identical class names across different packages.
 - **Primitive Deserialization Fast-Path**: Enabled direct `Ghost.deserialize<T>()` calls for primitives without requiring pre-registration.
+
+### Documentation
+- **Architecture Documentation**: Added comprehensive KDoc to all newly created compiler components, detailing their role in the robust deserialization pipeline.
 
 ### Benchmark & Tooling
 - **Statistical Benchmark Harness**: Rewrote `GhostBenchmark` to run N iterations inside a single JVM process, keeping the JIT hot across all runs. Supports `--runs`, `--warmup`, and `--no-tests` CLI flags.
