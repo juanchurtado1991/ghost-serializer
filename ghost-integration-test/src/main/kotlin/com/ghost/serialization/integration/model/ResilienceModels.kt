@@ -18,6 +18,12 @@ sealed class SmartDevice {
 }
 
 @GhostSerialization
+data class HomeConfig(
+    val wifiSsid: String,
+    val autoLock: Boolean
+)
+
+@GhostSerialization
 data class SmartHome(
     val id: String,
     @GhostResilient
@@ -26,7 +32,9 @@ data class SmartHome(
     val deviceCount: Int = 0,
     val devices: List<SmartDevice>,
     @GhostResilient
-    val status: HomeStatus? = null
+    val status: HomeStatus? = null,
+    @GhostResilient
+    val config: HomeConfig? = null
 )
 
 @GhostSerialization

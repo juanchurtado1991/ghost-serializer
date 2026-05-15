@@ -7,6 +7,8 @@ import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 import com.ghost.serialization.ghostInternalUseSource
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.parser.isNextNullValue
+import com.ghost.serialization.parser.consumeNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -37,7 +39,12 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
         return Converter { body ->
             body.use {
                 ghostInternalUseSource(it.source()) { reader ->
-                    serializer.deserialize(reader)
+                    if (reader.isNextNullValue()) {
+                        reader.consumeNull()
+                        null
+                    } else {
+                        serializer.deserialize(reader)
+                    }
                 }
             }
         }

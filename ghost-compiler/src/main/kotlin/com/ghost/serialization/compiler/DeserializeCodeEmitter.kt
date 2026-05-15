@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
@@ -24,7 +25,8 @@ internal class DeserializeCodeEmitter(
     private val isValue: Boolean,
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
-    private val discriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY
+    private val discriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY,
+    private val isResilientClass: Boolean = false
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     fun build(typeSpecBuilder: TypeSpec.Builder) {
@@ -47,6 +49,18 @@ internal class DeserializeCodeEmitter(
         }
 
         addDeserializeFunction(typeSpecBuilder, body.build())
+
+        if (isResilientClass) {
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    "isResilient",
+                    com.squareup.kotlinpoet.BOOLEAN
+                )
+                    .addModifiers(KModifier.OVERRIDE)
+                    .initializer("true")
+                    .build()
+            )
+        }
     }
 
     private fun addDeserializeFunction(typeSpecBuilder: TypeSpec.Builder, body: CodeBlock) {
@@ -67,13 +81,17 @@ internal class DeserializeCodeEmitter(
         }
         val regularSubclasses = sealedSubclasses.filter { it != fallbackSubclass }
 
-        body.addStatement(C.TEMPLATE_PEEK_TYPE, discriminatorKey, C.STR_MISSING_TYPE)
+        if (fallbackSubclass != null) {
+            body.addStatement("val typeName = reader.peekStringField(%S)", discriminatorKey)
+        } else {
+            body.addStatement(C.TEMPLATE_PEEK_TYPE, discriminatorKey, C.STR_MISSING_TYPE)
+        }
         body.beginControlFlow(C.STR_WHEN_TYPENAME)
         regularSubclasses.forEach { subclass ->
             val subClassName = subclass.toClassName()
             val serializerName = ClassName(
                 subClassName.packageName,
-                "${subClassName.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER}"
+                "${subClassName.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER_SUFFIX}"
             )
             body.addStatement(C.TEMPLATE_DESERIALIZE_BRANCH, subClassName.simpleName, serializerName)
         }
@@ -81,7 +99,7 @@ internal class DeserializeCodeEmitter(
             val fallbackClassName = fallbackSubclass.toClassName()
             val fallbackSerializerName = ClassName(
                 fallbackClassName.packageName,
-                "${fallbackClassName.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER}"
+                "${fallbackClassName.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER_SUFFIX}"
             )
             body.beginControlFlow(C.STR_ELSE_BRANCH)
             body.addStatement(C.TEMPLATE_DESERIALIZE_T, fallbackSerializerName)

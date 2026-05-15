@@ -65,9 +65,20 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
         }
     }
 
-    /** Appends a single byte (low 8 bits of [byteAsInt]). */
+    /** Appends a single byte (low 8 bits of [byteAsInt]). Optimized for inlining. */
     fun writeByte(byteAsInt: Int) {
-        if (size >= array.size) ensureCapacity(1)
+        val currentSize = size
+        val backingArray = array
+        if (currentSize < backingArray.size) {
+            backingArray[currentSize] = byteAsInt.toByte()
+            size = currentSize + 1
+        } else {
+            growAndWrite(byteAsInt)
+        }
+    }
+
+    private fun growAndWrite(byteAsInt: Int) {
+        ensureCapacity(1)
         array[size++] = byteAsInt.toByte()
     }
 

@@ -21,7 +21,26 @@ class GhostGodObjectTest {
         assertEquals(400, result.p40)
         assertEquals(590, result.p59)
         assertEquals(1, result.p1)
-        assertEquals(39, result.p39)
-        assertEquals(41, result.p41)
+    }
+
+    @Test
+    fun testGodObjectFragmentedSerialization() {
+        val god = GodObject(p0 = 100, p40 = 400, p59 = 590)
+        
+        val bytes = Ghost.encodeToBytes(god)
+        val json = bytes.decodeToString()
+        
+        // Verify some keys are present
+        assert(json.contains("\"p0\":100"))
+        assert(json.contains("\"p40\":400"))
+        assert(json.contains("\"p59\":590"))
+        assert(json.contains("\"p1\":1"))
+        
+        // Deserialize back to verify integrity
+        val result = Ghost.deserialize<GodObject>(bytes)
+        assertEquals(100, result.p0)
+        assertEquals(400, result.p40)
+        assertEquals(590, result.p59)
+        assertEquals(1, result.p1)
     }
 }

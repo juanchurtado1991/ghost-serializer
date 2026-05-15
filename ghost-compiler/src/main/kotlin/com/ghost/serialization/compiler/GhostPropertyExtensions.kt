@@ -21,6 +21,7 @@ internal fun GhostPropertyModel.getVariableType(): TypeName {
             if (underlying.type.isPrimitive()) underlying.typeName
             else underlying.typeName.copy(nullable = true)
         }
+
         else -> typeName.copy(nullable = true)
     }
 }
@@ -28,7 +29,7 @@ internal fun GhostPropertyModel.getVariableType(): TypeName {
 internal fun GhostPropertyModel.getInitialValue(): String {
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
     val targetProp = if (isUnboxedValueClass) valueClassProperty!! else this
-    
+
     return when {
         isNullable -> C.STR_NULL
         targetProp.type.isPrimitiveInt() -> C.STR_ZERO
@@ -43,62 +44,116 @@ internal fun GhostPropertyModel.getInitialValue(): String {
 internal fun GhostPropertyModel.getReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    
-    return when {
-        isPrimitive -> "${C.STR_UNDERSCORE}$kotlinName"
-        isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
-                C.STR_EMPTY
-            } else {
-                C.STR_BANG_BANG
-            }
+    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)
 
-            "$typeName(${C.STR_UNDERSCORE}$kotlinName$bang)"
+    return when {
+        isPrimitive -> varName
+        isUnboxedValueClass -> {
+            val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
+            C.TEMPLATE_WRAP_TYPE.format(typeName, "$varName$bang")
         }
-        else -> "${C.STR_UNDERSCORE}$kotlinName${C.STR_BANG_BANG}"
+
+        else -> {
+            if (isNullable) varName
+            else "$varName${C.STR_BANG_BANG}"
+        }
     }
 }
 
-internal fun GhostPropertyModel.getDefaultValueReturnExpression(maskIdx: Int, bitMaskStr: String): String {
+internal fun GhostPropertyModel.getDefaultValueReturnExpression(
+    maskIdx: Int,
+    bitMaskStr: String
+): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    
+
+    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
+    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)
+    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)
+
     return when {
-        isNullable -> "if ((_mask$maskIdx and $bitMaskStr) != 0L) _${kotlinName} else _result.${kotlinName}"
-        isPrimitive -> "if ((_mask$maskIdx and $bitMaskStr) != 0L) _${kotlinName} else _result.${kotlinName}"
+        isNullable || isPrimitive ->
+            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)
+
         isUnboxedValueClass -> {
             val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
-            "if ((_mask$maskIdx and $bitMaskStr) != 0L) ${typeName}(_${kotlinName}$bang) else _result.${kotlinName}"
+            C.TEMPLATE_IF_MASK_RETURN.format(
+                maskName,
+                bitMaskStr,
+                C.TEMPLATE_WRAP_TYPE.format(typeName, "$varName$bang"),
+                resultVar
+            )
         }
-        else -> "if ((_mask$maskIdx and $bitMaskStr) != 0L) _${kotlinName}${C.STR_BANG_BANG} else _result.${kotlinName}"
+
+        else -> {
+            val value = if (isNullable) varName else "$varName${C.STR_BANG_BANG}"
+            C.TEMPLATE_IF_MASK_RETURN.format(
+                maskName,
+                bitMaskStr,
+                value,
+                resultVar
+            )
+        }
     }
 }
 
 internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    
+    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)
+
     return when {
-        isPrimitive -> "ctx._$kotlinName"
+        isPrimitive -> ctxVar
         isUnboxedValueClass -> {
             val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
-            "$typeName(ctx._$kotlinName$bang)"
+            C.TEMPLATE_WRAP_TYPE.format(typeName, "$ctxVar$bang")
         }
-        else -> "ctx._$kotlinName${C.STR_BANG_BANG}"
+
+        else -> {
+            if (isNullable) ctxVar
+            else "$ctxVar${C.STR_BANG_BANG}"
+        }
     }
 }
 
-internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(maskIdx: Int, bitMaskStr: String): String {
+internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
+    maskIdx: Int,
+    bitMaskStr: String
+): String {
+
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    
+
+    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
+    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)
+    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)
+
     return when {
-        isNullable -> "if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${kotlinName} else _result.${kotlinName}"
-        isPrimitive -> "if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${kotlinName} else _result.${kotlinName}"
+        isNullable || isPrimitive ->
+            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)
+
         isUnboxedValueClass -> {
             val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
-            "${typeName}(if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${kotlinName}$bang else _result.${kotlinName})"
+            C.TEMPLATE_WRAP_TYPE.format(
+                typeName,
+                C.TEMPLATE_IF_MASK_RETURN.format(
+                    maskName,
+                    bitMaskStr,
+                    "$ctxVar$bang",
+                    resultVar
+                )
+
+            )
         }
-        else -> "if ((ctx._mask$maskIdx and $bitMaskStr) != 0L) ctx._${kotlinName}${C.STR_BANG_BANG} else _result.${kotlinName}"
+
+        else -> {
+            val value = if (isNullable) ctxVar else "$ctxVar${C.STR_BANG_BANG}"
+            C.TEMPLATE_IF_MASK_RETURN.format(
+                maskName,
+                bitMaskStr,
+                value,
+                resultVar
+            )
+        }
     }
 }

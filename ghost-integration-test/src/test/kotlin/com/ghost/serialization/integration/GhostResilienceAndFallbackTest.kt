@@ -116,4 +116,24 @@ class GhostResilienceAndFallbackTest {
         }
         assertEquals(false, homeFalse.active)
     }
+
+    @Test
+    fun testGhostResilientWithMalformedNestedObject() {
+        // HomeConfig requires wifiSsid and autoLock. We pass an empty object.
+        val json = """
+        {
+            "id": "home_5",
+            "active": true,
+            "deviceCount": 1,
+            "devices": [],
+            "config": {}
+        }
+        """.trimIndent()
+
+        val home = Ghost.deserialize<SmartHome>(json)
+        assertEquals("home_5", home.id)
+        
+        // config is malformed but @GhostResilient, should be null instead of crashing
+        assertEquals(null, home.config)
+    }
 }

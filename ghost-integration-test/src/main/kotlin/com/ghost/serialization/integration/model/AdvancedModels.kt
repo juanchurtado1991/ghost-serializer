@@ -113,3 +113,39 @@ data class DecimalStress(
     val small: Float,
     val precise: Double
 )
+
+@GhostSerialization
+data class MapEdgeCaseModel(
+    val complexKeys: Map<String, String>
+)
+
+@GhostSerialization
+data class LargeStringModel(
+    val large: String
+)
+
+@GhostSerialization
+data class RecursiveGraphNode(
+    val name: String,
+    val next: RecursiveGraphNode? = null
+)
+
+@GhostSerialization
+data class CollectionOfNulls(
+    val items: List<String?>
+)
+
+@GhostSerialization
+data class NullablePrimitives(
+    val i: Int?,
+    val l: Long?,
+    val b: Boolean?,
+    val d: Double?,
+    val s: String?
+)
+
+@GhostSerialization
+data class EvolutionModel(
+    val required: String,
+    val optional: String = "default"
+)

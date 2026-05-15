@@ -33,67 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-// --- Mock Models ---
-data class RetrofitUser(val id: Int, val name: String, val isActive: Boolean)
-
-// --- Manual Serializer for Testing (avoiding KSP in this module) ---
-@InternalGhostApi
-object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
-    override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
-
-    override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
-        writer.beginObject().ignore()
-        writer.name("id").ignore()
-        writer.value(value.id.toLong()).ignore()
-        writer.name("name").ignore()
-        writer.value(value.name).ignore()
-        writer.name("isActive").ignore()
-        writer.value(value.isActive).ignore()
-        writer.endObject().ignore()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: RetrofitUser) {
-        writer.beginObject().ignore()
-        writer.name("id").ignore()
-        writer.value(value.id.toLong()).ignore()
-        writer.name("name").ignore()
-        writer.value(value.name).ignore()
-        writer.name("isActive").ignore()
-        writer.value(value.isActive).ignore()
-        writer.endObject().ignore()
-    }
-
-    override fun deserialize(reader: GhostJsonReader): RetrofitUser {
-        var id = 0
-        var name = ""
-        var isActive = false
-        reader.beginObject()
-        while (true) {
-            val key = reader.nextKey() ?: break
-            reader.consumeKeySeparator()
-            when (key) {
-                "id" -> id = reader.nextInt()
-                "name" -> name = reader.nextString()
-                "isActive" -> isActive = reader.nextBoolean()
-                else -> reader.skipValue()
-            }
-        }
-        reader.endObject()
-        return RetrofitUser(id, name, isActive)
-    }
-}
-
-// --- Test registry that registers RetrofitUserSerializer into Ghost ---
-@InternalGhostApi
-private object RetrofitTestRegistry : GhostRegistry {
-    override fun prewarm() {}
-    override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
-        mapOf(RetrofitUser::class to RetrofitUserSerializer)
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
-        if (clazz == RetrofitUser::class) RetrofitUserSerializer as GhostSerializer<T> else null
-}
+// Models and serializers moved to RetrofitTestUtils.kt
 
 // --- Retrofit API Definition ---
 interface MockApiService {

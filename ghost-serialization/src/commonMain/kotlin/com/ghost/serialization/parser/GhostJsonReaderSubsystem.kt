@@ -124,6 +124,14 @@ fun GhostJsonReader.nextBoolean(): Boolean {
             internalSkip(1)
             return false
         }
+        if (token == QUOTE_INT) {
+            val s = readQuotedString().lowercase()
+            return when (s) {
+                "true", "yes", "on", "1", "y" -> true
+                "false", "no", "off", "0", "n" -> false
+                else -> throwError(ERR_EXPECTED_BOOLEAN + " \"$s\"")
+            }
+        }
     }
     throwError(ERR_EXPECTED_BOOLEAN)
 }

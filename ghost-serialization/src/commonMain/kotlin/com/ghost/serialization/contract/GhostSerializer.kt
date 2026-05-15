@@ -35,6 +35,12 @@ interface GhostSerializer<T> {
     val typeName: String
 
     /**
+     * Whether this serializer supports resilient parsing (skipping malformed items
+     * when used in collections).
+     */
+    val isResilient: Boolean get() = false
+
+    /**
      * Serializes [value] into the provided [sink] using the fast in-memory
      * [GhostJsonFlatWriter] and a single bulk drain. See `Ghost.serialize`
      * for the full rationale.

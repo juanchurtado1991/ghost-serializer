@@ -4,6 +4,7 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireCharBuffer
+import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.GhostJsonConstants.BMP_LIMIT
@@ -39,6 +40,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_ESCAPE_ERR
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERROR
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_UNICODE_ERROR
 import com.ghost.serialization.releaseCharBuffer
+import com.ghost.serialization.releaseScratchBuffer
 import okio.BufferedSource
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
@@ -317,15 +319,15 @@ class GhostJsonReader(
             return decodedString
         }
 
-        // Slow path: manual string building for escapes (Zero-Allocation approach)
-        var outBuffer = acquireCharBuffer(TIER_SMALL_INT)
+        // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
+        var outBuffer = acquireScratchBuffer(TIER_SMALL_INT)
         var outPos = 0
 
         fun ensureCapacity(extra: Int) {
             if (outPos + extra > outBuffer.size) {
-                val newBuffer = acquireCharBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
+                val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
                 outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                releaseCharBuffer(outBuffer)
+                releaseScratchBuffer(outBuffer)
                 outBuffer = newBuffer
             }
         }
@@ -335,7 +337,7 @@ class GhostJsonReader(
                 val byteValue = getByte(position++)
                 if (byteValue == QUOTE_INT) {
                     nextTokenByte = -1
-                    return outBuffer.concatToString(0, outPos)
+                    return outBuffer.decodeToString(0, outPos)
                 }
 
                 if (byteValue in CONTROL_CHAR_START_INT..CONTROL_CHAR_LIMIT_INT) {
@@ -376,56 +378,70 @@ class GhostJsonReader(
                                 }
                             }
 
-                            if (code <= BMP_LIMIT) {
-                                ensureCapacity(SINGLE_CHAR_SIZE)
-                                outBuffer[outPos++] = code.toChar()
+                            // Encode code point to UTF-8 bytes in outBuffer
+                            if (code <= 0x7F) {
+                                ensureCapacity(1)
+                                outBuffer[outPos++] = code.toByte()
+                            } else if (code <= 0x7FF) {
+                                ensureCapacity(2)
+                                outBuffer[outPos++] = (0xC0 or (code shr 6)).toByte()
+                                outBuffer[outPos++] = (0x80 or (code and 0x3F)).toByte()
+                            } else if (code <= 0xFFFF) {
+                                ensureCapacity(3)
+                                outBuffer[outPos++] = (0xE0 or (code shr 12)).toByte()
+                                outBuffer[outPos++] = (0x80 or ((code shr 6) and 0x3F)).toByte()
+                                outBuffer[outPos++] = (0x80 or (code and 0x3F)).toByte()
                             } else {
-                                ensureCapacity(SURROGATE_PAIR_SIZE)
-                                val base = code - UNICODE_BASE
-                                outBuffer[outPos++] =
-                                    (HIGH_SURROGATE_START or (base shr SHIFT_10)).toChar()
-                                outBuffer[outPos++] =
-                                    (LOW_SURROGATE_START or (base and SURROGATE_LOW_BITS_MASK)).toChar()
+                                ensureCapacity(4)
+                                outBuffer[outPos++] = (0xF0 or (code shr 18)).toByte()
+                                outBuffer[outPos++] = (0x80 or ((code shr 12) and 0x3F)).toByte()
+                                outBuffer[outPos++] = (0x80 or ((code shr 6) and 0x3F)).toByte()
+                                outBuffer[outPos++] = (0x80 or (code and 0x3F)).toByte()
                             }
                         }
 
                         GhostJsonConstants.N_BYTE_INT -> {
-                            ensureCapacity(SINGLE_CHAR_SIZE)
-                            outBuffer[outPos++] = '\n'
+                            ensureCapacity(1)
+                            outBuffer[outPos++] = 0x0A // \n
                         }
 
                         GhostJsonConstants.R_BYTE_INT -> {
-                            ensureCapacity(SINGLE_CHAR_SIZE)
-                            outBuffer[outPos++] = '\r'
+                            ensureCapacity(1)
+                            outBuffer[outPos++] = 0x0D // \r
                         }
 
                         GhostJsonConstants.T_BYTE_INT -> {
-                            ensureCapacity(SINGLE_CHAR_SIZE)
-                            outBuffer[outPos++] = '\t'
+                            ensureCapacity(1)
+                            outBuffer[outPos++] = 0x09 // \t
                         }
 
                         GhostJsonConstants.B_BYTE_INT -> {
-                            ensureCapacity(SINGLE_CHAR_SIZE)
-                            outBuffer[outPos++] = '\b'
+                            ensureCapacity(1)
+                            outBuffer[outPos++] = 0x08 // \b
                         }
 
                         GhostJsonConstants.F_BYTE_INT -> {
-                            ensureCapacity(SINGLE_CHAR_SIZE)
-                            outBuffer[outPos++] = '\u000C'
+                            ensureCapacity(1)
+                            outBuffer[outPos++] = 0x0C // \f
                         }
 
                         else -> {
-                            ensureCapacity(SINGLE_CHAR_SIZE); outBuffer[outPos++] =
-                                escaped.toChar()
+                            // Any other escaped char is written as its UTF-8 bytes
+                            val s = escaped.toChar().toString()
+                            val b = s.encodeToByteArray()
+                            ensureCapacity(b.size)
+                            b.copyInto(outBuffer, outPos, 0, b.size)
+                            outPos += b.size
                         }
                     }
                 } else {
-                    ensureCapacity(SINGLE_CHAR_SIZE)
-                    outBuffer[outPos++] = byteValue.toChar()
+                    // Normal byte (could be ASCII or part of UTF-8 sequence)
+                    ensureCapacity(1)
+                    outBuffer[outPos++] = byteValue.toByte()
                 }
             }
         } finally {
-            releaseCharBuffer(outBuffer)
+            releaseScratchBuffer(outBuffer)
         }
         throwError(UNTERMINATED_STRING_ERROR)
     }

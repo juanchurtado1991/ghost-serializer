@@ -4,6 +4,11 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.TypeName
 
+internal data class CustomCoderModel(
+    val provider: TypeName,
+    val functionName: String
+)
+
 internal data class GhostPropertyModel(
     val kotlinName: String,
     val jsonName: String,
@@ -29,6 +34,8 @@ internal data class GhostPropertyModel(
     val enumValues: Map<String, String>? = null,
     val isResilient: Boolean = false,
     val isContextual: Boolean = false,
-    val customDecoder: String? = null,
-    val customEncoder: String? = null
+    val customDecoder: CustomCoderModel? = null,
+    val customEncoder: CustomCoderModel? = null,
+    val flattenPath: List<String>? = null,
+    val wrapPath: List<String>? = null
 )

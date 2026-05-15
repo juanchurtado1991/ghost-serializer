@@ -4,13 +4,13 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.KModifier
-import com.ghost.serialization.compiler.GhostEmitterConstants as C
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Base class for all deserialization emitters.
@@ -23,6 +23,11 @@ internal abstract class BaseDeserializeEmitter(
     protected val originalClassName: ClassName,
     protected val readerClass: ClassName
 ) {
+    protected val fullPaths = properties.map {
+        it.flattenPath ?: (it.wrapPath?.let { path ->
+            path + it.jsonName
+        } ?: listOf(it.jsonName))
+    }
     protected val contextualSerializers = mutableMapOf<KSType, String>()
 
     protected fun buildCall(prop: GhostPropertyModel): CodeBlock {
@@ -43,7 +48,7 @@ internal abstract class BaseDeserializeEmitter(
                 C.TEMPLATE_DESERIALIZE_T,
                 ClassName(
                     C.STR_SERIALIZERS_PKG,
-                    "${prop.primitiveArrayType}${C.STR_SERIALIZER}"
+                    "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
                 )
             )
 
@@ -58,45 +63,32 @@ internal abstract class BaseDeserializeEmitter(
 
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
         if (prop.customDecoder != null) return nullGuarded(buildCustomDecoderCall(prop))
-        return when {
-            prop.isGhost || prop.isEnum -> CodeBlock.of(
-                C.STR_NULL_CHECK_1 + C.STR_NULL_CHECK_2,
-                serializerName(prop.type)
-            )
-
-            prop.type.isPrimitiveInt() -> CodeBlock.of(C.STR_NULL_CHECK_INT)
-            prop.type.isPrimitiveLong() -> CodeBlock.of(C.STR_NULL_CHECK_LONG)
-            prop.type.isPrimitiveDouble() -> CodeBlock.of(C.STR_NULL_CHECK_DOUBLE)
-            prop.type.isPrimitiveFloat() -> CodeBlock.of(C.STR_NULL_CHECK_FLOAT)
-            prop.type.isPrimitiveBoolean() -> CodeBlock.of(C.STR_NULL_CHECK_BOOLEAN)
-            prop.isPrimitiveArray -> nullGuarded(
+        if (prop.isPrimitiveArray) {
+            return nullGuarded(
                 CodeBlock.of(
                     C.TEMPLATE_DESERIALIZE_T,
                     ClassName(
                         C.STR_SERIALIZERS_PKG,
-                        "${prop.primitiveArrayType}${C.STR_SERIALIZER}"
+                        "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
                     )
                 )
             )
-            prop.isContextual -> {
-                val name = getContextualSerializerName(prop.type)
-                nullGuarded(CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name))
-            }
-
-            else -> nullGuarded(buildTypeReaderCall(prop.type))
         }
+        return buildTypeReaderCall(prop.type)
     }
 
     protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
-        return CodeBlock.of(C.TEMPLATE_L_READER, prop.customDecoder!!)
+        val coder = prop.customDecoder!!
+        return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
     }
 
     protected fun buildTypeReaderCall(type: KSType): CodeBlock {
-        return when {
+        val readerCall = when {
             type.isGhost() || type.isEnum() -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
                 serializerName(type)
             )
+
             type.isPrimitiveInt() -> CodeBlock.of(C.STR_NEXT_INT)
             type.isPrimitiveBoolean() -> CodeBlock.of(C.STR_NEXT_BOOLEAN)
             type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG)
@@ -108,7 +100,8 @@ internal abstract class BaseDeserializeEmitter(
 
                 CodeBlock.of(
                     C.STR_READ_LIST_TEMPLATE,
-                    buildTypeReaderCall(inner))
+                    buildTypeReaderCall(inner)
+                )
 
             }
 
@@ -126,7 +119,7 @@ internal abstract class BaseDeserializeEmitter(
             }
 
             else -> {
-                if (type.declaration.qualifiedName?.asString() == C.KOTLIN_STRING) {
+                if (type.isString()) {
                     CodeBlock.of(C.STR_NEXT_STRING)
                 } else {
                     val name = getContextualSerializerName(type)
@@ -134,17 +127,25 @@ internal abstract class BaseDeserializeEmitter(
                 }
             }
         }
+
+        return if (type.isMarkedNullable) nullGuarded(readerCall) else readerCall
     }
 
     private fun getContextualSerializerName(type: KSType): String {
         return contextualSerializers.getOrPut(type) {
             val simpleName = type.declaration.simpleName.asString()
-            "contextual_${simpleName.replaceFirstChar { it.lowercase() }}Serializer"
+            C.STR_CONTEXTUAL_PREFIX +
+                    simpleName.replaceFirstChar { it.lowercase() } +
+                    C.STR_SERIALIZER_SUFFIX
         }
     }
 
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
-        val ghostClass = ClassName(C.STR_GHOST_PKG, C.STR_GHOST_OBJ)
+        val ghostClass = ClassName(
+            C.STR_GHOST_PKG,
+            C.STR_GHOST_OBJ
+        )
+
         contextualSerializers.forEach { (type, name) ->
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
@@ -174,7 +175,7 @@ internal abstract class BaseDeserializeEmitter(
             val className = toClassName()
             return ClassName(
                 className.packageName,
-                "${className.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER}"
+                "${className.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER_SUFFIX}"
             )
         }
 }

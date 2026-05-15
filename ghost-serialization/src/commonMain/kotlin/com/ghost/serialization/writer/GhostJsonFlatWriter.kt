@@ -202,7 +202,6 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Int): GhostJsonFlatWriter {
-        appendSeparator()
         checkDepth()
         buffer.write(header)
         writeIntValueRaw(value)
@@ -216,7 +215,6 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Long): GhostJsonFlatWriter {
-        appendSeparator()
         checkDepth()
         buffer.write(header)
         writeLongValueRaw(value)
@@ -230,7 +228,6 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: String): GhostJsonFlatWriter {
-        appendSeparator()
         checkDepth()
         buffer.write(header)
         writeStringValueRaw(value)
@@ -244,7 +241,6 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Boolean): GhostJsonFlatWriter {
-        appendSeparator()
         checkDepth()
         buffer.write(header)
         writeBooleanValueRaw(value)
@@ -255,7 +251,6 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Double): GhostJsonFlatWriter {
-        appendSeparator()
         checkDepth()
         buffer.write(header)
         writeDoubleValueRaw(value)
@@ -272,7 +267,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Int): GhostJsonFlatWriter {
-        appendSeparator()
+        if (needsComma) buffer.writeByte(COMMA_INT)
         buffer.write(header)
         writeIntValueRaw(value)
         needsComma = true
@@ -284,7 +279,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Long): GhostJsonFlatWriter {
-        appendSeparator()
+        if (needsComma) buffer.writeByte(COMMA_INT)
         buffer.write(header)
         writeLongValueRaw(value)
         needsComma = true
@@ -296,7 +291,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonFlatWriter {
-        appendSeparator()
+        if (needsComma) buffer.writeByte(COMMA_INT)
         buffer.write(header)
         writeStringValueRaw(value)
         needsComma = true
@@ -308,7 +303,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Boolean): GhostJsonFlatWriter {
-        appendSeparator()
+        if (needsComma) buffer.writeByte(COMMA_INT)
         buffer.write(header)
         writeBooleanValueRaw(value)
         needsComma = true
@@ -317,7 +312,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Double): GhostJsonFlatWriter {
-        appendSeparator()
+        if (needsComma) buffer.writeByte(COMMA_INT)
         buffer.write(header)
         writeDoubleValueRaw(value)
         needsComma = true
@@ -443,25 +438,15 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
         buffer.write(if (value) TRUE_BS else FALSE_BS)
     }
 
-    /**
-     * Writes an integer value without a field name or separator.
-     * Optimized with a lookup table and fast-paths for common small integers.
-     */
     @InternalGhostApi
-    @Suppress("CascadeIf")
     fun writeIntValueRaw(value: Int) {
-        if (value == 0) {
-            buffer.writeByte(ZERO_INT)
-        } else if (value == 1) {
-            buffer.writeByte(ONE_INT)
-        } else if (value == 2) {
-            buffer.writeByte(TWO_INT)
-        } else if (value == -1) {
-            buffer.write(MINUS_ONE_BS)
-        } else if (value == Int.MIN_VALUE) {
-            buffer.write(MIN_INT_BS)
-        } else {
-            writeLongValueRawInternal(value.toLong())
+        when (value) {
+            0 -> buffer.writeByte(ZERO_INT)
+            1 -> buffer.writeByte(ONE_INT)
+            2 -> buffer.writeByte(TWO_INT)
+            -1 -> buffer.write(MINUS_ONE_BS)
+            Int.MIN_VALUE -> buffer.write(MIN_INT_BS)
+            else -> writeLongValueRawInternal(value.toLong())
         }
     }
 
@@ -486,7 +471,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      * Final output is a single bulk array copy into [buffer].
      */
     private fun writeLongValueRawInternal(value: Long) {
-        val scratchBuf = acquireScratch()
+        val scratchBuf = scratch ?: acquireScratch()
         val scratchEnd = LONG_SCRATCH_SIZE
         var writePosition = scratchEnd
         var remainingValue = value
@@ -587,7 +572,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
             return
         }
 
-        val scratchBuf = acquireScratch()
+        val scratchBuf = scratch ?: acquireScratch()
         if (length + STRING_QUOTE_PAIR_BYTES > scratchBuf.size) {
             buffer.writeByte(QUOTE_INT)
             writeEscaped(value)
@@ -728,13 +713,11 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     }
 
     private fun checkDepth() {
-        if (depth >= MAX_DEPTH) {
-            throw GhostJsonException(
-                "$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})",
-                0,
-                0
-            )
-        }
+        if (depth >= MAX_DEPTH) throwDepthError()
+    }
+
+    private fun throwDepthError() {
+        throw GhostJsonException("$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})", 0, 0)
     }
 
     private fun writeUnicodeEscape(char: Char, scratchBuf: ByteArray) {
