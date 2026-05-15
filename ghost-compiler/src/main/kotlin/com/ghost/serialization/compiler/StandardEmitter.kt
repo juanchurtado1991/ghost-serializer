@@ -25,7 +25,11 @@ internal class StandardEmitter(
         properties.forEach {
             val varType = it.getVariableType()
             val initialValue = it.getInitialValue()
-            body.addStatement("${C.STR_VAR_UNDERSCORE}${it.kotlinName}${C.TEMPLATE_VAR_INIT}", varType, initialValue)
+            body.addStatement(
+                "${C.STR_VAR_UNDERSCORE}${it.kotlinName}${C.TEMPLATE_VAR_INIT}",
+                varType,
+                initialValue
+            )
         }
 
         val maskCount = (properties.size + 63) / 64
@@ -44,22 +48,16 @@ internal class StandardEmitter(
         body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
         body.beginControlFlow(C.STR_WHEN_INDEX)
 
-        properties.forEachIndexed { index, prop ->
-            val call = buildCall(prop)
-            val maskIdx = index / 64
-            val bitIdx = index % 64
-            val bitMask = 1L shl bitIdx
-            val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
-            
-            body.beginControlFlow("$index${C.STR_ARROW}")
-            if (prop.isResilient) {
-                body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
-                body.addStatement("${C.STR_UNDERSCORE}${prop.kotlinName}${C.TEMPLATE_ASSIGN_L}", "it")
-                body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, bitMaskStr)
-                body.endControlFlow()
+        val topLevelNames = fullPaths.map { it.first() }.distinct()
+
+        topLevelNames.forEachIndexed { topIndex, topName ->
+            body.beginControlFlow("$topIndex${C.STR_ARROW}")
+            val propsForThisName = properties.filterIndexed { idx, _ -> fullPaths[idx].first() == topName }
+
+            if (propsForThisName.size == 1 && fullPaths[properties.indexOf(propsForThisName[0])].size == 1) {
+                emitPropertyAssignment(body, propsForThisName[0], properties.indexOf(propsForThisName[0]))
             } else {
-                body.addStatement("${C.STR_UNDERSCORE}${prop.kotlinName}${C.TEMPLATE_ASSIGN_L}", call)
-                body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, bitMaskStr)
+                emitFlattenedGroup(body, topName, propsForThisName, 1, "")
             }
             body.endControlFlow()
         }
@@ -71,6 +69,82 @@ internal class StandardEmitter(
         body.endControlFlow()
         body.endControlFlow()
         body.addStatement(C.STR_END_OBJECT)
+    }
+
+    private fun emitFlattenedGroup(
+        body: CodeBlock.Builder,
+        name: String,
+        props: List<GhostPropertyModel>,
+        pathIndex: Int,
+        parentPrefix: String
+    ) {
+        val currentPrefix = if (parentPrefix.isEmpty()) name else "${parentPrefix}_$name"
+        val optionsName = "OPTIONS_${currentPrefix.uppercase()}"
+
+        body.addStatement(C.STR_BEGIN_OBJECT)
+        body.beginControlFlow(C.STR_WHILE_TRUE)
+        body.addStatement(C.STR_SELECT_SUB_NAME, optionsName)
+        body.beginControlFlow(C.STR_WHEN_SUB_INDEX)
+
+        val nextLevelNames = props.map {
+            val path = fullPaths[properties.indexOf(it)]
+            if (pathIndex < path.size) {
+                path[pathIndex]
+            } else {
+                it.jsonName
+            }
+        }.distinct()
+
+        nextLevelNames.forEachIndexed { subIndex, subName ->
+            body.beginControlFlow("$subIndex${C.STR_ARROW}")
+            val subProps = props.filter {
+                val path = fullPaths[properties.indexOf(it)]
+                val currentName = if (pathIndex < path.size) {
+                    path[pathIndex]
+                } else {
+                    it.jsonName
+                }
+                currentName == subName
+            }
+
+            if (subProps.size == 1 && pathIndex == fullPaths[properties.indexOf(subProps[0])].size - 1) {
+                emitPropertyAssignment(body, subProps[0], properties.indexOf(subProps[0]))
+            } else {
+                emitFlattenedGroup(body, subName, subProps, pathIndex + 1, currentPrefix)
+            }
+            body.endControlFlow()
+        }
+
+        body.addStatement(C.STR_MINUS_ONE_BREAK)
+        body.beginControlFlow(C.STR_ELSE_BRANCH)
+        body.addStatement(C.STR_SKIP_VALUE)
+        body.endControlFlow()
+
+        body.endControlFlow() // when
+        body.endControlFlow() // while
+        body.addStatement(C.STR_END_OBJECT)
+    }
+
+    private fun emitPropertyAssignment(body: CodeBlock.Builder, prop: GhostPropertyModel, index: Int) {
+        val call = buildCall(prop)
+        val maskIdx = index / 64
+        val bitIdx = index % 64
+        val bitMask = 1L shl bitIdx
+        val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+            C.STR_BIT_MASK_MIN_LONG
+        } else {
+            "${bitMask}L"
+        }
+
+        if (prop.isResilient) {
+            body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
+            body.addStatement("${C.STR_UNDERSCORE}${prop.kotlinName}${C.TEMPLATE_ASSIGN_L}", "it")
+            body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, bitMaskStr)
+            body.endControlFlow()
+        } else {
+            body.addStatement("${C.STR_UNDERSCORE}${prop.kotlinName}${C.TEMPLATE_ASSIGN_L}", call)
+            body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, bitMaskStr)
+        }
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
@@ -88,7 +162,7 @@ internal class StandardEmitter(
             val reqMask = requiredMasks[i]
             if (reqMask != 0L) {
                 val reqMaskStr = if (reqMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${reqMask}L"
-                body.beginControlFlow("if ((_mask$i and $reqMaskStr) != $reqMaskStr)")
+                body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_SIMPLE, i, reqMaskStr, reqMaskStr)
                 properties.forEachIndexed { index, it ->
                     if (!it.isNullable && !it.hasDefaultValue && (index / 64) == i) {
                         val bitIdx = index % 64
@@ -109,7 +183,7 @@ internal class StandardEmitter(
 
         if (!hasDefaults) {
             val args = properties.joinToString(C.STR_COMMA_SPACE) { prop ->
-                prop.getReturnExpression()
+                "`${prop.kotlinName}` = ${prop.getReturnExpression()}"
             }
             body.addStatement("${C.TEMPLATE_RETURN_T_PAREN}$args${C.STR_PAREN}", originalClassName)
             return
@@ -123,7 +197,7 @@ internal class StandardEmitter(
         val defaultProps = properties.filter { it.hasDefaultValue }
 
         val requiredArgs = requiredProps.joinToString(C.STR_COMMA_SPACE) { prop ->
-            "${prop.kotlinName}${C.STR_EQ_SPACE}" + if (prop.isNullable) {
+            "`${prop.kotlinName}`${C.STR_EQ_SPACE}" + if (prop.isNullable) {
                 "${C.STR_UNDERSCORE}${prop.kotlinName}"
             } else {
                 "${C.STR_UNDERSCORE}${prop.kotlinName}${C.STR_BANG_BANG}"
@@ -149,7 +223,7 @@ internal class StandardEmitter(
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
                     val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${defMask}L"
-                    conditions.add("(_mask$i and $defMaskStr) != 0L")
+                    conditions.add(C.TEMPLATE_MASK_CHECK_MATCH.format(i, defMaskStr))
                 }
             }
             body.add(conditions.joinToString(C.STR_OR))
@@ -166,7 +240,7 @@ internal class StandardEmitter(
                 val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
                 val comma = if (localIdx < defaultPropsWithGlobalIndex.size - 1) C.STR_COMMA else C.STR_EMPTY
                 val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, bitMaskStr)
-                body.addStatement("${C.TEMPLATE_RESULT_FIELD_ASSIGN}$comma", prop.kotlinName, valueExpr)
+                body.addStatement("${C.STR_BACKTICK}%L${C.STR_BACKTICK}${C.TEMPLATE_ASSIGN_L}${C.STR_COMMA}", prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)

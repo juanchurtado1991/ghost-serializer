@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Analyzes Kotlin classes during KSP processing to generate serialization metadata.
@@ -36,8 +37,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         if (!isData && !isSealed && !isValue && !isEnum) {
             logger.error(
-                STR_ERR_CLASS_1 +
-                        "$STR_ERR_CLASS_2${classDeclaration.simpleName.asString()}$STR_ERR_CLASS_3",
+                C.STR_ERR_CLASS_1 +
+                        "${C.STR_ERR_CLASS_2}${classDeclaration.simpleName.asString()}${C.STR_ERR_CLASS_3}",
                 classDeclaration
             )
         }
@@ -45,7 +46,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
 
         val properties = classDeclaration.getAllProperties()
-            .filterNot { it.hasAnnotation(GHOST_IGNORE) }
+            .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
             .toList()
 
         val hasPrivateProperties = properties.any {
@@ -53,8 +54,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
         if (hasPrivateProperties) {
             logger.error(
-                STR_ERR_PRIV_1 +
-                        "$STR_ERR_PRIV_2${classDeclaration.simpleName.asString()}$STR_ERR_PRIV_3",
+                C.STR_ERR_PRIV_1 +
+                        "${C.STR_ERR_PRIV_2}${classDeclaration.simpleName.asString()}${C.STR_ERR_PRIV_3}",
                 classDeclaration
             )
         }
@@ -63,14 +64,14 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val propertyModels = if (isEnum) {
             properties
-                .filterNot { it.simpleName.asString() in listOf(NAME, ORDINAL) }
+                .filterNot { it.simpleName.asString() in listOf(C.NAME, C.ORDINAL) }
                 .map { prop -> buildPropertyModel(prop, parameters).copy(enumValues = enumValues) }
                 .let {
                     it.ifEmpty {
                         listOf(
                             GhostPropertyModel(
-                                kotlinName = NAME,
-                                jsonName = NAME,
+                                kotlinName = C.NAME,
+                                jsonName = C.NAME,
                                 type = classDeclaration.asType(emptyList()),
                                 typeName = classDeclaration.toClassName(),
                                 isNullable = false,
@@ -106,8 +107,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         names.forEach { (name, props) ->
             if (props.size > 1) {
                 logger.error(
-                    "$STR_ERR_DUP_1$name$STR_ERR_DUP_2${clazz.simpleName.asString()}$STR_ERR_DUP_3" +
-                            "$STR_ERR_DUP_4${props.joinToString { it.kotlinName }}",
+                    "${C.STR_ERR_DUP_1}$name${C.STR_ERR_DUP_2}${clazz.simpleName.asString()}${C.STR_ERR_DUP_3}" +
+                            "${C.STR_ERR_DUP_4}${props.joinToString { it.kotlinName }}",
                     clazz
                 )
             }
@@ -121,17 +122,17 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val type = prop.type.resolve()
         val qualifiedName = type.declaration.qualifiedName?.asString()
 
-        val isList = qualifiedName == LIST_QUALIFIED
-        val isMap = qualifiedName == MAP_QUALIFIED
+        val isList = qualifiedName == C.LIST_QUALIFIED
+        val isMap = qualifiedName == C.MAP_QUALIFIED
 
         val innerType = if (isList) resolveFirstTypeArg(type) else null
         val mapKeyType = if (isMap) resolveFirstTypeArg(type) else null
         val mapValueType = if (isMap) resolveSecondTypeArg(type) else null
 
-        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != STRING_QUALIFIED) {
+        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != C.STRING_QUALIFIED) {
             logger.error(
-                "$STR_ERR_MAP_1${prop.simpleName.asString()}$STR_ERR_MAP_2" +
-                        STR_ERR_MAP_3,
+                "${C.STR_ERR_MAP_1}${prop.simpleName.asString()}${C.STR_ERR_MAP_2}" +
+                        C.STR_ERR_MAP_3,
                 prop
             )
         }
@@ -142,23 +143,59 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val isPrimitiveArray = qualifiedName in PRIMITIVE_ARRAYS
         val primitiveArrayType =
-            if (isPrimitiveArray) qualifiedName?.removePrefix(STR_KOTLIN_DOT) else null
+            if (isPrimitiveArray) qualifiedName?.removePrefix(C.STR_KOTLIN_DOT) else null
 
         val customDecoder = prop.annotations.find {
-            it.shortName.asString() == GHOST_DECODER
-        }?.arguments?.find { it.name?.asString() == FUNCTION_ARG }?.value as? String
+            it.shortName.asString() == C.GHOST_DECODER
+        }?.let { ann ->
+            val provider =
+                ann.arguments.find { it.name?.asString() == C.PROVIDER_ARG }?.value as? KSType
+            val function =
+                ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
+            if (provider != null && function != null) {
+                CustomCoderModel(provider.toTypeName(), function)
+            } else null
+        }
 
         val customEncoder = prop.annotations.find {
-            it.shortName.asString() == GHOST_ENCODER
-        }?.arguments?.find { it.name?.asString() == FUNCTION_ARG }?.value as? String
+            it.shortName.asString() == C.GHOST_ENCODER
+        }?.let { ann ->
+            val provider =
+                ann.arguments.find { it.name?.asString() == C.PROVIDER_ARG }?.value as? KSType
+            val function =
+                ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
+            if (provider != null && function != null) {
+                CustomCoderModel(provider.toTypeName(), function)
+            } else null
+        }
+
+        val flattenPath = prop.annotations.find {
+            it.shortName.asString() == C.GHOST_FLATTEN
+        }?.let { ann ->
+            val path = ann.arguments.find { it.name?.asString() == C.PATH_ARG }?.value as? String
+            path?.split(C.STR_DOT)
+        }
+
+        val wrapPath = prop.annotations.find {
+            it.shortName.asString() == C.GHOST_WRAP
+        }?.let { ann ->
+            val path = ann.arguments.find { it.name?.asString() == C.PATH_ARG }?.value as? String
+            path?.split(C.STR_DOT)
+        }
 
         if (customDecoder != null || customEncoder != null) {
             logger.warn("Detected custom coder for ${prop.simpleName.asString()}: D=$customDecoder, E=$customEncoder")
         }
 
+        val jsonName = if (flattenPath != null) {
+            flattenPath.last()
+        } else {
+            getJsonName(prop)
+        }
+
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
-            jsonName = getJsonName(prop),
+            jsonName = jsonName,
             type = type,
             typeName = type.toTypeName(),
             isNullable = type.isMarkedNullable,
@@ -177,14 +214,21 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             isValueClass = isValueClass(type),
             valueClassProperty = if (isValueClass(type)) resolveValueClassProperty(type) else null,
             isSealedClass = isSealedClass(type),
-            sealedSubclasses = if (isSealedClass(type)) (type.declaration as KSClassDeclaration).getSealedSubclasses()
-                .toList() else emptyList(),
-            isResilient = prop.hasAnnotation(GHOST_RESILIENT) || prop.parentDeclaration?.let {
-                it is KSClassDeclaration && it.annotations.any { ann -> ann.shortName.asString() == GHOST_RESILIENT }
-            } ?: false,
+            sealedSubclasses = if (isSealedClass(type)) {
+                (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()
+            } else {
+                emptyList()
+            },
+            isResilient = prop.hasAnnotation(C.GHOST_RESILIENT) || prop.parentDeclaration
+                ?.let {
+                    it is KSClassDeclaration &&
+                            it.annotations.any { ann -> ann.shortName.asString() == C.GHOST_RESILIENT }
+                } ?: false,
             isContextual = isContextualType(type, isList, isMap, isPrimitiveArray),
             customDecoder = customDecoder,
-            customEncoder = customEncoder
+            customEncoder = customEncoder,
+            flattenPath = flattenPath,
+            wrapPath = wrapPath
         )
     }
 
@@ -199,13 +243,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         if (isEnumType(type)) return false
 
         val qualifiedName = type.declaration.qualifiedName?.asString()
-        val isBuiltIn = qualifiedName?.startsWith("kotlin.") == true ||
-                qualifiedName?.startsWith("java.") == true
+        val isBuiltIn = qualifiedName?.startsWith(C.STR_KOTLIN_PREFIX) == true ||
+                qualifiedName?.startsWith(C.STR_JAVA_PREFIX) == true
 
         if (isBuiltIn) {
             return when (qualifiedName) {
-                "kotlin.String", "kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float",
-                "kotlin.Boolean", "kotlin.Byte", "kotlin.Short", "kotlin.Char", "kotlin.Unit", "kotlin.Any" -> false
+                C.K_STRING, C.K_INT, C.K_LONG, C.K_DOUBLE, C.K_FLOAT,
+                C.K_BOOLEAN, C.K_BYTE, C.K_SHORT, C.K_CHAR, C.K_UNIT, C.K_ANY -> false
 
                 else -> true
             }
@@ -252,84 +296,45 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val annotations = declaration.annotations.toList()
 
         // 1. GhostName (Primary)
-        val ghostName = annotations.find { it.shortName.asString() == GHOST_NAME }
+        val ghostName = annotations.find { it.shortName.asString() == C.GHOST_NAME }
         if (ghostName != null) {
-            val arg = ghostName.arguments.find { it.name?.asString() == NAME_ARG }
+            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME_ARG }
                 ?: ghostName.arguments.firstOrNull()
-            return arg?.value?.toString() ?: STR_EMPTY
+            return arg?.value?.toString() ?: C.STR_EMPTY
         }
 
         // 2. SerialName (kotlinx compatibility)
         val serialName = annotations.find {
             val name = it.shortName.asString()
-            name == SERIAL_NAME || name.endsWith(STR_SERIAL_NAME_SUFFIX)
+            name == C.SERIAL_NAME || name.endsWith(C.STR_SERIAL_NAME_SUFFIX)
         }
 
         if (serialName != null) {
-            val arg = serialName.arguments.find { it.name?.asString() == STR_VALUE_ARG }
+            val arg = serialName.arguments.find { it.name?.asString() == C.STR_VALUE_ARG }
                 ?: serialName.arguments.firstOrNull()
             return arg?.value?.toString()
                 ?: (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString()
-                ?: STR_EMPTY
+                ?: C.STR_EMPTY
         }
 
         return (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)
             ?.simpleName?.asString()
-            ?: STR_EMPTY
+            ?: C.STR_EMPTY
     }
 
     private fun isEnumType(type: KSType): Boolean =
         (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
 
     private fun isGhostType(type: KSType): Boolean =
-        type.declaration.annotations.any { it.shortName.asString() == GHOST_SERIALIZATION }
+        type.declaration.annotations.any { it.shortName.asString() == C.GHOST_SERIALIZATION }
 
     companion object {
-        private const val STR_ERR_CLASS_1 =
-            "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class', 'value class' or 'enum class'. "
-        private const val STR_ERR_CLASS_2 = "Class '"
-        private const val STR_ERR_CLASS_3 = "' is not supported."
-        private const val STR_ERR_PRIV_1 =
-            "GhostSerialization: Properties in @GhostSerialization classes cannot be private. "
-        private const val STR_ERR_PRIV_2 = "Please remove 'private' modifier from properties in '"
-        private const val STR_ERR_PRIV_3 = "'."
-        private const val STR_ERR_DUP_1 = "GhostSerialization: Duplicate JSON name '"
-        private const val STR_ERR_DUP_2 = "' found in class '"
-        private const val STR_ERR_DUP_3 = "'. "
-        private const val STR_ERR_DUP_4 = "Problematic properties: "
-        private const val STR_ERR_MAP_1 =
-            "GhostSerialization: Map key must be a String in property '"
-        private const val STR_ERR_MAP_2 = "'. "
-        private const val STR_ERR_MAP_3 = "JSON only supports string-keyed objects."
-        private const val STR_KOTLIN_DOT = "kotlin."
-        private const val STR_TYPE_INT_ARRAY = "kotlin.IntArray"
-        private const val STR_TYPE_LONG_ARRAY = "kotlin.LongArray"
-        private const val STR_TYPE_FLOAT_ARRAY = "kotlin.FloatArray"
-        private const val STR_TYPE_DOUBLE_ARRAY = "kotlin.DoubleArray"
-        private const val STR_TYPE_BOOLEAN_ARRAY = "kotlin.BooleanArray"
-        private const val GHOST_IGNORE = "GhostIgnore"
-        private const val GHOST_NAME = "GhostName"
-        private const val SERIAL_NAME = "SerialName"
-        private const val GHOST_SERIALIZATION = "GhostSerialization"
-        private const val NAME_ARG = "name"
-        private const val LIST_QUALIFIED = "kotlin.collections.List"
-        private const val MAP_QUALIFIED = "kotlin.collections.Map"
-        private const val STRING_QUALIFIED = "kotlin.String"
-        private const val STR_VALUE_ARG = "value"
-        private const val STR_SERIAL_NAME_SUFFIX = "SerialName"
-        private const val GHOST_RESILIENT = "GhostResilient"
-        private const val GHOST_DECODER = "GhostDecoder"
-        private const val GHOST_ENCODER = "GhostEncoder"
-        private const val FUNCTION_ARG = "function"
-        private const val ORDINAL = "ordinal"
-        private const val NAME = "name"
-        private const val STR_EMPTY = ""
         private val PRIMITIVE_ARRAYS = setOf(
-            STR_TYPE_INT_ARRAY,
-            STR_TYPE_LONG_ARRAY,
-            STR_TYPE_FLOAT_ARRAY,
-            STR_TYPE_DOUBLE_ARRAY,
-            STR_TYPE_BOOLEAN_ARRAY
+            C.STR_TYPE_INT_ARRAY,
+            C.STR_TYPE_LONG_ARRAY,
+            C.STR_TYPE_FLOAT_ARRAY,
+            C.STR_TYPE_DOUBLE_ARRAY,
+            C.STR_TYPE_BOOLEAN_ARRAY
         )
     }
 }

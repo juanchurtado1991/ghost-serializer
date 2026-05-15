@@ -22,6 +22,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import kotlin.reflect.KClass
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Main KSP Processor for Ghost Serialization.
@@ -33,7 +34,6 @@ class GhostSerializationProcessor(
     private val logger: KSPLogger,
     options: Map<String, String> = emptyMap()
 ) : SymbolProcessor {
-    
 
     private val generateMoshiAdapters: Boolean = options[OPTION_GENERATE_MOSHI_ADAPTERS]
         ?.toBoolean()
@@ -46,16 +46,16 @@ class GhostSerializationProcessor(
 
     private val registryClassName: String by lazy {
         // Use the module name provided by KSP or fallback to a stable suffix
-        val moduleName = options[MODULE_NAME]
-            ?.replace(STR_DASH, STR_UNDERSCORE)
-            ?.replace(STR_DOT, STR_UNDERSCORE)
-            ?: STR_DEFAULT
+        val moduleName = options[C.OPTION_MODULE_NAME]
+            ?.replace(C.STR_DASH, C.STR_UNDERSCORE)
+            ?.replace(C.STR_DOT, C.STR_UNDERSCORE)
+            ?: C.STR_DEFAULT_NAME
 
-        STR_REGISTRY_PREFIX + STR_UNDERSCORE + moduleName
+        C.STR_REGISTRY_PREFIX + C.STR_UNDERSCORE + moduleName
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val symbols = resolver.getSymbolsWithAnnotation(ANNOTATION_NAME)
+        val symbols = resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION)
         val validClasses = symbols.filterIsInstance<KSClassDeclaration>().toList()
         val unableToProcess = symbols.filterNot { it is KSClassDeclaration }
 
@@ -65,7 +65,7 @@ class GhostSerializationProcessor(
             generateProGuardRules()
             generateServiceFile()
             if (!generateMoshiAdapters) {
-                logger.info("$LOG_PREFIX$STR_LOG_MOSHI_SKIPPED")
+                logger.info("${C.STR_LOG_PREFIX}${C.STR_LOG_MOSHI_SKIPPED}")
             }
         }
 
@@ -84,10 +84,8 @@ class GhostSerializationProcessor(
 
             val fileSpec = fileGenerator.createSpec()
             val fullFileName = "${classDeclaration.packageName.asString()}.${fileSpec.name}"
-            
-            if (processedFiles.contains(fullFileName)) {
-                return
-            }
+
+            if (processedFiles.contains(fullFileName)) return
             processedFiles.add(fullFileName)
 
             fileSpec.writeTo(
@@ -100,7 +98,7 @@ class GhostSerializationProcessor(
 
             val serializerClassName = ClassName(
                 classDeclaration.packageName.asString(),
-                classDeclaration.toClassName().simpleNames.joinToString(STR_UNDERSCORE) + STR_SERIALIZER_SUFFIX
+                classDeclaration.toClassName().simpleNames.joinToString(C.STR_UNDERSCORE) + C.STR_SERIALIZER_SUFFIX
             )
             classToSerializer[classDeclaration.toClassName()] = serializerClassName
 
@@ -110,9 +108,9 @@ class GhostSerializationProcessor(
                 }
             }
             classDeclaration.containingFile?.let { originatingFiles.add(it) }
-            logger.info("$LOG_PREFIX$STR_LOG_OPTIMIZED$className")
+            logger.info("${C.STR_LOG_PREFIX}${C.STR_LOG_OPTIMIZED}$className")
         } catch (e: Exception) {
-            logger.error("$LOG_PREFIX$STR_LOG_CRITICAL$className$STR_COLON_SPACE${e.stackTraceToString()}")
+            logger.error("${C.STR_LOG_PREFIX}${C.STR_LOG_CRITICAL}$className${C.STR_COLON_SPACE}${e.stackTraceToString()}")
         }
     }
 
@@ -123,77 +121,106 @@ class GhostSerializationProcessor(
      * - A lazy `allSerializers` map for getAllSerializers / prewarm only when the full graph is needed.
      */
     private fun generateModuleRegistry() {
-        val serializerType = ClassName(STR_CONTRACT_PKG, STR_GHOST_SERIALIZER)
-        val kClassType = ClassName(STR_REFLECT_PKG, STR_KCLASS)
-        val t = TypeVariableName(STR_TYPE_T, Any::class)
+        val serializerType = ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)
+        val kClassType = ClassName(C.STR_REFLECT_PKG, C.STR_KCLASS)
+        val type = TypeVariableName(C.STR_TYPE_T, Any::class)
 
-        val mapType = ClassName(STR_COLLECTIONS_PKG, STR_MAP)
-            .parameterizedBy(kClassType.parameterizedBy(STAR), serializerType.parameterizedBy(STAR))
+        val mapType = ClassName(
+            C.STR_COLLECTIONS_PKG,
+            C.STR_MAP
+        )
+            .parameterizedBy(
+                kClassType.parameterizedBy(STAR),
+                serializerType.parameterizedBy(STAR)
+            )
 
         val entries = classToSerializer.entries.toList()
             .sortedBy { it.key.canonicalName }
 
-        val mapBuilder = CodeBlock.builder().add(STR_MAP_OF)
+        val mapBuilder = CodeBlock.builder().add(C.STR_MAP_OF)
         entries.forEachIndexed { index, entry ->
-            mapBuilder.add(STR_MAP_ENTRY, entry.key, entry.value)
-            if (index < entries.size - 1) mapBuilder.add(STR_COMMA_NEWLINE)
+            mapBuilder.add(C.STR_MAP_ENTRY, entry.key, entry.value)
+            if (index < entries.size - 1) mapBuilder.add(C.STR_COMMA_NEWLINE)
         }
-        mapBuilder.add(STR_NEWLINE_PAREN)
+        mapBuilder.add(C.STR_NEWLINE_PAREN)
 
-        val allSerializersDelegate = CodeBlock.builder()
-            .add(STR_LAZY_START)
+        val allSerializersDelegate = CodeBlock
+            .builder()
+            .add(C.STR_LAZY_START)
             .indent()
             .add(mapBuilder.build())
             .unindent()
-            .add(STR_CURLY_CLOSE)
+            .add(C.STR_CURLY_CLOSE)
             .build()
 
-        val allSerializersProperty = PropertySpec.builder(STR_PROP_ALL_SERIALIZERS, mapType)
+        val allSerializersProperty = PropertySpec
+            .builder(C.STR_PROP_SERIALIZERS_MAP, mapType)
             .addModifiers(KModifier.PRIVATE)
             .delegate(allSerializersDelegate)
             .build()
 
         val whenBody = CodeBlock.builder()
-            .add(STR_WHEN_CLAZZ_START)
+            .add(C.STR_WHEN_CLAZZ_START)
         entries.forEach { entry ->
-            whenBody.add(STR_WHEN_ENTRY, entry.key, entry.value)
+            whenBody.add(C.STR_WHEN_ENTRY, entry.key, entry.value)
         }
-        whenBody.add(STR_WHEN_ELSE_NULL)
-        whenBody.add(STR_WHEN_CLOSE_CAST, serializerType.parameterizedBy(t).copy(nullable = true))
+        whenBody.add(C.STR_WHEN_ELSE_NULL)
+        whenBody.add(
+            C.STR_WHEN_CLOSE_CAST,
+            serializerType
+                .parameterizedBy(type)
+                .copy(nullable = true)
+        )
 
-        val getMethod = FunSpec.builder(STR_FUN_GET_SERIALIZER)
-            .addTypeVariable(t)
-            .addParameter(STR_PARAM_CLAZZ, KClass::class.asClassName().parameterizedBy(t))
-            .returns(serializerType.parameterizedBy(t).copy(nullable = true))
+        val getMethod = FunSpec.builder(C.STR_FUN_GET_SERIALIZER)
+            .addTypeVariable(type)
+            .addParameter(
+                C.STR_PARAM_CLAZZ,
+                KClass::class.asClassName().parameterizedBy(type)
+            )
+            .returns(
+                serializerType
+                    .parameterizedBy(type)
+                    .copy(nullable = true)
+            )
             .addAnnotation(
-                AnnotationSpec.builder(Suppress::class).addMember(STR_FORMAT_S, STR_UNCHECKED_CAST)
+                AnnotationSpec.builder(Suppress::class)
+                    .addMember(C.STR_FORMAT_S, C.STR_UNCHECKED_CAST)
                     .build()
             )
             .addCode(whenBody.build())
-        val registryInterface = ClassName(STR_CONTRACT_PKG, STR_GHOST_REGISTRY)
 
-        val prewarmMethod = FunSpec.builder(STR_FUN_PREWARM)
+        val registryInterface = ClassName(
+            C.STR_CONTRACT_PKG,
+            C.STR_GHOST_REGISTRY
+        )
+
+        val prewarmMethod = FunSpec.builder(C.STR_FUN_PREWARM)
             .addModifiers(KModifier.OVERRIDE)
-            .addStatement(STR_IGNORE_CALL, STR_ALL_SERIALIZERS_SIZE)
+            .addStatement(C.STR_IGNORE_CALL, C.STR_SERIALIZERS_SIZE)
             .build()
 
-        val registeredCountMethod = FunSpec.builder(STR_FUN_REG_COUNT)
+        val registeredCountMethod = FunSpec.builder(C.STR_FUN_REG_COUNT)
             .addModifiers(KModifier.OVERRIDE)
             .returns(Int::class)
-            .addStatement(STR_RETURN_L, entries.size)
+            .addStatement(C.STR_RETURN_L, entries.size)
             .build()
 
-        val getAllSerializersMethod = FunSpec.builder(STR_FUN_GET_ALL_SERIALIZERS)
+        val getAllSerializersMethod = FunSpec.builder(C.STR_FUN_GET_ALL_SERIALIZERS)
             .addModifiers(KModifier.OVERRIDE)
             .returns(mapType)
-            .addStatement(STR_RETURN_ALL_SERIALIZERS)
+            .addStatement(C.STR_RETURN_SERIALIZERS)
             .build()
 
         val registrySpec = TypeSpec.classBuilder(registryClassName)
-            .addKdoc(STR_KDOC_REGISTRY)
+            .addKdoc(C.STR_KDOC_REGISTRY)
             .addSuperinterface(registryInterface)
             .addProperty(allSerializersProperty)
-            .addFunction(getMethod.addModifiers(KModifier.OVERRIDE).build())
+            .addFunction(
+                getMethod
+                    .addModifiers(KModifier.OVERRIDE)
+                    .build()
+            )
             .addFunction(prewarmMethod)
             .addFunction(registeredCountMethod)
             .addFunction(getAllSerializersMethod)
@@ -201,12 +228,18 @@ class GhostSerializationProcessor(
                 TypeSpec.companionObjectBuilder()
                     .addProperty(
                         PropertySpec.builder(
-                            STR_INSTANCE,
-                            ClassName(PACKAGE_NAME, registryClassName)
+                            C.STR_INSTANCE,
+                            ClassName(
+                                C.STR_GENERATED_PKG,
+                                registryClassName
+                            )
                         )
                             .initializer(
-                                STR_INIT_INSTANCE,
-                                ClassName(PACKAGE_NAME, registryClassName)
+                                C.STR_INIT_INSTANCE,
+                                ClassName(
+                                    C.STR_GENERATED_PKG,
+                                    registryClassName
+                                )
                             )
                             .build()
                     )
@@ -214,8 +247,8 @@ class GhostSerializationProcessor(
             )
             .build()
 
-        FileSpec.builder(PACKAGE_NAME, registryClassName)
-            .addImport(PKG_PARSER, STR_IGNORE)
+        FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
+            .addImport(C.PKG_PARSER, C.STR_IGNORE)
             .addType(registrySpec)
             .build()
             .writeTo(
@@ -229,26 +262,19 @@ class GhostSerializationProcessor(
      * are not obfuscated or removed during the shrinking phase.
      */
     private fun generateProGuardRules() {
-        val rules = """
-            # GhostSerialization Robust Keep Rules
-            -keep class $PACKAGE_NAME.$registryClassName {
-                public static ** INSTANCE;
-                public *** getSerializer(...);
-            }
-            -keep class * implements com.ghost.serialization.contract.GhostSerializer {
-                *;
-            }
-        """.trimIndent()
+        val rules = C.TEMPLATE_PROGUARD_KEEP
+            .trimIndent()
+            .format(C.STR_GENERATED_PKG, registryClassName)
 
         try {
             codeGenerator.createNewFile(
                 dependencies = Dependencies(aggregating = true),
-                packageName = STR_META_INF_PROGUARD,
-                fileName = STR_GHOST_SERIALIZATION_FILE,
-                extensionName = STR_EXT_PRO
+                packageName = C.STR_META_INF_PROGUARD,
+                fileName = C.STR_GHOST_SERIALIZATION_FILE,
+                extensionName = C.STR_EXT_PRO
             ).use { it.write(rules.toByteArray()) }
         } catch (e: Exception) {
-            logger.warn("$LOG_PREFIX$STR_LOG_PROGUARD_WARN${e.message}")
+            logger.warn("${C.STR_LOG_PREFIX}${C.STR_LOG_PROGUARD_WARN}${e.message}")
         }
     }
 
@@ -257,8 +283,8 @@ class GhostSerializationProcessor(
      * discover this registry at runtime.
      */
     private fun generateServiceFile() {
-        val serviceName = STR_SERVICE_NAME
-        val implementationName = "$PACKAGE_NAME$STR_DOT$registryClassName"
+        val serviceName = C.STR_SERVICE_REGISTRY
+        val implementationName = "${C.STR_GENERATED_PKG}${C.STR_DOT}$registryClassName"
 
         try {
             codeGenerator.createNewFile(
@@ -266,76 +292,16 @@ class GhostSerializationProcessor(
                     aggregating = true,
                     *originatingFiles.toTypedArray()
                 ),
-                packageName = STR_META_INF_SERVICES,
+                packageName = C.STR_META_INF_SERVICES,
                 fileName = serviceName,
-                extensionName = STR_EMPTY
+                extensionName = C.STR_EMPTY
             ).use { it.write(implementationName.toByteArray()) }
         } catch (e: Exception) {
-            logger.warn("$LOG_PREFIX$STR_LOG_SERVICE_WARN${e.message}")
+            logger.warn("${C.STR_LOG_PREFIX}${C.STR_LOG_SERVICE_WARN}${e.message}")
         }
     }
 
     companion object {
-        private const val STR_DEFAULT = "Default"
-        private const val STR_UNDERSCORE = "_"
-        private const val STR_DOT = "."
-        private const val STR_DASH = "-"
-        private const val STR_LOG_MOSHI_SKIPPED =
-            " ghost.generateMoshiAdapters=false: Moshi JsonAdapter generation skipped. Binary footprint reduced to 1 class per model."
-        private const val STR_LOG_OPTIMIZED = " Successfully optimized: "
-        private const val STR_LOG_CRITICAL = " Critical error processing "
-        private const val STR_COLON_SPACE = ": "
-        private const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
-        private const val STR_GHOST_SERIALIZER = "GhostSerializer"
-        private const val STR_REFLECT_PKG = "kotlin.reflect"
-        private const val STR_KCLASS = "KClass"
-        private const val STR_TYPE_T = "T"
-        private const val STR_COLLECTIONS_PKG = "kotlin.collections"
-        private const val STR_MAP = "Map"
-        private const val STR_MAP_OF = "mapOf(\n"
-        private const val STR_SERIALIZER_SUFFIX = "Serializer"
-        private const val STR_MAP_ENTRY = "    %T::class to %T"
-        private const val STR_COMMA_NEWLINE = ",\n"
-        private const val STR_NEWLINE_PAREN = "\n)"
-        private const val STR_PROP_ALL_SERIALIZERS = "serializersByClass"
-        private const val STR_FUN_GET_SERIALIZER = "getSerializer"
-        private const val STR_PARAM_CLAZZ = "clazz"
-        private const val STR_UNCHECKED_CAST = "UNCHECKED_CAST"
-        private const val STR_GHOST_REGISTRY = "GhostRegistry"
-        private const val STR_FUN_PREWARM = "prewarm"
-        private const val STR_ALL_SERIALIZERS_SIZE = "serializersByClass.size"
-        private const val STR_FUN_REG_COUNT = "registeredCount"
-        private const val STR_FUN_GET_ALL_SERIALIZERS = "getAllSerializers"
-        private const val STR_RETURN_ALL_SERIALIZERS = "return serializersByClass"
-        private const val STR_KDOC_REGISTRY =
-            "Generated Registry for GhostSerialization.\n" +
-                "Uses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers."
-        private const val STR_INSTANCE = "INSTANCE"
-        private const val STR_INIT_INSTANCE = "%T()"
-        private const val STR_META_INF_PROGUARD = "META-INF.proguard"
-        private const val STR_GHOST_SERIALIZATION_FILE = "ghost-serialization"
-        private const val STR_EXT_PRO = "pro"
-        private const val STR_LOG_PROGUARD_WARN = " Could not generate ProGuard rules: "
-        private const val STR_SERVICE_NAME = "com.ghost.serialization.contract.GhostRegistry"
-        private const val STR_META_INF_SERVICES = "META-INF.services"
-        private const val STR_EMPTY = ""
-        private const val STR_LOG_SERVICE_WARN = " Could not generate ServiceLoader file: "
-        private const val STR_FORMAT_S = "%S"
-        private const val ANNOTATION_NAME = "com.ghost.serialization.annotations.GhostSerialization"
-        private const val PACKAGE_NAME = "com.ghost.serialization.generated"
-        private const val STR_REGISTRY_PREFIX = "GhostModuleRegistry"
-        private const val LOG_PREFIX = ">>> [GhostSerialization]"
-        const val OPTION_GENERATE_MOSHI_ADAPTERS = "ghost.generateMoshiAdapters"
-        private const val MODULE_NAME = "ghost.moduleName"
-        private const val STR_LAZY_START = "lazy {\n"
-        private const val STR_CURLY_CLOSE = "}"
-        private const val STR_WHEN_CLAZZ_START = "return when (clazz) {\n"
-        private const val STR_WHEN_ENTRY = "    %T::class -> %T\n"
-        private const val STR_WHEN_ELSE_NULL = "    else -> null\n"
-        private const val STR_WHEN_CLOSE_CAST = "} as %T\n"
-        private const val PKG_PARSER = "com.ghost.serialization.parser"
-        private const val STR_IGNORE = "ignore"
-        private const val STR_IGNORE_CALL = "%L.ignore()"
-        private const val STR_RETURN_L = "return %L"
+        const val OPTION_GENERATE_MOSHI_ADAPTERS = C.OPTION_MOSHI
     }
 }

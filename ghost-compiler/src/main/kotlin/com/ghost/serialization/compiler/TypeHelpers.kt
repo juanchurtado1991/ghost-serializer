@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 private fun KSType.nonNullTypeName() = toTypeName().copy(nullable = false)
 
@@ -23,13 +24,13 @@ internal fun KSType.isPrimitive(): Boolean = isPrimitiveInt() ||
         isPrimitiveDouble() ||
         isPrimitiveFloat()
 
-internal fun KSType.isList(): Boolean = declaration.qualifiedName?.asString() == "kotlin.collections.List"
-internal fun KSType.isMap(): Boolean = declaration.qualifiedName?.asString() == "kotlin.collections.Map"
-internal fun KSType.isString(): Boolean = declaration.qualifiedName?.asString() == "kotlin.String"
+internal fun KSType.isList(): Boolean = declaration.qualifiedName?.asString() == C.LIST_QUALIFIED
+internal fun KSType.isMap(): Boolean = declaration.qualifiedName?.asString() == C.MAP_QUALIFIED
+internal fun KSType.isString(): Boolean = declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
 
 internal fun KSType.isGhost(): Boolean {
     return declaration.annotations.any {
-        it.shortName.asString() == "GhostSerialization"
+        it.shortName.asString() == C.GHOST_SERIALIZATION
     }
 }
 

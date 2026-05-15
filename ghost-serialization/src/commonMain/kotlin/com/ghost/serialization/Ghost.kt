@@ -429,6 +429,7 @@ object Ghost {
                 registry.prewarm()
                 registry.getAllSerializers().forEach { (kclass, serializer) ->
                     serializerCache[kclass] = serializer
+                    serializerByName[serializer.typeName] = serializer
                     serializer.warmUp()
                 }
             }
@@ -438,6 +439,7 @@ object Ghost {
                 registry.prewarm()
                 registry.getAllSerializers().forEach { (kclass, serializer) ->
                     serializerCache[kclass] = serializer
+                    serializerByName[serializer.typeName] = serializer
                     serializer.warmUp()
                 }
             }

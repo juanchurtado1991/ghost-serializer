@@ -15,6 +15,7 @@ data class SyntaxModel(
     val scores: IntArray = intArrayOf()
 )
 
+@OptIn(InternalGhostApi::class)
 class GeneratedSyntaxTest {
 
     @Test

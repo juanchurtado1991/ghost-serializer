@@ -7,7 +7,7 @@
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
     <img src="https://img.shields.io/badge/version-1.1.14-brightgreen.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
-    <img src="https://img.shields.io/badge/tests-265%20passing-success.svg?style=flat-square" alt="Tests">
+    <img src="https://img.shields.io/badge/tests-345%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
 </div>
 
@@ -25,11 +25,12 @@ This README aims to be honest: we explain what Ghost is good at, how it achieves
 2. [Benchmark Results](#benchmark-results)
 3. [When to Use Ghost (and When Not To)](#when-to-use-ghost-and-when-not-to)
 4. [Installation](#installation)
-5. [Usage — Android](#usage--android)
-6. [Usage — Kotlin Multiplatform (KMP)](#usage--kotlin-multiplatform-kmp)
-7. [Usage — Spring Boot](#usage--spring-boot)
-8. [Features](#features)
-9. [Architecture](#architecture)
+5. [Usage - Android](#usage---android)
+6. [Usage - Kotlin Multiplatform (KMP)](#usage---kotlin-multiplatform-kmp)
+7. [Usage - iOS (Native / Swift)](#usage---ios-native--swift)
+8. [Usage - Spring Boot](#usage---spring-boot)
+9. [Features](#features)
+10. [Architecture](#architecture)
 
 ---
 
@@ -56,51 +57,54 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.045 ±0.006** | **46.4** | **0.042 ±0.004** | **23.0** | **0.043 ±0.002** | **41.5** |
-| KSerialization | 0.075 ±0.007 | 121.7 | 0.074 ±0.006 | 140.2 | 0.134 ±0.016 | 121.8 |
-| Gson | 0.086 ±0.015 | 143.3 | 0.085 ±0.016 | 161.8 | 0.084 ±0.012 | 153.0 |
-| Jackson | 0.087 ±0.009 | 344.6 | 0.079 ±0.011 | 344.8 | 0.079 ±0.009 | 344.8 |
-| Moshi | 0.105 ±0.017 | 112.5 | 0.105 ±0.017 | 130.9 | 0.093 ±0.016 | 112.5 |
+| **Ghost** | **0.046 ±0.005** | **46.4** | **0.042 ±0.004** | **23.1** | **0.043 ±0.003** | **41.5** |
+| KSerialization | 0.085 ±0.006 | 121.7 | 0.084 ±0.006 | 140.1 | 0.148 ±0.018 | 121.8 |
+| Gson | 0.086 ±0.010 | 143.3 | 0.083 ±0.009 | 161.7 | 0.083 ±0.010 | 153.0 |
+| Moshi | 0.107 ±0.019 | 112.5 | 0.107 ±0.014 | 130.9 | 0.094 ±0.012 | 112.5 |
+| Jackson | 0.125 ±0.013 | 328.8 | 0.117 ±0.012 | 329.0 | 0.127 ±0.069 | 329.0 |
 
 ### Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.341 ±0.025** | **343.7** | **0.330 ±0.015** | **197.4** | **0.348 ±0.022** | **446.3** |
-| Gson | 0.521 ±0.076 | 1140.8 | 0.520 ±0.048 | 1293.0 | 0.515 ±0.043 | 1159.3 |
-| KSerialization | 0.525 ±0.053 | 1087.5 | 0.533 ±0.050 | 1239.7 | 1.016 ±0.063 | 1184.2 |
-| Moshi | 0.675 ±0.074 | 949.9 | 0.686 ±0.062 | 1102.1 | 0.589 ±0.045 | 949.9 |
-| Jackson | 0.726 ±0.097 | 3349.5 | 0.644 ±0.094 | 3349.5 | 0.650 ±0.100 | 3349.6 |
+| **Ghost** | **0.349 ±0.019** | **343.8** | **0.338 ±0.016** | **197.4** | **0.356 ±0.027** | **446.3** |
+| Gson | 0.503 ±0.035 | 1140.8 | 0.514 ±0.029 | 1293.0 | 0.523 ±0.079 | 1159.2 |
+| KSerialization | 0.543 ±0.033 | 1087.4 | 0.566 ±0.099 | 1239.6 | 1.039 ±0.048 | 1184.1 |
+| Moshi | 0.697 ±0.108 | 949.9 | 0.691 ±0.052 | 1102.1 | 0.591 ±0.025 | 949.9 |
+| Jackson | 1.099 ±0.151 | 3193.1 | 1.004 ±0.078 | 3193.1 | 1.027 ±0.115 | 3193.2 |
 
 ### Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.067 ±0.018** | **77.1** | **0.064 ±0.010** | **77.1** | **0.065 ±0.004** | **80.6** |
-| KSerialization | 0.141 ±0.013 | 218.2 | 0.144 ±0.013 | 295.2 | 0.236 ±0.018 | 127.9 |
-| Jackson | 0.145 ±0.019 | 366.9 | 0.126 ±0.023 | 201.7 | 0.129 ±0.024 | 303.4 |
-| Gson | 0.279 ±0.027 | 559.2 | 0.279 ±0.024 | 636.2 | 0.655 ±0.074 | 3463.4 |
-| Moshi | 0.297 ±0.034 | 638.3 | 0.297 ±0.030 | 715.3 | 0.283 ±0.016 | 484.3 |
+| **Ghost** | **0.067 ±0.011** | **77.1** | **0.064 ±0.005** | **77.1** | **0.065 ±0.006** | **80.6** |
+| Jackson | 0.162 ±0.070 | 366.9 | 0.126 ±0.011 | 201.7 | 0.127 ±0.009 | 303.4 |
+| KSerialization | 0.140 ±0.013 | 218.2 | 0.142 ±0.016 | 295.2 | 0.245 ±0.016 | 221.7 |
+| Gson | 0.306 ±0.016 | 629.6 | 0.303 ±0.016 | 706.6 | 0.677 ±0.093 | 3533.7 |
+| Moshi | 0.317 ±0.019 | 638.3 | 0.319 ±0.016 | 715.3 | 0.307 ±0.025 | 484.3 |
 
 ### Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.003 ±0.004** | 0.005 | 0.005 | 0.006 | 0.008 |
-| Malformed JSON — resilience (ms) | **0.008 ±0.001** | 0.013 | 0.014 | 0.016 | 0.015 |
+| Deep Nesting — 20 levels (ms) | **0.004 ±0.009** | 0.006 | 0.006 | 0.009 | 0.011 |
+| Malformed JSON — resilience (ms) | **0.008 ±0.001** | 0.013 | 0.016 | 0.017 | 0.022 |
 
 **Ghost is #1 in all 11 categories.** The STDEV values confirm the measurements are stable: `±0.002ms` on streaming deserialization, `±0.004ms` on streaming serialization.
 
-To reproduce:
-```gradle
-./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 20000 --no-tests"
-```
+> [!TIP]
+> **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.
 
 ---
 
 ## Live Benchmark App
 
-The `ghost-sample` module is a **Kotlin Multiplatform Compose** app that benchmarks Ghost in real conditions. It runs on Android, Desktop JVM, and iOS. The benchmark suite covers:
+The `ghost-sample` module is a **Kotlin Multiplatform Compose** app that benchmarks Ghost in real conditions. It runs on Android, Desktop JVM, and iOS. For standalone, production-ready examples on specific platforms, see:
+- [Ghost Android Test App](https://github.com/juanchurtado1991/ghost-android-test-app)
+- [Ghost iOS Test App](https://github.com/juanchurtado1991/ghost-ios-test-app)
+- [Ghost Spring Boot Test App](https://github.com/juanchurtado1991/ghost-spring-boot-test-app)
+
+The benchmark suite covers:
 
 - **Network** — Ghost+Ktor vs KSer+Ktor (local MockEngine replay, no rate-limiting)
 - **Deserialization** — String and Bytes modes
@@ -112,13 +116,13 @@ The `ghost-sample` module is a **Kotlin Multiplatform Compose** app that benchma
 Open the `ghost-serializer` project in Android Studio, select the `ghost-sample` run configuration, and press **Run**. The app will install on your connected device or emulator.
 
 ```bash
-./gradlew :ghost-sample:assembleDebug
+  ./gradlew :ghost-sample:assembleDebug
 ```
 
 ### Run on Desktop (JVM)
 
 ```bash
-./gradlew :ghost-sample:run
+  ./gradlew :ghost-sample:run
 ```
 
 This opens a native desktop window with the same benchmark UI. Results on JVM HotSpot will reflect the numbers in the [Benchmark Results](#benchmark-results) table above.
@@ -128,7 +132,7 @@ This opens a native desktop window with the same benchmark UI. Results on JVM Ho
 Open the Xcode project generated by:
 
 ```bash
-./gradlew :ghost-sample:linkDebugFrameworkIosSimulatorArm64
+  ./gradlew :ghost-sample:linkDebugFrameworkIosSimulatorArm64
 ```
 
 Then build and run the `GhostSample` scheme in Xcode against an iOS simulator.
@@ -183,7 +187,7 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 
 ---
 
-## Usage — Android
+## Usage - Android
 
 ### 1. Apply the Gradle Plugin (recommended)
 
@@ -257,6 +261,9 @@ val retrofit = Retrofit.Builder()
 val api = retrofit.create(UserApi::class.java)
 ```
 
+> [!TIP]
+> For a full Android integration example including Retrofit and Room, see the [Ghost Android Test App](https://github.com/juanchurtado1991/ghost-android-test-app).
+
 ### Lists and Nullable fields
 
 ```kotlin
@@ -315,40 +322,103 @@ val user = Ghost.deserialize<User>(json) {
 > - **Custom Decoders** are property-specific overrides for a single field with arbitrary logic.
 
 #### 4. Custom Field Decoders (`@GhostDecoder` / `@GhostEncoder`)
-If you have a field with a very specific format (like a custom date format or a legacy boolean), you can delegate its parsing to a static function without writing a full serializer:
+**Best for**: Property-specific interventions. Use this when a specific field needs to deviate from the standard (e.g., a legacy date format used in only one API).
 
 ```kotlin
 @GhostSerialization
-data class Transaction(
-    val id: String,
-    @GhostDecoder(JodaUtils::class, "decodeDateTime")
-    @GhostEncoder(JodaUtils::class, "encodeDateTime")
-    val createdAt: DateTime // org.joda.time.DateTime
+data class LegacyUser(
+    val id: Int,
+    @GhostDecoder(LegacyUtils::class, "parseDate")
+    @GhostEncoder(LegacyUtils::class, "writeDate")
+    val birthDate: Long // Receives "15-05-2026", stores Long
 )
 
-object JodaUtils {
-    private val formatter = ISODateTimeFormat.dateTime()
-
-    fun decodeDateTime(reader: GhostJsonReader): DateTime {
-        return DateTime.parse(reader.nextString(), formatter)
+object LegacyUtils {
+    // Signature: (GhostJsonReader) -> T
+    fun parseDate(reader: GhostJsonReader): Long {
+        val raw = reader.nextString() // e.g. "15-05-2026"
+        return someDateParser(raw) 
     }
 
-    fun encodeDateTime(writer: GhostJsonFlatWriter, value: DateTime) {
-        writer.writeString(value.toString(formatter))
+    // Signature: (GhostJsonFlatWriter, T) -> Unit
+    fun writeDate(writer: GhostJsonFlatWriter, value: Long) {
+        writer.value(someDateFormatter(value))
     }
 }
 ```
 
 > [!IMPORTANT]
-> **No Interfaces Required**: 
-> To maintain the **Zero-Overhead** philosophy, Ghost does not require your utility classes to implement any interface. This avoids virtual method dispatch and generic boxing.
-> - The KSP compiler validates the **method signature** at compile-time.
-> - **Decoder signature**: `fun name(reader: GhostJsonReader): T`
-> - **Encoder signature**: `fun name(writer: GhostJsonFlatWriter, value: T)` (or `GhostJsonWriter`).
+> **Why no interfaces? (Zero-Overhead Philosophy)**
+> Unlike other libraries that force you to implement a `JsonAdapter` or `JsonSerializer` interface, Ghost uses **static method discovery**.
+> 1. **No Virtual Dispatch**: The generated code calls your function directly. The CPU doesn't have to look up an interface implementation in a vtable.
+> 2. **No Boxing**: Since there are no generics involved at the call site, primitives (like `Long` or `Int`) are never boxed into objects.
+> 3. **JIT Friendly**: These functions are perfect candidates for JIT inlining, making custom logic almost as fast as native Ghost code.
+
+#### 5. Contextual Serializers
+**Best for**: Global infrastructure and 3rd-party types. Use this to support classes you don't own (like `java.util.UUID`, `BigDecimal`, or `OffsetDateTime`) across your entire app without cluttering your models with annotations.
+
+```kotlin
+// 1. Define once for the external type
+object UUIDSerializer : GhostSerializer<UUID> {
+    override val typeName: String = "UUID"
+    override fun serialize(writer: GhostJsonWriter, value: UUID) = writer.value(value.toString())
+    override fun serialize(writer: GhostJsonFlatWriter, value: UUID) = writer.value(value.toString())
+    override fun deserialize(reader: GhostJsonReader): UUID = UUID.fromString(reader.nextString())
+}
+
+// 2. Register globally (perfect for Dependency Injection)
+val appRegistry = object : GhostRegistry {
+    override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+        if (clazz == UUID::class) UUIDSerializer as GhostSerializer<T> else null
+        
+    override fun getAllSerializers() = mapOf(UUID::class to UUIDSerializer)
+}
+Ghost.addRegistry(appRegistry)
+
+// 3. Use transparently in any model
+@GhostSerialization
+data class Account(
+    val id: UUID, // ✅ Ghost handles this automatically via the registry
+    val owner: String
+)
+```
 
 ---
 
-## Usage — Kotlin Multiplatform (KMP)
+## Structural Transformations
+
+Ghost can restructure JSON on the fly, avoiding the need for intermediate "wrapper" data classes. This is 2-5x faster than using GSON `JsonElement` manipulation.
+
+### 1. Flattening (`@GhostFlatten`)
+Map deeply nested JSON keys directly to your properties:
+
+```kotlin
+@GhostSerialization
+data class Device(
+    val id: String,
+    @GhostFlatten("attributes.status.level")
+    val batteryLevel: Int
+)
+// JSON: { "id": "d1", "attributes": { "status": { "level": 85 } } }
+// Decodes directly to: Device(id="d1", batteryLevel=85)
+```
+
+### 2. Wrapping (`@GhostWrap`)
+The inverse of flattening. Wrap properties into sub-objects during serialization:
+
+```kotlin
+@GhostSerialization
+data class User(
+    val id: Int,
+    @GhostWrap("metadata.info")
+    val name: String
+)
+// Serializes to: { "id": 1, "metadata": { "info": { "name": "John" } } }
+```
+
+---
+
+## Usage - Kotlin Multiplatform (KMP)
 
 ### 1. Apply the plugin in the shared module
 
@@ -395,6 +465,73 @@ Ghost generates a `ProductSerializer` in each platform's source set. The same AP
 val product: Product = Ghost.deserialize(jsonString)
 val json: String = Ghost.serialize(product)
 ```
+
+---
+
+## Usage - iOS (Native / Swift)
+
+Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Because Kotlin/Native does not support `ServiceLoader`, manual registry registration is required.
+
+### 1. Create a KMP Module
+In your KMP project, ensure you have an iOS target configured to export an XCFramework:
+
+```kotlin
+// shared/build.gradle.kts
+plugins {
+    kotlin("multiplatform")
+    id("com.google.devtools.ksp")
+}
+
+kotlin {
+    val xcf = XCFramework("SharedUtils")
+    iosArm64 {
+        binaries.framework {
+            baseName = "SharedUtils"
+            xcf.add(this)
+            export("com.ghost.serialization:ghost-serialization:$ghostVersion")
+        }
+    }
+    // ... iosSimulatorArm64 similarly
+}
+
+ksp {
+    arg("ghost.moduleName", "shared_utils")
+}
+```
+
+### 2. Define Your Models
+Annotate models in `commonMain` with `@GhostSerialization`.
+
+### 3. Create a Bridge for Swift
+You must register the KSP-generated registry manually once:
+
+```kotlin
+// shared/src/iosMain/kotlin/GhostBridge.kt
+object GhostBridge {
+    fun prewarm() {
+        // Register the KSP-generated registry manually
+        Ghost.addRegistry(GhostModuleRegistry_shared_utils())
+        Ghost.prewarm()
+    }
+}
+```
+
+### 4. Build and Import
+Build the framework: `./gradlew :shared:assembleSharedUtilsReleaseXCFramework`. Then drag the `.xcframework` into Xcode and set it to **Embed & Sign**.
+
+### 5. Use in Swift
+```swift
+import SharedUtils
+
+// Call once at startup
+GhostBridge.shared.prewarm()
+
+// Use the generated methods
+let user = Ghost.shared.deserialize(User.self, from: jsonString)
+```
+
+> [!TIP]
+> For a full step-by-step guide and optimized networking integration with Alamofire, refer to the [iOS Test App Repository](https://github.com/juanchurtado1991/ghost-ios-test-app).
 
 Ghost supports polymorphic serialization through Kotlin sealed classes. The type is identified by a **discriminator** field in the JSON (default is `"type"`).
 
@@ -463,7 +600,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 
 ---
 
-## Usage — Spring Boot
+## Usage - Spring Boot
 
 ### 1. Add the Spring Boot starter
 
@@ -515,6 +652,9 @@ class UserController(private val userService: UserService) {
 
 Ghost handles serialization and deserialization transparently. Spring Boot's content negotiation, validation, and error handling work unchanged.
 
+> [!TIP]
+> For a high-performance Spring Boot implementation, see the [Ghost Spring Boot Test App](https://github.com/juanchurtado1991/ghost-spring-boot-test-app).
+
 ### Manual configuration (optional)
 
 If you need explicit control:
@@ -553,7 +693,11 @@ class GhostConfig {
 | **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types in sealed hierarchies. |
 | **Boolean Coercion**| Support for `0` and `1` as `false` and `true` (configurable). |
 | **Custom Decoders** | `@GhostDecoder` / `@GhostEncoder` to delegate field logic to manual functions. |
+| **Structural Flattening** | `@GhostFlatten("a.b.c")` maps nested JSON values directly to class properties without wrapper objects. |
+| **Structural Wrapping** | `@GhostWrap("metadata.info")` nests class properties inside JSON sub-objects during serialization. |
+| **Contextual Serializers**| Register manual `GhostSerializer<T>` for external classes (e.g., Joda-Time) via `Ghost.addRegistry()`. |
 | **Lazy Discovery** | O(1) cold-start optimization via manual platform iterators. |
+| **Fragmented Emitters**| Automatic chunked emission for large models (+40 fields) to bypass JVM limits and optimize JIT. |
 | **Modular Registry**| `Ghost.addRegistry()` for dynamic serializer registration. |
 | **Incremental builds** | KSP only regenerates files for changed models. Unchanged modules are fully cached. |
 
@@ -569,8 +713,8 @@ When you annotate a class with `@GhostSerialization`, the KSP processor (`GhostS
 
 The key design decisions in the generated code:
 
-**Field matching via O(1) trie lookup**  
-Instead of comparing field names as strings, the parser uses `selectNameAndConsume(OPTIONS)` — a pre-computed options object that encodes the field names as a compact integer index. Matching a field name is a single integer comparison, not a string equality check.
+**Field matching via O(1) bitwise-accelerated Trie lookup**  
+Instead of comparing field names as strings, the parser uses `selectNameAndConsume(OPTIONS)` — a pre-computed options object that encodes the field names as a compact trie. Matching a field name is an O(1) operation using bitwise acceleration, avoiding all string equality checks and heap allocations.
 
 **Bitmask for required field tracking**  
 Instead of a boolean array, required fields are tracked with a `Long` bitmask. Setting a field is `mask = mask or (1L shl index)`. Checking all required fields is a single comparison: `if ((mask and REQUIRED_MASK) != REQUIRED_MASK)`.

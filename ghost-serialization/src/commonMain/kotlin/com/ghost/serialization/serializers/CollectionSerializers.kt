@@ -11,6 +11,7 @@ import com.ghost.serialization.parser.beginArray
 import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeArraySeparator
 import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.decodeResilient
 import com.ghost.serialization.parser.endArray
 import com.ghost.serialization.parser.endObject
 import com.ghost.serialization.parser.hasNext
@@ -44,7 +45,13 @@ class ListSerializer<T>(
     }
 
     override fun deserialize(reader: GhostJsonReader): List<T> {
-        return reader.readList { itemSerializer.deserialize(reader) }
+        return if (itemSerializer.isResilient) {
+            reader.readList {
+                reader.decodeResilient { itemSerializer.deserialize(reader) }
+            }.filterNotNull()
+        } else {
+            reader.readList { itemSerializer.deserialize(reader) }
+        }
     }
 }
 

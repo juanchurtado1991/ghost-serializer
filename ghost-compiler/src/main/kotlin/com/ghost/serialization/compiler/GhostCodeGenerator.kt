@@ -13,18 +13,23 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
-import com.ghost.serialization.compiler.GhostGeneratorConstants as C
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 internal class GhostCodeGenerator(
     private val properties: List<GhostPropertyModel>,
     classDeclaration: KSClassDeclaration
 ) {
+    private val fullPaths = properties.map {
+        it.flattenPath ?: (it.wrapPath?.let { p -> p + it.jsonName } ?: listOf(it.jsonName))
+    }
 
     private val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
     private val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||
             classDeclaration.modifiers.contains(Modifier.INLINE)
 
     private val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
+    private val isResilient =
+        classDeclaration.annotations.any { it.shortName.asString() == C.GHOST_RESILIENT }
 
     private val sealedSubclasses = if (isSealed) {
         classDeclaration.getSealedSubclasses().toList()
@@ -81,10 +86,25 @@ internal class GhostCodeGenerator(
 
     private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
 
-    private val serializerInterface = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
-    private val streamingWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_WRITER)
-    private val flatWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_FLAT_WRITER)
-    private val readerClass = ClassName(C.PKG_PARSER, C.STR_GHOST_JSON_READER)
+    private val serializerInterface = ClassName(
+        C.PKG_CONTRACT,
+        C.STR_GHOST_SERIALIZER
+    )
+
+    private val streamingWriterClass = ClassName(
+        C.PKG_WRITER,
+        C.STR_GHOST_JSON_WRITER
+    )
+
+    private val flatWriterClass = ClassName(
+        C.PKG_WRITER,
+        C.STR_GHOST_JSON_FLAT_WRITER
+    )
+
+    private val readerClass = ClassName(
+        C.PKG_PARSER,
+        C.STR_GHOST_JSON_READER
+    )
 
     fun createSpec(): FileSpec {
         val serializerName = baseClassName + C.STR_SERIALIZER_SUFFIX
@@ -105,36 +125,47 @@ internal class GhostCodeGenerator(
                     .build()
             )
             .addAnnotation(
-                AnnotationSpec.builder(ClassName(C.PKG_KOTLIN, C.STR_OPT_IN))
-                    .addMember("%T::class", ClassName(C.PKG_GHOST, C.STR_INTERNAL_GHOST_API))
+                AnnotationSpec.builder(
+                    ClassName(
+                        C.PKG_KOTLIN,
+                        C.STR_OPT_IN
+                    )
+                )
+                    .addMember(
+                        C.MARKER_CLASS,
+                        ClassName(
+                            C.PKG_GHOST,
+                            C.STR_INTERNAL_GHOST_API
+                        )
+                    )
                     .build()
             )
             .addImport(
                 C.PKG_PARSER,
-                C.STR_BEGIN_OBJECT,
-                C.STR_END_OBJECT,
-                C.STR_BEGIN_ARRAY,
-                C.STR_END_ARRAY,
-                C.STR_HAS_NEXT,
-                C.STR_SKIP_VALUE,
-                C.STR_READ_LIST,
-                C.STR_READ_MAP,
-                C.STR_NEXT_KEY,
-                C.STR_NEXT_INT,
-                C.STR_NEXT_LONG,
-                C.STR_NEXT_DOUBLE,
-                C.STR_NEXT_STRING,
-                C.STR_NEXT_BOOLEAN,
-                C.STR_SELECT_NAME_AND_CONSUME,
-                C.STR_SELECT_STRING,
-                C.STR_CONSUME_KEY_SEPARATOR,
-                C.STR_CONSUME_ARRAY_SEPARATOR,
-                C.STR_NEXT_FLOAT,
-                C.STR_PEEK_STRING_FIELD,
-                C.STR_IS_NEXT_NULL_VALUE,
-                C.STR_CONSUME_NULL,
-                C.STR_IGNORE,
-                C.DECODE_RESILIENT
+                "beginObject",
+                "endObject",
+                "beginArray",
+                "endArray",
+                "hasNext",
+                "skipValue",
+                "readList",
+                "readMap",
+                "nextKey",
+                "nextInt",
+                "nextLong",
+                "nextString",
+                "nextDouble",
+                "nextFloat",
+                "nextBoolean",
+                "selectNameAndConsume",
+                "selectString",
+                "peekStringField",
+                "consumeNull",
+                "isNextNullValue",
+                "ignore",
+                "decodeResilient",
+                "consumeKeySeparator",
+                "consumeArraySeparator"
             )
             .addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
             .addImport(C.OKIO_PACKAGE, C.STR_BYTESTRING_IMPORT)
@@ -142,8 +173,23 @@ internal class GhostCodeGenerator(
             .build()
     }
 
+    private fun getAllJsonNames(properties: List<GhostPropertyModel>): List<String> {
+        val names = mutableSetOf<String>()
+        properties.forEach { prop ->
+            if (prop.flattenPath != null) {
+                names.addAll(prop.flattenPath)
+            } else if (prop.wrapPath != null) {
+                names.addAll(prop.wrapPath)
+            }
+            names.add(prop.jsonName)
+        }
+        return names.toList().sorted()
+    }
+
     private fun buildSerializerObject(serializerName: String): TypeSpec {
-        val names = properties.map { it.jsonName }
+        val names = properties.map {
+            it.flattenPath?.firstOrNull() ?: it.wrapPath?.firstOrNull() ?: it.jsonName
+        }.distinct()
         val (shift, multiplier) = findPerfectHash(names)
 
         val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
@@ -151,10 +197,11 @@ internal class GhostCodeGenerator(
             .add(C.STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
             .indent()
 
-        properties.forEachIndexed { index, prop ->
-            val comma = if (index < properties.size - 1) C.STR_COMMA else C.STR_EMPTY
-            optionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, prop.jsonName)
+        names.forEachIndexed { index, name ->
+            val comma = if (index < names.size - 1) C.STR_COMMA else C.STR_EMPTY
+            optionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, name)
         }
+
         optionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
 
         val serializeEmitter = SerializeCodeEmitter(
@@ -169,8 +216,15 @@ internal class GhostCodeGenerator(
         )
 
         val deserializeEmitter = DeserializeCodeEmitter(
-            properties, originalClassName, readerClass, isSealed, isValue, isEnum, sealedSubclasses,
-            sealedDiscriminatorKey
+            properties,
+            originalClassName,
+            readerClass,
+            isSealed,
+            isValue,
+            isEnum,
+            sealedSubclasses,
+            sealedDiscriminatorKey,
+            isResilient
         )
 
         val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
@@ -196,16 +250,49 @@ internal class GhostCodeGenerator(
                     .build()
             )
 
+        // Cache all unique headers
+        val allNames = getAllJsonNames(properties)
+        allNames.forEach { name ->
+            val cleanName = name.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    C.STR_H_VAL_PREFIX + cleanName,
+                    C.BYTE_STRING_CLASS,
+                    KModifier.PRIVATE
+                )
+                    .initializer(
+                        "%S.encodeUtf8()",
+                        C.STR_QUOTE + name + C.STR_QUOTE + C.STR_COLON
+                    )
+                    .build()
+            )
+
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    C.STR_H_COMMA + cleanName,
+                    C.BYTE_STRING_CLASS,
+                    KModifier.PRIVATE
+                )
+                    .initializer(
+                        "%S.encodeUtf8()",
+                        C.STR_COMMA + C.STR_QUOTE + name + C.STR_QUOTE + C.STR_COLON
+                    )
+                    .build()
+            )
+        }
+
         if (isEnum && enumValues != null) {
             val enumOptionsBuilder = CodeBlock.builder()
                 .add(C.STR_OPTIONS_OF, optionsClass)
                 .indent()
 
             val values = enumValues.values.toList()
+
             values.forEachIndexed { index, serialName ->
                 val comma = if (index < values.size - 1) C.STR_COMMA else C.STR_EMPTY
                 enumOptionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, serialName)
             }
+
             enumOptionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
 
             typeSpecBuilder.addProperty(
@@ -219,18 +306,20 @@ internal class GhostCodeGenerator(
             )
         }
 
+        // Generate nested OPTIONS for GhostFlatten
+        generateNestedOptions(typeSpecBuilder, properties, readerClass)
+
         deserializeEmitter.build(typeSpecBuilder)
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
-        serializeEmitter.injectHeaderConstants(typeSpecBuilder)
 
         return typeSpecBuilder
-            .addFunction(serializeEmitter.build(streamingWriterClass))
-            .addFunction(serializeEmitter.build(flatWriterClass))
+            .addFunction(serializeEmitter.build(streamingWriterClass, typeSpecBuilder))
+            .addFunction(serializeEmitter.build(flatWriterClass, typeSpecBuilder))
             .addFunction(
                 FunSpec.builder(C.STR_WARM_UP)
                     .addModifiers(KModifier.OVERRIDE)
-                    .addCode(C.STR_WARM_UP_BODY, readerClass)
+                    .addCode(C.STR_WARM_UP_BODY, readerClass, C.STR_EMPTY_OBJ)
                     .build()
             )
             .build()
@@ -251,9 +340,12 @@ internal class GhostCodeGenerator(
                     if (bytes.isNotEmpty()) {
                         var key = 0
                         if (bytes.size >= 1) key = key or (bytes[0].toInt() and C.BYTE_MASK)
-                        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
-                        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
-                        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
+                        if (bytes.size >= 2) key =
+                            key or ((bytes[1].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
+                        if (bytes.size >= 3) key =
+                            key or ((bytes[2].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
+                        if (bytes.size >= 4) key =
+                            key or ((bytes[3].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
 
                         val hash = ((key * multiplier + bytes.size) shr shift) and C.HASH_MASK
                         if (dispatch[hash] == -1) {
@@ -268,5 +360,94 @@ internal class GhostCodeGenerator(
             }
         }
         return 0 to C.HASH_MULTIPLIER_START // Fallback
+    }
+
+    private fun generateNestedOptions(
+        typeSpecBuilder: TypeSpec.Builder,
+        properties: List<GhostPropertyModel>,
+        readerClass: ClassName
+    ) {
+        val rootNodes = mutableMapOf<String, FlattenNode>()
+
+        properties.forEach { prop ->
+            val path = prop.flattenPath ?: prop.wrapPath ?: return@forEach
+            var currentMap = rootNodes
+            path.forEachIndexed { index, segment ->
+                val isLast = index == path.size - 1
+                val node = currentMap.getOrPut(segment) { FlattenNode(segment) }
+                if (isLast) {
+                    node.properties.add(prop)
+                } else {
+                    currentMap = node.children
+                }
+            }
+        }
+
+        // We only care about nodes that have children (sub-objects) or multiple flattened properties
+        // Actually, any node in flattenPath that is NOT the top level needs its own Options if it has children.
+        // But the TOP level options are already handled by the main OPTIONS property?
+        // No, the main OPTIONS property contains the FIRST segment of any flattened path.
+
+        rootNodes.values.forEach { node ->
+            emitNestedOptionsRecursive(typeSpecBuilder, node, readerClass, "", listOf(node.segment))
+        }
+    }
+
+    private fun emitNestedOptionsRecursive(
+        typeSpecBuilder: TypeSpec.Builder,
+        node: FlattenNode,
+        readerClass: ClassName,
+        parentPrefix: String,
+        currentPath: List<String>
+    ) {
+        if (node.children.isEmpty() && node.properties.isEmpty()) return
+
+        val currentPrefix =
+            if (parentPrefix.isEmpty()) node.segment else parentPrefix + C.STR_UNDERSCORE + node.segment
+        val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
+
+        val depth = currentPath.size
+        val names = properties.filter { prop ->
+            val path = fullPaths[this.properties.indexOf(prop)]
+            path.size > depth && path.subList(0, depth) == currentPath
+        }.map { prop ->
+            val path = fullPaths[this.properties.indexOf(prop)]
+            path[depth]
+        }.distinct()
+
+        val (shift, multiplier) = findPerfectHash(names)
+
+        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
+        val optionsBuilder = CodeBlock.builder()
+            .add(C.STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
+            .indent()
+
+        names.forEachIndexed { index, name ->
+            val comma = if (index < names.size - 1) C.STR_COMMA else C.STR_EMPTY
+            optionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, name)
+        }
+        optionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
+
+        typeSpecBuilder.addProperty(
+            PropertySpec.builder(optionsName, optionsClass)
+                .addModifiers(KModifier.PRIVATE)
+                .initializer(optionsBuilder.build())
+                .build()
+        )
+
+        node.children.values.forEach { child ->
+            emitNestedOptionsRecursive(
+                typeSpecBuilder,
+                child,
+                readerClass,
+                currentPrefix,
+                currentPath + child.segment
+            )
+        }
+    }
+
+    private class FlattenNode(val segment: String) {
+        val children = mutableMapOf<String, FlattenNode>()
+        val properties = mutableListOf<GhostPropertyModel>()
     }
 }

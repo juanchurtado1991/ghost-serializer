@@ -2,6 +2,8 @@
 
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -9,7 +11,6 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Emitter for fragmented deserialization logic.
@@ -81,15 +82,19 @@ internal class FragmentedEmitter(
         chunks.forEachIndexed { chunkIdx, chunkProps ->
             val start = chunkIdx * chunkSize
             val end = start + chunkProps.size - 1
+            val chunkFunName = C.TEMPLATE_DECODE_CHUNK_NAME
+                .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
+
             body.addStatement(
                 C.TEMPLATE_CHUNK_CALL,
                 start,
                 end,
-                "${C.STR_DECODE_CHUNK_PREFIX}$chunkIdx"
+                chunkFunName
             )
         }
 
         body.addStatement(C.STR_MINUS_ONE_BREAK)
+
         body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
         body.addStatement(C.STR_SKIP_VALUE)
         body.endControlFlow()
@@ -109,8 +114,17 @@ internal class FragmentedEmitter(
         contextClassName: ClassName,
         typeSpecBuilder: TypeSpec.Builder
     ) {
-        val chunkFun = FunSpec.builder("${C.STR_DECODE_CHUNK_PREFIX}$chunkIdx")
-            .addModifiers(KModifier.PRIVATE)
+        val chunkFun = FunSpec
+            .builder(
+                C.TEMPLATE_DECODE_CHUNK_NAME
+                    .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
+            )
+            .addAnnotation(
+                AnnotationSpec.builder(Suppress::class)
+                    .addMember(C.MARKER, C.STR_NOTHING_TO_INLINE)
+                    .build()
+            )
+            .addModifiers(KModifier.PRIVATE, KModifier.INLINE)
             .addParameter(C.STR_READER_VAR, readerClass)
             .addParameter(C.STR_CTX_VAR, contextClassName)
             .addParameter(C.STR_INDEX_VAR, INT)
@@ -166,7 +180,7 @@ internal class FragmentedEmitter(
                     "${reqMask}L"
                 }
 
-                body.beginControlFlow("if ((ctx._mask$i and $reqMaskStr) != $reqMaskStr)")
+                body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET, i, reqMaskStr, reqMaskStr)
                 properties.forEachIndexed { index, it ->
                     if (!it.isNullable && !it.hasDefaultValue && (index / 64) == i) {
                         val bitIdx = index % 64
@@ -191,7 +205,7 @@ internal class FragmentedEmitter(
     private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
         val requiredArgs = requiredProps.joinToString(C.STR_COMMA_SPACE) { prop ->
-            prop.getFragmentedReturnExpression()
+            "`${prop.kotlinName}` = ${prop.getFragmentedReturnExpression()}"
         }
         body.addStatement("${C.TEMPLATE_VAL_RESULT}$requiredArgs${C.STR_PAREN}", originalClassName)
 
@@ -223,14 +237,13 @@ internal class FragmentedEmitter(
             val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
                 if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
             }
-            defaultPropsWithGlobalIndex.forEachIndexed { localIdx, (propIndex, prop) ->
+            defaultPropsWithGlobalIndex.forEachIndexed { _, (propIndex, prop) ->
                 val maskIdx = propIndex / 64
                 val bitIdx = propIndex % 64
                 val bitMask = 1L shl bitIdx
                 val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
-                val comma = if (localIdx < defaultPropsWithGlobalIndex.size - 1) C.STR_COMMA else C.STR_EMPTY
                 val valueExpr = prop.getFragmentedDefaultValueReturnExpression(maskIdx, bitMaskStr)
-                body.addStatement("${C.TEMPLATE_RESULT_FIELD_ASSIGN}$comma", prop.kotlinName, valueExpr)
+                body.addStatement("${C.STR_BACKTICK}%L${C.STR_BACKTICK}${C.STR_EQ_SPACE}%L${C.STR_COMMA}", prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)
