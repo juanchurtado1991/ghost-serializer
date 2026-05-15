@@ -29,7 +29,7 @@ expect fun <T> runSynchronized(lock: Any, block: () -> T): T
 
 expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
-expect fun discoverRegistries(): List<GhostRegistry>
+expect fun discoverRegistries(): Iterable<GhostRegistry>
 
 @OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
@@ -89,7 +89,7 @@ object Ghost {
 
     private val lock = Any()
     private val mutableRegistries = mutableSetOf<GhostRegistry>()
-    private var _discoveredRegistries: List<GhostRegistry>? = null
+    private var _discoveredRegistries: Iterable<GhostRegistry>? = null
     private var _consolidatedRegistries: List<GhostRegistry> = emptyList()
 
     private fun updateConsolidatedRegistries() {
@@ -99,16 +99,29 @@ object Ghost {
         } else {
             _discoveredRegistries!!
         }
-        _consolidatedRegistries = mutableRegistries.toList() + discovered
+        _consolidatedRegistries = mutableRegistries.toList() + discovered.toList()
     }
 
-    private val registries: List<GhostRegistry>
-        get() = runSynchronized(lock) {
-            if (_discoveredRegistries == null) {
-                updateConsolidatedRegistries()
-            }
-            _consolidatedRegistries
+    private fun <T : Any> getSerializerFromRegistries(clazz: KClass<T>): GhostSerializer<T>? {
+        // 1. Check manual registries
+        mutableRegistries.forEach { registry ->
+            registry.getSerializer(clazz)?.let { return it }
         }
+
+        // 2. Check discovered registries (Fast-path first inside the Iterable)
+        val disc = if (_discoveredRegistries == null) {
+            _discoveredRegistries = discoverRegistries()
+            _discoveredRegistries!!
+        } else {
+            _discoveredRegistries!!
+        }
+
+        disc.forEach { registry ->
+            registry.getSerializer(clazz)?.let { return it }
+        }
+
+        return null
+    }
 
     private val serializerByName = mutableMapOf<String, GhostSerializer<*>>()
 
@@ -162,11 +175,11 @@ object Ghost {
             val doubleCheck = serializerCache[clazz] as? GhostSerializer<T>
             if (doubleCheck != null) return@runSynchronized doubleCheck
 
-            val found = registries.firstNotNullOfOrNull { it.getSerializer(clazz) }
+            val found = getSerializerFromRegistries(clazz)
             if (found != null) {
                 serializerCache[clazz] = found as GhostSerializer<Any>
             }
-            found as? GhostSerializer<T>
+            found
         }
     }
 
@@ -235,8 +248,11 @@ object Ghost {
     }
 
     @PublishedApi
-    internal inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> =
-        resolveSerializerByType(T::class) { typeOf<T>() }
+    internal inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
+        val cached = serializerCache[T::class]
+        if (cached != null) return cached as GhostSerializer<T>
+        return resolveSerializerByType(T::class) { typeOf<T>() }
+    }
 
     /**
      * Encodes [value] and writes the resulting JSON payload into [sink].
@@ -403,14 +419,27 @@ object Ghost {
      */
     fun prewarm() {
         runSynchronized(lock) {
-            registries.forEach { registry ->
+            // Force discovery if not yet done
+            if (_discoveredRegistries == null) {
+                _discoveredRegistries = discoverRegistries()
+            }
+            
+            // Manual ones
+            mutableRegistries.forEach { registry ->
                 registry.prewarm()
-                registry
-                    .getAllSerializers()
-                    .forEach { (kclass, serializer) ->
-                        serializerCache[kclass] = serializer
-                        serializer.warmUp()
-                    }
+                registry.getAllSerializers().forEach { (kclass, serializer) ->
+                    serializerCache[kclass] = serializer
+                    serializer.warmUp()
+                }
+            }
+
+            // Discovered ones
+            _discoveredRegistries?.forEach { registry ->
+                registry.prewarm()
+                registry.getAllSerializers().forEach { (kclass, serializer) ->
+                    serializerCache[kclass] = serializer
+                    serializer.warmUp()
+                }
             }
         }
     }

@@ -46,12 +46,12 @@ class GhostSerializationProcessor(
 
     private val registryClassName: String by lazy {
         // Use the module name provided by KSP or fallback to a stable suffix
-        val moduleName = options["ghost.moduleName"]
+        val moduleName = options[MODULE_NAME]
             ?.replace(STR_DASH, STR_UNDERSCORE)
             ?.replace(STR_DOT, STR_UNDERSCORE)
             ?: STR_DEFAULT
 
-        "${REGISTRY_CLASS_NAME}_$moduleName"
+        STR_REGISTRY_PREFIX + STR_UNDERSCORE + moduleName
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -100,7 +100,7 @@ class GhostSerializationProcessor(
 
             val serializerClassName = ClassName(
                 classDeclaration.packageName.asString(),
-                "${classDeclaration.toClassName().simpleNames.joinToString("_")}$STR_SERIALIZER_SUFFIX"
+                classDeclaration.toClassName().simpleNames.joinToString(STR_UNDERSCORE) + STR_SERIALIZER_SUFFIX
             )
             classToSerializer[classDeclaration.toClassName()] = serializerClassName
 
@@ -118,9 +118,9 @@ class GhostSerializationProcessor(
 
     /**
      * Generates a registry with:
-     * - [getSerializer] as a `when` chain so the JVM only initializes serializers for the branch taken
+     * - getSerializer as a `when` chain so the JVM only initializes serializers for the branch taken
      *   (fast cold start vs eager `mapOf` that touches every companion on registry construction).
-     * - A lazy `allSerializers` map for [getAllSerializers] / [prewarm] only when the full graph is needed.
+     * - A lazy `allSerializers` map for getAllSerializers / prewarm only when the full graph is needed.
      */
     private fun generateModuleRegistry() {
         val serializerType = ClassName(STR_CONTRACT_PKG, STR_GHOST_SERIALIZER)
@@ -141,11 +141,11 @@ class GhostSerializationProcessor(
         mapBuilder.add(STR_NEWLINE_PAREN)
 
         val allSerializersDelegate = CodeBlock.builder()
-            .add("lazy {\n")
+            .add(STR_LAZY_START)
             .indent()
             .add(mapBuilder.build())
             .unindent()
-            .add("}")
+            .add(STR_CURLY_CLOSE)
             .build()
 
         val allSerializersProperty = PropertySpec.builder(STR_PROP_ALL_SERIALIZERS, mapType)
@@ -154,12 +154,12 @@ class GhostSerializationProcessor(
             .build()
 
         val whenBody = CodeBlock.builder()
-            .add("return when (clazz) {\n")
+            .add(STR_WHEN_CLAZZ_START)
         entries.forEach { entry ->
-            whenBody.add("    %T::class -> %T\n", entry.key, entry.value)
+            whenBody.add(STR_WHEN_ENTRY, entry.key, entry.value)
         }
-        whenBody.add("    else -> null\n")
-        whenBody.add("} as %T\n", serializerType.parameterizedBy(t).copy(nullable = true))
+        whenBody.add(STR_WHEN_ELSE_NULL)
+        whenBody.add(STR_WHEN_CLOSE_CAST, serializerType.parameterizedBy(t).copy(nullable = true))
 
         val getMethod = FunSpec.builder(STR_FUN_GET_SERIALIZER)
             .addTypeVariable(t)
@@ -174,13 +174,13 @@ class GhostSerializationProcessor(
 
         val prewarmMethod = FunSpec.builder(STR_FUN_PREWARM)
             .addModifiers(KModifier.OVERRIDE)
-            .addStatement("%L.ignore()", STR_ALL_SERIALIZERS_SIZE)
+            .addStatement(STR_IGNORE_CALL, STR_ALL_SERIALIZERS_SIZE)
             .build()
 
         val registeredCountMethod = FunSpec.builder(STR_FUN_REG_COUNT)
             .addModifiers(KModifier.OVERRIDE)
             .returns(Int::class)
-            .addStatement("return %L", entries.size)
+            .addStatement(STR_RETURN_L, entries.size)
             .build()
 
         val getAllSerializersMethod = FunSpec.builder(STR_FUN_GET_ALL_SERIALIZERS)
@@ -215,7 +215,7 @@ class GhostSerializationProcessor(
             .build()
 
         FileSpec.builder(PACKAGE_NAME, registryClassName)
-            .addImport("com.ghost.serialization.parser", "ignore")
+            .addImport(PKG_PARSER, STR_IGNORE)
             .addType(registrySpec)
             .build()
             .writeTo(
@@ -276,7 +276,6 @@ class GhostSerializationProcessor(
     }
 
     companion object {
-        private const val STR_SUFFIX_N = "n"
         private const val STR_DEFAULT = "Default"
         private const val STR_UNDERSCORE = "_"
         private const val STR_DOT = "."
@@ -298,7 +297,6 @@ class GhostSerializationProcessor(
         private const val STR_MAP_ENTRY = "    %T::class to %T"
         private const val STR_COMMA_NEWLINE = ",\n"
         private const val STR_NEWLINE_PAREN = "\n)"
-        /** Lazy map backing [GhostRegistry.getAllSerializers]; not named `allSerializers` (JVM getter would clash). */
         private const val STR_PROP_ALL_SERIALIZERS = "serializersByClass"
         private const val STR_FUN_GET_SERIALIZER = "getSerializer"
         private const val STR_PARAM_CLAZZ = "clazz"
@@ -325,8 +323,19 @@ class GhostSerializationProcessor(
         private const val STR_FORMAT_S = "%S"
         private const val ANNOTATION_NAME = "com.ghost.serialization.annotations.GhostSerialization"
         private const val PACKAGE_NAME = "com.ghost.serialization.generated"
-        private const val REGISTRY_CLASS_NAME = "GhostModuleRegistry"
+        private const val STR_REGISTRY_PREFIX = "GhostModuleRegistry"
         private const val LOG_PREFIX = ">>> [GhostSerialization]"
         const val OPTION_GENERATE_MOSHI_ADAPTERS = "ghost.generateMoshiAdapters"
+        private const val MODULE_NAME = "ghost.moduleName"
+        private const val STR_LAZY_START = "lazy {\n"
+        private const val STR_CURLY_CLOSE = "}"
+        private const val STR_WHEN_CLAZZ_START = "return when (clazz) {\n"
+        private const val STR_WHEN_ENTRY = "    %T::class -> %T\n"
+        private const val STR_WHEN_ELSE_NULL = "    else -> null\n"
+        private const val STR_WHEN_CLOSE_CAST = "} as %T\n"
+        private const val PKG_PARSER = "com.ghost.serialization.parser"
+        private const val STR_IGNORE = "ignore"
+        private const val STR_IGNORE_CALL = "%L.ignore()"
+        private const val STR_RETURN_L = "return %L"
     }
 }

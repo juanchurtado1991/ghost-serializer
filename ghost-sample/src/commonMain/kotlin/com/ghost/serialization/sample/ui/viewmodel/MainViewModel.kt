@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.ghost.serialization.sample.util.format
 
 class MainViewModel : ViewModel() {
     private val repository = RickAndMortyRepository()

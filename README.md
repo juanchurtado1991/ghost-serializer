@@ -309,6 +309,43 @@ val user = Ghost.deserialize<User>(json) {
 }
 ```
 
+> [!NOTE]
+> **Coercion vs. Custom Decoders**: 
+> - **Coercion** is a global/session configuration that applies to all `Boolean` fields. It is handled internally by the engine for maximum speed.
+> - **Custom Decoders** are property-specific overrides for a single field with arbitrary logic.
+
+#### 4. Custom Field Decoders (`@GhostDecoder` / `@GhostEncoder`)
+If you have a field with a very specific format (like a custom date format or a legacy boolean), you can delegate its parsing to a static function without writing a full serializer:
+
+```kotlin
+@GhostSerialization
+data class Transaction(
+    val id: String,
+    @GhostDecoder(JodaUtils::class, "decodeDateTime")
+    @GhostEncoder(JodaUtils::class, "encodeDateTime")
+    val createdAt: DateTime // org.joda.time.DateTime
+)
+
+object JodaUtils {
+    private val formatter = ISODateTimeFormat.dateTime()
+
+    fun decodeDateTime(reader: GhostJsonReader): DateTime {
+        return DateTime.parse(reader.nextString(), formatter)
+    }
+
+    fun encodeDateTime(writer: GhostJsonFlatWriter, value: DateTime) {
+        writer.writeString(value.toString(formatter))
+    }
+}
+```
+
+> [!IMPORTANT]
+> **No Interfaces Required**: 
+> To maintain the **Zero-Overhead** philosophy, Ghost does not require your utility classes to implement any interface. This avoids virtual method dispatch and generic boxing.
+> - The KSP compiler validates the **method signature** at compile-time.
+> - **Decoder signature**: `fun name(reader: GhostJsonReader): T`
+> - **Encoder signature**: `fun name(writer: GhostJsonFlatWriter, value: T)` (or `GhostJsonWriter`).
+
 ---
 
 ## Usage — Kotlin Multiplatform (KMP)
@@ -515,6 +552,9 @@ class GhostConfig {
 | **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns `null` instead of crashing. |
 | **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types in sealed hierarchies. |
 | **Boolean Coercion**| Support for `0` and `1` as `false` and `true` (configurable). |
+| **Custom Decoders** | `@GhostDecoder` / `@GhostEncoder` to delegate field logic to manual functions. |
+| **Lazy Discovery** | O(1) cold-start optimization via manual platform iterators. |
+| **Modular Registry**| `Ghost.addRegistry()` for dynamic serializer registration. |
 | **Incremental builds** | KSP only regenerates files for changed models. Unchanged modules are fully cached. |
 
 ---
@@ -543,6 +583,9 @@ Ghost has two writer types: `GhostJsonWriter` (streaming, backed by Okio) and `G
 
 **Scratch buffer pool**  
 Long-to-string conversion and string escaping share a pooled scratch `ByteArray` per writer instance. This eliminates per-call allocation for numeric and ASCII string values.
+
+**Lazy Registry Discovery (O(1))**  
+Ghost uses a specialized manual Iterator for registry discovery. It attempts a fast-path lookup for the default module via `Class.forName` before falling back to `ServiceLoader`, ensuring near-zero overhead during the first app launch (Cold Start).
 
 ### Runtime path (what happens during a call)
 

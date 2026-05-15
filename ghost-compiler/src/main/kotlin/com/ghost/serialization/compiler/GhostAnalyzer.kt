@@ -144,6 +144,18 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val primitiveArrayType =
             if (isPrimitiveArray) qualifiedName?.removePrefix(STR_KOTLIN_DOT) else null
 
+        val customDecoder = prop.annotations.find {
+            it.shortName.asString() == GHOST_DECODER
+        }?.arguments?.find { it.name?.asString() == FUNCTION_ARG }?.value as? String
+
+        val customEncoder = prop.annotations.find {
+            it.shortName.asString() == GHOST_ENCODER
+        }?.arguments?.find { it.name?.asString() == FUNCTION_ARG }?.value as? String
+
+        if (customDecoder != null || customEncoder != null) {
+            logger.warn("Detected custom coder for ${prop.simpleName.asString()}: D=$customDecoder, E=$customEncoder")
+        }
+
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
             jsonName = getJsonName(prop),
@@ -169,8 +181,37 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 .toList() else emptyList(),
             isResilient = prop.hasAnnotation(GHOST_RESILIENT) || prop.parentDeclaration?.let {
                 it is KSClassDeclaration && it.annotations.any { ann -> ann.shortName.asString() == GHOST_RESILIENT }
-            } ?: false
+            } ?: false,
+            isContextual = isContextualType(type, isList, isMap, isPrimitiveArray),
+            customDecoder = customDecoder,
+            customEncoder = customEncoder
         )
+    }
+
+    private fun isContextualType(
+        type: KSType,
+        isList: Boolean,
+        isMap: Boolean,
+        isPrimitiveArray: Boolean
+    ): Boolean {
+        if (isList || isMap || isPrimitiveArray) return false
+        if (isGhostType(type)) return false
+        if (isEnumType(type)) return false
+
+        val qualifiedName = type.declaration.qualifiedName?.asString()
+        val isBuiltIn = qualifiedName?.startsWith("kotlin.") == true ||
+                qualifiedName?.startsWith("java.") == true
+
+        if (isBuiltIn) {
+            return when (qualifiedName) {
+                "kotlin.String", "kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float",
+                "kotlin.Boolean", "kotlin.Byte", "kotlin.Short", "kotlin.Char", "kotlin.Unit", "kotlin.Any" -> false
+
+                else -> true
+            }
+        }
+
+        return true // Third party types
     }
 
     private fun isValueClass(type: KSType): Boolean {
@@ -277,6 +318,9 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         private const val STR_VALUE_ARG = "value"
         private const val STR_SERIAL_NAME_SUFFIX = "SerialName"
         private const val GHOST_RESILIENT = "GhostResilient"
+        private const val GHOST_DECODER = "GhostDecoder"
+        private const val GHOST_ENCODER = "GhostEncoder"
+        private const val FUNCTION_ARG = "function"
         private const val ORDINAL = "ordinal"
         private const val NAME = "name"
         private const val STR_EMPTY = ""

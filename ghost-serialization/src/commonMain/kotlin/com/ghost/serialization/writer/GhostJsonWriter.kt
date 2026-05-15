@@ -127,7 +127,7 @@ class GhostJsonWriter(
      * Automatically handles comma insertion and indentation tracking.
      */
     fun beginObject(): GhostJsonWriter {
-        checkDepth()
+        if (depth >= MAX_DEPTH) throwDepthError()
         appendSeparator()
         buffer.writeByte(OPEN_OBJ_INT)
         needsComma = false
@@ -153,7 +153,7 @@ class GhostJsonWriter(
     }
 
     fun beginArray(): GhostJsonWriter {
-        checkDepth()
+        if (depth >= MAX_DEPTH) throwDepthError()
         appendSeparator()
         buffer.writeByte(OPEN_ARR_INT)
         needsComma = false
@@ -199,8 +199,11 @@ class GhostJsonWriter(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Int): GhostJsonWriter {
-        appendSeparator()
-        checkDepth()
+        if (needsComma) {
+            buffer.writeByte(COMMA_INT)
+            needsComma = false
+        }
+        if (depth >= MAX_DEPTH) throwDepthError()
         buffer.write(header)
         writeIntValueRaw(value)
         needsComma = true
@@ -213,8 +216,11 @@ class GhostJsonWriter(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Long): GhostJsonWriter {
-        appendSeparator()
-        checkDepth()
+        if (needsComma) {
+            buffer.writeByte(COMMA_INT)
+            needsComma = false
+        }
+        if (depth >= MAX_DEPTH) throwDepthError()
         buffer.write(header)
         writeLongValueRaw(value)
         needsComma = true
@@ -227,8 +233,11 @@ class GhostJsonWriter(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: String): GhostJsonWriter {
-        appendSeparator()
-        checkDepth()
+        if (needsComma) {
+            buffer.writeByte(COMMA_INT)
+            needsComma = false
+        }
+        if (depth >= MAX_DEPTH) throwDepthError()
         buffer.write(header)
         writeStringValueRaw(value)
         needsComma = true
@@ -241,8 +250,11 @@ class GhostJsonWriter(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Boolean): GhostJsonWriter {
-        appendSeparator()
-        checkDepth()
+        if (needsComma) {
+            buffer.writeByte(COMMA_INT)
+            needsComma = false
+        }
+        if (depth >= MAX_DEPTH) throwDepthError()
         buffer.write(header)
         writeBooleanValueRaw(value)
         needsComma = true
@@ -252,8 +264,11 @@ class GhostJsonWriter(
 
     @InternalGhostApi
     fun writeFirstField(header: ByteString, value: Double): GhostJsonWriter {
-        appendSeparator()
-        checkDepth()
+        if (needsComma) {
+            buffer.writeByte(COMMA_INT)
+            needsComma = false
+        }
+        if (depth >= MAX_DEPTH) throwDepthError()
         buffer.write(header)
         writeDoubleValueRaw(value)
         needsComma = true
@@ -741,14 +756,12 @@ class GhostJsonWriter(
         buffer.write(scratchBuf, 0, scratchPos)
     }
 
-    private fun checkDepth() {
-        if (depth >= MAX_DEPTH) {
-            throw GhostJsonException(
-                "$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})",
-                0,
-                0
-            )
-        }
+    private fun throwDepthError() {
+        throw GhostJsonException(
+            "$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})",
+            0,
+            0
+        )
     }
 
     private fun writeUnicodeEscape(char: Char, scratchBuf: ByteArray) {

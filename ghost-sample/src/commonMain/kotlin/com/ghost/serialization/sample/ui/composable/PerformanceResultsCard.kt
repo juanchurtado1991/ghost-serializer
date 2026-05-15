@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ghost.serialization.sample.ui.AppDesign
 import com.ghost.serialization.sample.ui.model.UiState
+import com.ghost.serialization.sample.util.format
 
 private val ACCENT_COMPETITOR = Color(0xFF818CF8)
 

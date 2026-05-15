@@ -107,21 +107,25 @@ fun GhostJsonReader.consumeArraySeparator() {
 
 fun GhostJsonReader.nextBoolean(): Boolean {
     val token = peekNextToken()
-    return if (token == TRUE_CHAR_INT) {
+    if (token == TRUE_CHAR_INT) {
         skipAndValidateLiteral(TRUE_BS)
-        true
-    } else if (token == FALSE_CHAR_INT) {
-        skipAndValidateLiteral(FALSE_BS)
-        false
-    } else if (coerceBooleans && token == ONE_INT) {
-        internalSkip(1)
-        true
-    } else if (coerceBooleans && token == ZERO_INT) {
-        internalSkip(1)
-        false
-    } else {
-        throwError(ERR_EXPECTED_BOOLEAN)
+        return true
     }
+    if (token == FALSE_CHAR_INT) {
+        skipAndValidateLiteral(FALSE_BS)
+        return false
+    }
+    if (coerceBooleans) {
+        if (token == ONE_INT) {
+            internalSkip(1)
+            return true
+        }
+        if (token == ZERO_INT) {
+            internalSkip(1)
+            return false
+        }
+    }
+    throwError(ERR_EXPECTED_BOOLEAN)
 }
 
 fun GhostJsonReader.nextString(): String = readQuotedString()

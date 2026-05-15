@@ -12,21 +12,21 @@ class GhostExceptionTest {
         val ex = GhostJsonException("test error", 5, 10)
         assertEquals(5, ex.line)
         assertEquals(10, ex.column)
-        assertTrue(ex.message!!.contains("line 5"))
-        assertTrue(ex.message!!.contains("col 10"))
+        assertTrue(ex.message.contains("line 5"))
+        assertTrue(ex.message.contains("col 10"))
     }
 
     @Test
     fun exceptionContainsPath() {
         val ex = GhostJsonException("test error", 1, 1, "$.user.name")
         assertEquals("$.user.name", ex.path)
-        assertTrue(ex.message!!.contains("$.user.name"))
+        assertTrue(ex.message.contains("$.user.name"))
     }
 
     @Test
     fun exceptionContainsMessage() {
         val ex = GhostJsonException("Invalid token")
-        assertTrue(ex.message!!.contains("Invalid token"))
+        assertTrue(ex.message.contains("Invalid token"))
     }
 
     @Test

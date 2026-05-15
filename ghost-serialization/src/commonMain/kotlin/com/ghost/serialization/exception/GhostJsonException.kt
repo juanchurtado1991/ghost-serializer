@@ -29,5 +29,9 @@ class GhostJsonException @InternalGhostApi internal constructor(
         line: Int = -1,
         column: Int = -1,
         path: String = "$"
-    ) : this(message, { intArrayOf(line, column) }, path)
+    ) : this(
+        message,
+        { intArrayOf(line, column) },
+        path
+    )
 }
