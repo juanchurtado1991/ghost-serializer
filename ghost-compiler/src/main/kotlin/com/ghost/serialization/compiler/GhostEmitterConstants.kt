@@ -1,5 +1,7 @@
 package com.ghost.serialization.compiler
 
+import com.squareup.kotlinpoet.ClassName
+
 /**
  * Centralized constants for the deserialization code emitters.
  *
@@ -38,6 +40,7 @@ internal object GhostEmitterConstants {
     const val STR_SKIP_VALUE = "reader.skipValue()"
     const val STR_END_OBJECT = "reader.endObject()"
     const val TEMPLATE_DESERIALIZE_T = "%T.deserialize(reader)"
+    const val TEMPLATE_DESERIALIZE_L = "%L.deserialize(reader)"
     const val STR_NEXT_INT = "reader.nextInt()"
     const val STR_NEXT_BOOLEAN = "reader.nextBoolean()"
     const val STR_NEXT_LONG = "reader.nextLong()"
@@ -45,6 +48,7 @@ internal object GhostEmitterConstants {
     const val STR_NEXT_FLOAT = "reader.nextFloat()"
     const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"
     const val STR_NEXT_STRING = "reader.nextString()"
+    const val TEMPLATE_L_READER = "%L(reader)"
     const val STR_NULL_CHECK_INT = "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextInt()"
     const val STR_NULL_CHECK_LONG = "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextLong()"
     const val STR_NULL_CHECK_DOUBLE = "if (reader.isNextNullValue()) { reader.consumeNull(); null } else reader.nextDouble()"
@@ -81,7 +85,6 @@ internal object GhostEmitterConstants {
     const val STR_INDEX_VAR = "index"
     const val STR_WHEN_INDEX_PLAIN = "when (index)"
     const val STR_BIT_MASK_MIN_LONG = "Long.MIN_VALUE"
-    const val TEMPLATE_BIT_MASK_LONG = "%LL"
     const val TEMPLATE_DECODE_RESILIENT = "reader.decodeResilient { %L }?.let"
     const val TEMPLATE_CTX_FIELD_ASSIGN = "ctx._%L = %L"
     const val TEMPLATE_CTX_FIELD_SET_IT = "ctx._%L = it"
@@ -100,4 +103,12 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_IF_MASK_MATCH_BIT_F = "(ctx._mask%s and %s) != 0L"
     const val STR_CLOSE_PAREN_FLOW = ")"
     const val TEMPLATE_RESULT_FIELD_ASSIGN = "  %L = %L"
+    const val STR_GHOST_PKG = "com.ghost.serialization"
+    const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
+    const val STR_GHOST_OBJ = "Ghost"
+    const val STR_GHOST_SERIALIZER = "GhostSerializer"
+    const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
+    val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
+    const val KOTLIN_STRING = "kotlin.String"
+    const val DEFAULT_DISCRIMINATOR_KEY = "key"
 }

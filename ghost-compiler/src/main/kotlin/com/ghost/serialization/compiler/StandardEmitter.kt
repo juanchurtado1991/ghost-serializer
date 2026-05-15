@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.ghost.serialization.compiler
 
 import com.squareup.kotlinpoet.ClassName

@@ -1,6 +1,5 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonConstants
 import com.ghost.serialization.parser.GhostJsonConstants.SCRATCH_BUFFER_SIZE
 import kotlin.native.concurrent.ThreadLocal
 

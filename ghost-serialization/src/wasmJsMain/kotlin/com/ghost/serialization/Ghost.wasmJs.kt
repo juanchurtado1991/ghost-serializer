@@ -11,7 +11,7 @@ import okio.BufferedSource
 private var cachedWriterPair: WriterSinkPair? = null
 private var cachedReader: GhostJsonReader? = null
 
-actual fun discoverRegistries(): List<GhostRegistry> = emptyList()
+actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = block()
 

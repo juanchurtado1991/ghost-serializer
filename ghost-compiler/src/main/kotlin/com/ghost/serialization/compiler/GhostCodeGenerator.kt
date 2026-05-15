@@ -13,6 +13,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.GhostGeneratorConstants as C
 
 internal class GhostCodeGenerator(
     private val properties: List<GhostPropertyModel>,
@@ -33,7 +34,7 @@ internal class GhostCodeGenerator(
 
     private val packageName = classDeclaration.packageName.asString()
     private val originalClassName = classDeclaration.toClassName()
-    private val baseClassName = originalClassName.simpleNames.joinToString(STR_UNDERSCORE)
+    private val baseClassName = originalClassName.simpleNames.joinToString(C.STR_UNDERSCORE)
 
     // For a sealed subclass, this is the value written as the discriminator (i.e. the subclass name).
     // This is different from sealedDiscriminatorKey which is the JSON field name on the parent sealed class.
@@ -41,7 +42,8 @@ internal class GhostCodeGenerator(
         !isSealed &&
         !isValue &&
         classDeclaration.parentDeclaration is KSClassDeclaration &&
-        (classDeclaration.parentDeclaration as KSClassDeclaration).modifiers.contains(Modifier.SEALED)
+        (classDeclaration.parentDeclaration as KSClassDeclaration)
+            .modifiers.contains(Modifier.SEALED)
     ) {
         classDeclaration.simpleName.asString()
     } else {
@@ -61,17 +63,17 @@ internal class GhostCodeGenerator(
             classDeclaration
         }
         annotationSource?.annotations
-            ?.find { it.shortName.asString() == ANNOTATION_GHOST_SERIALIZATION }
+            ?.find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
             ?.arguments
-            ?.find { it.name?.asString() == ARG_DISCRIMINATOR }
+            ?.find { it.name?.asString() == C.ARG_DISCRIMINATOR }
             ?.value as? String
-            ?: STR_DEFAULT_DISCRIMINATOR
+            ?: C.STR_DEFAULT_DISCRIMINATOR
     }
 
     private val customTypeName: String = classDeclaration.annotations
-        .find { it.shortName.asString() == ANNOTATION_GHOST_SERIALIZATION }
+        .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
         ?.arguments
-        ?.find { it.name?.asString() == ARG_NAME }
+        ?.find { it.name?.asString() == C.ARG_NAME }
         ?.value as? String ?: ""
 
     private val finalTypeName: String =
@@ -79,63 +81,63 @@ internal class GhostCodeGenerator(
 
     private val enumValues = properties.firstOrNull { it.isEnum }?.enumValues
 
-    private val serializerInterface = ClassName(PKG_CONTRACT, STR_GHOST_SERIALIZER)
-    private val streamingWriterClass = ClassName(PKG_WRITER, STR_GHOST_JSON_WRITER)
-    private val flatWriterClass = ClassName(PKG_WRITER, STR_GHOST_JSON_FLAT_WRITER)
-    private val readerClass = ClassName(PKG_PARSER, STR_GHOST_JSON_READER)
+    private val serializerInterface = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
+    private val streamingWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_WRITER)
+    private val flatWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_FLAT_WRITER)
+    private val readerClass = ClassName(C.PKG_PARSER, C.STR_GHOST_JSON_READER)
 
     fun createSpec(): FileSpec {
-        val serializerName = "${baseClassName}$STR_SERIALIZER_SUFFIX"
+        val serializerName = baseClassName + C.STR_SERIALIZER_SUFFIX
         return FileSpec.builder(packageName, serializerName)
             .addAnnotation(
                 AnnotationSpec.builder(Suppress::class)
                     .addMember(
-                        STR_SUPPRESS_FORMAT,
-                        LINT_UNUSED_VARIABLE,
-                        LINT_UNUSED_EXPRESSION,
-                        LINT_UNCHECKED_CAST,
-                        LINT_USELESS_CAST,
-                        LINT_UNNECESSARY_NOT_NULL_ASSERTION,
-                        LINT_UNUSED,
-                        LINT_NAME_SHADOWING,
-                        LINT_UNUSED_RESULT
+                        C.STR_SUPPRESS_FORMAT,
+                        C.LINT_UNUSED_VARIABLE,
+                        C.LINT_UNUSED_EXPRESSION,
+                        C.LINT_UNCHECKED_CAST,
+                        C.LINT_USELESS_CAST,
+                        C.LINT_UNNECESSARY_NOT_NULL_ASSERTION,
+                        C.LINT_UNUSED,
+                        C.LINT_NAME_SHADOWING,
+                        C.LINT_UNUSED_RESULT
                     )
                     .build()
             )
             .addAnnotation(
-                AnnotationSpec.builder(ClassName(PKG_KOTLIN, STR_OPT_IN))
-                    .addMember("%T::class", ClassName(PKG_GHOST, STR_INTERNAL_GHOST_API))
+                AnnotationSpec.builder(ClassName(C.PKG_KOTLIN, C.STR_OPT_IN))
+                    .addMember("%T::class", ClassName(C.PKG_GHOST, C.STR_INTERNAL_GHOST_API))
                     .build()
             )
             .addImport(
-                PKG_PARSER,
-                STR_BEGIN_OBJECT,
-                STR_END_OBJECT,
-                STR_BEGIN_ARRAY,
-                STR_END_ARRAY,
-                STR_HAS_NEXT,
-                STR_SKIP_VALUE,
-                STR_READ_LIST,
-                STR_READ_MAP,
-                STR_NEXT_KEY,
-                STR_NEXT_INT,
-                STR_NEXT_LONG,
-                STR_NEXT_DOUBLE,
-                STR_NEXT_STRING,
-                STR_NEXT_BOOLEAN,
-                STR_SELECT_NAME_AND_CONSUME,
-                STR_SELECT_STRING,
-                STR_CONSUME_KEY_SEPARATOR,
-                STR_CONSUME_ARRAY_SEPARATOR,
-                STR_NEXT_FLOAT,
-                STR_PEEK_STRING_FIELD,
-                STR_IS_NEXT_NULL_VALUE,
-                STR_CONSUME_NULL,
-                STR_IGNORE,
-                DECODE_RESILIENT
+                C.PKG_PARSER,
+                C.STR_BEGIN_OBJECT,
+                C.STR_END_OBJECT,
+                C.STR_BEGIN_ARRAY,
+                C.STR_END_ARRAY,
+                C.STR_HAS_NEXT,
+                C.STR_SKIP_VALUE,
+                C.STR_READ_LIST,
+                C.STR_READ_MAP,
+                C.STR_NEXT_KEY,
+                C.STR_NEXT_INT,
+                C.STR_NEXT_LONG,
+                C.STR_NEXT_DOUBLE,
+                C.STR_NEXT_STRING,
+                C.STR_NEXT_BOOLEAN,
+                C.STR_SELECT_NAME_AND_CONSUME,
+                C.STR_SELECT_STRING,
+                C.STR_CONSUME_KEY_SEPARATOR,
+                C.STR_CONSUME_ARRAY_SEPARATOR,
+                C.STR_NEXT_FLOAT,
+                C.STR_PEEK_STRING_FIELD,
+                C.STR_IS_NEXT_NULL_VALUE,
+                C.STR_CONSUME_NULL,
+                C.STR_IGNORE,
+                C.DECODE_RESILIENT
             )
-            .addImport(PKG_EXCEPTION, STR_GHOST_JSON_EXCEPTION)
-            .addImport(OKIO_PACKAGE, STR_BYTESTRING_IMPORT)
+            .addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
+            .addImport(C.OKIO_PACKAGE, C.STR_BYTESTRING_IMPORT)
             .addType(buildSerializerObject(serializerName))
             .build()
     }
@@ -144,16 +146,16 @@ internal class GhostCodeGenerator(
         val names = properties.map { it.jsonName }
         val (shift, multiplier) = findPerfectHash(names)
 
-        val optionsClass = readerClass.peerClass(STR_OPTIONS_CLASS)
+        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
         val optionsBuilder = CodeBlock.builder()
-            .add(STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
+            .add(C.STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
             .indent()
 
         properties.forEachIndexed { index, prop ->
-            val comma = if (index < properties.size - 1) STR_COMMA else STR_EMPTY
-            optionsBuilder.add("$STR_FORMAT_S$comma$STR_NEWLINE", prop.jsonName)
+            val comma = if (index < properties.size - 1) C.STR_COMMA else C.STR_EMPTY
+            optionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, prop.jsonName)
         }
-        optionsBuilder.unindent().add(STR_PAREN_CLOSE)
+        optionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
 
         val serializeEmitter = SerializeCodeEmitter(
             properties,
@@ -172,22 +174,22 @@ internal class GhostCodeGenerator(
         )
 
         val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
-            .addKdoc(STR_KDOC_HIGH_PERF, originalClassName)
-            .addKdoc(STR_KDOC_GENERATED)
+            .addKdoc(C.STR_KDOC_HIGH_PERF, originalClassName)
+            .addKdoc(C.STR_KDOC_GENERATED)
             .addSuperinterface(
                 serializerInterface
                     .parameterizedBy(originalClassName)
             )
             .addProperty(
-                PropertySpec.builder(STR_TYPE_NAME_PROP, String::class)
+                PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer(MARKER, finalTypeName)
+                    .initializer(C.MARKER, finalTypeName)
                     .build()
             )
             .addProperty(
                 PropertySpec.builder(
-                    STR_OPTIONS,
-                    readerClass.peerClass(STR_OPTIONS_CLASS)
+                    C.STR_OPTIONS,
+                    readerClass.peerClass(C.STR_OPTIONS_CLASS)
                 )
                     .addModifiers(KModifier.PRIVATE)
                     .initializer(optionsBuilder.build())
@@ -196,20 +198,20 @@ internal class GhostCodeGenerator(
 
         if (isEnum && enumValues != null) {
             val enumOptionsBuilder = CodeBlock.builder()
-                .add(STR_OPTIONS_OF, optionsClass)
+                .add(C.STR_OPTIONS_OF, optionsClass)
                 .indent()
 
             val values = enumValues.values.toList()
             values.forEachIndexed { index, serialName ->
-                val comma = if (index < values.size - 1) STR_COMMA else STR_EMPTY
-                enumOptionsBuilder.add("$STR_FORMAT_S$comma$STR_NEWLINE", serialName)
+                val comma = if (index < values.size - 1) C.STR_COMMA else C.STR_EMPTY
+                enumOptionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, serialName)
             }
-            enumOptionsBuilder.unindent().add(STR_PAREN_CLOSE)
+            enumOptionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
 
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
-                    STR_ENUM_OPTIONS,
-                    readerClass.peerClass(STR_OPTIONS_CLASS)
+                    C.STR_ENUM_OPTIONS,
+                    readerClass.peerClass(C.STR_OPTIONS_CLASS)
                 )
                     .addModifiers(KModifier.PRIVATE)
                     .initializer(enumOptionsBuilder.build())
@@ -219,13 +221,16 @@ internal class GhostCodeGenerator(
 
         deserializeEmitter.build(typeSpecBuilder)
 
+        serializeEmitter.injectContextualSerializers(typeSpecBuilder)
+        serializeEmitter.injectHeaderConstants(typeSpecBuilder)
+
         return typeSpecBuilder
             .addFunction(serializeEmitter.build(streamingWriterClass))
             .addFunction(serializeEmitter.build(flatWriterClass))
             .addFunction(
-                FunSpec.builder(STR_WARM_UP)
+                FunSpec.builder(C.STR_WARM_UP)
                     .addModifiers(KModifier.OVERRIDE)
-                    .addCode(STR_WARM_UP_BODY, readerClass)
+                    .addCode(C.STR_WARM_UP_BODY, readerClass)
                     .build()
             )
             .build()
@@ -233,115 +238,35 @@ internal class GhostCodeGenerator(
 
     @Suppress("ReplaceSizeCheckWithIsNotEmpty")
     private fun findPerfectHash(names: List<String>): Pair<Int, Int> {
-        if (names.isEmpty()) return 0 to 31
+        if (names.isEmpty()) return 0 to C.HASH_MULTIPLIER_START
         val rawBytes = names.map { it.encodeToByteArray() }
 
         // Brute force search for a collision-free multiplier and shift for 4-byte hashing
-        for (m in 31..2000 step 2) {
-            for (s in 0..16) {
-                val dispatch = IntArray(1024) { -1 }
+        for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
+            for (shift in 0..C.HASH_SHIFT_LIMIT) {
+                val dispatch = IntArray(C.HASH_TABLE_SIZE) { -1 }
                 var collision = false
-                for (i in rawBytes.indices) {
-                    val bytes = rawBytes[i]
+                for (index in rawBytes.indices) {
+                    val bytes = rawBytes[index]
                     if (bytes.isNotEmpty()) {
                         var key = 0
-                        if (bytes.size >= 1) key = key or (bytes[0].toInt() and 0xFF)
-                        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and 0xFF) shl 8)
-                        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and 0xFF) shl 16)
-                        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and 0xFF) shl 24)
+                        if (bytes.size >= 1) key = key or (bytes[0].toInt() and C.BYTE_MASK)
+                        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
+                        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
+                        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
 
-                        val h = ((key * m + bytes.size) shr s) and 1023
-                        if (dispatch[h] == -1) {
-                            dispatch[h] = i
+                        val hash = ((key * multiplier + bytes.size) shr shift) and C.HASH_MASK
+                        if (dispatch[hash] == -1) {
+                            dispatch[hash] = index
                         } else {
                             collision = true
                             break
                         }
                     }
                 }
-                if (!collision) return s to m
+                if (!collision) return shift to multiplier
             }
         }
-        return 0 to 31 // Fallback
-    }
-
-    companion object {
-        private const val PKG_PARSER = "com.ghost.serialization.parser"
-        private const val PKG_WRITER = "com.ghost.serialization.writer"
-        private const val PKG_CONTRACT = "com.ghost.serialization.contract"
-        private const val PKG_EXCEPTION = "com.ghost.serialization.exception"
-        private const val PKG_GHOST = "com.ghost.serialization"
-        private const val OKIO_PACKAGE = "okio"
-        private const val DECODE_RESILIENT = "decodeResilient"
-        private const val STR_GHOST_SERIALIZER = "GhostSerializer"
-        private const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"
-        private const val STR_GHOST_JSON_FLAT_WRITER = "GhostJsonFlatWriter"
-        private const val STR_GHOST_JSON_READER = "GhostJsonReader"
-        private const val STR_SERIALIZER_SUFFIX = "Serializer"
-        private const val STR_BEGIN_OBJECT = "beginObject"
-        private const val STR_END_OBJECT = "endObject"
-        private const val STR_BEGIN_ARRAY = "beginArray"
-        private const val STR_END_ARRAY = "endArray"
-        private const val STR_HAS_NEXT = "hasNext"
-        private const val STR_IS_NEXT_NULL_VALUE = "isNextNullValue"
-        private const val STR_CONSUME_NULL = "consumeNull"
-        private const val STR_SKIP_VALUE = "skipValue"
-        private const val STR_READ_LIST = "readList"
-        private const val STR_READ_MAP = "readMap"
-        private const val STR_NEXT_KEY = "nextKey"
-        private const val STR_NEXT_INT = "nextInt"
-        private const val STR_NEXT_LONG = "nextLong"
-        private const val STR_NEXT_DOUBLE = "nextDouble"
-        private const val STR_NEXT_STRING = "nextString"
-        private const val STR_NEXT_BOOLEAN = "nextBoolean"
-        private const val STR_SELECT_NAME_AND_CONSUME = "selectNameAndConsume"
-        private const val STR_SELECT_STRING = "selectString"
-        private const val STR_CONSUME_KEY_SEPARATOR = "consumeKeySeparator"
-        private const val STR_CONSUME_ARRAY_SEPARATOR = "consumeArraySeparator"
-        private const val STR_NEXT_FLOAT = "nextFloat"
-        private const val STR_PEEK_STRING_FIELD = "peekStringField"
-        private const val STR_IGNORE = "ignore"
-        private const val STR_GHOST_JSON_EXCEPTION = "GhostJsonException"
-        private const val STR_BYTESTRING_IMPORT = "ByteString.Companion.encodeUtf8"
-        private const val STR_OPTIONS_OF = "%T.of(\n"
-        private const val STR_OPTIONS_OF_SEEDS = "%T.of(%L, %L,\n"
-        private const val STR_COMMA = ","
-        private const val STR_EMPTY = ""
-        private const val STR_FORMAT_S = "%S"
-        private const val STR_NEWLINE = "\n"
-        private const val STR_PAREN_CLOSE = ")"
-        private const val STR_KDOC_HIGH_PERF = "High-performance serializer for [%T].\n"
-        private const val STR_KDOC_GENERATED =
-            "Generated by GhostSerialization. Do not modify manually.\n"
-        private const val STR_OPTIONS = "OPTIONS"
-        private const val STR_OPTIONS_CLASS = "JsonReaderOptions"
-        private const val STR_ENUM_OPTIONS = "ENUM_OPTIONS"
-        private const val STR_WARM_UP = "warmUp"
-        private val STR_WARM_UP_BODY = """
-            |try {
-            |  val reader = %T("{}".encodeToByteArray())
-            |  deserialize(reader).ignore()
-            |} catch (e: Exception) {}
-        """.trimMargin()
-        private const val MARKER = "%S"
-
-        private const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
-        private const val ARG_DISCRIMINATOR = "discriminator"
-        private const val STR_DEFAULT_DISCRIMINATOR = "type"
-        private const val ARG_NAME = "name"
-        private const val PKG_KOTLIN = "kotlin"
-        private const val STR_OPT_IN = "OptIn"
-        private const val STR_INTERNAL_GHOST_API = "InternalGhostApi"
-        private const val STR_TYPE_NAME_PROP = "typeName"
-        private const val STR_UNDERSCORE = "_"
-        private const val STR_SUPPRESS_FORMAT = "$MARKER, $MARKER, $MARKER, $MARKER, $MARKER, $MARKER, $MARKER, $MARKER"
-        private const val LINT_UNUSED_VARIABLE = "UNUSED_VARIABLE"
-        private const val LINT_UNUSED_EXPRESSION = "UNUSED_EXPRESSION"
-        private const val LINT_UNCHECKED_CAST = "UNCHECKED_CAST"
-        private const val LINT_USELESS_CAST = "USELESS_CAST"
-        private const val LINT_UNNECESSARY_NOT_NULL_ASSERTION = "UNNECESSARY_NOT_NULL_ASSERTION"
-        private const val LINT_UNUSED = "unused"
-        private const val LINT_NAME_SHADOWING = "NAME_SHADOWING"
-        private const val LINT_UNUSED_RESULT = "UNUSED_RESULT"
+        return 0 to C.HASH_MULTIPLIER_START // Fallback
     }
 }

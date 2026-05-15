@@ -47,7 +47,12 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
     return when {
         isPrimitive -> "${C.STR_UNDERSCORE}$kotlinName"
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
+            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+                C.STR_EMPTY
+            } else {
+                C.STR_BANG_BANG
+            }
+
             "$typeName(${C.STR_UNDERSCORE}$kotlinName$bang)"
         }
         else -> "${C.STR_UNDERSCORE}$kotlinName${C.STR_BANG_BANG}"

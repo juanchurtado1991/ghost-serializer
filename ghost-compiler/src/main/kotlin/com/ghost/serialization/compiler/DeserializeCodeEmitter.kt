@@ -24,7 +24,7 @@ internal class DeserializeCodeEmitter(
     private val isValue: Boolean,
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
-    private val discriminatorKey: String = "type"
+    private val discriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     fun build(typeSpecBuilder: TypeSpec.Builder) {
@@ -35,11 +35,14 @@ internal class DeserializeCodeEmitter(
             isValue -> emitValue(body)
             isEnum -> emitEnum(body)
             properties.size > 40 -> {
-                FragmentedEmitter(properties, originalClassName, readerClass).emit(body, typeSpecBuilder)
-                return
+                val emitter = FragmentedEmitter(properties, originalClassName, readerClass)
+                emitter.emit(body, typeSpecBuilder)
+                emitter.injectContextualSerializers(typeSpecBuilder)
             }
             else -> {
-                StandardEmitter(properties, originalClassName, readerClass).emit(body, typeSpecBuilder)
+                val emitter = StandardEmitter(properties, originalClassName, readerClass)
+                emitter.emit(body, typeSpecBuilder)
+                emitter.injectContextualSerializers(typeSpecBuilder)
             }
         }
 
@@ -100,8 +103,8 @@ internal class DeserializeCodeEmitter(
         body.addStatement(C.STR_ENUM_SELECT_OPTIONS)
         body.beginControlFlow(C.STR_ENUM_WHEN)
 
-        properties.firstOrNull()?.enumValues?.entries?.forEachIndexed { i, entry ->
-            body.addStatement(C.TEMPLATE_ENUM_BRANCH, i, originalClassName, entry.key)
+        properties.firstOrNull()?.enumValues?.entries?.forEachIndexed { index, entry ->
+            body.addStatement(C.TEMPLATE_ENUM_BRANCH, index, originalClassName, entry.key)
         }
 
         body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)

@@ -27,5 +27,8 @@ internal data class GhostPropertyModel(
     val isSealedClass: Boolean = false,
     val sealedSubclasses: List<KSClassDeclaration> = emptyList(),
     val enumValues: Map<String, String>? = null,
-    val isResilient: Boolean = false
+    val isResilient: Boolean = false,
+    val isContextual: Boolean = false,
+    val customDecoder: String? = null,
+    val customEncoder: String? = null
 )

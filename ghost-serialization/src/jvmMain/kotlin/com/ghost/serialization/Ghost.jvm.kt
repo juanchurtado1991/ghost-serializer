@@ -23,7 +23,9 @@ actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
  * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
  */
 private fun acquireFlatWriterPair(): WriterSinkPair {
-    val pair = writerPool.get() ?: WriterSinkPair().also { writerPool.set(it) }
+    val pair = writerPool.get()
+        ?: WriterSinkPair().also { writerPool.set(it) }
+    
     pair.writer.reset()
     pair.byteWriter.reset()
     return pair
@@ -32,7 +34,12 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    val result = String(pair.byteWriter.array, 0, pair.byteWriter.size, Charsets.UTF_8)
+    val result = String(
+        pair.byteWriter.array,
+        0,
+        pair.byteWriter.size,
+        Charsets.UTF_8
+    )
     pair.byteWriter.reset()
     return result
 }
@@ -57,21 +64,44 @@ actual fun ghostInternalEncodeAndDrainTo(
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    sink.write(pair.byteWriter.array, 0, pair.byteWriter.size)
+    sink.write(
+        pair.byteWriter.array,
+        0,
+        pair.byteWriter.size
+    )
     pair.byteWriter.reset()
 }
 
-actual fun discoverRegistries(): List<GhostRegistry> {
-    val registries = linkedSetOf<GhostRegistry>()
+actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
+    object : Iterator<GhostRegistry> {
+        private var fast: GhostRegistry? = null
+        private var fastChecked = false
+        private var slow: Iterator<GhostRegistry>? = null
 
-    runCatching {
-        val loader = ServiceLoader
-            .load(GhostRegistry::class.java)
+        override fun hasNext(): Boolean {
+            if (!fastChecked) {
+                fastChecked = true
+                fast = runCatching {
+                    Class.forName("com.ghost.serialization.generated.GhostModuleRegistry_Default")
+                        .getField("INSTANCE")
+                        .get(null) as GhostRegistry
+                }.getOrNull()
+            }
+            if (fast != null) return true
 
-        registries.addAll(loader)
+            if (slow == null) {
+                slow = runCatching { ServiceLoader.load(GhostRegistry::class.java).iterator() }
+                    .getOrDefault(emptyList<GhostRegistry>().iterator())
+            }
+            return slow!!.hasNext()
+        }
+
+        override fun next(): GhostRegistry {
+            if (!hasNext()) throw NoSuchElementException()
+            fast?.let { fast = null; return it }
+            return slow!!.next()
+        }
     }
-
-    return registries.toList()
 }
 
 actual fun <T> ghostInternalUseReader(

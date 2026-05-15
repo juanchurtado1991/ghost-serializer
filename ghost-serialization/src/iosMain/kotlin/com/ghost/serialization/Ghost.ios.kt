@@ -2,53 +2,37 @@
 
 package com.ghost.serialization
 
-import android.annotation.SuppressLint
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
-import java.util.ServiceLoader
-import java.util.concurrent.ConcurrentHashMap
+import platform.objc.objc_sync_enter
+import platform.objc.objc_sync_exit
+import kotlin.native.concurrent.ThreadLocal
 
-private const val REGISTRY_CLASS =
-    "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
-private const val INSTANCE_FILED = "INSTANCE"
+@ThreadLocal
+private var cachedReader: GhostJsonReader? = null
 
-private val writerPool = ThreadLocal<WriterSinkPair>()
-private val readerPool = ThreadLocal<GhostJsonReader>()
+@ThreadLocal
+private var cachedWriterPair: WriterSinkPair? = null
 
-actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
+actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
-actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
+actual fun <K, V> createAtomicMap(): MutableMap<K, V> = mutableMapOf()
 
-@SuppressLint("NewApi")
-actual fun discoverRegistries(): List<GhostRegistry> {
-    val registries = linkedSetOf<GhostRegistry>()
-
-    runCatching {
-        val instance = Class
-            .forName(REGISTRY_CLASS)
-            .getDeclaredField(INSTANCE_FILED)
-            .get(null) as GhostRegistry
-        registries.add(instance)
-    }
-
-    runCatching {
-        val loader = ServiceLoader
-            .load(GhostRegistry::class.java)
-
-        registries.addAll(loader)
-    }
-
-    return registries.toList()
+actual fun <T> runSynchronized(lock: Any, block: () -> T): T = try {
+    objc_sync_enter(lock)
+    block()
+} finally {
+    objc_sync_exit(lock)
 }
 
 actual fun <T> ghostInternalUseReader(
     bytes: ByteArray, block: (GhostJsonReader) -> T
 ): T {
-    val reader = readerPool.get()
-        ?: GhostJsonReader(bytes).also { readerPool.set(it) }
+    val reader = cachedReader
+        ?: GhostJsonReader(bytes).also { cachedReader = it }
     reader.reset(bytes)
     return block(reader)
 }
@@ -59,19 +43,16 @@ actual fun <T> ghostInternalUseSource(
 ): T {
     source.request(Long.MAX_VALUE)
     val bytes = source.buffer.readByteArray()
-    val reader = readerPool.get()
-        ?: GhostJsonReader(bytes).also { readerPool.set(it) }
+
+    val reader = cachedReader
+        ?: GhostJsonReader(bytes).also { cachedReader = it }
+
     reader.reset(bytes)
     return block(reader)
 }
 
-/**
- * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
- * and returns it. The pair survives across calls so the underlying
- * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
- */
 private fun acquireFlatWriterPair(): WriterSinkPair {
-    val pair = writerPool.get() ?: WriterSinkPair().also { writerPool.set(it) }
+    val pair = cachedWriterPair ?: WriterSinkPair().also { cachedWriterPair = it }
     pair.writer.reset()
     pair.byteWriter.reset()
     return pair
@@ -80,7 +61,7 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    val result = String(pair.byteWriter.array, 0, pair.byteWriter.size, Charsets.UTF_8)
+    val result = pair.byteWriter.array.decodeToString(0, pair.byteWriter.size)
     pair.byteWriter.reset()
     return result
 }

@@ -1,8 +1,11 @@
+@file:Suppress("unused", "SameParameterValue")
+
 package com.ghost.serialization.compiler
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
@@ -21,9 +24,12 @@ internal class FragmentedEmitter(
     readerClass: ClassName
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    @Suppress("unused")
     fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val contextClassName = ClassName(C.STR_EMPTY, C.STR_CTX_CLASS)
+        val contextClassName = ClassName(
+            C.STR_EMPTY,
+            C.STR_CTX_CLASS
+        )
+
         val contextBuilder = TypeSpec.classBuilder(contextClassName)
             .addModifiers(KModifier.PRIVATE)
 
@@ -56,13 +62,45 @@ internal class FragmentedEmitter(
         val chunkSize = 40
         val chunks = properties.chunked(chunkSize)
         chunks.forEachIndexed { chunkIdx, chunkProps ->
-            emitChunkFunction(chunkIdx, chunkProps, chunkSize, readerClass, contextClassName, typeSpecBuilder)
+            emitChunkFunction(
+                chunkIdx,
+                chunkProps,
+                chunkSize,
+                readerClass,
+                contextClassName,
+                typeSpecBuilder
+            )
         }
 
-        emitMainFunction(chunks, chunkSize, typeSpecBuilder)
+        body.addStatement(C.STR_CTX_INIT)
+        body.addStatement(C.STR_BEGIN_OBJECT)
+        body.beginControlFlow(C.STR_WHILE_TRUE)
+        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
+        body.beginControlFlow(C.STR_WHEN_INDEX)
+        
+        chunks.forEachIndexed { chunkIdx, chunkProps ->
+            val start = chunkIdx * chunkSize
+            val end = start + chunkProps.size - 1
+            body.addStatement(
+                C.TEMPLATE_CHUNK_CALL,
+                start,
+                end,
+                "${C.STR_DECODE_CHUNK_PREFIX}$chunkIdx"
+            )
+        }
+
+        body.addStatement(C.STR_MINUS_ONE_BREAK)
+        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
+        body.addStatement(C.STR_SKIP_VALUE)
+        body.endControlFlow()
+        body.endControlFlow() // when
+        body.endControlFlow() // while
+        body.addStatement(C.STR_END_OBJECT)
+
+        emitValidation(body, typeSpecBuilder)
+        emitReturn(body, typeSpecBuilder)
     }
 
-    @Suppress("SameParameterValue")
     private fun emitChunkFunction(
         chunkIdx: Int,
         chunkProps: List<GhostPropertyModel>,
@@ -75,7 +113,7 @@ internal class FragmentedEmitter(
             .addModifiers(KModifier.PRIVATE)
             .addParameter(C.STR_READER_VAR, readerClass)
             .addParameter(C.STR_CTX_VAR, contextClassName)
-            .addParameter(C.STR_INDEX_VAR, com.squareup.kotlinpoet.INT)
+            .addParameter(C.STR_INDEX_VAR, INT)
 
         val chunkBody = CodeBlock.builder()
         chunkBody.beginControlFlow(C.STR_WHEN_INDEX_PLAIN)
@@ -85,7 +123,11 @@ internal class FragmentedEmitter(
             val maskIdx = globalIndex / 64
             val bitIdx = globalIndex % 64
             val bitMask = 1L shl bitIdx
-            val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
+            val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+                C.STR_BIT_MASK_MIN_LONG
+            } else {
+                "${bitMask}L"
+            }
             
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
             if (prop.isResilient) {
@@ -104,46 +146,6 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(chunkFun.build())
     }
 
-    @Suppress("SameParameterValue")
-    private fun emitMainFunction(
-        chunks: List<List<GhostPropertyModel>>,
-        chunkSize: Int,
-        typeSpecBuilder: TypeSpec.Builder
-    ) {
-        val mainBody = CodeBlock.builder()
-        mainBody.addStatement(C.STR_CTX_INIT)
-        mainBody.addStatement(C.STR_BEGIN_OBJECT)
-        mainBody.beginControlFlow(C.STR_WHILE_TRUE)
-        mainBody.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
-        mainBody.beginControlFlow(C.STR_WHEN_INDEX)
-        
-        chunks.forEachIndexed { chunkIdx, chunkProps ->
-            val start = chunkIdx * chunkSize
-            val end = start + chunkProps.size - 1
-            mainBody.addStatement(C.TEMPLATE_CHUNK_CALL, start, end, "${C.STR_DECODE_CHUNK_PREFIX}$chunkIdx")
-        }
-        mainBody.addStatement(C.STR_MINUS_ONE_BREAK)
-        mainBody.beginControlFlow(C.STR_MINUS_TWO_ARROW)
-        mainBody.addStatement(C.STR_SKIP_VALUE)
-        mainBody.endControlFlow()
-        mainBody.endControlFlow() // when
-        mainBody.endControlFlow() // while
-        mainBody.addStatement(C.STR_END_OBJECT)
-
-        emitValidation(mainBody, typeSpecBuilder)
-        emitReturn(mainBody, typeSpecBuilder)
-
-        typeSpecBuilder.addFunction(
-            FunSpec.builder(C.STR_DESERIALIZE)
-                .addKdoc(C.STR_KDOC_DESERIALIZE, originalClassName)
-                .addModifiers(KModifier.OVERRIDE)
-                .addParameter(C.STR_READER, readerClass)
-                .returns(originalClassName)
-                .addCode(mainBody.build())
-                .build()
-        )
-    }
-
     private fun emitValidation(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val maskCount = (properties.size + 63) / 64
         val requiredMasks = LongArray(maskCount)
@@ -158,13 +160,24 @@ internal class FragmentedEmitter(
         for (i in 0 until maskCount) {
             val reqMask = requiredMasks[i]
             if (reqMask != 0L) {
-                val reqMaskStr = if (reqMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${reqMask}L"
+                val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
+                    C.STR_BIT_MASK_MIN_LONG
+                } else {
+                    "${reqMask}L"
+                }
+
                 body.beginControlFlow("if ((ctx._mask$i and $reqMaskStr) != $reqMaskStr)")
                 properties.forEachIndexed { index, it ->
                     if (!it.isNullable && !it.hasDefaultValue && (index / 64) == i) {
                         val bitIdx = index % 64
                         val bitMask = 1L shl bitIdx
-                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
+
+                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+                            C.STR_BIT_MASK_MIN_LONG
+                        } else {
+                            "${bitMask}L"
+                        }
+
                         body.beginControlFlow(C.TEMPLATE_IF_MASK_MISSING, i, bitMaskStr)
                         body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + it.jsonName + C.STR_REQ_FIELD_2)
                         body.endControlFlow()

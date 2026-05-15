@@ -202,7 +202,7 @@ class GhostJsonReader(
             nextTokenByte = getByte(position)
         } else {
             position = limit
-            nextTokenByte = -1
+            nextTokenByte = MATCH_END
         }
     }
 
@@ -239,12 +239,9 @@ class GhostJsonReader(
     }
 
     fun peekNextToken(): Int {
-        if (nextTokenByte != -1) return nextTokenByte
+        val cached = nextTokenByte
+        if (cached != -1) return cached
         skipWhitespace()
-        if (position >= limit) {
-            nextTokenByte = MATCH_END
-            return MATCH_END
-        }
         return nextTokenByte
     }
 
