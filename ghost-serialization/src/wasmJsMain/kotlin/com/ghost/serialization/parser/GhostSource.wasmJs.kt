@@ -7,10 +7,9 @@ import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.HASH_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ASCII_LIMIT
-import com.ghost.serialization.parser.GhostJsonConstants.NEEDS_ESCAPE_MASK_LOW
-import com.ghost.serialization.parser.GhostJsonConstants.NEEDS_ESCAPE_MASK_HIGH
+import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_SHIFT
+import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_UNIT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_INDEX_MASK
-import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_WIDTH
 import com.ghost.serialization.parser.GhostJsonConstants.WHITESPACE_MASK
 
 @InternalGhostApi
@@ -29,9 +28,6 @@ class WasmByteArraySource(val data: ByteArray) : GhostSource {
         return expected.rangeEquals(0, data, start, expected.size)
     }
 
-    override fun copyTo(sink: ByteArray, sinkOffset: Int, start: Int, count: Int) {
-        data.copyInto(sink, sinkOffset, start, start + count)
-    }
 
     override fun findNextNonWhitespace(position: Int, limit: Int): Int {
         val sourceData = data
@@ -64,137 +60,92 @@ class WasmByteArraySource(val data: ByteArray) : GhostSource {
     override fun findClosingQuote(position: Int, limit: Int): Int {
         val sourceData = data
         var currentPos = position
-        val maskLow = NEEDS_ESCAPE_MASK_LOW
-        val maskHigh = NEEDS_ESCAPE_MASK_HIGH
-        val indexMask = BITMASK_INDEX_MASK
-        val bitmaskWidth = BITMASK_WIDTH
-
+        val masks = GhostJsonConstants.ESCAPE_MASKS
         while (currentPos + 3 < limit) {
             val b0 = sourceData[currentPos].toInt() and BYTE_MASK
-            if (b0 < ASCII_LIMIT) {
-                if (((if (b0.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b0 and indexMask)) and 1L != 0L) {
-                    if (b0 == QUOTE_INT) return currentPos
-                    return -1
-                }
+            if (b0 < ASCII_LIMIT && (masks[b0 shr BITMASK_SHIFT] shr (b0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b0 == QUOTE_INT) return currentPos
+                return -1
             }
             val b1 = sourceData[currentPos + 1].toInt() and BYTE_MASK
-            if (b1 < ASCII_LIMIT) {
-                if (((if (b1.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b1 and indexMask)) and 1L != 0L) {
-                    if (b1 == QUOTE_INT) return currentPos + 1
-                    return -1
-                }
+            if (b1 < ASCII_LIMIT && (masks[b1 shr BITMASK_SHIFT] shr (b1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b1 == QUOTE_INT) return currentPos + 1
+                return -1
             }
             val b2 = sourceData[currentPos + 2].toInt() and BYTE_MASK
-            if (b2 < ASCII_LIMIT) {
-                if (((if (b2.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b2 and indexMask)) and 1L != 0L) {
-                    if (b2 == QUOTE_INT) return currentPos + 2
-                    return -1
-                }
+            if (b2 < ASCII_LIMIT && (masks[b2 shr BITMASK_SHIFT] shr (b2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b2 == QUOTE_INT) return currentPos + 2
+                return -1
             }
             val b3 = sourceData[currentPos + 3].toInt() and BYTE_MASK
-            if (b3 < ASCII_LIMIT) {
-                if (((if (b3.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b3 and indexMask)) and 1L != 0L) {
-                    if (b3 == QUOTE_INT) return currentPos + 3
-                    return -1
-                }
+            if (b3 < ASCII_LIMIT && (masks[b3 shr BITMASK_SHIFT] shr (b3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b3 == QUOTE_INT) return currentPos + 3
+                return -1
             }
             currentPos += 4
         }
         while (currentPos < limit) {
             val b = sourceData[currentPos].toInt() and BYTE_MASK
-            if (b < ASCII_LIMIT) {
-                if (((if (b.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b and indexMask)) and 1L != 0L) {
-                    if (b == QUOTE_INT) return currentPos
-                    return -1
-                }
+            if (b < ASCII_LIMIT && (masks[b shr BITMASK_SHIFT] shr (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b == QUOTE_INT) return currentPos
+                return -1
             }
             currentPos++
         }
         return -1
     }
 
-    override fun scanString(start: Int, limit: Int, reader: GhostJsonReader): Int {
-        reader.beginUnescapedStringContentScan()
+    override fun scanString(start: Int, limit: Int): Long {
         val localData = data
         var pos = start
         var hash = 0
-        val maskLow = NEEDS_ESCAPE_MASK_LOW
-        val maskHigh = NEEDS_ESCAPE_MASK_HIGH
-        val indexMask = BITMASK_INDEX_MASK
-        val bitmaskWidth = BITMASK_WIDTH
+        var is7Bit = true
+        val masks = GhostJsonConstants.ESCAPE_MASKS
         val shift = HASH_SHIFT
-
+        val asciiLimit = ASCII_LIMIT
         while (pos + 3 < limit) {
             val b0 = localData[pos].toInt() and BYTE_MASK
-            if (b0 < ASCII_LIMIT) {
-                if (((if (b0.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b0 and indexMask)) and 1L != 0L) {
-                    if (b0 == QUOTE_INT) { reader.position = pos; return hash }
-                    return -1
-                }
-            } else reader.lastScanContentWas7BitOnly = false
+            if (b0 < asciiLimit && (masks[b0 shr BITMASK_SHIFT] shr (b0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b0 == QUOTE_INT) return GhostJsonConstants.packScanResult(pos - start, hash, is7Bit)
+                return -1L
+            } else if (b0 >= asciiLimit) is7Bit = false
             hash = (hash shl shift) - hash + b0
 
             val b1 = localData[pos + 1].toInt() and BYTE_MASK
-            if (b1 < ASCII_LIMIT) {
-                if (((if (b1.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b1 and indexMask)) and 1L != 0L) {
-                    if (b1 == QUOTE_INT) { reader.position = pos + 1; return hash }
-                    return -1
-                }
-            } else reader.lastScanContentWas7BitOnly = false
+            if (b1 < asciiLimit && (masks[b1 shr BITMASK_SHIFT] shr (b1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b1 == QUOTE_INT) return GhostJsonConstants.packScanResult(pos + 1 - start, hash, is7Bit)
+                return -1L
+            } else if (b1 >= asciiLimit) is7Bit = false
             hash = (hash shl shift) - hash + b1
 
             val b2 = localData[pos + 2].toInt() and BYTE_MASK
-            if (b2 < ASCII_LIMIT) {
-                if (((if (b2.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b2 and indexMask)) and 1L != 0L) {
-                    if (b2 == QUOTE_INT) { reader.position = pos + 2; return hash }
-                    return -1
-                }
-            } else reader.lastScanContentWas7BitOnly = false
+            if (b2 < asciiLimit && (masks[b2 shr BITMASK_SHIFT] shr (b2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b2 == QUOTE_INT) return GhostJsonConstants.packScanResult(pos + 2 - start, hash, is7Bit)
+                return -1L
+            } else if (b2 >= asciiLimit) is7Bit = false
             hash = (hash shl shift) - hash + b2
 
             val b3 = localData[pos + 3].toInt() and BYTE_MASK
-            if (b3 < ASCII_LIMIT) {
-                if (((if (b3.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b3 and indexMask)) and 1L != 0L) {
-                    if (b3 == QUOTE_INT) { reader.position = pos + 3; return hash }
-                    return -1
-                }
-            } else reader.lastScanContentWas7BitOnly = false
+            if (b3 < asciiLimit && (masks[b3 shr BITMASK_SHIFT] shr (b3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b3 == QUOTE_INT) return GhostJsonConstants.packScanResult(pos + 3 - start, hash, is7Bit)
+                return -1L
+            } else if (b3 >= asciiLimit) is7Bit = false
             hash = (hash shl shift) - hash + b3
 
             pos += 4
         }
         while (pos < limit) {
             val b = localData[pos].toInt() and BYTE_MASK
-            if (b < ASCII_LIMIT) {
-                if (((if (b.toLong() < bitmaskWidth) maskLow else maskHigh) shr (b and indexMask)) and 1L != 0L) {
-                    if (b == QUOTE_INT) { reader.position = pos; return hash }
-                    return -1
-                }
-            } else reader.lastScanContentWas7BitOnly = false
+            if (b < asciiLimit && (masks[b shr BITMASK_SHIFT] shr (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+                if (b == QUOTE_INT) return GhostJsonConstants.packScanResult(pos - start, hash, is7Bit)
+                return -1L
+            } else if (b >= asciiLimit) is7Bit = false
             hash = (hash shl shift) - hash + b
             pos++
         }
-        return -1
+        return -1L
     }
 
-    override fun calculateHash(start: Int, length: Int): Int {
-        val localData = data
-        var hashResult = 0
-        var index = 0
-        val shift = HASH_SHIFT
-        while (index + 3 < length) {
-            hashResult = (hashResult shl shift) - hashResult + (localData[start + index].toInt() and BYTE_MASK)
-            hashResult = (hashResult shl shift) - hashResult + (localData[start + index + 1].toInt() and BYTE_MASK)
-            hashResult = (hashResult shl shift) - hashResult + (localData[start + index + 2].toInt() and BYTE_MASK)
-            hashResult = (hashResult shl shift) - hashResult + (localData[start + index + 3].toInt() and BYTE_MASK)
-            index += 4
-        }
-        while (index < length) {
-            hashResult = (hashResult shl shift) - hashResult + (localData[start + index].toInt() and BYTE_MASK)
-            index++
-        }
-        return hashResult
-    }
 
     override fun contentEqualsString(start: Int, length: Int, str: String): Boolean {
         if (str.length != length) return false

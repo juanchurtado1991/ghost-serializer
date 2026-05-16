@@ -28,7 +28,7 @@ internal object GhostEmitterConstants {
     const val STR_ZERO_F = "0.0f"
     const val STR_FALSE = "false"
     const val STR_VAR_UNDERSCORE = "var _"
-    const val TEMPLATE_VAR_INIT = ": %T = %L"
+    const val TEMPLATE_VAR_TYPE_INIT = ": %T = %L"
     const val STR_BEGIN_OBJECT = "reader.beginObject()"
     const val STR_WHILE_TRUE = "while (true)"
     const val STR_SELECT_NAME_AND_CONSUME = "val index = reader.selectNameAndConsume(OPTIONS)"
@@ -201,6 +201,15 @@ internal object GhostEmitterConstants {
     const val STR_IGNORE = "ignore"
     const val STR_IGNORE_CALL = "%L.ignore()"
     const val STR_RETURN_L = "return %L"
+    
+    const val STR_LIST = "List"
+    const val STR_SET = "Set"
+    const val STR_INT = "Int"
+    const val STR_LONG_TYPE = "Long"
+    const val STR_STRING = "String"
+    const val STR_DOUBLE = "Double"
+    const val STR_FLOAT = "Float"
+    const val STR_BOOLEAN = "Boolean"
 
     const val TEMPLATE_PROGUARD_KEEP = """
         # GhostSerialization Robust Keep Rules
@@ -237,10 +246,7 @@ internal object GhostEmitterConstants {
     const val K_ANY = "kotlin.Any"
     const val STR_KOTLIN_PREFIX = "kotlin."
     const val STR_JAVA_PREFIX = "java."
-    const val STR_WRITER_WRITE_FIRST = "writer.writeFirstField(%L, value.%L)"
     const val STR_WRITER_WRITE_NAME_RAW = "writer.writeNameRaw(%L)"
-    const val STR_WRITER_WRITE_FIELD_COMMA = "writer.writeFieldWithComma(%L, value.%L)"
-    const val STR_WRITER_WRITE_NAME_RAW_COMMA = "writer.writeNameRawWithComma(%L)"
     const val STR_WRITER_WRITE_FIELD = "writer.writeField(%L, value.%L)"
     const val STR_H_FIRST = "STR_H_F_"
     const val STR_H_COMMA = "STR_H_C_"
@@ -252,7 +258,6 @@ internal object GhostEmitterConstants {
     const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"
     const val STR_WRITE_NAME_RAW = "writer.name(%L)"
     const val STR_WRITE_NAME_RAW_NULL = "writer.writeNameRaw(%L).nullValue()"
-    const val TEMPLATE_IF_NOT_NULL = "if (%L != null)"
     const val STR_CUSTOM_ENCODER_CALL = "%T.%L(writer, %L)"
     const val STR_VAR_ITEM = "item"
     const val STR_VAR_MAP_VAL = "mapVal"
@@ -260,6 +265,11 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_H_FIRST_INIT = "%N.writerFirstHeaders[0]"
     const val TEMPLATE_H_COMMA_INIT = "%N.writerHeadersWithComma[%L]"
     const val TEMPLATE_H_STD_INIT = "%N.writerHeaders[%L]"
+    
+    const val TEMPLATE_ENCODE_UTF8 = "%S.encodeUtf8()"
+    const val FMT_JSON_FIELD = "\"%s\":"
+    const val FMT_JSON_FIELD_COMMA = ",\"%s\":"
+    const val STR_BYTESTRING = "ByteString"
     
     // Analyzer Constants
     const val STR_ERR_CLASS_1 = "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class', 'value class' or 'enum class'. "
@@ -333,6 +343,20 @@ internal object GhostEmitterConstants {
     const val STR_OPTIONS = "OPTIONS"
     const val STR_OPTIONS_PREFIX = "OPTIONS_"
     const val STR_OPTIONS_CLASS = "JsonReaderOptions"
+    
+    // Import names (raw function names)
+    const val STR_BEGIN_OBJECT_NAME = "beginObject"
+    const val STR_END_OBJECT_NAME = "endObject"
+    const val STR_SELECT_NAME_AND_CONSUME_NAME = "selectNameAndConsume"
+    const val STR_SKIP_VALUE_NAME = "skipValue"
+    const val STR_NEXT_INT_NAME = "nextInt"
+    const val STR_NEXT_LONG_NAME = "nextLong"
+    const val STR_NEXT_STRING_NAME = "nextString"
+    const val STR_NEXT_DOUBLE_NAME = "nextDouble"
+    const val STR_NEXT_FLOAT_NAME = "nextFloat"
+    const val STR_NEXT_BOOLEAN_NAME = "nextBoolean"
+    const val STR_CONSUME_NULL_NAME = "consumeNull"
+    const val STR_IS_NEXT_NULL_VALUE_NAME = "isNextNullValue"
     const val STR_ENUM_OPTIONS = "ENUM_OPTIONS"
     const val STR_WARM_UP = "warmUp"
     const val STR_EMPTY_OBJ = "{}"
@@ -345,6 +369,7 @@ internal object GhostEmitterConstants {
     const val MARKER = "%S"
     const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
     const val ARG_DISCRIMINATOR = "discriminator"
+    const val ARG_INFERRED = "inferred"
     const val STR_DEFAULT_DISCRIMINATOR = "type"
     const val ARG_NAME = "name"
     const val PKG_KOTLIN = "kotlin"
@@ -372,4 +397,71 @@ internal object GhostEmitterConstants {
     const val BIT_SHIFT_24 = 24
     const val MARKER_CLASS = "%T::class"
     const val STR_WRITER_NULL_VAL = "writer.nullValue()"
+    const val STR_ELIGIBILITY_MASK = "eligibilityMask"
+    const val STR_SEEN_MASK = "seenMask"
+    const val STR_REQ_MASK_PREFIX = "reqMask"
+    const val STR_INSTANCE_VAR = "instance"
+    const val STR_V_VAR_PREFIX = "v"
+    const val STR_INFERRED_ERROR_MSG = "Could not infer subclass (eligibilityMask: \$eligibilityMask, seenMask: \$seenMask)"
+    const val STR_REQUIRED_FIELD_MISSING = "Required field '%s' missing for %s"
+    const val STR_ERR_NO_SUBCLASSES = "Inferred polymorphism requested but no subclasses found."
+    const val STR_COPY = "copy"
+    const val STR_ONE_L = "1L"
+    const val STR_SHL = "shl"
+    const val STR_SPACE = " "
+    const val STR_L_SUFFIX = "L"
+    const val STR_IS_RESILIENT = "isResilient"
+    const val STR_TRUE = "true"
+    
+    // Templates
+    const val TEMPLATE_VAR_NULL_DECL = "var %L%L: %T = %L"
+    const val TEMPLATE_VAR_LONG_INIT = "var %L = %L%L"
+    const val TEMPLATE_VAR_INIT = "var %L = %L"
+    const val TEMPLATE_WHEN_BRANCH = "%L ->"
+    const val TEMPLATE_VAR_ASSIGN = "%L%L = %L"
+    const val TEMPLATE_MASK_AND_ASSIGN = "%L = %L and %L%L"
+    const val TEMPLATE_MASK_OR_SHL_ASSIGN = "%L = %L or (%L %L %L)"
+    const val TEMPLATE_VAL_LONG_INIT = "val %L%L = %L%L"
+    const val TEMPLATE_RESULT_WHEN = "val result = when"
+    const val TEMPLATE_INFERRED_DECISION_BRANCH = "(%L and %L%L) != %L && (%L and %L) == %L ->"
+    const val TEMPLATE_REQUIRED_ARG = "%L = %L ?: throw %T(%S)"
+    const val TEMPLATE_OPTIONAL_ARG = "%L = %L"
+    const val TEMPLATE_DATA_CLASS_COPY_INIT = "var %L = %T(%L)"
+    const val TEMPLATE_IF_NOT_NULL_COPY = "if (%L != null) %L = %L.%L(%L = %L!!)"
+    const val TEMPLATE_THROW_EXCEPTION = "throw %T(%S)"
+    const val TEMPLATE_PEEK_STRING_FIELD = "val typeName = reader.peekStringField(%S)"
+    const val STR_IT = "it"
+    const val TEMPLATE_BACKTICKED = "`%L`"
+    const val FMT_LONG_LITERAL = "%dL"
+    const val MASK_SIZE_BITS = 64L
+    const val MASK_SIZE_BITS_MINUS_ONE = 63
+    const val STR_NULL_VAL_CALL = "writer.nullValue()"
+    
+    // Control Flow Templates
+    const val TEMPLATE_IF_NULL = "if (%L == null)"
+    const val TEMPLATE_IF_NOT_NULL = "if (%L != null)"
+    const val TEMPLATE_FOR_IN = "for (%L in %L)"
+    const val TEMPLATE_FOR_MAP = "for ((%L, %L) in %L)"
+    
+    // Writer Templates
+    const val TEMPLATE_WRITER_VALUE = "writer.value(%L)"
+    const val TEMPLATE_WRITER_NAME = "writer.name(%L)"
+    
+    // Misc
+    const val STR_ITEM_PREFIX = "item"
+    const val STR_MAP_KEY_PREFIX = "mapKey"
+    const val STR_MAP_VAL_PREFIX = "mapVal"
+    const val TEMPLATE_DATA_CLASS_INIT = "%T(%L)"
+    const val TEMPLATE_RESULT_ASSIGN = "val result = %L"
+    const val FMT_MASK_NAME = "%s%s%d"
+    const val GHOST_SIGNATURE = "GhostSignature"
+    const val STR_WARN_CUSTOM_CODER = "Detected custom coder for %s: D=%s, E=%s"
+    const val TEMPLATE_NAMED_ARG = "  %N = %L,"
+    const val TEMPLATE_NAMED_ARG_SIMPLE = "%N = %L"
+    const val TEMPLATE_ACCESSOR = "%L.%N"
+
+    // Scan results packing (Long)
+    const val SCAN_HASH_MASK = 0xFFFFFFFFL
+    const val SCAN_LENGTH_SHIFT = 32
+    const val SCAN_7BIT_BIT = 1L shl 63
 }

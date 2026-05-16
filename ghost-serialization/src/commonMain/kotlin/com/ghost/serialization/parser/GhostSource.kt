@@ -31,7 +31,6 @@ interface GhostSource {
 
     fun contentEquals(start: Int, expected: ByteString): Boolean
 
-    fun copyTo(sink: ByteArray, sinkOffset: Int, start: Int, count: Int)
 
     /** Access to the raw byte array if the source is backed by one. Returns EMPTY_BYTES otherwise. */
     val rawSourceData: ByteArray get() = GhostJsonConstants.EMPTY_BYTES
@@ -56,17 +55,11 @@ interface GhostSource {
      * Scans for the closing quote while calculating a rolling hash in a single pass.
      *
      * This is the "Ultra-Fast-Path" for string reading:
-     * - Updates [reader] position to the closing quote position.
-     * - Returns the rolling hash of the string content.
-     * - Returns -1 if an escape sequence or control character is encountered.
+     * - Returns the rolling hash (low 31 bits) AND the length (high 32 bits) if successful.
+     * - Returns -1L if an escape sequence or control character is encountered.
      */
-    fun scanString(start: Int, limit: Int, reader: GhostJsonReader): Int
+    fun scanString(start: Int, limit: Int): Long
 
-    /**
-     * Calculates the rolling hash of the bytes at [start] for [length].
-     * Default implementation; platforms should override this for speed.
-     */
-    fun calculateHash(start: Int, length: Int): Int
 
     /**
      * Compares the source bytes against a cached [String] instance.

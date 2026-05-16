@@ -78,7 +78,7 @@ internal class SerializeCodeEmitter(
                 }
 
                 val currentPath = mutableListOf<String>()
-                sortedProperties.forEachIndexed { index, prop ->
+                sortedProperties.forEach { prop ->
                     val targetPath = prop.flattenPath?.dropLast(1) 
                         ?: prop.wrapPath 
                         ?: emptyList()
@@ -96,7 +96,7 @@ internal class SerializeCodeEmitter(
                         currentPath.add(segment)
                     }
 
-                    emitProperty(code, prop, index)
+                    emitProperty(code, prop)
                 }
 
                 // Close remaining open objects
@@ -182,7 +182,7 @@ internal class SerializeCodeEmitter(
 
     private fun emitValueUnboxing(code: CodeBlock.Builder) {
         val prop = properties.firstOrNull() ?: return
-        val accessor = C.STR_VALUE_DOT + C.STR_BACKTICK + prop.kotlinName + C.STR_BACKTICK
+        val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
         emitValue(code, prop, accessor)
     }
 
@@ -201,10 +201,10 @@ internal class SerializeCodeEmitter(
         }
     }
 
-    internal fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel, index: Int) {
+    internal fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
         val cleanName = prop.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
         val headerName = C.STR_H_VAL_PREFIX + cleanName
-        val accessor = C.STR_PARAM_VALUE + C.STR_DOT + C.STR_BACKTICK + prop.kotlinName + C.STR_BACKTICK
+        val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
 
         if (prop.isNullable) {
             if (prop.hasDefaultValue) {
@@ -254,7 +254,7 @@ internal class SerializeCodeEmitter(
         return true
     }
 
-    private fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: String) {
+    private fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
             code.addStatement(
                 C.STR_CUSTOM_ENCODER_CALL,
@@ -266,7 +266,7 @@ internal class SerializeCodeEmitter(
         }
         when {
             prop.isValueClass && prop.valueClassProperty != null -> {
-                val innerAccessor = accessor + C.STR_DOT + prop.valueClassProperty.kotlinName
+                val innerAccessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, accessor, prop.valueClassProperty.kotlinName)
                 emitValue(code, prop.valueClassProperty, innerAccessor)
             }
 
@@ -292,16 +292,16 @@ internal class SerializeCodeEmitter(
                 code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)
             }
 
-            else -> emitTypeValue(code, prop.type, accessor, 0)
+            else -> emitTypeValue(code, prop.type, accessor, 0, skipNullCheck = true)
         }
     }
 
-    private fun emitTypeValue(code: CodeBlock.Builder, type: KSType, accessor: String, depth: Int) {
+    private fun emitTypeValue(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int, skipNullCheck: Boolean = false) {
         val isNullable = type.isMarkedNullable
-        if (isNullable) {
-            code.beginControlFlow("if ($accessor == null)")
-            code.addStatement("writer.nullValue()")
-            code.nextControlFlow("else")
+        if (isNullable && !skipNullCheck) {
+            code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)
+            code.addStatement(C.STR_NULL_VAL_CALL)
+            code.nextControlFlow(C.STR_ELSE)
         }
 
         val typeName = type.declaration.qualifiedName?.asString()
@@ -333,36 +333,36 @@ internal class SerializeCodeEmitter(
             }
         }
 
-        if (isNullable) {
+        if (isNullable && !skipNullCheck) {
             code.endControlFlow()
         }
     }
 
-    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: String, depth: Int) {
-        val itemName = "item$depth"
+    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int) {
+        val itemName = C.STR_ITEM_PREFIX + depth
         code.addStatement(C.STR_WRITER_BEGIN_ARR)
-        code.beginControlFlow("for ($itemName in $accessor)")
+        code.beginControlFlow(C.TEMPLATE_FOR_IN, itemName, accessor)
         val innerType = type.arguments.firstOrNull()?.type?.resolve()
         if (innerType != null) {
-            emitTypeValue(code, innerType, itemName, depth + 1)
+            emitTypeValue(code, innerType, itemName, depth + 1, skipNullCheck = false)
         } else {
-            code.addStatement("writer.value($itemName)")
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemName)
         }
         code.endControlFlow()
         code.addStatement(C.STR_WRITER_END_ARR)
     }
 
-    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: String, depth: Int) {
-        val keyName = "mapKey$depth"
-        val valName = "mapVal$depth"
+    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int) {
+        val keyName = C.STR_MAP_KEY_PREFIX + depth
+        val valName = C.STR_MAP_VAL_PREFIX + depth
         code.addStatement(C.STR_WRITER_BEGIN_OBJ)
-        code.beginControlFlow("for (($keyName, $valName) in $accessor)")
-        code.addStatement("writer.name($keyName)")
+        code.beginControlFlow(C.TEMPLATE_FOR_MAP, keyName, valName, accessor)
+        code.addStatement(C.TEMPLATE_WRITER_NAME, keyName)
         val valueType = type.arguments.getOrNull(1)?.type?.resolve()
         if (valueType != null) {
-            emitTypeValue(code, valueType, valName, depth + 1)
+            emitTypeValue(code, valueType, valName, depth + 1, skipNullCheck = false)
         } else {
-            code.addStatement("writer.value($valName)")
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, valName)
         }
         code.endControlFlow()
         code.addStatement(C.STR_WRITER_END_OBJ)

@@ -45,11 +45,11 @@ internal class FragmentedEmitter(
             )
         }
 
-        val maskCount = (properties.size + 63) / 64
+        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
         for (i in 0 until maskCount) {
             contextBuilder.addProperty(
                 PropertySpec.builder(
-                    "${C.STR_UNDERSCORE}${C.STR_MASK}${i}",
+                    C.FMT_MASK_NAME.format(C.STR_UNDERSCORE, C.STR_MASK, i),
                     com.squareup.kotlinpoet.LONG
                 )
                     .mutable(true)
@@ -60,7 +60,7 @@ internal class FragmentedEmitter(
 
         typeSpecBuilder.addType(contextBuilder.build())
 
-        val chunkSize = 40
+        val chunkSize = C.DEFAULT_CHUNK_SIZE
         val chunks = properties.chunked(chunkSize)
         chunks.forEachIndexed { chunkIdx, chunkProps ->
             emitChunkFunction(
@@ -102,8 +102,8 @@ internal class FragmentedEmitter(
         body.endControlFlow() // while
         body.addStatement(C.STR_END_OBJECT)
 
-        emitValidation(body, typeSpecBuilder)
-        emitReturn(body, typeSpecBuilder)
+        emitValidation(body)
+        emitReturn(body)
     }
 
     private fun emitChunkFunction(
@@ -135,12 +135,12 @@ internal class FragmentedEmitter(
             val globalIndex = chunkIdx * chunkSize + innerIdx
             val call = buildCall(prop)
             val maskIdx = globalIndex / 64
-            val bitIdx = globalIndex % 64
+            val bitIdx = globalIndex % C.MASK_SIZE_BITS.toInt()
             val bitMask = 1L shl bitIdx
             val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
                 C.STR_BIT_MASK_MIN_LONG
             } else {
-                "${bitMask}L"
+                C.FMT_LONG_LITERAL.format(bitMask)
             }
             
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
@@ -160,7 +160,7 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(chunkFun.build())
     }
 
-    private fun emitValidation(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+    private fun emitValidation(body: CodeBlock.Builder) {
         val maskCount = (properties.size + 63) / 64
         val requiredMasks = LongArray(maskCount)
         properties.forEachIndexed { index, it ->
@@ -177,19 +177,19 @@ internal class FragmentedEmitter(
                 val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
                     C.STR_BIT_MASK_MIN_LONG
                 } else {
-                    "${reqMask}L"
+                    C.FMT_LONG_LITERAL.format(reqMask)
                 }
 
                 body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET, i, reqMaskStr, reqMaskStr)
                 properties.forEachIndexed { index, it ->
-                    if (!it.isNullable && !it.hasDefaultValue && (index / 64) == i) {
-                        val bitIdx = index % 64
+                    if (!it.isNullable && !it.hasDefaultValue && (index / C.MASK_SIZE_BITS.toInt()) == i) {
+                        val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
 
                         val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
                             C.STR_BIT_MASK_MIN_LONG
                         } else {
-                            "${bitMask}L"
+                            C.FMT_LONG_LITERAL.format(bitMask)
                         }
 
                         body.beginControlFlow(C.TEMPLATE_IF_MASK_MISSING, i, bitMaskStr)
@@ -202,12 +202,13 @@ internal class FragmentedEmitter(
         }
     }
 
-    private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+    private fun emitReturn(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
-        val requiredArgs = requiredProps.joinToString(C.STR_COMMA_SPACE) { prop ->
-            "`${prop.kotlinName}` = ${prop.getFragmentedReturnExpression()}"
+        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+        requiredProps.forEach { prop ->
+            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getFragmentedReturnExpression())
         }
-        body.addStatement("${C.TEMPLATE_VAL_RESULT}$requiredArgs${C.STR_PAREN}", originalClassName)
+        body.addStatement(C.STR_PAREN)
 
         val defaultProps = properties.filter { it.hasDefaultValue }
         if (defaultProps.isNotEmpty()) {
@@ -226,7 +227,7 @@ internal class FragmentedEmitter(
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
-                    val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${defMask}L"
+                    val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(defMask)
                     conditions.add(C.TEMPLATE_IF_MASK_MATCH_BIT_F.format(i, defMaskStr))
                 }
             }
@@ -238,12 +239,12 @@ internal class FragmentedEmitter(
                 if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
             }
             defaultPropsWithGlobalIndex.forEachIndexed { _, (propIndex, prop) ->
-                val maskIdx = propIndex / 64
-                val bitIdx = propIndex % 64
+                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+                val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
-                val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
+                val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
                 val valueExpr = prop.getFragmentedDefaultValueReturnExpression(maskIdx, bitMaskStr)
-                body.addStatement("${C.STR_BACKTICK}%L${C.STR_BACKTICK}${C.STR_EQ_SPACE}%L${C.STR_COMMA}", prop.kotlinName, valueExpr)
+                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)

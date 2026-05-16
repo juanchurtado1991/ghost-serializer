@@ -13,6 +13,7 @@ tasks.withType<CreateStartScripts> {
         ":ghost-serialization:jvmTestClasses",
         ":ghost-integration-test:testClasses",
         ":ghost-ktor:jvmTestClasses",
+        ":ghost-retrofit:testClasses",
         ":ghost-gradle-plugin:testClasses"
     )
 }
@@ -24,6 +25,7 @@ tasks.named<JavaExec>("run") {
             ":ghost-serialization:jvmTest",
             ":ghost-integration-test:test",
             ":ghost-ktor:jvmTest",
+            ":ghost-retrofit:test",
             ":ghost-gradle-plugin:test"
         )
     }

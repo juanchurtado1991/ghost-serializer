@@ -80,7 +80,7 @@ class GhostResilienceTest {
             reader.selectString(opts)
         }
         
-        assertTrue(exception.message!!.contains("unknown_field"))
+        assertTrue(exception.message.contains("unknown_field"))
         assertEquals(0, exception.line)
         // Position should be near the start of the unknown field
         assertTrue(exception.column > 10)

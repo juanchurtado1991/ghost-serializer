@@ -99,7 +99,7 @@ class GhostStressAuditTest {
     private fun recursiveSkip(reader: GhostJsonReader) {
         reader.skipWhitespace()
         if (reader.position >= reader.limit) return
-        when (val b = reader.peekByte()) {
+        when (reader.peekByte()) {
             '{'.code.toByte() -> {
                 reader.beginObject()
                 while (reader.hasNext()) {

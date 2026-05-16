@@ -74,20 +74,29 @@ actual fun ghostInternalEncodeAndDrainTo(
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
     object : Iterator<GhostRegistry> {
-        private var fast: GhostRegistry? = null
+        private var fastRegistries: MutableList<GhostRegistry>? = null
+        private var fastIterator: Iterator<GhostRegistry>? = null
         private var fastChecked = false
         private var slow: Iterator<GhostRegistry>? = null
 
         override fun hasNext(): Boolean {
             if (!fastChecked) {
                 fastChecked = true
-                fast = runCatching {
-                    Class.forName("com.ghost.serialization.generated.GhostModuleRegistry_Default")
-                        .getField("INSTANCE")
-                        .get(null) as GhostRegistry
-                }.getOrNull()
+                val names = listOf(
+                    "com.ghost.serialization.generated.GhostModuleRegistry_Default",
+                    "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
+                )
+                fastRegistries = names.mapNotNull { name ->
+                    runCatching {
+                        Class.forName(name)
+                            .getField("INSTANCE")
+                            .get(null) as GhostRegistry
+                    }.getOrNull()
+                }.toMutableList()
+                fastIterator = fastRegistries?.iterator()
             }
-            if (fast != null) return true
+            
+            if (fastIterator?.hasNext() == true) return true
 
             if (slow == null) {
                 slow = runCatching { ServiceLoader.load(GhostRegistry::class.java).iterator() }
@@ -98,7 +107,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
 
         override fun next(): GhostRegistry {
             if (!hasNext()) throw NoSuchElementException()
-            fast?.let { fast = null; return it }
+            if (fastIterator?.hasNext() == true) return fastIterator!!.next()
             return slow!!.next()
         }
     }

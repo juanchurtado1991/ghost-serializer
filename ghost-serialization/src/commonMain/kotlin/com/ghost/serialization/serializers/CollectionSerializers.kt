@@ -64,18 +64,18 @@ class MapSerializer<V>(
 
     override fun serialize(writer: GhostJsonWriter, value: Map<String, V>) {
         writer.beginObject().ignore()
-        value.forEach { (key, mapValue) ->
-            writer.name(key).ignore()
-            valueSerializer.serialize(writer, mapValue)
+        for (entry in value) {
+            writer.name(entry.key).ignore()
+            valueSerializer.serialize(writer, entry.value)
         }
         writer.endObject().ignore()
     }
 
     override fun serialize(writer: GhostJsonFlatWriter, value: Map<String, V>) {
         writer.beginObject().ignore()
-        value.forEach { (key, mapValue) ->
-            writer.name(key).ignore()
-            valueSerializer.serialize(writer, mapValue)
+        for (entry in value) {
+            writer.name(entry.key).ignore()
+            valueSerializer.serialize(writer, entry.value)
         }
         writer.endObject().ignore()
     }

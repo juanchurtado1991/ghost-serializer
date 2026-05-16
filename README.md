@@ -57,37 +57,37 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.046 ±0.005** | **46.4** | **0.042 ±0.004** | **23.1** | **0.043 ±0.003** | **41.5** |
-| KSerialization | 0.085 ±0.006 | 121.7 | 0.084 ±0.006 | 140.1 | 0.148 ±0.018 | 121.8 |
-| Gson | 0.086 ±0.010 | 143.3 | 0.083 ±0.009 | 161.7 | 0.083 ±0.010 | 153.0 |
-| Moshi | 0.107 ±0.019 | 112.5 | 0.107 ±0.014 | 130.9 | 0.094 ±0.012 | 112.5 |
-| Jackson | 0.125 ±0.013 | 328.8 | 0.117 ±0.012 | 329.0 | 0.127 ±0.069 | 329.0 |
+| **Ghost** | **0.047 ±0.015** | **46.4** | **0.042 ±0.005** | **23.1** | **0.044 ±0.010** | **41.5** |
+| KSerialization | 0.085 ±0.012 | 121.7 | 0.087 ±0.020 | 140.1 | 0.147 ±0.015 | 121.8 |
+| Gson | 0.086 ±0.015 | 143.3 | 0.085 ±0.016 | 161.7 | 0.084 ±0.012 | 153.0 |
+| Moshi | 0.105 ±0.019 | 112.5 | 0.108 ±0.018 | 130.9 | 0.093 ±0.012 | 112.5 |
+| Jackson | 0.122 ±0.022 | 328.8 | 0.119 ±0.023 | 329.0 | 0.117 ±0.023 | 329.0 |
 
 ### Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.349 ±0.019** | **343.8** | **0.338 ±0.016** | **197.4** | **0.356 ±0.027** | **446.3** |
-| Gson | 0.503 ±0.035 | 1140.8 | 0.514 ±0.029 | 1293.0 | 0.523 ±0.079 | 1159.2 |
-| KSerialization | 0.543 ±0.033 | 1087.4 | 0.566 ±0.099 | 1239.6 | 1.039 ±0.048 | 1184.1 |
-| Moshi | 0.697 ±0.108 | 949.9 | 0.691 ±0.052 | 1102.1 | 0.591 ±0.025 | 949.9 |
-| Jackson | 1.099 ±0.151 | 3193.1 | 1.004 ±0.078 | 3193.1 | 1.027 ±0.115 | 3193.2 |
+| **Ghost** | **0.348 ±0.33** | **343.8** | **0.338 ±0.033** | **197.4** | **0.354 ±0.037** | **446.3** |
+| Gson | 0.509 ±0.055 | 1140.8 | 0.521 ±0.056 | 1293.0 | 0.515 ±0.049 | 1159.2 |
+| KSerialization | 0.552 ±0.053 | 1087.4 | 0.560 ±0.054 | 1239.6 | 1.038 ±0.070 | 1184.1 |
+| Moshi | 0.676 ±0.074 | 949.9 | 0.688 ±0.066 | 1102.1 | 0.593 ±0.054 | 949.9 |
+| Jackson | 1.073 ±0.126 | 3193.1 | 1.007 ±0.120 | 3193.1 | 1.018 ±0.115 | 3193.2 |
 
 ### Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.067 ±0.011** | **77.1** | **0.064 ±0.005** | **77.1** | **0.065 ±0.006** | **80.6** |
-| Jackson | 0.162 ±0.070 | 366.9 | 0.126 ±0.011 | 201.7 | 0.127 ±0.009 | 303.4 |
-| KSerialization | 0.140 ±0.013 | 218.2 | 0.142 ±0.016 | 295.2 | 0.245 ±0.016 | 221.7 |
-| Gson | 0.306 ±0.016 | 629.6 | 0.303 ±0.016 | 706.6 | 0.677 ±0.093 | 3533.7 |
-| Moshi | 0.317 ±0.019 | 638.3 | 0.319 ±0.016 | 715.3 | 0.307 ±0.025 | 484.3 |
+| **Ghost** | **0.071 ±0.015** | **77.1** | **0.067 ±0.005** | **77.1** | **0.069 ±0.014** | **80.6** |
+| Jackson | 0.152 ±0.023 | 366.9 | 0.126 ±0.020 | 201.7 | 0.128 ±0.020 | 303.4 |
+| KSerialization | 0.145 ±0.017 | 218.2 | 0.146 ±0.022 | 295.2 | 0.254 ±0.022 | 221.7 |
+| Gson | 0.285 ±0.033 | 535.8 | 0.283 ±0.032 | 612.8 | 0.657 ±0.085 | 3439.9 |
+| Moshi | 0.316 ±0.034 | 638.3 | 0.315 ±0.035 | 715.3 | 0.303 ±0.029 | 484.3 |
 
 ### Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.004 ±0.009** | 0.006 | 0.006 | 0.009 | 0.011 |
+| Deep Nesting — 20 levels (ms) | **0.003 ±0.007** | 0.006 | 0.006 | 0.009 | 0.011 |
 | Malformed JSON — resilience (ms) | **0.008 ±0.001** | 0.013 | 0.016 | 0.017 | 0.022 |
 
 **Ghost is #1 in all 11 categories.** The STDEV values confirm the measurements are stable: `±0.002ms` on streaming deserialization, `±0.004ms` on streaming serialization.
@@ -578,6 +578,26 @@ sealed class DeviceEvent {
 // JSON: { "type": "FutureEvent", ... } -> Decodes to DeviceEvent.Unknown()
 ```
 
+#### Inferred Polymorphism (`inferred = true`)
+Sometimes your JSON doesn't have a dedicated `"type"` field. Ghost can infer the correct subclass by identifying unique fields (signatures) within the payload. Use `inferred = true` and mark the identifying properties with `@GhostSignature`.
+
+```kotlin
+@GhostSerialization(inferred = true)
+sealed class SmartEvent {
+    @GhostSerialization
+    data class Temperature(@GhostSignature val celsius: Double) : SmartEvent()
+
+    @GhostSerialization
+    data class Motion(@GhostSignature val sensorId: String, val zone: Int) : SmartEvent()
+}
+
+// JSON: { "celsius": 24.5 } -> Decodes to Temperature
+// JSON: { "sensorId": "SN-01", "zone": 1 } -> Decodes to Motion
+```
+
+> [!IMPORTANT]
+> **Performance**: Unlike other libraries that perform multiple trial-and-error parsing attempts, Ghost generates a **bitwise decision tree** at compile time. It identifies the correct subclass in a single pass over the JSON keys, maintaining O(1) performance.
+
 ### 4. Ktor integration (KMP)
 
 ```kotlin
@@ -679,26 +699,26 @@ class GhostConfig {
 | **ProGuard / R8 safe** | Nothing to keep. Generated code is concrete, final, and directly called. |
 | **Null safety** | Nullable fields (`String?`) handled correctly. Missing required fields throw a descriptive `GhostJsonException`. |
 | **Default values** | Fields with Kotlin default values are optional in JSON. |
-| **Sealed classes** | Full polymorphism support with built-in or custom discriminator keys (via `@GhostSerialization(discriminator = "...")`). |
+| **Sealed classes** | Full polymorphism support (Standard or Inferred) with built-in or custom discriminator keys. |
 | **Value classes** | `@JvmInline value class` supported transparently — serialized as the wrapped type. |
-| **Collections** | `List<T>`, `Map<String, V>`, `IntArray`, `LongArray` supported out of the box. |
-| **Generics** | Deeply nested generics resolved at compile time. |
+| **Collections** | `List<T>`, `Set<T>`, `Map<String, V>`, and all primitive arrays supported out of the box. |
+| **Registry Sharding** | **[New]** Automatic fragmentation of the global registry to support thousands of models without JVM limits. |
+| **Dynamic Imports** | **[New]** Property-aware import generation. Only the used parser functions are imported, keeping code lean. |
+| **Zero Magic Strings**| **[New]** 100% literal-free compiler logic. All templates and identifiers are centralized for stability. |
 | **Thread safety** | Reader and writer pools are thread-safe. Safe to use from coroutines and multiple threads. |
 | **Depth protection** | Configurable max nesting depth (default 255) to prevent stack overflow on malicious input. |
 | **DoS protection** | Platform-aware `maxCollectionSize` limits prevent memory exhaustion on all targets. |
-| **Ktor 2.3** | `ghost()` plugin for `ContentNegotiation`. |
-| **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement. |
-| **Spring Boot** | Auto-configured `GhostHttpMessageConverter` via starter. |
-| **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns `null` instead of crashing. |
-| **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types in sealed hierarchies. |
-| **Boolean Coercion**| Support for `0` and `1` as `false` and `true` (configurable). |
-| **Custom Decoders** | `@GhostDecoder` / `@GhostEncoder` to delegate field logic to manual functions. |
-| **Structural Flattening** | `@GhostFlatten("a.b.c")` maps nested JSON values directly to class properties without wrapper objects. |
-| **Structural Wrapping** | `@GhostWrap("metadata.info")` nests class properties inside JSON sub-objects during serialization. |
-| **Contextual Serializers**| Register manual `GhostSerializer<T>` for external classes (e.g., Joda-Time) via `Ghost.addRegistry()`. |
-| **Lazy Discovery** | O(1) cold-start optimization via manual platform iterators. |
-| **Fragmented Emitters**| Automatic chunked emission for large models (+40 fields) to bypass JVM limits and optimize JIT. |
-| **Modular Registry**| `Ghost.addRegistry()` for dynamic serializer registration. |
+| **Ktor 3.0** | Native `ghost()` plugin for `ContentNegotiation` with full Ktor 3.x support. |
+| **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement with explicit `null` body handling. |
+| **Spring Boot** | Auto-configured `GhostHttpMessageConverter` via production-ready starter. |
+| **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns safe defaults. |
+| **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types. |
+| **Custom Decoders** | `@GhostDecoder` / `@GhostEncoder` to delegate specific field logic to manual functions. |
+| **Structural Flattening** | `@GhostFlatten("a.b.c")` maps nested JSON values directly to class properties. |
+| **Structural Wrapping** | `@GhostWrap("metadata.info")` nests class properties inside JSON sub-objects. |
+| **Contextual Serializers**| Register manual `GhostSerializer<T>` for 3rd-party types via `Ghost.addRegistry()`. |
+| **Lazy Discovery** | O(1) cold-start optimization via specialized manual platform iterators. |
+| **Fragmented Emitters**| Automatic chunked emission for large models (+40 fields) to optimize JIT execution. |
 | **Incremental builds** | KSP only regenerates files for changed models. Unchanged modules are fully cached. |
 
 ---

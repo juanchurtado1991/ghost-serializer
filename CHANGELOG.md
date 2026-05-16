@@ -1,26 +1,27 @@
 # Changelog
 
-## [1.1.14] - 2026-05-15
-### Performance & Cold Start 
+## [1.1.14] - 2026-05-16
+### Performance & Scalability
+- **Registry Fragmentation (Sharding)**: Implemented automatic "sharding" for the `GhostModuleRegistry`. In projects with thousands of models, the registry is split into smaller, JVM-compliant chunks to avoid the 64KB method size limit while maintaining O(1) average lookup performance.
+- **Dynamic Import Optimization**: Serializers now perform property-aware import generation. Only the necessary parser functions (e.g., `readList`, `nextInt`) are imported, eliminating "unused import" warnings and reducing build-time bloat.
 - **Lazy Registry Discovery (O(1))**: Rewrote the cross-platform discovery engine to be fully lazy. Ghost now loads the default module via `Class.forName` (fast-path) and stops before invoking the expensive `ServiceLoader` scan. **Reduces cold start by ~20-30% on JVM/Android.**
 - **Automatic Fragmented Emission**: Models with more than 40 properties are now automatically serialized/deserialized using a "Chunked" strategy. This prevents JVM "method too large" errors and maintains peak JIT performance even for massive objects.
 - **JIT-Friendly Inlining**: Applied `@Suppress("NOTHING_TO_INLINE")` and mandatory `inline` modifiers to fragmented chunks, guiding the JVM to optimize execution paths while bypassing bytecode limits.
 - **Hot-Path Inlining**: Refactored `resolveSerializer` to be an `inline` function that checks the cache first, eliminating lambda allocations and `typeOf` calls during steady-state execution.
-- **Manual Platform Iterators**: Replaced `sequence/yield` with specialized manual Iterators in `androidMain` and `jvmMain` to eliminate coroutine overhead and resolve IDE indexing "red" errors.
-- **Zero-Collision Naming**: Standardized all platform-specific files with unique suffixes (`.jvm.kt`, `.android.kt`, `.ios.kt`, `.wasmJs.kt`) to prevent JVM class name collisions in multi-module projects.
+- **Loop Optimization**: Replaced `forEach` and `forEachIndexed` with standard `for` loops in the code generator to improve efficiency and reduce GC pressure during the KSP phase.
 - **Bitwise-Accelerated Parsing**: All internal validations (hex, whitespace, control characters) now use bitwise masks for maximum throughput.
 - **Optimized Field Matching**: Refactored `selectNameAndConsume` to use an O(1) bitwise Trie lookup, reducing field identification overhead.
 - **Writing Fusion**: Fused separator and header writes in `GhostJsonFlatWriter` to minimize branching and eliminate performance regressions.
 - **Zero-Allocation Numbers**: Hardened the fast-path engine for `Double` and `Long` formatting to ensure zero heap allocation in 99% of use cases.
 
 ### Added
-  - **Polymorphic Fallbacks**: Introduced `@GhostFallback` for sealed classes. Unknown discriminators now map to a safe default subclass instead of throwing an exception.
-  - **Enum & Type Resilience**: New `@GhostResilient` annotation. Prevents crashes when receiving invalid enums or type mismatches by assigning `null` or default values.
-  - **Custom Field Decoders/Encoders**: Support for `@GhostDecoder` and `@GhostEncoder` properties. Delegate specific field logic to manual functions while keeping the rest of the class automated.
-  - **Flexible Type Coercion**: Added `coerceBooleans` (interpret 0/1 as bool) and `coerceNumbers` (parse numeric strings as Int/Long) flags to `GhostJsonReader`.
+- **Production Hardening Suite**: Introduced a comprehensive test battery covering huge models (45+ fields), deeply nested generic collections, and massive inferred polymorphism hierarchies.
+- **Polymorphic Fallbacks**: Introduced `@GhostFallback` for sealed classes. Unknown discriminators now map to a safe default subclass instead of throwing an exception.
+- **Enum & Type Resilience**: New `@GhostResilient` annotation. Prevents crashes when receiving invalid enums or type mismatches by assigning `null` or default values.
+- **Custom Field Decoders/Encoders**: Support for `@GhostDecoder` and `@GhostEncoder` properties. Delegate specific field logic to manual functions while keeping the rest of the class automated.
+- **Flexible Type Coercion**: Added `coerceBooleans` (interpret 0/1 as bool) and `coerceNumbers` (parse numeric strings as Int/Long) flags to `GhostJsonReader`.
 - **Modular Serialization**: Added `Ghost.addRegistry()` for manual, reflection-free registration of serializers in dynamic or plugin-based architectures.
 - **Official Networking Adapters**: Shipped production-ready bridges for **Ktor 3.0** and **Retrofit 2.11**. Implemented explicit JSON `null` handling in `GhostConverterFactory` for total compatibility with Retrofit response bodies.
-- **Reference Implementations**: Added official test app repositories and integration guides for **Android**, **Native iOS (Swift)**, and **Spring Boot**.
 
 ### Refactoring & Modularity (Zero Magic Strings)
 - **Zero Magic Strings Architecture**: Achieved 100% literal-free compiler logic. Centralized all hardcoded templates, identifiers, and ProGuard rules into `GhostEmitterConstants.kt`.
@@ -28,6 +29,7 @@
 - **Encapsulated Generation Logic**: Introduced `GhostPropertyExtensions` and `TypeHelpers` to handle complex code generation via clean, type-safe helper methods.
 
 ### Fixed
+- **Bit-Masking Protocol**: Resolved a critical bit-extraction bug in `GhostJsonReader` length calculation. Introduced `SCAN_LENGTH_MASK` and unsigned shifts to correctly isolate length from the 7-bit ASCII flag, fixing `IndexOutOfBoundsException` in Ktor/Retrofit.
 - **Android Compatibility (API 21)**: Resolved a critical `NewApi` error. Replaced API 33+ `Arrays.equals` range comparison with a manual loop compatible with Android API 21.
 - **KSP Format Integrity**: Resolved critical `UnknownFormatConversionException` and `IllegalArgumentException` by strictly segregating KotlinPoet templates (`%L`, `%T`) from standard Java format strings (`%s`).
 - **Signature Mismatch**: Fixed a bug in standard mode where the `deserialize` function was omitted from the generated serializer object due to improper delegation.

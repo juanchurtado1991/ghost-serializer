@@ -7,6 +7,9 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH
+import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_INDEX_MASK
+import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_SHIFT
+import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_UNIT
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.GhostJsonConstants.COLON_QUOTE_BS
@@ -16,6 +19,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.DOUBLE_DIGIT_LUT
 import com.ghost.serialization.parser.GhostJsonConstants.EMPTY_STRING_BS
 import com.ghost.serialization.parser.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 import com.ghost.serialization.parser.GhostJsonConstants.ERR_NON_FINITE
+import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_MASKS
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_REPLACEMENTS
 import com.ghost.serialization.parser.GhostJsonConstants.FALSE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.HEX_CHARS
@@ -29,7 +33,6 @@ import com.ghost.serialization.parser.GhostJsonConstants.MINUS_ONE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
-import com.ghost.serialization.parser.GhostJsonConstants.NEEDS_ESCAPE_LUT
 import com.ghost.serialization.parser.GhostJsonConstants.NULL_BS
 import com.ghost.serialization.parser.GhostJsonConstants.ONE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
@@ -47,7 +50,6 @@ import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.GhostJsonConstants.WRITER_SCRATCH_SIZE
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_INT
-import com.ghost.serialization.parser.JsonReaderOptions
 import com.ghost.serialization.releaseScratchBuffer
 import okio.BufferedSink
 import okio.ByteString
@@ -63,21 +65,19 @@ import okio.ByteString
  * - Minimizing virtual dispatch and branching in the hot path.
  */
 class GhostJsonWriter(
-    @PublishedApi internal val sink: BufferedSink
+    internal val sink: BufferedSink
 ) {
 
     @PublishedApi
     internal val buffer = sink.buffer
 
-    @PublishedApi
     internal var needsComma = false
 
     private var depth = 0
 
-    @PublishedApi
     internal var scratch: ByteArray? = null
 
-    internal fun getScratch(): ByteArray = scratch
+    internal fun acquireScratch(): ByteArray = scratch
         ?: acquireScratchBuffer(WRITER_SCRATCH_SIZE)
             .also { scratch = it }
 
@@ -195,93 +195,11 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeNameRaw(header: ByteString): GhostJsonWriter = name(header)
 
-    // ── writeFirstField (fused open+field, no leading comma) ─────────────────
 
-    @InternalGhostApi
-    fun writeFirstField(header: ByteString, value: Int): GhostJsonWriter {
-        if (needsComma) {
-            buffer.writeByte(COMMA_INT)
-            needsComma = false
-        }
-        if (depth >= MAX_DEPTH) throwDepthError()
-        buffer.write(header)
-        writeIntValueRaw(value)
-        needsComma = true
-        depth++
-        return this
-    }
-
-    fun writeFirstField(index: Int, options: JsonReaderOptions, value: Int): GhostJsonWriter =
-        writeFirstField(options.writerFirstHeaders[index], value)
-
-    @InternalGhostApi
-    fun writeFirstField(header: ByteString, value: Long): GhostJsonWriter {
-        if (needsComma) {
-            buffer.writeByte(COMMA_INT)
-            needsComma = false
-        }
-        if (depth >= MAX_DEPTH) throwDepthError()
-        buffer.write(header)
-        writeLongValueRaw(value)
-        needsComma = true
-        depth++
-        return this
-    }
-
-    fun writeFirstField(index: Int, options: JsonReaderOptions, value: Long): GhostJsonWriter =
-        writeFirstField(options.writerFirstHeaders[index], value)
-
-    @InternalGhostApi
-    fun writeFirstField(header: ByteString, value: String): GhostJsonWriter {
-        if (needsComma) {
-            buffer.writeByte(COMMA_INT)
-            needsComma = false
-        }
-        if (depth >= MAX_DEPTH) throwDepthError()
-        buffer.write(header)
-        writeStringValueRaw(value)
-        needsComma = true
-        depth++
-        return this
-    }
-
-    fun writeFirstField(index: Int, options: JsonReaderOptions, value: String): GhostJsonWriter =
-        writeFirstField(options.writerFirstHeaders[index], value)
-
-    @InternalGhostApi
-    fun writeFirstField(header: ByteString, value: Boolean): GhostJsonWriter {
-        if (needsComma) {
-            buffer.writeByte(COMMA_INT)
-            needsComma = false
-        }
-        if (depth >= MAX_DEPTH) throwDepthError()
-        buffer.write(header)
-        writeBooleanValueRaw(value)
-        needsComma = true
-        depth++
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFirstField(header: ByteString, value: Double): GhostJsonWriter {
-        if (needsComma) {
-            buffer.writeByte(COMMA_INT)
-            needsComma = false
-        }
-        if (depth >= MAX_DEPTH) throwDepthError()
-        buffer.write(header)
-        writeDoubleValueRaw(value)
-        needsComma = true
-        depth++
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFirstField(header: ByteString, value: Float): GhostJsonWriter =
-        writeFirstField(header, value.toDouble())
-
-    // ── writeField (with appendSeparator) ────────────────────────────────────
-
+    /**
+     * Fused name + value with automatic comma handling.
+     * Used by KSP-generated serializers for subsequent object fields.
+     */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Int): GhostJsonWriter {
         appendSeparator()
@@ -290,9 +208,6 @@ class GhostJsonWriter(
         needsComma = true
         return this
     }
-
-    fun writeField(index: Int, options: JsonReaderOptions, value: Int): GhostJsonWriter =
-        writeField(options.writerHeaders[index], value)
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Long): GhostJsonWriter {
@@ -303,9 +218,6 @@ class GhostJsonWriter(
         return this
     }
 
-    fun writeField(index: Int, options: JsonReaderOptions, value: Long): GhostJsonWriter =
-        writeField(options.writerHeaders[index], value)
-
     @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonWriter {
         appendSeparator()
@@ -314,9 +226,6 @@ class GhostJsonWriter(
         needsComma = true
         return this
     }
-
-    fun writeField(index: Int, options: JsonReaderOptions, value: String): GhostJsonWriter =
-        writeField(options.writerHeaders[index], value)
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Boolean): GhostJsonWriter {
@@ -340,67 +249,6 @@ class GhostJsonWriter(
     fun writeField(header: ByteString, value: Float): GhostJsonWriter =
         writeField(header, value.toDouble())
 
-    fun writeField(index: Int, options: JsonReaderOptions, value: Boolean): GhostJsonWriter =
-        writeField(options.writerHeaders[index], value)
-
-    fun writeField(index: Int, options: JsonReaderOptions, value: Double): GhostJsonWriter =
-        writeField(options.writerHeaders[index], value)
-
-    fun writeField(index: Int, options: JsonReaderOptions, value: Float): GhostJsonWriter =
-        writeField(options.writerHeaders[index], value.toDouble())
-
-    // ── writeFieldWithComma (leading comma pre-baked, no appendSeparator) ────
-
-    @InternalGhostApi
-    fun writeFieldWithComma(header: ByteString, value: Int): GhostJsonWriter {
-        buffer.write(header)
-        writeIntValueRaw(value)
-        needsComma = true
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFieldWithComma(header: ByteString, value: Long): GhostJsonWriter {
-        buffer.write(header)
-        writeLongValueRaw(value)
-        needsComma = true
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFieldWithComma(header: ByteString, value: String): GhostJsonWriter {
-        buffer.write(header)
-        writeStringValueRaw(value)
-        needsComma = true
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFieldWithComma(header: ByteString, value: Boolean): GhostJsonWriter {
-        buffer.write(header)
-        writeBooleanValueRaw(value)
-        needsComma = true
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFieldWithComma(header: ByteString, value: Double): GhostJsonWriter {
-        buffer.write(header)
-        writeDoubleValueRaw(value)
-        needsComma = true
-        return this
-    }
-
-    @InternalGhostApi
-    fun writeFieldWithComma(header: ByteString, value: Float): GhostJsonWriter =
-        writeFieldWithComma(header, value.toDouble())
-
-    @InternalGhostApi
-    fun writeNameRawWithComma(header: ByteString): GhostJsonWriter {
-        buffer.write(header)
-        needsComma = false
-        return this
-    }
 
     // ── value() public API ────────────────────────────────────────────────────
 
@@ -448,8 +296,10 @@ class GhostJsonWriter(
         return this
     }
 
-    // ── Raw value writers (called by generated code) ──────────────────────────
-
+    /**
+     * Writes a boolean value without a field name or separator.
+     * Used by KSP-generated serializers for array elements or raw values.
+     */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
         buffer.write(if (value) TRUE_BS else FALSE_BS)
@@ -458,6 +308,7 @@ class GhostJsonWriter(
     /**
      * Writes an integer value without a field name or separator.
      * Optimized with a lookup table and fast-paths for common small integers.
+     * Used by KSP-generated serializers for array elements or raw values.
      */
     @InternalGhostApi
     @Suppress("CascadeIf")
@@ -480,6 +331,7 @@ class GhostJsonWriter(
     /**
      * Writes a long value without a field name or separator.
      * Uses a fast `when` dispatch for common values.
+     * Used by KSP-generated serializers for array elements or raw values.
      */
     @InternalGhostApi
     fun writeLongValueRaw(value: Long) {
@@ -498,7 +350,7 @@ class GhostJsonWriter(
      * Final output is a single System.arraycopy into Okio segments.
      */
     private fun writeLongValueRawInternal(value: Long) {
-        val scratchBuf = getScratch()
+        val scratchBuf = acquireScratch()
         // Use the end of the scratch zone as the backward-write area.
         val scratchEnd = LONG_SCRATCH_SIZE
         var pos = scratchEnd
@@ -535,6 +387,11 @@ class GhostJsonWriter(
         buffer.write(scratchBuf, pos, scratchEnd - pos)
     }
 
+    /**
+     * Writes a double value without a field name or separator.
+     * Optimized for whole numbers.
+     * Used by KSP-generated serializers for array elements or raw values.
+     */
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
         // Fast path for whole numbers
@@ -547,7 +404,7 @@ class GhostJsonWriter(
             return
         }
 
-        val scratchBuf = getScratch()
+        val scratchBuf = acquireScratch()
         val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
             value = number,
             scratch = scratchBuf,
@@ -566,12 +423,15 @@ class GhostJsonWriter(
         }
     }
 
+    /**
+     * Writes the null literal.
+     * Used by KSP-generated serializers for nullable properties.
+     */
     @InternalGhostApi
     fun writeNullValueRaw() {
         buffer.write(NULL_BS)
     }
 
-    @PublishedApi
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun appendSeparator() {
         if (needsComma) {
@@ -580,19 +440,11 @@ class GhostJsonWriter(
         }
     }
 
-    @InternalGhostApi
-    fun writeRaw(byte: Int) {
-        buffer.writeByte(byte)
-    }
-
-    @InternalGhostApi
-    fun writeRaw(bytes: ByteArray) {
-        buffer.write(bytes)
-    }
 
     /**
      * Writes a string value with quotes and proper escaping.
      * Uses "Quote Fusion" to batch quotes with content in a single buffer write.
+     * Used by KSP-generated serializers for array elements or raw values.
      */
     @InternalGhostApi
     fun writeStringValueRaw(value: String) {
@@ -602,7 +454,7 @@ class GhostJsonWriter(
             return
         }
 
-        val scratchBuf = getScratch()
+        val scratchBuf = acquireScratch()
         if (length + 2 > scratchBuf.size) {
             buffer.writeByte(QUOTE_INT)
             writeEscaped(value)
@@ -620,43 +472,49 @@ class GhostJsonWriter(
      * Uses a single-pass scan with scratch accumulation to minimize buffer interactions.
      * Optimized with Path Splitting (Fast path for strings <= 512 chars).
      */
-    private fun writeEscaped(text: String) {
+    private fun writeEscaped(text: String, start: Int = 0) {
         val length = text.length
-        if (length == 0) return
+        val remaining = length - start
+        if (remaining <= 0) return
 
-        val needsEscapeTable = NEEDS_ESCAPE_LUT
         val replacements = ESCAPE_REPLACEMENTS
-        val scratchBuf = getScratch()
+        val scratchBuf = acquireScratch()
         val scratchSize = scratchBuf.size
 
         // Fast path: entire string fits in scratch — no per-char flush check needed.
         // Since scratchPos always starts at 0 (flushed at end of every call),
         // the condition reduces to a single upfront comparison.
-        if (length <= scratchSize) {
+        if (remaining <= scratchSize) {
             var scratchPos = 0
-            var index = 0
+            var index = start
             while (index < length) {
-                val char = text[index]
-                val charCode = char.code
-                if (charCode < ASCII_LIMIT && !needsEscapeTable[charCode]) {
-                    scratchBuf[scratchPos++] = charCode.toByte()
-                    index++
-                    continue
+                val charCode = text[index].code
+                
+                // Unrolled fast path for plain ASCII (common case)
+                if (charCode < ASCII_LIMIT) {
+                    val maskIdx = charCode shr BITMASK_SHIFT
+                    val bitIdx = charCode and BITMASK_INDEX_MASK
+                    if ((ESCAPE_MASKS[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
+                        scratchBuf[scratchPos++] = charCode.toByte()
+                        index++
+                        continue
+                    }
                 }
+                
                 if (scratchPos > 0) {
                     buffer.write(scratchBuf, 0, scratchPos)
                     scratchPos = 0
                 }
+                
                 if (charCode < ASCII_LIMIT) {
                     val replacement = replacements[charCode]
                     if (replacement != null) buffer.write(replacement)
-                    else writeUnicodeEscape(char, scratchBuf)
+                    else writeUnicodeEscape(charCode, scratchBuf)
                 } else {
-                    if (
-                        char.isHighSurrogate() && index + 1 < length &&
-                        text[index + 1].isLowSurrogate()
-                    ) {
-                        buffer.writeUtf8(text, index, index + 2); index++
+                    val c = text[index]
+                    if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
+                        buffer.writeUtf8(text, index, index + 2)
+                        index++
                     } else {
                         buffer.writeUtf8(text, index, index + 1)
                     }
@@ -671,13 +529,16 @@ class GhostJsonWriter(
 
         // Slow path: string longer than scratch (rare — only for > 512-char values).
         var scratchPos = 0
-        var index = 0
+        var index = start
 
         while (index < length) {
-            val char = text[index]
-            val charCode = char.code
+            val charCode = text[index].code
 
-            if (charCode < ASCII_LIMIT && !needsEscapeTable[charCode]) {
+            if (
+                charCode < ASCII_LIMIT &&
+                (ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
+                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+            ) {
                 scratchBuf[scratchPos++] = charCode.toByte()
                 if (scratchPos == scratchSize) {
                     buffer.write(scratchBuf, 0, scratchPos)
@@ -695,8 +556,9 @@ class GhostJsonWriter(
             if (charCode < ASCII_LIMIT) {
                 val replacement = replacements[charCode]
                 if (replacement != null) buffer.write(replacement)
-                else writeUnicodeEscape(char, scratchBuf)
+                else writeUnicodeEscape(charCode, scratchBuf)
             } else {
+                val char = text[index]
                 if (char.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
                     buffer.writeUtf8(text, index, index + 2); index++
                 } else {
@@ -718,42 +580,49 @@ class GhostJsonWriter(
         var index = 0
 
         while (index < length) {
-            val ch = text[index]
-            val charCode = ch.code
+            val charCode = text[index].code
 
-            if (charCode < ASCII_LIMIT && !NEEDS_ESCAPE_LUT[charCode]) {
+            if (
+                charCode < ASCII_LIMIT &&
+                (ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
+                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+            ) {
                 scratchBuf[scratchPos++] = charCode.toByte()
                 index++
                 continue
             }
 
-            // Flush what we have (including the opening quote) and fall back.
-            buffer.write(scratchBuf, 0, scratchPos)
+            // Flush what we have so far
+            if (scratchPos > 0) {
+                buffer.write(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
 
+            // Handle the escape
             if (charCode < ASCII_LIMIT) {
                 val replacement = ESCAPE_REPLACEMENTS[charCode]
                 if (replacement != null) buffer.write(replacement)
-                else writeUnicodeEscape(ch, scratchBuf)
+                else writeUnicodeEscape(charCode, scratchBuf)
             } else {
-                if (ch.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    buffer.writeUtf8(text, index, index + 2); index++
+                val c = text[index]
+                if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
+                    buffer.writeUtf8(text, index, index + 2)
+                    index++
                 } else {
                     buffer.writeUtf8(text, index, index + 1)
                 }
             }
             index++
-
-            // Continue the rest of the string using the normal writeEscaped logic
-            if (index < length) writeEscaped(text.substring(index))
-
-            // Add the closing quote
-            buffer.writeByte(QUOTE_INT)
-            return
         }
 
-        // Clean path finished: add closing quote and flush once.
-        scratchBuf[scratchPos++] = QUOTE_BYTE
-        buffer.write(scratchBuf, 0, scratchPos)
+        // Add the closing quote and final flush
+        if (scratchPos + 1 > scratchBuf.size) {
+            if (scratchPos > 0) buffer.write(scratchBuf, 0, scratchPos)
+            buffer.writeByte(QUOTE_INT)
+        } else {
+            scratchBuf[scratchPos++] = QUOTE_BYTE
+            buffer.write(scratchBuf, 0, scratchPos)
+        }
     }
 
     private fun throwDepthError() {
@@ -764,8 +633,7 @@ class GhostJsonWriter(
         )
     }
 
-    private fun writeUnicodeEscape(char: Char, scratchBuf: ByteArray) {
-        val code = char.code
+    private fun writeUnicodeEscape(code: Int, scratchBuf: ByteArray) {
         val hexChars = HEX_CHARS
 
         scratchBuf[0] = BACKSLASH

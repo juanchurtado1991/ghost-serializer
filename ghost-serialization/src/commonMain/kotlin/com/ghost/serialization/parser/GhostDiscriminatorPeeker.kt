@@ -26,6 +26,8 @@ object GhostDiscriminatorPeeker {
      *
      * This method decides the branch (Streaming vs Array) once and enters a zero-cost
      * modular implementation.
+     *
+     * Used by KSP-generated serializers for polymorphic deserialization.
      */
     fun peek(
         source: GhostSource,

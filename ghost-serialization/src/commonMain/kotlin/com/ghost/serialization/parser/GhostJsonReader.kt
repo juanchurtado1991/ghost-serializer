@@ -28,8 +28,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_10
 import com.ghost.serialization.parser.GhostJsonConstants.SINGLE_CHAR_SIZE
 import com.ghost.serialization.parser.GhostJsonConstants.STR_POOL_SIZE
-import com.ghost.serialization.parser.GhostJsonConstants.SURROGATE_LOW_BITS_MASK
-import com.ghost.serialization.parser.GhostJsonConstants.SURROGATE_PAIR_SIZE
+import com.ghost.serialization.parser.GhostJsonConstants.SURROGATE_OFFSET
 import com.ghost.serialization.parser.GhostJsonConstants.TIER_SMALL_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNESCAPED_CONTROL_CHAR_ERROR
 import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_BASE
@@ -39,6 +38,24 @@ import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_PREFIX_U_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_ESCAPE_ERROR
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERROR
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_UNICODE_ERROR
+import com.ghost.serialization.parser.GhostJsonConstants.BS_INT
+import com.ghost.serialization.parser.GhostJsonConstants.CR_INT
+import com.ghost.serialization.parser.GhostJsonConstants.FF_INT
+import com.ghost.serialization.parser.GhostJsonConstants.SCAN_7BIT_BIT
+import com.ghost.serialization.parser.GhostJsonConstants.SCAN_LENGTH_MASK
+import com.ghost.serialization.parser.GhostJsonConstants.SCAN_LENGTH_SHIFT
+import com.ghost.serialization.parser.GhostJsonConstants.LF_INT
+import com.ghost.serialization.parser.GhostJsonConstants.TAB_INT
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_1BYTE_MAX
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_2BYTE_MAX
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_2BYTE_PREFIX
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_3BYTE_PREFIX
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_4BYTE_PREFIX
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_CONT_MASK
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_CONT_PREFIX
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_6
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_12
+import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_18
 import com.ghost.serialization.releaseCharBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import okio.BufferedSource
@@ -79,14 +96,12 @@ class GhostJsonReader(
     @PublishedApi
     internal var nextTokenByte: Int = -1
 
-    @PublishedApi
     internal val stringPool = arrayOfNulls<String>(STR_POOL_SIZE)
 
     /**
      * Set during [GhostSource.scanString] fast path: false if any content byte had bit 7 set
      * (UTF-8 multibyte); true if only ASCII bytes were scanned (including empty string).
      */
-    @PublishedApi
     internal var lastScanContentWas7BitOnly: Boolean = false
 
     /** Current nesting depth (object/array).
@@ -212,6 +227,7 @@ class GhostJsonReader(
      * Attempts to peek at the discriminator value (e.g. "type") of the current object.
      * Does not advance the reader's position.
      * Returns null if not found or if the current token is not an object start.
+     * Used by KSP-generated serializers for polymorphic deserialization.
      */
     fun peekDiscriminator(key: String = "type"): String? {
         if (key == "type") return peekDiscriminator(GhostJsonConstants.TYPE_BS)
@@ -220,25 +236,12 @@ class GhostJsonReader(
 
     /**
      * Internal version that takes a [ByteString] for maximum performance.
+     * Used by KSP-generated serializers for polymorphic deserialization.
      */
     fun peekDiscriminator(key: ByteString): String? {
         return GhostDiscriminatorPeeker.peek(source, rawData, isStreaming, position, limit, key)
     }
 
-    /**
-     * Consumes and returns the current token byte.
-     * If no token is cached, it skips whitespace and reads the next byte.
-     */
-    fun nextToken(): Int {
-        if (nextTokenByte != -1) {
-            val token = nextTokenByte
-            nextTokenByte = -1
-            return token
-        }
-        skipWhitespace()
-        if (position >= limit) return MATCH_END
-        return getByte(position)
-    }
 
     fun peekNextToken(): Int {
         val cached = nextTokenByte
@@ -268,10 +271,6 @@ class GhostJsonReader(
         nextTokenByte = -1
     }
 
-    fun skipAndValidateLiteral(expected: ByteArray) {
-        val byteString = ByteString.of(*expected)
-        skipAndValidateLiteral(byteString)
-    }
 
     /**
      * Reads a quoted JSON string.
@@ -287,11 +286,13 @@ class GhostJsonReader(
         }
 
         val start = position
-        val rollingHash = source.scanString(start, limit, this)
+        val scanResult = source.scanString(start, limit)
 
-        if (rollingHash != -1) {
-            val end = position
-            val length = end - start
+        if (scanResult != -1L) {
+            val length = ((scanResult and SCAN_LENGTH_MASK) ushr SCAN_LENGTH_SHIFT).toInt()
+            val rollingHash = scanResult.toInt()
+            lastScanContentWas7BitOnly = (scanResult and SCAN_7BIT_BIT) != 0L
+            val end = start + length
             if (length <= 0) {
                 position = end + 1
                 return ""
@@ -358,7 +359,7 @@ class GhostJsonReader(
 
                             if (code in HIGH_SURROGATE_START..HIGH_SURROGATE_END) {
                                 if (
-                                    position + GhostJsonConstants.SURROGATE_OFFSET > limit ||
+                                    position + SURROGATE_OFFSET > limit ||
                                     getByte(position) == BACKSLASH_INT &&
                                     getByte(position + SINGLE_CHAR_SIZE) == UNICODE_PREFIX_U_INT
                                 ) {
@@ -379,59 +380,57 @@ class GhostJsonReader(
                             }
 
                             // Encode code point to UTF-8 bytes in outBuffer
-                            if (code <= 0x7F) {
+                            if (code <= UTF8_1BYTE_MAX) {
                                 ensureCapacity(1)
                                 outBuffer[outPos++] = code.toByte()
-                            } else if (code <= 0x7FF) {
+                            } else if (code <= UTF8_2BYTE_MAX) {
                                 ensureCapacity(2)
-                                outBuffer[outPos++] = (0xC0 or (code shr 6)).toByte()
-                                outBuffer[outPos++] = (0x80 or (code and 0x3F)).toByte()
-                            } else if (code <= 0xFFFF) {
+                                outBuffer[outPos++] = (UTF8_2BYTE_PREFIX or (code shr UTF8_SHIFT_6)).toByte()
+                                outBuffer[outPos++] = (UTF8_CONT_PREFIX or (code and UTF8_CONT_MASK)).toByte()
+                            } else if (code <= BMP_LIMIT) {
                                 ensureCapacity(3)
-                                outBuffer[outPos++] = (0xE0 or (code shr 12)).toByte()
-                                outBuffer[outPos++] = (0x80 or ((code shr 6) and 0x3F)).toByte()
-                                outBuffer[outPos++] = (0x80 or (code and 0x3F)).toByte()
+                                outBuffer[outPos++] = (UTF8_3BYTE_PREFIX or (code shr UTF8_SHIFT_12)).toByte()
+                                outBuffer[outPos++] = (UTF8_CONT_PREFIX or ((code shr UTF8_SHIFT_6) and UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] = (UTF8_CONT_PREFIX or (code and UTF8_CONT_MASK)).toByte()
                             } else {
                                 ensureCapacity(4)
-                                outBuffer[outPos++] = (0xF0 or (code shr 18)).toByte()
-                                outBuffer[outPos++] = (0x80 or ((code shr 12) and 0x3F)).toByte()
-                                outBuffer[outPos++] = (0x80 or ((code shr 6) and 0x3F)).toByte()
-                                outBuffer[outPos++] = (0x80 or (code and 0x3F)).toByte()
+                                outBuffer[outPos++] = (UTF8_4BYTE_PREFIX or (code shr UTF8_SHIFT_18)).toByte()
+                                outBuffer[outPos++] = (UTF8_CONT_PREFIX or ((code shr UTF8_SHIFT_12) and UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] = (UTF8_CONT_PREFIX or ((code shr UTF8_SHIFT_6) and UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] = (UTF8_CONT_PREFIX or (code and UTF8_CONT_MASK)).toByte()
                             }
                         }
 
                         GhostJsonConstants.N_BYTE_INT -> {
                             ensureCapacity(1)
-                            outBuffer[outPos++] = 0x0A // \n
+                            outBuffer[outPos++] = LF_INT.toByte()
                         }
 
                         GhostJsonConstants.R_BYTE_INT -> {
                             ensureCapacity(1)
-                            outBuffer[outPos++] = 0x0D // \r
+                            outBuffer[outPos++] = CR_INT.toByte()
                         }
 
                         GhostJsonConstants.T_BYTE_INT -> {
                             ensureCapacity(1)
-                            outBuffer[outPos++] = 0x09 // \t
+                            outBuffer[outPos++] = TAB_INT.toByte()
                         }
 
                         GhostJsonConstants.B_BYTE_INT -> {
                             ensureCapacity(1)
-                            outBuffer[outPos++] = 0x08 // \b
+                            outBuffer[outPos++] = BS_INT.toByte()
                         }
 
                         GhostJsonConstants.F_BYTE_INT -> {
                             ensureCapacity(1)
-                            outBuffer[outPos++] = 0x0C // \f
+                            outBuffer[outPos++] = FF_INT.toByte()
                         }
 
                         else -> {
-                            // Any other escaped char is written as its UTF-8 bytes
-                            val s = escaped.toChar().toString()
-                            val b = s.encodeToByteArray()
-                            ensureCapacity(b.size)
-                            b.copyInto(outBuffer, outPos, 0, b.size)
-                            outPos += b.size
+                            // Any other escaped char (like \", \\, \/) is written as its UTF-8 byte directly.
+                            // Standard JSON only allows these, so they are all single-byte ASCII.
+                            ensureCapacity(1)
+                            outBuffer[outPos++] = escaped.toByte()
                         }
                     }
                 } else {
@@ -535,31 +534,8 @@ class GhostJsonReader(
         this.strictMode = false
         this.coerceStringsToNumbers = false
         this.coerceBooleans = false
-        this.maxDepth = 255
+        this.maxDepth = GhostJsonConstants.MAX_DEPTH
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
     }
-}
-
-@InternalGhostApi
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun GhostJsonReader.beginUnescapedStringContentScan() {
-    lastScanContentWas7BitOnly = true
-}
-
-/**
- * Marks non-ASCII UTF-8 content (high bit set). No allocation: [Byte] stays primitive on JVM.
- * Uses signed [Byte]: bit 7 set ⇒ negative.
- */
-@InternalGhostApi
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun GhostJsonReader.noteUnescapedStringContentByte(b: Byte) {
-    if (b < 0) lastScanContentWas7BitOnly = false
-}
-
-/** Variant for [GhostSource.get] / streaming, where bytes are already unsigned 0–255 as [Int]. */
-@InternalGhostApi
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun GhostJsonReader.noteUnescapedStringContentByte(unsignedCode0To255: Int) {
-    if (unsignedCode0To255 and 0x80 != 0) lastScanContentWas7BitOnly = false
 }

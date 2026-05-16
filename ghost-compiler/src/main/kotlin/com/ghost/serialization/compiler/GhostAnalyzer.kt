@@ -86,8 +86,30 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else {
             properties.map { prop -> buildPropertyModel(prop, parameters) }
         }
-        validateNames(propertyModels, classDeclaration)
-        return propertyModels
+
+        val finalModels = if (isSealed) {
+            val inferredSubclasses = classDeclaration.getSealedSubclasses().map { subclass ->
+                InferredSubclassModel(subclass, analyze(subclass))
+            }.toList()
+            propertyModels.map { it.copy(inferredSubclasses = inferredSubclasses) }
+                .ifEmpty {
+                    // If the sealed class itself has no properties, return a dummy one to carry the inferred info
+                    listOf(
+                        GhostPropertyModel(
+                            kotlinName = C.STR_EMPTY, jsonName = C.STR_EMPTY,
+                            type = classDeclaration.asType(emptyList()),
+                            typeName = classDeclaration.toClassName(),
+                            isNullable = false, isGhost = false, isList = false, isEnum = false,
+                            inferredSubclasses = inferredSubclasses
+                        )
+                    )
+                }
+        } else {
+            propertyModels
+        }
+
+        validateNames(finalModels, classDeclaration)
+        return finalModels
     }
 
     private fun getEnumValues(
@@ -184,7 +206,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
 
         if (customDecoder != null || customEncoder != null) {
-            logger.warn("Detected custom coder for ${prop.simpleName.asString()}: D=$customDecoder, E=$customEncoder")
+            logger.warn(C.STR_WARN_CUSTOM_CODER.format(prop.simpleName.asString(), customDecoder, customEncoder))
         }
 
         val jsonName = if (flattenPath != null) {
@@ -228,7 +250,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             customDecoder = customDecoder,
             customEncoder = customEncoder,
             flattenPath = flattenPath,
-            wrapPath = wrapPath
+            wrapPath = wrapPath,
+            isInferredSignature = prop.hasAnnotation(C.GHOST_SIGNATURE)
         )
     }
 
