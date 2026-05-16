@@ -44,26 +44,51 @@ import com.ghost.serialization.parser.GhostJsonConstants.TRUE_CHAR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERROR
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_INT
 
+/**
+ * Starts a new JSON object.
+ * Increments [depth] and validates against [maxDepth].
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.beginObject() {
     if (nextNonWhitespace() != OPEN_OBJ_INT) throwError(ERR_EXPECTED_BEGIN_OBJ)
     if (++depth > maxDepth) throwError(ERR_DEPTH_EXCEEDED)
 }
 
+/**
+ * Ends the current JSON object.
+ * Decrements [depth].
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.endObject() {
     if (nextNonWhitespace() != CLOSE_OBJ_INT) throwError(ERR_EXPECTED_END_OBJ)
     depth--
 }
 
+/**
+ * Starts a new JSON array.
+ * Increments [depth] and validates against [maxDepth].
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.beginArray() {
     if (nextNonWhitespace() != OPEN_ARR_INT) throwError(ERR_EXPECTED_BEGIN_ARR)
     if (++depth > maxDepth) throwError(ERR_DEPTH_EXCEEDED)
 }
 
+/**
+ * Ends the current JSON array.
+ * Decrements [depth].
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.endArray() {
     if (nextNonWhitespace() != CLOSE_ARR_INT) throwError(ERR_EXPECTED_END_ARR)
     depth--
 }
 
+/**
+ * Returns true if the current object or array has more elements.
+ * Automatically handles comma consumption.
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.hasNext(): Boolean {
     val token = peekNextToken()
     if (
@@ -105,6 +130,11 @@ fun GhostJsonReader.consumeArraySeparator() {
     if (peekNextToken() == COMMA_INT) internalSkip(1)
 }
 
+/**
+ * Reads the next boolean value.
+ * Supports string coercion if [coerceBooleans] is true.
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.nextBoolean(): Boolean {
     val token = peekNextToken()
     if (token == TRUE_CHAR_INT) {
@@ -138,9 +168,17 @@ fun GhostJsonReader.nextBoolean(): Boolean {
 
 fun GhostJsonReader.nextString(): String = readQuotedString()
 
+/**
+ * Returns true if the next value is null.
+ * Used by KSP-generated serializers for nullable properties.
+ */
 fun GhostJsonReader.isNextNullValue(): Boolean =
     peekNextToken() == NULL_CHAR_INT
 
+/**
+ * Consumes the null literal from the source.
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.consumeNull() {
     skipAndValidateLiteral(NULL_BS)
 }
@@ -382,6 +420,7 @@ inline fun <K, V> GhostJsonReader.readMap(
     }
     return map
 }
+
 
 @InternalGhostApi
 inline fun <T> GhostJsonReader.decodeResilient(block: () -> T): T? {

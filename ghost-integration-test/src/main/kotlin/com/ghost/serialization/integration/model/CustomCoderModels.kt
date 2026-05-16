@@ -1,5 +1,8 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration.model
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.annotations.GhostDecoder
 import com.ghost.serialization.annotations.GhostEncoder

@@ -47,16 +47,25 @@ internal object GhostJsonConstants {
     const val ERR_HIGH_SURROGATE = "Lone high surrogate"
 
     // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
-    @PublishedApi internal val TRUE_BS = "true".encodeUtf8()
-    @PublishedApi internal val FALSE_BS = "false".encodeUtf8()
-    @PublishedApi internal val NULL_BS = "null".encodeUtf8()
+    @PublishedApi
+    internal val TRUE_BS = "true".encodeUtf8()
+    @PublishedApi
+    internal val FALSE_BS = "false".encodeUtf8()
+    @PublishedApi
+    internal val NULL_BS = "null".encodeUtf8()
     internal val EMPTY_STRING_BS = "\"\"".encodeUtf8()
-    @PublishedApi internal val MIN_INT_BS = "-2147483648".encodeUtf8()
-    @PublishedApi internal val MIN_LONG_BS = "-9223372036854775808".encodeUtf8()
-    @PublishedApi internal val DOT_ZERO = ".0".encodeToByteArray()
-    @PublishedApi internal val COLON_QUOTE_BS = "\":".encodeUtf8()
-    @PublishedApi internal val MINUS_ONE_BS = "-1".encodeUtf8()
-    @PublishedApi internal val TYPE_BS = "type".encodeUtf8()
+    @PublishedApi
+    internal val MIN_INT_BS = "-2147483648".encodeUtf8()
+    @PublishedApi
+    internal val MIN_LONG_BS = "-9223372036854775808".encodeUtf8()
+    @PublishedApi
+    internal val DOT_ZERO = ".0".encodeToByteArray()
+    @PublishedApi
+    internal val COLON_QUOTE_BS = "\":".encodeUtf8()
+    @PublishedApi
+    internal val MINUS_ONE_BS = "-1".encodeUtf8()
+    @PublishedApi
+    internal val TYPE_BS = "type".encodeUtf8()
 
     // --- Numeric Limits & Formatting ---
     const val MAX_SAFE_INTEGER_DOUBLE = 1e15
@@ -70,12 +79,17 @@ internal object GhostJsonConstants {
     // --- Bitwise Optimization Constants ---
     /** The unit bit (1L) used for flag shifting. */
     const val BYTE_SHIFT_UNIT = 1L
+
     /** Result of a bitwise check when no flags match. */
     const val RESULT_NONE = 0L
+
     /** Bitmask for ASCII digits '0'-'9' (bits 48-57 set). Used for zero-cast validation. */
-    @PublishedApi internal const val DIGIT_BITMASK = 0x03FF000000000000L
+    @PublishedApi
+    internal const val DIGIT_BITMASK = 0x03FF000000000000L
+
     /** Bitmask for JSON whitespace: Space (32), LF (10), CR (13), HT (9). */
     const val WHITESPACE_MASK = (1L shl 32) or (1L shl 10) or (1L shl 13) or (1L shl 9)
+
     /** Standard mask for unsigned byte access. */
     const val BYTE_MASK = 0xFF
 
@@ -120,10 +134,13 @@ internal object GhostJsonConstants {
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
     const val STR_POOL_SIZE = 2048
+
     /** Bit shift used for rolling hash calculation. */
     const val HASH_SHIFT = 5
+
     /** Bitmask to normalize ASCII uppercase to lowercase (e.g. 'E' or 32 == 'e'). */
     const val CASE_INSENSITIVE_MASK = 32
+
     /** Max digits of precision for numeric formatting. */
     const val DOUBLE_PRECISION_LIMIT = 17
     const val FLOAT_PRECISION_LIMIT = 9
@@ -131,8 +148,10 @@ internal object GhostJsonConstants {
     // --- Buffer Sizes & Scaling ---
     /** Minimum scratch buffer size for small objects. */
     const val TIER_SMALL_INT = 1024
+
     /** Scaling factor when growing internal buffers. */
     const val BUFFER_SCALE_FACTOR = 2
+
     /** Byte sizes for common UTF/JSON sequences. */
     const val SINGLE_CHAR_SIZE = 1
     const val SURROGATE_PAIR_SIZE = 2
@@ -145,10 +164,13 @@ internal object GhostJsonConstants {
 
     /** Max depth for nested objects and arrays. */
     const val MAX_DEPTH = 255
+
     /** Size of the scratch buffer for numeric itoa/dtoa. */
     const val LONG_SCRATCH_SIZE = 24
+
     /** Size of the hot-path writer scratch buffer. */
     const val WRITER_SCRATCH_SIZE = 512
+
     /** Initial size for the [com.ghost.serialization.writer.FlatByteArrayWriter]. */
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
 
@@ -166,6 +188,7 @@ internal object GhostJsonConstants {
     // --- Lookup Tables (LUTs) ---
     /** Hexadecimal character bytes. */
     val HEX_CHARS = "0123456789abcdef".encodeToByteArray()
+
     /** Maps ASCII bytes (0-255) to their hex numeric value (-1 if invalid). */
     val HEX_LUT = IntArray(256) { -1 }.apply {
         for (i in 0..9) this['0'.code + i] = i
@@ -174,32 +197,34 @@ internal object GhostJsonConstants {
             this['a'.code + i] = 10 + i
         }
     }
+
     /** Stores two ASCII bytes per number (00-99) for fast numeric formatting. */
     val DOUBLE_DIGIT_LUT = ByteArray(200) { i ->
         val num = i / 2
         if (i % 2 == 0) (num / 10 + '0'.code).toByte() else (num % 10 + '0'.code).toByte()
     }
-    /** Bitmask width for 64-bit Long operations. */
-    const val BITMASK_WIDTH = 64L
+
     /** Mask to extract the bit index within a 64-bit Long. */
     const val BITMASK_INDEX_MASK = 63
 
+    /** Shift to get the index in the LongArray bitmask (index = charCode shr 6). */
+    const val BITMASK_SHIFT = 6
+
+    /** Unit long for bitwise comparisons. */
+    const val BITMASK_UNIT = 1L
+
+    /** Maximum ASCII value (0-127). */
+    const val ASCII_LIMIT = 128
+
     /** Bitmask for ASCII characters 0-63 that require escaping (Controls + Quote). */
     const val NEEDS_ESCAPE_MASK_LOW = 0x4FFFFFFFFL
+
     /** Bitmask for ASCII characters 64-127 that require escaping (Backslash). */
     const val NEEDS_ESCAPE_MASK_HIGH = 0x10000000L
 
-    /** Flags bytes that require escaping in JSON strings. */
-    val NEEDS_ESCAPE_LUT = booleanArrayOf(
-        true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,
-        true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,
-        false, false, true,  false, false, false, false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false, false, false, true,  false, false, false,
-        false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-    )
+    /** Combined masks for branch-free lookup. */
+    val ESCAPE_MASKS = longArrayOf(NEEDS_ESCAPE_MASK_LOW, NEEDS_ESCAPE_MASK_HIGH)
+
     /** Pre-encoded replacement bytes for common escape sequences (e.g., \n -> ['\\', 'n']). */
     val ESCAPE_REPLACEMENTS = arrayOfNulls<ByteArray>(128).apply {
         this['"'.code] = "\\\"".encodeToByteArray()
@@ -236,17 +261,11 @@ internal object GhostJsonConstants {
     const val UNICODE_BASE = 0x10000
     const val SHIFT_10 = 10
     const val BMP_LIMIT = 0xFFFF
-    const val SURROGATE_LOW_BITS_MASK = 0x3FF
 
     // --- Scanning & Escape Identifiers ---
-    const val SEARCH_UNROLL_STEP = 8
-    const val SEARCH_UNROLL_LIMIT = 7
     const val SPACE_INT = 32
     const val QUOTE_BYTE: Byte = 34
-    const val BACKSLASH_BYTE: Byte = 92
-    const val CONTROL_CHAR_START: Byte = 0
     const val CONTROL_CHAR_START_INT = 0
-    const val CONTROL_CHAR_LIMIT: Byte = 31
     const val CONTROL_CHAR_LIMIT_INT = 31
     const val N_BYTE_INT = 110
     const val R_BYTE_INT = 114
@@ -254,42 +273,65 @@ internal object GhostJsonConstants {
     const val B_BYTE_INT = 98
     const val F_BYTE_INT = 102
 
+    // --- Control Characters (Int values for parsing) ---
+    const val LF_INT = 0x0A
+    const val CR_INT = 0x0D
+    const val TAB_INT = 0x09
+    const val BS_INT = 0x08
+    const val FF_INT = 0x0C
+
     // --- Writer Formatting Constants ---
     const val SCRATCH_BUFFER_SIZE = 48
     const val BASE_TEN = 10
     const val BASE_HUNDRED = 100
     const val ASCII_OFFSET = 48
-    const val ASCII_LIMIT = 128
 
     // --- Quote / Escape Layout ---
     /** Bytes consumed by the opening + closing quotes around a JSON string value. */
     const val STRING_QUOTE_PAIR_BYTES = 2
+
     /** Number of UTF-16 code units in a Unicode surrogate pair. */
     const val SURROGATE_PAIR_LENGTH = 2
+
     /** Total bytes in a JSON `\uXXXX` escape sequence (`\` + `u` + 4 hex digits). */
     const val UNICODE_ESCAPE_LENGTH = 6
 
     // --- UTF-8 Encoding (used by FlatByteArrayWriter) ---
     /** Code point upper bound (exclusive) for the 1-byte UTF-8 form (i.e. ASCII). */
     const val UTF8_1BYTE_LIMIT = 0x80
+    const val UTF8_1BYTE_MAX = 0x7F
+
     /** Code point upper bound (exclusive) for the 2-byte UTF-8 form. */
     const val UTF8_2BYTE_LIMIT = 0x800
+    const val UTF8_2BYTE_MAX = 0x7FF
+
     /** Leading-byte prefix for a 2-byte UTF-8 sequence (110xxxxx). */
     const val UTF8_2BYTE_PREFIX = 0xC0
+
     /** Leading-byte prefix for a 3-byte UTF-8 sequence (1110xxxx). */
     const val UTF8_3BYTE_PREFIX = 0xE0
+
     /** Leading-byte prefix for a 4-byte UTF-8 sequence (11110xxx). */
     const val UTF8_4BYTE_PREFIX = 0xF0
+
     /** Continuation-byte prefix for trailing UTF-8 bytes (10xxxxxx). */
     const val UTF8_CONT_PREFIX = 0x80
+
     /** Six-bit mask used to extract the payload of a UTF-8 continuation byte. */
     const val UTF8_CONT_MASK = 0x3F
+
     /** Right-shift by 6 bits when packing UTF-8 continuation bytes. */
     const val UTF8_SHIFT_6 = 6
+
+    /** Right-shift by 12 bits when packing the middle byte of a 3-byte UTF-8 sequence. */
+    const val UTF8_SHIFT_12 = 12
+
     /** Right-shift by 18 bits when packing the leading byte of a 4-byte UTF-8 sequence. */
     const val UTF8_SHIFT_18 = 18
+
     /** Worst-case number of UTF-8 bytes for any BMP code point (3 + 1 trailing surrogate). */
     const val UTF8_MAX_BMP_BYTES = 4
+
     /** UTF-8 encoding of the Unicode replacement character `U+FFFD`. */
     val UTF8_REPLACEMENT_CHAR: ByteArray = byteArrayOf(
         0xEF.toByte(),
@@ -307,9 +349,29 @@ internal object GhostJsonConstants {
             }
         }
     }
+
+    // --- Scan results packing (Long) ---
+    /** Mask to extract the 32-bit hash from the scan result Long. */
+    const val SCAN_HASH_MASK = 0xFFFFFFFFL
+
+    /** Shift to extract the 31-bit length from the scan result Long. */
+    const val SCAN_LENGTH_SHIFT = 32
+
+    /** Bit indicating that the scanned string contains only 7-bit ASCII characters. */
+    const val SCAN_7BIT_BIT = 1L shl 63
+
+    /** Mask to extract the 31-bit length from the scan result Long (bits 32-62). */
+    const val SCAN_LENGTH_MASK = 0x7FFFFFFF00000000L
+
+    @PublishedApi
+    internal fun packScanResult(length: Int, hash: Int, is7Bit: Boolean): Long {
+        var res = (length.toLong() shl SCAN_LENGTH_SHIFT) or (hash.toLong() and SCAN_HASH_MASK)
+        if (is7Bit) res = res or SCAN_7BIT_BIT
+        return res
+    }
 }
 
 /** Utility extension to suppress unused result warnings in a zero-cost way. */
 @Suppress("NOTHING_TO_INLINE")
 @InternalGhostApi
-inline fun Any?.ignore() {}
+inline fun Any?.ignore() { }

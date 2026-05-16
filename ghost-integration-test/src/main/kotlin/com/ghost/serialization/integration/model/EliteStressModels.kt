@@ -1,5 +1,8 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration.model
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.annotations.*
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonReader
@@ -89,6 +92,7 @@ object EliteUtils {
 
 data class ExternalColor(val r: Int, val g: Int, val b: Int)
 
+@InternalGhostApi
 object ExternalColorSerializer : GhostSerializer<ExternalColor> {
     override val typeName: String = "ExternalColor"
 

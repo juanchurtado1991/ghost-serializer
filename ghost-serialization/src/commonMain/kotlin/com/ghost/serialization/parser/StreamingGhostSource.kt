@@ -4,6 +4,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.GhostJsonConstants.CONTROL_CHAR_LIMIT_INT
 import com.ghost.serialization.parser.GhostJsonConstants.CONTROL_CHAR_START_INT
+import com.ghost.serialization.parser.GhostJsonConstants.packScanResult
 import com.ghost.serialization.parser.GhostJsonConstants.HASH_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
@@ -38,14 +39,6 @@ class StreamingGhostSource(val okioSource: BufferedSource) : GhostSource {
         return okioSource.rangeEquals(start.toLong(), expected)
     }
 
-    override fun copyTo(sink: ByteArray, sinkOffset: Int, start: Int, count: Int) {
-        val startLong = start.toLong()
-        val countLong = count.toLong()
-        okioSource.request(startLong + countLong)
-        val tempBuffer = Buffer()
-        buffer.copyTo(tempBuffer, startLong, countLong)
-        tempBuffer.read(sink, sinkOffset, count)
-    }
 
     override fun findNextNonWhitespace(position: Int, limit: Int): Int {
         var localPosition = position
@@ -73,35 +66,25 @@ class StreamingGhostSource(val okioSource: BufferedSource) : GhostSource {
         return -1
     }
 
-    override fun scanString(start: Int, limit: Int, reader: GhostJsonReader): Int {
-        reader.beginUnescapedStringContentScan()
+    override fun scanString(start: Int, limit: Int): Long {
         var position = start
         var hashResult = 0
+        var is7Bit = true
         while (position < limit) {
             val byte = get(position)
             if (byte == QUOTE_INT) {
-                reader.position = position
-                return hashResult
+                return GhostJsonConstants.packScanResult(position - start, hashResult, is7Bit)
             }
             if (byte == BACKSLASH_INT || byte < SPACE_INT) {
-                return -1
+                return -1L
             }
-            reader.noteUnescapedStringContentByte(byte)
+            if (byte >= GhostJsonConstants.ASCII_LIMIT) is7Bit = false
             hashResult = (hashResult shl HASH_SHIFT) - hashResult + byte
             position++
         }
-        return -1
+        return -1L
     }
 
-    override fun calculateHash(start: Int, length: Int): Int {
-        var hashResult = 0
-        var index = 0
-        while (index < length) {
-            hashResult = (hashResult shl HASH_SHIFT) - hashResult + get(start + index)
-            index++
-        }
-        return hashResult
-    }
 
     override fun contentEqualsString(start: Int, length: Int, str: String): Boolean {
         if (str.length != length) return false

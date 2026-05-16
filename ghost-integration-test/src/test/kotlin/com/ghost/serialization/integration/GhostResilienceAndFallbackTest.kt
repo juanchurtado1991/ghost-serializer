@@ -1,6 +1,7 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.HomeStatus
 import com.ghost.serialization.integration.model.SmartDevice
 import com.ghost.serialization.integration.model.SmartHome
@@ -8,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(InternalGhostApi::class)
 class GhostResilienceAndFallbackTest {
 
     @Test

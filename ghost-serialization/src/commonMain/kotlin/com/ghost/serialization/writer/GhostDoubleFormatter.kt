@@ -108,13 +108,16 @@ internal object GhostDoubleFormatter {
         pos += decimalsToPrint
         var writePos = pos - 1
 
-        var decimal = decimalsToPrint
-        while (decimal > 0) {
-            val q = fracInt / 10
-            // % avoids the extra multiply in (fracInt - q*10)
-            scratch[writePos--] = (GhostJsonConstants.ZERO_INT + fracInt % 10).toByte()
+        while (decimalsToPrint >= 2) {
+            val q = fracInt / 100
+            val r = (fracInt - (q * 100)) * 2
+            GhostJsonConstants.DOUBLE_DIGIT_LUT.copyInto(scratch, writePos - 1, r, r + 2)
+            writePos -= 2
             fracInt = q
-            decimal--
+            decimalsToPrint -= 2
+        }
+        if (decimalsToPrint == 1) {
+            scratch[writePos] = (GhostJsonConstants.ZERO_INT + fracInt % 10).toByte()
         }
 
         return pos - offset

@@ -12,10 +12,12 @@ package com.ghost.serialization.annotations
  *   Defaults to `"type"`. Override this when consuming third-party APIs that use a different
  *   convention (e.g. `"kind"`, `"object"`, `"@type"`).
  *   Has no effect on non-sealed classes.
+ * @param inferred Whether the type should be inferred automatically.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
 annotation class GhostSerialization(
     val name: String = "",
-    val discriminator: String = "type"
+    val discriminator: String = "type",
+    val inferred: Boolean = false
 )

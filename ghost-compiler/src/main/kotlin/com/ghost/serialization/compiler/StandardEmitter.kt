@@ -21,25 +21,25 @@ internal class StandardEmitter(
     readerClass: ClassName
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+    fun emit(body: CodeBlock.Builder) {
         properties.forEach {
             val varType = it.getVariableType()
             val initialValue = it.getInitialValue()
             body.addStatement(
-                "${C.STR_VAR_UNDERSCORE}${it.kotlinName}${C.TEMPLATE_VAR_INIT}",
+                "${C.STR_VAR_UNDERSCORE}${it.kotlinName}${C.TEMPLATE_VAR_TYPE_INIT}",
                 varType,
                 initialValue
             )
         }
 
-        val maskCount = (properties.size + 63) / 64
+        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
         for (i in 0 until maskCount) {
             body.addStatement(C.STR_MASK_INIT, i)
         }
 
         emitParseLoop(body)
-        emitFieldValidation(body, typeSpecBuilder)
-        emitReturnStatement(body, typeSpecBuilder)
+        emitFieldValidation(body)
+        emitReturnStatement(body)
     }
 
     private fun emitParseLoop(body: CodeBlock.Builder) {
@@ -51,13 +51,13 @@ internal class StandardEmitter(
         val topLevelNames = fullPaths.map { it.first() }.distinct()
 
         topLevelNames.forEachIndexed { topIndex, topName ->
-            body.beginControlFlow("$topIndex${C.STR_ARROW}")
+            body.beginControlFlow(C.TEMPLATE_WHEN_BRANCH, topIndex)
             val propsForThisName = properties.filterIndexed { idx, _ -> fullPaths[idx].first() == topName }
 
             if (propsForThisName.size == 1 && fullPaths[properties.indexOf(propsForThisName[0])].size == 1) {
                 emitPropertyAssignment(body, propsForThisName[0], properties.indexOf(propsForThisName[0]))
             } else {
-                emitFlattenedGroup(body, topName, propsForThisName, 1, "")
+                emitFlattenedGroup(body, topName, propsForThisName, 1, C.STR_EMPTY)
             }
             body.endControlFlow()
         }
@@ -78,8 +78,8 @@ internal class StandardEmitter(
         pathIndex: Int,
         parentPrefix: String
     ) {
-        val currentPrefix = if (parentPrefix.isEmpty()) name else "${parentPrefix}_$name"
-        val optionsName = "OPTIONS_${currentPrefix.uppercase()}"
+        val currentPrefix = if (parentPrefix.isEmpty()) name else "${parentPrefix}${C.STR_UNDERSCORE}$name"
+        val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
 
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
@@ -96,7 +96,7 @@ internal class StandardEmitter(
         }.distinct()
 
         nextLevelNames.forEachIndexed { subIndex, subName ->
-            body.beginControlFlow("$subIndex${C.STR_ARROW}")
+            body.beginControlFlow(C.TEMPLATE_WHEN_BRANCH, subIndex)
             val subProps = props.filter {
                 val path = fullPaths[properties.indexOf(it)]
                 val currentName = if (pathIndex < path.size) {
@@ -127,93 +127,110 @@ internal class StandardEmitter(
 
     private fun emitPropertyAssignment(body: CodeBlock.Builder, prop: GhostPropertyModel, index: Int) {
         val call = buildCall(prop)
-        val maskIdx = index / 64
-        val bitIdx = index % 64
+        val maskIdx = index / C.MASK_SIZE_BITS.toInt()
+        val bitIdx = index % C.MASK_SIZE_BITS.toInt()
         val bitMask = 1L shl bitIdx
         val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
             C.STR_BIT_MASK_MIN_LONG
         } else {
-            "${bitMask}L"
+            C.FMT_LONG_LITERAL.format(bitMask)
         }
 
         if (prop.isResilient) {
             body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
-            body.addStatement("${C.STR_UNDERSCORE}${prop.kotlinName}${C.TEMPLATE_ASSIGN_L}", "it")
+            body.addStatement(C.STR_UNDERSCORE + prop.kotlinName + C.TEMPLATE_ASSIGN_L, C.STR_IT)
             body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, bitMaskStr)
             body.endControlFlow()
         } else {
-            body.addStatement("${C.STR_UNDERSCORE}${prop.kotlinName}${C.TEMPLATE_ASSIGN_L}", call)
+            body.addStatement(C.STR_UNDERSCORE + prop.kotlinName + C.TEMPLATE_ASSIGN_L, call)
             body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, bitMaskStr)
         }
     }
 
-    private fun emitFieldValidation(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val maskCount = (properties.size + 63) / 64
+    private fun emitFieldValidation(body: CodeBlock.Builder) {
+        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
         val requiredMasks = LongArray(maskCount)
-        properties.forEachIndexed { index, it ->
-            if (!it.isNullable && !it.hasDefaultValue) {
-                val maskIdx = index / 64
-                val bitIdx = index % 64
+        val requiredPropsByMask = Array(maskCount) { mutableListOf<GhostPropertyModel>() }
+        
+        properties.forEachIndexed { index, prop ->
+            if (!prop.isNullable && !prop.hasDefaultValue) {
+                val maskIdx = index / C.MASK_SIZE_BITS.toInt()
+                val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                 requiredMasks[maskIdx] = requiredMasks[maskIdx] or (1L shl bitIdx)
+                requiredPropsByMask[maskIdx].add(prop)
             }
         }
 
         for (i in 0 until maskCount) {
             val reqMask = requiredMasks[i]
             if (reqMask != 0L) {
-                val reqMaskStr = if (reqMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${reqMask}L"
-                body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_SIMPLE, i, reqMaskStr, reqMaskStr)
-                properties.forEachIndexed { index, it ->
-                    if (!it.isNullable && !it.hasDefaultValue && (index / 64) == i) {
-                        val bitIdx = index % 64
+                val reqMaskStr = if (reqMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(reqMask)
+                val propsInMask = requiredPropsByMask[i]
+
+                if (propsInMask.size == 1) {
+                    val prop = propsInMask[0]
+                    val index = properties.indexOf(prop)
+                    val bitIdx = index % C.MASK_SIZE_BITS.toInt()
+                    val bitMask = 1L shl bitIdx
+                    val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
+                    body.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_SIMPLE, i, bitMaskStr)
+                    body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2)
+                    body.endControlFlow()
+                } else {
+                    body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_SIMPLE, i, reqMaskStr, reqMaskStr)
+                    propsInMask.forEach { prop ->
+                        val index = properties.indexOf(prop)
+                        val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
-                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
+                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
                         body.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_SIMPLE, i, bitMaskStr)
-                        body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + it.jsonName + C.STR_REQ_FIELD_2)
+                        body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2)
                         body.endControlFlow()
                     }
+                    body.endControlFlow()
                 }
-                body.endControlFlow()
             }
         }
     }
 
-    private fun emitReturnStatement(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+    private fun emitReturnStatement(body: CodeBlock.Builder) {
         val hasDefaults = properties.any { it.hasDefaultValue }
 
         if (!hasDefaults) {
-            val args = properties.joinToString(C.STR_COMMA_SPACE) { prop ->
-                "`${prop.kotlinName}` = ${prop.getReturnExpression()}"
+            body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)
+            properties.forEach { prop ->
+                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
             }
-            body.addStatement("${C.TEMPLATE_RETURN_T_PAREN}$args${C.STR_PAREN}", originalClassName)
+            body.addStatement(C.STR_PAREN)
             return
         }
 
-        emitDefaultValueReturn(body, typeSpecBuilder)
+        emitDefaultValueReturn(body)
     }
 
-    private fun emitDefaultValueReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+    private fun emitDefaultValueReturn(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
         val defaultProps = properties.filter { it.hasDefaultValue }
 
-        val requiredArgs = requiredProps.joinToString(C.STR_COMMA_SPACE) { prop ->
-            "`${prop.kotlinName}`${C.STR_EQ_SPACE}" + if (prop.isNullable) {
-                "${C.STR_UNDERSCORE}${prop.kotlinName}"
+        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+        requiredProps.forEach { prop ->
+            val expr = if (prop.isNullable) {
+                C.STR_UNDERSCORE + prop.kotlinName
             } else {
-                "${C.STR_UNDERSCORE}${prop.kotlinName}${C.STR_BANG_BANG}"
+                C.STR_UNDERSCORE + prop.kotlinName + C.STR_BANG_BANG
             }
+            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, expr)
         }
-
-        body.addStatement("${C.TEMPLATE_VAL_RESULT}$requiredArgs${C.STR_PAREN}", originalClassName)
+        body.addStatement(C.STR_PAREN)
 
         if (defaultProps.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
-            val maskCount = (properties.size + 63) / 64
+            val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
             val defaultMasks = LongArray(maskCount)
-            properties.forEachIndexed { index, it ->
-                if (it.hasDefaultValue) {
-                    val maskIdx = index / 64
-                    val bitIdx = index % 64
+            properties.forEachIndexed { index, prop ->
+                if (prop.hasDefaultValue) {
+                    val maskIdx = index / C.MASK_SIZE_BITS.toInt()
+                    val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                     defaultMasks[maskIdx] = defaultMasks[maskIdx] or (1L shl bitIdx)
                 }
             }
@@ -222,7 +239,7 @@ internal class StandardEmitter(
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
-                    val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${defMask}L"
+                    val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(defMask)
                     conditions.add(C.TEMPLATE_MASK_CHECK_MATCH.format(i, defMaskStr))
                 }
             }
@@ -233,14 +250,13 @@ internal class StandardEmitter(
             val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
                 if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
             }
-            defaultPropsWithGlobalIndex.forEachIndexed { localIdx, (propIndex, prop) ->
-                val maskIdx = propIndex / 64
-                val bitIdx = propIndex % 64
+            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
+                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+                val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
-                val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else "${bitMask}L"
-                val comma = if (localIdx < defaultPropsWithGlobalIndex.size - 1) C.STR_COMMA else C.STR_EMPTY
+                val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
                 val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, bitMaskStr)
-                body.addStatement("${C.STR_BACKTICK}%L${C.STR_BACKTICK}${C.TEMPLATE_ASSIGN_L}${C.STR_COMMA}", prop.kotlinName, valueExpr)
+                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)

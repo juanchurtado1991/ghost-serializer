@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
     ksp(project(":ghost-compiler"))
+    kspTest(project(":ghost-compiler"))
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.core)

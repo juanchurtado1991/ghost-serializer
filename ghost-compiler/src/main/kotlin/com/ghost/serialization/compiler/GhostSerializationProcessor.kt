@@ -46,10 +46,21 @@ class GhostSerializationProcessor(
 
     private val registryClassName: String by lazy {
         // Use the module name provided by KSP or fallback to a stable suffix
-        val moduleName = options[C.OPTION_MODULE_NAME]
+        var moduleName = options[C.OPTION_MODULE_NAME]
             ?.replace(C.STR_DASH, C.STR_UNDERSCORE)
             ?.replace(C.STR_DOT, C.STR_UNDERSCORE)
             ?: C.STR_DEFAULT_NAME
+
+        // Append _Test if we are in a test source set to avoid collisions
+        if (moduleName == C.STR_DEFAULT_NAME) {
+            val isTest = originatingFiles.any { 
+                val path = it.filePath
+                path.contains("/src/test/") || path.contains("/src/androidTest/") || path.contains("/src/testKsp/")
+            }
+            if (isTest) {
+                moduleName += "_Test"
+            }
+        }
 
         C.STR_REGISTRY_PREFIX + C.STR_UNDERSCORE + moduleName
     }
@@ -116,145 +127,145 @@ class GhostSerializationProcessor(
 
     /**
      * Generates a registry with:
-     * - getSerializer as a `when` chain so the JVM only initializes serializers for the branch taken
-     *   (fast cold start vs eager `mapOf` that touches every companion on registry construction).
-     * - A lazy `allSerializers` map for getAllSerializers / prewarm only when the full graph is needed.
+     * - getSerializer as a `when` chain so the JVM only initializes serializers for the branch taken.
+     *   Fragments the registry into shards if there are many models to avoid method size limits.
+     * - A lazy `allSerializers` map for getAllSerializers / prewarm.
      */
     private fun generateModuleRegistry() {
         val serializerType = ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)
         val kClassType = ClassName(C.STR_REFLECT_PKG, C.STR_KCLASS)
         val type = TypeVariableName(C.STR_TYPE_T, Any::class)
 
-        val mapType = ClassName(
-            C.STR_COLLECTIONS_PKG,
-            C.STR_MAP
-        )
-            .parameterizedBy(
-                kClassType.parameterizedBy(STAR),
-                serializerType.parameterizedBy(STAR)
-            )
+        val mapType = ClassName(C.STR_COLLECTIONS_PKG, C.STR_MAP)
+            .parameterizedBy(kClassType.parameterizedBy(STAR), serializerType.parameterizedBy(STAR))
 
-        val entries = classToSerializer.entries.toList()
-            .sortedBy { it.key.canonicalName }
-
-        val mapBuilder = CodeBlock.builder().add(C.STR_MAP_OF)
-        entries.forEachIndexed { index, entry ->
-            mapBuilder.add(C.STR_MAP_ENTRY, entry.key, entry.value)
-            if (index < entries.size - 1) mapBuilder.add(C.STR_COMMA_NEWLINE)
-        }
-        mapBuilder.add(C.STR_NEWLINE_PAREN)
-
-        val allSerializersDelegate = CodeBlock
-            .builder()
-            .add(C.STR_LAZY_START)
-            .indent()
-            .add(mapBuilder.build())
-            .unindent()
-            .add(C.STR_CURLY_CLOSE)
-            .build()
-
-        val allSerializersProperty = PropertySpec
-            .builder(C.STR_PROP_SERIALIZERS_MAP, mapType)
-            .addModifiers(KModifier.PRIVATE)
-            .delegate(allSerializersDelegate)
-            .build()
-
-        val whenBody = CodeBlock.builder()
-            .add(C.STR_WHEN_CLAZZ_START)
-        entries.forEach { entry ->
-            whenBody.add(C.STR_WHEN_ENTRY, entry.key, entry.value)
-        }
-        whenBody.add(C.STR_WHEN_ELSE_NULL)
-        whenBody.add(
-            C.STR_WHEN_CLOSE_CAST,
-            serializerType
-                .parameterizedBy(type)
-                .copy(nullable = true)
-        )
-
-        val getMethod = FunSpec.builder(C.STR_FUN_GET_SERIALIZER)
-            .addTypeVariable(type)
-            .addParameter(
-                C.STR_PARAM_CLAZZ,
-                KClass::class.asClassName().parameterizedBy(type)
-            )
-            .returns(
-                serializerType
-                    .parameterizedBy(type)
-                    .copy(nullable = true)
-            )
-            .addAnnotation(
-                AnnotationSpec.builder(Suppress::class)
-                    .addMember(C.STR_FORMAT_S, C.STR_UNCHECKED_CAST)
-                    .build()
-            )
-            .addCode(whenBody.build())
-
-        val registryInterface = ClassName(
-            C.STR_CONTRACT_PKG,
-            C.STR_GHOST_REGISTRY
-        )
-
-        val prewarmMethod = FunSpec.builder(C.STR_FUN_PREWARM)
-            .addModifiers(KModifier.OVERRIDE)
-            .addStatement(C.STR_IGNORE_CALL, C.STR_SERIALIZERS_SIZE)
-            .build()
-
-        val registeredCountMethod = FunSpec.builder(C.STR_FUN_REG_COUNT)
-            .addModifiers(KModifier.OVERRIDE)
-            .returns(Int::class)
-            .addStatement(C.STR_RETURN_L, entries.size)
-            .build()
-
-        val getAllSerializersMethod = FunSpec.builder(C.STR_FUN_GET_ALL_SERIALIZERS)
-            .addModifiers(KModifier.OVERRIDE)
-            .returns(mapType)
-            .addStatement(C.STR_RETURN_SERIALIZERS)
-            .build()
-
+        val entries = classToSerializer.entries.toList().sortedBy { it.key.canonicalName }
         val registrySpec = TypeSpec.classBuilder(registryClassName)
             .addKdoc(C.STR_KDOC_REGISTRY)
-            .addSuperinterface(registryInterface)
-            .addProperty(allSerializersProperty)
-            .addFunction(
-                getMethod
-                    .addModifiers(KModifier.OVERRIDE)
-                    .build()
-            )
-            .addFunction(prewarmMethod)
-            .addFunction(registeredCountMethod)
-            .addFunction(getAllSerializersMethod)
-            .addType(
-                TypeSpec.companionObjectBuilder()
-                    .addProperty(
-                        PropertySpec.builder(
-                            C.STR_INSTANCE,
-                            ClassName(
-                                C.STR_GENERATED_PKG,
-                                registryClassName
-                            )
-                        )
-                            .initializer(
-                                C.STR_INIT_INSTANCE,
-                                ClassName(
-                                    C.STR_GENERATED_PKG,
-                                    registryClassName
-                                )
-                            )
-                            .build()
-                    )
-                    .build()
-            )
-            .build()
+            .addSuperinterface(ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_REGISTRY))
+
+        val chunkSize = 500
+        val chunks = entries.chunked(chunkSize)
+
+        // 1. Generate full serializers map (Lazy + Fragmented)
+        val allSerializersDelegate = CodeBlock.builder().add(C.STR_LAZY_START).indent()
+        if (chunks.size > 1) {
+            chunks.forEachIndexed { i, _ ->
+                allSerializersDelegate.add("getShardMap%L()", i)
+                if (i < chunks.size - 1) allSerializersDelegate.add(" + ")
+            }
+        } else {
+            allSerializersDelegate.add(buildMapBlock(entries))
+        }
+        allSerializersDelegate.unindent().add("\n}")
+
+        registrySpec.addProperty(
+            PropertySpec.builder(C.STR_PROP_SERIALIZERS_MAP, mapType)
+                .addModifiers(KModifier.PRIVATE)
+                .delegate(allSerializersDelegate.build())
+                .build()
+        )
+
+        // 2. Generate getSerializer method (Fragmented when)
+        val getMethodBuilder = FunSpec.builder(C.STR_FUN_GET_SERIALIZER)
+            .addTypeVariable(type)
+            .addParameter(C.STR_PARAM_CLAZZ, KClass::class.asClassName().parameterizedBy(type))
+            .returns(serializerType.parameterizedBy(type).copy(nullable = true))
+            .addModifiers(KModifier.OVERRIDE)
+            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember(C.MARKER, C.STR_UNCHECKED_CAST).build())
+
+        val getCode = CodeBlock.builder()
+        if (chunks.size > 1) {
+            for (i in chunks.indices) {
+                getCode.addStatement("getShard%L(clazz)?.let { return it as %T }", i, serializerType.parameterizedBy(type).copy(nullable = true))
+            }
+            getCode.addStatement("return null")
+        } else {
+            getCode.add(buildWhenBlock(entries, serializerType, type))
+        }
+        getMethodBuilder.addCode(getCode.build())
+        registrySpec.addFunction(getMethodBuilder.build())
+
+        // 3. Generate Shard Methods
+        if (chunks.size > 1) {
+            chunks.forEachIndexed { i, chunk ->
+                // Shard Map
+                registrySpec.addFunction(
+                    FunSpec.builder("getShardMap$i")
+                        .addModifiers(KModifier.PRIVATE)
+                        .returns(mapType)
+                        .addCode("return %L", buildMapBlock(chunk))
+                        .build()
+                )
+
+                // Shard Lookup
+                registrySpec.addFunction(
+                    FunSpec.builder("getShard$i")
+                        .addModifiers(KModifier.PRIVATE)
+                        .addParameter("clazz", KClass::class.asClassName().parameterizedBy(STAR))
+                        .returns(serializerType.parameterizedBy(STAR).copy(nullable = true))
+                        .addCode(buildWhenBlock(chunk, serializerType, STAR))
+                        .build()
+                )
+            }
+        }
+
+        registrySpec.addFunction(
+            FunSpec.builder(C.STR_FUN_PREWARM)
+                .addModifiers(KModifier.OVERRIDE)
+                .addStatement(C.STR_IGNORE_CALL, C.STR_SERIALIZERS_SIZE)
+                .build()
+        )
+        registrySpec.addFunction(
+            FunSpec.builder(C.STR_FUN_REG_COUNT)
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(Int::class)
+                .addStatement(C.STR_RETURN_L, entries.size)
+                .build()
+        )
+        registrySpec.addFunction(
+            FunSpec.builder(C.STR_FUN_GET_ALL_SERIALIZERS)
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(mapType)
+                .addStatement(C.STR_RETURN_SERIALIZERS)
+                .build()
+        )
+        registrySpec.addType(
+            TypeSpec.companionObjectBuilder()
+                .addProperty(
+                    PropertySpec.builder(C.STR_INSTANCE, ClassName(C.STR_GENERATED_PKG, registryClassName))
+                        .initializer(C.STR_INIT_INSTANCE, ClassName(C.STR_GENERATED_PKG, registryClassName))
+                        .addAnnotation(JvmField::class)
+                        .build()
+                )
+                .build()
+        )
 
         FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
             .addImport(C.PKG_PARSER, C.STR_IGNORE)
-            .addType(registrySpec)
+            .addType(registrySpec.build())
             .build()
-            .writeTo(
-                codeGenerator,
-                Dependencies(aggregating = true, *originatingFiles.toTypedArray())
-            )
+            .writeTo(codeGenerator, Dependencies(aggregating = true, *originatingFiles.toTypedArray()))
+    }
+
+    private fun buildMapBlock(entries: List<Map.Entry<ClassName, ClassName>>): CodeBlock {
+        val builder = CodeBlock.builder().add(C.STR_MAP_OF)
+        entries.forEachIndexed { index, entry ->
+            builder.add(C.STR_MAP_ENTRY, entry.key, entry.value)
+            if (index < entries.size - 1) builder.add(C.STR_COMMA_NEWLINE)
+        }
+        builder.add(C.STR_PAREN_CLOSE)
+        return builder.build()
+    }
+
+    private fun buildWhenBlock(entries: List<Map.Entry<ClassName, ClassName>>, serializerType: ClassName, type: com.squareup.kotlinpoet.TypeName): CodeBlock {
+        val builder = CodeBlock.builder().add(C.STR_WHEN_CLAZZ_START)
+        entries.forEach { entry ->
+            builder.add(C.STR_WHEN_ENTRY, entry.key, entry.value)
+        }
+        builder.add(C.STR_WHEN_ELSE_NULL)
+        builder.add(C.STR_WHEN_CLOSE_CAST, serializerType.parameterizedBy(type).copy(nullable = true))
+        return builder.build()
     }
 
     /**

@@ -1,4 +1,5 @@
 @file:OptIn(InternalGhostApi::class)
+@file:Suppress("UNCHECKED_CAST")
 
 package com.ghost.serialization
 

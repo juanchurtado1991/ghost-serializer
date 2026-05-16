@@ -9,6 +9,11 @@ internal data class CustomCoderModel(
     val functionName: String
 )
 
+internal data class InferredSubclassModel(
+    val declaration: KSClassDeclaration,
+    val properties: List<GhostPropertyModel>
+)
+
 internal data class GhostPropertyModel(
     val kotlinName: String,
     val jsonName: String,
@@ -37,5 +42,7 @@ internal data class GhostPropertyModel(
     val customDecoder: CustomCoderModel? = null,
     val customEncoder: CustomCoderModel? = null,
     val flattenPath: List<String>? = null,
-    val wrapPath: List<String>? = null
+    val wrapPath: List<String>? = null,
+    val isInferredSignature: Boolean = false,
+    val inferredSubclasses: List<InferredSubclassModel> = emptyList()
 )

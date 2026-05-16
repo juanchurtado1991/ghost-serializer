@@ -77,7 +77,7 @@ internal class FragmentedSerializeEmitter(
         val chunkCode = CodeBlock.builder()
         chunkProps.forEach { prop ->
             // We use the delegate to reuse the property emission logic
-            delegate.emitProperty(chunkCode, prop, properties.indexOf(prop))
+            delegate.emitProperty(chunkCode, prop)
         }
 
         chunkFun.addCode(chunkCode.build())

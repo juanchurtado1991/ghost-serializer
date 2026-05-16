@@ -1,4 +1,6 @@
-@file:OptIn(ExperimentalStdlibApi::class, InternalGhostApi::class)
+@file:OptIn(ExperimentalStdlibApi::class, InternalGhostApi::class,
+    ExperimentalSerializationApi::class
+)
 @file:Suppress("SameParameterValue")
 
 package com.ghost.benchmark
@@ -21,6 +23,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.sun.management.ThreadMXBean
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource

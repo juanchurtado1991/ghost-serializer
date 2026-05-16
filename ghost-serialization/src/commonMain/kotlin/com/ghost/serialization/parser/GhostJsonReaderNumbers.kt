@@ -48,6 +48,7 @@ import kotlin.math.pow
 /**
  * Reads a JSON number and returns it as a Float.
  * Uses a zero-allocation, register-based loop for maximum speed.
+ * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.nextFloat(): Float {
     val header = prepareNumericHeader()
@@ -114,6 +115,11 @@ fun GhostJsonReader.nextFloat(): Float {
     return result
 }
 
+/**
+ * Reads a JSON number and returns it as a Double.
+ * Uses a zero-allocation, register-based loop for maximum speed.
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.nextDouble(): Double {
     val header = prepareNumericHeader()
     val isQuoted = (header and NUMERIC_HEADER_QUOTED) != 0
@@ -246,6 +252,7 @@ private inline fun getDoublePowerOfTen(exponent: Int): Double {
 /**
  * Reads a JSON integer and returns it as an Int.
  * Optimized for common small integers.
+ * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.nextInt(): Int {
     val header = prepareNumericHeader()
@@ -268,6 +275,11 @@ fun GhostJsonReader.nextInt(): Int {
     return finalIntResult
 }
 
+/**
+ * Reads a JSON long and returns it as a Long.
+ * Optimized for common small longs.
+ * Used by KSP-generated serializers.
+ */
 fun GhostJsonReader.nextLong(): Long {
     val header = prepareNumericHeader()
     val isQuoted = (header and NUMERIC_HEADER_QUOTED) != 0

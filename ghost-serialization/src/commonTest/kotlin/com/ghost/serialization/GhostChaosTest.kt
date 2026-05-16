@@ -1,15 +1,17 @@
 @file:OptIn(InternalGhostApi::class)
 
 package com.ghost.serialization
-import com.ghost.serialization.parser.*
 
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.createByteArraySource
+import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.nextDouble
 import com.ghost.serialization.parser.nextKey
+import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.parser.skipValue
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -66,7 +68,8 @@ class GhostChaosTest {
         // Test DoS protection on unknown fields
         val deepJson = "{\"unknown\": " + "[".repeat(120) + "]" + "}".repeat(120)
         // Explicitly set maxDepth to 100 to trigger failure
-        val reader = GhostJsonReader(createByteArraySource(deepJson.encodeToByteArray()), maxDepth = 100)
+        val reader =
+            GhostJsonReader(createByteArraySource(deepJson.encodeToByteArray()), maxDepth = 100)
         reader.beginObject()
         reader.nextKey().ignore()
         reader.consumeKeySeparator()
