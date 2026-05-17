@@ -11,9 +11,6 @@ import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 
-private const val REGISTRY_CLASS =
-    "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
-private const val INSTANCE_FILED = "INSTANCE"
 
 private val writerPool = ThreadLocal<WriterSinkPair>()
 private val readerPool = ThreadLocal<GhostJsonReader>()
@@ -52,13 +49,13 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
 
 private fun loadFastRegistries(out: MutableList<GhostRegistry>) {
     listOf(
-        "com.ghost.serialization.generated.GhostModuleRegistry_Default",
-        REGISTRY_CLASS
+        Ghost.DEFAULT_REGISTRY_NAME,
+        Ghost.ANDROID_REGISTRY_NAME
     ).forEach { name ->
         runCatching {
             val clazz = Class.forName(name)
-            val field = runCatching { clazz.getField("INSTANCE") }.getOrNull() 
-                ?: clazz.getDeclaredField(INSTANCE_FILED)
+            val field = runCatching { clazz.getField(Ghost.INSTANCE_FIELD) }.getOrNull() 
+                ?: clazz.getDeclaredField(Ghost.INSTANCE_FIELD)
             (field.get(null) as? GhostRegistry)?.let { out.add(it) }
         }
     }

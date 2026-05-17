@@ -63,15 +63,15 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
             ghostInternalEncodeAndDrainTo(buffer) { writer ->
                 serializer.serialize(writer, value)
             }
-            // Use readByteArray() to avoid ByteString overhead if possible
-            buffer.readByteArray().toRequestBody(MEDIA_TYPE)
+            buffer
+                .readByteArray()
+                .toRequestBody(MEDIA_TYPE)
         }
     }
 
     private fun getSerializerWithCache(type: Type): GhostSerializer<Any>? {
-        return serializerCache.getOrPut(type) {
-            getSerializerForType(type) ?: return null
-        }
+        return serializerCache
+            .getOrPut(type) { getSerializerForType(type) ?: return null }
     }
 
     @Suppress("UNCHECKED_CAST")

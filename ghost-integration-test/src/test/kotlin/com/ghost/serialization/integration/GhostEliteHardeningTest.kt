@@ -6,8 +6,6 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.integration.model.*
-import com.ghost.serialization.parser.GhostJsonReader
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

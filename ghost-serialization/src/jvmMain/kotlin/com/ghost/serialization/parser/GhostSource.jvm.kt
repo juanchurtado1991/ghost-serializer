@@ -21,7 +21,8 @@ class JvmByteArraySource(val data: ByteArray) : GhostSource {
 
     override val rawSourceData: ByteArray get() = data
 
-    override fun decodeToString(start: Int, end: Int): String = data.decodeToString(start, end)
+    override fun decodeToString(start: Int, end: Int): String = data
+        .decodeToString(start, end)
 
     override fun decodeJsonStringRange(start: Int, end: Int, isKnown7BitContent: Boolean): String {
         if (!isKnown7BitContent) return decodeToString(start, end)

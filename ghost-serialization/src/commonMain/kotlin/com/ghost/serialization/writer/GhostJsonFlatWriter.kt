@@ -388,8 +388,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
-        if (number >= MIN_SAFE_INTEGER_DOUBLE &&
-            number <= MAX_SAFE_INTEGER_DOUBLE &&
+        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
             number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
         ) {
             writeLongValueRawInternal(number.toLong())
@@ -493,17 +492,34 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
                     if (replacement != null) buffer.write(replacement)
                     else writeUnicodeEscape(charCode, scratchBuf)
                 } else {
-                    val c = text[index]
-                    if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                        buffer.writeUtf8(text, index, index + SURROGATE_PAIR_LENGTH)
+                    val char = text[index]
+                    if (
+                        char.isHighSurrogate() &&
+                        index + 1 < length && text[index + 1].isLowSurrogate()
+                    ) {
+                        buffer.writeUtf8(
+                            text,
+                            index,
+                            index + SURROGATE_PAIR_LENGTH
+                        )
                         index++
                     } else {
-                        buffer.writeUtf8(text, index, index + 1)
+                        buffer.writeUtf8(
+                            text,
+                            index,
+                            index + 1
+                        )
                     }
                 }
                 index++
             }
-            if (scratchPos > 0) buffer.write(scratchBuf, 0, scratchPos)
+            if (scratchPos > 0) {
+                buffer.write(
+                    scratchBuf,
+                    0,
+                    scratchPos
+                )
+            }
             return
         }
 

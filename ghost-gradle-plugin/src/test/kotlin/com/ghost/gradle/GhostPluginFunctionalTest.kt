@@ -17,7 +17,8 @@ class GhostPluginFunctionalTest {
     @Test
     fun `plugin supports configuration cache`() {
         settingsFile.writeText("rootProject.name = \"cache-test\"")
-        buildFile.writeText("""
+        buildFile.writeText(
+            """
             plugins {
                 kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "1.9.22"}"
                 id("com.ghostserializer.ghost")
@@ -31,7 +32,8 @@ class GhostPluginFunctionalTest {
                 autoInjectKtor.set(false)
                 autoInjectRetrofit.set(false)
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val runner = GradleRunner.create()
             .withProjectDir(testProjectDir)
@@ -41,28 +43,37 @@ class GhostPluginFunctionalTest {
 
         // First run - calculates cache
         val result1 = runner.build()
-        assertTrue(result1.output.contains("Configuration cache entry stored."), "Should store configuration cache")
+        assertTrue(
+            result1.output.contains("Configuration cache entry stored."),
+            "Should store configuration cache"
+        )
 
         // Second run - reuses cache
         val result2 = runner.build()
-        assertTrue(result2.output.contains("Reusing configuration cache."), "Should reuse configuration cache")
+        assertTrue(
+            result2.output.contains("Reusing configuration cache."),
+            "Should reuse configuration cache"
+        )
     }
 
     @Test
     fun `plugin handles incremental builds correctly`() {
         settingsFile.writeText("rootProject.name = \"incremental-test\"")
-        
+
         val srcDir = testProjectDir.resolve("src/main/kotlin/com/example")
         srcDir.mkdirs()
         val modelFile = srcDir.resolve("Model.kt")
-        modelFile.writeText("""
+        modelFile.writeText(
+            """
             package com.example
             import com.ghost.serialization.annotations.GhostSerialization
             @GhostSerialization
             data class Model(val name: String)
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        buildFile.writeText("""
+        buildFile.writeText(
+            """
             plugins {
                 kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "1.9.24"}"
                 id("com.google.devtools.ksp") version "1.9.24-1.0.20"
@@ -77,7 +88,8 @@ class GhostPluginFunctionalTest {
             dependencies {
                 implementation("com.ghostserializer:ghost-serialization:1.1.14")
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val runner = GradleRunner.create()
             .withProjectDir(testProjectDir)
@@ -87,15 +99,17 @@ class GhostPluginFunctionalTest {
 
         // First build
         runner.build()
-        
+
         // Change model
-        modelFile.writeText("""
+        modelFile.writeText(
+            """
             package com.example
             import com.ghost.serialization.annotations.GhostSerialization
             @GhostSerialization
             data class Model(val name: String, val age: Int)
-        """.trimIndent())
-        
+        """.trimIndent()
+        )
+
         // Second build - should be successful and incremental
         val result = runner.build()
         assertTrue(result.output.contains("SUCCESS"), "Incremental build should succeed")

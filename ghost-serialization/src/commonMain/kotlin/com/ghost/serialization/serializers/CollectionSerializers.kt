@@ -22,9 +22,6 @@ import com.ghost.serialization.parser.readList
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
-@Suppress("NOTHING_TO_INLINE")
-private inline fun Any?.ignore() {}
-
 @OptIn(InternalGhostApi::class)
 class ListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>
@@ -32,25 +29,41 @@ class ListSerializer<T>(
 
     override val typeName: String get() = "List<${itemSerializer.typeName}>"
 
-    override fun serialize(writer: GhostJsonWriter, value: List<T>) {
-        writer.beginArray().ignore()
-        for (item in value) itemSerializer.serialize(writer, item)
-        writer.endArray().ignore()
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: List<T>
+    ) {
+        writer.beginArray()
+        for (item in value) {
+            itemSerializer
+                .serialize(writer, item)
+        }
+        writer.endArray()
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: List<T>) {
-        writer.beginArray().ignore()
-        for (item in value) itemSerializer.serialize(writer, item)
-        writer.endArray().ignore()
+    override fun serialize(
+        writer: GhostJsonFlatWriter,
+        value: List<T>
+    ) {
+        writer.beginArray()
+        for (item in value) {
+            itemSerializer
+                .serialize(writer, item)
+        }
+        writer.endArray()
     }
 
-    override fun deserialize(reader: GhostJsonReader): List<T> {
-        return if (itemSerializer.isResilient) {
-            reader.readList {
-                reader.decodeResilient { itemSerializer.deserialize(reader) }
-            }.filterNotNull()
-        } else {
-            reader.readList { itemSerializer.deserialize(reader) }
+    override fun deserialize(
+        reader: GhostJsonReader
+    ): List<T> = if (itemSerializer.isResilient) {
+        reader.readList {
+            reader.decodeResilient {
+                itemSerializer.deserialize(reader)
+            }
+        }.filterNotNull()
+    } else {
+        reader.readList {
+            itemSerializer.deserialize(reader)
         }
     }
 }
@@ -62,41 +75,56 @@ class MapSerializer<V>(
     override val typeName: String get() =
         "Map<String, ${valueSerializer.typeName}>"
 
-    override fun serialize(writer: GhostJsonWriter, value: Map<String, V>) {
-        writer.beginObject().ignore()
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: Map<String, V>
+    ) {
+        writer.beginObject()
         for (entry in value) {
-            writer.name(entry.key).ignore()
-            valueSerializer.serialize(writer, entry.value)
+            writer.name(entry.key)
+            valueSerializer.serialize(
+                writer,
+                entry.value
+            )
         }
-        writer.endObject().ignore()
+        writer.endObject()
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: Map<String, V>) {
-        writer.beginObject().ignore()
+    override fun serialize(
+        writer: GhostJsonFlatWriter,
+        value: Map<String, V>
+    ) {
+        writer.beginObject()
         for (entry in value) {
-            writer.name(entry.key).ignore()
-            valueSerializer.serialize(writer, entry.value)
+            writer.name(entry.key)
+            valueSerializer.serialize(
+                writer,
+                entry.value
+            )
         }
-        writer.endObject().ignore()
+        writer.endObject()
     }
 
     override fun deserialize(
         reader: GhostJsonReader
     ): Map<String, V> {
 
-        reader.beginObject().ignore()
+        reader.beginObject()
         if (reader.peekByte() == CLOSE_OBJ) {
-            reader.endObject().ignore()
-            return emptyMap()
+            reader.endObject(); return emptyMap()
         }
 
         return buildMap {
             while (true) {
                 val key = reader.nextKey() ?: break
                 reader.consumeKeySeparator()
-                put(key, valueSerializer.deserialize(reader))
+                put(
+                    key,
+                    valueSerializer
+                        .deserialize(reader)
+                )
             }
-            reader.endObject().ignore()
+            reader.endObject()
         }
     }
 }
@@ -105,24 +133,33 @@ object IntArraySerializer : GhostSerializer<IntArray> {
 
     override val typeName: String = "IntArray"
 
-    override fun serialize(writer: GhostJsonWriter, value: IntArray) {
-        writer.beginArray().ignore()
-        for (item in value) writer.value(item)
-        writer.endArray().ignore()
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: IntArray
+    ) {
+        writer.beginArray()
+        for (item in value)
+            writer.value(item)
+        writer.endArray()
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: IntArray) {
-        writer.beginArray().ignore()
-        for (item in value) writer.value(item)
-        writer.endArray().ignore()
+    override fun serialize(
+        writer: GhostJsonFlatWriter,
+        value: IntArray
+    ) {
+        writer.beginArray()
+        for (item in value)
+            writer.value(item)
+        writer.endArray()
     }
 
-    override fun deserialize(reader: GhostJsonReader): IntArray {
-        reader.beginArray().ignore()
+    override fun deserialize(
+        reader: GhostJsonReader
+    ): IntArray {
+        reader.beginArray()
 
         if (reader.peekByte() == CLOSE_ARR) {
-            reader.endArray().ignore()
-            return IntArray(0)
+            reader.endArray(); return IntArray(0)
         }
 
         val list = GhostIntList()
@@ -131,7 +168,7 @@ object IntArraySerializer : GhostSerializer<IntArray> {
             list.add(reader.nextInt())
         }
 
-        reader.endArray().ignore()
+        reader.endArray()
         return list.toArray()
     }
 }
@@ -140,33 +177,44 @@ object LongArraySerializer : GhostSerializer<LongArray> {
 
     override val typeName: String = "LongArray"
 
-    override fun serialize(writer: GhostJsonWriter, value: LongArray) {
-        writer.beginArray().ignore()
-        for (item in value) writer.value(item)
-        writer.endArray().ignore()
+    override fun serialize(
+        writer: GhostJsonWriter,
+        value: LongArray
+    ) {
+        writer.beginArray()
+        for (item in value)
+            writer.value(item)
+        writer.endArray()
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: LongArray) {
-        writer.beginArray().ignore()
-        for (item in value) writer.value(item)
-        writer.endArray().ignore()
+    override fun serialize(
+        writer: GhostJsonFlatWriter,
+        value: LongArray
+    ) {
+        writer.beginArray()
+        for (item in value)
+            writer.value(item)
+        writer.endArray()
     }
 
-    override fun deserialize(reader: GhostJsonReader): LongArray {
-        reader.beginArray().ignore()
+    override fun deserialize(
+        reader: GhostJsonReader
+    ): LongArray {
+        reader.beginArray()
 
         if (reader.peekByte() == CLOSE_ARR) {
-            reader.endArray().ignore()
-            return LongArray(0)
+            reader.endArray(); return LongArray(0)
         }
 
         val list = GhostLongList()
         while (reader.hasNext()) {
-            if (!list.isEmpty()) reader.consumeArraySeparator()
+            if (!list.isEmpty())
+                reader.consumeArraySeparator()
+
             list.add(reader.nextLong())
         }
 
-        reader.endArray().ignore()
+        reader.endArray()
         return list.toArray()
     }
 }

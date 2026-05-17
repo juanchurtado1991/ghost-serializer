@@ -83,13 +83,13 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             if (!fastChecked) {
                 fastChecked = true
                 val names = listOf(
-                    "com.ghost.serialization.generated.GhostModuleRegistry_Default",
-                    "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
+                    Ghost.DEFAULT_REGISTRY_NAME,
+                    Ghost.TEST_REGISTRY_NAME
                 )
                 fastRegistries = names.mapNotNull { name ->
                     runCatching {
                         Class.forName(name)
-                            .getField("INSTANCE")
+                            .getField(Ghost.INSTANCE_FIELD)
                             .get(null) as GhostRegistry
                     }.getOrNull()
                 }.toMutableList()

@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.compiler.GhostEmitterConstants as C
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -11,6 +10,7 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Emitter for fragmented deserialization logic.
@@ -25,7 +25,10 @@ internal class FragmentedEmitter(
     readerClass: ClassName
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+    fun emit(
+        body: CodeBlock.Builder,
+        typeSpecBuilder: TypeSpec.Builder
+    ) {
         val contextClassName = ClassName(
             C.STR_EMPTY,
             C.STR_CTX_CLASS
@@ -38,18 +41,27 @@ internal class FragmentedEmitter(
             val varType = it.getVariableType()
             val initialValue = it.getInitialValue()
             contextBuilder.addProperty(
-                PropertySpec.builder(C.STR_UNDERSCORE + it.kotlinName, varType)
+                PropertySpec.builder(
+                    C.STR_UNDERSCORE + it.kotlinName,
+                    varType
+                )
                     .mutable(true)
                     .initializer(initialValue)
                     .build()
             )
         }
 
-        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
-        for (i in 0 until maskCount) {
+        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
+                C.MASK_SIZE_BITS.toInt()
+
+        for (index in 0 until maskCount) {
             contextBuilder.addProperty(
                 PropertySpec.builder(
-                    C.FMT_MASK_NAME.format(C.STR_UNDERSCORE, C.STR_MASK, i),
+                    C.FMT_MASK_NAME.format(
+                        C.STR_UNDERSCORE,
+                        C.STR_MASK,
+                        index
+                    ),
                     com.squareup.kotlinpoet.LONG
                 )
                     .mutable(true)
@@ -171,18 +183,29 @@ internal class FragmentedEmitter(
             }
         }
 
-        for (i in 0 until maskCount) {
-            val reqMask = requiredMasks[i]
+        for (index in 0 until maskCount) {
+            val reqMask = requiredMasks[index]
             if (reqMask != 0L) {
+
                 val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
                     C.STR_BIT_MASK_MIN_LONG
                 } else {
                     C.FMT_LONG_LITERAL.format(reqMask)
                 }
 
-                body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET, i, reqMaskStr, reqMaskStr)
+                body.beginControlFlow(
+                    C.TEMPLATE_IF_MASK_NOT_MET,
+                    index,
+                    reqMaskStr,
+                    reqMaskStr
+                )
+
                 properties.forEachIndexed { index, it ->
-                    if (!it.isNullable && !it.hasDefaultValue && (index / C.MASK_SIZE_BITS.toInt()) == i) {
+                    if (
+                        !it.isNullable &&
+                        !it.hasDefaultValue
+                        && (index / C.MASK_SIZE_BITS.toInt()) == index
+                    ) {
                         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
 
@@ -192,8 +215,17 @@ internal class FragmentedEmitter(
                             C.FMT_LONG_LITERAL.format(bitMask)
                         }
 
-                        body.beginControlFlow(C.TEMPLATE_IF_MASK_MISSING, i, bitMaskStr)
-                        body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + it.jsonName + C.STR_REQ_FIELD_2)
+                        body.beginControlFlow(
+                            C.TEMPLATE_IF_MASK_MISSING,
+                            index,
+                            bitMaskStr
+                        )
+
+                        body.addStatement(
+                            C.TEMPLATE_THROW_S,
+                            C.STR_REQ_FIELD_1 + it.jsonName + C.STR_REQ_FIELD_2
+                        )
+
                         body.endControlFlow()
                     }
                 }
@@ -205,9 +237,15 @@ internal class FragmentedEmitter(
     private fun emitReturn(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
         body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+
         requiredProps.forEach { prop ->
-            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getFragmentedReturnExpression())
+            body.addStatement(
+                C.TEMPLATE_NAMED_ARG,
+                prop.kotlinName,
+                prop.getFragmentedReturnExpression()
+            )
         }
+
         body.addStatement(C.STR_PAREN)
 
         val defaultProps = properties.filter { it.hasDefaultValue }
@@ -227,23 +265,45 @@ internal class FragmentedEmitter(
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
-                    val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(defMask)
-                    conditions.add(C.TEMPLATE_IF_MASK_MATCH_BIT_F.format(i, defMaskStr))
+                    val defMaskStr = if (defMask == Long.MIN_VALUE) {
+                        C.STR_BIT_MASK_MIN_LONG
+                    } else {
+                        C.FMT_LONG_LITERAL.format(defMask)
+                    }
+
+                    conditions.add(
+                        C.TEMPLATE_IF_MASK_MATCH_BIT_F
+                            .format(i, defMaskStr)
+                    )
                 }
             }
             body.add(conditions.joinToString(C.STR_OR))
             body.beginControlFlow(C.STR_CLOSE_PAREN_FLOW)
 
             body.addStatement(C.STR_RETURN_RESULT_COPY)
-            val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-                if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+            val defaultPropsWithGlobalIndex = properties
+                .mapIndexedNotNull { globalIdx, prop ->
+
+                if (prop.hasDefaultValue) {
+                    Pair(globalIdx, prop)
+                } else {
+                    null
+                }
             }
+
             defaultPropsWithGlobalIndex.forEachIndexed { _, (propIndex, prop) ->
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
-                val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
-                val valueExpr = prop.getFragmentedDefaultValueReturnExpression(maskIdx, bitMaskStr)
+
+                val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+                    C.STR_BIT_MASK_MIN_LONG
+                } else {
+                    C.FMT_LONG_LITERAL.format(bitMask)
+                }
+
+                val valueExpr = prop
+                    .getFragmentedDefaultValueReturnExpression(maskIdx, bitMaskStr)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)

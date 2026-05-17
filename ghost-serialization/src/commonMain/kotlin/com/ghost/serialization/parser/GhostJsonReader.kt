@@ -40,6 +40,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_STRING_ERR
 import com.ghost.serialization.parser.GhostJsonConstants.UNTERMINATED_UNICODE_ERROR
 import com.ghost.serialization.parser.GhostJsonConstants.BS_INT
 import com.ghost.serialization.parser.GhostJsonConstants.CR_INT
+import com.ghost.serialization.parser.GhostJsonConstants.DEFAULT_DISCRIMINATOR_KEY
 import com.ghost.serialization.parser.GhostJsonConstants.FF_INT
 import com.ghost.serialization.parser.GhostJsonConstants.SCAN_7BIT_BIT
 import com.ghost.serialization.parser.GhostJsonConstants.SCAN_LENGTH_MASK
@@ -72,7 +73,6 @@ import okio.ByteString.Companion.encodeUtf8
  * - Providing a "Discriminator Peeker" for ultra-fast polymorphic deserialization.
  * - Minimizing virtual dispatch by caching the raw source data.
  */
-@InternalGhostApi
 class GhostJsonReader(
     @PublishedApi internal var source: GhostSource,
     @PublishedApi internal var limit: Int = source.size,
@@ -167,7 +167,11 @@ class GhostJsonReader(
     fun throwError(message: String): Nothing {
         val errorPosition = position
         val sourceRef = source
-        val errorEnd = if (errorPosition > sourceRef.size) sourceRef.size else errorPosition
+        val errorEnd = if (errorPosition > sourceRef.size) {
+            sourceRef.size
+        } else {
+            errorPosition
+        }
 
         throw GhostJsonException(
             baseMessage = "$message at position $errorPosition",
@@ -213,7 +217,10 @@ class GhostJsonReader(
     }
 
     fun skipWhitespace() {
-        val nextPos = source.findNextNonWhitespace(position, limit)
+        val nextPos = source.findNextNonWhitespace(
+            position, limit
+        )
+
         if (nextPos != -1) {
             position = nextPos
             nextTokenByte = getByte(position)
@@ -229,8 +236,10 @@ class GhostJsonReader(
      * Returns null if not found or if the current token is not an object start.
      * Used by KSP-generated serializers for polymorphic deserialization.
      */
-    fun peekDiscriminator(key: String = "type"): String? {
-        if (key == "type") return peekDiscriminator(GhostJsonConstants.TYPE_BS)
+    fun peekDiscriminator(key: String = DEFAULT_DISCRIMINATOR_KEY): String? {
+        if (key == DEFAULT_DISCRIMINATOR_KEY) {
+            return peekDiscriminator(GhostJsonConstants.TYPE_BS)
+        }
         return peekDiscriminator(key.encodeUtf8())
     }
 
@@ -239,9 +248,15 @@ class GhostJsonReader(
      * Used by KSP-generated serializers for polymorphic deserialization.
      */
     fun peekDiscriminator(key: ByteString): String? {
-        return GhostDiscriminatorPeeker.peek(source, rawData, isStreaming, position, limit, key)
+        return GhostDiscriminatorPeeker.peek(
+            source,
+            rawData,
+            isStreaming,
+            position,
+            limit,
+            key
+        )
     }
-
 
     fun peekNextToken(): Int {
         val cached = nextTokenByte
@@ -289,7 +304,9 @@ class GhostJsonReader(
         val scanResult = source.scanString(start, limit)
 
         if (scanResult != -1L) {
-            val length = ((scanResult and SCAN_LENGTH_MASK) ushr SCAN_LENGTH_SHIFT).toInt()
+            val length = ((scanResult and SCAN_LENGTH_MASK) ushr SCAN_LENGTH_SHIFT)
+                .toInt()
+
             val rollingHash = scanResult.toInt()
             lastScanContentWas7BitOnly = (scanResult and SCAN_7BIT_BIT) != 0L
             val end = start + length
@@ -298,7 +315,11 @@ class GhostJsonReader(
                 return ""
             }
             if (length > GhostHeuristics.maxStringPoolLength) {
-                val result = source.decodeJsonStringRange(start, end, lastScanContentWas7BitOnly)
+                val result = source.decodeJsonStringRange(
+                    start,
+                    end,
+                    lastScanContentWas7BitOnly
+                )
                 position = end + 1
                 return result
             }
@@ -314,7 +335,12 @@ class GhostJsonReader(
                 return cachedString
             }
 
-            val decodedString = source.decodeJsonStringRange(start, end, lastScanContentWas7BitOnly)
+            val decodedString = source.decodeJsonStringRange(
+                start,
+                end,
+                lastScanContentWas7BitOnly
+            )
+
             stringPool[poolBucketIndex] = decodedString
             position = end + 1
             return decodedString
@@ -326,8 +352,15 @@ class GhostJsonReader(
 
         fun ensureCapacity(extra: Int) {
             if (outPos + extra > outBuffer.size) {
-                val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
-                outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                val newBuffer = acquireScratchBuffer(
+                    outBuffer.size * BUFFER_SCALE_FACTOR
+                )
+                outBuffer.copyInto(
+                    newBuffer,
+                    0,
+                    0,
+                    outPos
+                )
                 releaseScratchBuffer(outBuffer)
                 outBuffer = newBuffer
             }

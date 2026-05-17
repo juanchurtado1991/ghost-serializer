@@ -111,7 +111,12 @@ internal object GhostDoubleFormatter {
         while (decimalsToPrint >= 2) {
             val q = fracInt / 100
             val r = (fracInt - (q * 100)) * 2
-            GhostJsonConstants.DOUBLE_DIGIT_LUT.copyInto(scratch, writePos - 1, r, r + 2)
+            GhostJsonConstants.DOUBLE_DIGIT_LUT.copyInto(
+                scratch,
+                writePos - 1,
+                r,
+                r + 2
+            )
             writePos -= 2
             fracInt = q
             decimalsToPrint -= 2

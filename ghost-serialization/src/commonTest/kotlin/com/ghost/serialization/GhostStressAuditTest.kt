@@ -103,7 +103,7 @@ class GhostStressAuditTest {
             '{'.code.toByte() -> {
                 reader.beginObject()
                 while (reader.hasNext()) {
-                    reader.nextKey().ignore()
+                    reader.nextKey()
                     reader.consumeKeySeparator()
                     recursiveSkip(reader)
                 }

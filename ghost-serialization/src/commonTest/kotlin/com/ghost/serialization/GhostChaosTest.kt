@@ -7,7 +7,6 @@ import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeKeySeparator
 import com.ghost.serialization.parser.createByteArraySource
-import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.nextDouble
 import com.ghost.serialization.parser.nextKey
 import com.ghost.serialization.parser.nextString
@@ -43,7 +42,7 @@ class GhostChaosTest {
         val json = "{\"v\": \"\\uD83D\\u0020\"}"
         val reader = readerOf(json)
         reader.beginObject()
-        reader.nextKey().ignore()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFailsWith<GhostJsonException> {
             reader.nextString()
@@ -71,7 +70,7 @@ class GhostChaosTest {
         val reader =
             GhostJsonReader(createByteArraySource(deepJson.encodeToByteArray()), maxDepth = 100)
         reader.beginObject()
-        reader.nextKey().ignore()
+        reader.nextKey()
         reader.consumeKeySeparator()
         // Should fail because total depth (1 from current object + 120 from skip) > 100
         assertFailsWith<GhostJsonException> {

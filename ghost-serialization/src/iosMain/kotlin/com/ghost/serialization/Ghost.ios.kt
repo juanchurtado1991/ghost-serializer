@@ -52,7 +52,9 @@ actual fun <T> ghostInternalUseSource(
 }
 
 private fun acquireFlatWriterPair(): WriterSinkPair {
-    val pair = cachedWriterPair ?: WriterSinkPair().also { cachedWriterPair = it }
+    val pair = cachedWriterPair
+        ?: WriterSinkPair().also { cachedWriterPair = it }
+
     pair.writer.reset()
     pair.byteWriter.reset()
     return pair
@@ -61,7 +63,12 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    val result = pair.byteWriter.array.decodeToString(0, pair.byteWriter.size)
+
+    val result = pair
+        .byteWriter
+        .array
+        .decodeToString(0, pair.byteWriter.size)
+
     pair.byteWriter.reset()
     return result
 }
@@ -69,8 +76,10 @@ actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): St
 actual fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): ByteArray {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
+
     val result = pair.byteWriter.toByteArray()
     pair.byteWriter.reset()
+
     return result
 }
 
@@ -86,6 +95,10 @@ actual fun ghostInternalEncodeAndDrainTo(
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    sink.write(pair.byteWriter.array, 0, pair.byteWriter.size)
+    sink.write(
+        pair.byteWriter.array,
+        0,
+        pair.byteWriter.size
+    )
     pair.byteWriter.reset()
 }

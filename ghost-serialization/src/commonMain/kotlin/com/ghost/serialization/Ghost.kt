@@ -2,7 +2,6 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.annotations.MustUseReturnValues
 import kotlin.collections.ArrayList
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
@@ -91,19 +90,7 @@ object Ghost {
     private val lock = Any()
     private val mutableRegistries = mutableSetOf<GhostRegistry>()
     private var _discoveredRegistries: Iterable<GhostRegistry>? = null
-    private var _consolidatedRegistries: List<GhostRegistry> = emptyList()
 
-    private fun updateConsolidatedRegistries() {
-        if (_discoveredRegistries == null) {
-            _discoveredRegistries = discoverRegistries()
-        }
-        val discovered = _discoveredRegistries!!
-        
-        val list = ArrayList<GhostRegistry>(mutableRegistries.size + (discovered as? Collection<*>)?.size.let { it ?: 10 })
-        for (r in mutableRegistries) list.add(r)
-        for (r in discovered) list.add(r)
-        _consolidatedRegistries = list
-    }
 
     private fun <T : Any> getSerializerFromRegistries(clazz: KClass<T>): GhostSerializer<T>? {
         // 1. Check manual registries
@@ -137,7 +124,6 @@ object Ghost {
     fun addRegistry(registry: GhostRegistry) {
         runSynchronized(lock) {
             if (mutableRegistries.add(registry)) {
-                updateConsolidatedRegistries()
                 val serializers = registry.getAllSerializers()
                 for (entry in serializers) {
                     val kclass = entry.key
@@ -310,6 +296,7 @@ object Ghost {
      * Use this for stream-mode benchmarks and JIT warm-up where the encoded
      * bytes are not needed.
      */
+    @Suppress("unused")
     inline fun <reified T : Any> encodeAndDiscard(value: T) {
         val serializer = resolveSerializer<T>()
         ghostInternalEncodeAndDiscard { writer ->
@@ -371,6 +358,7 @@ object Ghost {
         }
     }
 
+    @Suppress("unused")
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>): T {
         return ghostInternalUseReader(bytes) { reader ->
@@ -410,7 +398,6 @@ object Ghost {
     }
 
     @OptIn(InternalGhostApi::class)
-    @MustUseReturnValues
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
@@ -461,6 +448,11 @@ object Ghost {
         }
     }
 
+    internal const val DEFAULT_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_Default"
+    internal const val TEST_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
+    internal const val ANDROID_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
+    internal const val INSTANCE_FIELD = "INSTANCE"
+
     const val MISSING_ANN = "Did you annotate it with @GhostSerialization?"
     const val NOT_FOUND = "No Ghost serializer found for"
 
@@ -475,7 +467,6 @@ object Ghost {
             serializerCache.clear()
             typeCache.clear()
             serializerByName.clear()
-            updateConsolidatedRegistries()
         }
     }
 }

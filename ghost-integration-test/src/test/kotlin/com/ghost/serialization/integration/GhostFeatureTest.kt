@@ -2,7 +2,7 @@ package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.integration.model.IgnoreModel
-import com.ghost.serialization.integration.model.UnicodeModel
+import com.ghost.serialization.integration.model.UniCodeModel
 import com.ghost.serialization.integration.model.NamingModel
 import com.ghost.serialization.exception.GhostJsonException
 import kotlin.test.Test
@@ -31,14 +31,14 @@ class GhostFeatureTest {
 
     @Test
     fun testUnicodeAndEscapes() {
-        val model = UnicodeModel(
+        val model = UniCodeModel(
             text = "Hello World",
             emoji = "🚀🔥✨",
             escaped = "Line1\nLine2\tTab\"Quote\"\\Backslash"
         )
         
         val json = Ghost.serialize(model)
-        val deserialized = Ghost.deserialize<UnicodeModel>(json)
+        val deserialized = Ghost.deserialize<UniCodeModel>(json)
         
         assertEquals(model.text, deserialized.text)
         assertEquals(model.emoji, deserialized.emoji)
@@ -46,7 +46,7 @@ class GhostFeatureTest {
         
         // Test raw unicode escape in JSON source
         val jsonWithUnicode = "{\"text\":\"\\u0041\\u0042\\u0043\",\"emoji\":\"\\uD83D\\uDE80\",\"escaped\":\"\"}"
-        val deserialized2 = Ghost.deserialize<UnicodeModel>(jsonWithUnicode)
+        val deserialized2 = Ghost.deserialize<UniCodeModel>(jsonWithUnicode)
         assertEquals("ABC", deserialized2.text)
         assertEquals("🚀", deserialized2.emoji)
     }

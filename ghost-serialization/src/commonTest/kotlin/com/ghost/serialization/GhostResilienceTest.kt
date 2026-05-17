@@ -54,8 +54,8 @@ class GhostResilienceTest {
                 val index = reader.selectString(JsonReaderOptions.of("id", "name"))
                 reader.consumeKeySeparator()
                 when (index) {
-                    0 -> reader.nextInt().ignore()
-                    1 -> reader.nextString().ignore() // This will fail due to terminal quote missing
+                    0 -> reader.nextInt()
+                    1 -> reader.nextString() // This will fail due to terminal quote missing
                 }
             }
         }
@@ -74,7 +74,7 @@ class GhostResilienceTest {
             val opts = JsonReaderOptions.of("id")
             assertEquals(0, reader.selectString(opts))
             reader.consumeKeySeparator()
-            reader.nextInt().ignore()
+            reader.nextInt()
             
             // Next one is 'unknown_field', in strict mode it should throw
             reader.selectString(opts)

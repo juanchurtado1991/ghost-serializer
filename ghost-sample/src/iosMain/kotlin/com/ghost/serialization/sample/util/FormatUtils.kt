@@ -15,7 +15,7 @@ actual fun String.format(vararg args: Any?): String {
     // For this sample, we'll just handle the most common case in the UI (%.2f or %.3f)
     val firstArg = args[0]
     return if (firstArg is Double || firstArg is Float) {
-        val d = firstArg.toDouble()
+        val d = (firstArg as Number).toDouble()
         if (this.contains("%.2f")) {
              // Simple fallback for sample UI
              val s = d.toString()

@@ -4,6 +4,7 @@ import com.ghost.serialization.Ghost
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
+import io.ktor.http.content.ByteArrayContent
 import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
@@ -22,11 +23,15 @@ class GhostContentConverter : ContentConverter {
     ): OutgoingContent? {
         if (value == null) return null
         val clazz = typeInfo.type
+
         @Suppress("UNCHECKED_CAST")
-        val serializer = Ghost.getSerializer(clazz as KClass<Any>) ?: return null
+        val serializer = Ghost.getSerializer(clazz as KClass<Any>)
+            ?: return null
+
         val buffer = Buffer()
         serializer.serialize(buffer, value)
-        return TextContent(text = buffer.readUtf8(), contentType = contentType)
+        val bytes = buffer.readByteArray()
+        return ByteArrayContent(bytes, contentType)
     }
 
     override suspend fun deserialize(
@@ -39,5 +44,6 @@ class GhostContentConverter : ContentConverter {
     }
 }
 
-/** Platform bridge: converts a [ByteReadChannel] to an [okio.BufferedSource] without copying bytes. */
+/** Platform bridge: converts a [ByteReadChannel]
+ * to an [okio.BufferedSource] without copying bytes. */
 internal expect suspend fun ByteReadChannel.toBufferedSource(): BufferedSource

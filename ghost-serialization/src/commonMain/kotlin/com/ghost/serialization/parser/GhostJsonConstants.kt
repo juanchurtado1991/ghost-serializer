@@ -46,6 +46,19 @@ internal object GhostJsonConstants {
     const val ERR_NUMERIC_OVERFLOW = "Numeric overflow or NaN is not allowed in JSON"
     const val ERR_HIGH_SURROGATE = "Lone high surrogate"
 
+    // --- Boolean Coercion Values ---
+    const val COERCE_TRUE_STR = "true"
+    const val COERCE_YES_STR = "yes"
+    const val COERCE_ON_STR = "on"
+    const val COERCE_1_STR = "1"
+    const val COERCE_Y_STR = "y"
+    
+    const val COERCE_FALSE_STR = "false"
+    const val COERCE_NO_STR = "no"
+    const val COERCE_OFF_STR = "off"
+    const val COERCE_0_STR = "0"
+    const val COERCE_N_STR = "n"
+
     // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
     @PublishedApi
     internal val TRUE_BS = "true".encodeUtf8()
@@ -154,7 +167,6 @@ internal object GhostJsonConstants {
 
     /** Byte sizes for common UTF/JSON sequences. */
     const val SINGLE_CHAR_SIZE = 1
-    const val SURROGATE_PAIR_SIZE = 2
     const val UNICODE_ESCAPE_PREFIX_SIZE = 2
     const val INT_SAFE_DIGITS = 9
     const val LONG_SAFE_DIGITS = 18
@@ -171,8 +183,11 @@ internal object GhostJsonConstants {
     /** Size of the hot-path writer scratch buffer. */
     const val WRITER_SCRATCH_SIZE = 512
 
-    /** Initial size for the [com.ghost.serialization.writer.FlatByteArrayWriter]. */
+    /** Initial size for the
+     * [com.ghost.serialization.writer.FlatByteArrayWriter]. */
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
+
+    const val DEFAULT_DISCRIMINATOR_KEY = "type"
 
     // --- Mathematical Tables ---
     /** Pre-calculated powers of ten to avoid expensive Math.pow calls. */
@@ -370,8 +385,3 @@ internal object GhostJsonConstants {
         return res
     }
 }
-
-/** Utility extension to suppress unused result warnings in a zero-cost way. */
-@Suppress("NOTHING_TO_INLINE")
-@InternalGhostApi
-inline fun Any?.ignore() { }

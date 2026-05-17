@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.consumeKeySeparator
 import com.ghost.serialization.parser.endArray
 import com.ghost.serialization.parser.endObject
 import com.ghost.serialization.parser.hasNext
-import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.nextDouble
 import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.parser.nextKey
@@ -34,11 +33,11 @@ class HugeJsonTest {
 
         writer.beginArray()
         for (obj in data) {
-            writer.beginObject().ignore()
-            writer.name("id").value(obj["id"] as Int).ignore()
-            writer.name("name").value(obj["name"] as String).ignore()
-            writer.name("value").value(obj["value"] as Double).ignore()
-            writer.endObject().ignore()
+            writer.beginObject()
+            writer.name("id").value(obj["id"] as Int)
+            writer.name("name").value(obj["name"] as String)
+            writer.name("value").value(obj["value"] as Double)
+            writer.endObject()
         }
         writer.endArray()
         writer.release()
