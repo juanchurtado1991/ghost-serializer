@@ -27,6 +27,7 @@ fun PerformanceResultsCard(
     uiState: UiState,
     onCopyLogs: () -> Unit
 ) {
+
     // Group results by category prefix, e.g. "[NETWORK]", "[PARSE_STRING]"
     val grouped = uiState.results.groupBy { result ->
         result.name.substringBefore("]").removePrefix("[")
@@ -52,7 +53,6 @@ fun PerformanceResultsCard(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── Header ───────────────────────────────────────────────────────────
             SampleText(
                 text = "PERFORMANCE INSIGHT",
                 isBold = true,
@@ -80,7 +80,6 @@ fun PerformanceResultsCard(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // ── Results by category ──────────────────────────────────────────────
             grouped.forEach { (category, results) ->
                 SampleText(
                     text = category,
@@ -91,7 +90,6 @@ fun PerformanceResultsCard(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                // Time row
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
@@ -108,7 +106,6 @@ fun PerformanceResultsCard(
                     }
                 }
 
-                // Memory row
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
@@ -132,7 +129,6 @@ fun PerformanceResultsCard(
                 )
             }
 
-            // ── Copy logs button ─────────────────────────────────────────────────
             TextButton(
                 onClick = onCopyLogs,
                 modifier = Modifier.padding(top = 8.dp)

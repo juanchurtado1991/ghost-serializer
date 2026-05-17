@@ -8,7 +8,7 @@ import android.annotation.SuppressLint
 actual fun forceGC() {
     System.gc()
     Runtime.getRuntime().gc()
-    try { Thread.sleep(100) } catch (e: Exception) {}
+    try { Thread.sleep(100) } catch (_: Exception) {}
 }
 
 /**
@@ -17,13 +17,10 @@ actual fun forceGC() {
 @SuppressLint("SoonBlockedPrivateApi")
 actual fun getCurrentThreadAllocatedBytes(): Long {
     return try {
-        // VMDebug is the internal truth of Dalvik/ART.
-        // threadAllocSize() provides byte-precision that android.os.Debug might aggregate in 32KB chunks.
         val vmDebugClass = Class.forName("dalvik.system.VMDebug")
         val method = vmDebugClass.getMethod("threadAllocSize")
         method.invoke(null) as Long
-    } catch (e: Exception) {
-        // Last-ditch effort if VMDebug is missing
+    } catch (_: Exception) {
         val runtime = Runtime.getRuntime()
         runtime.totalMemory() - runtime.freeMemory()
     }

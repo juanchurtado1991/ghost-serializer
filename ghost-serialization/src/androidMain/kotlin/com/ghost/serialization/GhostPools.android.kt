@@ -10,34 +10,34 @@ private val pool = ThreadLocal<AndroidPool>()
 
 @InternalGhostApi
 actual fun acquireScratchBuffer(minSize: Int): ByteArray {
-    var pool = pool.get()
-    if (pool == null) {
-        pool = AndroidPool()
-        com.ghost.serialization.pool.set(pool)
+    var localPool = pool.get()
+    if (localPool == null) {
+        localPool = AndroidPool()
+        pool.set(localPool)
     }
     return when {
         minSize <= SCRATCH_BUFFER_SIZE -> {
-            val smallLocal = pool.small
+            val smallLocal = localPool.small
             if (smallLocal != null && smallLocal.size >= SCRATCH_BUFFER_SIZE) {
-                pool.small = null
+                localPool.small = null
                 smallLocal
             } else {
                 ByteArray(SCRATCH_BUFFER_SIZE)
             }
         }
         minSize <= TIER_SMALL -> {
-            val smallLocal = pool.small
-            pool.small = null
+            val smallLocal = localPool.small
+            localPool.small = null
             smallLocal ?: ByteArray(TIER_SMALL)
         }
         minSize <= TIER_MEDIUM -> {
-            val mediumLocal = pool.medium
-            pool.medium = null
+            val mediumLocal = localPool.medium
+            localPool.medium = null
             mediumLocal ?: ByteArray(TIER_MEDIUM)
         }
         minSize <= TIER_LARGE -> {
-            val largeLocal = pool.large
-            pool.large = null
+            val largeLocal = localPool.large
+            localPool.large = null
             largeLocal ?: ByteArray(TIER_LARGE)
         }
         else -> ByteArray(minSize)
@@ -46,43 +46,11 @@ actual fun acquireScratchBuffer(minSize: Int): ByteArray {
 
 @InternalGhostApi
 actual fun releaseScratchBuffer(buffer: ByteArray) {
-    val pool = pool.get() ?: return
+    val localPool = pool.get() ?: return
     val size = buffer.size
     when (size) {
-        SCRATCH_BUFFER_SIZE, TIER_SMALL -> pool.small = buffer
-        TIER_MEDIUM -> pool.medium = buffer
-        TIER_LARGE -> pool.large = buffer
-    }
-}
-
-@InternalGhostApi
-actual fun acquireCharBuffer(minSize: Int): CharArray {
-    var localPool = pool.get()
-    if (localPool == null) {
-        localPool = AndroidPool()
-        pool.set(localPool)
-    }
-    return when {
-        minSize <= TIER_SMALL -> {
-            val char = localPool.charSmall
-            localPool.charSmall = null
-            char ?: CharArray(TIER_SMALL)
-        }
-        minSize <= TIER_MEDIUM -> {
-            val char = localPool.charMedium
-            localPool.charMedium = null
-            char ?: CharArray(TIER_MEDIUM)
-        }
-        else -> CharArray(minSize)
-    }
-}
-
-@InternalGhostApi
-actual fun releaseCharBuffer(buffer: CharArray) {
-    val pool = pool.get() ?: return
-    val size = buffer.size
-    when (size) {
-        TIER_SMALL -> pool.charSmall = buffer
-        TIER_MEDIUM -> pool.charMedium = buffer
+        SCRATCH_BUFFER_SIZE, TIER_SMALL -> localPool.small = buffer
+        TIER_MEDIUM -> localPool.medium = buffer
+        TIER_LARGE -> localPool.large = buffer
     }
 }

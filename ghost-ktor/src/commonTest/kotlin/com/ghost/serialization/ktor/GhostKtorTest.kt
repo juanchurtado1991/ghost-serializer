@@ -134,7 +134,11 @@ class GhostKtorTest {
     @Test
     fun testSerializationOfRequestBody() = runTest {
         val mockEngine = MockEngine { request ->
-            val bodyText = (request.body as io.ktor.http.content.TextContent).text
+            val bodyText = when (val body = request.body) {
+                is io.ktor.http.content.TextContent -> body.text
+                is io.ktor.http.content.OutgoingContent.ByteArrayContent -> body.bytes().decodeToString()
+                else -> error("Unsupported body type: ${body::class}")
+            }
             assertEquals("""{"id":100,"name":"Alice","isActive":false}""", bodyText)
             respond(
                 content = bodyText,

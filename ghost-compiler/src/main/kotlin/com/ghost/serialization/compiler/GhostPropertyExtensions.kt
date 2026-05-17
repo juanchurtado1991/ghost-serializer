@@ -86,7 +86,7 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
         }
 
         else -> {
-            val value = if (isNullable) varName else "$varName${C.STR_BANG_BANG}"
+            val value = "$varName${C.STR_BANG_BANG}"
             C.TEMPLATE_IF_MASK_RETURN.format(
                 maskName,
                 bitMaskStr,
@@ -105,7 +105,12 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     return when {
         isPrimitive -> ctxVar
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
+            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+                C.STR_EMPTY
+            } else {
+                C.STR_BANG_BANG
+            }
+
             C.TEMPLATE_WRAP_TYPE.format(typeName, "$ctxVar$bang")
         }
 
@@ -147,7 +152,7 @@ internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
         }
 
         else -> {
-            val value = if (isNullable) ctxVar else "$ctxVar${C.STR_BANG_BANG}"
+            val value = "$ctxVar${C.STR_BANG_BANG}"
             C.TEMPLATE_IF_MASK_RETURN.format(
                 maskName,
                 bitMaskStr,

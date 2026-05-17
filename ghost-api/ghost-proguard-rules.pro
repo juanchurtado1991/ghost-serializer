@@ -9,4 +9,4 @@
 -keep class com.ghost.serialization.annotations.GhostSerialization { *; }
 
 # Ghost's generated serializers must be preserved if they are accessed dynamically
--keep class * implements com.ghost.serialization.core.contract.GhostSerializer { *; }
+-keep class * implements com.ghost.serialization.contract.GhostSerializer { *; }

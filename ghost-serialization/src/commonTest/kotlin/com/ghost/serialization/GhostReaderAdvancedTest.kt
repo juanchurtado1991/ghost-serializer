@@ -12,7 +12,6 @@ import com.ghost.serialization.parser.consumeNull
 import com.ghost.serialization.parser.createByteArraySource
 import com.ghost.serialization.parser.endArray
 import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.isNextNullValue
 import com.ghost.serialization.parser.nextBoolean
 import com.ghost.serialization.parser.nextDouble
@@ -244,15 +243,15 @@ class GhostReaderAdvancedTest {
         assertEquals(0, reader.depth)
         reader.beginObject()
         assertEquals(1, reader.depth)
-        reader.nextKey().ignore()
+        reader.nextKey()
         reader.consumeKeySeparator()
-        reader.beginObject().ignore()
+        reader.beginObject()
         assertEquals(2, reader.depth)
-        reader.nextKey().ignore()
+        reader.nextKey()
         reader.consumeKeySeparator()
-        reader.beginArray().ignore()
+        reader.beginArray()
         assertEquals(3, reader.depth)
-        reader.nextInt().ignore()
+        reader.nextInt()
         reader.endArray()
         assertEquals(2, reader.depth)
         reader.endObject()
@@ -282,9 +281,9 @@ class GhostReaderAdvancedTest {
         val reader = readerOf(json)
         reader.beginObject()
         val ex = assertFailsWith<GhostJsonException> {
-            reader.selectString(JsonReaderOptions.of("v")).ignore()
+            reader.selectString(JsonReaderOptions.of("v"))
             reader.consumeKeySeparator()
-            reader.nextInt().ignore()
+            reader.nextInt()
             reader.endObject() // This MUST fail
         }
         assertTrue(ex.line > 1, "Line should be > 1. Found: ${ex.line}")
@@ -295,9 +294,9 @@ class GhostReaderAdvancedTest {
     @Test
     fun nextFloatLosesPrecisionGracefully() {
         val reader = readerOf("""{"v":1.123456789}""")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
-        reader.consumeKeySeparator().ignore()
+        reader.beginObject()
+        reader.nextKey()
+        reader.consumeKeySeparator()
         val f = reader.nextFloat()
         assertEquals(1.1234568, f.toDouble(), 0.0000001)
     }
@@ -343,7 +342,7 @@ class GhostReaderAdvancedTest {
         reader.beginObject()
 
         assertEquals(2, reader.selectString(options))
-        reader.consumeKeySeparator().ignore()
+        reader.consumeKeySeparator()
         reader.readList { reader.nextInt() }
 
         assertEquals(0, reader.selectString(options))

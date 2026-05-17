@@ -7,10 +7,6 @@ import kotlinx.browser.document
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    // Manual registration for Wasm environment
     Ghost.addRegistry(GhostModuleRegistry_serialization_sample.INSTANCE)
-    
-    ComposeViewport(document.body!!) {
-        GhostSampleApp()
-    }
+    ComposeViewport(document.body!!) { GhostSampleApp() }
 }

@@ -40,7 +40,7 @@ class RickAndMortyRepository {
         Ghost.prewarm()
     }
 
-    private val kserJson = Json { ignoreUnknownKeys = true }
+    private val kSerJson = Json { ignoreUnknownKeys = true }
 
     // Real client for downloading stress data (used once)
     private val downloadClient = HttpClient {
@@ -57,7 +57,10 @@ class RickAndMortyRepository {
             val stressData = downloadStressData(pageCount, onStatusChange)
             warmUpEngines(stressData, onStatusChange)
 
-            val networkResults = benchmarkNetworkStack(stressData.bytes, onStatusChange)
+            val networkResults = benchmarkNetworkStack(
+                stressData.bytes,
+                onStatusChange
+            )
 
             val parseStringResults = benchmarkParseString(stressData, onStatusChange)
             val parseBytesResults = benchmarkParseBytes(stressData, onStatusChange)
@@ -90,14 +93,21 @@ class RickAndMortyRepository {
     ): StressData {
         val allBytes = mutableListOf<ByteArray>()
         onStatusChange("Downloading Stress Data ($pageCount pages)...")
+
         for (i in 1..pageCount) {
             onStatusChange("Downloading Page $i/$pageCount...")
             val response: HttpResponse = downloadClient.get(
                 "https://rickandmortyapi.com/api/character/"
             ) { parameter("page", i) }
-            if (!response.status.isSuccess()) throw Exception("Network Error on Page $i")
+
+            if (!response.status.isSuccess()) {
+                throw Exception("Network Error on Page $i")
+            }
+
             allBytes.add(response.body<ByteArray>())
-            delay(150) // Respect the API rate limit
+
+            // Respect the API rate limit
+            delay(150)
         }
 
         val jsonString = mergePages(allBytes, pageCount)
@@ -107,8 +117,12 @@ class RickAndMortyRepository {
 
     private fun mergePages(allBytes: List<ByteArray>, pageCount: Int): String {
         if (pageCount == 1) return allBytes[0].decodeToString()
-        val responses =
-            allBytes.map { kserJson.decodeFromString<CharacterResponse>(it.decodeToString()) }
+        val responses = allBytes.map {
+            kSerJson.decodeFromString<CharacterResponse>(
+                string = it.decodeToString()
+            )
+        }
+
         val mergedResults = responses.flatMap { it.results }
         val merged = CharacterResponse(
             info = PageInfo(
@@ -119,20 +133,26 @@ class RickAndMortyRepository {
             ),
             results = mergedResults
         )
-        return kserJson.encodeToString(CharacterResponse.serializer(), merged)
+
+        return kSerJson.encodeToString(
+            serializer = CharacterResponse.serializer(),
+            value = merged
+        )
     }
 
     // ── Warm-Up (fair: same data, same iterations for everyone) ─────────────────
 
-    private suspend fun warmUpEngines(
+    private fun warmUpEngines(
         data: StressData,
         onStatusChange: (String) -> Unit
     ) {
         onStatusChange("Aggressive JIT Warmup (${WARMUP_ITERATIONS}x)...")
+
         repeat(WARMUP_ITERATIONS) {
             Ghost.deserialize<CharacterResponse>(data.bytes)
-            kserJson.decodeFromString<CharacterResponse>(data.jsonString)
+            kSerJson.decodeFromString<CharacterResponse>(data.jsonString)
         }
+
         forceGC()
     }
 
@@ -148,38 +168,51 @@ class RickAndMortyRepository {
     ): List<EngineResult> {
         onStatusChange("Benchmarking NETWORK STACKS (converter only, local replay)...")
 
-        val ghostMockClient = HttpClient(MockEngine { _ ->
-            respond(
+        val ghostMockClient = HttpClient(
+            engine = MockEngine { _ ->
+                respond(
                 content = networkBytes,
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
-            )
-        }) {
+                    headers = headersOf(
+                        name = HttpHeaders.ContentType,
+                        value = "application/json"
+                    )
+                )
+            }
+        ) {
             install(ContentNegotiation) { ghost() }
         }
 
-        val kserMockClient = HttpClient(MockEngine { _ ->
-            respond(
+        val kSerMockClient = HttpClient(
+            engine = MockEngine { _ ->
+                respond(
                 content = networkBytes,
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
-            )
-        }) {
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+                    headers = headersOf(
+                        name = HttpHeaders.ContentType,
+                        value = "application/json"
+                    )
+                )
+            }
+        ) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
         }
 
         val ghostNet = measureEngine("[NETWORK] GHOST (Ktor)", onStatusChange) {
             ghostMockClient.get("https://rickandmortyapi.com/api/character/")
                 .body<CharacterResponse>()
         }
-        val kserNet = measureEngine("[NETWORK] KSER (Ktor)", onStatusChange) {
-            kserMockClient.get("https://rickandmortyapi.com/api/character/")
+
+        val kSerNet = measureEngine("[NETWORK] KSER (Ktor)", onStatusChange) {
+            kSerMockClient.get("https://rickandmortyapi.com/api/character/")
                 .body<CharacterResponse>()
         }
 
         ghostMockClient.close()
-        kserMockClient.close()
-        return listOf(ghostNet, kserNet)
+        kSerMockClient.close()
+        return listOf(ghostNet, kSerNet)
     }
 
     // ── Deserialization: STRING Mode ─────────────────────────────────────────────
@@ -191,10 +224,12 @@ class RickAndMortyRepository {
         val ghost = measureEngine("[PARSE_STRING] GHOST", onStatusChange) {
             Ghost.deserialize<CharacterResponse>(data.jsonString)
         }
-        val kser = measureEngine("[PARSE_STRING] KSER", onStatusChange) {
-            kserJson.decodeFromString<CharacterResponse>(data.jsonString)
+
+        val kSer = measureEngine("[PARSE_STRING] KSER", onStatusChange) {
+            kSerJson.decodeFromString<CharacterResponse>(data.jsonString)
         }
-        return listOf(ghost, kser)
+
+        return listOf(ghost, kSer)
     }
 
     // ── Deserialization: BYTES Mode ──────────────────────────────────────────────
@@ -203,14 +238,16 @@ class RickAndMortyRepository {
         data: StressData,
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
+
         val ghost = measureEngine("[PARSE_BYTES] GHOST", onStatusChange) {
             Ghost.deserialize<CharacterResponse>(data.bytes)
         }
-        // KSer doesn't have a native ByteArray decode path — matches real-world usage
-        val kser = measureEngine("[PARSE_BYTES] KSER", onStatusChange) {
-            kserJson.decodeFromString<CharacterResponse>(data.bytes.decodeToString())
+
+        val kSer = measureEngine("[PARSE_BYTES] KSER", onStatusChange) {
+            kSerJson.decodeFromString<CharacterResponse>(data.bytes.decodeToString())
         }
-        return listOf(ghost, kser)
+
+        return listOf(ghost, kSer)
     }
 
     // ── Serialization: STRING Mode ───────────────────────────────────────────────
@@ -220,13 +257,16 @@ class RickAndMortyRepository {
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
         val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+
         val ghost = measureEngine("[WRITE_STRING] GHOST", onStatusChange) {
             Ghost.serialize(obj)
         }
-        val kser = measureEngine("[WRITE_STRING] KSER", onStatusChange) {
-            kserJson.encodeToString(CharacterResponse.serializer(), obj)
+
+        val kSer = measureEngine("[WRITE_STRING] KSER", onStatusChange) {
+            kSerJson.encodeToString(CharacterResponse.serializer(), obj)
         }
-        return listOf(ghost, kser)
+
+        return listOf(ghost, kSer)
     }
 
     // ── Serialization: BYTES Mode ────────────────────────────────────────────────
@@ -235,14 +275,20 @@ class RickAndMortyRepository {
         data: StressData,
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
+
         val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+
         val ghost = measureEngine("[WRITE_BYTES] GHOST", onStatusChange) {
             Ghost.encodeToBytes(obj)
         }
-        val kser = measureEngine("[WRITE_BYTES] KSER", onStatusChange) {
-            kserJson.encodeToString(CharacterResponse.serializer(), obj).encodeToByteArray()
+
+        val kSer = measureEngine("[WRITE_BYTES] KSER", onStatusChange) {
+            kSerJson
+                .encodeToString(CharacterResponse.serializer(), obj)
+                .encodeToByteArray()
         }
-        return listOf(ghost, kser)
+
+        return listOf(ghost, kSer)
     }
 
     // ── Deserialization: STREAM Mode ─────────────────────────────────────────────
@@ -255,15 +301,21 @@ class RickAndMortyRepository {
         data: StressData,
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
+
         val ghost = measureEngine("[PARSE_STREAM] GHOST", onStatusChange) {
             val buf = Buffer().write(data.bytes)
             Ghost.deserialize<CharacterResponse>(buf)
         }
-        val kser = measureEngine("[PARSE_STREAM] KSER", onStatusChange) {
+
+        val kSer = measureEngine("[PARSE_STREAM] KSER", onStatusChange) {
             val buf = Buffer().write(data.bytes)
-            kserJson.decodeFromBufferedSource(CharacterResponse.serializer(), buf)
+            kSerJson.decodeFromBufferedSource(
+                deserializer = CharacterResponse.serializer(),
+                source = buf
+            )
         }
-        return listOf(ghost, kser)
+
+        return listOf(ghost, kSer)
     }
 
     // ── Serialization: BUFFER (Sink) Mode ────────────────────────────────────────
@@ -276,15 +328,22 @@ class RickAndMortyRepository {
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
         val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+
         val ghost = measureEngine("[WRITE_BUFFER] GHOST", onStatusChange) {
             val buf = Buffer()
             Ghost.encodeToSink(buf, obj)
         }
-        val kser = measureEngine("[WRITE_BUFFER] KSER", onStatusChange) {
+
+        val kSer = measureEngine("[WRITE_BUFFER] KSER", onStatusChange) {
             val buf = Buffer()
-            kserJson.encodeToBufferedSink(CharacterResponse.serializer(), obj, buf)
+            kSerJson.encodeToBufferedSink(
+                serializer = CharacterResponse.serializer(),
+                value = obj,
+                sink = buf
+            )
         }
-        return listOf(ghost, kser)
+
+        return listOf(ghost, kSer)
     }
 
     // ── Measurement Utility ──────────────────────────────────────────────────────
@@ -301,17 +360,26 @@ class RickAndMortyRepository {
     ): EngineResult {
         onStatusChange("Benchmarking $name...")
         forceGC()
+
         var totalTimeNs = 0L
         var totalMem = 0L
         repeat(BENCHMARK_ITERATIONS) {
             val memStart = getCurrentThreadAllocatedBytes()
             val start = TimeSource.Monotonic.markNow()
+
             block()
+
             val durationNs = start.elapsedNow().inWholeNanoseconds
             val memEnd = getCurrentThreadAllocatedBytes()
+
             totalTimeNs += durationNs
-            totalMem += if (memEnd >= memStart) memEnd - memStart else 0L
+            totalMem += if (memEnd >= memStart) {
+                memEnd - memStart
+            } else {
+                0L
+            }
         }
+
         return EngineResult(
             name = name,
             timeMs = (totalTimeNs / BENCHMARK_ITERATIONS.toDouble()) / NANOS_PER_MILLI,
@@ -321,14 +389,19 @@ class RickAndMortyRepository {
 
     // ── Initial data fetch for UI character list ─────────────────────────────────
 
-    suspend fun fetchCharacters(page: Int): CharacterResponse = withContext(Dispatchers.Default) {
+    suspend fun fetchCharacters(
+        page: Int
+    ): CharacterResponse = withContext(Dispatchers.Default) {
         downloadClient.get("https://rickandmortyapi.com/api/character") {
             parameter("page", page)
         }.body()
     }
 
     @Suppress("ArrayInDataClass")
-    private data class StressData(val jsonString: String, val bytes: ByteArray)
+    private data class StressData(
+        val jsonString: String,
+        val bytes: ByteArray
+    )
 
     companion object {
         private const val WARMUP_ITERATIONS = 200

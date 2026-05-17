@@ -12,15 +12,3 @@ expect fun acquireScratchBuffer(minSize: Int = 48): ByteArray
  */
 @InternalGhostApi
 expect fun releaseScratchBuffer(buffer: ByteArray)
-
-/**
- * Provides access to reusable character buffers for string building.
- */
-@InternalGhostApi
-expect fun acquireCharBuffer(minSize: Int): CharArray
-
-/**
- * Releases a character buffer back to the pool.
- */
-@InternalGhostApi
-expect fun releaseCharBuffer(buffer: CharArray)

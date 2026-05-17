@@ -1,10 +1,10 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
-import okio.buffer
-import okio.source
+import com.ghost.serialization.ghostInternalUseReader
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractDecoder
@@ -17,7 +17,10 @@ import reactor.core.publisher.Mono
 
 /**
  * Reactive Decoder for Ghost Serialization.
- * Supports streaming of objects from [DataBuffer]s with Zero-Copy.
+ *
+ * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
+ * to the pooled [com.ghost.serialization.parser.GhostJsonReader], avoiding
+ * intermediate Okio/InputStream wrappers entirely.
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
@@ -79,15 +82,22 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
             }
         }
 
+    @OptIn(InternalGhostApi::class)
     private fun deserializeBuffer(
         buffer: DataBuffer,
         clazz: Class<*>
     ): Any {
-        val inputStream = buffer.asInputStream()
-        val source = inputStream.source().buffer()
+        val bytes = ByteArray(buffer.readableByteCount())
+        buffer.read(bytes)
 
         return try {
-            Ghost.decodeFromSource(source, clazz.kotlin)
+            ghostInternalUseReader(bytes) { reader ->
+                val serializer = Ghost.getSerializer(clazz.kotlin)
+                    ?: throw IllegalArgumentException(
+                        "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
+                    )
+                serializer.deserialize(reader)
+            }
         } catch (e: Exception) {
             throw GhostJsonException(
                 "$DECODE_ERROR ${clazz.simpleName}: ${e.message}"
@@ -96,7 +106,7 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
     }
 
     private fun isNdJson(mimeType: MimeType?): Boolean {
-        return mimeType?.toString()?.contains("x-ndjson") == true
+        return mimeType?.subtype?.contains("ndjson") == true
     }
 
     companion object {

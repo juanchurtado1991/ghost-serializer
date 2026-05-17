@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ghost.serialization.sample.api.RickAndMortyRepository
 import com.ghost.serialization.sample.ui.model.UiState
+import com.ghost.serialization.sample.util.format
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.ghost.serialization.sample.util.format
 
 class MainViewModel : ViewModel() {
     private val repository = RickAndMortyRepository()
@@ -21,14 +21,20 @@ class MainViewModel : ViewModel() {
     }
 
     fun runBenchmark() {
-        _uiState.update { it.copy(isLoading = true, errorMessage = null, results = emptyList(), loadingStatus = "Initiating...") }
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessage = null,
+                results = emptyList(),
+                loadingStatus = "Initiating..."
+            )
+        }
 
         viewModelScope.launch {
-            // Fetch characters for UI display
             try {
                 val characters = repository.fetchCharacters(1)
                 _uiState.update { it.copy(characters = characters.results) }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Non-fatal: continue benchmark even if UI fetch fails
             }
 
@@ -39,9 +45,23 @@ class MainViewModel : ViewModel() {
                 }
             ).onSuccess { results ->
                 val logEntry = buildString {
-                    appendLine("--- RUN (${_uiState.value.pageCount.toInt()} pages x${BENCHMARK_ITERATIONS}) ---")
+                    appendLine(
+                        "--- RUN (${
+                            _uiState.value.pageCount.toInt()
+                        } pages x${
+                            BENCHMARK_ITERATIONS
+                        }) ---"
+                    )
                     results.forEach { r ->
-                        appendLine("${r.name}: ${"%.3f".format(r.timeMs)}ms | ${r.memoryBytes / 1024}KB")
+                        appendLine(
+                            "${
+                                r.name
+                            }: ${
+                                "%.3f".format(r.timeMs)
+                            }ms | ${
+                                r.memoryBytes / 1024
+                            }KB"
+                        )
                     }
                 }
                 _uiState.update { state ->
@@ -52,7 +72,12 @@ class MainViewModel : ViewModel() {
                     )
                 }
             }.onFailure { error ->
-                _uiState.update { it.copy(errorMessage = error.message, isLoading = false) }
+                _uiState.update {
+                    it.copy(
+                        errorMessage = error.message,
+                        isLoading = false
+                    )
+                }
             }
         }
     }

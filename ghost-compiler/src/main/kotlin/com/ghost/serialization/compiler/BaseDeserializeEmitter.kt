@@ -23,11 +23,13 @@ internal abstract class BaseDeserializeEmitter(
     protected val originalClassName: ClassName,
     protected val readerClass: ClassName
 ) {
+
     protected val fullPaths = properties.map {
         it.flattenPath ?: (it.wrapPath?.let { path ->
             path + it.jsonName
         } ?: listOf(it.jsonName))
     }
+
     protected val contextualSerializers = mutableMapOf<KSType, String>()
 
     protected fun buildCall(prop: GhostPropertyModel): CodeBlock {
@@ -62,7 +64,10 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
-        if (prop.customDecoder != null) return nullGuarded(buildCustomDecoderCall(prop))
+        if (prop.customDecoder != null) {
+            return nullGuarded(buildCustomDecoderCall(prop))
+        }
+
         if (prop.isPrimitiveArray) {
             return nullGuarded(
                 CodeBlock.of(
@@ -74,6 +79,7 @@ internal abstract class BaseDeserializeEmitter(
                 )
             )
         }
+
         return buildTypeReaderCall(prop.type)
     }
 
@@ -94,6 +100,7 @@ internal abstract class BaseDeserializeEmitter(
             type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG)
             type.isPrimitiveDouble() -> CodeBlock.of(C.STR_NEXT_DOUBLE)
             type.isPrimitiveFloat() -> CodeBlock.of(C.STR_NEXT_FLOAT)
+
             type.isList() -> {
                 val inner = type.arguments.firstOrNull()?.type?.resolve()
                     ?: return CodeBlock.of(C.STR_NEXT_STRING)
@@ -128,7 +135,11 @@ internal abstract class BaseDeserializeEmitter(
             }
         }
 
-        return if (type.isMarkedNullable) nullGuarded(readerCall) else readerCall
+        return if (type.isMarkedNullable) {
+            nullGuarded(readerCall)
+        } else {
+            readerCall
+        }
     }
 
     private fun getContextualSerializerName(type: KSType): String {
@@ -175,7 +186,10 @@ internal abstract class BaseDeserializeEmitter(
             val className = toClassName()
             return ClassName(
                 className.packageName,
-                "${className.simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER_SUFFIX}"
+                "${className
+                    .simpleNames
+                    .joinToString(C.STR_UNDERSCORE)
+                }${C.STR_SERIALIZER_SUFFIX}"
             )
         }
 }

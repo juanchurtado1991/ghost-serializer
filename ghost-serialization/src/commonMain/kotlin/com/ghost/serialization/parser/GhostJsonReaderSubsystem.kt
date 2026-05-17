@@ -9,6 +9,16 @@ import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ_INT
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_0_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_1_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_FALSE_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_NO_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_N_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_OFF_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_ON_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_TRUE_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_YES_STR
+import com.ghost.serialization.parser.GhostJsonConstants.COERCE_Y_STR
 import com.ghost.serialization.parser.GhostJsonConstants.COLON_INT
 import com.ghost.serialization.parser.GhostJsonConstants.COMMA_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ERR_DEPTH_EXCEEDED
@@ -157,9 +167,19 @@ fun GhostJsonReader.nextBoolean(): Boolean {
         if (token == QUOTE_INT) {
             val s = readQuotedString().lowercase()
             return when (s) {
-                "true", "yes", "on", "1", "y" -> true
-                "false", "no", "off", "0", "n" -> false
-                else -> throwError(ERR_EXPECTED_BOOLEAN + " \"$s\"")
+                COERCE_TRUE_STR,
+                COERCE_YES_STR,
+                COERCE_ON_STR,
+                COERCE_1_STR,
+                COERCE_Y_STR -> true
+
+                COERCE_FALSE_STR,
+                COERCE_NO_STR,
+                COERCE_OFF_STR,
+                COERCE_0_STR,
+                COERCE_N_STR -> false
+
+                else -> throwError("$ERR_EXPECTED_BOOLEAN \"$s\"")
             }
         }
     }
@@ -210,7 +230,13 @@ private fun GhostJsonReader.internalSelect(
     }
 
     if (token != QUOTE_INT) {
-        throwError(if (consumeSeparator) ERR_EXPECTED_KEY else ERR_EXPECTED_STRING)
+        throwError(
+            if (consumeSeparator) {
+                ERR_EXPECTED_KEY
+            } else {
+                ERR_EXPECTED_STRING
+            }
+        )
     }
 
     val start = position + 1
@@ -223,7 +249,14 @@ private fun GhostJsonReader.internalSelect(
     val index = options.dispatch[hasIndex]
 
     if (index != MATCH_END) {
-        if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {
+        if (
+            verifyKeyMatch(
+                start,
+                length,
+                options.rawBytes[index],
+                consumeSeparator
+            )
+        ) {
             return index
         }
     }
@@ -232,7 +265,10 @@ private fun GhostJsonReader.internalSelect(
     position = end + 1
     nextTokenByte = MATCH_END
     if (consumeSeparator) {
-        if (position < limit && getByte(position) == COLON_INT) {
+        if (
+            position < limit &&
+            getByte(position) == COLON_INT
+        ) {
             position++
         } else {
             consumeKeySeparator()

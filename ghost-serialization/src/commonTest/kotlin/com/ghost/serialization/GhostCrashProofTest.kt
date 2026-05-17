@@ -11,7 +11,6 @@ import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeKeySeparator
 import com.ghost.serialization.parser.consumeNull
 import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.isNextNullValue
 import com.ghost.serialization.parser.nextBoolean
 import com.ghost.serialization.parser.nextDouble
@@ -44,8 +43,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullDetectsActualNull() {
         val reader = readerOf("{\"v\":null}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertTrue(reader.isNextNullValue())
     }
@@ -53,8 +52,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullReturnsFalseForString() {
         val reader = readerOf("{\"v\":\"hello\"}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFalse(reader.isNextNullValue())
     }
@@ -62,8 +61,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullReturnsFalseForNumber() {
         val reader = readerOf("{\"v\":42}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFalse(reader.isNextNullValue())
     }
@@ -71,8 +70,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullReturnsFalseForObject() {
         val reader = readerOf("{\"v\":{}}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFalse(reader.isNextNullValue())
     }
@@ -80,8 +79,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullReturnsFalseForArray() {
         val reader = readerOf("{\"v\":[]}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFalse(reader.isNextNullValue())
     }
@@ -89,8 +88,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullReturnsFalseForTrue() {
         val reader = readerOf("{\"v\":true}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFalse(reader.isNextNullValue())
     }
@@ -98,8 +97,8 @@ class GhostCrashProofTest {
     @Test
     fun isNextNullReturnsFalseForFalse() {
         val reader = readerOf("{\"v\":false}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFalse(reader.isNextNullValue())
     }
@@ -112,8 +111,8 @@ class GhostCrashProofTest {
     fun invalidUnicodeEscapeThrowsException() {
         val json = "{\"v\":\"\\u00GG\"}"
         val reader = readerOf(json)
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFailsWith<Exception> { reader.nextString() }
     }
@@ -122,8 +121,8 @@ class GhostCrashProofTest {
     fun truncatedUnicodeEscapeThrowsException() {
         val json = "{\"v\":\"\\u00\"}"
         val reader = readerOf(json)
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFailsWith<Exception> { reader.nextString() }
     }
@@ -136,8 +135,8 @@ class GhostCrashProofTest {
     fun veryLargeNumberThrowsOverflowException() {
         val huge = "99999999999999999999"
         val reader = readerOf("{\"v\":$huge}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFailsWith<GhostJsonException> {
             reader.nextLong()
@@ -147,8 +146,8 @@ class GhostCrashProofTest {
     @Test
     fun readsExactLongMaxValue() {
         val reader = readerOf("{\"v\":${Long.MAX_VALUE}}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertEquals(Long.MAX_VALUE, reader.nextLong())
     }
@@ -156,8 +155,8 @@ class GhostCrashProofTest {
     @Test
     fun readsExactLongMinValue() {
         val reader = readerOf("{\"v\":${Long.MIN_VALUE}}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertEquals(Long.MIN_VALUE, reader.nextLong())
     }
@@ -169,8 +168,8 @@ class GhostCrashProofTest {
     @Test
     fun truncatedNullFailsImmediately() {
         val reader = readerOf("{\"v\":nul}")
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertTrue(reader.isNextNullValue())
         assertFailsWith<Exception> { reader.consumeNull() }
@@ -427,11 +426,11 @@ class GhostCrashProofTest {
     // ══════════════════════════════════════════════════════════════════
 
     @Test
-    fun roundtripAllEscapeCharacters() {
+    fun roundTripAllEscapeCharacters() {
         val original = "tab\there\nnewline\rcarriage\bback\"quote\\slash"
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
-        writer.beginObject().name("v").value(original).endObject().ignore()
+        writer.beginObject().name("v").value(original).endObject()
 
         writer.flush()
         val json = buffer.readUtf8()
@@ -443,7 +442,7 @@ class GhostCrashProofTest {
     }
 
     @Test
-    fun roundtripControlCharsBelow0x20() {
+    fun roundTripControlCharsBelow0x20() {
         val original = "\u0001\u0002\u0003\u0010\u001F"
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
@@ -473,7 +472,7 @@ class GhostCrashProofTest {
 
         assertEquals(2, reader.selectString(options))
         reader.consumeKeySeparator()
-        reader.readList { reader.nextInt() }.ignore()
+        reader.readList { reader.nextInt() }
         assertEquals(3, reader.selectString(options))
         reader.consumeKeySeparator()
         assertEquals("g", reader.nextString())

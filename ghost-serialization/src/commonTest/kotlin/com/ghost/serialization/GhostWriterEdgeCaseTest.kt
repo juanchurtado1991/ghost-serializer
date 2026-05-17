@@ -3,7 +3,6 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.writer.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
@@ -14,7 +13,7 @@ class GhostWriterEdgeCaseTest {
     private fun writerToString(block: (GhostJsonWriter) -> Any?): String {
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
-        block(writer).ignore()
+        block(writer)
         writer.flush()
         return buffer.readUtf8()
     }

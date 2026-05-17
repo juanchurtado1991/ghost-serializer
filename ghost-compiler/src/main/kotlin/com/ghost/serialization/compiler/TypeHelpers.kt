@@ -28,10 +28,8 @@ internal fun KSType.isList(): Boolean = declaration.qualifiedName?.asString() ==
 internal fun KSType.isMap(): Boolean = declaration.qualifiedName?.asString() == C.MAP_QUALIFIED
 internal fun KSType.isString(): Boolean = declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
 
-internal fun KSType.isGhost(): Boolean {
-    return declaration.annotations.any {
-        it.shortName.asString() == C.GHOST_SERIALIZATION
-    }
+internal fun KSType.isGhost(): Boolean = declaration.annotations.any {
+    it.shortName.asString() == C.GHOST_SERIALIZATION
 }
 
 internal fun KSType.isEnum(): Boolean {

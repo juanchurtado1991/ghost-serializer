@@ -4,9 +4,6 @@ package com.ghost.serialization.compiler
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
@@ -26,13 +23,21 @@ internal class StandardEmitter(
             val varType = it.getVariableType()
             val initialValue = it.getInitialValue()
             body.addStatement(
-                "${C.STR_VAR_UNDERSCORE}${it.kotlinName}${C.TEMPLATE_VAR_TYPE_INIT}",
+                "${
+                    C.STR_VAR_UNDERSCORE
+                }${
+                    it.kotlinName
+                }${
+                    C.TEMPLATE_VAR_TYPE_INIT
+                }",
                 varType,
                 initialValue
             )
         }
 
-        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
+        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
+                C.MASK_SIZE_BITS.toInt()
+
         for (i in 0 until maskCount) {
             body.addStatement(C.STR_MASK_INIT, i)
         }
@@ -51,13 +56,31 @@ internal class StandardEmitter(
         val topLevelNames = fullPaths.map { it.first() }.distinct()
 
         topLevelNames.forEachIndexed { topIndex, topName ->
-            body.beginControlFlow(C.TEMPLATE_WHEN_BRANCH, topIndex)
-            val propsForThisName = properties.filterIndexed { idx, _ -> fullPaths[idx].first() == topName }
+            body.beginControlFlow(
+                C.TEMPLATE_WHEN_BRANCH,
+                topIndex
+            )
 
-            if (propsForThisName.size == 1 && fullPaths[properties.indexOf(propsForThisName[0])].size == 1) {
-                emitPropertyAssignment(body, propsForThisName[0], properties.indexOf(propsForThisName[0]))
+            val propsForThisName = properties
+                .filterIndexed { index, _ -> fullPaths[index].first() == topName }
+
+            if (
+                propsForThisName.size == 1 &&
+                fullPaths[properties.indexOf(propsForThisName[0])].size == 1
+            ) {
+                emitPropertyAssignment(
+                    body,
+                    propsForThisName[0],
+                    properties.indexOf(propsForThisName[0])
+                )
             } else {
-                emitFlattenedGroup(body, topName, propsForThisName, 1, C.STR_EMPTY)
+                emitFlattenedGroup(
+                    body,
+                    topName,
+                    propsForThisName,
+                    1,
+                    C.STR_EMPTY
+                )
             }
             body.endControlFlow()
         }
@@ -78,7 +101,12 @@ internal class StandardEmitter(
         pathIndex: Int,
         parentPrefix: String
     ) {
-        val currentPrefix = if (parentPrefix.isEmpty()) name else "${parentPrefix}${C.STR_UNDERSCORE}$name"
+        val currentPrefix = if (parentPrefix.isEmpty()) {
+            name
+        } else {
+            "${parentPrefix}${C.STR_UNDERSCORE}$name"
+        }
+
         val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
 
         body.addStatement(C.STR_BEGIN_OBJECT)
@@ -96,7 +124,10 @@ internal class StandardEmitter(
         }.distinct()
 
         nextLevelNames.forEachIndexed { subIndex, subName ->
-            body.beginControlFlow(C.TEMPLATE_WHEN_BRANCH, subIndex)
+            body.beginControlFlow(
+                C.TEMPLATE_WHEN_BRANCH,
+                subIndex
+            )
             val subProps = props.filter {
                 val path = fullPaths[properties.indexOf(it)]
                 val currentName = if (pathIndex < path.size) {
@@ -107,10 +138,23 @@ internal class StandardEmitter(
                 currentName == subName
             }
 
-            if (subProps.size == 1 && pathIndex == fullPaths[properties.indexOf(subProps[0])].size - 1) {
-                emitPropertyAssignment(body, subProps[0], properties.indexOf(subProps[0]))
+            if (
+                subProps.size == 1 &&
+                pathIndex == fullPaths[properties.indexOf(subProps[0])].size - 1
+            ) {
+                emitPropertyAssignment(
+                    body,
+                    subProps[0],
+                    properties.indexOf(subProps[0])
+                )
             } else {
-                emitFlattenedGroup(body, subName, subProps, pathIndex + 1, currentPrefix)
+                emitFlattenedGroup(
+                    body,
+                    subName,
+                    subProps,
+                    pathIndex + 1,
+                    currentPrefix
+                )
             }
             body.endControlFlow()
         }
@@ -125,7 +169,11 @@ internal class StandardEmitter(
         body.addStatement(C.STR_END_OBJECT)
     }
 
-    private fun emitPropertyAssignment(body: CodeBlock.Builder, prop: GhostPropertyModel, index: Int) {
+    private fun emitPropertyAssignment(
+        body: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        index: Int
+    ) {
         val call = buildCall(prop)
         val maskIdx = index / C.MASK_SIZE_BITS.toInt()
         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
@@ -164,7 +212,12 @@ internal class StandardEmitter(
         for (i in 0 until maskCount) {
             val reqMask = requiredMasks[i]
             if (reqMask != 0L) {
-                val reqMaskStr = if (reqMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(reqMask)
+                val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
+                    C.STR_BIT_MASK_MIN_LONG
+                } else {
+                    C.FMT_LONG_LITERAL.format(reqMask)
+                }
+
                 val propsInMask = requiredPropsByMask[i]
 
                 if (propsInMask.size == 1) {
@@ -172,19 +225,48 @@ internal class StandardEmitter(
                     val index = properties.indexOf(prop)
                     val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                     val bitMask = 1L shl bitIdx
-                    val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
-                    body.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_SIMPLE, i, bitMaskStr)
-                    body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2)
+                    val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+                        C.STR_BIT_MASK_MIN_LONG
+                    } else {
+                        C.FMT_LONG_LITERAL.format(bitMask)
+                    }
+
+                    body.beginControlFlow(
+                        C.TEMPLATE_IF_MASK_ZERO_SIMPLE,
+                        i,
+                        bitMaskStr
+                    )
+                    body.addStatement(
+                        C.TEMPLATE_THROW_S,
+                        C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
+                    )
                     body.endControlFlow()
                 } else {
-                    body.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_SIMPLE, i, reqMaskStr, reqMaskStr)
+                    body.beginControlFlow(
+                        C.TEMPLATE_IF_MASK_NOT_MET_SIMPLE,
+                        i,
+                        reqMaskStr,
+                        reqMaskStr
+                    )
                     propsInMask.forEach { prop ->
                         val index = properties.indexOf(prop)
                         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
-                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
-                        body.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_SIMPLE, i, bitMaskStr)
-                        body.addStatement(C.TEMPLATE_THROW_S, C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2)
+                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+                            C.STR_BIT_MASK_MIN_LONG
+                        } else {
+                            C.FMT_LONG_LITERAL.format(bitMask)
+                        }
+
+                        body.beginControlFlow(
+                            C.TEMPLATE_IF_MASK_ZERO_SIMPLE,
+                            i,
+                            bitMaskStr
+                        )
+                        body.addStatement(
+                            C.TEMPLATE_THROW_S,
+                            C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
+                        )
                         body.endControlFlow()
                     }
                     body.endControlFlow()
@@ -197,9 +279,16 @@ internal class StandardEmitter(
         val hasDefaults = properties.any { it.hasDefaultValue }
 
         if (!hasDefaults) {
-            body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)
+            body.addStatement(
+                C.TEMPLATE_RETURN_T_PAREN,
+                originalClassName
+            )
             properties.forEach { prop ->
-                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+                body.addStatement(
+                    C.TEMPLATE_NAMED_ARG,
+                    prop.kotlinName,
+                    prop.getReturnExpression()
+                )
             }
             body.addStatement(C.STR_PAREN)
             return
@@ -225,7 +314,9 @@ internal class StandardEmitter(
 
         if (defaultProps.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
-            val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
+            val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
+                    C.MASK_SIZE_BITS.toInt()
+
             val defaultMasks = LongArray(maskCount)
             properties.forEachIndexed { index, prop ->
                 if (prop.hasDefaultValue) {
@@ -239,8 +330,16 @@ internal class StandardEmitter(
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
-                    val defMaskStr = if (defMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(defMask)
-                    conditions.add(C.TEMPLATE_MASK_CHECK_MATCH.format(i, defMaskStr))
+                    val defMaskStr = if (defMask == Long.MIN_VALUE) {
+                        C.STR_BIT_MASK_MIN_LONG
+                    } else {
+                        C.FMT_LONG_LITERAL.format(defMask)
+                    }
+
+                    conditions.add(
+                        C.TEMPLATE_MASK_CHECK_MATCH
+                            .format(i, defMaskStr)
+                    )
                 }
             }
             body.add(conditions.joinToString(C.STR_OR))
@@ -254,7 +353,12 @@ internal class StandardEmitter(
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
-                val bitMaskStr = if (bitMask == Long.MIN_VALUE) C.STR_BIT_MASK_MIN_LONG else C.FMT_LONG_LITERAL.format(bitMask)
+                val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
+                    C.STR_BIT_MASK_MIN_LONG
+                } else {
+                    C.FMT_LONG_LITERAL.format(bitMask)
+                }
+
                 val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, bitMaskStr)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }

@@ -24,14 +24,17 @@ actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
  */
 private fun acquireFlatWriterPair(): WriterSinkPair {
     val pair = writerPool.get()
-        ?: WriterSinkPair().also { writerPool.set(it) }
+        ?: WriterSinkPair()
+            .also { writerPool.set(it) }
     
     pair.writer.reset()
     pair.byteWriter.reset()
     return pair
 }
 
-actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String {
+actual fun ghostInternalEncodeToString(
+    block: (GhostJsonFlatWriter) -> Unit
+): String {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
     val result = String(
@@ -44,7 +47,9 @@ actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): St
     return result
 }
 
-actual fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): ByteArray {
+actual fun ghostInternalEncodeWithWriter(
+    block: (GhostJsonFlatWriter) -> Unit
+): ByteArray {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
     val result = pair.byteWriter.toByteArray()
@@ -52,7 +57,9 @@ actual fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): 
     return result
 }
 
-actual fun ghostInternalEncodeAndDiscard(block: (GhostJsonFlatWriter) -> Unit) {
+actual fun ghostInternalEncodeAndDiscard(
+    block: (GhostJsonFlatWriter) -> Unit
+) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
     pair.byteWriter.reset()
@@ -83,13 +90,13 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             if (!fastChecked) {
                 fastChecked = true
                 val names = listOf(
-                    "com.ghost.serialization.generated.GhostModuleRegistry_Default",
-                    "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
+                    Ghost.DEFAULT_REGISTRY_NAME,
+                    Ghost.TEST_REGISTRY_NAME
                 )
                 fastRegistries = names.mapNotNull { name ->
                     runCatching {
                         Class.forName(name)
-                            .getField("INSTANCE")
+                            .getField(Ghost.INSTANCE_FIELD)
                             .get(null) as GhostRegistry
                     }.getOrNull()
                 }.toMutableList()
@@ -99,8 +106,15 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             if (fastIterator?.hasNext() == true) return true
 
             if (slow == null) {
-                slow = runCatching { ServiceLoader.load(GhostRegistry::class.java).iterator() }
-                    .getOrDefault(emptyList<GhostRegistry>().iterator())
+                slow = runCatching {
+                    ServiceLoader
+                        .load(GhostRegistry::class.java)
+                        .iterator()
+                }
+                    .getOrDefault(
+                        emptyList<GhostRegistry>()
+                            .iterator()
+                    )
             }
             return slow!!.hasNext()
         }

@@ -2,15 +2,6 @@ package com.ghost.benchmark
 
 import java.io.File
 
-// ─── Data model ───────────────────────────────────────────────────────────────
-
-data class TestResult(
-    val name: String,
-    val category: String,
-    val passed: Boolean,
-    val error: String? = null
-)
-
 /**
  * Unified test summary for all Ghost modules.
  *
@@ -42,9 +33,7 @@ object ParsingTestBenchmark {
         val results = mutableListOf<TestResult>()
         for ((label, dir) in reportRoots) {
             if (!dir.exists()) {
-                println(
-                    "  ⚠️  No XML reports for $label at ${dir.path} — run the module's test task first."
-                )
+                println("  ⚠️  No XML reports for $label at ${dir.path} — run the module's test task first.")
                 continue
             }
             dir.walkTopDown().filter { it.isFile && it.name.endsWith(".xml") }.forEach { file ->
@@ -75,7 +64,14 @@ object ParsingTestBenchmark {
                 name = displayName,
                 category = resolveCategory(className),
                 passed = !failed,
-                error = if (failed) Regex("""message="([^"]*)""").find(body)?.groupValues?.get(1) else null
+                error = if (failed) {
+                    Regex("""message="([^"]*)""")
+                        .find(body)
+                        ?.groupValues
+                        ?.get(1)
+                } else {
+                    null
+                }
             )
         }
     }
@@ -90,31 +86,37 @@ object ParsingTestBenchmark {
         val uid = className
         return when {
             uid.contains("GhostPluginTest") ||
-                uid.contains("GhostPluginFunctionalTest") -> "Gradle Plugin"
+                    uid.contains("GhostPluginFunctionalTest") -> "Gradle Plugin"
+
             uid.contains("GhostKtorTest") -> "Ktor Adapter"
             uid.contains("GhostRetrofitTest") -> "Retrofit Adapter"
             uid.contains("integration") -> "Integration"
             uid.contains("GhostChaosTest")
-                || uid.contains("GhostCrashProof")
-                || uid.contains("GhostHardening")
-                || uid.contains("GhostMalice")
-                || uid.contains("GhostRobustness") -> "Resilience"
+                    || uid.contains("GhostCrashProof")
+                    || uid.contains("GhostHardening")
+                    || uid.contains("GhostMalice")
+                    || uid.contains("GhostRobustness") -> "Resilience"
+
             uid.contains("GhostReader")
-                || uid.contains("GhostWriter")
-                || uid.contains("FieldTrie")
-                || uid.contains("OkioTest")
-                || uid.contains("PrimitiveArray") -> "Parser / Writer"
+                    || uid.contains("GhostWriter")
+                    || uid.contains("FieldTrie")
+                    || uid.contains("OkioTest")
+                    || uid.contains("PrimitiveArray") -> "Parser / Writer"
+
             uid.contains("GhostMemory")
-                || uid.contains("GhostPerformance")
-                || uid.contains("GhostStressAudit") -> "Performance"
+                    || uid.contains("GhostPerformance")
+                    || uid.contains("GhostStressAudit") -> "Performance"
+
             uid.contains("GhostPrewarm")
-                || uid.contains("DeepPrewarm") -> "Prewarm"
+                    || uid.contains("DeepPrewarm") -> "Prewarm"
+
             uid.contains("GhostGeneric")
-                || uid.contains("GhostAdvancedTypes")
-                || uid.contains("GhostValueClass")
-                || uid.contains("GhostEnum")
-                || uid.contains("GhostCoercion")
-                || uid.contains("GhostCustomDiscriminator") -> "Type System"
+                    || uid.contains("GhostAdvancedTypes")
+                    || uid.contains("GhostValueClass")
+                    || uid.contains("GhostEnum")
+                    || uid.contains("GhostCoercion")
+                    || uid.contains("GhostCustomDiscriminator") -> "Type System"
+
             uid.contains("GhostFuture") -> "Future / Discovery"
             uid.contains("GhostConcurrency") -> "Concurrency"
             uid.contains("GhostException") -> "Exceptions"
@@ -146,7 +148,14 @@ object ParsingTestBenchmark {
 
         println("  " + "─".repeat(W - 2))
         val totalIcon = if (totalFailed == 0) "✅" else "❌"
-        println("  $totalIcon  %-38s  %7d  %7d  %7d".format("TOTAL", total, totalPassed, totalFailed))
+        println(
+            "  $totalIcon  %-38s  %7d  %7d  %7d".format(
+                "TOTAL",
+                total,
+                totalPassed,
+                totalFailed
+            )
+        )
         println("═".repeat(W))
 
         if (totalFailed > 0) {

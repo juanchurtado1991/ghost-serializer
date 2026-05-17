@@ -32,7 +32,10 @@ fun MetricItem(
         )
         Box(
             modifier = Modifier
-                .background(AppDesign.GlassColor, RoundedCornerShape(8.dp))
+                .background(
+                    AppDesign.GlassColor,
+                    RoundedCornerShape(8.dp)
+                )
                 .padding(horizontal = 12.dp, vertical = 4.dp)
         ) {
             SampleText(

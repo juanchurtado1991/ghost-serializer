@@ -270,7 +270,13 @@ fun GhostJsonReader.nextInt(): Int {
     } else {
         parseIntDigits(isNegativeValue, startOfNumber)
     }
-    val finalIntResult = if (isNegativeValue) -absoluteValue else absoluteValue
+
+    val finalIntResult = if (isNegativeValue) {
+        -absoluteValue
+    } else {
+        absoluteValue
+    }
+
     if (isQuoted) consumeNumericCoercionFooter()
     return finalIntResult
 }
@@ -345,6 +351,7 @@ private fun GhostJsonReader.handleLeadingZero() {
     internalSkip(1)
 }
 
+@Suppress("AssignedValueIsNeverRead")
 private fun GhostJsonReader.parseIntDigits(
     isNegative: Boolean,
     startOfNumber: Int
@@ -357,10 +364,10 @@ private fun GhostJsonReader.parseIntDigits(
     readNumericLoop(
         onDigit = { byte ->
             val digit = byte - ZERO_INT
-            if (digitCount < INT_SAFE_DIGITS) {
-                accumulatedValue = accumulatedValue * BASE_TEN + digit
+            accumulatedValue = if (digitCount < INT_SAFE_DIGITS) {
+                accumulatedValue * BASE_TEN + digit
             } else {
-                accumulatedValue = calculateIntWithOverflowCheck(
+                calculateIntWithOverflowCheck(
                     accumulatedValue,
                     digit,
                     isNegative
@@ -382,6 +389,7 @@ private fun GhostJsonReader.parseIntDigits(
     return accumulatedValue
 }
 
+@Suppress("AssignedValueIsNeverRead", "UNNECESSARY_NOT_NULL_ASSERTION")
 private fun GhostJsonReader.parseLongDigits(
     isNegative: Boolean,
     startOfNumber: Int
@@ -509,7 +517,10 @@ fun GhostJsonReader.skipNumber() {
     if (position < limit && getByte(position) == ZERO_INT) {
         position++
         hasDigits = true
-        if (position < limit && isDigit(getByte(position))) {
+        if (
+            position < limit &&
+            isDigit(getByte(position))
+        ) {
             throwError(ERR_LEADING_ZEROS)
         }
     } else {
@@ -521,7 +532,10 @@ fun GhostJsonReader.skipNumber() {
     }
 
     // Decimal part
-    if (position < limit && getByte(position) == DOT_INT) {
+    if (
+        position < limit &&
+        getByte(position) == DOT_INT
+    ) {
         position++
         var hasDecimalDigits = false
         readNumericLoop(onDigit = { hasDecimalDigits = true })

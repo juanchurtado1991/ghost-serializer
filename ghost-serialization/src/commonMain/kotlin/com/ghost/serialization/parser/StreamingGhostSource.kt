@@ -17,7 +17,10 @@ import okio.ByteString
  * Automatically requests data from the source as needed.
  */
 @InternalGhostApi
-class StreamingGhostSource(val okioSource: BufferedSource) : GhostSource {
+class StreamingGhostSource(
+    val okioSource: BufferedSource
+) : GhostSource {
+
     private val buffer = okioSource.buffer
 
     override val size: Int get() = Int.MAX_VALUE
@@ -73,12 +76,21 @@ class StreamingGhostSource(val okioSource: BufferedSource) : GhostSource {
         while (position < limit) {
             val byte = get(position)
             if (byte == QUOTE_INT) {
-                return GhostJsonConstants.packScanResult(position - start, hashResult, is7Bit)
+                return packScanResult(
+                    position - start,
+                    hashResult,
+                    is7Bit
+                )
             }
+
             if (byte == BACKSLASH_INT || byte < SPACE_INT) {
                 return -1L
             }
-            if (byte >= GhostJsonConstants.ASCII_LIMIT) is7Bit = false
+
+            if (byte >= GhostJsonConstants.ASCII_LIMIT) {
+                is7Bit = false
+            }
+
             hashResult = (hashResult shl HASH_SHIFT) - hashResult + byte
             position++
         }
@@ -86,11 +98,18 @@ class StreamingGhostSource(val okioSource: BufferedSource) : GhostSource {
     }
 
 
-    override fun contentEqualsString(start: Int, length: Int, str: String): Boolean {
+    override fun contentEqualsString(
+        start: Int,
+        length: Int,
+        str: String
+    ): Boolean {
         if (str.length != length) return false
+
         var index = 0
         while (index < length) {
-            if (str[index].code != get(start + index)) return false
+            if (str[index].code != get(start + index)) {
+                return false
+            }
             index++
         }
         return true

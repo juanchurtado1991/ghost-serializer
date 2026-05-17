@@ -66,21 +66,32 @@ class GhostPlugin : Plugin<Project> {
         val compilerDep = version.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
         
         if (isMultiplatform(project)) {
-            val kotlinExtension = project.extensions.findByType(KotlinMultiplatformExtension::class.java)
+            val kotlinExtension = project
+                .extensions
+                .findByType(KotlinMultiplatformExtension::class.java)
+
             kotlinExtension?.targets?.configureEach {
                 if (name == TARGET_METADATA) {
-                    project.dependencies.add(CONFIG_KSP_COMMON, compilerDep)
+                    project.dependencies
+                        .add(
+                            CONFIG_KSP_COMMON,
+                            compilerDep
+                        )
                 } else {
                     val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
-                    project.dependencies.add("$PREFIX_KSP$capitalizedTarget", compilerDep)
+                    project.dependencies.add(
+                        "$PREFIX_KSP$capitalizedTarget",
+                        compilerDep
+                    )
                 }
             }
         } else {
-            project.dependencies.add(PREFIX_KSP, compilerDep)
+            project.dependencies.add(
+                PREFIX_KSP,
+                compilerDep
+            )
         }
     }
-
-
 
     private fun isMultiplatform(project: Project): Boolean {
         return project.pluginManager.hasPlugin(PLUGIN_KMP)
@@ -89,31 +100,35 @@ class GhostPlugin : Plugin<Project> {
     private fun hasKtorDependency(project: Project): Boolean {
         return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)
-            config?.dependencies?.any { it.group == GROUP_KTOR && it.name.startsWith(PREFIX_KTOR_CLIENT) } ?: false
+            config?.dependencies?.any {
+                it.group == GROUP_KTOR &&
+                        it.name.startsWith(PREFIX_KTOR_CLIENT)
+            } ?: false
         }
     }
 
     private fun hasRetrofitDependency(project: Project): Boolean {
         return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)
-            config?.dependencies?.any { it.group == GROUP_RETROFIT && it.name == NAME_RETROFIT } ?: false
+            config?.dependencies?.any {
+                it.group == GROUP_RETROFIT &&
+                        it.name == NAME_RETROFIT
+            } ?: false
         }
     }
-
-
 
     private fun injectNetworkDependency(project: Project, dep: String) {
         if (project.pluginManager.hasPlugin(PLUGIN_KMP)) {
-            project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, dep)
+            project.dependencies.add(
+                CONFIG_COMMON_MAIN_IMPL,
+                dep
+            )
         } else {
-            project.dependencies.add(CONFIG_IMPL, dep)
+            project.dependencies.add(
+                CONFIG_IMPL,
+                dep
+            )
         }
-    }
-
-    private fun isAndroidOrJvm(project: Project): Boolean {
-        return project.pluginManager.hasPlugin(PLUGIN_ANDROID_APP) ||
-                project.pluginManager.hasPlugin(PLUGIN_ANDROID_LIB) ||
-                project.pluginManager.hasPlugin(PLUGIN_JVM)
     }
 
     companion object {
