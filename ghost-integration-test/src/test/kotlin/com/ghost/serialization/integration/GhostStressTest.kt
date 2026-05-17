@@ -2,7 +2,6 @@ package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.integration.model.*
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -52,11 +51,11 @@ class GhostStressTest {
             `when` = "now",
             `val` = 42,
             `fun` = true,
-            `reader` = "input",
-            `writer` = "output",
-            `index` = 1,
-            `mask` = 0xFFL,
-            `OPTIONS` = "config"
+            reader = "input",
+            writer = "output",
+            index = 1,
+            mask = 0xFFL,
+            OPTIONS = "config"
         )
         
         val json = Ghost.serialize(model)

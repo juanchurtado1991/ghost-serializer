@@ -1,6 +1,7 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -20,6 +21,7 @@ interface ExpandedApiService {
     suspend fun getNoContent(): Unit
 }
 
+@OptIn(InternalGhostApi::class)
 class GhostRetrofitExpansionTest {
     private lateinit var mockWebServer: MockWebServer
     private lateinit var apiService: ExpandedApiService

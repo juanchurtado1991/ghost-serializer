@@ -38,9 +38,22 @@ object GhostDiscriminatorPeeker {
         key: ByteString
     ): String? {
         return if (isStreaming) {
-            peekInternal(source, start, limit, key) { pos -> source[pos] }
+            peekInternal(
+                source,
+                start,
+                limit, key
+            ) { pos ->
+                source[pos]
+            }
         } else {
-            peekInternal(source, start, limit, key) { pos -> rawData[pos].toInt() and BYTE_MASK }
+            peekInternal(
+                source,
+                start,
+                limit,
+                key
+            ) { pos ->
+                rawData[pos].toInt() and BYTE_MASK
+            }
         }
     }
 
@@ -181,7 +194,10 @@ object GhostDiscriminatorPeeker {
         while (position < limit) {
             val valueByte = getByte(position)
             if (valueByte == QUOTE_INT) {
-                return source.decodeToString(valueStart, position)
+                return source.decodeToString(
+                    valueStart,
+                    position
+                )
             }
             if (valueByte == BACKSLASH_INT) {
                 // Escapes not supported in fast peek

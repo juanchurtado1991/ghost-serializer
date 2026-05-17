@@ -6,7 +6,6 @@ import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.ignore
 import com.ghost.serialization.parser.nextDouble
 import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.parser.nextKey
@@ -49,8 +48,8 @@ class GhostHardeningTest {
         // A literal newline (0x0A) is not allowed inside a JSON string.
         val json = "{\"k\": \"line1\nline2\"}"
         val reader = readerOf(json)
-        reader.beginObject().ignore()
-        reader.nextKey().ignore()
+        reader.beginObject()
+        reader.nextKey()
         reader.consumeKeySeparator()
         assertFailsWith<GhostJsonException> {
             reader.nextString()

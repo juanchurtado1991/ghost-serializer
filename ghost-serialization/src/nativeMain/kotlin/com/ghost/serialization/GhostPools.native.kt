@@ -16,12 +16,6 @@ private var medium: ByteArray? = null
 @ThreadLocal
 private var large: ByteArray? = null
 
-@ThreadLocal
-private var charSmall: CharArray? = null
-
-@ThreadLocal
-private var charMedium: CharArray? = null
-
 @InternalGhostApi
 actual fun acquireScratchBuffer(minSize: Int): ByteArray {
     return when {
@@ -67,33 +61,5 @@ actual fun releaseScratchBuffer(buffer: ByteArray) {
         SCRATCH_BUFFER_SIZE, TIER_SMALL -> small = buffer
         TIER_MEDIUM -> medium = buffer
         TIER_LARGE -> large = buffer
-    }
-}
-
-@InternalGhostApi
-actual fun acquireCharBuffer(minSize: Int): CharArray {
-    return when {
-        minSize <= TIER_SMALL -> {
-            val localSmall = charSmall
-            charSmall = null
-            localSmall ?: CharArray(TIER_SMALL)
-        }
-
-        minSize <= TIER_MEDIUM -> {
-            val localMedium = charMedium
-            charMedium = null
-            localMedium ?: CharArray(TIER_MEDIUM)
-        }
-
-        else -> CharArray(minSize)
-    }
-}
-
-@InternalGhostApi
-actual fun releaseCharBuffer(buffer: CharArray) {
-    val size = buffer.size
-    when (size) {
-        TIER_SMALL -> charSmall = buffer
-        TIER_MEDIUM -> charMedium = buffer
     }
 }

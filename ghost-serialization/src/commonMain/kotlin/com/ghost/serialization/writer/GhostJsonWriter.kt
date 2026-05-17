@@ -395,8 +395,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
         // Fast path for whole numbers
-        if (number >= MIN_SAFE_INTEGER_DOUBLE &&
-            number <= MAX_SAFE_INTEGER_DOUBLE &&
+        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
             number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
         ) {
             writeLongValueRawInternal(number.toLong())
@@ -427,6 +426,7 @@ class GhostJsonWriter(
      * Writes the null literal.
      * Used by KSP-generated serializers for nullable properties.
      */
+    @Suppress("unused")
     @InternalGhostApi
     fun writeNullValueRaw() {
         buffer.write(NULL_BS)

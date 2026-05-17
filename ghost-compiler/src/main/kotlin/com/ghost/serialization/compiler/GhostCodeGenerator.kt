@@ -153,8 +153,7 @@ internal class GhostCodeGenerator(
             C.STR_BEGIN_OBJECT_NAME,
             C.STR_END_OBJECT_NAME,
             C.STR_SELECT_NAME_AND_CONSUME_NAME,
-            C.STR_SKIP_VALUE_NAME,
-            C.STR_IGNORE
+            C.STR_SKIP_VALUE_NAME
         )
 
         var hasNullable = properties.any { it.isNullable }

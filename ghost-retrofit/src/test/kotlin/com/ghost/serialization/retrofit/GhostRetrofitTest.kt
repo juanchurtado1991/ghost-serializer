@@ -18,8 +18,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-// Models and serializers moved to RetrofitTestUtils.kt
-
 // --- Retrofit API Definition ---
 interface MockApiService {
     @GET("/user")
@@ -32,7 +30,9 @@ interface MockApiService {
     suspend fun getMetadata(): Map<String, Int>
 
     @POST("/user")
-    suspend fun createUser(@Body user: RetrofitUser): RetrofitUser
+    suspend fun createUser(
+        @Body user: RetrofitUser
+    ): RetrofitUser
 
     @GET("/primitive")
     suspend fun getPrimitive(): Int
@@ -48,7 +48,6 @@ class GhostRetrofitTest {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        // Register the test serializer into the global Ghost instance
         Ghost.addRegistry(RetrofitTestRegistry)
 
         val retrofit = Retrofit.Builder()

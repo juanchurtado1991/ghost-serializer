@@ -12,7 +12,6 @@ import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sampl
 import com.ghost.serialization.sample.ui.GhostSampleApp
 
 fun main() {
-    // Manual registration for JVM
     Ghost.addRegistry(GhostModuleRegistry_serialization_sample.INSTANCE)
 
     application {

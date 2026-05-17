@@ -2,7 +2,6 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.annotations.MustUseReturnValues
 import kotlin.collections.ArrayList
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
@@ -91,19 +90,7 @@ object Ghost {
     private val lock = Any()
     private val mutableRegistries = mutableSetOf<GhostRegistry>()
     private var _discoveredRegistries: Iterable<GhostRegistry>? = null
-    private var _consolidatedRegistries: List<GhostRegistry> = emptyList()
 
-    private fun updateConsolidatedRegistries() {
-        if (_discoveredRegistries == null) {
-            _discoveredRegistries = discoverRegistries()
-        }
-        val discovered = _discoveredRegistries!!
-        
-        val list = ArrayList<GhostRegistry>(mutableRegistries.size + (discovered as? Collection<*>)?.size.let { it ?: 10 })
-        for (r in mutableRegistries) list.add(r)
-        for (r in discovered) list.add(r)
-        _consolidatedRegistries = list
-    }
 
     private fun <T : Any> getSerializerFromRegistries(clazz: KClass<T>): GhostSerializer<T>? {
         // 1. Check manual registries
@@ -124,7 +111,7 @@ object Ghost {
         return null
     }
 
-    private val serializerByName = mutableMapOf<String, GhostSerializer<*>>()
+    private val serializerByName = createAtomicMap<String, GhostSerializer<*>>()
 
     fun throwError(message: String): Nothing {
         throw IllegalArgumentException(message)
@@ -137,7 +124,6 @@ object Ghost {
     fun addRegistry(registry: GhostRegistry) {
         runSynchronized(lock) {
             if (mutableRegistries.add(registry)) {
-                updateConsolidatedRegistries()
                 val serializers = registry.getAllSerializers()
                 for (entry in serializers) {
                     val kclass = entry.key
@@ -154,7 +140,7 @@ object Ghost {
      */
     @Suppress("unused")
     fun getSerializerByName(name: String): GhostSerializer<*>? {
-        return runSynchronized(lock) { serializerByName[name] }
+        return serializerByName[name]
     }
 
     /**
@@ -162,7 +148,7 @@ object Ghost {
      */
     @Suppress("unused")
     fun getSerializerNames(): List<String> {
-        return runSynchronized(lock) { serializerByName.keys.toList() }
+        return serializerByName.keys.toList()
     }
 
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
@@ -199,30 +185,43 @@ object Ghost {
 
         // Special handling for parameterized collections
         if (classifier == List::class || classifier == Map::class) {
-            val cached = runSynchronized(lock) { typeCache[type] }
+            val cached = typeCache[type]
             if (cached != null) return cached as GhostSerializer<Any>
 
-            val created = when (classifier) {
-                List::class -> {
-                    val itemType = type.arguments.getOrNull(0)?.type ?: return null
-                    val itemSerializer = getSerializer(itemType) ?: return null
-                    ListSerializer(itemSerializer)
+            return runSynchronized(lock) {
+                val doubleCheck = typeCache[type]
+                if (doubleCheck != null) return@runSynchronized doubleCheck as GhostSerializer<Any>
+
+                val created = when (classifier) {
+                    List::class -> {
+                        val itemType = type.arguments.getOrNull(0)?.type
+                            ?: return@runSynchronized null
+
+                        val itemSerializer = getSerializer(itemType)
+                            ?: return@runSynchronized null
+
+                        ListSerializer(itemSerializer)
+                    }
+
+                    Map::class -> {
+                        val valueType = type.arguments.getOrNull(1)?.type
+                            ?: return@runSynchronized null
+
+                        val valueSerializer = getSerializer(valueType)
+                            ?: return@runSynchronized null
+
+                        MapSerializer(valueSerializer)
+                    }
+
+                    else -> null
                 }
 
-                Map::class -> {
-                    val valueType = type.arguments.getOrNull(1)?.type ?: return null
-                    val valueSerializer = getSerializer(valueType) ?: return null
-                    MapSerializer(valueSerializer)
+                if (created != null) {
+                    typeCache[type] = created
                 }
 
-                else -> null
+                created as? GhostSerializer<Any>
             }
-
-            if (created != null) {
-                runSynchronized(lock) { typeCache[type] = created }
-            }
-
-            return created as? GhostSerializer<Any>
         }
 
         // Delegate to class-based resolution (handles primitives and caching)
@@ -310,6 +309,7 @@ object Ghost {
      * Use this for stream-mode benchmarks and JIT warm-up where the encoded
      * bytes are not needed.
      */
+    @Suppress("unused")
     inline fun <reified T : Any> encodeAndDiscard(value: T) {
         val serializer = resolveSerializer<T>()
         ghostInternalEncodeAndDiscard { writer ->
@@ -371,6 +371,7 @@ object Ghost {
         }
     }
 
+    @Suppress("unused")
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>): T {
         return ghostInternalUseReader(bytes) { reader ->
@@ -400,7 +401,7 @@ object Ghost {
      * only as a [KClass] at runtime (e.g. Spring HttpMessageConverter, Retrofit adapters).
      */
     @OptIn(InternalGhostApi::class)
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
         val serializer = getSerializer(clazz)
             ?: throwError("$NOT_FOUND ${clazz.simpleName}. $MISSING_ANN")
@@ -410,7 +411,6 @@ object Ghost {
     }
 
     @OptIn(InternalGhostApi::class)
-    @MustUseReturnValues
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
@@ -461,6 +461,11 @@ object Ghost {
         }
     }
 
+    internal const val DEFAULT_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_Default"
+    internal const val TEST_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
+    internal const val ANDROID_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
+    internal const val INSTANCE_FIELD = "INSTANCE"
+
     const val MISSING_ANN = "Did you annotate it with @GhostSerialization?"
     const val NOT_FOUND = "No Ghost serializer found for"
 
@@ -475,7 +480,6 @@ object Ghost {
             serializerCache.clear()
             typeCache.clear()
             serializerByName.clear()
-            updateConsolidatedRegistries()
         }
     }
 }

@@ -23,13 +23,16 @@ class GhostPluginTest {
         // Simulate a JVM project
         project.pluginManager.apply("org.jetbrains.kotlin.jvm")
         project.pluginManager.apply(GhostPlugin::class.java)
-        
+
         // Force the afterEvaluate block to run
         (project as DefaultProject).evaluate()
 
         // Verify dependencies are added to "implementation"
         val implDependencies = project.configurations.getByName("implementation").dependencies
-        assertTrue(implDependencies.any { it.name == "ghost-serialization" }, "Should inject ghost-serialization")
+        assertTrue(
+            implDependencies.any { it.name == "ghost-serialization" },
+            "Should inject ghost-serialization"
+        )
         assertTrue(implDependencies.any { it.name == "ghost-api" }, "Should inject ghost-api")
     }
 }

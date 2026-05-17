@@ -2,20 +2,25 @@ package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.annotations.GhostSerialization
-import okio.buffer
-import okio.sink
+import com.ghost.serialization.ghostInternalEncodeWithWriter
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractEncoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
-import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
+import kotlin.reflect.KClass
+
+private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 
 /**
  * Reactive Encoder for Ghost Serialization.
+ *
+ * Serializes through the pooled [com.ghost.serialization.writer.GhostJsonFlatWriter]
+ * to a [ByteArray] and wraps it with [DataBufferFactory.wrap], producing a
+ * zero-copy [DataBuffer] backed by the serialized bytes directly.
  */
 class GhostReactiveEncoder : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
@@ -24,8 +29,8 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()
         return super.canEncode(elementType, mimeType) &&
-                (clazz.isAnnotationPresent(GhostSerialization::class.java) || 
-                 Ghost.getSerializer(clazz.kotlin) != null)
+                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||
+                        Ghost.getSerializer(clazz.kotlin) != null)
     }
 
     override fun encode(
@@ -43,34 +48,30 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
     }
 
     private fun encodeValue(
-        value: Any, bufferFactory: DataBufferFactory,
-        isNdJson: Boolean)
-    : DataBuffer {
-        val buffer = bufferFactory
-            .allocateBuffer(OPTIMAL_BUFFER_CAPACITY)
+        value: Any,
+        bufferFactory: DataBufferFactory,
+        isNdJson: Boolean
+    ): DataBuffer {
+        @Suppress("UNCHECKED_CAST")
+        val kClass = value::class as KClass<Any>
+        val serializer = Ghost.getSerializer(kClass)
+            ?: throw IllegalArgumentException(
+                "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}"
+            )
 
-        val outputStream = buffer.asOutputStream()
-        val sink = outputStream.sink().buffer()
-        
-        try {
-            Ghost.encodeToSink(sink, value)
-            if (isNdJson) {
-                sink.writeByte('\n'.code)
-            }
-            sink.flush()
-        } catch (e: Exception) {
-            DataBufferUtils.release(buffer)
-            throw e
+        val encoded = ghostInternalEncodeWithWriter { writer ->
+            serializer.serialize(writer, value)
         }
-        
-        return buffer
+
+        if (!isNdJson) return bufferFactory.wrap(encoded)
+
+        val bytes = ByteArray(encoded.size + 1)
+        encoded.copyInto(bytes)
+        bytes[encoded.size] = NDJSON_NEWLINE
+        return bufferFactory.wrap(bytes)
     }
 
     private fun isNdJson(mimeType: MimeType?): Boolean {
-        return mimeType?.toString()?.contains("x-ndjson") == true
-    }
-
-    companion object {
-        private const val OPTIMAL_BUFFER_CAPACITY = 4096
+        return mimeType?.subtype?.contains("ndjson") == true
     }
 }

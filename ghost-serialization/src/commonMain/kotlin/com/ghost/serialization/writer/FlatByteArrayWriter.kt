@@ -60,7 +60,10 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
         val requiredCapacity = size + extraBytes
         if (requiredCapacity > array.size) {
             var newCapacity = array.size
-            while (newCapacity < requiredCapacity) newCapacity *= BUFFER_SCALE_FACTOR
+            while (newCapacity < requiredCapacity) {
+                newCapacity *= BUFFER_SCALE_FACTOR
+            }
+
             array = array.copyOf(newCapacity)
         }
     }
@@ -92,7 +95,12 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
     /** Appends `bytes[offset until offset + length]` to the live payload. */
     fun write(bytes: ByteArray, offset: Int, length: Int) {
         ensureCapacity(length)
-        bytes.copyInto(array, size, offset, offset + length)
+        bytes.copyInto(
+            array,
+            size,
+            offset,
+            offset + length
+        )
         size += length
     }
 
@@ -100,7 +108,12 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
     fun write(byteString: ByteString) {
         val length = byteString.size
         ensureCapacity(length)
-        byteString.copyInto(0, array, size, length)
+        byteString.copyInto(
+            0,
+            array,
+            size,
+            length
+        )
         size += length
     }
 
@@ -150,13 +163,15 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
                 codePoint < UTF8_1BYTE_LIMIT -> {
                     backingArray[writeIndex++] = codePoint.toByte()
                 }
+
                 codePoint < UTF8_2BYTE_LIMIT -> {
                     backingArray[writeIndex++] =
                         (UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6)).toByte()
                     backingArray[writeIndex++] =
                         (UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK)).toByte()
                 }
-                codePoint < HIGH_SURROGATE_START || codePoint > LOW_SURROGATE_END -> {
+
+                codePoint !in HIGH_SURROGATE_START..LOW_SURROGATE_END -> {
                     backingArray[writeIndex++] =
                         (UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12)).toByte()
                     backingArray[writeIndex++] =
@@ -164,6 +179,7 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
                     backingArray[writeIndex++] =
                         (UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK)).toByte()
                 }
+
                 codePoint <= HIGH_SURROGATE_END && sourceIndex + 1 < endIndex -> {
                     val lowSurrogate = text[sourceIndex + 1].code
                     if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {
@@ -184,6 +200,7 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
                         writeIndex += UTF8_REPLACEMENT_CHAR.size
                     }
                 }
+
                 else -> {
                     UTF8_REPLACEMENT_CHAR.copyInto(backingArray, writeIndex)
                     writeIndex += UTF8_REPLACEMENT_CHAR.size

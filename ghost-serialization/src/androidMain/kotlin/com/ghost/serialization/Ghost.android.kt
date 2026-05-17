@@ -1,4 +1,5 @@
 @file:OptIn(InternalGhostApi::class)
+@file:JvmName("Ghost_jvmKt")
 
 package com.ghost.serialization
 
@@ -11,9 +12,6 @@ import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 
-private const val REGISTRY_CLASS =
-    "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
-private const val INSTANCE_FILED = "INSTANCE"
 
 private val writerPool = ThreadLocal<WriterSinkPair>()
 private val readerPool = ThreadLocal<GhostJsonReader>()
@@ -50,25 +48,32 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
     }
 }
 
-private fun loadFastRegistries(out: MutableList<GhostRegistry>) {
+private fun loadFastRegistries(
+    out: MutableList<GhostRegistry>
+) {
     listOf(
-        "com.ghost.serialization.generated.GhostModuleRegistry_Default",
-        REGISTRY_CLASS
+        Ghost.DEFAULT_REGISTRY_NAME,
+        Ghost.ANDROID_REGISTRY_NAME
     ).forEach { name ->
         runCatching {
             val clazz = Class.forName(name)
-            val field = runCatching { clazz.getField("INSTANCE") }.getOrNull() 
-                ?: clazz.getDeclaredField(INSTANCE_FILED)
+            val field = runCatching { clazz.getField(Ghost.INSTANCE_FIELD) }
+                .getOrNull()
+                ?: clazz.getDeclaredField(Ghost.INSTANCE_FIELD)
+
             (field.get(null) as? GhostRegistry)?.let { out.add(it) }
         }
     }
 }
 
 actual fun <T> ghostInternalUseReader(
-    bytes: ByteArray, block: (GhostJsonReader) -> T
+    bytes: ByteArray,
+    block: (GhostJsonReader) -> T
 ): T {
     val reader = readerPool.get()
-        ?: GhostJsonReader(bytes).also { readerPool.set(it) }
+        ?: GhostJsonReader(bytes)
+            .also { readerPool.set(it) }
+
     reader.reset(bytes)
     return block(reader)
 }
@@ -80,7 +85,9 @@ actual fun <T> ghostInternalUseSource(
     source.request(Long.MAX_VALUE)
     val bytes = source.buffer.readByteArray()
     val reader = readerPool.get()
-        ?: GhostJsonReader(bytes).also { readerPool.set(it) }
+        ?: GhostJsonReader(bytes)
+            .also { readerPool.set(it) }
+
     reader.reset(bytes)
     return block(reader)
 }
@@ -91,21 +98,33 @@ actual fun <T> ghostInternalUseSource(
  * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
  */
 private fun acquireFlatWriterPair(): WriterSinkPair {
-    val pair = writerPool.get() ?: WriterSinkPair().also { writerPool.set(it) }
+    val pair = writerPool.get()
+        ?: WriterSinkPair()
+            .also { writerPool.set(it) }
+
     pair.writer.reset()
     pair.byteWriter.reset()
     return pair
 }
 
-actual fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String {
+actual fun ghostInternalEncodeToString(
+    block: (GhostJsonFlatWriter) -> Unit
+): String {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    val result = String(pair.byteWriter.array, 0, pair.byteWriter.size, Charsets.UTF_8)
+    val result = String(
+        pair.byteWriter.array,
+        0,
+        pair.byteWriter.size,
+        Charsets.UTF_8
+    )
     pair.byteWriter.reset()
     return result
 }
 
-actual fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): ByteArray {
+actual fun ghostInternalEncodeWithWriter(
+    block: (GhostJsonFlatWriter) -> Unit
+): ByteArray {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
     val result = pair.byteWriter.toByteArray()
@@ -113,7 +132,9 @@ actual fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): 
     return result
 }
 
-actual fun ghostInternalEncodeAndDiscard(block: (GhostJsonFlatWriter) -> Unit) {
+actual fun ghostInternalEncodeAndDiscard(
+    block: (GhostJsonFlatWriter) -> Unit
+) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
     pair.byteWriter.reset()
@@ -125,6 +146,10 @@ actual fun ghostInternalEncodeAndDrainTo(
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
-    sink.write(pair.byteWriter.array, 0, pair.byteWriter.size)
+    sink.write(
+        pair.byteWriter.array,
+        0,
+        pair.byteWriter.size
+    )
     pair.byteWriter.reset()
 }

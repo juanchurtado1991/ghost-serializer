@@ -2,7 +2,9 @@ package com.ghost.serialization.compiler
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
@@ -38,7 +40,11 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         if (!isData && !isSealed && !isValue && !isEnum) {
             logger.error(
                 C.STR_ERR_CLASS_1 +
-                        "${C.STR_ERR_CLASS_2}${classDeclaration.simpleName.asString()}${C.STR_ERR_CLASS_3}",
+                        "${C.STR_ERR_CLASS_2}${
+                            classDeclaration
+                                .simpleName
+                                .asString()
+                        }${C.STR_ERR_CLASS_3}",
                 classDeclaration
             )
         }
@@ -55,7 +61,11 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         if (hasPrivateProperties) {
             logger.error(
                 C.STR_ERR_PRIV_1 +
-                        "${C.STR_ERR_PRIV_2}${classDeclaration.simpleName.asString()}${C.STR_ERR_PRIV_3}",
+                        "${C.STR_ERR_PRIV_2}${
+                            classDeclaration
+                                .simpleName
+                                .asString()
+                        }${C.STR_ERR_PRIV_3}",
                 classDeclaration
             )
         }
@@ -88,12 +98,19 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
 
         val finalModels = if (isSealed) {
-            val inferredSubclasses = classDeclaration.getSealedSubclasses().map { subclass ->
-                InferredSubclassModel(subclass, analyze(subclass))
-            }.toList()
+            val inferredSubclasses = classDeclaration
+                .getSealedSubclasses()
+                .map { subclass ->
+                    InferredSubclassModel(
+                        subclass,
+                        analyze(subclass)
+                    )
+                }
+                .toList()
             propertyModels.map { it.copy(inferredSubclasses = inferredSubclasses) }
                 .ifEmpty {
-                    // If the sealed class itself has no properties, return a dummy one to carry the inferred info
+                    // If the sealed class itself has no properties,
+                    // return a dummy one to carry the inferred info
                     listOf(
                         GhostPropertyModel(
                             kotlinName = C.STR_EMPTY, jsonName = C.STR_EMPTY,
@@ -124,12 +141,19 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else null
     }
 
-    private fun validateNames(properties: List<GhostPropertyModel>, clazz: KSClassDeclaration) {
+    private fun validateNames(
+        properties: List<GhostPropertyModel>,
+        clazz: KSClassDeclaration
+    ) {
         val names = properties.groupBy { it.jsonName }
         names.forEach { (name, props) ->
             if (props.size > 1) {
                 logger.error(
-                    "${C.STR_ERR_DUP_1}$name${C.STR_ERR_DUP_2}${clazz.simpleName.asString()}${C.STR_ERR_DUP_3}" +
+                    "${C.STR_ERR_DUP_1}$name${C.STR_ERR_DUP_2}${
+                        clazz
+                            .simpleName
+                            .asString()
+                    }${C.STR_ERR_DUP_3}" +
                             "${C.STR_ERR_DUP_4}${props.joinToString { it.kotlinName }}",
                     clazz
                 )
@@ -206,14 +230,17 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
 
         if (customDecoder != null || customEncoder != null) {
-            logger.warn(C.STR_WARN_CUSTOM_CODER.format(prop.simpleName.asString(), customDecoder, customEncoder))
+            logger.warn(
+                C.STR_WARN_CUSTOM_CODER
+                    .format(
+                        prop.simpleName.asString(),
+                        customDecoder,
+                        customEncoder
+                    )
+            )
         }
 
-        val jsonName = if (flattenPath != null) {
-            flattenPath.last()
-        } else {
-            getJsonName(prop)
-        }
+        val jsonName = flattenPath?.last() ?: getJsonName(prop)
 
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
@@ -315,7 +342,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return annotations.any { it.shortName.asString() == name }
     }
 
-    internal fun getSerialName(declaration: com.google.devtools.ksp.symbol.KSAnnotated): String {
+    internal fun getSerialName(declaration: KSAnnotated): String {
         val annotations = declaration.annotations.toList()
 
         // 1. GhostName (Primary)
@@ -335,12 +362,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         if (serialName != null) {
             val arg = serialName.arguments.find { it.name?.asString() == C.STR_VALUE_ARG }
                 ?: serialName.arguments.firstOrNull()
+
             return arg?.value?.toString()
-                ?: (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)?.simpleName?.asString()
+                ?: (declaration as? KSDeclaration)?.simpleName?.asString()
                 ?: C.STR_EMPTY
         }
 
-        return (declaration as? com.google.devtools.ksp.symbol.KSDeclaration)
+        return (declaration as? KSDeclaration)
             ?.simpleName?.asString()
             ?: C.STR_EMPTY
     }

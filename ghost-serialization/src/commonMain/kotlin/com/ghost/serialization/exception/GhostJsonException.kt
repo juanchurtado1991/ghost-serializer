@@ -16,7 +16,9 @@ class GhostJsonException @InternalGhostApi internal constructor(
     val path: String = "$"
 ) : RuntimeException() {
 
-    private val lineCol: IntArray by lazy(LazyThreadSafetyMode.NONE) { computeLineCol() }
+    private val lineCol: IntArray by lazy(LazyThreadSafetyMode.NONE) {
+        computeLineCol()
+    }
 
     val line: Int get() = lineCol[0]
     val column: Int get() = lineCol[1]
@@ -24,6 +26,7 @@ class GhostJsonException @InternalGhostApi internal constructor(
     override val message: String
         get() = "$baseMessage [at line $line, col $column, path $path]"
 
+    @OptIn(InternalGhostApi::class)
     constructor(
         message: String,
         line: Int = -1,

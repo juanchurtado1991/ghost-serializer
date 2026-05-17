@@ -9,36 +9,41 @@ private const val TIER_LARGE = 65536
 private var small: ByteArray? = null
 private var medium: ByteArray? = null
 private var large: ByteArray? = null
-private var charSmall: CharArray? = null
-private var charMedium: CharArray? = null
 
 @InternalGhostApi
 actual fun acquireScratchBuffer(minSize: Int): ByteArray {
     return when {
         minSize <= SCRATCH_BUFFER_SIZE -> {
             val localSmall = small
-            if (localSmall != null && localSmall.size >= SCRATCH_BUFFER_SIZE) {
+            if (
+                localSmall != null &&
+                localSmall.size >= SCRATCH_BUFFER_SIZE
+            ) {
                 small = null
                 localSmall
             } else {
                 ByteArray(SCRATCH_BUFFER_SIZE)
             }
         }
+
         minSize <= TIER_SMALL -> {
             val localSmall = small
             small = null
             localSmall ?: ByteArray(TIER_SMALL)
         }
+
         minSize <= TIER_MEDIUM -> {
             val localMedium = medium
             medium = null
             localMedium ?: ByteArray(TIER_MEDIUM)
         }
+
         minSize <= TIER_LARGE -> {
             val localLarge = large
             large = null
             localLarge ?: ByteArray(TIER_LARGE)
         }
+
         else -> ByteArray(minSize)
     }
 }
@@ -50,31 +55,5 @@ actual fun releaseScratchBuffer(buffer: ByteArray) {
         SCRATCH_BUFFER_SIZE, TIER_SMALL -> small = buffer
         TIER_MEDIUM -> medium = buffer
         TIER_LARGE -> large = buffer
-    }
-}
-
-@InternalGhostApi
-actual fun acquireCharBuffer(minSize: Int): CharArray {
-    return when {
-        minSize <= TIER_SMALL -> {
-            val localSmall = charSmall
-            charSmall = null
-            localSmall ?: CharArray(TIER_SMALL)
-        }
-        minSize <= TIER_MEDIUM -> {
-            val localMedium = charMedium
-            charMedium = null
-            localMedium ?: CharArray(TIER_MEDIUM)
-        }
-        else -> CharArray(minSize)
-    }
-}
-
-@InternalGhostApi
-actual fun releaseCharBuffer(buffer: CharArray) {
-    val size = buffer.size
-    when (size) {
-        TIER_SMALL -> charSmall = buffer
-        TIER_MEDIUM -> charMedium = buffer
     }
 }

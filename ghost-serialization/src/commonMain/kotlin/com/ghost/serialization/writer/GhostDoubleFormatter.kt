@@ -45,7 +45,8 @@ internal object GhostDoubleFormatter {
             localValue = -localValue
         }
 
-        // Fast path for small whole numbers (very common in metrics/coordinates)
+        // Fast path for small whole numbers
+        // (very common in metrics/coordinates)
         if (
             localValue <= SMALL_WHOLE_THRESHOLD &&
             localValue % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
@@ -111,7 +112,12 @@ internal object GhostDoubleFormatter {
         while (decimalsToPrint >= 2) {
             val q = fracInt / 100
             val r = (fracInt - (q * 100)) * 2
-            GhostJsonConstants.DOUBLE_DIGIT_LUT.copyInto(scratch, writePos - 1, r, r + 2)
+            GhostJsonConstants.DOUBLE_DIGIT_LUT.copyInto(
+                scratch,
+                writePos - 1,
+                r,
+                r + 2
+            )
             writePos -= 2
             fracInt = q
             decimalsToPrint -= 2
