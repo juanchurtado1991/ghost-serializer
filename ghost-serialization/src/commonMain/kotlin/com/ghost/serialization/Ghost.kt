@@ -6,6 +6,7 @@ import kotlin.collections.ArrayList
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.DoubleSerializer
 import com.ghost.serialization.serializers.IntSerializer
@@ -33,6 +34,9 @@ expect fun discoverRegistries(): Iterable<GhostRegistry>
 
 @OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
+
+@OptIn(InternalGhostApi::class)
+expect fun <T> ghostInternalUseFlatReader(bytes: ByteArray, block: (GhostJsonFlatReader) -> T): T
 
 @OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
@@ -322,17 +326,19 @@ object Ghost {
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(json: String): T {
         val bytes = json.encodeToByteArray()
-        return ghostInternalUseReader(bytes) { reader -> deserialize(reader) }
+        return ghostInternalUseFlatReader(bytes) { reader -> deserialize(reader) }
     }
 
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
-        return ghostInternalUseSource(source) { reader -> deserialize(reader) }
+        source.request(Long.MAX_VALUE)
+        val bytes = source.buffer.readByteArray()
+        return ghostInternalUseFlatReader(bytes) { reader -> deserialize(reader) }
     }
 
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
-        return ghostInternalUseReader(bytes) { reader -> deserialize(reader) }
+        return ghostInternalUseFlatReader(bytes) { reader -> deserialize(reader) }
     }
 
     // ── Advanced overloads: options exposes GhostJsonReader → opt-in required ─
@@ -374,7 +380,7 @@ object Ghost {
     @Suppress("unused")
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>): T {
-        return ghostInternalUseReader(bytes) { reader ->
+        return ghostInternalUseFlatReader(bytes) { reader ->
             val serializer = getSerializer(clazz)
                 ?: throwError("$NOT_FOUND ${clazz.simpleName}")
 
@@ -384,7 +390,9 @@ object Ghost {
 
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
-        return ghostInternalUseSource(source) { reader ->
+        source.request(Long.MAX_VALUE)
+        val bytes = source.buffer.readByteArray()
+        return ghostInternalUseFlatReader(bytes) { reader ->
             val serializer = getSerializer(clazz)
                 ?: throwError("$NOT_FOUND ${clazz.simpleName}")
 
@@ -412,6 +420,12 @@ object Ghost {
 
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
+        val serializer = resolveSerializer<T>()
+        return serializer.deserialize(reader)
+    }
+
+    @OptIn(InternalGhostApi::class)
+    inline fun <reified T : Any> deserialize(reader: GhostJsonFlatReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
     }

@@ -5,7 +5,7 @@
   <p>
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin"></a>
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
-    <img src="https://img.shields.io/badge/version-1.1.14-brightgreen.svg?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.1.16-brightgreen.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
     <img src="https://img.shields.io/badge/tests-345%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
@@ -167,7 +167,7 @@ Ghost is published to **JFrog Artifactory** (and Maven Central for stable releas
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.1.14"
+ghost = "1.1.16"
 
 [libraries]
 ghost-api            = { module = "com.ghost.serialization:ghost-api", version.ref = "ghost" }
@@ -197,7 +197,7 @@ The plugin auto-configures KSP and injects the correct dependencies for Android.
 // build.gradle.kts (app module)
 plugins {
     id("com.android.application")
-    id("com.ghostserializer.ghost") version "1.1.14"
+    id("com.ghostserializer.ghost") version "1.1.16"
 }
 ```
 
@@ -426,7 +426,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.1.14"
+    id("com.ghostserializer.ghost") version "1.1.16"
 }
 
 kotlin {
@@ -627,7 +627,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghost.serialization:ghost-spring-boot-starter:1.1.14")
+    implementation("com.ghost.serialization:ghost-spring-boot-starter:1.1.16")
 }
 ```
 

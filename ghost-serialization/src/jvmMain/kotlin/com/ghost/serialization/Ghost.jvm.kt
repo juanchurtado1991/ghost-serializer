@@ -4,6 +4,7 @@ package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
@@ -11,6 +12,7 @@ import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 
 private val readerPool = ThreadLocal<GhostJsonReader>()
+private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 private val writerPool = ThreadLocal<WriterSinkPair>()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
@@ -134,6 +136,18 @@ actual fun <T> ghostInternalUseReader(
     val reader = readerPool.get()
         ?: GhostJsonReader(bytes)
             .also { readerPool.set(it) }
+
+    reader.reset(bytes)
+    return block(reader)
+}
+
+actual fun <T> ghostInternalUseFlatReader(
+    bytes: ByteArray,
+    block: (GhostJsonFlatReader) -> T
+): T {
+    val reader = flatReaderPool.get()
+        ?: GhostJsonFlatReader(bytes)
+            .also { flatReaderPool.set(it) }
 
     reader.reset(bytes)
     return block(reader)

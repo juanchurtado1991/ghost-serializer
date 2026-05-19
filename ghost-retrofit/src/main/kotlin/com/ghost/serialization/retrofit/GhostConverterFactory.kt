@@ -4,9 +4,8 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalEncodeWithWriter
-import com.ghost.serialization.ghostInternalUseReader
-import com.ghost.serialization.parser.consumeNull
-import com.ghost.serialization.parser.isNextNullValue
+import com.ghost.serialization.ghostInternalUseFlatReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import okhttp3.MediaType.Companion.toMediaType
@@ -39,7 +38,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
         return Converter { body ->
             body.use {
-                ghostInternalUseReader(
+                ghostInternalUseFlatReader(
                     it.bytes()
                 ) { reader ->
                     if (reader.isNextNullValue()) {
@@ -72,7 +71,9 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
     private fun getSerializerWithCache(type: Type): GhostSerializer<Any>? {
         val cached = serializerCache[type]
-        if (cached != null) return cached
+        if (cached != null) {
+            return cached
+        }
 
         val serializer = getSerializerForType(type) ?: return null
         val existing = serializerCache.putIfAbsent(type, serializer)
@@ -81,9 +82,10 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
     @Suppress("UNCHECKED_CAST")
     private fun getSerializerForType(type: Type): GhostSerializer<Any>? {
-        if (type is Class<*>)
+        if (type is Class<*>) {
             return Ghost
                 .getSerializer(type.kotlin as KClass<Any>)
+        }
 
         if (type is ParameterizedType) {
             val rawType = type.rawType as? Class<*> ?: return null

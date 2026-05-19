@@ -21,6 +21,9 @@ object StringSerializer : GhostSerializer<String> {
 
     override fun deserialize(reader: GhostJsonReader): String =
         reader.readQuotedString()
+
+    override fun deserialize(reader: GhostJsonFlatReader): String =
+        reader.readQuotedString()
 }
 
 object IntSerializer : GhostSerializer<Int> {
@@ -35,6 +38,9 @@ object IntSerializer : GhostSerializer<Int> {
     }
 
     override fun deserialize(reader: GhostJsonReader): Int =
+        reader.nextInt()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Int =
         reader.nextInt()
 }
 
@@ -51,6 +57,9 @@ object LongSerializer : GhostSerializer<Long> {
 
     override fun deserialize(reader: GhostJsonReader): Long =
         reader.nextLong()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Long =
+        reader.nextLong()
 }
 
 object DoubleSerializer : GhostSerializer<Double> {
@@ -66,6 +75,9 @@ object DoubleSerializer : GhostSerializer<Double> {
 
     override fun deserialize(reader: GhostJsonReader): Double =
         reader.nextDouble()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Double =
+        reader.nextDouble()
 }
 
 object BooleanSerializer : GhostSerializer<Boolean> {
@@ -80,5 +92,8 @@ object BooleanSerializer : GhostSerializer<Boolean> {
     }
 
     override fun deserialize(reader: GhostJsonReader): Boolean =
+        reader.nextBoolean()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Boolean =
         reader.nextBoolean()
 }

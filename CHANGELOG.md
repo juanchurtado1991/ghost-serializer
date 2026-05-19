@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.16] - 2026-05-19
+### Added
+- **Flat-Path Buffer Pooling (`GhostJsonFlatReader`)**: Introduced a zero-allocation, high-performance reader pooling architecture. Reuses `GhostJsonFlatReader` and `ByteArrayGhostSource` instances via `ThreadLocal` (JVM/Android) and `@ThreadLocal` (iOS/Native), completely eliminating GC pressure and allocations during flat deserialization.
+- **KSP-Generated Flat Deserializers**: The compiler now generates direct, non-virtual `deserialize(reader: GhostJsonFlatReader)` implementations for all serializable models, bypassing interface/virtual dispatch overhead for maximum JIT optimization.
+- **Clean Conditonal Formatting**: Enforced structured `if`/`else` brace wrapping and descriptive variable naming across the codebase.
+- **Zero Magic-String Hardening**: Centralized try/catch templates, warm-up constructs, and parser control variables into `GhostEmitterConstants` and `GhostJsonFlatReader.RESET_TOKEN_BYTE` to ensure a completely clean, literal-free compiler codebase.
+
 ## [1.1.14] - 2026-05-16
 ### Performance & Scalability
 - **Registry Fragmentation (Sharding)**: Implemented automatic "sharding" for the `GhostModuleRegistry`. In projects with thousands of models, the registry is split into smaller, JVM-compliant chunks to avoid the 64KB method size limit while maintaining O(1) average lookup performance.

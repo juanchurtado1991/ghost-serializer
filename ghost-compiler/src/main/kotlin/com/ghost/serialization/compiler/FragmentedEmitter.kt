@@ -27,7 +27,8 @@ internal class FragmentedEmitter(
 
     fun emit(
         body: CodeBlock.Builder,
-        typeSpecBuilder: TypeSpec.Builder
+        typeSpecBuilder: TypeSpec.Builder,
+        isFlatPath: Boolean = false
     ) {
         val contextClassName = ClassName(
             C.STR_EMPTY,
@@ -52,7 +53,7 @@ internal class FragmentedEmitter(
         }
 
         val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
-                C.MASK_SIZE_BITS.toInt()
+            C.MASK_SIZE_BITS.toInt()
 
         for (index in 0 until maskCount) {
             contextBuilder.addProperty(
@@ -70,7 +71,9 @@ internal class FragmentedEmitter(
             )
         }
 
-        typeSpecBuilder.addType(contextBuilder.build())
+        if (!isFlatPath) {
+            typeSpecBuilder.addType(contextBuilder.build())
+        }
 
         val chunkSize = C.DEFAULT_CHUNK_SIZE
         val chunks = properties.chunked(chunkSize)

@@ -85,6 +85,17 @@ internal abstract class BaseDeserializeEmitter(
 
     protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
         val coder = prop.customDecoder!!
+        if (readerClass.simpleName == C.STR_GHOST_JSON_FLAT_READER) {
+            return CodeBlock.builder()
+                .add(C.STR_RUN_OPEN)
+                .add(C.STR_CUSTOM_DECODER_TEMP_READER)
+                .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)
+                .add(C.STR_CUSTOM_DECODER_UPDATE_POS)
+                .add(C.STR_RESET_TOKEN_BYTE_CALL)
+                .add(C.STR_CUSTOM_DECODER_RETURN_RES)
+                .add(C.STR_RUN_CLOSE)
+                .build()
+        }
         return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
     }
 

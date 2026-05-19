@@ -21,7 +21,9 @@ internal class GhostCodeGenerator(
     classDeclaration: KSClassDeclaration
 ) {
     private val fullPaths = properties.map {
-        it.flattenPath ?: (it.wrapPath?.let { p -> p + it.jsonName } ?: listOf(it.jsonName))
+        it.flattenPath
+            ?: (it.wrapPath?.let { p -> p + it.jsonName }
+                ?: listOf(it.jsonName))
     }
 
     private val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
@@ -40,7 +42,9 @@ internal class GhostCodeGenerator(
 
     private val packageName = classDeclaration.packageName.asString()
     private val originalClassName = classDeclaration.toClassName()
-    private val baseClassName = originalClassName.simpleNames.joinToString(C.STR_UNDERSCORE)
+    private val baseClassName = originalClassName
+        .simpleNames
+        .joinToString(C.STR_UNDERSCORE)
 
     // For a sealed subclass, this is the value written as the discriminator (i.e. the subclass name).
     // This is different from sealedDiscriminatorKey which is the JSON field name on the parent sealed class.
@@ -113,10 +117,17 @@ internal class GhostCodeGenerator(
         C.STR_GHOST_JSON_FLAT_WRITER
     )
 
-    private val readerClass = ClassName(
+    private val streamingReaderClass = ClassName(
         C.PKG_PARSER,
         C.STR_GHOST_JSON_READER
     )
+
+    private val flatReaderClass = ClassName(
+        C.PKG_PARSER,
+        C.STR_GHOST_JSON_FLAT_READER
+    )
+
+    private val readerClass = streamingReaderClass
 
     fun createSpec(): FileSpec {
         val serializerName = baseClassName + C.STR_SERIALIZER_SUFFIX
@@ -296,10 +307,23 @@ internal class GhostCodeGenerator(
             sealedDiscriminatorKey
         )
 
-        val deserializeEmitter = DeserializeCodeEmitter(
+        val deserializeEmitterStreaming = DeserializeCodeEmitter(
             properties,
             originalClassName,
-            readerClass,
+            streamingReaderClass,
+            isSealed,
+            isValue,
+            isEnum,
+            sealedSubclasses,
+            sealedDiscriminatorKey,
+            isResilient,
+            isInferred
+        )
+
+        val deserializeEmitterFlat = DeserializeCodeEmitter(
+            properties,
+            originalClassName,
+            flatReaderClass,
             isSealed,
             isValue,
             isEnum,
@@ -397,7 +421,8 @@ internal class GhostCodeGenerator(
         // Generate nested OPTIONS for GhostFlatten
         generateNestedOptions(typeSpecBuilder, properties, readerClass)
 
-        deserializeEmitter.build(typeSpecBuilder)
+        deserializeEmitterStreaming.build(typeSpecBuilder, isFlatPath = false)
+        deserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
@@ -407,7 +432,20 @@ internal class GhostCodeGenerator(
             .addFunction(
                 FunSpec.builder(C.STR_WARM_UP)
                     .addModifiers(KModifier.OVERRIDE)
-                    .addCode(C.STR_WARM_UP_BODY, readerClass, C.STR_EMPTY_OBJ)
+                    .addCode(
+                        CodeBlock.builder()
+                            .beginControlFlow(C.STR_TRY)
+                            .addStatement(C.TEMPLATE_WARM_UP_READER_INIT, C.STR_READER1, streamingReaderClass, C.STR_EMPTY_OBJ)
+                            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER1)
+                            .nextControlFlow(C.STR_CATCH_EXCEPTION)
+                            .endControlFlow()
+                            .beginControlFlow(C.STR_TRY)
+                            .addStatement(C.TEMPLATE_WARM_UP_READER_INIT, C.STR_READER2, flatReaderClass, C.STR_EMPTY_OBJ)
+                            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER2)
+                            .nextControlFlow(C.STR_CATCH_EXCEPTION)
+                            .endControlFlow()
+                            .build()
+                    )
                     .build()
             )
             .build()

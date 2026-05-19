@@ -6,6 +6,7 @@ package com.ghost.serialization
 import android.annotation.SuppressLint
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private val writerPool = ThreadLocal<WriterSinkPair>()
 private val readerPool = ThreadLocal<GhostJsonReader>()
+private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
 
@@ -33,17 +35,27 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
                 fastLoaded = true
                 loadFastRegistries(fast)
             }
-            if (index < fast.size) return true
-            if (slow == null) slow = runCatching {
-                ServiceLoader.load(GhostRegistry::class.java).iterator()
+            if (index < fast.size) {
+                return true
             }
-                .getOrDefault(emptyList<GhostRegistry>().iterator())
+            if (slow == null) {
+                slow = runCatching {
+                    ServiceLoader.load(GhostRegistry::class.java).iterator()
+                }
+                    .getOrDefault(emptyList<GhostRegistry>().iterator())
+            }
             return slow!!.hasNext()
         }
 
         override fun next(): GhostRegistry {
-            if (!hasNext()) throw NoSuchElementException()
-            return if (index < fast.size) fast[index++] else slow!!.next()
+            if (!hasNext()) {
+                throw NoSuchElementException()
+            }
+            return if (index < fast.size) {
+                fast[index++]
+            } else {
+                slow!!.next()
+            }
         }
     }
 }
@@ -73,6 +85,18 @@ actual fun <T> ghostInternalUseReader(
     val reader = readerPool.get()
         ?: GhostJsonReader(bytes)
             .also { readerPool.set(it) }
+
+    reader.reset(bytes)
+    return block(reader)
+}
+
+actual fun <T> ghostInternalUseFlatReader(
+    bytes: ByteArray,
+    block: (GhostJsonFlatReader) -> T
+): T {
+    val reader = flatReaderPool.get()
+        ?: GhostJsonFlatReader(bytes)
+            .also { flatReaderPool.set(it) }
 
     reader.reset(bytes)
     return block(reader)

@@ -4,12 +4,14 @@ package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
 
 private var cachedWriterPair: WriterSinkPair? = null
 private var cachedReader: GhostJsonReader? = null
+private var cachedFlatReader: GhostJsonFlatReader? = null
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
@@ -23,6 +25,17 @@ actual fun <T> ghostInternalUseReader(
     val reader = cachedReader
         ?: GhostJsonReader(bytes)
             .also { cachedReader = it }
+
+    reader.reset(bytes)
+    return block(reader)
+}
+
+actual fun <T> ghostInternalUseFlatReader(
+    bytes: ByteArray, block: (GhostJsonFlatReader) -> T
+): T {
+    val reader = cachedFlatReader
+        ?: GhostJsonFlatReader(bytes)
+            .also { cachedFlatReader = it }
 
     reader.reset(bytes)
     return block(reader)
