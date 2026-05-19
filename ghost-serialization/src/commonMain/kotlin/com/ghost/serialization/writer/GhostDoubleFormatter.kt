@@ -1,14 +1,6 @@
 package com.ghost.serialization.writer
 
-import com.ghost.serialization.parser.GhostJsonConstants
-import com.ghost.serialization.parser.GhostJsonConstants.ASCII_OFFSET
-import com.ghost.serialization.parser.GhostJsonConstants.BASE_HUNDRED
-import com.ghost.serialization.parser.GhostJsonConstants.BASE_TEN
-import com.ghost.serialization.parser.GhostJsonConstants.FormatUtils.DIGIT_ONES
-import com.ghost.serialization.parser.GhostJsonConstants.FormatUtils.DIGIT_TENS
-import com.ghost.serialization.parser.GhostJsonConstants.MINUS
-import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
-import com.ghost.serialization.parser.GhostJsonConstants.ZERO_DOUBLE
+import com.ghost.serialization.parser.GhostJsonConstants as C
 import kotlin.math.roundToInt
 
 /**
@@ -41,7 +33,7 @@ internal object GhostDoubleFormatter {
         var localValue = value
 
         if (localValue < 0.0) {
-            scratch[pos++] = MINUS
+            scratch[pos++] = C.MINUS
             localValue = -localValue
         }
 
@@ -49,7 +41,7 @@ internal object GhostDoubleFormatter {
         // (very common in metrics/coordinates)
         if (
             localValue <= SMALL_WHOLE_THRESHOLD &&
-            localValue % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
+            localValue % C.WHOLE_NUMBER_CHECK == C.ZERO_DOUBLE
         ) {
             return writeLongDirect(
                 localValue.toLong(),
@@ -92,10 +84,10 @@ internal object GhostDoubleFormatter {
             writeDecimalZero = false
         )
 
-        scratch[pos++] = GhostJsonConstants.DOT
+        scratch[pos++] = C.DOT
 
         if (fracInt == 0) {
-            scratch[pos++] = GhostJsonConstants.ZERO
+            scratch[pos++] = C.ZERO
             return pos - offset
         }
 
@@ -112,7 +104,7 @@ internal object GhostDoubleFormatter {
         while (decimalsToPrint >= 2) {
             val q = fracInt / 100
             val r = (fracInt - (q * 100)) * 2
-            GhostJsonConstants.DOUBLE_DIGIT_LUT.copyInto(
+            C.DOUBLE_DIGIT_LUT.copyInto(
                 scratch,
                 writePos - 1,
                 r,
@@ -123,7 +115,7 @@ internal object GhostDoubleFormatter {
             decimalsToPrint -= 2
         }
         if (decimalsToPrint == 1) {
-            scratch[writePos] = (GhostJsonConstants.ZERO_INT + fracInt % 10).toByte()
+            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()
         }
 
         return pos - offset
@@ -137,10 +129,10 @@ internal object GhostDoubleFormatter {
         writeDecimalZero: Boolean
     ): Int {
         if (value == 0L) {
-            scratch[offset] = GhostJsonConstants.ZERO
+            scratch[offset] = C.ZERO
             if (writeDecimalZero) {
-                scratch[offset + 1] = GhostJsonConstants.DOT
-                scratch[offset + 2] = GhostJsonConstants.ZERO
+                scratch[offset + 1] = C.DOT
+                scratch[offset + 2] = C.ZERO
                 return offset + 3
             }
             return offset + 1
@@ -151,19 +143,19 @@ internal object GhostDoubleFormatter {
         // scratchEnd is always offset + 32, safely within FAST_BUF_SCRATCH_ZONE.
         var end = scratchEnd
 
-        while (localValue >= BASE_HUNDRED) {
-            val q = localValue / BASE_HUNDRED
-            val r = (localValue - (q * BASE_HUNDRED)).toInt()
+        while (localValue >= C.BASE_HUNDRED) {
+            val q = localValue / C.BASE_HUNDRED
+            val r = (localValue - (q * C.BASE_HUNDRED)).toInt()
             localValue = q
-            scratch[--end] = DIGIT_ONES[r]
-            scratch[--end] = DIGIT_TENS[r]
+            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]
+            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]
         }
-        if (localValue >= BASE_TEN) {
+        if (localValue >= C.BASE_TEN) {
             val r = localValue.toInt()
-            scratch[--end] = DIGIT_ONES[r]
-            scratch[--end] = DIGIT_TENS[r]
+            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]
+            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]
         } else {
-            scratch[--end] = (localValue.toInt() + ASCII_OFFSET).toByte()
+            scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()
         }
 
         val length = scratchEnd - end
@@ -177,8 +169,8 @@ internal object GhostDoubleFormatter {
 
         var nextOffset = offset + length
         if (writeDecimalZero) {
-            scratch[nextOffset++] = GhostJsonConstants.DOT
-            scratch[nextOffset++] = GhostJsonConstants.ZERO
+            scratch[nextOffset++] = C.DOT
+            scratch[nextOffset++] = C.ZERO
         }
 
         return nextOffset

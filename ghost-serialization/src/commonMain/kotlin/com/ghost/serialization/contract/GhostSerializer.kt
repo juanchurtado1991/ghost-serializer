@@ -6,6 +6,7 @@ import com.ghost.serialization.parser.createByteArraySource
 import okio.BufferedSink
 import okio.BufferedSource
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
@@ -66,16 +67,22 @@ interface GhostSerializer<T> {
     fun serialize(writer: GhostJsonFlatWriter, value: T)
 
     /** Deserializes a new instance of [T] from the [source]. */
-    fun deserialize(source: BufferedSource): T = deserialize(
-        GhostJsonReader(
-            createByteArraySource(
-                source.readByteArray()
-            )
-        )
-    )
+    fun deserialize(source: BufferedSource): T {
+        val reader = GhostJsonFlatReader(source.readByteArray())
+        return deserialize(reader)
+    }
 
-    /** Deserializes a new instance of [T] using a specialized [reader]. */
+    /** Deserializes a new instance of [T] using a specialized streaming [reader]. */
     fun deserialize(reader: GhostJsonReader): T
+
+    /** Deserializes a new instance of [T] using a specialized flat in-memory [reader]. */
+    fun deserialize(reader: GhostJsonFlatReader): T {
+        val temp = GhostJsonReader(reader.rawData).also { it.position = reader.position }
+        val result = deserialize(temp)
+        reader.position = temp.position
+        reader.nextTokenByte = -1
+        return result
+    }
 
     /**
      * Optional warm-up cycle to trigger JIT (Just-In-Time) or ART optimization

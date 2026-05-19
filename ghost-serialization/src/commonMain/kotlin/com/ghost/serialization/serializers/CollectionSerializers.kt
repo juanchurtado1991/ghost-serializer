@@ -7,6 +7,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.beginArray
 import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.consumeArraySeparator
@@ -27,7 +28,8 @@ class ListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>
 ) : GhostSerializer<List<T>> {
 
-    override val typeName: String get() = "List<${itemSerializer.typeName}>"
+    override val typeName: String
+        get() = "List<${itemSerializer.typeName}>"
 
     override fun serialize(
         writer: GhostJsonWriter,
@@ -55,6 +57,20 @@ class ListSerializer<T>(
 
     override fun deserialize(
         reader: GhostJsonReader
+    ): List<T> = if (itemSerializer.isResilient) {
+        reader.readList {
+            reader.decodeResilient {
+                itemSerializer.deserialize(reader)
+            }
+        }.filterNotNull()
+    } else {
+        reader.readList {
+            itemSerializer.deserialize(reader)
+        }
+    }
+
+    override fun deserialize(
+        reader: GhostJsonFlatReader
     ): List<T> = if (itemSerializer.isResilient) {
         reader.readList {
             reader.decodeResilient {
@@ -127,6 +143,29 @@ class MapSerializer<V>(
             reader.endObject()
         }
     }
+
+    override fun deserialize(
+        reader: GhostJsonFlatReader
+    ): Map<String, V> {
+
+        reader.beginObject()
+        if (reader.peekByte() == CLOSE_OBJ) {
+            reader.endObject(); return emptyMap()
+        }
+
+        return buildMap {
+            while (true) {
+                val key = reader.nextKey() ?: break
+                reader.consumeKeySeparator()
+                put(
+                    key,
+                    valueSerializer
+                        .deserialize(reader)
+                )
+            }
+            reader.endObject()
+        }
+    }
 }
 
 object IntArraySerializer : GhostSerializer<IntArray> {
@@ -159,12 +198,37 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         reader.beginArray()
 
         if (reader.peekByte() == CLOSE_ARR) {
-            reader.endArray(); return IntArray(0)
+            reader.endArray()
+            return IntArray(0)
         }
 
         val list = GhostIntList()
         while (reader.hasNext()) {
-            if (!list.isEmpty()) reader.consumeArraySeparator()
+            if (!list.isEmpty()) {
+                reader.consumeArraySeparator()
+            }
+            list.add(reader.nextInt())
+        }
+
+        reader.endArray()
+        return list.toArray()
+    }
+
+    override fun deserialize(
+        reader: GhostJsonFlatReader
+    ): IntArray {
+        reader.beginArray()
+
+        if (reader.peekByte() == CLOSE_ARR) {
+            reader.endArray()
+            return IntArray(0)
+        }
+
+        val list = GhostIntList()
+        while (reader.hasNext()) {
+            if (!list.isEmpty()) {
+                reader.consumeArraySeparator()
+            }
             list.add(reader.nextInt())
         }
 
@@ -203,13 +267,38 @@ object LongArraySerializer : GhostSerializer<LongArray> {
         reader.beginArray()
 
         if (reader.peekByte() == CLOSE_ARR) {
-            reader.endArray(); return LongArray(0)
+            reader.endArray()
+            return LongArray(0)
         }
 
         val list = GhostLongList()
         while (reader.hasNext()) {
-            if (!list.isEmpty())
+            if (!list.isEmpty()) {
                 reader.consumeArraySeparator()
+            }
+
+            list.add(reader.nextLong())
+        }
+
+        reader.endArray()
+        return list.toArray()
+    }
+
+    override fun deserialize(
+        reader: GhostJsonFlatReader
+    ): LongArray {
+        reader.beginArray()
+
+        if (reader.peekByte() == CLOSE_ARR) {
+            reader.endArray()
+            return LongArray(0)
+        }
+
+        val list = GhostLongList()
+        while (reader.hasNext()) {
+            if (!list.isEmpty()) {
+                reader.consumeArraySeparator()
+            }
 
             list.add(reader.nextLong())
         }

@@ -260,6 +260,7 @@ internal object GhostJsonConstants {
     const val INT_MAX_LAST_DIGIT = 7
     const val HASH_MASK = 1023
     const val MATCH_END = -1
+    const val RESET_TOKEN_BYTE = -1
     const val MATCH_NONE = -2
     const val SHIFT_24 = 24
     const val SHIFT_16 = 16

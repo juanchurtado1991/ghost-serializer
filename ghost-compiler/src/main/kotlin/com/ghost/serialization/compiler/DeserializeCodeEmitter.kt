@@ -32,7 +32,10 @@ internal class DeserializeCodeEmitter(
     private val isInferred: Boolean = false
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    fun build(typeSpecBuilder: TypeSpec.Builder) {
+    fun build(
+        typeSpecBuilder: TypeSpec.Builder,
+        isFlatPath: Boolean = false
+    ) {
         val body = CodeBlock.builder()
 
         when {
@@ -47,8 +50,10 @@ internal class DeserializeCodeEmitter(
                     readerClass
                 )
 
-                emitter.emit(body, typeSpecBuilder)
-                emitter.injectContextualSerializers(typeSpecBuilder)
+                emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)
+                if (!isFlatPath) {
+                    emitter.injectContextualSerializers(typeSpecBuilder)
+                }
             }
             else -> {
                 val emitter = StandardEmitter(
@@ -58,13 +63,15 @@ internal class DeserializeCodeEmitter(
                 )
 
                 emitter.emit(body)
-                emitter.injectContextualSerializers(typeSpecBuilder)
+                if (!isFlatPath) {
+                    emitter.injectContextualSerializers(typeSpecBuilder)
+                }
             }
         }
 
         addDeserializeFunction(typeSpecBuilder, body.build())
 
-        if (isResilientClass) {
+        if (isResilientClass && !isFlatPath) {
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     C.STR_IS_RESILIENT,
