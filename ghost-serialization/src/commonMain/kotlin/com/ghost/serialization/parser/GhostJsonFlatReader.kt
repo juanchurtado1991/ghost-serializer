@@ -482,10 +482,26 @@ class GhostJsonFlatReader(
     private fun verifyKeyMatch(
         start: Int,
         length: Int,
-        expected: ByteString,
+        expected: ByteArray,
         consumeSeparator: Boolean
     ): Boolean {
-        if (expected.size == length && expected.rangeEquals(0, rawData, start, length)) {
+        // Direct byte comparison — avoids Okio virtual dispatch and redundant bounds checks.
+        // Length is already guaranteed equal by the dispatch table (same hash slot).
+        if (expected.size == length) {
+            val localData = rawData
+            var i = 0
+            // Unrolled x4 for typical ASCII field name lengths (4–20 chars).
+            while (i + 3 < length) {
+                if (localData[start + i] != expected[i]) return false
+                if (localData[start + i + 1] != expected[i + 1]) return false
+                if (localData[start + i + 2] != expected[i + 2]) return false
+                if (localData[start + i + 3] != expected[i + 3]) return false
+                i += 4
+            }
+            while (i < length) {
+                if (localData[start + i] != expected[i]) return false
+                i++
+            }
             val endPos = start + length
             val newPos = endPos + 1
             position = newPos
@@ -506,6 +522,7 @@ class GhostJsonFlatReader(
         }
         return false
     }
+
 
     /**
      * Peeks at a key name and returns it if it is a string match.

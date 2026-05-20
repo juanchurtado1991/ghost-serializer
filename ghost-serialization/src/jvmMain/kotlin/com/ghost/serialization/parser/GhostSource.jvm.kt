@@ -25,7 +25,7 @@ class JvmByteArraySource(
             data,
             start,
             end - start,
-            StandardCharsets.US_ASCII
+            StandardCharsets.ISO_8859_1
         )
     }
 }

@@ -297,10 +297,22 @@ private fun GhostJsonReader.computeKeyHash(start: Int, length: Int): Int {
 private fun GhostJsonReader.verifyKeyMatch(
     start: Int,
     length: Int,
-    expected: ByteString,
+    expected: ByteArray,
     consumeSeparator: Boolean
 ): Boolean {
-    if (expected.size == length && source.contentEquals(start, expected)) {
+    if (expected.size == length) {
+        var i = 0
+        while (i + 3 < length) {
+            if (getByte(start + i) != expected[i].toInt() and C.BYTE_MASK) return false
+            if (getByte(start + i + 1) != expected[i + 1].toInt() and C.BYTE_MASK) return false
+            if (getByte(start + i + 2) != expected[i + 2].toInt() and C.BYTE_MASK) return false
+            if (getByte(start + i + 3) != expected[i + 3].toInt() and C.BYTE_MASK) return false
+            i += 4
+        }
+        while (i < length) {
+            if (getByte(start + i) != expected[i].toInt() and C.BYTE_MASK) return false
+            i++
+        }
         val endPos = start + length
         val newPos = endPos + 1
         position = newPos
@@ -322,6 +334,7 @@ private fun GhostJsonReader.verifyKeyMatch(
     }
     return false
 }
+
 
 /**
  * Searches for a specific key in the current object without fully consuming it.
