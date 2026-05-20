@@ -159,13 +159,15 @@ internal class GhostCodeGenerator(
             )
 
         // Core imports always used
-        fileBuilder.addImport(
-            C.PKG_PARSER,
-            C.STR_BEGIN_OBJECT_NAME,
-            C.STR_END_OBJECT_NAME,
-            C.STR_SELECT_NAME_AND_CONSUME_NAME,
-            C.STR_SKIP_VALUE_NAME
-        )
+        if (!isEnum && !isValue) {
+            fileBuilder.addImport(
+                C.PKG_PARSER,
+                C.STR_BEGIN_OBJECT_NAME,
+                C.STR_END_OBJECT_NAME,
+                C.STR_SELECT_NAME_AND_CONSUME_NAME,
+                C.STR_SKIP_VALUE_NAME
+            )
+        }
 
         var hasNullable = properties.any { it.isNullable }
         val allTypes = properties.flatMap { prop -> 
@@ -248,8 +250,11 @@ internal class GhostCodeGenerator(
             C.STR_NEXT_BOOLEAN_NAME
         )
 
+        if (isEnum || isSealed || properties.any { it.isResilient }) {
+            fileBuilder.addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
+        }
+
         return fileBuilder
-            .addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
             .addImport(C.OKIO_PACKAGE, C.STR_BYTESTRING_IMPORT)
             .addType(buildSerializerObject(serializerName))
             .build()
@@ -274,28 +279,6 @@ internal class GhostCodeGenerator(
     }
 
     private fun buildSerializerObject(serializerName: String): TypeSpec {
-        val names = if (isSealed && isInferred) {
-            properties.firstOrNull()?.inferredSubclasses?.flatMap { it.properties }
-                ?.map { it.jsonName }?.distinct() ?: emptyList()
-        } else {
-            properties.map {
-                it.flattenPath?.firstOrNull() ?: it.wrapPath?.firstOrNull() ?: it.jsonName
-            }.distinct()
-        }
-        val (shift, multiplier) = findPerfectHash(names)
-
-        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
-        val optionsBuilder = CodeBlock.builder()
-            .add(C.STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
-            .indent()
-
-        names.forEachIndexed { index, name ->
-            val comma = if (index < names.size - 1) C.STR_COMMA else C.STR_EMPTY
-            optionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, name)
-        }
-
-        optionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
-
         val serializeEmitter = SerializeCodeEmitter(
             properties,
             originalClassName,
@@ -346,7 +329,31 @@ internal class GhostCodeGenerator(
                     .initializer(C.MARKER, finalTypeName)
                     .build()
             )
-            .addProperty(
+
+        if (!isEnum && !isValue) {
+            val names = if (isSealed && isInferred) {
+                properties.firstOrNull()?.inferredSubclasses?.flatMap { it.properties }
+                    ?.map { it.jsonName }?.distinct() ?: emptyList()
+            } else {
+                properties.map {
+                    it.flattenPath?.firstOrNull() ?: it.wrapPath?.firstOrNull() ?: it.jsonName
+                }.distinct()
+            }
+            val (shift, multiplier) = findPerfectHash(names)
+
+            val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
+            val optionsBuilder = CodeBlock.builder()
+                .add(C.STR_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
+                .indent()
+
+            names.forEachIndexed { index, name ->
+                val comma = if (index < names.size - 1) C.STR_COMMA else C.STR_EMPTY
+                optionsBuilder.add(C.STR_FORMAT_S + comma + C.STR_NEWLINE, name)
+            }
+
+            optionsBuilder.unindent().add(C.STR_PAREN_CLOSE)
+
+            typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     C.STR_OPTIONS,
                     readerClass.peerClass(C.STR_OPTIONS_CLASS)
@@ -356,29 +363,31 @@ internal class GhostCodeGenerator(
                     .build()
             )
 
-        // Cache all unique headers
-        val allNames = getAllJsonNames(properties)
-        for (name in allNames) {
-            val cleanName = name.replace(
-                C.STR_DOT,
-                C.STR_UNDERSCORE
-            ).uppercase()
+            // Cache all unique headers
+            val allNames = getAllJsonNames(properties)
+            for (name in allNames) {
+                val cleanName = name.replace(
+                    C.STR_DOT,
+                    C.STR_UNDERSCORE
+                ).uppercase()
 
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(
-                    C.STR_H_VAL_PREFIX + cleanName,
-                    C.BYTE_STRING_CLASS,
-                    KModifier.PRIVATE
-                )
-                    .initializer(
-                        C.TEMPLATE_ENCODE_UTF8,
-                        C.FMT_JSON_FIELD.format(name)
+                typeSpecBuilder.addProperty(
+                    PropertySpec.builder(
+                        C.STR_H_VAL_PREFIX + cleanName,
+                        C.BYTE_STRING_CLASS,
+                        KModifier.PRIVATE
                     )
-                    .build()
-            )
+                        .initializer(
+                            C.TEMPLATE_ENCODE_UTF8,
+                            C.FMT_JSON_FIELD.format(name)
+                        )
+                        .build()
+                )
+            }
         }
 
         if (isEnum && enumValues != null) {
+            val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
             val enumOptionsBuilder = CodeBlock.builder()
                 .add(C.STR_OPTIONS_OF, optionsClass)
                 .indent()
