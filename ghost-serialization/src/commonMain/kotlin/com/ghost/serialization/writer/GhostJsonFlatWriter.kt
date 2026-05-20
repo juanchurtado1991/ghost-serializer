@@ -347,38 +347,12 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     private fun writeLongValueRawInternal(value: Long) {
         val scratchBuf = scratch ?: acquireScratch()
-        val scratchEnd = LONG_SCRATCH_SIZE
-        var writePosition = scratchEnd
-        var remainingValue = value
-        val isNegative = remainingValue < 0
-        if (isNegative) {
-            if (remainingValue == Long.MIN_VALUE) {
-                buffer.write(MIN_LONG_BS)
-                return
-            }
-            remainingValue = -remainingValue
-        }
-
-        while (remainingValue >= HUNDRED_LONG) {
-            val twoDigitIndex = (remainingValue % HUNDRED_LONG).toInt() * 2
-            scratchBuf[--writePosition] = DOUBLE_DIGIT_LUT[twoDigitIndex + 1]
-            scratchBuf[--writePosition] = DOUBLE_DIGIT_LUT[twoDigitIndex]
-            remainingValue /= HUNDRED_LONG
-        }
-
-        if (remainingValue < TEN_LONG) {
-            scratchBuf[--writePosition] = (ZERO_INT + remainingValue.toInt()).toByte()
-        } else {
-            val twoDigitIndex = remainingValue.toInt() * 2
-            scratchBuf[--writePosition] = DOUBLE_DIGIT_LUT[twoDigitIndex + 1]
-            scratchBuf[--writePosition] = DOUBLE_DIGIT_LUT[twoDigitIndex]
-        }
-
-        if (isNegative) {
-            scratchBuf[--writePosition] = MINUS
-        }
-
-        buffer.write(scratchBuf, writePosition, scratchEnd - writePosition)
+        writeLongValueRawInternalImpl(
+            value = value,
+            scratchBuf = scratchBuf,
+            writeBytes = { bytes, offset, length -> buffer.write(bytes, offset, length) },
+            writeByteString = { byteString -> buffer.write(byteString) }
+        )
     }
 
     /**
@@ -388,31 +362,14 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
-        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
-            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
-        ) {
-            writeLongValueRawInternal(number.toLong())
-            buffer.write(DOT_ZERO)
-            return
-        }
-
         val scratchBuf = acquireScratch()
-        val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
-            value = number,
-            scratch = scratchBuf,
-            offset = 0,
-            fallback = { fallbackNum ->
-                if (!fallbackNum.isFinite()) {
-                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                }
-                buffer.writeUtf8(fallbackNum.toString())
-                -1
-            }
+        writeDoubleValueRawImpl(
+            number = number,
+            scratchBuf = scratchBuf,
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) },
+            writeBytes = { bytes, offset, length -> buffer.write(bytes, offset, length) },
+            writeUtf8 = { str -> buffer.writeUtf8(str) }
         )
-
-        if (bytesWrittenLength > 0) {
-            buffer.write(scratchBuf, 0, bytesWrittenLength)
-        }
     }
 
     /**

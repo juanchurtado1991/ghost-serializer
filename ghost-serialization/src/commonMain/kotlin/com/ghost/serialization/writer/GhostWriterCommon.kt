@@ -16,6 +16,8 @@ import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_PREFIX_U
 import okio.ByteString
+import com.ghost.serialization.parser.GhostJsonConstants as C
+import com.ghost.serialization.exception.GhostJsonException
 
 internal inline fun writeUnicodeEscapeImpl(
     code: Int,
@@ -193,5 +195,78 @@ internal inline fun writeEscapedIntoScratchImpl(
     } else {
         scratchBuf[scratchPos++] = QUOTE_BYTE
         writeBytes(scratchBuf, 0, scratchPos)
+    }
+}
+
+internal inline fun writeLongValueRawInternalImpl(
+    value: Long,
+    scratchBuf: ByteArray,
+    crossinline writeBytes: (ByteArray, Int, Int) -> Unit,
+    crossinline writeByteString: (ByteString) -> Unit
+) {
+    val scratchEnd = C.LONG_SCRATCH_SIZE
+    var pos = scratchEnd
+    var localValue = value
+    val isNegative = localValue < 0
+    if (isNegative) {
+        if (localValue == Long.MIN_VALUE) {
+            writeByteString(C.MIN_LONG_BS)
+            return
+        }
+        localValue = -localValue
+    }
+
+    while (localValue >= C.HUNDRED_LONG) {
+        val rem = (localValue % C.HUNDRED_LONG).toInt() * 2
+        scratchBuf[--pos] = C.DOUBLE_DIGIT_LUT[rem + 1] // ones
+        scratchBuf[--pos] = C.DOUBLE_DIGIT_LUT[rem]     // tens
+        localValue /= C.HUNDRED_LONG
+    }
+
+    if (localValue < C.TEN_LONG) {
+        scratchBuf[--pos] = (C.ZERO_INT + localValue.toInt()).toByte()
+    } else {
+        val rem = localValue.toInt() * 2
+        scratchBuf[--pos] = C.DOUBLE_DIGIT_LUT[rem + 1] // ones
+        scratchBuf[--pos] = C.DOUBLE_DIGIT_LUT[rem]     // tens
+    }
+
+    if (isNegative) {
+        scratchBuf[--pos] = C.MINUS
+    }
+
+    writeBytes(scratchBuf, pos, scratchEnd - pos)
+}
+
+internal inline fun writeDoubleValueRawImpl(
+    number: Double,
+    scratchBuf: ByteArray,
+    crossinline writeLongValueRawInternal: (Long) -> Unit,
+    crossinline writeBytes: (ByteArray, Int, Int) -> Unit,
+    crossinline writeUtf8: (String) -> Unit
+) {
+    if (number in C.MIN_SAFE_INTEGER_DOUBLE..C.MAX_SAFE_INTEGER_DOUBLE &&
+        number % C.WHOLE_NUMBER_CHECK == C.ZERO_DOUBLE
+    ) {
+        writeLongValueRawInternal(number.toLong())
+        writeBytes(C.DOT_ZERO, 0, C.DOT_ZERO.size)
+        return
+    }
+
+    val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
+        value = number,
+        scratch = scratchBuf,
+        offset = 0,
+        fallback = { fallbackNum ->
+            if (!fallbackNum.isFinite()) {
+                throw GhostJsonException(C.ERR_NON_FINITE, 0, 0)
+            }
+            writeUtf8(fallbackNum.toString())
+            -1
+        }
+    )
+
+    if (bytesWrittenLength > 0) {
+        writeBytes(scratchBuf, 0, bytesWrittenLength)
     }
 }
