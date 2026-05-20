@@ -244,23 +244,31 @@ internal class StandardEmitter(
                         reqMaskStr,
                         reqMaskStr
                     )
-                    propsInMask.forEach { prop ->
+                    propsInMask.forEachIndexed { propIdx, prop ->
                         val index = propertyIndices[prop]!!
                         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
                         val bitMaskStr = formatMaskString(bitMask)
 
-                        body.beginControlFlow(
-                            C.TEMPLATE_IF_MASK_ZERO_SIMPLE,
-                            i,
-                            bitMaskStr
-                        )
+                        if (propIdx == 0) {
+                            body.beginControlFlow(
+                                C.TEMPLATE_IF_MASK_ZERO_SIMPLE,
+                                i,
+                                bitMaskStr
+                            )
+                        } else {
+                            body.nextControlFlow(
+                                C.TEMPLATE_ELSE_IF_MASK_ZERO_SIMPLE,
+                                i,
+                                bitMaskStr
+                            )
+                        }
                         body.addStatement(
                             C.TEMPLATE_THROW_S,
                             C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
                         )
-                        body.endControlFlow()
                     }
+                    body.endControlFlow()
                     body.endControlFlow()
                 }
             }

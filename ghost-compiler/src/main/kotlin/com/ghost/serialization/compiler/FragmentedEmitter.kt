@@ -176,6 +176,7 @@ internal class FragmentedEmitter(
                     reqMaskStr
                 )
 
+                var isFirst = true
                 properties.forEachIndexed { propIdx, prop ->
                     if (
                         !prop.isNullable &&
@@ -186,19 +187,29 @@ internal class FragmentedEmitter(
                         val bitMask = 1L shl bitIdx
                         val bitMaskStr = formatMaskString(bitMask)
 
-                        body.beginControlFlow(
-                            C.TEMPLATE_IF_MASK_MISSING,
-                            maskIdx,
-                            bitMaskStr
-                        )
+                        if (isFirst) {
+                            body.beginControlFlow(
+                                C.TEMPLATE_IF_MASK_MISSING,
+                                maskIdx,
+                                bitMaskStr
+                            )
+                            isFirst = false
+                        } else {
+                            body.nextControlFlow(
+                                C.TEMPLATE_ELSE_IF_MASK_MISSING,
+                                maskIdx,
+                                bitMaskStr
+                            )
+                        }
 
                         body.addStatement(
                             C.TEMPLATE_THROW_S,
                             C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
                         )
-
-                        body.endControlFlow()
                     }
+                }
+                if (!isFirst) {
+                    body.endControlFlow()
                 }
                 body.endControlFlow()
             }
