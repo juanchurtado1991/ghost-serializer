@@ -7,6 +7,7 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH
+import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_UNIT
@@ -42,6 +43,8 @@ import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_12
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
+import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
+import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.GhostJsonConstants.TRUE_BS
@@ -332,11 +335,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     fun value(value: Boolean): GhostJsonFlatWriter {
         appendSeparator()
-        buffer.write(if (value) {
-            TRUE_BS
-        } else {
-            FALSE_BS
-        })
+        if (value) { buffer.writeTrue() } else { buffer.writeFalse() }
         needsComma = true
         return this
     }
@@ -346,7 +345,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     fun nullValue(): GhostJsonFlatWriter {
         appendSeparator()
-        buffer.write(NULL_BS)
+        buffer.writeNull()
         needsComma = true
         return this
     }
@@ -356,11 +355,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
-        buffer.write(if (value) {
-            TRUE_BS
-        } else {
-            FALSE_BS
-        })
+        if (value) { buffer.writeTrue() } else { buffer.writeFalse() }
     }
 
     /**
@@ -461,7 +456,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
             number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
         ) {
             writeLongValueRawInternal(number.toLong())
-            buffer.write(DOT_ZERO, 0, DOT_ZERO.size)
+            buffer.writeDotZero()
             return
         }
 
@@ -490,7 +485,7 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     @Suppress("unused")
     @InternalGhostApi
     fun writeNullValueRaw() {
-        buffer.write(NULL_BS)
+        buffer.writeNull()
     }
 
     /**
@@ -512,8 +507,30 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     fun writeStringValueRaw(value: String) {
         val length = value.length
         if (length == 0) {
-            buffer.write(EMPTY_STRING_BS)
+            // Two quotes, one bounds-check
+            buffer.write2Bytes(QUOTE_INT, QUOTE_INT)
             return
+        }
+
+        // Fast path: plain ASCII with no characters needing escaping.
+        // A single scan (cheaper than the ESCAPE_MASKS bitmask lookup) to decide.
+        // If all chars qualify, writeQuotedAscii writes directly into the backing
+        // array with a single ensureCapacity and an unrolled loop — no scratch buffer.
+        if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
+            var allPlain = true
+            var i = 0
+            while (i < length) {
+                val c = value[i].code
+                if (c < SPACE_INT || c >= ASCII_LIMIT || c == QUOTE_INT || c == BACKSLASH_INT) {
+                    allPlain = false
+                    break
+                }
+                i++
+            }
+            if (allPlain) {
+                buffer.writeQuotedAscii(value, length)
+                return
+            }
         }
 
         val scratchBuf = scratch ?: acquireScratch()

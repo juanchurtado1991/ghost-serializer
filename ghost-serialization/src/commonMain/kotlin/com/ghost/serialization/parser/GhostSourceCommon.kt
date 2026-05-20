@@ -174,10 +174,16 @@ internal inline fun contentEqualsStringImpl(
 ): Boolean {
     if (str.length != length) return false
     var index = 0
+    // Unrolled x4 for instruction-level parallelism on typical field-name lengths.
+    while (index + 3 < length) {
+        if (str[index].code != getByte(start + index)) return false
+        if (str[index + 1].code != getByte(start + index + 1)) return false
+        if (str[index + 2].code != getByte(start + index + 2)) return false
+        if (str[index + 3].code != getByte(start + index + 3)) return false
+        index += 4
+    }
     while (index < length) {
-        if (str[index].code != getByte(start + index)) {
-            return false
-        }
+        if (str[index].code != getByte(start + index)) return false
         index++
     }
     return true
