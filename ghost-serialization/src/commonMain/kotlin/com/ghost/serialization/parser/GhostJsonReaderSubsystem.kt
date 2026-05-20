@@ -335,7 +335,6 @@ private fun GhostJsonReader.verifyKeyMatch(
     return false
 }
 
-
 /**
  * Searches for a specific key in the current object without fully consuming it.
  * Used for sealed class discriminators.
