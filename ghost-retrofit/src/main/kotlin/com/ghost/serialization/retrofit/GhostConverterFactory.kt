@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
@@ -43,18 +45,34 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                 val stream = it.byteStream()
                 var scratch = acquireScratchBuffer(BUFFER_SIZE)
                 try {
+
                     var offset = 0
                     while (true) {
                         if (offset == scratch.size) {
-                            val grown = acquireScratchBuffer(scratch.size * 2)
-                            scratch.copyInto(grown, 0, 0, offset)
+                            val grown =
+                                acquireScratchBuffer(scratch.size * 2)
+
+                            scratch.copyInto(
+                                grown,
+                                0,
+                                0,
+                                offset
+                            )
+
                             releaseScratchBuffer(scratch)
                             scratch = grown
                         }
-                        val read = stream.read(scratch, offset, scratch.size - offset)
+
+                        val read = stream.read(
+                            scratch,
+                            offset,
+                            scratch.size - offset
+                        )
+
                         if (read == -1) break
                         offset += read
                     }
+
                     ghostInternalUseFlatReader(
                         scratch, offset
                     ) { reader ->
@@ -91,6 +109,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
     private fun getSerializerWithCache(type: Type): GhostSerializer<Any>? {
         val cached = serializerCache[type]
+
         if (cached != null) {
             return cached
         }
@@ -100,7 +119,6 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
         return existing ?: serializer
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun getSerializerForType(type: Type): GhostSerializer<Any>? {
         if (type is Class<*>) {
             return Ghost

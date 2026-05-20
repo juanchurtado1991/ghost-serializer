@@ -112,7 +112,9 @@ internal inline fun scanStringImpl(
         val b0 = getByte(pos)
         if (b0 < asciiLimit && (masks[b0 shr BITMASK_SHIFT] shr
                     (b0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b0 == QUOTE_INT) return packScanResult(pos - start, hash, is7Bit)
+            if (b0 == QUOTE_INT) {
+                return packScanResult(pos - start, hash, is7Bit)
+            }
             return matchEndLong
         } else if (b0 >= asciiLimit) is7Bit = false
         hash = (hash shl shift) - hash + b0
@@ -120,7 +122,9 @@ internal inline fun scanStringImpl(
         val b1 = getByte(pos + INDEX_OFFSET_1)
         if (b1 < asciiLimit && (masks[b1 shr BITMASK_SHIFT] shr
                     (b1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b1 == QUOTE_INT) return packScanResult(pos + INDEX_OFFSET_1 - start, hash, is7Bit)
+            if (b1 == QUOTE_INT) {
+                return packScanResult(pos + INDEX_OFFSET_1 - start, hash, is7Bit)
+            }
             return matchEndLong
         } else if (b1 >= asciiLimit) is7Bit = false
         hash = (hash shl shift) - hash + b1
@@ -128,7 +132,9 @@ internal inline fun scanStringImpl(
         val b2 = getByte(pos + INDEX_OFFSET_2)
         if (b2 < asciiLimit && (masks[b2 shr BITMASK_SHIFT] shr
                     (b2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b2 == QUOTE_INT) return packScanResult(pos + INDEX_OFFSET_2 - start, hash, is7Bit)
+            if (b2 == QUOTE_INT) {
+                return packScanResult(pos + INDEX_OFFSET_2 - start, hash, is7Bit)
+            }
             return matchEndLong
         } else if (b2 >= asciiLimit) is7Bit = false
         hash = (hash shl shift) - hash + b2
@@ -136,7 +142,9 @@ internal inline fun scanStringImpl(
         val b3 = getByte(pos + INDEX_OFFSET_3)
         if (b3 < asciiLimit && (masks[b3 shr BITMASK_SHIFT] shr
                     (b3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b3 == QUOTE_INT) return packScanResult(pos + INDEX_OFFSET_3 - start, hash, is7Bit)
+            if (b3 == QUOTE_INT) {
+                return packScanResult(pos + INDEX_OFFSET_3 - start, hash, is7Bit)
+            }
             return matchEndLong
         } else if (b3 >= asciiLimit) is7Bit = false
         hash = (hash shl shift) - hash + b3
@@ -147,7 +155,9 @@ internal inline fun scanStringImpl(
         val b = getByte(pos)
         if (b < asciiLimit && (masks[b shr BITMASK_SHIFT] shr
                     (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b == QUOTE_INT) return packScanResult(pos - start, hash, is7Bit)
+            if (b == QUOTE_INT) {
+                return packScanResult(pos - start, hash, is7Bit)
+            }
             return matchEndLong
         } else if (b >= asciiLimit) is7Bit = false
         hash = (hash shl shift) - hash + b

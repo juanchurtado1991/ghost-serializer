@@ -5,6 +5,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.BUFFER_SCALE_FACTOR
 import com.ghost.serialization.parser.GhostJsonConstants.HIGH_SURROGATE_END
 import com.ghost.serialization.parser.GhostJsonConstants.HIGH_SURROGATE_START
 import com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
+import com.ghost.serialization.parser.GhostJsonConstants.MAX_WARM_BUFFER_SIZE
 import com.ghost.serialization.parser.GhostJsonConstants.LOW_SURROGATE_END
 import com.ghost.serialization.parser.GhostJsonConstants.LOW_SURROGATE_START
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_10
@@ -38,7 +39,7 @@ import okio.ByteString
  * directly via [array] + [size] for zero-copy fast paths).
  */
 @InternalGhostApi
-class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
+class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
 
     /**
      * Backing store. The slice `array[0 until size]` is the live encoded
@@ -217,6 +218,9 @@ class FlatByteArrayWriter(initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
      */
     fun reset() {
         size = 0
+        if (array.size > MAX_WARM_BUFFER_SIZE) {
+            array = ByteArray(initialCapacity)
+        }
     }
 
     /** Returns a fresh [ByteArray] containing exactly the encoded payload. */

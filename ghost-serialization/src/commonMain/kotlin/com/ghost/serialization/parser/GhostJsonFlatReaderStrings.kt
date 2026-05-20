@@ -21,7 +21,8 @@ fun GhostJsonFlatReader.readQuotedString(): String {
     }
 
     val start = position
-    val scanResult = source.scanString(start, limit)
+    val localData = rawData
+    val scanResult = scanStringImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
 
     if (scanResult != -1L) {
         val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()
@@ -44,14 +45,16 @@ fun GhostJsonFlatReader.readQuotedString(): String {
         val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
         val cachedString = stringPool[poolBucketIndex]
 
-        if (cachedString != null && source.contentEqualsString(start, length, cachedString)) {
+        if (only7Bit && cachedString != null && contentEqualsStringImpl(start, length, cachedString) { localData[it].toInt() and C.BYTE_MASK }) {
             position = end + 1
             nextTokenByte = C.RESET_TOKEN_BYTE
             return cachedString
         }
 
         val decodedString = source.decodeJsonStringRange(start, end, only7Bit)
-        stringPool[poolBucketIndex] = decodedString
+        if (only7Bit) {
+            stringPool[poolBucketIndex] = decodedString
+        }
         position = end + 1
         nextTokenByte = C.RESET_TOKEN_BYTE
         return decodedString
@@ -212,7 +215,8 @@ fun GhostJsonFlatReader.skipQuotedString() {
     }
 
     val start = position
-    val end = source.findClosingQuote(start, limit)
+    val localData = rawData
+    val end = findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
     if (end != -1) {
         position = end + 1
         return

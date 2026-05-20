@@ -183,9 +183,10 @@ internal object GhostJsonConstants {
     /** Size of the hot-path writer scratch buffer. */
     const val WRITER_SCRATCH_SIZE = 512
 
-    /** Initial size for the
-     * [com.ghost.serialization.writer.FlatByteArrayWriter]. */
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
+
+    /** Max size of the warm buffer in FlatByteArrayWriter to prevent memory retention leaks. */
+    const val MAX_WARM_BUFFER_SIZE = 2 * 1024 * 1024 // 2 MB
 
     const val DEFAULT_DISCRIMINATOR_KEY = "type"
 
