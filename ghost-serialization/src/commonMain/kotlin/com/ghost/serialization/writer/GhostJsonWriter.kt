@@ -351,40 +351,12 @@ class GhostJsonWriter(
      */
     private fun writeLongValueRawInternal(value: Long) {
         val scratchBuf = acquireScratch()
-        // Use the end of the scratch zone as the backward-write area.
-        val scratchEnd = LONG_SCRATCH_SIZE
-        var pos = scratchEnd
-        var localValue = value
-        val isNegative = localValue < 0
-        if (isNegative) {
-            if (localValue == Long.MIN_VALUE) {
-                buffer.write(MIN_LONG_BS)
-                return
-            }
-            localValue = -localValue
-        }
-
-        while (localValue >= HUNDRED_LONG) {
-            val rem = (localValue % HUNDRED_LONG).toInt() * 2
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem + 1] // ones
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem]     // tens
-            localValue /= HUNDRED_LONG
-        }
-
-        if (localValue < TEN_LONG) {
-            scratchBuf[--pos] = (ZERO_INT + localValue.toInt()).toByte()
-        } else {
-            val rem = localValue.toInt() * 2
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem + 1] // ones
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem]     // tens
-        }
-
-        if (isNegative) {
-            scratchBuf[--pos] = MINUS
-        }
-
-        // Single write into Okio's segment — one System.arraycopy call
-        buffer.write(scratchBuf, pos, scratchEnd - pos)
+        writeLongValueRawInternalImpl(
+            value = value,
+            scratchBuf = scratchBuf,
+            writeBytes = { bytes, offset, length -> buffer.write(bytes, offset, length) },
+            writeByteString = { byteString -> buffer.write(byteString) }
+        )
     }
 
     /**
@@ -394,32 +366,14 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
-        // Fast path for whole numbers
-        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
-            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
-        ) {
-            writeLongValueRawInternal(number.toLong())
-            buffer.write(DOT_ZERO)
-            return
-        }
-
         val scratchBuf = acquireScratch()
-        val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
-            value = number,
-            scratch = scratchBuf,
-            offset = 0,
-            fallback = { fallbackNum ->
-                if (!fallbackNum.isFinite()) {
-                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                }
-                buffer.writeUtf8(fallbackNum.toString())
-                -1
-            }
+        writeDoubleValueRawImpl(
+            number = number,
+            scratchBuf = scratchBuf,
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) },
+            writeBytes = { bytes, offset, length -> buffer.write(bytes, offset, length) },
+            writeUtf8 = { str -> buffer.writeUtf8(str) }
         )
-
-        if (bytesWrittenLength > 0) {
-            buffer.write(scratchBuf, 0, bytesWrittenLength)
-        }
     }
 
     /**
