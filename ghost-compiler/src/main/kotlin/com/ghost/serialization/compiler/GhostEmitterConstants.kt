@@ -12,7 +12,7 @@ internal object GhostEmitterConstants {
     const val STR_DESERIALIZE = "deserialize"
     const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
     const val STR_NOTHING_TO_INLINE = "NOTHING_TO_INLINE"
-    const val DEFAULT_CHUNK_SIZE = 200
+    const val DEFAULT_CHUNK_SIZE = 10
     const val STR_READER = "reader"
     const val TEMPLATE_PEEK_TYPE = "val typeName = reader.peekStringField(%S) ?: reader.throwError(%S)"
     const val STR_MISSING_TYPE = "Missing discriminator field for sealed class"
@@ -310,11 +310,11 @@ internal object GhostEmitterConstants {
     const val STR_OPTIONS = "OPTIONS"
     const val STR_OPTIONS_PREFIX = "OPTIONS_"
     const val STR_OPTIONS_CLASS = "JsonReaderOptions"
-    const val STR_RESET_TOKEN_BYTE_CALL = "    reader.nextTokenByte = com.ghost.serialization.parser.GhostJsonFlatReader.RESET_TOKEN_BYTE\n"
+    const val STR_RESET_TOKEN_BYTE_CALL = "    reader._setNextTokenByte(com.ghost.serialization.parser.GhostJsonFlatReader.RESET_TOKEN_BYTE)\n"
     const val STR_RUN_OPEN = "run {\n"
-    const val STR_CUSTOM_DECODER_TEMP_READER = "    val temp = com.ghost.serialization.parser.GhostJsonReader(reader.rawData).also { it.position = reader.position }\n"
+    const val STR_CUSTOM_DECODER_TEMP_READER = "    val temp = com.ghost.serialization.parser.GhostJsonReader(reader._getRawData()).also { it._setPosition(reader._getPosition()) }\n"
     const val TEMPLATE_CUSTOM_DECODER_TEMP_CALL = "    val res = %T.%L(temp)\n"
-    const val STR_CUSTOM_DECODER_UPDATE_POS = "    reader.position = temp.position\n"
+    const val STR_CUSTOM_DECODER_UPDATE_POS = "    reader._setPosition(temp._getPosition())\n"
     const val STR_CUSTOM_DECODER_RETURN_RES = "    res\n"
     const val STR_RUN_CLOSE = "}"
     const val STR_TRY = "try"

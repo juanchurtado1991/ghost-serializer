@@ -18,6 +18,9 @@ internal class StandardEmitter(
     readerClass: ClassName
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
+    /**
+     * Entry point to emit all standard deserialization code block builders.
+     */
     fun emit(body: CodeBlock.Builder) {
         properties.forEach {
             val varType = it.getVariableType()
@@ -44,6 +47,9 @@ internal class StandardEmitter(
         emitReturnStatement(body)
     }
 
+    /**
+     * Generates the main field parsing loop using the perfect hash options.
+     */
     private fun emitParseLoop(body: CodeBlock.Builder) {
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
@@ -63,12 +69,12 @@ internal class StandardEmitter(
 
             if (
                 propsForThisName.size == 1 &&
-                fullPaths[properties.indexOf(propsForThisName[0])].size == 1
+                fullPaths[propertyIndices[propsForThisName[0]]!!].size == 1
             ) {
                 emitPropertyAssignment(
                     body,
                     propsForThisName[0],
-                    properties.indexOf(propsForThisName[0])
+                    propertyIndices[propsForThisName[0]]!!
                 )
             } else {
                 emitFlattenedGroup(
@@ -91,6 +97,9 @@ internal class StandardEmitter(
         body.addStatement(C.STR_END_OBJECT)
     }
 
+    /**
+     * Recursively generates nested parsing loops for flattened structure properties.
+     */
     private fun emitFlattenedGroup(
         body: CodeBlock.Builder,
         name: String,
@@ -112,7 +121,7 @@ internal class StandardEmitter(
         body.beginControlFlow(C.STR_WHEN_SUB_INDEX)
 
         val nextLevelNames = props.map {
-            val path = fullPaths[properties.indexOf(it)]
+            val path = fullPaths[propertyIndices[it]!!]
             if (pathIndex < path.size) {
                 path[pathIndex]
             } else {
@@ -126,7 +135,7 @@ internal class StandardEmitter(
                 subIndex
             )
             val subProps = props.filter {
-                val path = fullPaths[properties.indexOf(it)]
+                val path = fullPaths[propertyIndices[it]!!]
                 val currentName = if (pathIndex < path.size) {
                     path[pathIndex]
                 } else {
@@ -137,12 +146,12 @@ internal class StandardEmitter(
 
             if (
                 subProps.size == 1 &&
-                pathIndex == fullPaths[properties.indexOf(subProps[0])].size - 1
+                pathIndex == fullPaths[propertyIndices[subProps[0]]!!].size - 1
             ) {
                 emitPropertyAssignment(
                     body,
                     subProps[0],
-                    properties.indexOf(subProps[0])
+                    propertyIndices[subProps[0]]!!
                 )
             } else {
                 emitFlattenedGroup(
@@ -166,6 +175,9 @@ internal class StandardEmitter(
         body.addStatement(C.STR_END_OBJECT)
     }
 
+    /**
+     * Generates a single property assignment step.
+     */
     private fun emitPropertyAssignment(
         body: CodeBlock.Builder,
         prop: GhostPropertyModel,
@@ -188,9 +200,12 @@ internal class StandardEmitter(
         }
     }
 
+    /**
+     * Generates required field presence validation checks using bitwise operations.
+     */
     private fun emitFieldValidation(body: CodeBlock.Builder) {
         val requiredPropsByMask = Array(maskCount) { mutableListOf<GhostPropertyModel>() }
-        
+
         properties.forEachIndexed { index, prop ->
             if (!prop.isNullable && !prop.hasDefaultValue) {
                 val maskIdx = index / C.MASK_SIZE_BITS.toInt()
@@ -207,7 +222,7 @@ internal class StandardEmitter(
 
                 if (propsInMask.size == 1) {
                     val prop = propsInMask[0]
-                    val index = properties.indexOf(prop)
+                    val index = propertyIndices[prop]!!
                     val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                     val bitMask = 1L shl bitIdx
                     val bitMaskStr = formatMaskString(bitMask)
@@ -230,7 +245,7 @@ internal class StandardEmitter(
                         reqMaskStr
                     )
                     propsInMask.forEach { prop ->
-                        val index = properties.indexOf(prop)
+                        val index = propertyIndices[prop]!!
                         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
                         val bitMaskStr = formatMaskString(bitMask)
@@ -252,6 +267,9 @@ internal class StandardEmitter(
         }
     }
 
+    /**
+     * Emits the class instantiation return statement.
+     */
     private fun emitReturnStatement(body: CodeBlock.Builder) {
         val hasDefaults = properties.any { it.hasDefaultValue }
 
@@ -274,6 +292,9 @@ internal class StandardEmitter(
         emitDefaultValueReturn(body)
     }
 
+    /**
+     * Emits copy-constructors when defaults are used for omitted fields.
+     */
     private fun emitDefaultValueReturn(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
         val defaultProps = properties.filter { it.hasDefaultValue }
@@ -309,7 +330,11 @@ internal class StandardEmitter(
 
             body.addStatement(C.STR_RETURN_RESULT_COPY)
             val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-                if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+                if (prop.hasDefaultValue) {
+                    Pair(globalIdx, prop)
+                } else {
+                    null
+                }
             }
             defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()

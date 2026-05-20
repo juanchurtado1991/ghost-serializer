@@ -4,8 +4,13 @@
 ### Added
 - **Flat-Path Buffer Pooling (`GhostJsonFlatReader`)**: Introduced a zero-allocation, high-performance reader pooling architecture. Reuses `GhostJsonFlatReader` and `ByteArrayGhostSource` instances via `ThreadLocal` (JVM/Android) and `@ThreadLocal` (iOS/Native), completely eliminating GC pressure and allocations during flat deserialization.
 - **KSP-Generated Flat Deserializers**: The compiler now generates direct, non-virtual `deserialize(reader: GhostJsonFlatReader)` implementations for all serializable models, bypassing interface/virtual dispatch overhead for maximum JIT optimization.
-- **Clean Conditonal Formatting**: Enforced structured `if`/`else` brace wrapping and descriptive variable naming across the codebase.
+- **Clean Conditional Formatting**: Enforced structured `if`/`else` brace wrapping and descriptive variable naming across the codebase.
 - **Zero Magic-String Hardening**: Centralized try/catch templates, warm-up constructs, and parser control variables into `GhostEmitterConstants` and `GhostJsonFlatReader.RESET_TOKEN_BYTE` to ensure a completely clean, literal-free compiler codebase.
+- **AST Property Lookup Optimization**: Replaced linear $O(N)$ searches in KSP emission loops with $O(1)$ precomputed index map lookups in `StandardEmitter` and `BaseDeserializeEmitter`.
+- **Nested Options Path Resolution Optimization**: Streamlined flattened path nested options generation in `GhostCodeGenerator` to avoid quadratic $O(N^2)$ lookups using an $O(N)$ mapIndexedNotNull mapping.
+- **Inferred Sealed Class Indexing Optimization**: Precomputed names to indexes lookup in `DeserializeCodeEmitter` for inferred sealed subclasses.
+- **Path String Caching during Sorting**: Avoided repeated path formatting allocations by caching full paths before comparing and sorting properties in `SerializeCodeEmitter`.
+- **Bitwise Safe `isDigit` Check**: Replaced 64-bit shifting mask checks with an optimized and safe bitwise comparison `(byteCode xor C.ZERO_INT) < C.BASE_TEN` that does not wrap around on ASCII values >= 64, resolving false positives on char inputs.
 
 ## [1.1.14] - 2026-05-16
 ### Performance & Scalability

@@ -32,6 +32,9 @@ internal class DeserializeCodeEmitter(
     private val isInferred: Boolean = false
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
+    /**
+     * Builds the deserializer spec details (properties, functions, and nested classes).
+     */
     fun build(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean = false
@@ -39,10 +42,18 @@ internal class DeserializeCodeEmitter(
         val body = CodeBlock.builder()
 
         when {
-            isSealed && isInferred -> emitInferredSealed(body)
-            isSealed -> emitSealed(body)
-            isValue -> emitValue(body)
-            isEnum -> emitEnum(body)
+            isSealed && isInferred -> {
+                emitInferredSealed(body)
+            }
+            isSealed -> {
+                emitSealed(body)
+            }
+            isValue -> {
+                emitValue(body)
+            }
+            isEnum -> {
+                emitEnum(body)
+            }
             properties.size > PROPERTY_MAX_SIZE -> {
                 val emitter = FragmentedEmitter(
                     properties,
@@ -84,6 +95,9 @@ internal class DeserializeCodeEmitter(
         }
     }
 
+    /**
+     * Adds the deserialize method to the generated serializer object.
+     */
     private fun addDeserializeFunction(
         typeSpecBuilder: TypeSpec.Builder,
         body: CodeBlock
@@ -99,8 +113,10 @@ internal class DeserializeCodeEmitter(
         )
     }
 
+    /**
+     * Emits deserialization logic for sealed class hierarchies using type discriminator checks.
+     */
     private fun emitSealed(body: CodeBlock.Builder) {
-
         val fallbackSubclass = sealedSubclasses.find { subclass ->
             subclass.annotations.any {
                 it.shortName.asString() == C.STR_FALLBACK_ANNOTATION
@@ -147,6 +163,10 @@ internal class DeserializeCodeEmitter(
         body.endControlFlow()
         body.addStatement(C.STR_RETURN_RESULT)
     }
+
+    /**
+     * Emits deserialization logic for inferred polymorphism, mapping property presence to candidate subclasses.
+     */
     private fun emitInferredSealed(body: CodeBlock.Builder) {
         val inferredInfo = properties.firstOrNull()?.inferredSubclasses ?: emptyList()
         if (inferredInfo.isEmpty()) {
@@ -159,6 +179,8 @@ internal class DeserializeCodeEmitter(
         val allProps = names.map { name ->
             inferredInfo.flatMap { it.properties }.find { it.jsonName == name }!!
         }
+
+        val nameToIndex = names.mapIndexed { index, name -> name to index }.toMap()
 
         // 2. Build bitmasks: which subclasses contain which property?
         val propertyToClassMask = names.associateWith { name ->
@@ -178,8 +200,8 @@ internal class DeserializeCodeEmitter(
                 C.TEMPLATE_VAR_NULL_DECL,
                 C.STR_V_VAR_PREFIX,
                 index,
-                prop.typeName.copy(nullable = true)
-                , C.STR_NULL
+                prop.typeName.copy(nullable = true),
+                C.STR_NULL
             )
         }
 
@@ -248,7 +270,7 @@ internal class DeserializeCodeEmitter(
             var reqMask = 0L
             subclass.properties.forEach { prop ->
                 if (!prop.isNullable && !prop.hasDefaultValue) {
-                    val pIdx = names.indexOf(prop.jsonName)
+                    val pIdx = nameToIndex[prop.jsonName]!!
                     reqMask = reqMask or (1L shl pIdx)
                 }
             }
@@ -272,7 +294,7 @@ internal class DeserializeCodeEmitter(
             val subclassClassName = subclass.declaration.toClassName()
             val maskBit = 1L shl subclassIndex
             val reqMaskVar = "${C.STR_REQ_MASK_PREFIX}$subclassIndex"
-            
+
             body.beginControlFlow(
                 C.TEMPLATE_INFERRED_DECISION_BRANCH,
                 C.STR_ELIGIBILITY_MASK,
@@ -283,13 +305,13 @@ internal class DeserializeCodeEmitter(
                 reqMaskVar,
                 reqMaskVar
             )
-            
+
             val requiredProps = subclass.properties.filter { !it.hasDefaultValue }
             val defaultProps = subclass.properties.filter { it.hasDefaultValue }
 
             val requiredArgs = CodeBlock.builder()
             requiredProps.forEachIndexed { i, prop ->
-                val pIdx = names.indexOf(prop.jsonName)
+                val pIdx = nameToIndex[prop.jsonName]!!
                 val vVar = "${C.STR_V_VAR_PREFIX}$pIdx"
                 if (!prop.isNullable) {
                     val msg = C.STR_REQUIRED_FIELD_MISSING.format(
@@ -326,7 +348,7 @@ internal class DeserializeCodeEmitter(
                     requiredArgs.build()
                 )
                 defaultProps.forEach { prop ->
-                    val pIdx = names.indexOf(prop.jsonName)
+                    val pIdx = nameToIndex[prop.jsonName]!!
                     val vVar = "${C.STR_V_VAR_PREFIX}$pIdx"
                     body.addStatement(
                         C.TEMPLATE_IF_NOT_NULL_COPY,
@@ -354,6 +376,9 @@ internal class DeserializeCodeEmitter(
         body.addStatement(C.STR_RETURN_RESULT)
     }
 
+    /**
+     * Emits deserialization logic for value class types.
+     */
     private fun emitValue(body: CodeBlock.Builder) {
         val prop = properties.firstOrNull() ?: return
         val call = buildCall(prop)
@@ -364,6 +389,9 @@ internal class DeserializeCodeEmitter(
         )
     }
 
+    /**
+     * Emits deserialization logic for enum types using integer lookups.
+     */
     private fun emitEnum(body: CodeBlock.Builder) {
         body.addStatement(C.STR_ENUM_SELECT_OPTIONS)
         body.beginControlFlow(C.STR_ENUM_WHEN)
@@ -373,13 +401,13 @@ internal class DeserializeCodeEmitter(
             ?.enumValues
             ?.entries
             ?.forEachIndexed { index, entry ->
-            body.addStatement(
-                C.TEMPLATE_ENUM_BRANCH,
-                index,
-                originalClassName,
-                entry.key
-            )
-        }
+                body.addStatement(
+                    C.TEMPLATE_ENUM_BRANCH,
+                    index,
+                    originalClassName,
+                    entry.key
+                )
+            }
 
         body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)
         body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)

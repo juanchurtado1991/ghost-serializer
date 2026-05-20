@@ -36,6 +36,10 @@ internal class SerializeCodeEmitter(
             rootToFirstIndex.putIfAbsent(root, index)
         }
 
+        val propertyPaths = properties.associateWith { prop ->
+            prop.flattenPath?.joinToString(C.STR_DOT) ?: prop.jsonName
+        }
+
         properties.sortedWith { p1, p2 ->
             val root1 = p1.flattenPath?.firstOrNull()
                 ?: p1.wrapPath?.firstOrNull()
@@ -51,9 +55,8 @@ internal class SerializeCodeEmitter(
             if (index1 != index2) {
                 index1.compareTo(index2)
             } else {
-                // Same root, sort by full path to ensure grouping works for nested flattened fields
-                val path1 = (p1.flattenPath?.joinToString(C.STR_DOT) ?: p1.jsonName)
-                val path2 = (p2.flattenPath?.joinToString(C.STR_DOT) ?: p2.jsonName)
+                val path1 = propertyPaths[p1]!!
+                val path2 = propertyPaths[p2]!!
                 path1.compareTo(path2)
             }
         }
