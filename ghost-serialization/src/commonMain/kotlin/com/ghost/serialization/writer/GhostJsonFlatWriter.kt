@@ -139,35 +139,49 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      * Automatically handles comma insertion and depth tracking.
      */
     fun beginObject(): GhostJsonFlatWriter {
-        checkDepth()
-        appendSeparator()
-        buffer.writeByte(OPEN_OBJ_INT)
-        needsComma = false
-        depth++
+        beginObjectImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            maxDepth = MAX_DEPTH,
+            appendSeparator = { appendSeparator() },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it },
+            throwDepthError = { throwDepthError() }
+        )
         return this
     }
 
     /** Ends the current JSON object. */
     fun endObject(): GhostJsonFlatWriter {
-        buffer.writeByte(CLOSE_OBJ_INT)
-        needsComma = true
-        depth--
+        endObjectImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it }
+        )
         return this
     }
 
     fun beginArray(): GhostJsonFlatWriter {
-        checkDepth()
-        appendSeparator()
-        buffer.writeByte(OPEN_ARR_INT)
-        needsComma = false
-        depth++
+        beginArrayImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            maxDepth = MAX_DEPTH,
+            appendSeparator = { appendSeparator() },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it },
+            throwDepthError = { throwDepthError() }
+        )
         return this
     }
 
     fun endArray(): GhostJsonFlatWriter {
-        buffer.writeByte(CLOSE_ARR_INT)
-        needsComma = true
-        depth--
+        endArrayImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it }
+        )
         return this
     }
 
@@ -176,11 +190,14 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      * Escapes the key and appends the colon separator.
      */
     fun name(key: String): GhostJsonFlatWriter {
-        appendSeparator()
-        buffer.writeByte(QUOTE_INT)
-        writeEscaped(key)
-        buffer.write(COLON_QUOTE_BS)
-        needsComma = false
+        nameStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeByte = { buffer.writeByte(it) },
+            writeEscaped = { writeEscaped(it) },
+            writeBytes = { buffer.write(it) },
+            setNeedsComma = { needsComma = it },
+            key = key
+        )
         return this
     }
 
@@ -189,9 +206,12 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      * This is the fastest way to write field names as it avoids runtime escaping.
      */
     fun name(key: ByteString): GhostJsonFlatWriter {
-        appendSeparator()
-        buffer.write(key)
-        needsComma = false
+        nameByteStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            setNeedsComma = { needsComma = it },
+            key = key
+        )
         return this
     }
 
@@ -204,46 +224,66 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Int): GhostJsonFlatWriter {
-        if (needsComma) buffer.writeByte(COMMA_INT)
-        buffer.write(header)
-        writeIntValueRaw(value)
-        needsComma = true
+        writeFieldIntImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeIntValueRaw = { writeIntValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Long): GhostJsonFlatWriter {
-        if (needsComma) buffer.writeByte(COMMA_INT)
-        buffer.write(header)
-        writeLongValueRaw(value)
-        needsComma = true
+        writeFieldLongImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeLongValueRaw = { writeLongValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonFlatWriter {
-        if (needsComma) buffer.writeByte(COMMA_INT)
-        buffer.write(header)
-        writeStringValueRaw(value)
-        needsComma = true
+        writeFieldStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeStringValueRaw = { writeStringValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Boolean): GhostJsonFlatWriter {
-        if (needsComma) buffer.writeByte(COMMA_INT)
-        buffer.write(header)
-        writeBooleanValueRaw(value)
-        needsComma = true
+        writeFieldBooleanImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeBooleanValueRaw = { writeBooleanValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Double): GhostJsonFlatWriter {
-        if (needsComma) buffer.writeByte(COMMA_INT)
-        buffer.write(header)
-        writeDoubleValueRaw(value)
-        needsComma = true
+        writeFieldDoubleImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeDoubleValueRaw = { writeDoubleValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
