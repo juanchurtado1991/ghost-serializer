@@ -3,6 +3,7 @@ package com.ghost.serialization.ktor
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeWithWriter
+import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import io.ktor.http.ContentType
@@ -12,8 +13,7 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
-import io.ktor.utils.io.core.readAvailable
-import io.ktor.utils.io.readRemaining
+import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
 
 @OptIn(InternalGhostApi::class)
@@ -43,14 +43,33 @@ class GhostContentConverter : ContentConverter {
         typeInfo: TypeInfo,
         content: ByteReadChannel
     ): Any {
-        val packet = content.readRemaining()
-        val limit = packet.remaining.toInt()
-        val bytes = acquireScratchBuffer(limit)
+        var scratch = acquireScratchBuffer(BUFFER_SIZE)
         try {
-            packet.readAvailable(bytes, 0, limit)
-            return Ghost.decodeFromBytes(bytes, typeInfo.type, limit)
+            var offset = 0
+            while (true) {
+                if (offset == scratch.size) {
+                    val grown = acquireScratchBuffer(scratch.size * 2)
+                    scratch.copyInto(grown, 0, 0, offset)
+                    releaseScratchBuffer(scratch)
+                    scratch = grown
+                }
+                val read = content.readAvailable(scratch, offset, scratch.size - offset)
+                if (read == -1) break
+                offset += read
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            return ghostInternalUseFlatReader(scratch, offset) { reader ->
+                val serializer = Ghost.getSerializer(typeInfo.type as KClass<Any>)
+                    ?: Ghost.throwError("${Ghost.NOT_FOUND} ${typeInfo.type.simpleName}. ${Ghost.MISSING_ANN}")
+                serializer.deserialize(reader)
+            }
         } finally {
-            releaseScratchBuffer(bytes)
+            releaseScratchBuffer(scratch)
         }
+    }
+
+    companion object {
+        private const val BUFFER_SIZE = 524288
     }
 }

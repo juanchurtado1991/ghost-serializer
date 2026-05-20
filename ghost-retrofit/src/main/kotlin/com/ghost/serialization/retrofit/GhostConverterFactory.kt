@@ -40,19 +40,23 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
         return Converter { body ->
             body.use {
-                val source = it.source()
-                source.request(Long.MAX_VALUE)
-                val limit = source.buffer.size.toInt()
-                val bytes = acquireScratchBuffer(limit)
+                val stream = it.byteStream()
+                var scratch = acquireScratchBuffer(BUFFER_SIZE)
                 try {
                     var offset = 0
-                    while (offset < limit) {
-                        val count = source.read(bytes, offset, limit - offset)
-                        if (count == -1) break
-                        offset += count
+                    while (true) {
+                        if (offset == scratch.size) {
+                            val grown = acquireScratchBuffer(scratch.size * 2)
+                            scratch.copyInto(grown, 0, 0, offset)
+                            releaseScratchBuffer(scratch)
+                            scratch = grown
+                        }
+                        val read = stream.read(scratch, offset, scratch.size - offset)
+                        if (read == -1) break
+                        offset += read
                     }
                     ghostInternalUseFlatReader(
-                        bytes, limit
+                        scratch, offset
                     ) { reader ->
                         if (reader.isNextNullValue()) {
                             reader.consumeNull()
@@ -62,7 +66,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                         }
                     }
                 } finally {
-                    releaseScratchBuffer(bytes)
+                    releaseScratchBuffer(scratch)
                 }
             }
         }
@@ -133,6 +137,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
     companion object {
         private const val STR_MEDIA_TYPE = "application/json; charset=UTF-8"
         private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
+        private const val BUFFER_SIZE = 524288
 
         fun create(): GhostConverterFactory = GhostConverterFactory()
     }
