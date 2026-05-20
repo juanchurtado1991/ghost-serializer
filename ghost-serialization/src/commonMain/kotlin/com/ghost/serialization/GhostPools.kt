@@ -16,15 +16,8 @@ internal class GhostPool {
 
 internal expect fun getLocalPool(): GhostPool
 
-private inline fun poolOrAllocate(
-    tierSize: Int,
-    get: () -> ByteArray?,
-    set: (ByteArray?) -> Unit
-): ByteArray {
-    val cached = get()
-    set(null)
-    return cached ?: ByteArray(tierSize)
-}
+@PublishedApi
+internal val SCRATCH_BUFFER_SIZE_INT = SCRATCH_BUFFER_SIZE
 
 /**
  * Provides access to reusable buffers to minimize allocations during hot paths.
@@ -34,39 +27,55 @@ private inline fun poolOrAllocate(
 fun acquireScratchBuffer(minSize: Int = 48): ByteArray {
     val pool = getLocalPool()
     return when {
-        minSize <= SCRATCH_BUFFER_SIZE -> {
+        minSize <= SCRATCH_BUFFER_SIZE_INT -> {
             val smallLocal = pool.small
-            if (smallLocal != null && smallLocal.size >= SCRATCH_BUFFER_SIZE) {
+            if (smallLocal != null && smallLocal.size >= minSize) {
                 pool.small = null
                 smallLocal
             } else {
-                ByteArray(SCRATCH_BUFFER_SIZE)
+                ByteArray(SCRATCH_BUFFER_SIZE_INT)
             }
         }
 
-        minSize <= TIER_SMALL -> poolOrAllocate(
-            TIER_SMALL,
-            { pool.small },
-            { pool.small = it }
-        )
+        minSize <= TIER_SMALL -> {
+            val smallLocal = pool.small
+            if (smallLocal != null && smallLocal.size >= minSize) {
+                pool.small = null
+                smallLocal
+            } else {
+                ByteArray(TIER_SMALL)
+            }
+        }
 
-        minSize <= TIER_MEDIUM -> poolOrAllocate(
-            TIER_MEDIUM,
-            { pool.medium },
-            { pool.medium = it }
-        )
+        minSize <= TIER_MEDIUM -> {
+            val mediumLocal = pool.medium
+            if (mediumLocal != null && mediumLocal.size >= minSize) {
+                pool.medium = null
+                mediumLocal
+            } else {
+                ByteArray(TIER_MEDIUM)
+            }
+        }
 
-        minSize <= TIER_LARGE -> poolOrAllocate(
-            TIER_LARGE,
-            { pool.large },
-            { pool.large = it }
-        )
+        minSize <= TIER_LARGE -> {
+            val largeLocal = pool.large
+            if (largeLocal != null && largeLocal.size >= minSize) {
+                pool.large = null
+                largeLocal
+            } else {
+                ByteArray(TIER_LARGE)
+            }
+        }
 
-        minSize <= TIER_XLARGE -> poolOrAllocate(
-            TIER_XLARGE,
-            { pool.xlarge },
-            { pool.xlarge = it }
-        )
+        minSize <= TIER_XLARGE -> {
+            val xlargeLocal = pool.xlarge
+            if (xlargeLocal != null && xlargeLocal.size >= minSize) {
+                pool.xlarge = null
+                xlargeLocal
+            } else {
+                ByteArray(TIER_XLARGE)
+            }
+        }
 
         else -> ByteArray(minSize)
     }
