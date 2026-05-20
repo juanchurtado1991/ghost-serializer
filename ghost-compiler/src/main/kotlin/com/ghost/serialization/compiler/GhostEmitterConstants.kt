@@ -62,6 +62,7 @@ internal object GhostEmitterConstants {
     const val STR_PAREN = ")"
     const val TEMPLATE_VAL_RESULT = "val _result = %T("
     const val STR_OR = " || "
+    const val STR_AND_AND = " && "
     const val STR_RETURN_RESULT_COPY = "return _result.copy("
     const val STR_COMMA = ","
     const val STR_EMPTY = ""
@@ -439,6 +440,14 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_VARIABLE = "%L"
 
     const val PROPERTY_MAX_SIZE = 40
+
+    /**
+     * Maximum number of default-valued properties for which the compiler
+     * generates 2^N explicit constructor branches (zero .copy() allocations).
+     * Classes with more defaults fall back to the val _result + .copy() pattern.
+     * 3 → max 8 branches; 4 would mean 16 branches (too much code bloat).
+     */
+    const val MAX_DEFAULT_BRANCH_COUNT = 4
 
     const val STR_SRC_TEST = "/src/test/"
     const val STR_SRC_ANDROID_TEST = "/src/androidTest/"

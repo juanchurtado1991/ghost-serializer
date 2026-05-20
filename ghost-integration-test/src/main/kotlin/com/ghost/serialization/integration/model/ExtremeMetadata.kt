@@ -14,5 +14,6 @@ data class ExtremeMetadata(
     val role: UserRole,
     val tags: List<String>,
     val precisionScore: Double,
-    val accessHistory: IntArray
+    val accessHistory: IntArray,
+    val debugInfo: String? = null
 )

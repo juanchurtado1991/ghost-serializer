@@ -69,7 +69,10 @@ fun main(args: Array<String>) {
     // 5. Print Final Results
     printFinalResults(finalResults, config.runs)
 
-    // 6. Verification Tests
+    // 6. Ghost Special Features (exclusive capabilities, no competition)
+    GhostSpecialFeaturesBenchmark.run(config.runs, config.warmupIters)
+
+    // 7. Verification Tests
     if (!config.noTests) {
         val testResults = ParsingTestBenchmark.runAllTests()
         ParsingTestBenchmark.printUnifiedSummaryTable(testResults)
@@ -862,8 +865,10 @@ private fun generateComplexData(count: Int): ComplexResponse {
             i,
             "User $i",
             "u@e.com",
+            1.0,
             true,
-            1.0
+            UserRole.VIEWER,
+            null
         )
     }
     return ComplexResponse(

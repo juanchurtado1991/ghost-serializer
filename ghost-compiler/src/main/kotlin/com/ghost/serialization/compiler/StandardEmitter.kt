@@ -301,12 +301,110 @@ internal class StandardEmitter(
     }
 
     /**
-     * Emits copy-constructors when defaults are used for omitted fields.
+     * Emits the optimal return strategy when some properties have default values.
+     *
+     * - N ≤ [C.MAX_DEFAULT_BRANCH_COUNT]: 2^N explicit constructor branches — 1 allocation, 0 copies.
+     * - N >  [C.MAX_DEFAULT_BRANCH_COUNT]: val _result + .copy() — 1 or 2 allocations.
+     *
+     * The branch conditions are pure Long bitwise comparisons on local mask variables already
+     * held in CPU registers, so their overhead is negligible compared to eliminating .copy().
      */
     private fun emitDefaultValueReturn(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
-        val defaultProps = properties.filter { it.hasDefaultValue }
+        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
+            if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+        }
 
+        if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
+            emitMultiBranchReturn(body, requiredProps, defaultPropsWithIndex)
+        } else {
+            emitCopyReturn(body, requiredProps, defaultPropsWithIndex)
+        }
+    }
+
+    /**
+     * Generates 2^N if-branches, each calling the primary constructor exactly once.
+     * Subsets are ordered by descending popcount so larger subsets take priority —
+     * early-return semantics ensure correctness without needing negative checks.
+     *
+     * Example for 2 defaults (optA, optB):
+     *   if ((_mask0 and 3L) == 3L) return MyClass(req, optA, optB)  // both present
+     *   if ((_mask0 and 1L) == 1L) return MyClass(req, optA)        // optA only
+     *   if ((_mask0 and 2L) == 2L) return MyClass(req, optB)        // optB only
+     *   return MyClass(req)                                          // neither
+     */
+    private fun emitMultiBranchReturn(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>
+    ) {
+        val n = defaultPropsWithIndex.size
+
+        // Iterate subsets from most bits set → fewest; skip the empty set (handled as fallback).
+        val subsets = (1 until (1 shl n))
+            .sortedByDescending { mask -> (0 until n).sumOf { bit -> (mask shr bit) and 1 } }
+
+        for (subsetBits in subsets) {
+            val conditionStr = buildSubsetCondition(subsetBits, defaultPropsWithIndex)
+            body.beginControlFlow("if ($conditionStr)")
+            body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)
+            requiredProps.forEach { prop ->
+                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+            }
+            for (i in 0 until n) {
+                if (subsetBits and (1 shl i) != 0) {
+                    val (_, prop) = defaultPropsWithIndex[i]
+                    body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+                }
+            }
+            body.addStatement(C.STR_PAREN)
+            body.endControlFlow()
+        }
+
+        // Fallback: no default props present — omit them so Kotlin uses their default values.
+        body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)
+        requiredProps.forEach { prop ->
+            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+        }
+        body.addStatement(C.STR_PAREN)
+    }
+
+    /**
+     * Builds the condition string for a subset bitmask of default props.
+     * Props are grouped by mask index; combined bits for each mask are compared with ==
+     * so a single operation verifies all bits in that mask simultaneously.
+     *
+     * Example subset {optA=bit0, optB=bit1} both in mask0:
+     *   returns "(_mask0 and 3L) == 3L"
+     */
+    private fun buildSubsetCondition(
+        subsetBits: Int,
+        defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>
+    ): String {
+        val maskGroups = mutableMapOf<Int, Long>()
+        for (i in defaultPropsWithIndex.indices) {
+            if (subsetBits and (1 shl i) != 0) {
+                val globalIdx = defaultPropsWithIndex[i].first
+                val maskIdx = globalIdx / C.MASK_SIZE_BITS.toInt()
+                val bitIdx = globalIdx % C.MASK_SIZE_BITS.toInt()
+                maskGroups[maskIdx] = (maskGroups[maskIdx] ?: 0L) or (1L shl bitIdx)
+            }
+        }
+        return maskGroups.entries.joinToString(C.STR_AND_AND) { (maskIdx, combinedBits) ->
+            val bitsStr = formatMaskString(combinedBits)
+            "(_mask$maskIdx and $bitsStr) == $bitsStr"
+        }
+    }
+
+    /**
+     * Legacy copy-based return for classes with > MAX_DEFAULT_BRANCH_COUNT default props.
+     * Kept as-is since 2^N branches would produce excessive code bloat at that scale.
+     */
+    private fun emitCopyReturn(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>
+    ) {
         body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
         requiredProps.forEach { prop ->
             val expr = if (prop.isNullable) {
@@ -318,38 +416,25 @@ internal class StandardEmitter(
         }
         body.addStatement(C.STR_PAREN)
 
-        if (defaultProps.isNotEmpty()) {
+        if (defaultPropsWithIndex.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
-
             val conditions = mutableListOf<String>()
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
                     val defMaskStr = formatMaskString(defMask)
-
-                    conditions.add(
-                        C.TEMPLATE_MASK_CHECK_MATCH
-                            .format(i, defMaskStr)
-                    )
+                    conditions.add(C.TEMPLATE_MASK_CHECK_MATCH.format(i, defMaskStr))
                 }
             }
             body.add(conditions.joinToString(C.STR_OR))
             body.beginControlFlow(C.STR_CLOSE_PAREN_FLOW)
 
             body.addStatement(C.STR_RETURN_RESULT_COPY)
-            val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-                if (prop.hasDefaultValue) {
-                    Pair(globalIdx, prop)
-                } else {
-                    null
-                }
-            }
-            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
+            defaultPropsWithIndex.forEach { (propIndex, prop) ->
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
                 val bitMaskStr = formatMaskString(bitMask)
-
                 val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, bitMaskStr)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }

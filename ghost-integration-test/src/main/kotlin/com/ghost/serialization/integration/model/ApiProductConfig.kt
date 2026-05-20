@@ -4,16 +4,16 @@ import com.ghost.serialization.annotations.GhostSerialization
 import com.squareup.moshi.JsonClass
 import kotlinx.serialization.Serializable
 
+/**
+ * Realistic model with 2 required + 2 default-valued properties.
+ * Exercises the N=2 multi-branch path (4 constructor branches, 0 .copy() calls).
+ */
 @Serializable
 @JsonClass(generateAdapter = true)
 @GhostSerialization
-data class BenchUser(
+data class ApiProductConfig(
     val id: Int,
     val name: String,
-    val email: String,
-    val score: Double,
-    val isActive: Boolean = true,
-    val role: UserRole = UserRole.VIEWER,
-    val bio: String? = null
+    val maxRetries: Int = 3,
+    val isEnabled: Boolean = true
 )
-
