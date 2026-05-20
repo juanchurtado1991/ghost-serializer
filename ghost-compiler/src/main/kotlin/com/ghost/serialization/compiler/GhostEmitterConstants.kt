@@ -227,7 +227,6 @@ internal object GhostEmitterConstants {
     const val K_ANY = "kotlin.Any"
     const val STR_KOTLIN_PREFIX = "kotlin."
     const val STR_JAVA_PREFIX = "java."
-    const val STR_H_COMMA = "STR_H_C_"
     const val STR_H_VAL_PREFIX = "H_"
     const val STR_SERIALIZE_CALL = "%L.serialize(writer, %L)"
     const val STR_WRITER_VAL_L = "writer.value(%L)"
