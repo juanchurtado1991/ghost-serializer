@@ -61,7 +61,7 @@ class GhostConcurrencyExpansionTest {
         val dispatcher = Executors.newFixedThreadPool(numThreads).asCoroutineDispatcher()
         
         withContext(dispatcher) {
-            val jobs = (0 until 1000).map { i ->
+            val jobs = (0 until 1000).map { _ ->
                 launch {
                     Ghost.getSerializer(LargeStringModel::class)
                 }

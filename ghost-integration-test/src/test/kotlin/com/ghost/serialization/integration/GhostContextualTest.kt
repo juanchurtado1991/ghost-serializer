@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
