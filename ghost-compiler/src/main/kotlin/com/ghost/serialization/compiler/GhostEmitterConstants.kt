@@ -12,7 +12,7 @@ internal object GhostEmitterConstants {
     const val STR_DESERIALIZE = "deserialize"
     const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
     const val STR_NOTHING_TO_INLINE = "NOTHING_TO_INLINE"
-    const val DEFAULT_CHUNK_SIZE = 20
+    const val DEFAULT_CHUNK_SIZE = 40
     const val STR_READER = "reader"
     const val TEMPLATE_PEEK_TYPE = "val typeName = reader.peekStringField(%S) ?: reader.throwError(%S)"
     const val STR_MISSING_TYPE = "Missing discriminator field for sealed class"
