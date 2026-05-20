@@ -52,9 +52,6 @@ internal class FragmentedEmitter(
             )
         }
 
-        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
-            C.MASK_SIZE_BITS.toInt()
-
         for (index in 0 until maskCount) {
             contextBuilder.addProperty(
                 PropertySpec.builder(
@@ -152,11 +149,7 @@ internal class FragmentedEmitter(
             val maskIdx = globalIndex / 64
             val bitIdx = globalIndex % C.MASK_SIZE_BITS.toInt()
             val bitMask = 1L shl bitIdx
-            val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-                C.STR_BIT_MASK_MIN_LONG
-            } else {
-                C.FMT_LONG_LITERAL.format(bitMask)
-            }
+            val bitMaskStr = formatMaskString(bitMask)
             
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
             if (prop.isResilient) {
@@ -176,25 +169,10 @@ internal class FragmentedEmitter(
     }
 
     private fun emitValidation(body: CodeBlock.Builder) {
-        val maskCount = (properties.size + 63) / 64
-        val requiredMasks = LongArray(maskCount)
-        properties.forEachIndexed { index, it ->
-            if (!it.isNullable && !it.hasDefaultValue) {
-                val maskIdx = index / 64
-                val bitIdx = index % 64
-                requiredMasks[maskIdx] = requiredMasks[maskIdx] or (1L shl bitIdx)
-            }
-        }
-
         for (maskIdx in 0 until maskCount) {
             val reqMask = requiredMasks[maskIdx]
             if (reqMask != 0L) {
-
-                val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
-                    C.STR_BIT_MASK_MIN_LONG
-                } else {
-                    C.FMT_LONG_LITERAL.format(reqMask)
-                }
+                val reqMaskStr = formatMaskString(reqMask)
 
                 body.beginControlFlow(
                     C.TEMPLATE_IF_MASK_NOT_MET,
@@ -211,12 +189,7 @@ internal class FragmentedEmitter(
                     ) {
                         val bitIdx = propIdx % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
-
-                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-                            C.STR_BIT_MASK_MIN_LONG
-                        } else {
-                            C.FMT_LONG_LITERAL.format(bitMask)
-                        }
+                        val bitMaskStr = formatMaskString(bitMask)
 
                         body.beginControlFlow(
                             C.TEMPLATE_IF_MASK_MISSING,
@@ -254,25 +227,12 @@ internal class FragmentedEmitter(
         val defaultProps = properties.filter { it.hasDefaultValue }
         if (defaultProps.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
-            val maskCount = (properties.size + 63) / 64
-            val defaultMasks = LongArray(maskCount)
-            properties.forEachIndexed { index, it ->
-                if (it.hasDefaultValue) {
-                    val maskIdx = index / 64
-                    val bitIdx = index % 64
-                    defaultMasks[maskIdx] = defaultMasks[maskIdx] or (1L shl bitIdx)
-                }
-            }
 
             val conditions = mutableListOf<String>()
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
-                    val defMaskStr = if (defMask == Long.MIN_VALUE) {
-                        C.STR_BIT_MASK_MIN_LONG
-                    } else {
-                        C.FMT_LONG_LITERAL.format(defMask)
-                    }
+                    val defMaskStr = formatMaskString(defMask)
 
                     conditions.add(
                         C.TEMPLATE_IF_MASK_MATCH_BIT_F
@@ -298,12 +258,7 @@ internal class FragmentedEmitter(
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
-
-                val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-                    C.STR_BIT_MASK_MIN_LONG
-                } else {
-                    C.FMT_LONG_LITERAL.format(bitMask)
-                }
+                val bitMaskStr = formatMaskString(bitMask)
 
                 val valueExpr = prop
                     .getFragmentedDefaultValueReturnExpression(maskIdx, bitMaskStr)

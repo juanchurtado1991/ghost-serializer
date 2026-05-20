@@ -35,9 +35,6 @@ internal class StandardEmitter(
             )
         }
 
-        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
-                C.MASK_SIZE_BITS.toInt()
-
         for (i in 0 until maskCount) {
             body.addStatement(C.STR_MASK_INIT, i)
         }
@@ -178,11 +175,7 @@ internal class StandardEmitter(
         val maskIdx = index / C.MASK_SIZE_BITS.toInt()
         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
         val bitMask = 1L shl bitIdx
-        val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-            C.STR_BIT_MASK_MIN_LONG
-        } else {
-            C.FMT_LONG_LITERAL.format(bitMask)
-        }
+        val bitMaskStr = formatMaskString(bitMask)
 
         if (prop.isResilient) {
             body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
@@ -196,15 +189,11 @@ internal class StandardEmitter(
     }
 
     private fun emitFieldValidation(body: CodeBlock.Builder) {
-        val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
-        val requiredMasks = LongArray(maskCount)
         val requiredPropsByMask = Array(maskCount) { mutableListOf<GhostPropertyModel>() }
         
         properties.forEachIndexed { index, prop ->
             if (!prop.isNullable && !prop.hasDefaultValue) {
                 val maskIdx = index / C.MASK_SIZE_BITS.toInt()
-                val bitIdx = index % C.MASK_SIZE_BITS.toInt()
-                requiredMasks[maskIdx] = requiredMasks[maskIdx] or (1L shl bitIdx)
                 requiredPropsByMask[maskIdx].add(prop)
             }
         }
@@ -212,11 +201,7 @@ internal class StandardEmitter(
         for (i in 0 until maskCount) {
             val reqMask = requiredMasks[i]
             if (reqMask != 0L) {
-                val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
-                    C.STR_BIT_MASK_MIN_LONG
-                } else {
-                    C.FMT_LONG_LITERAL.format(reqMask)
-                }
+                val reqMaskStr = formatMaskString(reqMask)
 
                 val propsInMask = requiredPropsByMask[i]
 
@@ -225,11 +210,7 @@ internal class StandardEmitter(
                     val index = properties.indexOf(prop)
                     val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                     val bitMask = 1L shl bitIdx
-                    val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-                        C.STR_BIT_MASK_MIN_LONG
-                    } else {
-                        C.FMT_LONG_LITERAL.format(bitMask)
-                    }
+                    val bitMaskStr = formatMaskString(bitMask)
 
                     body.beginControlFlow(
                         C.TEMPLATE_IF_MASK_ZERO_SIMPLE,
@@ -252,11 +233,7 @@ internal class StandardEmitter(
                         val index = properties.indexOf(prop)
                         val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
-                        val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-                            C.STR_BIT_MASK_MIN_LONG
-                        } else {
-                            C.FMT_LONG_LITERAL.format(bitMask)
-                        }
+                        val bitMaskStr = formatMaskString(bitMask)
 
                         body.beginControlFlow(
                             C.TEMPLATE_IF_MASK_ZERO_SIMPLE,
@@ -314,27 +291,12 @@ internal class StandardEmitter(
 
         if (defaultProps.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
-            val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
-                    C.MASK_SIZE_BITS.toInt()
-
-            val defaultMasks = LongArray(maskCount)
-            properties.forEachIndexed { index, prop ->
-                if (prop.hasDefaultValue) {
-                    val maskIdx = index / C.MASK_SIZE_BITS.toInt()
-                    val bitIdx = index % C.MASK_SIZE_BITS.toInt()
-                    defaultMasks[maskIdx] = defaultMasks[maskIdx] or (1L shl bitIdx)
-                }
-            }
 
             val conditions = mutableListOf<String>()
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != 0L) {
-                    val defMaskStr = if (defMask == Long.MIN_VALUE) {
-                        C.STR_BIT_MASK_MIN_LONG
-                    } else {
-                        C.FMT_LONG_LITERAL.format(defMask)
-                    }
+                    val defMaskStr = formatMaskString(defMask)
 
                     conditions.add(
                         C.TEMPLATE_MASK_CHECK_MATCH
@@ -353,11 +315,7 @@ internal class StandardEmitter(
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
                 val bitMask = 1L shl bitIdx
-                val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
-                    C.STR_BIT_MASK_MIN_LONG
-                } else {
-                    C.FMT_LONG_LITERAL.format(bitMask)
-                }
+                val bitMaskStr = formatMaskString(bitMask)
 
                 val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, bitMaskStr)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)

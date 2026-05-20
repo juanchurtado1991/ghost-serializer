@@ -30,6 +30,40 @@ internal abstract class BaseDeserializeEmitter(
         } ?: listOf(it.jsonName))
     }
 
+    protected val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
+
+    protected val requiredMasks: LongArray by lazy {
+        val masks = LongArray(maskCount)
+        properties.forEachIndexed { index, prop ->
+            if (!prop.isNullable && !prop.hasDefaultValue) {
+                val maskIdx = index / C.MASK_SIZE_BITS.toInt()
+                val bitIdx = index % C.MASK_SIZE_BITS.toInt()
+                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)
+            }
+        }
+        masks
+    }
+
+    protected val defaultMasks: LongArray by lazy {
+        val masks = LongArray(maskCount)
+        properties.forEachIndexed { index, prop ->
+            if (prop.hasDefaultValue) {
+                val maskIdx = index / C.MASK_SIZE_BITS.toInt()
+                val bitIdx = index % C.MASK_SIZE_BITS.toInt()
+                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)
+            }
+        }
+        masks
+    }
+
+    protected fun formatMaskString(mask: Long): String {
+        return if (mask == Long.MIN_VALUE) {
+            C.STR_BIT_MASK_MIN_LONG
+        } else {
+            C.FMT_LONG_LITERAL.format(mask)
+        }
+    }
+
     protected val contextualSerializers = mutableMapOf<KSType, String>()
 
     protected fun buildCall(prop: GhostPropertyModel): CodeBlock {
