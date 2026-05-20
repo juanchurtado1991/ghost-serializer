@@ -376,19 +376,6 @@ internal class GhostCodeGenerator(
                     )
                     .build()
             )
-
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(
-                    C.STR_H_COMMA + cleanName,
-                    C.BYTE_STRING_CLASS,
-                    KModifier.PRIVATE
-                )
-                    .initializer(
-                        C.TEMPLATE_ENCODE_UTF8,
-                        C.FMT_JSON_FIELD_COMMA.format(name)
-                    )
-                    .build()
-            )
         }
 
         if (isEnum && enumValues != null) {
