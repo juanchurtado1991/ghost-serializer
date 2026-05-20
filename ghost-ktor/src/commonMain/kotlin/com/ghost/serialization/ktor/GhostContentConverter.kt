@@ -3,6 +3,8 @@ package com.ghost.serialization.ktor
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeWithWriter
+import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.releaseScratchBuffer
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.ByteArrayContent
@@ -10,7 +12,7 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
-import io.ktor.utils.io.core.readBytes
+import io.ktor.utils.io.core.readAvailable
 import io.ktor.utils.io.readRemaining
 import kotlin.reflect.KClass
 
@@ -41,7 +43,14 @@ class GhostContentConverter : ContentConverter {
         typeInfo: TypeInfo,
         content: ByteReadChannel
     ): Any {
-        val bytes = content.readRemaining().readBytes()
-        return Ghost.decodeFromBytes(bytes, typeInfo.type)
+        val packet = content.readRemaining()
+        val limit = packet.remaining.toInt()
+        val bytes = acquireScratchBuffer(limit)
+        try {
+            packet.readAvailable(bytes, 0, limit)
+            return Ghost.decodeFromBytes(bytes, typeInfo.type, limit)
+        } finally {
+            releaseScratchBuffer(bytes)
+        }
     }
 }

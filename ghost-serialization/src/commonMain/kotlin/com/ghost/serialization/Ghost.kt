@@ -36,7 +36,7 @@ expect fun discoverRegistries(): Iterable<GhostRegistry>
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 
 @OptIn(InternalGhostApi::class)
-expect fun <T> ghostInternalUseFlatReader(bytes: ByteArray, block: (GhostJsonFlatReader) -> T): T
+expect fun <T> ghostInternalUseFlatReader(bytes: ByteArray, limit: Int = bytes.size, block: (GhostJsonFlatReader) -> T): T
 
 @OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
@@ -332,8 +332,19 @@ object Ghost {
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
         source.request(Long.MAX_VALUE)
-        val bytes = source.buffer.readByteArray()
-        return ghostInternalUseFlatReader(bytes) { reader -> deserialize(reader) }
+        val limit = source.buffer.size.toInt()
+        val bytes = acquireScratchBuffer(limit)
+        try {
+            var offset = 0
+            while (offset < limit) {
+                val count = source.read(bytes, offset, limit - offset)
+                if (count == -1) break
+                offset += count
+            }
+            return ghostInternalUseFlatReader(bytes, limit) { reader -> deserialize(reader) }
+        } finally {
+            releaseScratchBuffer(bytes)
+        }
     }
 
     @OptIn(InternalGhostApi::class)
@@ -379,8 +390,8 @@ object Ghost {
 
     @Suppress("unused")
     @OptIn(InternalGhostApi::class)
-    fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>): T {
-        return ghostInternalUseFlatReader(bytes) { reader ->
+    fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>, limit: Int = bytes.size): T {
+        return ghostInternalUseFlatReader(bytes, limit) { reader ->
             val serializer = getSerializer(clazz)
                 ?: throwError("$NOT_FOUND ${clazz.simpleName}")
 
@@ -391,12 +402,23 @@ object Ghost {
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
         source.request(Long.MAX_VALUE)
-        val bytes = source.buffer.readByteArray()
-        return ghostInternalUseFlatReader(bytes) { reader ->
-            val serializer = getSerializer(clazz)
-                ?: throwError("$NOT_FOUND ${clazz.simpleName}")
+        val limit = source.buffer.size.toInt()
+        val bytes = acquireScratchBuffer(limit)
+        try {
+            var offset = 0
+            while (offset < limit) {
+                val count = source.read(bytes, offset, limit - offset)
+                if (count == -1) break
+                offset += count
+            }
+            return ghostInternalUseFlatReader(bytes, limit) { reader ->
+                val serializer = getSerializer(clazz)
+                    ?: throwError("$NOT_FOUND ${clazz.simpleName}")
 
-            serializer.deserialize(reader)
+                serializer.deserialize(reader)
+            }
+        } finally {
+            releaseScratchBuffer(bytes)
         }
     }
 
