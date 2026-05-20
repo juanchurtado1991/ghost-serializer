@@ -502,13 +502,31 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
         if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
             var allPlain = true
             var i = 0
-            while (i < length) {
-                val c = value[i].code
-                if (c < SPACE_INT || c >= ASCII_LIMIT || c == QUOTE_INT || c == BACKSLASH_INT) {
+            // Unrolled x4: 75% fewer loop condition checks for typical string lengths.
+            while (i + 3 < length) {
+                val c0 = value[i].code
+                val c1 = value[i + 1].code
+                val c2 = value[i + 2].code
+                val c3 = value[i + 3].code
+                if (c0 < SPACE_INT || c0 >= ASCII_LIMIT || c0 == QUOTE_INT || c0 == BACKSLASH_INT ||
+                    c1 < SPACE_INT || c1 >= ASCII_LIMIT || c1 == QUOTE_INT || c1 == BACKSLASH_INT ||
+                    c2 < SPACE_INT || c2 >= ASCII_LIMIT || c2 == QUOTE_INT || c2 == BACKSLASH_INT ||
+                    c3 < SPACE_INT || c3 >= ASCII_LIMIT || c3 == QUOTE_INT || c3 == BACKSLASH_INT
+                ) {
                     allPlain = false
                     break
                 }
-                i++
+                i += 4
+            }
+            if (allPlain) {
+                while (i < length) {
+                    val c = value[i].code
+                    if (c < SPACE_INT || c >= ASCII_LIMIT || c == QUOTE_INT || c == BACKSLASH_INT) {
+                        allPlain = false
+                        break
+                    }
+                    i++
+                }
             }
             if (allPlain) {
                 buffer.writeQuotedAscii(value, length)

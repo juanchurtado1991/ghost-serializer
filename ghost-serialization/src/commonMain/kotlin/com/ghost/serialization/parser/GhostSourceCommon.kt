@@ -10,6 +10,8 @@ import com.ghost.serialization.parser.GhostJsonConstants.HASH_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.MATCH_END
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
+import com.ghost.serialization.parser.GhostJsonConstants.SCAN_HASH_MASK
+import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_32
 import com.ghost.serialization.parser.GhostJsonConstants.WHITESPACE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.packScanResult
 
@@ -94,6 +96,46 @@ internal inline fun findClosingQuoteImpl(
     }
     return MATCH_END
 }
+
+/**
+ * Combined scan: finds the closing `"` of a JSON key AND builds the 4-byte
+ * dispatch hash in a **single pass**, eliminating the redundant [computeKeyHash]
+ * re-read of the first 4 bytes.
+ *
+ * Returns a packed [Long]: high 32 bits = end position, low 32 bits = dispatch hash.
+ * Returns `-1L` on escape, non-ASCII byte, or unterminated string — callers must
+ * fall back to the standard [findClosingQuoteImpl] + [computeKeyHash] path.
+ */
+internal inline fun scanKeyWithHashImpl(
+    position: Int,
+    limit: Int,
+    getByte: (Int) -> Int
+): Long {
+    var currentPos = position
+    var key = 0
+    var keyBytes = 0
+    val masks = GhostJsonConstants.ESCAPE_MASKS
+    while (currentPos < limit) {
+        val b = getByte(currentPos)
+        // Non-ASCII in a key is very rare but valid — fall back to slow path.
+        if (b >= ASCII_LIMIT) return -1L
+        if ((masks[b shr BITMASK_SHIFT] shr (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+            if (b == QUOTE_INT) {
+                // Pack end position (high 32) + dispatch hash (low 32).
+                return (currentPos.toLong() shl SHIFT_32) or (key.toLong() and SCAN_HASH_MASK)
+            }
+            return -1L // escape character — fall back
+        }
+        // Accumulate first 4 bytes for the dispatch hash (little-endian).
+        if (keyBytes < 4) {
+            key = key or (b shl (keyBytes shl 3))
+            keyBytes++
+        }
+        currentPos++
+    }
+    return -1L // unterminated
+}
+
 
 internal inline fun scanStringImpl(
     start: Int,
