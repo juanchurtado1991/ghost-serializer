@@ -8,6 +8,8 @@ import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.releaseScratchBuffer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -38,15 +40,29 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
         return Converter { body ->
             body.use {
-                ghostInternalUseFlatReader(
-                    it.bytes()
-                ) { reader ->
-                    if (reader.isNextNullValue()) {
-                        reader.consumeNull()
-                        null
-                    } else {
-                        serializer.deserialize(reader)
+                val source = it.source()
+                source.request(Long.MAX_VALUE)
+                val limit = source.buffer.size.toInt()
+                val bytes = acquireScratchBuffer(limit)
+                try {
+                    var offset = 0
+                    while (offset < limit) {
+                        val count = source.read(bytes, offset, limit - offset)
+                        if (count == -1) break
+                        offset += count
                     }
+                    ghostInternalUseFlatReader(
+                        bytes, limit
+                    ) { reader ->
+                        if (reader.isNextNullValue()) {
+                            reader.consumeNull()
+                            null
+                        } else {
+                            serializer.deserialize(reader)
+                        }
+                    }
+                } finally {
+                    releaseScratchBuffer(bytes)
                 }
             }
         }

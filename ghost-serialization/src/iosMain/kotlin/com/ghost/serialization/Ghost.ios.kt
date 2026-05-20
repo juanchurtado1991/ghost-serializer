@@ -46,13 +46,14 @@ actual fun <T> ghostInternalUseReader(
 
 actual fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
+    limit: Int,
     block: (GhostJsonFlatReader) -> T
 ): T {
     val reader = cachedFlatReader
         ?: GhostJsonFlatReader(bytes)
             .also { cachedFlatReader = it }
 
-    reader.reset(bytes)
+    reader.reset(bytes, limit)
     return block(reader)
 }
 
