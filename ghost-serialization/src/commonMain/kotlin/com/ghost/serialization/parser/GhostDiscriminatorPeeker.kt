@@ -95,37 +95,12 @@ object GhostDiscriminatorPeeker {
                     getByte(keyStart + keySize) == QUOTE_INT &&
                     source.contentEquals(keyStart, key)
                 ) {
-                    position = keyStart + keySize + 1
-
-                    // 3. Fast-path colon check
-                    val colonPosition = skipWhitespaceAndExpect(
-                        position,
+                    return tryExtractValue(
+                        source,
+                        keyStart + keySize + 1,
                         scanLimit,
-                        COLON_INT,
                         getByte
                     )
-
-                    if (colonPosition != -1) {
-                        position = colonPosition
-                        // 4. Fast-path opening quote check
-                        val quotePosition = skipWhitespaceAndExpect(
-                            position,
-                            scanLimit,
-                            QUOTE_INT,
-                            getByte
-                        )
-
-                        if (quotePosition != -1) {
-                            // 5. Extract value string
-                            return extractValue(
-                                source,
-                                quotePosition,
-                                scanLimit,
-                                getByte
-                            )
-                        }
-                    }
-                    return null
                 }
 
                 // Not the key. Skip this string safely.
@@ -138,6 +113,40 @@ object GhostDiscriminatorPeeker {
             }
         }
         return null
+    }
+
+    @PublishedApi
+    internal inline fun tryExtractValue(
+        source: GhostSource,
+        start: Int,
+        limit: Int,
+        crossinline getByte: (Int) -> Int
+    ): String? {
+        // 3. Fast-path colon check
+        val colonPosition = skipWhitespaceAndExpect(
+            start,
+            limit,
+            COLON_INT,
+            getByte
+        )
+        if (colonPosition == -1) return null
+
+        // 4. Fast-path opening quote check
+        val quotePosition = skipWhitespaceAndExpect(
+            colonPosition,
+            limit,
+            QUOTE_INT,
+            getByte
+        )
+        if (quotePosition == -1) return null
+
+        // 5. Extract value string
+        return extractValue(
+            source,
+            quotePosition,
+            limit,
+            getByte
+        )
     }
 
     @PublishedApi
