@@ -51,4 +51,11 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("kotlinVersion", libs.versions.kotlin.get())
+    systemProperty("kspVersion", libs.versions.ksp.get())
+    systemProperty("ghostVersion", libs.versions.publish.version.get())
+    dependsOn(
+        ":ghost-api:publishToMavenLocal",
+        ":ghost-serialization:publishToMavenLocal",
+        ":ghost-compiler:publishToMavenLocal",
+    )
 }

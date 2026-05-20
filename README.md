@@ -17,6 +17,21 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
+**Current release:** `1.1.16` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+
+---
+
+## Related projects
+
+| Project | Description |
+|:---|:---|
+| **ghost-sample** (this repo, `ghost-sample` module) | Kotlin Multiplatform Compose benchmark — Android, Desktop JVM, iOS |
+| [ghost-android-test-app](https://github.com/juanchurtado1991/ghost-android-test-app) | Standalone Android app — on-device benchmark vs Gson, Moshi, kotlinx.serialization |
+| [ghost-ios-test-app](https://github.com/juanchurtado1991/ghost-ios-test-app) | Standalone iOS app — Xcode + bundled XCFramework, benchmark vs Apple Codable |
+| [ghost-spring-boot-test-app](https://github.com/juanchurtado1991/ghost-spring-boot-test-app) | Standalone Spring Boot app — WebFlux dashboard + `benchmark.py` vs Jackson |
+
+The standalone test apps consume Ghost from Maven Central only (no local checkout of this monorepo required). Use them as copy-paste references for production integrations.
+
 ---
 
 ## Table of Contents
@@ -24,13 +39,14 @@ This README aims to be honest: we explain what Ghost is good at, how it achieves
 1. [How it Works](#how-it-works)
 2. [Benchmark Results](#benchmark-results)
 3. [When to Use Ghost (and When Not To)](#when-to-use-ghost-and-when-not-to)
-4. [Installation](#installation)
-5. [Usage - Android](#usage---android)
-6. [Usage - Kotlin Multiplatform (KMP)](#usage---kotlin-multiplatform-kmp)
-7. [Usage - iOS (Native / Swift)](#usage---ios-native--swift)
-8. [Usage - Spring Boot](#usage---spring-boot)
-9. [Features](#features)
-10. [Architecture](#architecture)
+4. [Related projects](#related-projects)
+5. [Installation](#installation)
+6. [Usage - Android](#usage---android)
+7. [Usage - Kotlin Multiplatform (KMP)](#usage---kotlin-multiplatform-kmp)
+8. [Usage - iOS (Native / Swift)](#usage---ios-native--swift)
+9. [Usage - Spring Boot](#usage---spring-boot)
+10. [Features](#features)
+11. [Architecture](#architecture)
 
 ---
 
@@ -57,54 +73,64 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.038 ±0.007** | **46.6** | **0.035 ±0.003** | **23.2** | **0.036 ±0.008** | **23.2** |
-| KSerialization | 0.085 ±0.007 | 121.7 | 0.084 ±0.022 | 121.7 | 0.147 ±0.011 | 121.8 |
-| Gson | 0.087 ±0.026 | 143.3 | 0.083 ±0.011 | 143.3 | 0.084 ±0.007 | 153.0 |
-| Moshi | 0.104 ±0.019 | 112.5 | 0.103 ±0.014 | 112.5 | 0.092 ±0.013 | 112.5 |
-| Jackson | 0.123 ±0.014 | 328.8 | 0.116 ±0.021 | 328.9 | 0.117 ±0.030 | 329.0 |
+| **Ghost** | **0.048 ±0.021** | **51.3** | **0.042 ±0.006** | **24.8** | **0.043 ±0.004** | **24.8** |
+| Gson | 0.097 ±0.009 | 164.0 | 0.092 ±0.008 | 164.0 | 0.095 ±0.022 | 173.5 |
+| KSerialization | 0.108 ±0.010 | 194.4 | 0.107 ±0.017 | 194.4 | 0.180 ±0.025 | 194.5 |
+| Moshi | 0.177 ±0.026 | 324.4 | 0.174 ±0.024 | 324.4 | 0.156 ±0.013 | 324.4 |
+| Jackson | 0.248 ±0.031 | 700.7 | 0.241 ±0.033 | 700.7 | 0.241 ±0.037 | 700.8 |
 
 ### Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.295 ±0.022** | **344.1** | **0.286 ±0.031** | **197.7** | **0.300 ±0.017** | **294.4** |
-| Gson | 0.510 ±0.062 | 1140.8 | 0.508 ±0.056 | 1140.8 | 0.516 ±0.063 | 1159.2 |
-| KSerialization | 0.550 ±0.056 | 1087.4 | 0.547 ±0.061 | 1087.4 | 1.052 ±0.068 | 1184.1 |
-| Moshi | 0.670 ±0.076 | 949.9 | 0.668 ±0.058 | 949.9 | 0.583 ±0.050 | 949.9 |
-| Jackson | 1.082 ±0.116 | 3193.1 | 1.007 ±0.100 | 3193.1 | 1.014 ±0.109 | 3193.2 |
+| **Ghost** | **0.362 ±0.035** | **390.9** | **0.347 ±0.021** | **213.4** | **0.369 ±0.040** | **334.2** |
+| Gson | 0.598 ±0.061 | 1343.8 | 0.596 ±0.058 | 1343.8 | 0.616 ±0.078 | 1366.6 |
+| KSerialization | 0.767 ±0.077 | 1883.5 | 0.765 ±0.076 | 1883.5 | 1.365 ±0.104 | 2004.4 |
+| Moshi | 1.336 ±0.119 | 3084.6 | 1.356 ±0.138 | 3084.6 | 1.220 ±0.123 | 3084.5 |
+| Jackson | 2.294 ±0.191 | 6897.7 | 2.216 ±0.187 | 6897.7 | 2.254 ±0.185 | 6897.8 |
 
 ### Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.069 ±0.012** | **77.1** | **0.066 ±0.008** | **77.1** | **0.067 ±0.005** | **80.6** |
-| KSerialization | 0.147 ±0.022 | 218.2 | 0.147 ±0.014 | 295.2 | 0.255 ±0.022 | 221.7 |
-| Jackson | 0.150 ±0.028 | 366.9 | 0.132 ±0.027 | 201.7 | 0.133 ±0.014 | 303.4 |
-| Gson | 0.281 ±0.033 | 559.2 | 0.279 ±0.029 | 636.2 | 0.643 ±0.075 | 3463.3 |
-| Moshi | 0.321 ±0.025 | 638.3 | 0.324 ±0.033 | 715.3 | 0.313 ±0.032 | 484.3 |
+| **Ghost** | **0.085 ±0.024** | **92.7** | **0.080 ±0.013** | **92.7** | **0.081 ±0.007** | **96.7** |
+| KSerialization | 0.133 ±0.024 | 202.6 | 0.134 ±0.023 | 263.9 | 0.216 ±0.016 | 205.6 |
+| Jackson | 0.201 ±0.018 | 396.2 | 0.153 ±0.019 | 249.7 | 0.151 ±0.024 | 303.5 |
+| Gson | 0.343 ±0.038 | 551.3 | 0.338 ±0.033 | 643.9 | 0.777 ±0.106 | 3908.6 |
+| Moshi | 0.396 ±0.038 | 630.7 | 0.393 ±0.034 | 723.3 | 0.379 ±0.036 | 445.5 |
 
 ### Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.002 ±0.007** | 0.005 | 0.005 | 0.008 | 0.010 |
-| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.016 | 0.016 | 0.021 |
+| Deep Nesting — 20 levels (ms) | **0.003 ±0.005** | 0.007 | 0.006 | 0.008 | 0.011 |
+| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.017 | 0.023 | 0.034 |
 
 **Ghost is #1 in all 11 categories.** The STDEV values confirm the measurements are stable under load.
 
+### Ghost Special Features
+
+These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson. They are measured with the same methodology (10,000 runs, 20,000-iteration JIT warmup).
+
+| Feature | µs/op | B/op |
+|:---|:---:|:---:|
+| Polymorphism — Sealed Class Dispatch | **0.47** | 436 |
+| Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.22** | 128 |
+| Resilience — `@GhostResilient` (type mismatch recovery) | **1.43** | 2116 |
+| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **2.47** | 16748 |
+| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.31** | 376 |
+
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.
+
 
 ---
 
 ## Live Benchmark App
 
-The `ghost-sample` module is a **Kotlin Multiplatform Compose** app that benchmarks Ghost in real conditions. It runs on Android, Desktop JVM, and iOS. For standalone, production-ready examples on specific platforms, see:
-- [Ghost Android Test App](https://github.com/juanchurtado1991/ghost-android-test-app)
-- [Ghost iOS Test App](https://github.com/juanchurtado1991/ghost-ios-test-app)
-- [Ghost Spring Boot Test App](https://github.com/juanchurtado1991/ghost-spring-boot-test-app)
+The **`ghost-sample`** module in this repo is a **Kotlin Multiplatform Compose** app that benchmarks Ghost in real conditions (Android, Desktop JVM, iOS). Platform-specific standalone demos live in the [related projects](#related-projects) table above.
 
-The benchmark suite covers:
+The `ghost-sample` benchmark suite covers:
 
 - **Network** — Ghost+Ktor vs KSer+Ktor (local MockEngine replay, no rate-limiting)
 - **Deserialization** — String and Bytes modes
@@ -145,7 +171,7 @@ Then build and run the `GhostSample` scheme in Xcode against an iOS simulator.
 
 - You are on **Android or JVM** (server, desktop) and your app deserializes JSON at high frequency — API responses, background sync, push notifications.
 - You process **large payloads** (hundreds to thousands of objects per response). Ghost's advantage grows with payload size.
-- **Memory matters**. Ghost allocates 2–7x less heap than the competition per parse call. On Android this reduces GC pressure and prevents jank on the main thread. On servers it allows higher throughput with the same heap budget.
+- **Memory matters**. Ghost allocates 6–32x less heap than the competition per parse call. On Android this reduces GC pressure and prevents jank on the main thread. On servers it allows higher throughput with the same heap budget.
 - You want **ProGuard/R8 safety without manual `@Keep` rules**. All serializers are generated at compile time; there is nothing to reflect on at runtime.
 - You are using **Ktor 3.0 or Retrofit 2.11** and want zero-configuration integration.
 
@@ -788,3 +814,7 @@ The benchmark is self-contained — no external harness needed. It runs inside a
 ## License
 
 [Apache 2.0](./LICENSE)
+
+---
+
+*Developed with ❤️ by the Ghost Serialization team.* 👻

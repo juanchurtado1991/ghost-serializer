@@ -8,8 +8,8 @@ import kotlinx.serialization.Serializable
 @JsonClass(generateAdapter = true)
 @GhostSerialization
 data class ComplexResponse(
-    val status: String,
+    val status: String = "ok",
     val data: List<BenchUser>,
     val meta: ExtremeMetadata,
-    val extras: String
+    val extras: String = ""
 )

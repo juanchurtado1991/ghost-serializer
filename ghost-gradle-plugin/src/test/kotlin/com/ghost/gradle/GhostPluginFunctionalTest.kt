@@ -14,21 +14,32 @@ class GhostPluginFunctionalTest {
     private val buildFile by lazy { testProjectDir.resolve("build.gradle.kts") }
     private val settingsFile by lazy { testProjectDir.resolve("settings.gradle.kts") }
 
+    private val kotlinVersion: String
+        get() = System.getProperty("kotlinVersion") ?: "1.9.24"
+
+    private val kspVersion: String
+        get() = System.getProperty("kspVersion") ?: "1.9.24-1.0.20"
+
+    private val ghostVersion: String
+        get() = System.getProperty("ghostVersion") ?: "1.1.16"
+
     @Test
     fun `plugin supports configuration cache`() {
         settingsFile.writeText("rootProject.name = \"cache-test\"")
         buildFile.writeText(
             """
             plugins {
-                kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "1.9.22"}"
+                kotlin("jvm") version "$kotlinVersion"
                 id("com.ghostserializer.ghost")
             }
             
             repositories {
+                mavenLocal()
                 mavenCentral()
             }
             
             ghost {
+                version.set("$ghostVersion")
                 autoInjectKtor.set(false)
                 autoInjectRetrofit.set(false)
             }
@@ -75,8 +86,8 @@ class GhostPluginFunctionalTest {
         buildFile.writeText(
             """
             plugins {
-                kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "1.9.24"}"
-                id("com.google.devtools.ksp") version "1.9.24-1.0.20"
+                kotlin("jvm") version "$kotlinVersion"
+                id("com.google.devtools.ksp") version "$kspVersion"
                 id("com.ghostserializer.ghost")
             }
             
@@ -85,8 +96,10 @@ class GhostPluginFunctionalTest {
                 mavenCentral()
             }
             
-            dependencies {
-                implementation("com.ghostserializer:ghost-serialization:1.1.14")
+            ghost {
+                version.set("$ghostVersion")
+                autoInjectKtor.set(false)
+                autoInjectRetrofit.set(false)
             }
         """.trimIndent()
         )
