@@ -1,24 +1,22 @@
 @file:OptIn(InternalGhostApi::class)
+@file:Suppress("FunctionName")
 
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.parser.GhostJsonConstants as C
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.releaseScratchBuffer
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
 import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
-import kotlin.math.pow
 
 /**
  * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
  * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
  */
 class GhostJsonFlatReader(
-    @InternalGhostApi var rawData: ByteArray,
+    @PublishedApi internal var rawData: ByteArray,
     var maxDepth: Int = C.MAX_DEPTH,
     var strictMode: Boolean = false,
     var coerceStringsToNumbers: Boolean = false,
@@ -32,11 +30,27 @@ class GhostJsonFlatReader(
     @PublishedApi
     internal var limit: Int = rawData.size
 
-    @InternalGhostApi
-    var position: Int = 0
+    @PublishedApi
+    internal var position: Int = 0
+
+    @PublishedApi
+    internal var nextTokenByte: Int = C.RESET_TOKEN_BYTE
 
     @InternalGhostApi
-    var nextTokenByte: Int = C.RESET_TOKEN_BYTE
+    fun _getPosition(): Int = position
+
+    @InternalGhostApi
+    fun _setPosition(p: Int) {
+        position = p
+    }
+
+    @InternalGhostApi
+    fun _getRawData(): ByteArray = rawData
+
+    @InternalGhostApi
+    fun _setNextTokenByte(t: Int) {
+        nextTokenByte = t
+    }
 
     internal val stringPool = arrayOfNulls<String>(C.STR_POOL_SIZE)
 
@@ -44,18 +58,26 @@ class GhostJsonFlatReader(
 
     var depth: Int = 0
 
+    /**
+     * Gets the byte at the specified index, masking it to a positive integer.
+     */
     @PublishedApi
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun getByte(index: Int): Int {
         return rawData[index].toInt() and C.BYTE_MASK
     }
 
-    @PublishedApi
+    /**
+     * Helper to verify if the given byte is a valid JSON numeric digit.
+     */
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun isDigit(byteCode: Int): Boolean {
-        return (C.DIGIT_BITMASK shr byteCode) and C.BYTE_SHIFT_UNIT != C.RESULT_NONE
+        return (byteCode xor C.ZERO_INT) < C.BASE_TEN
     }
 
+    /**
+     * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
+     */
     fun throwError(message: String): Nothing {
         val errorPosition = position
         val errorEnd = if (errorPosition > limit) {
@@ -84,11 +106,17 @@ class GhostJsonFlatReader(
         )
     }
 
+    /**
+     * Skips forward in the byte array by [n] bytes and resets [nextTokenByte].
+     */
     fun internalSkip(n: Int) {
         position += n
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
+    /**
+     * Advances the position past any whitespace and caches the next non-whitespace token byte.
+     */
     fun skipWhitespace() {
         val nextPos = source.findNextNonWhitespace(position, limit)
         if (nextPos != -1) {
@@ -100,6 +128,9 @@ class GhostJsonFlatReader(
         }
     }
 
+    /**
+     * Peeks at the next key to see if it matches the discriminator name without consuming it.
+     */
     fun peekDiscriminator(key: String = C.DEFAULT_DISCRIMINATOR_KEY): String? {
         if (key == C.DEFAULT_DISCRIMINATOR_KEY) {
             return peekDiscriminator(C.TYPE_BS)
@@ -107,6 +138,9 @@ class GhostJsonFlatReader(
         return peekDiscriminator(key.encodeUtf8())
     }
 
+    /**
+     * Peeks at the next key to see if it matches the discriminator byte string without consuming it.
+     */
     fun peekDiscriminator(key: ByteString): String? {
         return GhostDiscriminatorPeeker.peek(
             source,
@@ -118,15 +152,26 @@ class GhostJsonFlatReader(
         )
     }
 
+    /**
+     * Peeks and returns the next token byte in the stream, skipping preceding whitespaces.
+     */
     fun peekNextToken(): Int {
         val cached = nextTokenByte
-        if (cached != -1) { return cached }
+        if (cached != -1) {
+            return cached
+        }
         skipWhitespace()
         return nextTokenByte
     }
 
+    /**
+     * Peeks and returns the next token byte as a [Byte].
+     */
     fun peekByte(): Byte = peekNextToken().toByte()
 
+    /**
+     * Consumes and returns the next non-whitespace token byte in the stream.
+     */
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
         if (nextToken == -1) {
@@ -136,6 +181,9 @@ class GhostJsonFlatReader(
         return nextToken
     }
 
+    /**
+     * Skips and validates that the next characters in the stream match the [expected] byte sequence.
+     */
     @InternalGhostApi
     fun skipAndValidateLiteral(expected: ByteString) {
         if (!source.contentEquals(position, expected)) {
@@ -145,46 +193,9 @@ class GhostJsonFlatReader(
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
-    fun readQuotedString(): String {
-        return readQuotedStringImpl(
-            getPosition = { position },
-            setPosition = { position = it },
-            getLimit = { limit },
-            getNextNonWhitespace = { nextNonWhitespace() },
-            setNextTokenByte = { nextTokenByte = it },
-            getByte = { getByte(it) },
-            getStringPool = { stringPool },
-            setLastScanContentWas7BitOnly = { lastScanContentWas7BitOnly = it },
-            scanString = { p, lim -> source.scanString(p, lim) },
-            decodeJsonStringRange = { s, e, asc -> source.decodeJsonStringRange(s, e, asc) },
-            contentEqualsString = { s, len, str -> source.contentEqualsString(s, len, str) },
-            parseUnicodeHex = { parseUnicodeHex(it) },
-            throwError = { throwError(it) }
-        )
-    }
-
-    fun skipQuotedString() {
-        skipQuotedStringImpl(
-            getPosition = { position },
-            setPosition = { position = it },
-            getLimit = { limit },
-            getNextNonWhitespace = { nextNonWhitespace() },
-            setNextTokenByte = { nextTokenByte = it },
-            getByte = { getByte(it) },
-            findClosingQuote = { p, lim -> source.findClosingQuote(p, lim) },
-            parseUnicodeHex = { parseUnicodeHex(it) },
-            throwError = { throwError(it) }
-        )
-    }
-
-    private fun parseUnicodeHex(currentPosition: Int): Int {
-        return parseUnicodeHexImpl(
-            currentPosition = currentPosition,
-            getByte = { getByte(it) },
-            throwError = { throwError(it) }
-        )
-    }
-
+    /**
+     * Resets the reader's state to process a new byte payload.
+     */
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
         this.rawData = newData
         source.data = newData
@@ -200,480 +211,432 @@ class GhostJsonFlatReader(
         this.lastScanContentWas7BitOnly = false
     }
 
+    /**
+     * Begins consumption of a JSON object '{'. Increments validation depth.
+     */
     fun beginObject() {
-        beginObjectImpl(
-            nextNonWhitespace = { nextNonWhitespace() },
-            getDepth = { depth },
-            setDepth = { depth = it },
-            maxDepth = maxDepth,
-            throwError = { throwError(it) }
-        )
+        if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
+            throwError(C.ERR_EXPECTED_BEGIN_OBJ)
+        }
+        depth++
+        if (depth > maxDepth) {
+            throwError(C.ERR_DEPTH_EXCEEDED)
+        }
     }
 
+    /**
+     * Ends consumption of a JSON object '}'. Decrements validation depth.
+     */
     fun endObject() {
-        endObjectImpl(
-            nextNonWhitespace = { nextNonWhitespace() },
-            getDepth = { depth },
-            setDepth = { depth = it },
-            throwError = { throwError(it) }
-        )
+        if (nextNonWhitespace() != C.CLOSE_OBJ_INT) {
+            throwError(C.ERR_EXPECTED_END_OBJ)
+        }
+        depth--
     }
 
+    /**
+     * Begins consumption of a JSON array '['. Increments validation depth.
+     */
     fun beginArray() {
-        beginArrayImpl(
-            nextNonWhitespace = { nextNonWhitespace() },
-            getDepth = { depth },
-            setDepth = { depth = it },
-            maxDepth = maxDepth,
-            throwError = { throwError(it) }
-        )
+        if (nextNonWhitespace() != C.OPEN_ARR_INT) {
+            throwError(C.ERR_EXPECTED_BEGIN_ARR)
+        }
+        depth++
+        if (depth > maxDepth) {
+            throwError(C.ERR_DEPTH_EXCEEDED)
+        }
     }
 
+    /**
+     * Ends consumption of a JSON array ']'. Decrements validation depth.
+     */
     fun endArray() {
-        endArrayImpl(
-            nextNonWhitespace = { nextNonWhitespace() },
-            getDepth = { depth },
-            setDepth = { depth = it },
-            throwError = { throwError(it) }
-        )
+        if (nextNonWhitespace() != C.CLOSE_ARR_INT) {
+            throwError(C.ERR_EXPECTED_END_ARR)
+        }
+        depth--
     }
 
+    /**
+     * Checks if there are more elements in the current JSON container.
+     */
     fun hasNext(): Boolean {
-        return hasNextImpl(
-            peekNextToken = { peekNextToken() },
-            internalSkip = { internalSkip(it) },
-            throwError = { throwError(it) }
-        )
+        val token = peekNextToken()
+        if (
+            token == C.CLOSE_ARR_INT ||
+            token == C.CLOSE_OBJ_INT ||
+            token == C.MATCH_END
+        ) {
+            return false
+        }
+        if (token == C.COMMA_INT) {
+            internalSkip(1)
+            val next = peekNextToken()
+            if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
+                throwError(C.ERR_TRAILING_COMMA)
+            }
+        }
+        return true
     }
 
+    /**
+     * Consumes any comma separator and returns the next object key string. Returns null if object ends.
+     */
     fun nextKey(): String? {
-        return nextKeyImpl(
-            peekNextToken = { peekNextToken() },
-            internalSkip = { internalSkip(it) },
-            readQuotedString = { readQuotedString() },
-            throwError = { throwError(it) }
-        )
+        val token = peekNextToken()
+        if (token == C.CLOSE_OBJ_INT) {
+            return null
+        }
+        if (token == C.COMMA_INT) {
+            internalSkip(1)
+            if (peekNextToken() == C.CLOSE_OBJ_INT) {
+                throwError(C.ERR_TRAILING_COMMA)
+            }
+        }
+        return readQuotedString()
     }
 
+    /**
+     * Consumes the ':' key-value separator character.
+     */
     fun consumeKeySeparator() {
-        consumeKeySeparatorImpl(
-            nextNonWhitespace = { nextNonWhitespace() },
-            throwError = { throwError(it) }
-        )
+        if (nextNonWhitespace() != C.COLON_INT) {
+            throwError(C.ERR_EXPECTED_COLON)
+        }
     }
 
+    /**
+     * Consumes the array element separating comma if present.
+     */
     fun consumeArraySeparator() {
-        consumeArraySeparatorImpl(
-            peekNextToken = { peekNextToken() },
-            internalSkip = { internalSkip(it) }
-        )
+        if (peekNextToken() == C.COMMA_INT) {
+            internalSkip(1)
+        }
     }
 
+    /**
+     * Parses and returns the next [Boolean] value.
+     */
     fun nextBoolean(): Boolean {
-        return nextBooleanImpl(
-            peekNextToken = { peekNextToken() },
-            skipAndValidateLiteral = { skipAndValidateLiteral(it) },
-            coerceBooleans = coerceBooleans,
-            internalSkip = { internalSkip(it) },
-            readQuotedString = { readQuotedString() },
-            throwError = { throwError(it) }
-        )
+        val token = peekNextToken()
+        if (token == C.TRUE_CHAR_INT) {
+            skipAndValidateLiteral(C.TRUE_BS)
+            return true
+        }
+        if (token == C.FALSE_CHAR_INT) {
+            skipAndValidateLiteral(C.FALSE_BS)
+            return false
+        }
+        if (coerceBooleans) {
+            if (token == C.ONE_INT) {
+                internalSkip(1)
+                return true
+            }
+            if (token == C.ZERO_INT) {
+                internalSkip(1)
+                return false
+            }
+            if (token == C.QUOTE_INT) {
+                val s = readQuotedString().lowercase()
+                return when (s) {
+                    C.COERCE_TRUE_STR,
+                    C.COERCE_YES_STR,
+                    C.COERCE_ON_STR,
+                    C.COERCE_1_STR,
+                    C.COERCE_Y_STR -> true
+
+                    C.COERCE_FALSE_STR,
+                    C.COERCE_NO_STR,
+                    C.COERCE_OFF_STR,
+                    C.COERCE_0_STR,
+                    C.COERCE_N_STR -> false
+
+                    else -> throwError("${C.ERR_EXPECTED_BOOLEAN} \"$s\"")
+                }
+            }
+        }
+        throwError(C.ERR_EXPECTED_BOOLEAN)
     }
 
+    /**
+     * Parses and returns the next string literal.
+     */
     fun nextString(): String = readQuotedString()
 
+    /**
+     * Peeks whether the next JSON token is the null value token.
+     */
     fun isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
+    /**
+     * Consumes the null value literal from the stream.
+     */
     fun consumeNull() {
         skipAndValidateLiteral(C.NULL_BS)
     }
 
+    /**
+     * Selects name and consumes the key separator.
+     */
     fun selectNameAndConsume(options: JsonReaderOptions): Int =
         internalSelect(options, consumeSeparator = true)
 
+    /**
+     * Selects matching string options.
+     */
     fun selectString(options: JsonReaderOptions): Int =
         internalSelect(options, consumeSeparator = false)
 
+    /**
+     * Low-level helper to search and return matched index in options lookup table.
+     */
     private fun internalSelect(options: JsonReaderOptions, consumeSeparator: Boolean): Int {
-        return internalSelectImpl(
-            options = options,
-            consumeSeparator = consumeSeparator,
-            peekNextToken = { peekNextToken() },
-            internalSkip = { internalSkip(it) },
-            getPosition = { position },
-            setPosition = { position = it },
-            getLimit = { limit },
-            findClosingQuote = { start, limit -> source.findClosingQuote(start, limit) },
-            computeKeyHash = { start, length ->
-                computeKeyHashImpl(start, length) {
-                    rawData[it].toInt() and C.BYTE_MASK
+        var token = peekNextToken()
+        if (token == C.CLOSE_OBJ_INT) {
+            return -1
+        }
+        if (token == C.COMMA_INT) {
+            internalSkip(1)
+            token = peekNextToken()
+            if (token == C.CLOSE_OBJ_INT) {
+                throwError(C.ERR_TRAILING_COMMA)
+            }
+        }
+
+        if (token != C.QUOTE_INT) {
+            throwError(
+                if (consumeSeparator) {
+                    C.ERR_EXPECTED_KEY
+                } else {
+                    C.ERR_EXPECTED_STRING
                 }
-            },
-            verifyKeyMatch = { start, length, expected, consumeSep ->
-                verifyKeyMatchImpl(
-                    start = start,
-                    length = length,
-                    expected = expected,
-                    consumeSeparator = consumeSep,
-                    setPosition = { position = it },
-                    setNextTokenByte = { nextTokenByte = it },
-                    getLimit = { limit },
-                    getByte = {
-                        rawData[it].toInt() and C.BYTE_MASK
-                    },
-                    consumeKeySeparator = { consumeKeySeparator() },
-                    contentEquals = { startPos, expectedStr -> source.contentEquals(startPos, expectedStr) }
-                )
-            },
-            setNextTokenByte = { nextTokenByte = it },
-            getByte = {
-                rawData[it].toInt() and C.BYTE_MASK
-            },
-            consumeKeySeparator = { consumeKeySeparator() },
-            strictMode = strictMode,
-            decodeToString = { start, end -> source.decodeToString(start, end) },
-            throwError = { throwError(it) }
-        )
+            )
+        }
+
+        val start = position + 1
+        val end = source.findClosingQuote(start, limit)
+        if (end == -1) {
+            throwError(C.UNTERMINATED_STRING_ERROR)
+        }
+
+        val length = end - start
+        val key = computeKeyHash(start, length)
+        val hasIndex = ((key * options.multiplier + length) shr options.shift) and C.HASH_MASK
+        val index = options.dispatch[hasIndex]
+
+        if (index != C.MATCH_END) {
+            if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {
+                return index
+            }
+        }
+
+        // No match found
+        val newPos = end + 1
+        position = newPos
+        nextTokenByte = C.MATCH_END
+        if (consumeSeparator) {
+            if (newPos < limit && getByte(newPos) == C.COLON_INT) {
+                position = newPos + 1
+            } else {
+                consumeKeySeparator()
+            }
+        } else if (strictMode) {
+            val unknownKey = source.decodeToString(start, end)
+            throwError("${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey")
+        }
+
+        return C.MATCH_NONE
     }
 
+    /**
+     * Computes the 32-bit hash value of the string range.
+     */
+    private fun computeKeyHash(start: Int, length: Int): Int {
+        var key = 0
+        if (length >= 4) {
+            val b0 = rawData[start].toInt() and C.BYTE_MASK
+            val b1 = rawData[start + 1].toInt() and C.BYTE_MASK
+            val b2 = rawData[start + 2].toInt() and C.BYTE_MASK
+            val b3 = rawData[start + 3].toInt() and C.BYTE_MASK
+            key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)
+        } else {
+            if (length >= 1) {
+                key = key or (rawData[start].toInt() and C.BYTE_MASK)
+            }
+            if (length >= 2) {
+                key = key or ((rawData[start + 1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)
+            }
+            if (length >= 3) {
+                key = key or ((rawData[start + 2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)
+            }
+        }
+        return key
+    }
+
+    /**
+     * Performs a fast comparison of the parsed string against expected bytes to verify matches.
+     */
+    private fun verifyKeyMatch(
+        start: Int,
+        length: Int,
+        expected: ByteString,
+        consumeSeparator: Boolean
+    ): Boolean {
+        if (expected.size == length && source.contentEquals(start, expected)) {
+            val endPos = start + length
+            val newPos = endPos + 1
+            position = newPos
+            nextTokenByte = -1
+            if (consumeSeparator) {
+                if (newPos < limit) {
+                    val colonToken = getByte(newPos)
+                    if (colonToken == C.COLON_INT) {
+                        position = newPos + 1
+                    } else {
+                        consumeKeySeparator()
+                    }
+                } else {
+                    consumeKeySeparator()
+                }
+            }
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Peeks at a key name and returns it if it is a string match.
+     */
     fun peekStringField(name: String): String? {
         return peekDiscriminator(name)
     }
 
+    /**
+     * Skips the next complete value token (object, array, string, number, boolean, null) from the stream.
+     */
     fun skipValue() {
-        skipValueImpl(
-            peekNextToken = { peekNextToken() },
-            beginObject = { beginObject() },
-            hasNext = { hasNext() },
-            skipQuotedString = { skipQuotedString() },
-            consumeKeySeparator = { consumeKeySeparator() },
-            skipValue = { skipValue() },
-            endObject = { endObject() },
-            beginArray = { beginArray() },
-            endArray = { endArray() },
-            skipAndValidateLiteral = { skipAndValidateLiteral(it) },
-            skipNumber = { skipNumber() },
-            throwError = { throwError(it) }
-        )
+        val token = peekNextToken()
+        when (token) {
+            C.OPEN_OBJ_INT -> {
+                beginObject()
+                while (hasNext()) {
+                    if (peekNextToken() != C.QUOTE_INT) {
+                        throwError(C.ERR_EXPECTED_KEY)
+                    }
+                    skipQuotedString()
+                    consumeKeySeparator()
+                    skipValue()
+                }
+                endObject()
+            }
+
+            C.OPEN_ARR_INT -> {
+                beginArray()
+                while (hasNext()) {
+                    skipValue()
+                }
+                endArray()
+            }
+
+            C.QUOTE_INT -> {
+                skipQuotedString()
+            }
+            C.TRUE_CHAR_INT -> {
+                skipAndValidateLiteral(C.TRUE_BS)
+            }
+            C.FALSE_CHAR_INT -> {
+                skipAndValidateLiteral(C.FALSE_BS)
+            }
+            C.NULL_CHAR_INT -> {
+                skipAndValidateLiteral(C.NULL_BS)
+            }
+
+            else -> {
+                skipNumber()
+            }
+        }
     }
 
+    /**
+     * Reads a list of items using the provided [itemParser].
+     */
     inline fun <T> readList(crossinline itemParser: () -> T): List<T> {
-        return readListImpl(
-            beginArray = { beginArray() },
-            peekNextToken = { peekNextToken() },
-            endArray = { endArray() },
-            getInitialCollectionCapacity = { initialCollectionCapacity },
-            getMaxCollectionSize = { maxCollectionSize },
-            itemParser = { itemParser() },
-            nextNonWhitespace = { nextNonWhitespace() },
-            decrementDepth = { depth-- },
-            throwError = { throwError(it) }
-        )
+        beginArray()
+        if (peekNextToken() == C.CLOSE_ARR_INT) {
+            endArray()
+            return emptyList()
+        }
+        val list = ArrayList<T>(initialCollectionCapacity)
+        val maxSize = maxCollectionSize
+
+        while (true) {
+            list.add(itemParser())
+            val next = nextNonWhitespace()
+            if (next == C.CLOSE_ARR_INT) {
+                depth--
+                break
+            }
+            if (next != C.COMMA_INT) {
+                throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
+            }
+            if (list.size > maxSize) {
+                throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+            }
+        }
+        return list
     }
 
+    /**
+     * Reads a map of keys and values using the provided [keyParser] and [valueParser].
+     */
     inline fun <K, V> readMap(
         crossinline keyParser: () -> K,
         crossinline valueParser: () -> V
     ): Map<K, V> {
-        return readMapImpl(
-            beginObject = { beginObject() },
-            peekNextToken = { peekNextToken() },
-            endObject = { endObject() },
-            getInitialCollectionCapacity = { initialCollectionCapacity },
-            getMaxCollectionSize = { maxCollectionSize },
-            keyParser = { keyParser() },
-            consumeKeySeparator = { consumeKeySeparator() },
-            valueParser = { valueParser() },
-            nextNonWhitespace = { nextNonWhitespace() },
-            decrementDepth = { depth-- },
-            throwError = { throwError(it) }
-        )
-    }
-
-    @InternalGhostApi
-    inline fun <T> decodeResilient(crossinline block: () -> T): T? {
-        return decodeResilientImpl(
-            getPosition = { position },
-            setPosition = { position = it },
-            getNextTokenByte = { nextTokenByte },
-            setNextTokenByte = { nextTokenByte = it },
-            skipValue = { skipValue() },
-            block = { block() }
-        )
-    }
-
-    fun nextFloat(): Float = nextFloatImpl(
-        prepareNumericHeader = { prepareNumericHeader() },
-        validateLeadingZero = { validateLeadingZero() },
-        readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
-        throwError = { throwError(it) },
-        getPosition = { position },
-        setPosition = { position = it },
-        getLimit = { limit },
-        getByte = { getByte(it) },
-        isExponentMarker = { isExponentMarker(it) },
-        parseExponentValue = { parseExponentValue() },
-        getFloatPowerOfTen = { getFloatPowerOfTen(it) },
-        validateNumericRangeFloat = { validateNumericRangeFloat(it) },
-        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
-        setNextTokenByte = { nextTokenByte = it }
-    )
-
-    fun nextDouble(): Double = nextDoubleImpl(
-        prepareNumericHeader = { prepareNumericHeader() },
-        validateLeadingZero = { validateLeadingZero() },
-        readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
-        throwError = { throwError(it) },
-        getPosition = { position },
-        setPosition = { position = it },
-        getLimit = { limit },
-        getByte = { getByte(it) },
-        isExponentMarker = { isExponentMarker(it) },
-        parseExponentValue = { parseExponentValue() },
-        getDoublePowerOfTen = { getDoublePowerOfTen(it) },
-        validateNumericRange = { validateNumericRange(it) },
-        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
-        setNextTokenByte = { nextTokenByte = it }
-    )
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun parseExponentValue(): Int {
-        position++
-        var isExpNegative = false
-        if (position < limit) {
-            val marker = getByte(position)
-            if (marker == C.MINUS_INT) {
-                isExpNegative = true
-                position++
-            } else if (marker == C.PLUS_INT) {
-                position++
-            }
+        beginObject()
+        if (peekNextToken() == C.CLOSE_OBJ_INT) {
+            endObject()
+            return emptyMap()
         }
 
-        var expValue = 0
-        var hasExpDigits = false
-        while (position < limit) {
-            val currentByteInt = getByte(position)
-            if (isDigit(currentByteInt)) {
-                expValue = expValue * C.BASE_TEN + (currentByteInt - C.ZERO_INT)
-                hasExpDigits = true
-                position++
-            } else break
-        }
+        val map = HashMap<K, V>(initialCollectionCapacity)
+        val maxSize = maxCollectionSize
 
-        if (!hasExpDigits) { throwError(C.ERR_EXPECTED_EXPONENT_DIGITS) }
-        return if (isExpNegative) -expValue else expValue
-    }
+        while (true) {
+            val key = keyParser()
+            consumeKeySeparator()
+            val value = valueParser()
+            map[key] = value
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun getFloatPowerOfTen(exponent: Int): Float {
-        return if (exponent > 0) {
-            if (exponent < C.POWERS_OF_TEN_FLOAT.size) {
-                C.POWERS_OF_TEN_FLOAT[exponent]
-            } else {
-                10.0f.pow(exponent.toFloat())
-            }
-        } else {
-            val absExp = -exponent
-            if (absExp < C.INVERSE_POWERS_OF_TEN_FLOAT.size) {
-                C.INVERSE_POWERS_OF_TEN_FLOAT[absExp]
-            } else {
-                10.0f.pow(exponent.toFloat())
-            }
-        }
-    }
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun getDoublePowerOfTen(exponent: Int): Double {
-        return if (exponent > 0) {
-            if (exponent < C.POWERS_OF_TEN.size) {
-                C.POWERS_OF_TEN[exponent]
-            } else {
-                10.0.pow(exponent.toDouble())
-            }
-        } else {
-            val absExp = -exponent
-            if (absExp < C.INVERSE_POWERS_OF_TEN.size) {
-                C.INVERSE_POWERS_OF_TEN[absExp]
-            } else {
-                10.0.pow(exponent.toDouble())
-            }
-        }
-    }
-
-    fun nextInt(): Int = nextIntImpl(
-        prepareNumericHeader = { prepareNumericHeader() },
-        getPosition = { position },
-        getLimit = { limit },
-        getByte = { getByte(it) },
-        handleLeadingZero = { handleLeadingZero() },
-        parseIntDigits = { neg, start -> parseIntDigits(neg, start) },
-        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() }
-    )
-
-    fun nextLong(): Long = nextLongImpl(
-        prepareNumericHeader = { prepareNumericHeader() },
-        getPosition = { position },
-        getLimit = { limit },
-        getByte = { getByte(it) },
-        handleLeadingZero = { handleLeadingZero() },
-        parseLongDigits = { neg, start -> parseLongDigits(neg, start) },
-        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() }
-    )
-
-    private fun prepareNumericHeader(): Int {
-        if (nextTokenByte == C.RESET_TOKEN_BYTE) { skipWhitespace() }
-        if (position >= limit) { throwError(C.ERR_EXPECTED_NUMBER) }
-
-        var header = 0
-        var token = nextTokenByte
-
-        if (token == C.QUOTE_INT) {
-            if (!coerceStringsToNumbers) { throwError(C.ERR_COERCION_DISABLED) }
-            position++
-            nextTokenByte = C.RESET_TOKEN_BYTE
-            skipWhitespace()
-            if (position >= limit) { throwError(C.ERR_EXPECTED_NUMBER) }
-            token = nextTokenByte
-            header = header or C.NUMERIC_HEADER_QUOTED
-        }
-
-        if (token == C.MINUS_INT) {
-            if (position + 1 >= limit) { throwError(C.ERR_ISOLATED_MINUS) }
-            position++
-            nextTokenByte = C.RESET_TOKEN_BYTE
-            header = header or C.NUMERIC_HEADER_NEGATIVE
-        }
-
-        return header
-    }
-
-    private fun handleLeadingZero() {
-        val nextCursor = position + 1
-        if (nextCursor < limit) {
-            val nextDigitByte = getByte(nextCursor)
-            if ((C.DIGIT_BITMASK shr nextDigitByte) and C.BYTE_SHIFT_UNIT != C.RESULT_NONE) {
-                throwError(C.ERR_LEADING_ZEROS)
-            }
-        }
-        internalSkip(1)
-    }
-
-    private fun parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int = parseIntDigitsImpl(
-        isNegative = isNegative,
-        startOfNumber = startOfNumber,
-        readNumericLoop = { onDigit, onBreak -> readNumericLoop(onDigit, onBreak) },
-        calculateIntWithOverflowCheck = { curr, digit, neg -> calculateIntWithOverflowCheck(curr, digit, neg) },
-        isNumericSeparator = { isNumericSeparator(it) },
-        setPosition = { position = it },
-        nextDouble = { nextDouble() },
-        throwError = { throwError(it) },
-        setNextTokenByte = { nextTokenByte = it }
-    )
-
-    private fun parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long = parseLongDigitsImpl(
-        isNegative = isNegative,
-        startOfNumber = startOfNumber,
-        readNumericLoop = { onDigit, onBreak -> readNumericLoop(onDigit, onBreak) },
-        calculateLongWithOverflowCheck = { curr, digit, neg -> calculateLongWithOverflowCheck(curr, digit, neg) },
-        isNumericSeparator = { isNumericSeparator(it) },
-        setPosition = { position = it },
-        nextDouble = { nextDouble() },
-        throwError = { throwError(it) },
-        setNextTokenByte = { nextTokenByte = it }
-    )
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun consumeNumericCoercionFooter() {
-        if (position >= limit || getByte(position) != C.QUOTE_INT) {
-            throwError(C.ERR_EXPECTED_COERCION_QUOTE)
-        }
-        internalSkip(1)
-        skipWhitespace()
-    }
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun calculateIntWithOverflowCheck(current: Int, digitValue: Int, isNegative: Boolean): Int {
-        if (current > C.INT_OVERFLOW_LIMIT ||
-            (current == C.INT_OVERFLOW_LIMIT && digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
-        ) {
-            throwError(C.ERR_INT_OVERFLOW)
-        }
-        return current * C.BASE_TEN + digitValue
-    }
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun calculateLongWithOverflowCheck(current: Long, digitValue: Int, isNegative: Boolean): Long {
-        if (current > C.LONG_OVERFLOW_LIMIT ||
-            (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)
-        ) {
-            if (isNegative && current == C.LONG_OVERFLOW_LIMIT && digitValue == C.LONG_MIN_LAST_DIGIT) {
-                return Long.MIN_VALUE
-            }
-            throwError(C.ERR_LONG_OVERFLOW)
-        }
-        return current * C.BASE_TEN + digitValue
-    }
-
-    private fun validateLeadingZero() {
-        if (position < limit && getByte(position) == C.ZERO_INT && position + 1 < limit) {
-            val nextDigitByte = getByte(position + 1)
-            if ((C.DIGIT_BITMASK shr nextDigitByte) and 1L != 0L) {
-                throwError(C.ERR_LEADING_ZEROS)
-            }
-        }
-    }
-
-    private fun validateNumericRangeFloat(valueToValidate: Float) {
-        if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {
-            throwError(C.ERR_NUMERIC_OVERFLOW)
-        }
-    }
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun isNumericSeparator(byteCode: Int): Boolean {
-        return byteCode == C.DOT_INT || byteCode == C.EXP_LOWER_INT || byteCode == C.EXP_UPPER_INT
-    }
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun isExponentMarker(markerByte: Int): Boolean {
-        return (markerByte or C.CASE_INSENSITIVE_MASK) == C.EXP_LOWER_INT
-    }
-
-    private fun validateNumericRange(valueToValidate: Double) {
-        if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {
-            throwError(C.ERR_NUMERIC_OVERFLOW)
-        }
-    }
-
-    fun skipNumber() = skipNumberImpl(
-        prepareNumericHeader = { prepareNumericHeader() },
-        getPosition = { position },
-        setPosition = { position = it },
-        getLimit = { limit },
-        getByte = { getByte(it) },
-        isDigit = { isDigit(it) },
-        readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
-        throwError = { throwError(it) },
-        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
-        setNextTokenByte = { nextTokenByte = it }
-    )
-
-    private inline fun readNumericLoop(
-        crossinline onDigit: (byte: Int) -> Unit,
-        crossinline onBreak: (byte: Int) -> Unit = {}
-    ) {
-        val data = rawData
-        val localLimit = limit
-        while (position < localLimit) {
-            val byte = data[position].toInt() and C.BYTE_MASK
-            if (isDigit(byte)) {
-                onDigit(byte)
-                position++
-            } else {
-                onBreak(byte)
+            val next = nextNonWhitespace()
+            if (next == C.CLOSE_OBJ_INT) {
+                depth--
                 break
             }
+            if (next != C.COMMA_INT) {
+                throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ} but found $next")
+            }
+            if (map.size > maxSize) {
+                throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+            }
+        }
+        return map
+    }
+
+    /**
+     * Resiliently decodes a value. If an error occurs, skips the value and returns null.
+     */
+    @InternalGhostApi
+    inline fun <T> decodeResilient(crossinline block: () -> T): T? {
+        val savedPos = position
+        val savedToken = nextTokenByte
+        try {
+            return block()
+        } catch (_: GhostJsonException) {
+            position = savedPos
+            nextTokenByte = savedToken
+            skipValue()
+            return null
         }
     }
 

@@ -30,6 +30,8 @@ internal abstract class BaseDeserializeEmitter(
         } ?: listOf(it.jsonName))
     }
 
+    protected val propertyIndices = properties.mapIndexed { index, prop -> prop to index }.toMap()
+
     protected val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) / C.MASK_SIZE_BITS.toInt()
 
     protected val requiredMasks: LongArray by lazy {

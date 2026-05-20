@@ -2,19 +2,18 @@
 
 package com.ghost.serialization.parser
 
-import com.ghost.serialization.parser.GhostJsonConstants as C
-
 import com.ghost.serialization.InternalGhostApi
 import kotlin.math.pow
+import com.ghost.serialization.parser.GhostJsonConstants as C
 
 /**
- * Reads a JSON number and returns it as a Float.
- * Uses a zero-allocation, register-based loop for maximum speed.
- * Used by KSP-generated serializers.
+ * Parses and returns the next [Float] value from the JSON stream.
+ *
+ * Supports coercion from strings if enabled, exponent notations, decimal fractions, and range checks.
  *
  * @throws GhostJsonException if float format is invalid or overflows.
  */
-fun GhostJsonReader.nextFloat(): Float {
+fun GhostJsonFlatReader.nextFloat(): Float {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -27,13 +26,21 @@ fun GhostJsonReader.nextFloat(): Float {
 
     // Integer part
     nextTokenByte = -1
-    readNumericLoop { byte ->
-        val digit = byte - C.ZERO_INT
-        if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-            mantissa = mantissa * C.BASE_TEN + digit
-            digitCount++
+    val data = rawData
+    val localLimit = limit
+    while (position < localLimit) {
+        val byte = data[position].toInt() and C.BYTE_MASK
+        if (isDigit(byte)) {
+            val digit = byte - C.ZERO_INT
+            if (digitCount < C.FLOAT_PRECISION_LIMIT) {
+                mantissa = mantissa * C.BASE_TEN + digit
+                digitCount++
+            } else {
+                exponent++
+            }
+            position++
         } else {
-            exponent++
+            break
         }
     }
 
@@ -42,18 +49,22 @@ fun GhostJsonReader.nextFloat(): Float {
     }
 
     // Decimal part
-    val pos = position
-    val lim = limit
-    if (pos < lim && getByte(pos) == C.DOT_INT) {
-        val newPos = pos + 1
+    if (position < localLimit && getByte(position) == C.DOT_INT) {
+        val newPos = position + 1
         position = newPos
         val startPos = newPos
-        readNumericLoop { byte ->
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-                exponent--
+        while (position < localLimit) {
+            val byte = data[position].toInt() and C.BYTE_MASK
+            if (isDigit(byte)) {
+                val digit = byte - C.ZERO_INT
+                if (digitCount < C.FLOAT_PRECISION_LIMIT) {
+                    mantissa = mantissa * C.BASE_TEN + digit
+                    digitCount++
+                    exponent--
+                }
+                position++
+            } else {
+                break
             }
         }
         if (position == startPos) {
@@ -62,9 +73,7 @@ fun GhostJsonReader.nextFloat(): Float {
     }
 
     // Exponent part
-    val currentPos = position
-    val currentLimit = limit
-    if (currentPos < currentLimit && isExponentMarker(getByte(currentPos))) {
+    if (position < localLimit && isExponentMarker(getByte(position))) {
         exponent += parseExponentValue()
     }
 
@@ -86,13 +95,13 @@ fun GhostJsonReader.nextFloat(): Float {
 }
 
 /**
- * Reads a JSON number and returns it as a Double.
- * Uses a zero-allocation, register-based loop for maximum speed.
- * Used by KSP-generated serializers.
+ * Parses and returns the next [Double] value from the JSON stream.
+ *
+ * Supports coercion from strings if enabled, exponent notations, decimal fractions, and range checks.
  *
  * @throws GhostJsonException if double format is invalid or overflows.
  */
-fun GhostJsonReader.nextDouble(): Double {
+fun GhostJsonFlatReader.nextDouble(): Double {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -105,13 +114,21 @@ fun GhostJsonReader.nextDouble(): Double {
 
     // Integer part
     nextTokenByte = -1
-    readNumericLoop { byte ->
-        val digit = byte - C.ZERO_INT
-        if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-            mantissa = mantissa * C.BASE_TEN + digit
-            digitCount++
+    val data = rawData
+    val localLimit = limit
+    while (position < localLimit) {
+        val byte = data[position].toInt() and C.BYTE_MASK
+        if (isDigit(byte)) {
+            val digit = byte - C.ZERO_INT
+            if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
+                mantissa = mantissa * C.BASE_TEN + digit
+                digitCount++
+            } else {
+                exponent++
+            }
+            position++
         } else {
-            exponent++
+            break
         }
     }
 
@@ -120,18 +137,22 @@ fun GhostJsonReader.nextDouble(): Double {
     }
 
     // Decimal part
-    val pos = position
-    val lim = limit
-    if (pos < lim && getByte(pos) == C.DOT_INT) {
-        val newPos = pos + 1
+    if (position < localLimit && getByte(position) == C.DOT_INT) {
+        val newPos = position + 1
         position = newPos
         val startPos = newPos
-        readNumericLoop { byte ->
-            val digitValue = byte - C.ZERO_INT
-            if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digitValue
-                digitCount++
-                exponent--
+        while (position < localLimit) {
+            val byte = data[position].toInt() and C.BYTE_MASK
+            if (isDigit(byte)) {
+                val digitValue = byte - C.ZERO_INT
+                if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
+                    mantissa = mantissa * C.BASE_TEN + digitValue
+                    digitCount++
+                    exponent--
+                }
+                position++
+            } else {
+                break
             }
         }
         if (position == startPos) {
@@ -140,9 +161,7 @@ fun GhostJsonReader.nextDouble(): Double {
     }
 
     // Exponent part
-    val currentPos = position
-    val currentLimit = limit
-    if (currentPos < currentLimit && isExponentMarker(getByte(currentPos))) {
+    if (position < localLimit && isExponentMarker(getByte(position))) {
         exponent += parseExponentValue()
     }
 
@@ -164,12 +183,11 @@ fun GhostJsonReader.nextDouble(): Double {
 }
 
 /**
- * Parses the exponent value suffix (e.g. e-5) from the stream.
+ * Helper to parse the exponent suffix value (e.g. e-5 or e+12) from a number.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun GhostJsonReader.parseExponentValue(): Int {
+private inline fun GhostJsonFlatReader.parseExponentValue(): Int {
     position++
-
     var isExpNegative = false
     if (position < limit) {
         val marker = getByte(position)
@@ -183,7 +201,6 @@ private inline fun GhostJsonReader.parseExponentValue(): Int {
 
     var expValue = 0
     var hasExpDigits = false
-
     while (position < limit) {
         val currentByteInt = getByte(position)
         if (isDigit(currentByteInt)) {
@@ -202,10 +219,10 @@ private inline fun GhostJsonReader.parseExponentValue(): Int {
 }
 
 /**
- * Returns 10.0f raised to the power of exponent using a lookup table or pow fallback.
+ * Returns 10.0f raised to the power of exponent using a fast lookup table or fallback pow.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun getFloatPowerOfTen(exponent: Int): Float {
+private inline fun GhostJsonFlatReader.getFloatPowerOfTen(exponent: Int): Float {
     return if (exponent > 0) {
         if (exponent < C.POWERS_OF_TEN_FLOAT.size) {
             C.POWERS_OF_TEN_FLOAT[exponent]
@@ -223,10 +240,10 @@ private inline fun getFloatPowerOfTen(exponent: Int): Float {
 }
 
 /**
- * Returns 10.0 raised to the power of exponent using a lookup table or pow fallback.
+ * Returns 10.0 raised to the power of exponent using a fast lookup table or fallback pow.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun getDoublePowerOfTen(exponent: Int): Double {
+private inline fun GhostJsonFlatReader.getDoublePowerOfTen(exponent: Int): Double {
     return if (exponent > 0) {
         if (exponent < C.POWERS_OF_TEN.size) {
             C.POWERS_OF_TEN[exponent]
@@ -244,23 +261,20 @@ private inline fun getDoublePowerOfTen(exponent: Int): Double {
 }
 
 /**
- * Reads a JSON integer and returns it as an Int.
- * Optimized for common small integers.
- * Used by KSP-generated serializers.
+ * Parses and returns the next [Int] value from the JSON stream.
  *
- * @throws GhostJsonException if the integer is invalid or overflows.
+ * Supports coercion from strings if enabled, validates format, leading zeros, and range overflow.
+ *
+ * @throws GhostJsonException if integer is invalid or overflows.
  */
-fun GhostJsonReader.nextInt(): Int {
+fun GhostJsonFlatReader.nextInt(): Int {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
 
     val startOfNumber = position
 
-    val absoluteValue = if (
-        startOfNumber < limit &&
-        getByte(startOfNumber) == C.ZERO_INT
-    ) {
+    val absoluteValue = if (startOfNumber < limit && getByte(startOfNumber) == C.ZERO_INT) {
         handleLeadingZero()
         0
     } else {
@@ -280,23 +294,20 @@ fun GhostJsonReader.nextInt(): Int {
 }
 
 /**
- * Reads a JSON long and returns it as a Long.
- * Optimized for common small longs.
- * Used by KSP-generated serializers.
+ * Parses and returns the next [Long] value from the JSON stream.
  *
- * @throws GhostJsonException if the long is invalid or overflows.
+ * Supports coercion from strings if enabled, validates format, leading zeros, and range overflow.
+ *
+ * @throws GhostJsonException if long value is invalid or overflows.
  */
-fun GhostJsonReader.nextLong(): Long {
+fun GhostJsonFlatReader.nextLong(): Long {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
 
     val startOfNumber = position
 
-    val absoluteValue = if (
-        startOfNumber < limit &&
-        getByte(startOfNumber) == C.ZERO_INT
-    ) {
+    val absoluteValue = if (startOfNumber < limit && getByte(startOfNumber) == C.ZERO_INT) {
         handleLeadingZero()
         0L
     } else {
@@ -316,10 +327,10 @@ fun GhostJsonReader.nextLong(): Long {
 }
 
 /**
- * Prepares the numeric header by checking the negative sign and checking string coercion quote.
+ * Prepares the numeric header by checking negative signs and string coercion quotes.
  */
-private fun GhostJsonReader.prepareNumericHeader(): Int {
-    if (nextTokenByte == -1) {
+private fun GhostJsonFlatReader.prepareNumericHeader(): Int {
+    if (nextTokenByte == C.RESET_TOKEN_BYTE) {
         skipWhitespace()
     }
     if (position >= limit) {
@@ -334,7 +345,7 @@ private fun GhostJsonReader.prepareNumericHeader(): Int {
             throwError(C.ERR_COERCION_DISABLED)
         }
         position++
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
         skipWhitespace()
         if (position >= limit) {
             throwError(C.ERR_EXPECTED_NUMBER)
@@ -348,7 +359,7 @@ private fun GhostJsonReader.prepareNumericHeader(): Int {
             throwError(C.ERR_ISOLATED_MINUS)
         }
         position++
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
         header = header or C.NUMERIC_HEADER_NEGATIVE
     }
 
@@ -356,9 +367,9 @@ private fun GhostJsonReader.prepareNumericHeader(): Int {
 }
 
 /**
- * Validates and consumes a leading zero.
+ * Handles validation and skipping of a single leading zero.
  */
-private fun GhostJsonReader.handleLeadingZero() {
+private fun GhostJsonFlatReader.handleLeadingZero() {
     val nextCursor = position + 1
     if (nextCursor < limit) {
         val nextDigitByte = getByte(nextCursor)
@@ -370,42 +381,40 @@ private fun GhostJsonReader.handleLeadingZero() {
 }
 
 /**
- * Bitwise parsing loop for integer digits with overflow verification.
+ * Parses integer digits bitwise with overflow checks.
  */
-private fun GhostJsonReader.parseIntDigits(
-    isNegative: Boolean,
-    startOfNumber: Int
-): Int {
+private fun GhostJsonFlatReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
     var accumulatedValue = 0
     var digitCount = 0
     var hasDigitsFound = false
     nextTokenByte = -1
     var earlyExitResult: Int? = null
-    readNumericLoop(
-        { byte ->
+
+    val data = rawData
+    val localLimit = limit
+    while (position < localLimit) {
+        val byte = data[position].toInt() and C.BYTE_MASK
+        if (isDigit(byte)) {
             val digit = byte - C.ZERO_INT
             accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
                 accumulatedValue * C.BASE_TEN + digit
             } else {
-                calculateIntWithOverflowCheck(
-                    accumulatedValue,
-                    digit,
-                    isNegative
-                )
+                calculateIntWithOverflowCheck(accumulatedValue, digit, isNegative)
             }
             digitCount++
             hasDigitsFound = true
-        },
-        { byte ->
+            position++
+        } else {
             if (isNumericSeparator(byte)) {
                 position = startOfNumber
                 earlyExitResult = nextDouble().toInt()
             }
+            break
         }
-    )
+    }
 
     if (earlyExitResult != null) {
-        return earlyExitResult!!
+        return earlyExitResult
     }
     if (!hasDigitsFound) {
         throwError(C.ERR_EXPECTED_INT_PART)
@@ -414,42 +423,40 @@ private fun GhostJsonReader.parseIntDigits(
 }
 
 /**
- * Bitwise parsing loop for long digits with overflow verification.
+ * Parses long digits bitwise with overflow checks.
  */
-private fun GhostJsonReader.parseLongDigits(
-    isNegative: Boolean,
-    startOfNumber: Int
-): Long {
+private fun GhostJsonFlatReader.parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
     var accumulatedValue = 0L
     var digitCount = 0
     var hasDigitsFound = false
     nextTokenByte = -1
     var earlyExitResult: Long? = null
-    readNumericLoop(
-        { byte ->
+
+    val data = rawData
+    val localLimit = limit
+    while (position < localLimit) {
+        val byte = data[position].toInt() and C.BYTE_MASK
+        if (isDigit(byte)) {
             val digit = byte - C.ZERO_INT
             accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
                 accumulatedValue * C.BASE_TEN + digit
             } else {
-                calculateLongWithOverflowCheck(
-                    accumulatedValue,
-                    digit,
-                    isNegative
-                )
+                calculateLongWithOverflowCheck(accumulatedValue, digit, isNegative)
             }
             digitCount++
             hasDigitsFound = true
-        },
-        { byte ->
+            position++
+        } else {
             if (isNumericSeparator(byte)) {
                 position = startOfNumber
                 earlyExitResult = nextDouble().toLong()
             }
+            break
         }
-    )
+    }
 
     if (earlyExitResult != null) {
-        return earlyExitResult!!
+        return earlyExitResult
     }
     if (!hasDigitsFound) {
         throwError(C.ERR_EXPECTED_INT_PART)
@@ -458,10 +465,10 @@ private fun GhostJsonReader.parseLongDigits(
 }
 
 /**
- * Consumes the closing quotation mark for coerced numeric string values.
+ * Consumes the trailing quotation mark when parsing coerced numeric string values.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
+private inline fun GhostJsonFlatReader.consumeNumericCoercionFooter() {
     if (position >= limit || getByte(position) != C.QUOTE_INT) {
         throwError(C.ERR_EXPECTED_COERCION_QUOTE)
     }
@@ -470,17 +477,12 @@ private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
 }
 
 /**
- * Accumulates and checks Int bounds to throw [GhostJsonException] on overflow.
+ * Accumulates int value and throws if it overflows the safe JVM Int limit.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun GhostJsonReader.calculateIntWithOverflowCheck(
-    current: Int,
-    digitValue: Int,
-    isNegative: Boolean
-): Int {
+private inline fun GhostJsonFlatReader.calculateIntWithOverflowCheck(current: Int, digitValue: Int, isNegative: Boolean): Int {
     if (current > C.INT_OVERFLOW_LIMIT ||
-        (current == C.INT_OVERFLOW_LIMIT &&
-                digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
+        (current == C.INT_OVERFLOW_LIMIT && digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
     ) {
         throwError(C.ERR_INT_OVERFLOW)
     }
@@ -488,21 +490,14 @@ private inline fun GhostJsonReader.calculateIntWithOverflowCheck(
 }
 
 /**
- * Accumulates and checks Long bounds to throw [GhostJsonException] on overflow.
+ * Accumulates long value and throws if it overflows the safe JVM Long limit.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun GhostJsonReader.calculateLongWithOverflowCheck(
-    current: Long,
-    digitValue: Int,
-    isNegative: Boolean
-): Long {
+private inline fun GhostJsonFlatReader.calculateLongWithOverflowCheck(current: Long, digitValue: Int, isNegative: Boolean): Long {
     if (current > C.LONG_OVERFLOW_LIMIT ||
-        (current == C.LONG_OVERFLOW_LIMIT &&
-                digitValue > C.LONG_MAX_LAST_DIGIT)
+        (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)
     ) {
-        if (isNegative && current == C.LONG_OVERFLOW_LIMIT &&
-            digitValue == C.LONG_MIN_LAST_DIGIT
-        ) {
+        if (isNegative && current == C.LONG_OVERFLOW_LIMIT && digitValue == C.LONG_MIN_LAST_DIGIT) {
             return Long.MIN_VALUE
         }
         throwError(C.ERR_LONG_OVERFLOW)
@@ -511,14 +506,10 @@ private inline fun GhostJsonReader.calculateLongWithOverflowCheck(
 }
 
 /**
- * Asserts that leading zero doesn't precede another digit.
+ * Validates leading zero presence for numbers.
  */
-private fun GhostJsonReader.validateLeadingZero() {
-    if (
-        position < limit &&
-        getByte(position) == C.ZERO_INT &&
-        position + 1 < limit
-    ) {
+private fun GhostJsonFlatReader.validateLeadingZero() {
+    if (position < limit && getByte(position) == C.ZERO_INT && position + 1 < limit) {
         val nextDigitByte = getByte(position + 1)
         if ((C.DIGIT_BITMASK shr nextDigitByte) and 1L != 0L) {
             throwError(C.ERR_LEADING_ZEROS)
@@ -527,44 +518,47 @@ private fun GhostJsonReader.validateLeadingZero() {
 }
 
 /**
- * Verifies that parsed Float values are finite numbers.
+ * Validates that float values parsed are finite numbers.
  */
-private fun GhostJsonReader.validateNumericRangeFloat(valueToValidate: Float) {
+private fun GhostJsonFlatReader.validateNumericRangeFloat(valueToValidate: Float) {
     if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {
         throwError(C.ERR_NUMERIC_OVERFLOW)
     }
 }
 
 /**
- * Checks if the byte code matches dot, lower 'e', or upper 'E'.
+ * Helper checking if byte is decimal dot or exponent character.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun isNumericSeparator(byteCode: Int): Boolean {
+private inline fun GhostJsonFlatReader.isNumericSeparator(byteCode: Int): Boolean {
     return byteCode == C.DOT_INT || byteCode == C.EXP_LOWER_INT || byteCode == C.EXP_UPPER_INT
 }
 
 /**
- * Checks if the byte code matches lowercase or uppercase 'e'.
+ * Helper checking if byte is exponent character.
  */
 @Suppress("NOTHING_TO_INLINE")
-private inline fun isExponentMarker(markerByte: Int): Boolean {
+private inline fun GhostJsonFlatReader.isExponentMarker(markerByte: Int): Boolean {
     return (markerByte or C.CASE_INSENSITIVE_MASK) == C.EXP_LOWER_INT
 }
 
 /**
- * Verifies that parsed Double values are finite numbers.
+ * Validates that double values parsed are finite numbers.
  */
-private fun GhostJsonReader.validateNumericRange(valueToValidate: Double) {
+private fun GhostJsonFlatReader.validateNumericRange(valueToValidate: Double) {
     if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {
         throwError(C.ERR_NUMERIC_OVERFLOW)
     }
 }
 
 /**
- * Skips a JSON numeric token value from the source.
+ * Skips the next numeric token value in the JSON stream.
+ *
+ * Validates scientific exponent format, dot separation, and handles string coercion bounds.
+ *
+ * @throws GhostJsonException if number is malformed.
  */
-@InternalGhostApi
-fun GhostJsonReader.skipNumber() {
+fun GhostJsonFlatReader.skipNumber() {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
 
@@ -573,18 +567,24 @@ fun GhostJsonReader.skipNumber() {
     // Integer part
     val pos = position
     val lim = limit
+    val data = rawData
     if (pos < lim && getByte(pos) == C.ZERO_INT) {
         val newPos = pos + 1
         position = newPos
         hasDigits = true
-        if (
-            newPos < lim &&
-            isDigit(getByte(newPos))
-        ) {
+        if (newPos < lim && isDigit(getByte(newPos))) {
             throwError(C.ERR_LEADING_ZEROS)
         }
     } else {
-        readNumericLoop { hasDigits = true }
+        while (position < lim) {
+            val byte = data[position].toInt() and C.BYTE_MASK
+            if (isDigit(byte)) {
+                hasDigits = true
+                position++
+            } else {
+                break
+            }
+        }
     }
 
     if (!hasDigits) {
@@ -592,29 +592,30 @@ fun GhostJsonReader.skipNumber() {
     }
 
     // Decimal part
-    val decPos = position
-    val decLim = limit
-    if (
-        decPos < decLim &&
-        getByte(decPos) == C.DOT_INT
-    ) {
-        position = decPos + 1
+    if (position < lim && getByte(position) == C.DOT_INT) {
+        position++
         var hasDecimalDigits = false
-        readNumericLoop { hasDecimalDigits = true }
+        while (position < lim) {
+            val byte = data[position].toInt() and C.BYTE_MASK
+            if (isDigit(byte)) {
+                hasDecimalDigits = true
+                position++
+            } else {
+                break
+            }
+        }
         if (!hasDecimalDigits) {
             throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
         }
     }
 
     // Exponent part
-    val expPos = position
-    val expLim = limit
-    if (expPos < expLim) {
-        val byte = getByte(expPos)
+    if (position < lim) {
+        val byte = getByte(position)
         if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {
-            var newPos = expPos + 1
+            var newPos = position + 1
             position = newPos
-            if (newPos < expLim) {
+            if (newPos < lim) {
                 val sign = getByte(newPos)
                 if (sign == C.PLUS_INT || sign == C.MINUS_INT) {
                     newPos++
@@ -623,7 +624,15 @@ fun GhostJsonReader.skipNumber() {
             }
 
             var hasExpDigits = false
-            readNumericLoop { hasExpDigits = true }
+            while (position < lim) {
+                val b = data[position].toInt() and C.BYTE_MASK
+                if (isDigit(b)) {
+                    hasExpDigits = true
+                    position++
+                } else {
+                    break
+                }
+            }
             if (!hasExpDigits) {
                 throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)
             }
@@ -634,48 +643,4 @@ fun GhostJsonReader.skipNumber() {
         consumeNumericCoercionFooter()
     }
     nextTokenByte = -1
-}
-
-/**
- * Loops and consumes digits from the stream.
- */
-@Suppress("NOTHING_TO_INLINE")
-private inline fun GhostJsonReader.readNumericLoop(
-    crossinline onDigit: (byte: Int) -> Unit
-) {
-    readNumericLoop(onDigit, {})
-}
-
-/**
- * Loops and consumes digits from the stream, with optional break hook.
- */
-@Suppress("NOTHING_TO_INLINE")
-private inline fun GhostJsonReader.readNumericLoop(
-    crossinline onDigit: (byte: Int) -> Unit,
-    crossinline onBreak: (byte: Int) -> Unit
-) {
-    if (isStreaming) {
-        while (position < limit) {
-            val byte = source[position]
-            if (isDigit(byte)) {
-                onDigit(byte)
-                position++
-            } else {
-                onBreak(byte)
-                break
-            }
-        }
-    } else {
-        val data = rawData
-        while (position < limit) {
-            val byte = data[position].toInt() and C.BYTE_MASK
-            if (isDigit(byte)) {
-                onDigit(byte)
-                position++
-            } else {
-                onBreak(byte)
-                break
-            }
-        }
-    }
 }

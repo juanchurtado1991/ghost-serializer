@@ -131,12 +131,7 @@ internal class FragmentedEmitter(
                 C.TEMPLATE_DECODE_CHUNK_NAME
                     .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
             )
-            .addAnnotation(
-                AnnotationSpec.builder(Suppress::class)
-                    .addMember(C.MARKER, C.STR_NOTHING_TO_INLINE)
-                    .build()
-            )
-            .addModifiers(KModifier.PRIVATE, KModifier.INLINE)
+            .addModifiers(KModifier.PRIVATE)
             .addParameter(C.STR_READER_VAR, readerClass)
             .addParameter(C.STR_CTX_VAR, contextClassName)
             .addParameter(C.STR_INDEX_VAR, INT)

@@ -65,12 +65,7 @@ internal class FragmentedSerializeEmitter(
                     writerSuffix
                 )
             )
-            .addAnnotation(
-                AnnotationSpec.builder(Suppress::class)
-                    .addMember(C.MARKER, C.STR_NOTHING_TO_INLINE)
-                    .build()
-            )
-            .addModifiers(KModifier.PRIVATE, KModifier.INLINE)
+            .addModifiers(KModifier.PRIVATE)
             .addParameter(C.STR_PARAM_WRITER, writerClass)
             .addParameter(C.STR_PARAM_VALUE, originalClassName)
 

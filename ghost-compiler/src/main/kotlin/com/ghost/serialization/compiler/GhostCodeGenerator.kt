@@ -533,12 +533,13 @@ internal class GhostCodeGenerator(
         val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
 
         val depth = currentPath.size
-        val names = properties.filter { prop ->
-            val path = fullPaths[this.properties.indexOf(prop)]
-            path.size > depth && path.subList(0, depth) == currentPath
-        }.map { prop ->
-            val path = fullPaths[this.properties.indexOf(prop)]
-            path[depth]
+        val names = properties.mapIndexedNotNull { index, _ ->
+            val path = fullPaths[index]
+            if (path.size > depth && path.subList(0, depth) == currentPath) {
+                path[depth]
+            } else {
+                null
+            }
         }.distinct()
 
         val (shift, multiplier) = findPerfectHash(names)

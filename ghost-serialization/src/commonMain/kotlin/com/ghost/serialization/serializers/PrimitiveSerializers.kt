@@ -4,10 +4,19 @@ package com.ghost.serialization.serializers
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.*
+import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.nextBoolean
+import com.ghost.serialization.parser.nextDouble
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.parser.nextLong
+import com.ghost.serialization.parser.readQuotedString
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
+/**
+ * Built-in serializer for Kotlin [String] type.
+ */
 object StringSerializer : GhostSerializer<String> {
     override val typeName: String get() = "String"
 
@@ -19,13 +28,18 @@ object StringSerializer : GhostSerializer<String> {
         writer.value(value)
     }
 
-    override fun deserialize(reader: GhostJsonReader): String =
-        reader.readQuotedString()
+    override fun deserialize(reader: GhostJsonReader): String {
+        return reader.readQuotedString()
+    }
 
-    override fun deserialize(reader: GhostJsonFlatReader): String =
-        reader.readQuotedString()
+    override fun deserialize(reader: GhostJsonFlatReader): String {
+        return reader.readQuotedString()
+    }
 }
 
+/**
+ * Built-in serializer for Kotlin [Int] type.
+ */
 object IntSerializer : GhostSerializer<Int> {
     override val typeName: String get() = "Int"
 
@@ -37,13 +51,18 @@ object IntSerializer : GhostSerializer<Int> {
         writer.value(value)
     }
 
-    override fun deserialize(reader: GhostJsonReader): Int =
-        reader.nextInt()
+    override fun deserialize(reader: GhostJsonReader): Int {
+        return reader.nextInt()
+    }
 
-    override fun deserialize(reader: GhostJsonFlatReader): Int =
-        reader.nextInt()
+    override fun deserialize(reader: GhostJsonFlatReader): Int {
+        return reader.nextInt()
+    }
 }
 
+/**
+ * Built-in serializer for Kotlin [Long] type.
+ */
 object LongSerializer : GhostSerializer<Long> {
     override val typeName: String get() = "Long"
 
@@ -55,13 +74,18 @@ object LongSerializer : GhostSerializer<Long> {
         writer.value(value)
     }
 
-    override fun deserialize(reader: GhostJsonReader): Long =
-        reader.nextLong()
+    override fun deserialize(reader: GhostJsonReader): Long {
+        return reader.nextLong()
+    }
 
-    override fun deserialize(reader: GhostJsonFlatReader): Long =
-        reader.nextLong()
+    override fun deserialize(reader: GhostJsonFlatReader): Long {
+        return reader.nextLong()
+    }
 }
 
+/**
+ * Built-in serializer for Kotlin [Double] type.
+ */
 object DoubleSerializer : GhostSerializer<Double> {
     override val typeName: String get() = "Double"
 
@@ -73,13 +97,18 @@ object DoubleSerializer : GhostSerializer<Double> {
         writer.value(value)
     }
 
-    override fun deserialize(reader: GhostJsonReader): Double =
-        reader.nextDouble()
+    override fun deserialize(reader: GhostJsonReader): Double {
+        return reader.nextDouble()
+    }
 
-    override fun deserialize(reader: GhostJsonFlatReader): Double =
-        reader.nextDouble()
+    override fun deserialize(reader: GhostJsonFlatReader): Double {
+        return reader.nextDouble()
+    }
 }
 
+/**
+ * Built-in serializer for Kotlin [Boolean] type.
+ */
 object BooleanSerializer : GhostSerializer<Boolean> {
     override val typeName: String get() = "Boolean"
 
@@ -91,9 +120,11 @@ object BooleanSerializer : GhostSerializer<Boolean> {
         writer.value(value)
     }
 
-    override fun deserialize(reader: GhostJsonReader): Boolean =
-        reader.nextBoolean()
+    override fun deserialize(reader: GhostJsonReader): Boolean {
+        return reader.nextBoolean()
+    }
 
-    override fun deserialize(reader: GhostJsonFlatReader): Boolean =
-        reader.nextBoolean()
+    override fun deserialize(reader: GhostJsonFlatReader): Boolean {
+        return reader.nextBoolean()
+    }
 }

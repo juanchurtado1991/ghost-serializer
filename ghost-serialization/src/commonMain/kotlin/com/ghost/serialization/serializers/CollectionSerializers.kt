@@ -23,6 +23,9 @@ import com.ghost.serialization.parser.readList
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
+/**
+ * Serializer implementation for standard Kotlin [List] collections.
+ */
 @OptIn(InternalGhostApi::class)
 class ListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>
@@ -37,8 +40,7 @@ class ListSerializer<T>(
     ) {
         writer.beginArray()
         for (item in value) {
-            itemSerializer
-                .serialize(writer, item)
+            itemSerializer.serialize(writer, item)
         }
         writer.endArray()
     }
@@ -49,41 +51,47 @@ class ListSerializer<T>(
     ) {
         writer.beginArray()
         for (item in value) {
-            itemSerializer
-                .serialize(writer, item)
+            itemSerializer.serialize(writer, item)
         }
         writer.endArray()
     }
 
     override fun deserialize(
         reader: GhostJsonReader
-    ): List<T> = if (itemSerializer.isResilient) {
-        reader.readList {
-            reader.decodeResilient {
+    ): List<T> {
+        return if (itemSerializer.isResilient) {
+            reader.readList {
+                reader.decodeResilient {
+                    itemSerializer.deserialize(reader)
+                }
+            }.filterNotNull()
+        } else {
+            reader.readList {
                 itemSerializer.deserialize(reader)
             }
-        }.filterNotNull()
-    } else {
-        reader.readList {
-            itemSerializer.deserialize(reader)
         }
     }
 
     override fun deserialize(
         reader: GhostJsonFlatReader
-    ): List<T> = if (itemSerializer.isResilient) {
-        reader.readList {
-            reader.decodeResilient {
+    ): List<T> {
+        return if (itemSerializer.isResilient) {
+            reader.readList {
+                reader.decodeResilient {
+                    itemSerializer.deserialize(reader)
+                }
+            }.filterNotNull()
+        } else {
+            reader.readList {
                 itemSerializer.deserialize(reader)
             }
-        }.filterNotNull()
-    } else {
-        reader.readList {
-            itemSerializer.deserialize(reader)
         }
     }
 }
 
+/**
+ * Serializer implementation for standard Kotlin [Map] collections with String keys.
+ */
 class MapSerializer<V>(
     private val valueSerializer: GhostSerializer<V>
 ) : GhostSerializer<Map<String, V>> {
@@ -124,20 +132,22 @@ class MapSerializer<V>(
     override fun deserialize(
         reader: GhostJsonReader
     ): Map<String, V> {
-
         reader.beginObject()
         if (reader.peekByte() == CLOSE_OBJ) {
-            reader.endObject(); return emptyMap()
+            reader.endObject()
+            return emptyMap()
         }
 
         return buildMap {
             while (true) {
-                val key = reader.nextKey() ?: break
+                val key = reader.nextKey()
+                if (key == null) {
+                    break
+                }
                 reader.consumeKeySeparator()
                 put(
                     key,
-                    valueSerializer
-                        .deserialize(reader)
+                    valueSerializer.deserialize(reader)
                 )
             }
             reader.endObject()
@@ -147,20 +157,22 @@ class MapSerializer<V>(
     override fun deserialize(
         reader: GhostJsonFlatReader
     ): Map<String, V> {
-
         reader.beginObject()
         if (reader.peekByte() == CLOSE_OBJ) {
-            reader.endObject(); return emptyMap()
+            reader.endObject()
+            return emptyMap()
         }
 
         return buildMap {
             while (true) {
-                val key = reader.nextKey() ?: break
+                val key = reader.nextKey()
+                if (key == null) {
+                    break
+                }
                 reader.consumeKeySeparator()
                 put(
                     key,
-                    valueSerializer
-                        .deserialize(reader)
+                    valueSerializer.deserialize(reader)
                 )
             }
             reader.endObject()
@@ -168,6 +180,9 @@ class MapSerializer<V>(
     }
 }
 
+/**
+ * Serializer implementation for primitive [IntArray].
+ */
 object IntArraySerializer : GhostSerializer<IntArray> {
 
     override val typeName: String = "IntArray"
@@ -177,8 +192,9 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         value: IntArray
     ) {
         writer.beginArray()
-        for (item in value)
+        for (item in value) {
             writer.value(item)
+        }
         writer.endArray()
     }
 
@@ -187,8 +203,9 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         value: IntArray
     ) {
         writer.beginArray()
-        for (item in value)
+        for (item in value) {
             writer.value(item)
+        }
         writer.endArray()
     }
 
@@ -237,6 +254,9 @@ object IntArraySerializer : GhostSerializer<IntArray> {
     }
 }
 
+/**
+ * Serializer implementation for primitive [LongArray].
+ */
 object LongArraySerializer : GhostSerializer<LongArray> {
 
     override val typeName: String = "LongArray"
@@ -246,8 +266,9 @@ object LongArraySerializer : GhostSerializer<LongArray> {
         value: LongArray
     ) {
         writer.beginArray()
-        for (item in value)
+        for (item in value) {
             writer.value(item)
+        }
         writer.endArray()
     }
 
@@ -256,8 +277,9 @@ object LongArraySerializer : GhostSerializer<LongArray> {
         value: LongArray
     ) {
         writer.beginArray()
-        for (item in value)
+        for (item in value) {
             writer.value(item)
+        }
         writer.endArray()
     }
 
@@ -276,7 +298,6 @@ object LongArraySerializer : GhostSerializer<LongArray> {
             if (!list.isEmpty()) {
                 reader.consumeArraySeparator()
             }
-
             list.add(reader.nextLong())
         }
 
@@ -299,7 +320,6 @@ object LongArraySerializer : GhostSerializer<LongArray> {
             if (!list.isEmpty()) {
                 reader.consumeArraySeparator()
             }
-
             list.add(reader.nextLong())
         }
 
