@@ -128,13 +128,7 @@ internal class DeserializeCodeEmitter(
 
         regularSubclasses.forEach { subclass ->
             val subClassName = subclass.toClassName()
-            val serializerName = ClassName(
-                subClassName.packageName,
-                subClassName
-                    .simpleNames
-                    .joinToString(C.STR_UNDERSCORE)
-                        + C.STR_SERIALIZER_SUFFIX
-            )
+            val serializerName = subClassName.serializerClassName()
             body.addStatement(
                 C.TEMPLATE_DESERIALIZE_BRANCH,
                 subClassName.simpleName,
@@ -143,13 +137,7 @@ internal class DeserializeCodeEmitter(
         }
         if (fallbackSubclass != null) {
             val fallbackClassName = fallbackSubclass.toClassName()
-            val fallbackSerializerName = ClassName(
-                fallbackClassName.packageName,
-                fallbackClassName
-                    .simpleNames
-                    .joinToString(C.STR_UNDERSCORE)
-                        + C.STR_SERIALIZER_SUFFIX
-            )
+            val fallbackSerializerName = fallbackClassName.serializerClassName()
             body.beginControlFlow(C.STR_ELSE_BRANCH)
             body.addStatement(C.TEMPLATE_DESERIALIZE_T, fallbackSerializerName)
             body.endControlFlow()

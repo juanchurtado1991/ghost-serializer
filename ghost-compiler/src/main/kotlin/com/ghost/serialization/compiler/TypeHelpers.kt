@@ -4,12 +4,26 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
 import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
+
+internal fun KSType.serializerClassName(): ClassName {
+    val classDecl = declaration as KSClassDeclaration
+    return classDecl.toClassName().serializerClassName()
+}
+
+internal fun ClassName.serializerClassName(): ClassName {
+    return ClassName(
+        packageName,
+        "${simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER_SUFFIX}"
+    )
+}
 
 private fun KSType.nonNullTypeName() = toTypeName().copy(nullable = false)
 
