@@ -118,10 +118,11 @@ class GhostJsonFlatReader(
      * Advances the position past any whitespace and caches the next non-whitespace token byte.
      */
     fun skipWhitespace() {
-        val nextPos = source.findNextNonWhitespace(position, limit)
+        val localData = rawData
+        val nextPos = findNextNonWhitespaceImpl(position, limit) { localData[it].toInt() and C.BYTE_MASK }
         if (nextPos != -1) {
             position = nextPos
-            nextTokenByte = getByte(position)
+            nextTokenByte = localData[position].toInt() and C.BYTE_MASK
         } else {
             position = limit
             nextTokenByte = C.MATCH_END
@@ -186,10 +187,11 @@ class GhostJsonFlatReader(
      */
     @InternalGhostApi
     fun skipAndValidateLiteral(expected: ByteString) {
-        if (!source.contentEquals(position, expected)) {
+        val size = expected.size
+        if (position + size > limit || !expected.rangeEquals(0, rawData, position, size)) {
             throwError("Expected literal ${expected.utf8()}")
         }
-        position += expected.size
+        position += size
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
@@ -414,7 +416,8 @@ class GhostJsonFlatReader(
         }
 
         val start = position + 1
-        val end = source.findClosingQuote(start, limit)
+        val localData = rawData
+        val end = findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
         if (end == -1) {
             throwError(C.UNTERMINATED_STRING_ERROR)
         }
@@ -482,7 +485,7 @@ class GhostJsonFlatReader(
         expected: ByteString,
         consumeSeparator: Boolean
     ): Boolean {
-        if (expected.size == length && source.contentEquals(start, expected)) {
+        if (expected.size == length && expected.rangeEquals(0, rawData, start, length)) {
             val endPos = start + length
             val newPos = endPos + 1
             position = newPos

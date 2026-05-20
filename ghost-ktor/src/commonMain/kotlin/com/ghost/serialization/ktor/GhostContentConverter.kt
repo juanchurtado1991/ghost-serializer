@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
@@ -28,13 +30,15 @@ class GhostContentConverter : ContentConverter {
         if (value == null) return null
         val clazz = typeInfo.type
 
-        @Suppress("UNCHECKED_CAST")
-        val serializer = Ghost.getSerializer(clazz as KClass<Any>)
+
+        val serializer = Ghost
+            .getSerializer(clazz as KClass<Any>)
             ?: return null
 
         val bytes = ghostInternalEncodeWithWriter { writer ->
             serializer.serialize(writer, value)
         }
+
         return ByteArrayContent(bytes, contentType)
     }
 
@@ -43,25 +47,42 @@ class GhostContentConverter : ContentConverter {
         typeInfo: TypeInfo,
         content: ByteReadChannel
     ): Any {
-        var scratch = acquireScratchBuffer(BUFFER_SIZE)
+        var scratch =
+            acquireScratchBuffer(BUFFER_SIZE)
+
         try {
             var offset = 0
             while (true) {
                 if (offset == scratch.size) {
-                    val grown = acquireScratchBuffer(scratch.size * 2)
-                    scratch.copyInto(grown, 0, 0, offset)
+                    val grown =
+                        acquireScratchBuffer(scratch.size * 2)
+
+                    scratch.copyInto(
+                        grown,
+                        0,
+                        0,
+                        offset
+                    )
+
                     releaseScratchBuffer(scratch)
                     scratch = grown
                 }
-                val read = content.readAvailable(scratch, offset, scratch.size - offset)
+
+                val read = content.readAvailable(
+                    scratch,
+                    offset,
+                    scratch.size - offset
+                )
+
                 if (read == -1) break
                 offset += read
             }
 
-            @Suppress("UNCHECKED_CAST")
             return ghostInternalUseFlatReader(scratch, offset) { reader ->
+
                 val serializer = Ghost.getSerializer(typeInfo.type as KClass<Any>)
                     ?: Ghost.throwError("${Ghost.NOT_FOUND} ${typeInfo.type.simpleName}. ${Ghost.MISSING_ANN}")
+
                 serializer.deserialize(reader)
             }
         } finally {
