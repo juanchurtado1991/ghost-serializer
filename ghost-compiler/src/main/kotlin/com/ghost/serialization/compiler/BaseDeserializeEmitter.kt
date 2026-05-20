@@ -77,7 +77,7 @@ internal abstract class BaseDeserializeEmitter(
 
             prop.isSealedClass -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
-                serializerName(prop.type)
+                prop.type.serializerClassName()
             )
 
             prop.isPrimitiveArray -> CodeBlock.of(
@@ -137,7 +137,7 @@ internal abstract class BaseDeserializeEmitter(
         val readerCall = when {
             type.isGhost() || type.isEnum() -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
-                serializerName(type)
+                type.serializerClassName()
             )
 
             type.isPrimitiveInt() -> CodeBlock.of(C.STR_NEXT_INT)
@@ -225,16 +225,4 @@ internal abstract class BaseDeserializeEmitter(
 
     protected fun nullGuarded(inner: CodeBlock): CodeBlock =
         CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)
-
-    protected fun serializerName(type: KSType): ClassName =
-        with(type.declaration as KSClassDeclaration) {
-            val className = toClassName()
-            return ClassName(
-                className.packageName,
-                "${className
-                    .simpleNames
-                    .joinToString(C.STR_UNDERSCORE)
-                }${C.STR_SERIALIZER_SUFFIX}"
-            )
-        }
 }

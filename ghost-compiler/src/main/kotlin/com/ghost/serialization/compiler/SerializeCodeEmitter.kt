@@ -194,13 +194,7 @@ internal class SerializeCodeEmitter(
         code.beginControlFlow(C.STR_WHEN_VALUE)
         sealedSubclasses.forEach { subclass ->
             val subClassName = subclass.toClassName()
-            val serializerName = ClassName(
-                subClassName.packageName,
-                subClassName
-                    .simpleNames
-                    .joinToString(C.STR_UNDERSCORE)
-                        + C.STR_SERIALIZER_SUFFIX
-            )
+            val serializerName = subClassName.serializerClassName()
             code.addStatement(
                 C.STR_IS_T_ARROW_T_SERIALIZE,
                 subClassName, serializerName
@@ -318,7 +312,7 @@ internal class SerializeCodeEmitter(
             prop.isSealedClass -> {
                 code.addStatement(
                     C.STR_T_SERIALIZE_WRITER_ACC,
-                    serializerName(prop.type),
+                    prop.type.serializerClassName(),
                     accessor
                 )
             }
@@ -365,13 +359,13 @@ internal class SerializeCodeEmitter(
         when {
             type.isGhost() -> code.addStatement(
                 C.STR_T_SERIALIZE_WRITER_ACC,
-                serializerName(type),
+                type.serializerClassName(),
                 accessor
             )
 
             type.isEnum() -> code.addStatement(
                 C.STR_T_SERIALIZE_WRITER_ACC,
-                serializerName(type),
+                type.serializerClassName(),
                 accessor
             )
 
@@ -468,13 +462,4 @@ internal class SerializeCodeEmitter(
         }
     }
 
-    private fun serializerName(type: KSType): ClassName =
-        with(type.declaration as KSClassDeclaration) {
-            val className = toClassName()
-            return ClassName(
-                className.packageName,
-                className.simpleNames.joinToString(C.STR_UNDERSCORE)
-                        + C.STR_SERIALIZER_SUFFIX
-            )
-        }
 }
