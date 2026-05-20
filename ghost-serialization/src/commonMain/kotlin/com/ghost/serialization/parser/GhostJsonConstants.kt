@@ -289,6 +289,18 @@ internal object GhostJsonConstants {
     const val T_BYTE_INT = 116
     const val B_BYTE_INT = 98
     const val F_BYTE_INT = 102
+    const val U_BYTE_INT = 117
+    const val A_BYTE_INT = 97
+    const val L_BYTE_INT = 108
+    const val S_BYTE_INT = 115
+    const val E_BYTE_INT = 101
+
+    /**
+     * Maximum string length for the plain-ASCII writeQuotedAscii fast-path.
+     * Strings longer than this still fall through to the scratch-buffer escape path.
+     * Chosen to be larger than the scratch buffer so every short JSON string benefits.
+     */
+    const val PLAIN_ASCII_FAST_PATH_LIMIT = 512
 
     // --- Control Characters (Int values for parsing) ---
     const val LF_INT = 0x0A

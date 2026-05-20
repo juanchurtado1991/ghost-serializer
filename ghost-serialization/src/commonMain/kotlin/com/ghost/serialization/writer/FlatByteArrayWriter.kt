@@ -1,6 +1,7 @@
 package com.ghost.serialization.writer
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.parser.GhostJsonConstants.BUFFER_SCALE_FACTOR
 import com.ghost.serialization.parser.GhostJsonConstants.HIGH_SURROGATE_END
 import com.ghost.serialization.parser.GhostJsonConstants.HIGH_SURROGATE_START
@@ -84,6 +85,57 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     private fun growAndWrite(byteAsInt: Int) {
         ensureCapacity(1)
         array[size++] = byteAsInt.toByte()
+    }
+
+    /**
+     * Appends exactly two bytes in a single bounds-check.
+     * Use instead of two consecutive [writeByte] calls whenever both bytes
+     * are known at the call site (e.g. opening + closing quotes, escape pairs).
+     */
+    fun write2Bytes(b1: Int, b2: Int) {
+        val s = size
+        val arr = array
+        if (s + 1 < arr.size) {
+            arr[s] = b1.toByte()
+            arr[s + 1] = b2.toByte()
+            size = s + 2
+        } else {
+            ensureCapacity(2)
+            val arr2 = array
+            arr2[s] = b1.toByte()
+            arr2[s + 1] = b2.toByte()
+            size = s + 2
+        }
+    }
+
+    /**
+     * Writes `"text"` directly into [array] for a caller-verified plain-ASCII
+     * string (all chars in [0x20, 0x7E] with no `"` or `\`).
+     *
+     * Avoids the scratch-buffer accumulation used by the generic escape path,
+     * saving one intermediate copy + thread-local acquire for the common case.
+     */
+    fun writeQuotedAscii(text: String, length: Int) {
+        ensureCapacity(length + C.STRING_QUOTE_PAIR_BYTES)
+        val arr = array
+        var w = size
+        arr[w++] = C.QUOTE_INT.toByte()
+        var i = 0
+        // Unrolled x4 for instruction-level parallelism
+        while (i + 3 < length) {
+            arr[w] = text[i].code.toByte()
+            arr[w + 1] = text[i + 1].code.toByte()
+            arr[w + 2] = text[i + 2].code.toByte()
+            arr[w + 3] = text[i + 3].code.toByte()
+            w += 4
+            i += 4
+        }
+        while (i < length) {
+            arr[w++] = text[i].code.toByte()
+            i++
+        }
+        arr[w++] = C.QUOTE_INT.toByte()
+        size = w
     }
 
     /** Appends every byte from [bytes] to the live payload. */
@@ -210,6 +262,53 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
             sourceIndex++
         }
         size = writeIndex
+    }
+
+    /** Writes the literal "true" directly. */
+    fun writeTrue() {
+        ensureCapacity(4)
+        val backingArray = array
+        var s = size
+        backingArray[s++] = C.T_BYTE_INT.toByte()
+        backingArray[s++] = C.R_BYTE_INT.toByte()
+        backingArray[s++] = C.U_BYTE_INT.toByte()
+        backingArray[s++] = C.E_BYTE_INT.toByte()
+        size = s
+    }
+
+    /** Writes the literal "false" directly. */
+    fun writeFalse() {
+        ensureCapacity(5)
+        val backingArray = array
+        var s = size
+        backingArray[s++] = C.F_BYTE_INT.toByte()
+        backingArray[s++] = C.A_BYTE_INT.toByte()
+        backingArray[s++] = C.L_BYTE_INT.toByte()
+        backingArray[s++] = C.S_BYTE_INT.toByte()
+        backingArray[s++] = C.E_BYTE_INT.toByte()
+        size = s
+    }
+
+    /** Writes the literal "null" directly. */
+    fun writeNull() {
+        ensureCapacity(4)
+        val backingArray = array
+        var s = size
+        backingArray[s++] = C.N_BYTE_INT.toByte()
+        backingArray[s++] = C.U_BYTE_INT.toByte()
+        backingArray[s++] = C.L_BYTE_INT.toByte()
+        backingArray[s++] = C.L_BYTE_INT.toByte()
+        size = s
+    }
+
+    /** Writes the literal ".0" directly. */
+    fun writeDotZero() {
+        ensureCapacity(2)
+        val backingArray = array
+        var s = size
+        backingArray[s++] = C.DOT_INT.toByte()
+        backingArray[s++] = C.ZERO_INT.toByte()
+        size = s
     }
 
     /**
