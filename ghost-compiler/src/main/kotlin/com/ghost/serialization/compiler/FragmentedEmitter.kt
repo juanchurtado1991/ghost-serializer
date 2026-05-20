@@ -186,8 +186,8 @@ internal class FragmentedEmitter(
             }
         }
 
-        for (index in 0 until maskCount) {
-            val reqMask = requiredMasks[index]
+        for (maskIdx in 0 until maskCount) {
+            val reqMask = requiredMasks[maskIdx]
             if (reqMask != 0L) {
 
                 val reqMaskStr = if (reqMask == Long.MIN_VALUE) {
@@ -198,18 +198,18 @@ internal class FragmentedEmitter(
 
                 body.beginControlFlow(
                     C.TEMPLATE_IF_MASK_NOT_MET,
-                    index,
+                    maskIdx,
                     reqMaskStr,
                     reqMaskStr
                 )
 
-                properties.forEachIndexed { index, it ->
+                properties.forEachIndexed { propIdx, prop ->
                     if (
-                        !it.isNullable &&
-                        !it.hasDefaultValue
-                        && (index / C.MASK_SIZE_BITS.toInt()) == index
+                        !prop.isNullable &&
+                        !prop.hasDefaultValue
+                        && (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx
                     ) {
-                        val bitIdx = index % C.MASK_SIZE_BITS.toInt()
+                        val bitIdx = propIdx % C.MASK_SIZE_BITS.toInt()
                         val bitMask = 1L shl bitIdx
 
                         val bitMaskStr = if (bitMask == Long.MIN_VALUE) {
@@ -220,13 +220,13 @@ internal class FragmentedEmitter(
 
                         body.beginControlFlow(
                             C.TEMPLATE_IF_MASK_MISSING,
-                            index,
+                            maskIdx,
                             bitMaskStr
                         )
 
                         body.addStatement(
                             C.TEMPLATE_THROW_S,
-                            C.STR_REQ_FIELD_1 + it.jsonName + C.STR_REQ_FIELD_2
+                            C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
                         )
 
                         body.endControlFlow()
