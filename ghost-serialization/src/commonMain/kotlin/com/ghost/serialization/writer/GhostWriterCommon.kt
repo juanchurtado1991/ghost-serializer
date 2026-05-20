@@ -422,3 +422,140 @@ internal inline fun writeFieldDoubleImpl(
     writeDoubleValueRaw(value)
     setNeedsComma(true)
 }
+
+internal inline fun writeValueStringImpl(
+    appendSeparator: () -> Unit,
+    writeStringValueRaw: (String) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    value: String
+) {
+    appendSeparator()
+    writeStringValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeValueIntImpl(
+    appendSeparator: () -> Unit,
+    writeIntValueRaw: (Int) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    value: Int
+) {
+    appendSeparator()
+    writeIntValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeValueLongImpl(
+    appendSeparator: () -> Unit,
+    writeLongValueRaw: (Long) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    value: Long
+) {
+    appendSeparator()
+    writeLongValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeValueDoubleImpl(
+    appendSeparator: () -> Unit,
+    writeDoubleValueRaw: (Double) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    value: Double
+) {
+    appendSeparator()
+    writeDoubleValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeValueBooleanImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    value: Boolean
+) {
+    appendSeparator()
+    writeBytes(if (value) C.TRUE_BS else C.FALSE_BS)
+    setNeedsComma(true)
+}
+
+internal inline fun writeNullValueImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    setNeedsComma: (Boolean) -> Unit
+) {
+    appendSeparator()
+    writeBytes(C.NULL_BS)
+    setNeedsComma(true)
+}
+
+internal inline fun writeBooleanValueRawImpl(
+    value: Boolean,
+    writeBytes: (ByteString) -> Unit
+) {
+    writeBytes(if (value) C.TRUE_BS else C.FALSE_BS)
+}
+
+internal inline fun writeIntValueRawImpl(
+    value: Int,
+    writeByte: (Int) -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeLongValueRawInternal: (Long) -> Unit
+) {
+    if (value == 0) {
+        writeByte(C.ZERO_INT)
+    } else if (value == 1) {
+        writeByte(C.ONE_INT)
+    } else if (value == 2) {
+        writeByte(C.TWO_INT)
+    } else if (value == -1) {
+        writeBytes(C.MINUS_ONE_BS)
+    } else if (value == Int.MIN_VALUE) {
+        writeBytes(C.MIN_INT_BS)
+    } else {
+        writeLongValueRawInternal(value.toLong())
+    }
+}
+
+internal inline fun writeLongValueRawImpl(
+    value: Long,
+    writeByte: (Int) -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeLongValueRawInternal: (Long) -> Unit
+) {
+    when (value) {
+        0L -> writeByte(C.ZERO_INT)
+        1L -> writeByte(C.ONE_INT)
+        2L -> writeByte(C.TWO_INT)
+        -1L -> writeBytes(C.MINUS_ONE_BS)
+        Int.MIN_VALUE.toLong() -> writeBytes(C.MIN_INT_BS)
+        Long.MIN_VALUE -> writeBytes(C.MIN_LONG_BS)
+        else -> writeLongValueRawInternal(value)
+    }
+}
+
+internal inline fun writeStringValueRawImpl(
+    value: String,
+    acquireScratch: () -> ByteArray,
+    writeByte: (Int) -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeEscaped: (String) -> Unit,
+    writeEscapedIntoScratch: (String, Int, ByteArray) -> Unit
+) {
+    val length = value.length
+    if (length == 0) {
+        writeBytes(C.EMPTY_STRING_BS)
+        return
+    }
+
+    val scratchBuf = acquireScratch()
+    if (length + C.STRING_QUOTE_PAIR_BYTES > scratchBuf.size) {
+        writeByte(C.QUOTE_INT)
+        writeEscaped(value)
+        writeByte(C.QUOTE_INT)
+        return
+    }
+
+    scratchBuf[0] = C.QUOTE_BYTE
+    writeEscapedIntoScratch(value, length, scratchBuf)
+}
+
