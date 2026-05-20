@@ -15,14 +15,11 @@ import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.GhostJsonConstants.COLON_QUOTE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.COMMA_INT
-import com.ghost.serialization.parser.GhostJsonConstants.DOT_ZERO
 import com.ghost.serialization.parser.GhostJsonConstants.DOUBLE_DIGIT_LUT
-import com.ghost.serialization.parser.GhostJsonConstants.EMPTY_STRING_BS
 import com.ghost.serialization.parser.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 import com.ghost.serialization.parser.GhostJsonConstants.ERR_NON_FINITE
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_MASKS
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_REPLACEMENTS
-import com.ghost.serialization.parser.GhostJsonConstants.FALSE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.HEX_CHARS
 import com.ghost.serialization.parser.GhostJsonConstants.HEX_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.HUNDRED_LONG
@@ -30,12 +27,11 @@ import com.ghost.serialization.parser.GhostJsonConstants.LONG_SCRATCH_SIZE
 import com.ghost.serialization.parser.GhostJsonConstants.MAX_DEPTH
 import com.ghost.serialization.parser.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.MINUS
-import com.ghost.serialization.parser.GhostJsonConstants.MINUS_ONE_BS
+import com.ghost.serialization.parser.GhostJsonConstants.MINUS_INT
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.NULL_BS
-import com.ghost.serialization.parser.GhostJsonConstants.ONE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_BYTE
@@ -47,7 +43,6 @@ import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_L
 import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.TEN_LONG
-import com.ghost.serialization.parser.GhostJsonConstants.TRUE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.TWO_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
@@ -363,14 +358,12 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     @InternalGhostApi
     fun writeIntValueRaw(value: Int) {
-        if (value == 0) {
-            buffer.writeByte(ZERO_INT)
-        } else if (value == 1) {
-            buffer.writeByte(ONE_INT)
-        } else if (value == 2) {
-            buffer.writeByte(TWO_INT)
-        } else if (value == -1) {
-            buffer.write(MINUS_ONE_BS)
+        // Fast-path: single digit positive (most common: IDs, counts, status codes)
+        if (value in 0..9) {
+            buffer.writeByte(ZERO_INT + value)
+        } else if (value in -9..-1) {
+            // Single-digit negative: two bytes, one bounds-check
+            buffer.write2Bytes(MINUS_INT, ZERO_INT - value)
         } else if (value == Int.MIN_VALUE) {
             buffer.write(MIN_INT_BS)
         } else {
@@ -383,28 +376,18 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      */
     @InternalGhostApi
     fun writeLongValueRaw(value: Long) {
-        when (value) {
-            0L -> {
-                buffer.writeByte(ZERO_INT)
-            }
-            1L -> {
-                buffer.writeByte(ONE_INT)
-            }
-            2L -> {
-                buffer.writeByte(TWO_INT)
-            }
-            -1L -> {
-                buffer.write(MINUS_ONE_BS)
-            }
-            Int.MIN_VALUE.toLong() -> {
-                buffer.write(MIN_INT_BS)
-            }
-            Long.MIN_VALUE -> {
-                buffer.write(MIN_LONG_BS)
-            }
-            else -> {
-                writeLongValueRawInternal(value)
-            }
+        // Fast-path: single digit positive
+        if (value in 0L..9L) {
+            buffer.writeByte((ZERO_INT + value).toInt())
+        } else if (value in -9L..-1L) {
+            // Single-digit negative: two bytes, one bounds-check
+            buffer.write2Bytes(MINUS_INT, (ZERO_INT - value).toInt())
+        } else if (value == Int.MIN_VALUE.toLong()) {
+            buffer.write(MIN_INT_BS)
+        } else if (value == Long.MIN_VALUE) {
+            buffer.write(MIN_LONG_BS)
+        } else {
+            writeLongValueRawInternal(value)
         }
     }
 
