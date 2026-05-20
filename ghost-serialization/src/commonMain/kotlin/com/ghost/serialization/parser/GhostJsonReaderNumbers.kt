@@ -12,137 +12,44 @@ import kotlin.math.pow
  * Uses a zero-allocation, register-based loop for maximum speed.
  * Used by KSP-generated serializers.
  */
-fun GhostJsonReader.nextFloat(): Float {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-
-    validateLeadingZero()
-
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
-    // Integer part
-    nextTokenByte = -1
-    readNumericLoop(
-        onDigit = { byte ->
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-            } else {
-                exponent++
-            }
-        }
-    )
-
-    if (digitCount == 0) throwError(C.ERR_EXPECTED_INT_PART)
-
-    // Decimal part
-    if (position < limit && getByte(position) == C.DOT_INT) {
-        position++ // nextTokenByte already -1
-        val startPos = position
-        readNumericLoop(
-            onDigit = { byte ->
-                val digit = byte - C.ZERO_INT
-                if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digit
-                    digitCount++
-                    exponent--
-                }
-            }
-        )
-        if (position == startPos) throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-    }
-
-    // Exponent part
-    if (
-        position < limit &&
-        isExponentMarker(getByte(position))
-    ) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toFloat()
-    if (exponent != 0) {
-        result *= getFloatPowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) result = -result
-    validateNumericRangeFloat(result)
-
-    if (isQuoted) consumeNumericCoercionFooter()
-
-    return result
-}
+fun GhostJsonReader.nextFloat(): Float = nextFloatImpl(
+    prepareNumericHeader = { prepareNumericHeader() },
+    validateLeadingZero = { validateLeadingZero() },
+    readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
+    throwError = { throwError(it) },
+    getPosition = { position },
+    setPosition = { position = it },
+    getLimit = { limit },
+    getByte = { getByte(it) },
+    isExponentMarker = { isExponentMarker(it) },
+    parseExponentValue = { parseExponentValue() },
+    getFloatPowerOfTen = { getFloatPowerOfTen(it) },
+    validateNumericRangeFloat = { validateNumericRangeFloat(it) },
+    consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
+    setNextTokenByte = { nextTokenByte = it }
+)
 
 /**
  * Reads a JSON number and returns it as a Double.
  * Uses a zero-allocation, register-based loop for maximum speed.
  * Used by KSP-generated serializers.
  */
-fun GhostJsonReader.nextDouble(): Double {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-
-    validateLeadingZero()
-
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
-    // Integer part
-    nextTokenByte = -1
-    readNumericLoop(
-        onDigit = { byte ->
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-            } else {
-                exponent++
-            }
-        }
-    )
-
-    if (digitCount == 0) throwError(C.ERR_EXPECTED_INT_PART)
-
-    // Decimal part
-    if (position < limit && getByte(position) == C.DOT_INT) {
-        position++ // nextTokenByte already -1
-        val startPos = position
-        readNumericLoop(
-            onDigit = { byte ->
-                val digitValue = byte - C.ZERO_INT
-                if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digitValue
-                    digitCount++
-                    exponent--
-                }
-            }
-        )
-        if (position == startPos) throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-    }
-
-    // Exponent part
-    if (position < limit && isExponentMarker(getByte(position))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toDouble()
-    if (exponent != 0) {
-        result *= getDoublePowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) result = -result
-    validateNumericRange(result)
-
-    if (isQuoted) consumeNumericCoercionFooter()
-
-    return result
-}
+fun GhostJsonReader.nextDouble(): Double = nextDoubleImpl(
+    prepareNumericHeader = { prepareNumericHeader() },
+    validateLeadingZero = { validateLeadingZero() },
+    readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
+    throwError = { throwError(it) },
+    getPosition = { position },
+    setPosition = { position = it },
+    getLimit = { limit },
+    getByte = { getByte(it) },
+    isExponentMarker = { isExponentMarker(it) },
+    parseExponentValue = { parseExponentValue() },
+    getDoublePowerOfTen = { getDoublePowerOfTen(it) },
+    validateNumericRange = { validateNumericRange(it) },
+    consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
+    setNextTokenByte = { nextTokenByte = it }
+)
 
 @Suppress("NOTHING_TO_INLINE")
 private inline fun GhostJsonReader.parseExponentValue(): Int {
@@ -216,64 +123,30 @@ private inline fun getDoublePowerOfTen(exponent: Int): Double {
  * Optimized for common small integers.
  * Used by KSP-generated serializers.
  */
-fun GhostJsonReader.nextInt(): Int {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-    
-    val startOfNumber = position
-
-    val absoluteValue = if (
-        position < limit &&
-        getByte(position) == C.ZERO_INT
-    ) {
-        handleLeadingZero()
-        0
-    } else {
-        parseIntDigits(isNegativeValue, startOfNumber)
-    }
-
-    val finalIntResult = if (isNegativeValue) {
-        -absoluteValue
-    } else {
-        absoluteValue
-    }
-
-    if (isQuoted) consumeNumericCoercionFooter()
-    return finalIntResult
-}
+fun GhostJsonReader.nextInt(): Int = nextIntImpl(
+    prepareNumericHeader = { prepareNumericHeader() },
+    getPosition = { position },
+    getLimit = { limit },
+    getByte = { getByte(it) },
+    handleLeadingZero = { handleLeadingZero() },
+    parseIntDigits = { neg, start -> parseIntDigits(neg, start) },
+    consumeNumericCoercionFooter = { consumeNumericCoercionFooter() }
+)
 
 /**
  * Reads a JSON long and returns it as a Long.
  * Optimized for common small longs.
  * Used by KSP-generated serializers.
  */
-fun GhostJsonReader.nextLong(): Long {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-    
-    val startOfNumber = position
-
-    val absoluteValue = if (
-        position < limit &&
-        getByte(position) == C.ZERO_INT
-    ) {
-        handleLeadingZero()
-        C.RESULT_NONE
-    } else {
-        parseLongDigits(isNegativeValue, startOfNumber)
-    }
-
-    val finalLongResult = if (absoluteValue == Long.MIN_VALUE) {
-        absoluteValue
-    } else {
-        (if (isNegativeValue) -absoluteValue else absoluteValue)
-    }
-
-    if (isQuoted) consumeNumericCoercionFooter()
-    return finalLongResult
-}
+fun GhostJsonReader.nextLong(): Long = nextLongImpl(
+    prepareNumericHeader = { prepareNumericHeader() },
+    getPosition = { position },
+    getLimit = { limit },
+    getByte = { getByte(it) },
+    handleLeadingZero = { handleLeadingZero() },
+    parseLongDigits = { neg, start -> parseLongDigits(neg, start) },
+    consumeNumericCoercionFooter = { consumeNumericCoercionFooter() }
+)
 
 private fun GhostJsonReader.prepareNumericHeader(): Int {
     if (nextTokenByte == -1) skipWhitespace()
@@ -313,81 +186,35 @@ private fun GhostJsonReader.handleLeadingZero() {
     internalSkip(1)
 }
 
-@Suppress("AssignedValueIsNeverRead")
 private fun GhostJsonReader.parseIntDigits(
     isNegative: Boolean,
     startOfNumber: Int
-): Int {
-    var accumulatedValue = 0
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = -1
-    var earlyExitResult: Int? = null
-    readNumericLoop(
-        onDigit = { byte ->
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                calculateIntWithOverflowCheck(
-                    accumulatedValue,
-                    digit,
-                    isNegative
-                )
-            }
-            digitCount++
-            hasDigitsFound = true
-        },
-        onBreak = { byte ->
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toInt()
-            }
-        }
-    )
+): Int = parseIntDigitsImpl(
+    isNegative = isNegative,
+    startOfNumber = startOfNumber,
+    readNumericLoop = { onDigit, onBreak -> readNumericLoop(onDigit, onBreak) },
+    calculateIntWithOverflowCheck = { curr, digit, neg -> calculateIntWithOverflowCheck(curr, digit, neg) },
+    isNumericSeparator = { isNumericSeparator(it) },
+    setPosition = { position = it },
+    nextDouble = { nextDouble() },
+    throwError = { throwError(it) },
+    setNextTokenByte = { nextTokenByte = it }
+)
 
-    if (earlyExitResult != null) return earlyExitResult!!
-    if (!hasDigitsFound) throwError(C.ERR_EXPECTED_INT_PART)
-    return accumulatedValue
-}
-
-@Suppress("AssignedValueIsNeverRead", "UNNECESSARY_NOT_NULL_ASSERTION")
 private fun GhostJsonReader.parseLongDigits(
     isNegative: Boolean,
     startOfNumber: Int
-): Long {
-    var accumulatedValue = 0L
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = -1
-    var earlyExitResult: Long? = null
-    readNumericLoop(
-        onDigit = { byte ->
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                calculateLongWithOverflowCheck(
-                    accumulatedValue,
-                    digit,
-                    isNegative
-                )
-            }
-            digitCount++
-            hasDigitsFound = true
-        },
-        onBreak = { byte ->
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toLong()
-            }
-        }
-    )
-
-    if (earlyExitResult != null) return earlyExitResult!!
-    if (!hasDigitsFound) throwError(C.ERR_EXPECTED_INT_PART)
-    return accumulatedValue
-}
+): Long = parseLongDigitsImpl(
+    isNegative = isNegative,
+    startOfNumber = startOfNumber,
+    readNumericLoop = { onDigit, onBreak -> readNumericLoop(onDigit, onBreak) },
+    calculateLongWithOverflowCheck = { curr, digit, neg -> calculateLongWithOverflowCheck(curr, digit, neg) },
+    isNumericSeparator = { isNumericSeparator(it) },
+    setPosition = { position = it },
+    nextDouble = { nextDouble() },
+    throwError = { throwError(it) },
+    setNextTokenByte = { nextTokenByte = it }
+)
 
 @Suppress("NOTHING_TO_INLINE")
 private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
@@ -469,62 +296,18 @@ private fun GhostJsonReader.validateNumericRange(valueToValidate: Double) {
 }
 
 @InternalGhostApi
-fun GhostJsonReader.skipNumber() {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-
-    var hasDigits = false
-
-    // Integer part
-    if (position < limit && getByte(position) == C.ZERO_INT) {
-        position++
-        hasDigits = true
-        if (
-            position < limit &&
-            isDigit(getByte(position))
-        ) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    } else {
-        readNumericLoop(onDigit = { hasDigits = true })
-    }
-
-    if (!hasDigits) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    // Decimal part
-    if (
-        position < limit &&
-        getByte(position) == C.DOT_INT
-    ) {
-        position++
-        var hasDecimalDigits = false
-        readNumericLoop(onDigit = { hasDecimalDigits = true })
-        if (!hasDecimalDigits) throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-    }
-
-    // Exponent part
-    if (position < limit) {
-        val byte = getByte(position)
-        if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {
-            position++
-            if (position < limit) {
-                val sign = getByte(position)
-                if (sign == C.PLUS_INT || sign == C.MINUS_INT) {
-                    position++
-                }
-            }
-
-            var hasExpDigits = false
-            readNumericLoop(onDigit = { hasExpDigits = true })
-            if (!hasExpDigits) throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)
-        }
-    }
-
-    if (isQuoted) consumeNumericCoercionFooter()
-    nextTokenByte = -1
-}
+fun GhostJsonReader.skipNumber() = skipNumberImpl(
+    prepareNumericHeader = { prepareNumericHeader() },
+    getPosition = { position },
+    setPosition = { position = it },
+    getLimit = { limit },
+    getByte = { getByte(it) },
+    isDigit = { isDigit(it) },
+    readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
+    throwError = { throwError(it) },
+    consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
+    setNextTokenByte = { nextTokenByte = it }
+)
 
 @Suppress("NOTHING_TO_INLINE")
 private inline fun GhostJsonReader.readNumericLoop(
