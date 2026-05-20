@@ -75,7 +75,7 @@ internal class SerializeCodeEmitter(
             isValue -> emitValueUnboxing(code)
             isEnum -> emitEnumSerialization(code)
 
-            properties.size > C.DEFAULT_CHUNK_SIZE -> {
+            properties.size > C.PROPERTY_MAX_SIZE -> {
                 val fragmented = FragmentedSerializeEmitter(
                     sortedProperties,
                     originalClassName,
