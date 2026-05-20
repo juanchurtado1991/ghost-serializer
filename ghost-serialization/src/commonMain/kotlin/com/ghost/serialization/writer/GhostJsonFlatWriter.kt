@@ -461,108 +461,16 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     }
 
     private fun writeEscaped(text: String, start: Int = 0) {
-        val length = text.length
-        val remaining = length - start
-        if (remaining <= 0) return
-
-        val replacements = ESCAPE_REPLACEMENTS
         val scratchBuf = acquireScratch()
-        val scratchSize = scratchBuf.size
-
-        if (remaining <= scratchSize) {
-            var scratchPos = 0
-            var index = start
-            while (index < length) {
-                val charCode = text[index].code
-                if (
-                    charCode < ASCII_LIMIT &&
-                    (GhostJsonConstants.ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
-                            (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-                ) {
-                    scratchBuf[scratchPos++] = charCode.toByte()
-                    index++
-                    continue
-                }
-                if (scratchPos > 0) {
-                    buffer.write(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-                if (charCode < ASCII_LIMIT) {
-                    val replacement = replacements[charCode]
-                    if (replacement != null) buffer.write(replacement)
-                    else writeUnicodeEscape(charCode, scratchBuf)
-                } else {
-                    val char = text[index]
-                    if (
-                        char.isHighSurrogate() &&
-                        index + 1 < length && text[index + 1].isLowSurrogate()
-                    ) {
-                        buffer.writeUtf8(
-                            text,
-                            index,
-                            index + SURROGATE_PAIR_LENGTH
-                        )
-                        index++
-                    } else {
-                        buffer.writeUtf8(
-                            text,
-                            index,
-                            index + 1
-                        )
-                    }
-                }
-                index++
-            }
-            if (scratchPos > 0) {
-                buffer.write(
-                    scratchBuf,
-                    0,
-                    scratchPos
-                )
-            }
-            return
-        }
-
-        var scratchPos = 0
-        var index = start
-        while (index < length) {
-            val charCode = text[index].code
-            if (
-                charCode < ASCII_LIMIT &&
-                (GhostJsonConstants.ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                if (scratchPos == scratchSize) {
-                    buffer.write(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-                index++
-                continue
-            }
-
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            if (charCode < ASCII_LIMIT) {
-                val replacement = replacements[charCode]
-                if (replacement != null) buffer.write(replacement)
-                else writeUnicodeEscape(charCode, scratchBuf)
-            } else {
-                val c = text[index]
-                if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    buffer.writeUtf8(text, index, index + SURROGATE_PAIR_LENGTH)
-                    index++
-                } else {
-                    buffer.writeUtf8(text, index, index + 1)
-                }
-            }
-            index++
-        }
-
-        if (scratchPos > 0) buffer.write(scratchBuf, 0, scratchPos)
+        writeEscapedImpl(
+            text = text,
+            start = start,
+            scratchBuf = scratchBuf,
+            writeBytes = { bytes, offset, len -> buffer.write(bytes, offset, len) },
+            writeReplacementBytes = { bytes -> buffer.write(bytes) },
+            writeUtf8 = { str, begin, end -> buffer.writeUtf8(str, begin, end) },
+            writeUnicodeEscape = { code -> writeUnicodeEscape(code, scratchBuf) }
+        )
     }
 
     /**
@@ -570,46 +478,16 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
      * If an escape character is found, it falls back to standard [writeEscaped].
      */
     private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: ByteArray) {
-        var scratchPos = 1 // Start after the opening quote already written at index 0.
-        var index = 0
-        while (index < length) {
-            val charCode = text[index].code
-            if (
-                charCode < ASCII_LIMIT &&
-                (GhostJsonConstants.ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                index++
-                continue
-            }
-
-            // Flush what we have (including the opening quote) and fall back.
-            buffer.write(scratchBuf, 0, scratchPos)
-
-            if (charCode < ASCII_LIMIT) {
-                val replacement = ESCAPE_REPLACEMENTS[charCode]
-                if (replacement != null) buffer.write(replacement)
-                else writeUnicodeEscape(charCode, scratchBuf)
-            } else {
-                val c = text[index]
-                if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    buffer.writeUtf8(text, index, index + SURROGATE_PAIR_LENGTH)
-                    index++
-                } else {
-                    buffer.writeUtf8(text, index, index + 1)
-                }
-            }
-            index++
-
-            if (index < length) writeEscaped(text, index)
-
-            buffer.writeByte(QUOTE_INT)
-            return
-        }
-
-        scratchBuf[scratchPos++] = QUOTE_BYTE
-        buffer.write(scratchBuf, 0, scratchPos)
+        writeEscapedIntoScratchImpl(
+            text = text,
+            length = length,
+            scratchBuf = scratchBuf,
+            writeBytes = { bytes, offset, len -> buffer.write(bytes, offset, len) },
+            writeByte = { b -> buffer.writeByte(b) },
+            writeReplacementBytes = { bytes -> buffer.write(bytes) },
+            writeUtf8 = { str, begin, end -> buffer.writeUtf8(str, begin, end) },
+            writeUnicodeEscape = { code -> writeUnicodeEscape(code, scratchBuf) }
+        )
     }
 
     private fun checkDepth() {
@@ -621,15 +499,10 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     }
 
     private fun writeUnicodeEscape(code: Int, scratchBuf: ByteArray) {
-        val hexChars = HEX_CHARS
-
-        scratchBuf[0] = BACKSLASH
-        scratchBuf[1] = UNICODE_PREFIX_U
-        scratchBuf[2] = hexChars[(code shr SHIFT_12) and HEX_MASK]
-        scratchBuf[3] = hexChars[(code shr SHIFT_8) and HEX_MASK]
-        scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
-        scratchBuf[5] = hexChars[code and HEX_MASK]
-
-        buffer.write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)
+        writeUnicodeEscapeImpl(
+            code = code,
+            scratchBuf = scratchBuf,
+            writeBytes = { bytes, offset, length -> buffer.write(bytes, offset, length) }
+        )
     }
 }
