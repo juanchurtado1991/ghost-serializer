@@ -270,3 +270,155 @@ internal inline fun writeDoubleValueRawImpl(
         writeBytes(scratchBuf, 0, bytesWrittenLength)
     }
 }
+
+internal inline fun beginObjectImpl(
+    getDepth: () -> Int,
+    setDepth: (Int) -> Unit,
+    maxDepth: Int,
+    appendSeparator: () -> Unit,
+    writeByte: (Int) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    throwDepthError: () -> Unit
+) {
+    val d = getDepth()
+    if (d >= maxDepth) throwDepthError()
+    appendSeparator()
+    writeByte(C.OPEN_OBJ_INT)
+    setNeedsComma(false)
+    setDepth(d + 1)
+}
+
+internal inline fun endObjectImpl(
+    getDepth: () -> Int,
+    setDepth: (Int) -> Unit,
+    writeByte: (Int) -> Unit,
+    setNeedsComma: (Boolean) -> Unit
+) {
+    writeByte(C.CLOSE_OBJ_INT)
+    setNeedsComma(true)
+    setDepth(getDepth() - 1)
+}
+
+internal inline fun beginArrayImpl(
+    getDepth: () -> Int,
+    setDepth: (Int) -> Unit,
+    maxDepth: Int,
+    appendSeparator: () -> Unit,
+    writeByte: (Int) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    throwDepthError: () -> Unit
+) {
+    val d = getDepth()
+    if (d >= maxDepth) throwDepthError()
+    appendSeparator()
+    writeByte(C.OPEN_ARR_INT)
+    setNeedsComma(false)
+    setDepth(d + 1)
+}
+
+internal inline fun endArrayImpl(
+    getDepth: () -> Int,
+    setDepth: (Int) -> Unit,
+    writeByte: (Int) -> Unit,
+    setNeedsComma: (Boolean) -> Unit
+) {
+    writeByte(C.CLOSE_ARR_INT)
+    setNeedsComma(true)
+    setDepth(getDepth() - 1)
+}
+
+internal inline fun nameStringImpl(
+    appendSeparator: () -> Unit,
+    writeByte: (Int) -> Unit,
+    writeEscaped: (String) -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    key: String
+) {
+    appendSeparator()
+    writeByte(C.QUOTE_INT)
+    writeEscaped(key)
+    writeBytes(C.COLON_QUOTE_BS)
+    setNeedsComma(false)
+}
+
+internal inline fun nameByteStringImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    key: ByteString
+) {
+    appendSeparator()
+    writeBytes(key)
+    setNeedsComma(false)
+}
+
+internal inline fun writeFieldIntImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeIntValueRaw: (Int) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    header: ByteString,
+    value: Int
+) {
+    appendSeparator()
+    writeBytes(header)
+    writeIntValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeFieldLongImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeLongValueRaw: (Long) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    header: ByteString,
+    value: Long
+) {
+    appendSeparator()
+    writeBytes(header)
+    writeLongValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeFieldStringImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeStringValueRaw: (String) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    header: ByteString,
+    value: String
+) {
+    appendSeparator()
+    writeBytes(header)
+    writeStringValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeFieldBooleanImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeBooleanValueRaw: (Boolean) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    header: ByteString,
+    value: Boolean
+) {
+    appendSeparator()
+    writeBytes(header)
+    writeBooleanValueRaw(value)
+    setNeedsComma(true)
+}
+
+internal inline fun writeFieldDoubleImpl(
+    appendSeparator: () -> Unit,
+    writeBytes: (ByteString) -> Unit,
+    writeDoubleValueRaw: (Double) -> Unit,
+    setNeedsComma: (Boolean) -> Unit,
+    header: ByteString,
+    value: Double
+) {
+    appendSeparator()
+    writeBytes(header)
+    writeDoubleValueRaw(value)
+    setNeedsComma(true)
+}

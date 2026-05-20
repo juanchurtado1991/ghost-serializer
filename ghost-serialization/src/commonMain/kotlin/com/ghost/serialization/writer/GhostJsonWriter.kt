@@ -127,11 +127,15 @@ class GhostJsonWriter(
      * Automatically handles comma insertion and indentation tracking.
      */
     fun beginObject(): GhostJsonWriter {
-        if (depth >= MAX_DEPTH) throwDepthError()
-        appendSeparator()
-        buffer.writeByte(OPEN_OBJ_INT)
-        needsComma = false
-        depth++
+        beginObjectImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            maxDepth = MAX_DEPTH,
+            appendSeparator = { appendSeparator() },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it },
+            throwDepthError = { throwDepthError() }
+        )
         return this
     }
 
@@ -146,25 +150,35 @@ class GhostJsonWriter(
      * significant cost when serializing large lists.
      */
     fun endObject(): GhostJsonWriter {
-        buffer.writeByte(CLOSE_OBJ_INT)
-        needsComma = true
-        depth--
+        endObjectImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it }
+        )
         return this
     }
 
     fun beginArray(): GhostJsonWriter {
-        if (depth >= MAX_DEPTH) throwDepthError()
-        appendSeparator()
-        buffer.writeByte(OPEN_ARR_INT)
-        needsComma = false
-        depth++
+        beginArrayImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            maxDepth = MAX_DEPTH,
+            appendSeparator = { appendSeparator() },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it },
+            throwDepthError = { throwDepthError() }
+        )
         return this
     }
 
     fun endArray(): GhostJsonWriter {
-        buffer.writeByte(CLOSE_ARR_INT)
-        needsComma = true
-        depth--
+        endArrayImpl(
+            getDepth = { depth },
+            setDepth = { depth = it },
+            writeByte = { buffer.writeByte(it) },
+            setNeedsComma = { needsComma = it }
+        )
         return this
     }
 
@@ -173,11 +187,14 @@ class GhostJsonWriter(
      * Escapes the key and appends the colon separator.
      */
     fun name(key: String): GhostJsonWriter {
-        appendSeparator()
-        buffer.writeByte(QUOTE_INT)
-        writeEscaped(key)
-        buffer.write(COLON_QUOTE_BS)
-        needsComma = false
+        nameStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeByte = { buffer.writeByte(it) },
+            writeEscaped = { writeEscaped(it) },
+            writeBytes = { buffer.write(it) },
+            setNeedsComma = { needsComma = it },
+            key = key
+        )
         return this
     }
 
@@ -186,9 +203,12 @@ class GhostJsonWriter(
      * This is the fastest way to write field names as it avoids runtime escaping.
      */
     fun name(key: ByteString): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(key)
-        needsComma = false
+        nameByteStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            setNeedsComma = { needsComma = it },
+            key = key
+        )
         return this
     }
 
@@ -202,46 +222,66 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Int): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(header)
-        writeIntValueRaw(value)
-        needsComma = true
+        writeFieldIntImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeIntValueRaw = { writeIntValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Long): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(header)
-        writeLongValueRaw(value)
-        needsComma = true
+        writeFieldLongImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeLongValueRaw = { writeLongValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(header)
-        writeStringValueRaw(value)
-        needsComma = true
+        writeFieldStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeStringValueRaw = { writeStringValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Boolean): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(header)
-        writeBooleanValueRaw(value)
-        needsComma = true
+        writeFieldBooleanImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeBooleanValueRaw = { writeBooleanValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
     @InternalGhostApi
     fun writeField(header: ByteString, value: Double): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(header)
-        writeDoubleValueRaw(value)
-        needsComma = true
+        writeFieldDoubleImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            writeDoubleValueRaw = { writeDoubleValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            header = header,
+            value = value
+        )
         return this
     }
 
