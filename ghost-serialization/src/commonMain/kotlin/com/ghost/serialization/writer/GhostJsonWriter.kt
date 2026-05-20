@@ -289,50 +289,66 @@ class GhostJsonWriter(
     fun writeField(header: ByteString, value: Float): GhostJsonWriter =
         writeField(header, value.toDouble())
 
-
     // ── value() public API ────────────────────────────────────────────────────
 
     fun value(text: String): GhostJsonWriter {
-        appendSeparator()
-        writeStringValueRaw(text)
-        needsComma = true
+        writeValueStringImpl(
+            appendSeparator = { appendSeparator() },
+            writeStringValueRaw = { writeStringValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            value = text
+        )
         return this
     }
 
     fun value(number: Int): GhostJsonWriter {
-        appendSeparator()
-        writeIntValueRaw(number)
-        needsComma = true
+        writeValueIntImpl(
+            appendSeparator = { appendSeparator() },
+            writeIntValueRaw = { writeIntValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            value = number
+        )
         return this
     }
 
     fun value(number: Long): GhostJsonWriter {
-        appendSeparator()
-        writeLongValueRaw(number)
-        needsComma = true
+        writeValueLongImpl(
+            appendSeparator = { appendSeparator() },
+            writeLongValueRaw = { writeLongValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            value = number
+        )
         return this
     }
 
     fun value(number: Double): GhostJsonWriter {
-        appendSeparator()
-        writeDoubleValueRaw(number)
-        needsComma = true
+        writeValueDoubleImpl(
+            appendSeparator = { appendSeparator() },
+            writeDoubleValueRaw = { writeDoubleValueRaw(it) },
+            setNeedsComma = { needsComma = it },
+            value = number
+        )
         return this
     }
 
     fun value(number: Float): GhostJsonWriter = value(number.toDouble())
 
     fun value(value: Boolean): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(if (value) TRUE_BS else FALSE_BS)
-        needsComma = true
+        writeValueBooleanImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            setNeedsComma = { needsComma = it },
+            value = value
+        )
         return this
     }
 
     fun nullValue(): GhostJsonWriter {
-        appendSeparator()
-        buffer.write(NULL_BS)
-        needsComma = true
+        writeNullValueImpl(
+            appendSeparator = { appendSeparator() },
+            writeBytes = { buffer.write(it) },
+            setNeedsComma = { needsComma = it }
+        )
         return this
     }
 
@@ -342,7 +358,10 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
-        buffer.write(if (value) TRUE_BS else FALSE_BS)
+        writeBooleanValueRawImpl(
+            value = value,
+            writeBytes = { buffer.write(it) }
+        )
     }
 
     /**
@@ -353,19 +372,12 @@ class GhostJsonWriter(
     @InternalGhostApi
     @Suppress("CascadeIf")
     fun writeIntValueRaw(value: Int) {
-        if (value == 0) {
-            buffer.writeByte(ZERO_INT)
-        } else if (value == 1) {
-            buffer.writeByte(ONE_INT)
-        } else if (value == 2) {
-            buffer.writeByte(TWO_INT)
-        } else if (value == -1) {
-            buffer.write(MINUS_ONE_BS)
-        } else if (value == Int.MIN_VALUE) {
-            buffer.write(MIN_INT_BS)
-        } else {
-            writeLongValueRawInternal(value.toLong())
-        }
+        writeIntValueRawImpl(
+            value = value,
+            writeByte = { buffer.writeByte(it) },
+            writeBytes = { buffer.write(it) },
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) }
+        )
     }
 
     /**
@@ -375,13 +387,12 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeLongValueRaw(value: Long) {
-        when (value) {
-            0L -> buffer.writeByte(ZERO_INT)
-            1L -> buffer.writeByte(ONE_INT)
-            2L -> buffer.writeByte(TWO_INT)
-            -1L -> buffer.write(MINUS_ONE_BS)
-            else -> writeLongValueRawInternal(value)
-        }
+        writeLongValueRawImpl(
+            value = value,
+            writeByte = { buffer.writeByte(it) },
+            writeBytes = { buffer.write(it) },
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) }
+        )
     }
 
     /**
@@ -434,7 +445,6 @@ class GhostJsonWriter(
         }
     }
 
-
     /**
      * Writes a string value with quotes and proper escaping.
      * Uses "Quote Fusion" to batch quotes with content in a single buffer write.
@@ -442,22 +452,16 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeStringValueRaw(value: String) {
-        val length = value.length
-        if (length == 0) {
-            buffer.write(EMPTY_STRING_BS)
-            return
-        }
-
-        val scratchBuf = acquireScratch()
-        if (length + 2 > scratchBuf.size) {
-            buffer.writeByte(QUOTE_INT)
-            writeEscaped(value)
-            buffer.writeByte(QUOTE_INT)
-            return
-        }
-
-        scratchBuf[0] = QUOTE_BYTE
-        writeEscapedIntoScratch(value, length, scratchBuf)
+        writeStringValueRawImpl(
+            value = value,
+            acquireScratch = { acquireScratch() },
+            writeByte = { buffer.writeByte(it) },
+            writeBytes = { buffer.write(it) },
+            writeEscaped = { writeEscaped(it) },
+            writeEscapedIntoScratch = { text, length, scratchBuf ->
+                writeEscapedIntoScratch(text, length, scratchBuf)
+            }
+        )
     }
 
 
