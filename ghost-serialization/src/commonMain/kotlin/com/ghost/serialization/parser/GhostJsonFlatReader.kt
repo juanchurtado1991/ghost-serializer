@@ -485,7 +485,6 @@ class GhostJsonFlatReader(
         expected: ByteArray,
         consumeSeparator: Boolean
     ): Boolean {
-        // Direct byte comparison — avoids Okio virtual dispatch and redundant bounds checks.
         // Length is already guaranteed equal by the dispatch table (same hash slot).
         if (expected.size == length) {
             val localData = rawData
