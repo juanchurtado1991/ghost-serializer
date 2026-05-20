@@ -2,6 +2,8 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.parser.GhostJsonConstants as C
 
 internal inline fun beginObjectImpl(
@@ -437,4 +439,275 @@ internal inline fun <T> decodeResilientImpl(
         skipValue()
         return null
     }
+}
+
+@PublishedApi
+internal fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
+    val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+    outBuffer.copyInto(newBuffer, 0, 0, outPos)
+    releaseScratchBuffer(outBuffer)
+    return newBuffer
+}
+
+@PublishedApi
+internal inline fun readQuotedStringImpl(
+    getPosition: () -> Int,
+    setPosition: (Int) -> Unit,
+    getLimit: () -> Int,
+    getNextNonWhitespace: () -> Int,
+    setNextTokenByte: (Int) -> Unit,
+    getByte: (Int) -> Int,
+    getStringPool: () -> Array<String?>,
+    setLastScanContentWas7BitOnly: (Boolean) -> Unit,
+    scanString: (Int, Int) -> Long,
+    decodeJsonStringRange: (Int, Int, Boolean) -> String,
+    contentEqualsString: (Int, Int, String) -> Boolean,
+    parseUnicodeHex: (Int) -> Int,
+    throwError: (String) -> Nothing
+): String {
+    if (getNextNonWhitespace() != C.QUOTE_INT) {
+        throwError(C.ERR_EXPECTED_QUOTE)
+    }
+
+    val start = getPosition()
+    val limit = getLimit()
+    val scanResult = scanString(start, limit)
+
+    if (scanResult != -1L) {
+        val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()
+        val rollingHash = scanResult.toInt()
+        val only7Bit = (scanResult and C.SCAN_7BIT_BIT) != 0L
+        setLastScanContentWas7BitOnly(only7Bit)
+        val end = start + length
+        if (length <= 0) {
+            setPosition(end + 1)
+            return ""
+        }
+        if (length > GhostHeuristics.maxStringPoolLength) {
+            val result = decodeJsonStringRange(start, end, only7Bit)
+            setPosition(end + 1)
+            return result
+        }
+
+        val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
+        val stringPool = getStringPool()
+        val cachedString = stringPool[poolBucketIndex]
+
+        if (cachedString != null && contentEqualsString(start, length, cachedString)) {
+            setPosition(end + 1)
+            return cachedString
+        }
+
+        val decodedString = decodeJsonStringRange(start, end, only7Bit)
+        stringPool[poolBucketIndex] = decodedString
+        setPosition(end + 1)
+        return decodedString
+    }
+
+    // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
+    var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)
+    var outPos = 0
+
+    try {
+        var pos = start
+        while (pos < limit) {
+            val byteValue = getByte(pos++)
+            if (byteValue == C.QUOTE_INT) {
+                setPosition(pos)
+                setNextTokenByte(C.RESET_TOKEN_BYTE)
+                return outBuffer.decodeToString(0, outPos)
+            }
+
+            if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
+                setPosition(pos)
+                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
+            }
+
+            if (byteValue == C.BACKSLASH_INT) {
+                if (pos >= limit) {
+                    setPosition(pos)
+                    throwError(C.UNTERMINATED_ESCAPE_ERROR)
+                }
+                val escaped = getByte(pos++)
+                when (escaped) {
+                    C.UNICODE_PREFIX_U_INT -> {
+                        if (pos + C.UNICODE_HEX_LENGTH > limit) {
+                            setPosition(pos)
+                            throwError(C.UNTERMINATED_UNICODE_ERROR)
+                        }
+
+                        var code = parseUnicodeHex(pos)
+                        pos += C.UNICODE_HEX_LENGTH
+
+                        if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
+                            if (pos + C.SURROGATE_OFFSET > limit ||
+                                getByte(pos) == C.BACKSLASH_INT &&
+                                getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT
+                            ) {
+                                // Valid surrogate pair check
+                                pos += C.UNICODE_ESCAPE_PREFIX_SIZE
+                                val lowCode = parseUnicodeHex(pos)
+                                if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
+                                    pos += C.UNICODE_HEX_LENGTH
+                                    code = C.UNICODE_BASE +
+                                            ((code - C.HIGH_SURROGATE_START) shl C.SHIFT_10) +
+                                            (lowCode - C.LOW_SURROGATE_START)
+                                } else {
+                                    setPosition(pos)
+                                    throwError(C.ERR_HIGH_SURROGATE)
+                                }
+                            } else {
+                                setPosition(pos)
+                                throwError(C.ERR_HIGH_SURROGATE)
+                            }
+                        }
+
+                        // Encode code point to UTF-8 bytes in outBuffer
+                        if (code <= C.UTF8_1BYTE_MAX) {
+                            if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                            outBuffer[outPos++] = code.toByte()
+                        } else if (code <= C.UTF8_2BYTE_MAX) {
+                            if (outPos + 2 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                            outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                        } else if (code <= C.BMP_LIMIT) {
+                            if (outPos + 3 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                            outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                        } else {
+                            if (outPos + 4 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                            outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                        }
+                    }
+
+                    C.N_BYTE_INT -> {
+                        if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                        outBuffer[outPos++] = C.LF_INT.toByte()
+                    }
+
+                    C.R_BYTE_INT -> {
+                        if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                        outBuffer[outPos++] = C.CR_INT.toByte()
+                    }
+
+                    C.T_BYTE_INT -> {
+                        if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                        outBuffer[outPos++] = C.TAB_INT.toByte()
+                    }
+
+                    C.B_BYTE_INT -> {
+                        if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                        outBuffer[outPos++] = C.BS_INT.toByte()
+                    }
+
+                    C.F_BYTE_INT -> {
+                        if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                        outBuffer[outPos++] = C.FF_INT.toByte()
+                    }
+
+                    else -> {
+                        if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                        outBuffer[outPos++] = escaped.toByte()
+                    }
+                }
+            } else {
+                if (outPos + 1 > outBuffer.size) { outBuffer = growBuffer(outBuffer, outPos) }
+                outBuffer[outPos++] = byteValue.toByte()
+            }
+        }
+        setPosition(pos)
+    } finally {
+        releaseScratchBuffer(outBuffer)
+    }
+    throwError(C.UNTERMINATED_STRING_ERROR)
+}
+
+@PublishedApi
+internal inline fun skipQuotedStringImpl(
+    getPosition: () -> Int,
+    setPosition: (Int) -> Unit,
+    getLimit: () -> Int,
+    getNextNonWhitespace: () -> Int,
+    setNextTokenByte: (Int) -> Unit,
+    getByte: (Int) -> Int,
+    findClosingQuote: (Int, Int) -> Int,
+    parseUnicodeHex: (Int) -> Int,
+    throwError: (String) -> Nothing
+) {
+    if (getNextNonWhitespace() != C.QUOTE_INT) {
+        throwError(C.ERR_EXPECTED_QUOTE)
+    }
+
+    val start = getPosition()
+    val limit = getLimit()
+    val end = findClosingQuote(start, limit)
+    if (end != -1) {
+        setPosition(end + 1)
+        return
+    }
+
+    var pos = start
+    while (pos < limit) {
+        val byteValue = getByte(pos++)
+        if (byteValue == C.QUOTE_INT) {
+            setPosition(pos)
+            setNextTokenByte(C.RESET_TOKEN_BYTE)
+            return
+        }
+
+        if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
+            setPosition(pos)
+            throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
+        }
+
+        if (byteValue == C.BACKSLASH_INT) {
+            if (pos >= limit) {
+                setPosition(pos)
+                throwError(C.UNTERMINATED_ESCAPE_ERROR)
+            }
+            val escaped = getByte(pos++)
+
+            if (escaped == C.UNICODE_PREFIX_U_INT) {
+                if (pos + C.UNICODE_HEX_LENGTH > limit) {
+                    setPosition(pos)
+                    throwError(C.UNTERMINATED_UNICODE_ERROR)
+                }
+                parseUnicodeHex(pos)
+                pos += C.UNICODE_HEX_LENGTH
+            }
+        }
+    }
+    setPosition(pos)
+    throwError(C.UNTERMINATED_STRING_ERROR)
+}
+
+@PublishedApi
+internal inline fun parseUnicodeHexImpl(
+    currentPosition: Int,
+    getByte: (Int) -> Int,
+    throwError: (String) -> Nothing
+): Int {
+    val hexByte0 = getByte(currentPosition)
+    val hexByte1 = getByte(currentPosition + 1)
+    val hexByte2 = getByte(currentPosition + 2)
+    val hexByte3 = getByte(currentPosition + 3)
+
+    val hexLookupTable = C.HEX_LUT
+    val digitValue0 = hexLookupTable[hexByte0]
+    val digitValue1 = hexLookupTable[hexByte1]
+    val digitValue2 = hexLookupTable[hexByte2]
+    val digitValue3 = hexLookupTable[hexByte3]
+
+    if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
+        throwError("Invalid unicode escape at $currentPosition")
+    }
+
+    return (digitValue0 shl C.SHIFT_12) or
+            (digitValue1 shl C.SHIFT_8) or
+            (digitValue2 shl C.SHIFT_4) or
+            digitValue3
 }
