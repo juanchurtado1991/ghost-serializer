@@ -413,6 +413,8 @@ internal class GhostCodeGenerator(
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
+        val warmupJson = generateMinimalJson()
+
         return typeSpecBuilder
             .addFunction(serializeEmitter.build(streamingWriterClass, typeSpecBuilder))
             .addFunction(serializeEmitter.build(flatWriterClass, typeSpecBuilder))
@@ -422,12 +424,12 @@ internal class GhostCodeGenerator(
                     .addCode(
                         CodeBlock.builder()
                             .beginControlFlow(C.STR_TRY)
-                            .addStatement(C.TEMPLATE_WARM_UP_READER_INIT, C.STR_READER1, streamingReaderClass, C.STR_EMPTY_OBJ)
+                            .addStatement(C.TEMPLATE_WARM_UP_READER_INIT, C.STR_READER1, streamingReaderClass, warmupJson)
                             .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER1)
                             .nextControlFlow(C.STR_CATCH_EXCEPTION)
                             .endControlFlow()
                             .beginControlFlow(C.STR_TRY)
-                            .addStatement(C.TEMPLATE_WARM_UP_READER_INIT, C.STR_READER2, flatReaderClass, C.STR_EMPTY_OBJ)
+                            .addStatement(C.TEMPLATE_WARM_UP_READER_INIT, C.STR_READER2, flatReaderClass, warmupJson)
                             .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER2)
                             .nextControlFlow(C.STR_CATCH_EXCEPTION)
                             .endControlFlow()
@@ -436,6 +438,32 @@ internal class GhostCodeGenerator(
                     .build()
             )
             .build()
+    }
+
+    private fun generateMinimalJson(): String {
+        if (isSealed || isEnum || isValue) return "{}"
+        val sb = StringBuilder()
+        sb.append("{")
+        val entries = mutableListOf<String>()
+        properties.forEach { prop ->
+            if (!prop.isNullable && !prop.hasDefaultValue) {
+                val key = "\"${prop.jsonName}\""
+                val value = when {
+                    prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() -> "0"
+                    prop.type.isPrimitiveDouble() || prop.type.isPrimitiveFloat() -> "0.0"
+                    prop.type.isPrimitiveBoolean() -> "false"
+                    prop.type.isString() -> "\"\""
+                    prop.type.isList() -> "[]"
+                    prop.type.isMap() -> "{}"
+                    prop.type.isGhost() -> "{}"
+                    else -> "null"
+                }
+                entries.add("$key:$value")
+            }
+        }
+        sb.append(entries.joinToString(","))
+        sb.append("}")
+        return sb.toString()
     }
 
     @Suppress("ReplaceSizeCheckWithIsNotEmpty")
