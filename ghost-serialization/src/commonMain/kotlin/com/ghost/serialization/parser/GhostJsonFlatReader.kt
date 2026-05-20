@@ -693,121 +693,40 @@ class GhostJsonFlatReader(
     }
 
     // Number Subsystem
-    fun nextFloat(): Float {
-        val header = prepareNumericHeader()
-        val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-        val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
+    // Number Subsystem
+    fun nextFloat(): Float = nextFloatImpl(
+        prepareNumericHeader = { prepareNumericHeader() },
+        validateLeadingZero = { validateLeadingZero() },
+        readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
+        throwError = { throwError(it) },
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        isExponentMarker = { isExponentMarker(it) },
+        parseExponentValue = { parseExponentValue() },
+        getFloatPowerOfTen = { getFloatPowerOfTen(it) },
+        validateNumericRangeFloat = { validateNumericRangeFloat(it) },
+        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
+        setNextTokenByte = { nextTokenByte = it }
+    )
 
-        validateLeadingZero()
-
-        var mantissa = 0L
-        var exponent = 0
-        var digitCount = 0
-
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        readNumericLoop(
-            onDigit = { byte ->
-                val digit = byte - C.ZERO_INT
-                if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digit
-                    digitCount++
-                } else {
-                    exponent++
-                }
-            }
-        )
-
-        if (digitCount == 0) { throwError(C.ERR_EXPECTED_INT_PART) }
-
-        if (position < limit && getByte(position) == C.DOT_INT) {
-            position++
-            val startPos = position
-            readNumericLoop(
-                onDigit = { byte ->
-                    val digit = byte - C.ZERO_INT
-                    if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                        mantissa = mantissa * C.BASE_TEN + digit
-                        digitCount++
-                        exponent--
-                    }
-                }
-            )
-            if (position == startPos) { throwError(C.ERR_EXPECTED_DECIMAL_DIGITS) }
-        }
-
-        if (position < limit && isExponentMarker(getByte(position))) {
-            exponent += parseExponentValue()
-        }
-
-        var result = mantissa.toFloat()
-        if (exponent != 0) {
-            result *= getFloatPowerOfTen(exponent)
-        }
-
-        if (isNegativeValue) { result = -result }
-        validateNumericRangeFloat(result)
-
-        if (isQuoted) { consumeNumericCoercionFooter() }
-        return result
-    }
-
-    fun nextDouble(): Double {
-        val header = prepareNumericHeader()
-        val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-        val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-
-        validateLeadingZero()
-
-        var mantissa = 0L
-        var exponent = 0
-        var digitCount = 0
-
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        readNumericLoop(
-            onDigit = { byte ->
-                val digit = byte - C.ZERO_INT
-                if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digit
-                    digitCount++
-                } else {
-                    exponent++
-                }
-            }
-        )
-
-        if (digitCount == 0) { throwError(C.ERR_EXPECTED_INT_PART) }
-
-        if (position < limit && getByte(position) == C.DOT_INT) {
-            position++
-            val startPos = position
-            readNumericLoop(
-                onDigit = { byte ->
-                    val digitValue = byte - C.ZERO_INT
-                    if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                        mantissa = mantissa * C.BASE_TEN + digitValue
-                        digitCount++
-                        exponent--
-                    }
-                }
-            )
-            if (position == startPos) { throwError(C.ERR_EXPECTED_DECIMAL_DIGITS) }
-        }
-
-        if (position < limit && isExponentMarker(getByte(position))) {
-            exponent += parseExponentValue()
-        }
-
-        var result = mantissa.toDouble()
-        if (exponent != 0) {
-            result *= getDoublePowerOfTen(exponent)
-        }
-
-        if (isNegativeValue) { result = -result }
-        validateNumericRange(result)
-
-        if (isQuoted) { consumeNumericCoercionFooter() }
-        return result
-    }
+    fun nextDouble(): Double = nextDoubleImpl(
+        prepareNumericHeader = { prepareNumericHeader() },
+        validateLeadingZero = { validateLeadingZero() },
+        readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
+        throwError = { throwError(it) },
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        isExponentMarker = { isExponentMarker(it) },
+        parseExponentValue = { parseExponentValue() },
+        getDoublePowerOfTen = { getDoublePowerOfTen(it) },
+        validateNumericRange = { validateNumericRange(it) },
+        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
+        setNextTokenByte = { nextTokenByte = it }
+    )
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun parseExponentValue(): Int {
@@ -874,54 +793,25 @@ class GhostJsonFlatReader(
         }
     }
 
-    fun nextInt(): Int {
-        val header = prepareNumericHeader()
-        val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-        val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-        val startOfNumber = position
+    fun nextInt(): Int = nextIntImpl(
+        prepareNumericHeader = { prepareNumericHeader() },
+        getPosition = { position },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        handleLeadingZero = { handleLeadingZero() },
+        parseIntDigits = { neg, start -> parseIntDigits(neg, start) },
+        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() }
+    )
 
-        val absoluteValue = if (position < limit && getByte(position) == C.ZERO_INT) {
-            handleLeadingZero()
-            0
-        } else {
-            parseIntDigits(isNegativeValue, startOfNumber)
-        }
-
-        val finalIntResult = if (isNegativeValue) {
-            -absoluteValue
-        } else {
-            absoluteValue
-        }
-        if (isQuoted) { consumeNumericCoercionFooter() }
-        return finalIntResult
-    }
-
-    fun nextLong(): Long {
-        val header = prepareNumericHeader()
-        val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-        val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-        val startOfNumber = position
-
-        val absoluteValue = if (position < limit && getByte(position) == C.ZERO_INT) {
-            handleLeadingZero()
-            0L
-        } else {
-            parseLongDigits(isNegativeValue, startOfNumber)
-        }
-
-        val finalLongResult = if (absoluteValue == Long.MIN_VALUE) {
-            absoluteValue
-        } else {
-            if (isNegativeValue) {
-                -absoluteValue
-            } else {
-                absoluteValue
-            }
-        }
-
-        if (isQuoted) { consumeNumericCoercionFooter() }
-        return finalLongResult
-    }
+    fun nextLong(): Long = nextLongImpl(
+        prepareNumericHeader = { prepareNumericHeader() },
+        getPosition = { position },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        handleLeadingZero = { handleLeadingZero() },
+        parseLongDigits = { neg, start -> parseLongDigits(neg, start) },
+        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() }
+    )
 
     private fun prepareNumericHeader(): Int {
         if (nextTokenByte == C.RESET_TOKEN_BYTE) { skipWhitespace() }
@@ -961,67 +851,29 @@ class GhostJsonFlatReader(
         internalSkip(1)
     }
 
-    private fun parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
-        var accumulatedValue = 0
-        var digitCount = 0
-        var hasDigitsFound = false
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        var earlyExitResult: Int? = null
+    private fun parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int = parseIntDigitsImpl(
+        isNegative = isNegative,
+        startOfNumber = startOfNumber,
+        readNumericLoop = { onDigit, onBreak -> readNumericLoop(onDigit, onBreak) },
+        calculateIntWithOverflowCheck = { curr, digit, neg -> calculateIntWithOverflowCheck(curr, digit, neg) },
+        isNumericSeparator = { isNumericSeparator(it) },
+        setPosition = { position = it },
+        nextDouble = { nextDouble() },
+        throwError = { throwError(it) },
+        setNextTokenByte = { nextTokenByte = it }
+    )
 
-        readNumericLoop(
-            onDigit = { byte ->
-                val digit = byte - C.ZERO_INT
-                accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
-                    accumulatedValue * C.BASE_TEN + digit
-                } else {
-                    calculateIntWithOverflowCheck(accumulatedValue, digit, isNegative)
-                }
-                digitCount++
-                hasDigitsFound = true
-            },
-            onBreak = { byte ->
-                if (isNumericSeparator(byte)) {
-                    position = startOfNumber
-                    earlyExitResult = nextDouble().toInt()
-                }
-            }
-        )
-
-        if (earlyExitResult != null) { return earlyExitResult!! }
-        if (!hasDigitsFound) { throwError(C.ERR_EXPECTED_INT_PART) }
-        return accumulatedValue
-    }
-
-    private fun parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
-        var accumulatedValue = 0L
-        var digitCount = 0
-        var hasDigitsFound = false
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        var earlyExitResult: Long? = null
-
-        readNumericLoop(
-            onDigit = { byte ->
-                val digit = byte - C.ZERO_INT
-                accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
-                    accumulatedValue * C.BASE_TEN + digit
-                } else {
-                    calculateLongWithOverflowCheck(accumulatedValue, digit, isNegative)
-                }
-                digitCount++
-                hasDigitsFound = true
-            },
-            onBreak = { byte ->
-                if (isNumericSeparator(byte)) {
-                    position = startOfNumber
-                    earlyExitResult = nextDouble().toLong()
-                }
-            }
-        )
-
-        if (earlyExitResult != null) { return earlyExitResult!! }
-        if (!hasDigitsFound) { throwError(C.ERR_EXPECTED_INT_PART) }
-        return accumulatedValue
-    }
+    private fun parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long = parseLongDigitsImpl(
+        isNegative = isNegative,
+        startOfNumber = startOfNumber,
+        readNumericLoop = { onDigit, onBreak -> readNumericLoop(onDigit, onBreak) },
+        calculateLongWithOverflowCheck = { curr, digit, neg -> calculateLongWithOverflowCheck(curr, digit, neg) },
+        isNumericSeparator = { isNumericSeparator(it) },
+        setPosition = { position = it },
+        nextDouble = { nextDouble() },
+        throwError = { throwError(it) },
+        setNextTokenByte = { nextTokenByte = it }
+    )
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun consumeNumericCoercionFooter() {
@@ -1086,49 +938,18 @@ class GhostJsonFlatReader(
         }
     }
 
-    fun skipNumber() {
-        val header = prepareNumericHeader()
-        val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-        var hasDigits = false
-
-        if (position < limit && getByte(position) == C.ZERO_INT) {
-            position++
-            hasDigits = true
-            if (position < limit && isDigit(getByte(position))) {
-                throwError(C.ERR_LEADING_ZEROS)
-            }
-        } else {
-            readNumericLoop(onDigit = { hasDigits = true })
-        }
-
-        if (!hasDigits) { throwError(C.ERR_EXPECTED_INT_PART) }
-
-        if (position < limit && getByte(position) == C.DOT_INT) {
-            position++
-            var hasDecimalDigits = false
-            readNumericLoop(onDigit = { hasDecimalDigits = true })
-            if (!hasDecimalDigits) { throwError(C.ERR_EXPECTED_DECIMAL_DIGITS) }
-        }
-
-        if (position < limit) {
-            val byte = getByte(position)
-            if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {
-                position++
-                if (position < limit) {
-                    val sign = getByte(position)
-                    if (sign == C.PLUS_INT || sign == C.MINUS_INT) {
-                        position++
-                    }
-                }
-                var hasExpDigits = false
-                readNumericLoop(onDigit = { hasExpDigits = true })
-                if (!hasExpDigits) { throwError(C.ERR_EXPECTED_EXPONENT_DIGITS) }
-            }
-        }
-
-        if (isQuoted) { consumeNumericCoercionFooter() }
-        nextTokenByte = C.RESET_TOKEN_BYTE
-    }
+    fun skipNumber() = skipNumberImpl(
+        prepareNumericHeader = { prepareNumericHeader() },
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        isDigit = { isDigit(it) },
+        readNumericLoop = { onDigit -> readNumericLoop(onDigit) },
+        throwError = { throwError(it) },
+        consumeNumericCoercionFooter = { consumeNumericCoercionFooter() },
+        setNextTokenByte = { nextTokenByte = it }
+    )
 
     private inline fun readNumericLoop(
         crossinline onDigit: (byte: Int) -> Unit,
