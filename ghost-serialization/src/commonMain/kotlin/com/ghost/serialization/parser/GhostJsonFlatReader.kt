@@ -417,24 +417,13 @@ class GhostJsonFlatReader(
 
         val start = position + 1
         val localData = rawData
-        // Single-pass: find closing quote AND build dispatch hash simultaneously.
-        // Falls back to the two-pass path for rare non-ASCII / escaped keys.
-        val packed = scanKeyWithHashImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
-        val end: Int
-        val key: Int
-        if (packed != -1L) {
-            end = (packed ushr C.SHIFT_32).toInt()
-            key = packed.toInt()
-        } else {
-            // Slow path: non-ASCII or escape in key name.
-            end = findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
-            if (end == -1) {
-                throwError(C.UNTERMINATED_STRING_ERROR)
-            }
-            key = computeKeyHash(start, end - start)
+        val end = findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
+        if (end == -1) {
+            throwError(C.UNTERMINATED_STRING_ERROR)
         }
 
         val length = end - start
+        val key = computeKeyHash(start, length)
         val hasIndex = ((key * options.multiplier + length) shr options.shift) and C.HASH_MASK
         val index = options.dispatch[hasIndex]
 
