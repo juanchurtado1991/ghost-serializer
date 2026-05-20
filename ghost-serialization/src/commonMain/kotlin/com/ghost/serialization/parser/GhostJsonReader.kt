@@ -245,186 +245,21 @@ class GhostJsonReader(
      * 3. **Slow-path**: StringBuilder-like approach using a pooled char buffer for escapes.
      */
     fun readQuotedString(): String {
-        if (nextNonWhitespace() != C.QUOTE_INT) {
-            throwError(C.ERR_EXPECTED_QUOTE)
-        }
-
-        val start = position
-        val scanResult = source.scanString(start, limit)
-
-        if (scanResult != -1L) {
-            val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT)
-                .toInt()
-
-            val rollingHash = scanResult.toInt()
-            lastScanContentWas7BitOnly = (scanResult and C.SCAN_7BIT_BIT) != 0L
-            val end = start + length
-            if (length <= 0) {
-                position = end + 1
-                return ""
-            }
-            if (length > GhostHeuristics.maxStringPoolLength) {
-                val result = source.decodeJsonStringRange(
-                    start,
-                    end,
-                    lastScanContentWas7BitOnly
-                )
-                position = end + 1
-                return result
-            }
-
-            val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
-            val cachedString = stringPool[poolBucketIndex]
-
-            if (
-                cachedString != null &&
-                source.contentEqualsString(start, length, cachedString)
-            ) {
-                position = end + 1
-                return cachedString
-            }
-
-            val decodedString = source.decodeJsonStringRange(
-                start,
-                end,
-                lastScanContentWas7BitOnly
-            )
-
-            stringPool[poolBucketIndex] = decodedString
-            position = end + 1
-            return decodedString
-        }
-
-        // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
-        var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)
-        var outPos = 0
-
-        fun ensureCapacity(extra: Int) {
-            if (outPos + extra > outBuffer.size) {
-                val newBuffer = acquireScratchBuffer(
-                    outBuffer.size * C.BUFFER_SCALE_FACTOR
-                )
-                outBuffer.copyInto(
-                    newBuffer,
-                    0,
-                    0,
-                    outPos
-                )
-                releaseScratchBuffer(outBuffer)
-                outBuffer = newBuffer
-            }
-        }
-
-        try {
-            while (position < limit) {
-                val byteValue = getByte(position++)
-                if (byteValue == C.QUOTE_INT) {
-                    nextTokenByte = -1
-                    return outBuffer.decodeToString(0, outPos)
-                }
-
-                if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
-                    throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
-                }
-
-                if (byteValue == C.BACKSLASH_INT) {
-                    if (position >= limit) throwError(C.UNTERMINATED_ESCAPE_ERROR)
-                    val escaped = getByte(position++)
-                    when (escaped) {
-                        C.UNICODE_PREFIX_U_INT -> {
-                            if (position + C.UNICODE_HEX_LENGTH > limit) {
-                                throwError(C.UNTERMINATED_UNICODE_ERROR)
-                            }
-
-                            var code = parseUnicodeHex(position)
-                            position += C.UNICODE_HEX_LENGTH
-
-                            if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
-                                if (
-                                    position + C.SURROGATE_OFFSET > limit ||
-                                    getByte(position) == C.BACKSLASH_INT &&
-                                    getByte(position + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT
-                                ) {
-                                    // Valid surrogate pair check
-                                    position += C.UNICODE_ESCAPE_PREFIX_SIZE
-                                    val lowCode = parseUnicodeHex(position)
-                                    if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
-                                        position += C.UNICODE_HEX_LENGTH
-                                        code = C.UNICODE_BASE +
-                                                ((code - C.HIGH_SURROGATE_START) shl C.SHIFT_10) +
-                                                (lowCode - C.LOW_SURROGATE_START)
-                                    } else {
-                                        throwError(C.ERR_HIGH_SURROGATE)
-                                    }
-                                } else {
-                                    throwError(C.ERR_HIGH_SURROGATE)
-                                }
-                            }
-
-                            // Encode code point to UTF-8 bytes in outBuffer
-                            if (code <= C.UTF8_1BYTE_MAX) {
-                                ensureCapacity(1)
-                                outBuffer[outPos++] = code.toByte()
-                            } else if (code <= C.UTF8_2BYTE_MAX) {
-                                ensureCapacity(2)
-                                outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                            } else if (code <= C.BMP_LIMIT) {
-                                ensureCapacity(3)
-                                outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                            } else {
-                                ensureCapacity(4)
-                                outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                            }
-                        }
-
-                        C.N_BYTE_INT -> {
-                            ensureCapacity(1)
-                            outBuffer[outPos++] = C.LF_INT.toByte()
-                        }
-
-                        C.R_BYTE_INT -> {
-                            ensureCapacity(1)
-                            outBuffer[outPos++] = C.CR_INT.toByte()
-                        }
-
-                        C.T_BYTE_INT -> {
-                            ensureCapacity(1)
-                            outBuffer[outPos++] = C.TAB_INT.toByte()
-                        }
-
-                        C.B_BYTE_INT -> {
-                            ensureCapacity(1)
-                            outBuffer[outPos++] = C.BS_INT.toByte()
-                        }
-
-                        C.F_BYTE_INT -> {
-                            ensureCapacity(1)
-                            outBuffer[outPos++] = C.FF_INT.toByte()
-                        }
-
-                        else -> {
-                            // Any other escaped char (like \", \\, \/) is written as its UTF-8 byte directly.
-                            // Standard JSON only allows these, so they are all single-byte ASCII.
-                            ensureCapacity(1)
-                            outBuffer[outPos++] = escaped.toByte()
-                        }
-                    }
-                } else {
-                    // Normal byte (could be ASCII or part of UTF-8 sequence)
-                    ensureCapacity(1)
-                    outBuffer[outPos++] = byteValue.toByte()
-                }
-            }
-        } finally {
-            releaseScratchBuffer(outBuffer)
-        }
-        throwError(C.UNTERMINATED_STRING_ERROR)
+        return readQuotedStringImpl(
+            getPosition = { position },
+            setPosition = { position = it },
+            getLimit = { limit },
+            getNextNonWhitespace = { nextNonWhitespace() },
+            setNextTokenByte = { nextTokenByte = it },
+            getByte = { getByte(it) },
+            getStringPool = { stringPool },
+            setLastScanContentWas7BitOnly = { lastScanContentWas7BitOnly = it },
+            scanString = { p, lim -> source.scanString(p, lim) },
+            decodeJsonStringRange = { s, e, asc -> source.decodeJsonStringRange(s, e, asc) },
+            contentEqualsString = { s, len, str -> source.contentEqualsString(s, len, str) },
+            parseUnicodeHex = { parseUnicodeHex(it) },
+            throwError = { throwError(it) }
+        )
     }
 
 
@@ -433,65 +268,25 @@ class GhostJsonReader(
      * Used by generated code to skip unknown fields in non-strict mode.
      */
     fun skipQuotedString() {
-        if (nextNonWhitespace() != C.QUOTE_INT) {
-            throwError(C.ERR_EXPECTED_QUOTE)
-        }
-
-        val start = position
-        val end = source.findClosingQuote(start, limit)
-        if (end != -1) {
-            position = end + 1
-            return
-        }
-
-        while (position < limit) {
-            val byteValue = getByte(position++)
-            if (byteValue == C.QUOTE_INT) {
-                nextTokenByte = -1
-                return
-            }
-
-            if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
-                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
-            }
-
-            if (byteValue == C.BACKSLASH_INT) {
-                if (position >= limit) throwError(C.UNTERMINATED_ESCAPE_ERROR)
-                val escaped = getByte(position++)
-
-                if (escaped == C.UNICODE_PREFIX_U_INT) {
-                    if (position + C.UNICODE_HEX_LENGTH > limit) {
-                        throwError(C.UNTERMINATED_UNICODE_ERROR)
-                    }
-                    parseUnicodeHex(position)
-                    position += C.UNICODE_HEX_LENGTH
-                }
-            }
-        }
-
-        throwError(C.UNTERMINATED_STRING_ERROR)
+        skipQuotedStringImpl(
+            getPosition = { position },
+            setPosition = { position = it },
+            getLimit = { limit },
+            getNextNonWhitespace = { nextNonWhitespace() },
+            setNextTokenByte = { nextTokenByte = it },
+            getByte = { getByte(it) },
+            findClosingQuote = { p, lim -> source.findClosingQuote(p, lim) },
+            parseUnicodeHex = { parseUnicodeHex(it) },
+            throwError = { throwError(it) }
+        )
     }
 
     private fun parseUnicodeHex(currentPosition: Int): Int {
-        val hexByte0 = getByte(currentPosition)
-        val hexByte1 = getByte(currentPosition + 1)
-        val hexByte2 = getByte(currentPosition + 2)
-        val hexByte3 = getByte(currentPosition + 3)
-
-        val hexLookupTable = C.HEX_LUT
-        val digitValue0 = hexLookupTable[hexByte0]
-        val digitValue1 = hexLookupTable[hexByte1]
-        val digitValue2 = hexLookupTable[hexByte2]
-        val digitValue3 = hexLookupTable[hexByte3]
-
-        if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
-            throwError("Invalid unicode escape at $currentPosition")
-        }
-
-        return (digitValue0 shl C.SHIFT_12) or
-                (digitValue1 shl C.SHIFT_8) or
-                (digitValue2 shl C.SHIFT_4) or
-                digitValue3
+        return parseUnicodeHexImpl(
+            currentPosition = currentPosition,
+            getByte = { getByte(it) },
+            throwError = { throwError(it) }
+        )
     }
 
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
