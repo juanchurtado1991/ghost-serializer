@@ -66,21 +66,26 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: KSP metadata (required before iOS compile)
-        run: ./gradlew :ghost-serialization:kspCommonMainKotlinMetadata
-
       - name: ghost-serialization iOS simulator tests
         run: |
-          set -o pipefail
-          ./gradlew :ghost-serialization:iosSimulatorArm64Test --rerun-tasks 2>&1 | tee gradle-ios.log
-          if grep -q "iosSimulatorArm64Test SKIPPED" gradle-ios.log; then
-            echo "::error::iosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + Apple Silicon simulator target)"
+          set -euo pipefail
+          log="$(mktemp)"
+          # K/N iOS tests do not print "N tests completed" (unlike JVM JUnit). Trust Gradle exit code.
+          ./gradlew :ghost-serialization:kspCommonMainKotlinMetadata :ghost-serialization:iosSimulatorArm64Test --rerun-tasks --console=plain 2>&1 | tee "$log"
+          gradle_exit="${PIPESTATUS[0]}"
+          if [[ "$gradle_exit" -ne 0 ]]; then
+            echo "::error::Gradle exited with $gradle_exit"
+            exit "$gradle_exit"
+          fi
+          if grep -q "> Task :ghost-serialization:iosSimulatorArm64Test SKIPPED" "$log"; then
+            echo "::error::iosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + Apple Silicon)"
             exit 1
           fi
-          if ! grep -qE "[0-9]+ tests? completed" gradle-ios.log; then
-            echo "::error::No test summary in Gradle output (iosSimulatorArm64Test may not have executed)"
+          if grep -q "> Task :ghost-serialization:iosSimulatorArm64Test FAILED" "$log"; then
+            echo "::error::iosSimulatorArm64Test task failed"
             exit 1
           fi
+          echo "iosSimulatorArm64Test completed (BUILD SUCCESSFUL)"
 
   publish-check:
     name: Publish dry-run (Maven Local)
