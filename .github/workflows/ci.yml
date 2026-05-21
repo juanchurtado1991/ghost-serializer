@@ -70,7 +70,9 @@ jobs:
 
   test-ios:
     name: Tests (iOS)
-    runs-on: macos-latest
+    # Apple Silicon + Xcode required; iosSimulatorArm64Test is SKIPPED on Linux/Intel runners.
+    runs-on: macos-14
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -85,8 +87,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: KSP metadata (required before iOS compile)
+        run: ./gradlew :ghost-serialization:kspCommonMainKotlinMetadata
+
       - name: ghost-serialization iOS simulator tests
-        run: ./gradlew :ghost-serialization:iosSimulatorArm64Test
+        run: |
+          set -o pipefail
+          ./gradlew :ghost-serialization:iosSimulatorArm64Test --rerun-tasks 2>&1 | tee gradle-ios.log
+          if grep -q "iosSimulatorArm64Test SKIPPED" gradle-ios.log; then
+            echo "::error::iosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + Apple Silicon simulator target)"
+            exit 1
+          fi
+          if ! grep -qE "[0-9]+ tests? completed" gradle-ios.log; then
+            echo "::error::No test summary in Gradle output (iosSimulatorArm64Test may not have executed)"
+            exit 1
+          fi
 
   publish-check:
     name: Publish dry-run (Maven Local)
