@@ -14,13 +14,14 @@ tasks.withType<CreateStartScripts> {
         ":ghost-integration-test:testClasses",
         ":ghost-ktor:jvmTestClasses",
         ":ghost-retrofit:testClasses",
-        ":ghost-gradle-plugin:testClasses"
+        ":ghost-spring-boot-starter:testClasses",
+        ":ghost-gradle-plugin:testClasses",
     )
 }
 
 tasks.named<JavaExec>("run") {
-    // Same suite as GitHub Actions CI (see root ciTest); iOS skipped on Linux/Windows.
-    // Use -PskipTests to run benchmark only; --args="--no-tests" skips Gson/Moshi comparisons.
+    // Runs root ciTest (ciTestJvm + Android unit + iOS on macOS). Add new :module:test in
+    // ciTestJvmModules (build.gradle.kts), not here. -PskipTests skips the suite.
     if (!project.hasProperty("skipTests")) {
         dependsOn(":ciTest")
     }

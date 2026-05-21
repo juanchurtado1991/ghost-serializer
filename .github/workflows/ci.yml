@@ -24,29 +24,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: ghost-serialization JVM tests
-        run: ./gradlew :ghost-serialization:jvmTest
-
-      - name: ghost-ktor JVM tests
-        run: ./gradlew :ghost-ktor:jvmTest
-
-      - name: ghost-compiler tests
-        run: ./gradlew :ghost-compiler:test
-
-      - name: Publish to Maven Local (for functional tests)
-        run: ./gradlew publishToMavenLocal -x test
-
-      - name: ghost-gradle-plugin tests
-        run: ./gradlew :ghost-gradle-plugin:test
-
-      - name: ghost-integration-test
-        run: ./gradlew :ghost-integration-test:test
-
-      - name: ghost-retrofit tests
-        run: ./gradlew :ghost-retrofit:test
-
-      - name: ghost-spring-boot-starter tests
-        run: ./gradlew :ghost-spring-boot-starter:test
+      - name: JVM test suite (ciTestJvm)
+        run: ./gradlew ciTestJvm
 
   test-android:
     name: Tests (Android)
