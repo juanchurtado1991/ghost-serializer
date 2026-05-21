@@ -27,7 +27,6 @@ internal object GhostJsonConstants {
     const val ERR_EXPECTED_KEY = "Expected key but found "
     const val ERR_EXPECTED_STRING = "Expected string"
     const val ERR_MAX_COLLECTION_SIZE = "Collection size exceeds maximum allowed"
-    const val ERR_MAX_PAYLOAD_SIZE = "JSON payload exceeds maximum allowed size"
     const val ERR_EXPECTED_COMMA_OR_CLOSE_ARR = "Expected ',' or ']'"
     const val ERR_EXPECTED_COMMA_OR_CLOSE_OBJ = "Expected ',' or '}'"
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
@@ -185,9 +184,6 @@ internal object GhostJsonConstants {
     const val WRITER_SCRATCH_SIZE = 512
 
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
-
-    /** Max size of the warm buffer in FlatByteArrayWriter to prevent memory retention leaks. */
-    const val MAX_WARM_BUFFER_SIZE = 2 * 1024 * 1024 // 2 MB
 
     const val DEFAULT_DISCRIMINATOR_KEY = "type"
 

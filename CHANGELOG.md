@@ -2,27 +2,22 @@
 
 ## [1.1.17] - 2026-05-21
 ### Added
-- **Configurable payload limits**: `Ghost.maxPayloadBytes` and `Ghost.resetMaxPayloadBytes()` with platform defaults (JVM/Native 16 MB, Android 8 MB, Wasm 4 MB). Enforced on `Ghost.deserialize`, streaming reads, Ktor `ghost()`, and Retrofit `GhostConverterFactory`.
-- **Spring Boot property**: `ghost.max-payload-bytes` in `application.yml`, wired via `GhostPayloadConfiguration` and documented in `additional-spring-configuration-metadata.json`.
 - **Encode API aliases**: `serialize` / `serializeToString` / `serializeToBytes` as aliases for `encodeToString` / `encodeToBytes` (API-compatible with earlier naming).
 - **Root `ciTest` task**: Mirrors GitHub Actions JVM + Android tests; runs iOS simulator tests on macOS only, logs skip on Linux/Windows.
-- **README — Payload size limits**: Dedicated section with platform defaults and configuration for code, Spring, Ktor, and Retrofit.
+- **Platform write-buffer caps**: `GhostHeuristics.maxWarmWriteBufferCapacity` — Android / Native 4 MB, JVM 8 MB, Wasm 2 MB. `FlatByteArrayWriter.reset()` retains grown capacity up to this limit per target.
 
 ### Changed
 - **`ghost-benchmark:run`**: Depends on `:ciTest` before the benchmark (unless `-PskipTests`), matching local validation to CI.
 - **KSP processor**: Fails the build on processor errors instead of silently continuing.
 - **Gradle plugin default version**: `DEFAULT_VERSION` updated to `1.1.17` for projects that omit an explicit Ghost version.
-
-### Security
-- **JSON body size cap**: Oversized payloads throw `GhostJsonException` before parsing. Apps relying on bodies larger than the platform default must set `Ghost.maxPayloadBytes` or `ghost.max-payload-bytes`.
+- **Removed configurable HTTP payload limits**: Dropped `Ghost.maxPayloadBytes`, `GhostPayload`, Retrofit/Ktor/Spring body-size checks, and `ghost.max-payload-bytes`. Collection limits (`maxCollectionSize`) remain; HTTP body size belongs in OkHttp, Ktor engine, Spring codec, or reverse proxy.
+- **Spring Boot starter**: Split into `GhostAutoConfiguration`, `GhostWebMvcAutoConfiguration`, and `GhostWebFluxAutoConfiguration` (`open` classes) for Spring Framework 6.2 / Boot 3.4.
 
 ### Fixed
 - **CI — iOS**: `test-ios` job fails if `iosSimulatorArm64Test` is SKIPPED; runs `kspCommonMainKotlinMetadata` first on `macos-14`.
-- **Retrofit / Ktor**: Payload checks aligned with `Ghost.maxPayloadBytes` on streaming conversion paths.
-
+- **JVM encode benchmarks**: Fixed inflated `ThreadAllocatedBytes` on repeated multi-MB encodes caused by a 2 MB global warm-buffer shrink (payloads ~5–6 MB regrew from 8 KB every request). JVM now keeps buffers up to 8 MB capacity across encodes on the same thread.
 ### Tests
 - **Compiler**: KSP compile-testing coverage (`GhostSerializationKspTest`, `GhostEmitterConstantsTest`, processor tests).
-- **Core**: `GhostLimitsTest`, `GhostPayloadApiTest`, `GhostPayloadLimitTest` (JVM streaming and buffer growth).
 - **CI**: Android `testDebugUnitTest` and iOS `iosSimulatorArm64Test` jobs in GitHub Actions.
 - **Style**: Removed unnecessary non-null assertions (`!!`) in test sources.
 - **Suite size**: **1117** tests in full CI on macOS (885 JVM/Android/Linux + 232 `iosSimulatorArm64Test`); **885** on Linux/Windows (`./gradlew ciTest`).
