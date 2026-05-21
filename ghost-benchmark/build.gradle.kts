@@ -19,17 +19,11 @@ tasks.withType<CreateStartScripts> {
 }
 
 tasks.named<JavaExec>("run") {
-    // Run ALL test suites before benchmark: JVM, Integration, Ktor, Plugin
+    // Same suite as GitHub Actions CI (see root ciTest); iOS skipped on Linux/Windows.
+    // Use -PskipTests to run benchmark only; --args="--no-tests" skips Gson/Moshi comparisons.
     if (!project.hasProperty("skipTests")) {
-        dependsOn(
-            ":ghost-serialization:jvmTest",
-            ":ghost-integration-test:test",
-            ":ghost-ktor:jvmTest",
-            ":ghost-retrofit:test",
-            ":ghost-gradle-plugin:test"
-        )
+        dependsOn(":ciTest")
     }
-
 }
 
 kotlin {

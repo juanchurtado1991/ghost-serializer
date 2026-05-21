@@ -1,3 +1,4 @@
+import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply(from = "publish.gradle.kts")
@@ -77,6 +78,46 @@ nexusPublishing {
             packageGroup.set(libs.versions.publish.group.get())
         }
     }
+}
+
+val isMacOsHost = OperatingSystem.current().isMacOsX
+
+val ciTestIosSkipped = tasks.register("ciTestIosSkipped") {
+    group = "verification"
+    description = "Logs when iOS CI tests are skipped on non-macOS hosts"
+    onlyIf { !isMacOsHost }
+    doLast {
+        logger.lifecycle(
+            "ciTest: skipping :ghost-serialization:iosSimulatorArm64Test (requires macOS + Xcode)"
+        )
+    }
+}
+
+val ciTestIos = tasks.register("ciTestIos") {
+    group = "verification"
+    description = "iOS simulator tests (same as CI test-ios job; macOS only)"
+    onlyIf { isMacOsHost }
+    dependsOn(
+        ":ghost-serialization:kspCommonMainKotlinMetadata",
+        ":ghost-serialization:iosSimulatorArm64Test",
+    )
+}
+
+tasks.register("ciTest") {
+    group = "verification"
+    description = "Full CI test suite (GitHub Actions); iOS auto-skipped on Linux/Windows"
+    dependsOn(
+        ciTestIosSkipped,
+        ciTestIos,
+        ":ghost-serialization:jvmTest",
+        ":ghost-ktor:jvmTest",
+        ":ghost-compiler:test",
+        ":ghost-integration-test:test",
+        ":ghost-retrofit:test",
+        ":ghost-spring-boot-starter:test",
+        ":ghost-serialization:testDebugUnitTest",
+        ":ghost-gradle-plugin:test",
+    )
 }
 
 

@@ -45,8 +45,9 @@ The standalone test apps consume Ghost from Maven Central only (no local checkou
 7. [Usage - Kotlin Multiplatform (KMP)](#usage---kotlin-multiplatform-kmp)
 8. [Usage - iOS (Native / Swift)](#usage---ios-native--swift)
 9. [Usage - Spring Boot](#usage---spring-boot)
-10. [Features](#features)
-11. [Architecture](#architecture)
+10. [Payload size limits](#payload-size-limits)
+11. [Features](#features)
+12. [Architecture](#architecture)
 
 ---
 
@@ -276,11 +277,9 @@ val json: String = Ghost.encodeToString(user)
 
 // Serialize to ByteArray (aliases: serializeToBytes)
 val bytes: ByteArray = Ghost.encodeToBytes(user)
-
-// Optional: override max JSON body size (default is platform-specific: 16 MB JVM, 8 MB Android, 4 MB Wasm)
-Ghost.maxPayloadBytes = 32 * 1024 * 1024
-// Ghost.resetMaxPayloadBytes() // restore platform default
 ```
+
+> See [Payload size limits](#payload-size-limits) to cap JSON body size and avoid oversized responses.
 
 ### 4. With Retrofit
 
@@ -299,6 +298,8 @@ val retrofit = Retrofit.Builder()
 
 val api = retrofit.create(UserApi::class.java)
 ```
+
+> Request/response size limits: [Payload size limits](#payload-size-limits) (`Ghost.maxPayloadBytes`).
 
 > [!TIP]
 > For a full Android integration example including Retrofit and Room, see the [Ghost Android Test App](https://github.com/juanchurtado1991/ghost-android-test-app).
@@ -659,6 +660,8 @@ val client = HttpClient {
 val response: List<Product> = client.get("https://api.example.com/products").body()
 ```
 
+> Response size limits: [Payload size limits](#payload-size-limits) (`Ghost.maxPayloadBytes`).
+
 ---
 
 ## Usage - Spring Boot
@@ -674,12 +677,7 @@ dependencies {
 
 The starter auto-configures Spring MVC and WebFlux to use Ghost as the JSON engine via `GhostHttpMessageConverter`. No additional configuration is required.
 
-Optional payload limit (maps to `Ghost.maxPayloadBytes` at startup):
-
-```yaml
-ghost:
-  max-payload-bytes: 33554432  # 32 MB; omit to use the platform default
-```
+> Optional `ghost.max-payload-bytes` in `application.yml` — see [Payload size limits](#payload-size-limits).
 
 ### 2. Annotate your DTOs
 
@@ -739,6 +737,51 @@ class GhostConfig {
 
 ---
 
+## Payload size limits
+
+Ghost rejects JSON bodies larger than a configurable byte limit on **deserialize** (and on streaming reads in Ktor / Retrofit). This protects against accidental huge responses and basic denial-of-service via oversized payloads. It is separate from [collection size limits](#features) (`maxCollectionSize`), which cap array/map element counts.
+
+### Platform defaults
+
+When you do not set an override, `Ghost.maxPayloadBytes` uses the compile target:
+
+| Platform | Default |
+|:---|---:|
+| JVM (server, desktop) | 16 MB |
+| Android | 8 MB |
+| iOS / Kotlin Native | 16 MB |
+| Wasm (JS) | 4 MB |
+
+### 1. Global override (all integrations)
+
+Set once at app startup (before parsing). Applies to `Ghost.deserialize`, Ktor `ghost()`, Retrofit `GhostConverterFactory`, and any code path that reads through `Ghost`:
+
+```kotlin
+import com.ghost.serialization.Ghost
+
+Ghost.maxPayloadBytes = 32 * 1024 * 1024  // 32 MB
+
+// Later, restore the platform default:
+Ghost.resetMaxPayloadBytes()
+```
+
+Oversized input throws `GhostJsonException` with a message that includes the configured limit.
+
+### 2. Spring Boot (`application.yml`)
+
+The starter maps `ghost.max-payload-bytes` to `Ghost.maxPayloadBytes` during auto-configuration:
+
+```yaml
+ghost:
+  max-payload-bytes: 33554432  # 32 MB; omit property to keep the platform default
+```
+
+### 3. Ktor and Retrofit
+
+There is **no separate** Ktor or Retrofit property. Both adapters use the global `Ghost.maxPayloadBytes` (including any Spring startup value). Configure the limit with §1 or §2 above before creating your `HttpClient` or `Retrofit` instance.
+
+---
+
 ## Features
 
 | Feature | Description |
@@ -755,7 +798,7 @@ class GhostConfig {
 | **Zero Magic Strings**| **[New]** 100% literal-free compiler logic. All templates and identifiers are centralized for stability. |
 | **Thread safety** | Reader and writer pools are thread-safe. Safe to use from coroutines and multiple threads. |
 | **Depth protection** | Configurable max nesting depth (default 255) to prevent stack overflow on malicious input. |
-| **DoS protection** | Platform-aware `maxCollectionSize` limits prevent memory exhaustion on all targets. |
+| **DoS protection** | Platform-aware `maxCollectionSize` and [`maxPayloadBytes`](#payload-size-limits) limits prevent memory exhaustion on all targets. |
 | **Ktor 3.0** | Native `ghost()` plugin for `ContentNegotiation` with full Ktor 3.x support. |
 | **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement with explicit `null` body handling. |
 | **Spring Boot** | Auto-configured `GhostHttpMessageConverter` via production-ready starter. |
