@@ -26,7 +26,7 @@ class GhostSpringStarterTest {
         val error = assertFailsWith<GhostJsonException> {
             checkPayloadSize(GhostHeuristics.maxPayloadBytes + 1)
         }
-        assertTrue(error.message!!.contains("maximum allowed size"))
+        assertTrue(error.message.orEmpty().contains("maximum allowed size"))
     }
 
     @Test
