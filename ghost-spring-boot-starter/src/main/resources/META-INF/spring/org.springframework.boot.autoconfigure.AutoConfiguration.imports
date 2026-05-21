@@ -1,1 +1,3 @@
 com.ghost.serialization.spring.GhostAutoConfiguration
+com.ghost.serialization.spring.GhostWebMvcAutoConfiguration
+com.ghost.serialization.spring.GhostWebFluxAutoConfiguration
