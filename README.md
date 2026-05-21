@@ -188,28 +188,36 @@ Then build and run the `GhostSample` scheme in Xcode against an iOS simulator.
 
 ### Artifacts
 
-Ghost is published to **JFrog Artifactory** (and Maven Central for stable releases).
+Ghost is published to **Maven Central** (`com.ghostserializer`).
 
 ```toml
 # gradle/libs.versions.toml
 [versions]
 ghost = "1.1.16"
+ksp = "1.9.24-1.0.20" # match your Kotlin version
 
 [libraries]
-ghost-api            = { module = "com.ghost.serialization:ghost-api", version.ref = "ghost" }
-ghost-serialization  = { module = "com.ghost.serialization:ghost-serialization", version.ref = "ghost" }
-ghost-compiler       = { module = "com.ghost.serialization:ghost-compiler", version.ref = "ghost" }
-ghost-ktor           = { module = "com.ghost.serialization:ghost-ktor", version.ref = "ghost" }
-ghost-retrofit       = { module = "com.ghost.serialization:ghost-retrofit", version.ref = "ghost" }
+ghost-api            = { module = "com.ghostserializer:ghost-api", version.ref = "ghost" }
+ghost-serialization  = { module = "com.ghostserializer:ghost-serialization", version.ref = "ghost" }
+ghost-compiler       = { module = "com.ghostserializer:ghost-compiler", version.ref = "ghost" }
+ghost-ktor           = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" }
+ghost-retrofit       = { module = "com.ghostserializer:ghost-retrofit", version.ref = "ghost" }
+ghost-spring-boot-starter = { module = "com.ghostserializer:ghost-spring-boot-starter", version.ref = "ghost" }
 
 [plugins]
 ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
+ksp   = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ```
 
-> Add the JFrog repository to your `settings.gradle.kts` if not already present:
-> ```kotlin
-> maven("https://your-org.jfrog.io/artifactory/ghost-releases")
-> ```
+```kotlin
+// settings.gradle.kts — Maven Central is enough for stable releases
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
+```
 
 ---
 
@@ -217,17 +225,18 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 
 ### 1. Apply the Gradle Plugin (recommended)
 
-The plugin auto-configures KSP and injects the correct dependencies for Android.
+The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler artifact when the **KSP plugin is already applied**.
 
 ```kotlin
 // build.gradle.kts (app module)
 plugins {
     id("com.android.application")
+    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
     id("com.ghostserializer.ghost") version "1.1.16"
 }
 ```
 
-That's it. The plugin detects Android, adds `ghost-api` and `ghost-serialization` as dependencies, and wires KSP automatically.
+The plugin detects Android, adds `ghost-api` and `ghost-serialization`, and registers `ghost-compiler` on the `ksp` configuration. You still need the KSP plugin in the build (same Kotlin version as KSP).
 
 ### 2. Annotate your models
 
@@ -262,11 +271,15 @@ val user: User = Ghost.deserialize(jsonString)
 // Deserialize from ByteArray (e.g., from OkHttp response body)
 val user: User = Ghost.deserialize(responseBodyBytes)
 
-// Serialize to String
-val json: String = Ghost.serialize(user)
+// Serialize to String (aliases: serialize, serializeToString)
+val json: String = Ghost.encodeToString(user)
 
-// Serialize to ByteArray (zero-copy path)
-val bytes: ByteArray = Ghost.serializeToBytes(user)
+// Serialize to ByteArray (aliases: serializeToBytes)
+val bytes: ByteArray = Ghost.encodeToBytes(user)
+
+// Optional: override max JSON body size (default is platform-specific: 16 MB JVM, 8 MB Android, 4 MB Wasm)
+Ghost.maxPayloadBytes = 32 * 1024 * 1024
+// Ghost.resetMaxPayloadBytes() // restore platform default
 ```
 
 ### 4. With Retrofit
@@ -514,7 +527,7 @@ kotlin {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghost.serialization:ghost-serialization:$ghostVersion")
+            export("com.ghostserializer:ghost-serialization:$ghostVersion")
         }
     }
     // ... iosSimulatorArm64 similarly
@@ -626,6 +639,8 @@ sealed class SmartEvent {
 
 ### 4. Ktor integration (KMP)
 
+Uses **Ktor 2.3.x** client APIs (`io.ktor:ktor-client-*:2.3.11` in this repo).
+
 ```kotlin
 // commonMain
 dependencies {
@@ -653,11 +668,18 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghost.serialization:ghost-spring-boot-starter:1.1.16")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.16")
 }
 ```
 
 The starter auto-configures Spring MVC and WebFlux to use Ghost as the JSON engine via `GhostHttpMessageConverter`. No additional configuration is required.
+
+Optional payload limit (maps to `Ghost.maxPayloadBytes` at startup):
+
+```yaml
+ghost:
+  max-payload-bytes: 33554432  # 32 MB; omit to use the platform default
+```
 
 ### 2. Annotate your DTOs
 
