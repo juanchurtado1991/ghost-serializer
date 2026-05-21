@@ -31,13 +31,13 @@ gradlePlugin {
 
 dependencies {
     // Need this to access Kotlin Multiplatform and Android Gradle Plugin APIs in the plugin
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}")
+    compileOnly(libs.kotlin.gradle.plugin)
     compileOnly("com.android.tools.build:gradle:${libs.versions.agp.get()}")
     
     testImplementation(gradleTestKit())
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit5)
-    testImplementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}")
+    testImplementation(libs.kotlin.gradle.plugin)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -50,7 +50,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    systemProperty("kotlinVersion", libs.versions.kotlin.get())
+    systemProperty("kotlinVersion", libs.versions.kotlin.sdk.get())
     systemProperty("kspVersion", libs.versions.ksp.get())
     systemProperty("ghostVersion", libs.versions.publish.version.get())
     dependsOn(

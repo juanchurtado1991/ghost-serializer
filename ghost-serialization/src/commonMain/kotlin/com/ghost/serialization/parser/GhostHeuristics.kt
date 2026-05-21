@@ -32,4 +32,10 @@ expect object GhostHeuristics {
      * The maximum distance to scan for a discriminator before giving up.
      */
     val maxDiscriminatorPeekDistance: Int
+
+    /**
+     * Maximum JSON body size (bytes) for stream/body adapters and [BufferedSource] reads.
+     * Prevents unbounded buffering on hostile or accidental huge payloads.
+     */
+    val maxPayloadBytes: Int
 }

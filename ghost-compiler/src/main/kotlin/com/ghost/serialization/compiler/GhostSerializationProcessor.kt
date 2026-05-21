@@ -37,10 +37,6 @@ class GhostSerializationProcessor(
     options: Map<String, String> = emptyMap()
 ) : SymbolProcessor {
 
-    private val generateMoshiAdapters: Boolean = options[OPTION_GENERATE_MOSHI_ADAPTERS]
-        ?.toBoolean()
-        ?: false
-
     private val classToSerializer = mutableMapOf<ClassName, ClassName>()
     private val originatingFiles = mutableSetOf<com.google.devtools.ksp.symbol.KSFile>()
     private val processedFiles = mutableSetOf<String>()
@@ -80,10 +76,6 @@ class GhostSerializationProcessor(
             generateModuleRegistry()
             generateProGuardRules()
             generateServiceFile()
-
-            if (!generateMoshiAdapters) {
-                logger.info("${C.STR_LOG_PREFIX}${C.STR_LOG_MOSHI_SKIPPED}")
-            }
         }
 
         return unableToProcess.toList()
@@ -143,13 +135,8 @@ class GhostSerializationProcessor(
             )
         } catch (e: Exception) {
             logger.error(
-                "${
-                    C.STR_LOG_PREFIX
-                }${
-                    C.STR_LOG_CRITICAL
-                }$className${
-                    C.STR_COLON_SPACE
-                }${e.stackTraceToString()}"
+                "${C.STR_LOG_PREFIX}${C.STR_LOG_CRITICAL}$className${C.STR_COLON_SPACE}${e.message ?: e.toString()}",
+                classDeclaration
             )
         }
     }
@@ -487,7 +474,4 @@ class GhostSerializationProcessor(
         }
     }
 
-    companion object {
-        const val OPTION_GENERATE_MOSHI_ADAPTERS = C.OPTION_MOSHI
-    }
 }

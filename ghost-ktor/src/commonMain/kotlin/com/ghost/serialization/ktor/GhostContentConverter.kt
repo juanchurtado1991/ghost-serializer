@@ -7,6 +7,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.growPayloadBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
@@ -47,23 +48,14 @@ class GhostContentConverter : ContentConverter {
         typeInfo: TypeInfo,
         content: ByteReadChannel
     ): Any {
-        var scratch =
-            acquireScratchBuffer(BUFFER_SIZE)
+        var scratch = acquireScratchBuffer(INITIAL_BUFFER_SIZE)
 
         try {
             var offset = 0
             while (true) {
                 if (offset == scratch.size) {
-                    val grown =
-                        acquireScratchBuffer(scratch.size * 2)
-
-                    scratch.copyInto(
-                        grown,
-                        0,
-                        0,
-                        offset
-                    )
-
+                    val grown = growPayloadBuffer(scratch, offset)
+                    scratch.copyInto(grown, 0, 0, offset)
                     releaseScratchBuffer(scratch)
                     scratch = grown
                 }
@@ -91,6 +83,7 @@ class GhostContentConverter : ContentConverter {
     }
 
     companion object {
-        private const val BUFFER_SIZE = 524288
+        private val INITIAL_BUFFER_SIZE: Int =
+            minOf(524288, Ghost.maxPayloadBytes)
     }
 }

@@ -1,6 +1,7 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.checkPayloadSize
 import com.ghost.serialization.ghostInternalEncodeWithWriter
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
@@ -31,6 +32,7 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
 
     override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
         val bytes = inputMessage.body.readBytes()
+        checkPayloadSize(bytes.size)
         return Ghost.decodeFromBytes(bytes, clazz.kotlin)
     }
 
