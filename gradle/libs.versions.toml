@@ -39,7 +39,7 @@ kotlin-compile-testing          = "1.6.0"
 kotlin-compile-testing-ksp      = "1.6.0"
 junit-jupiter                   = "5.10.2"
 kotlinx-coroutines-test         = "1.8.1"
-spring-boot-starter-web         = "3.2.5"
+spring-boot                     = "3.4.5"
 
 [libraries]
 
@@ -98,8 +98,9 @@ kotlinx-coroutines-core         = { group = "org.jetbrains.kotlinx", name = "kot
 kotlinx-coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-swing        = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-android      = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines-test" }
-spring-boot-starter-web         = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot-starter-web" }
-spring-boot-starter-webflux     = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-starter-web" }
+spring-boot-starter-web         = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-webflux     = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
+spring-boot-starter-test        = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
 
 [bundles]
 serialization-engines           = ["gson", "moshi", "moshi-kotlin", "kotlinx-serialization-json", "jackson-databind", "jackson-module-kotlin"]

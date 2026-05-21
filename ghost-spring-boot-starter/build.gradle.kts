@@ -1,19 +1,27 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
 }
 
 dependencies {
     api(project(":ghost-serialization"))
-    
+
     compileOnly(libs.spring.boot.starter.web)
     compileOnly(libs.spring.boot.starter.webflux)
-    
+
     implementation(libs.okio)
-    
+
+    kspTest(project(":ghost-compiler"))
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.spring.boot.starter.web)
+    testImplementation(libs.spring.boot.starter.test)
+}
+
+ksp {
+    arg("ghost.moduleName", "spring_starter_test")
 }
 
 tasks.test {
