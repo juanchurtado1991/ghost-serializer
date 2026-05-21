@@ -99,8 +99,6 @@ object GhostSpecialFeaturesBenchmark {
         jsonSamples: List<String>,
         crossinline deserialize: (String) -> T
     ) {
-        val bytesSamples = jsonSamples.map { it.encodeToByteArray() }
-
         // Warmup
         repeat(warmupIters) {
             for (sample in jsonSamples) {
