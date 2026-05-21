@@ -22,8 +22,8 @@ class GhostPayloadLimitTest {
             val error = assertFailsWith<GhostJsonException> {
                 Ghost.decodeFromBytes(oversized, String::class)
             }
-            assertTrue(error.message!!.contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
-            assertTrue(error.message!!.contains("$customLimit bytes"))
+            assertTrue(error.message.orEmpty().contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
+            assertTrue(error.message.orEmpty().contains("$customLimit bytes"))
         } finally {
             Ghost.resetMaxPayloadBytes()
         }
@@ -46,7 +46,7 @@ class GhostPayloadLimitTest {
         val error = assertFailsWith<GhostJsonException> {
             Ghost.decodeFromBytes(oversized, String::class)
         }
-        assertTrue(error.message!!.contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
+        assertTrue(error.message.orEmpty().contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
     }
 
     @Test
@@ -56,7 +56,7 @@ class GhostPayloadLimitTest {
         val error = assertFailsWith<GhostJsonException> {
             Ghost.decodeFromSource(buffer, String::class)
         }
-        assertTrue(error.message!!.contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
+        assertTrue(error.message.orEmpty().contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
     }
 
     @Test
@@ -64,6 +64,6 @@ class GhostPayloadLimitTest {
         val error = assertFailsWith<GhostJsonException> {
             growPayloadBuffer(ByteArray(GhostHeuristics.maxPayloadBytes), GhostHeuristics.maxPayloadBytes + 1)
         }
-        assertTrue(error.message!!.contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
+        assertTrue(error.message.orEmpty().contains(GhostJsonConstants.ERR_MAX_PAYLOAD_SIZE))
     }
 }
