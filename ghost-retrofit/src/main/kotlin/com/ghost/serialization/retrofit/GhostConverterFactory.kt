@@ -11,7 +11,6 @@ import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.growPayloadBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
@@ -44,13 +43,22 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
         return Converter { body ->
             body.use {
                 val stream = it.byteStream()
-                var scratch = acquireScratchBuffer(INITIAL_BUFFER_SIZE)
+                var scratch = acquireScratchBuffer(BUFFER_SIZE)
                 try {
+
                     var offset = 0
                     while (true) {
                         if (offset == scratch.size) {
-                            val grown = growPayloadBuffer(scratch, offset)
-                            scratch.copyInto(grown, 0, 0, offset)
+                            val grown =
+                                acquireScratchBuffer(scratch.size * 2)
+
+                            scratch.copyInto(
+                                grown,
+                                0,
+                                0,
+                                offset
+                            )
+
                             releaseScratchBuffer(scratch)
                             scratch = grown
                         }
@@ -147,8 +155,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
     companion object {
         private const val STR_MEDIA_TYPE = "application/json; charset=UTF-8"
         private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
-        private val INITIAL_BUFFER_SIZE: Int =
-            minOf(524288, Ghost.maxPayloadBytes)
+        private const val BUFFER_SIZE = 524288
 
         fun create(): GhostConverterFactory = GhostConverterFactory()
     }

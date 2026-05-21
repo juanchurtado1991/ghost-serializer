@@ -95,20 +95,6 @@ expect fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, block: (GhostJsonFl
  */
 object Ghost {
 
-    /**
-     * Maximum JSON body size (bytes) for reads and streaming adapters.
-     *
-     * Assign to override the platform default from [com.ghost.serialization.parser.GhostHeuristics]:
-     * JVM/Native 16 MB, Android 8 MB, Wasm 4 MB.
-     * Call [resetMaxPayloadBytes] to restore the default.
-     */
-    var maxPayloadBytes: Int
-        get() = GhostLimits.effectiveMaxPayloadBytes()
-        set(value) = GhostLimits.setMaxPayloadBytes(value)
-
-    /** Clears a user override; the platform default applies again. */
-    fun resetMaxPayloadBytes() = GhostLimits.resetMaxPayloadBytes()
-
     @PublishedApi
     internal val serializerCache = createAtomicMap<KClass<*>, GhostSerializer<*>>()
 
@@ -375,12 +361,6 @@ object Ghost {
         }
     }
 
-    /** Alias for [encodeToBytes] — preferred name in docs and new code. */
-    inline fun <reified T : Any> serializeToBytes(value: T): ByteArray = encodeToBytes(value)
-
-    /** Alias for [encodeToString]. */
-    inline fun <reified T : Any> serializeToString(value: T): String = encodeToString(value)
-
     /**
      * Serializes [value] through the pooled [GhostJsonFlatWriter] and discards
      * the output. No [BufferedSink] allocation, no Okio wrapper objects.
@@ -401,7 +381,6 @@ object Ghost {
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(json: String): T {
         val bytes = json.encodeToByteArray()
-        checkPayloadSize(bytes.size)
         return ghostInternalUseFlatReader(bytes) { reader ->
             deserialize(reader)
         }
@@ -412,9 +391,23 @@ object Ghost {
      */
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
-        val bytes = source.readPayloadBytes()
-        return ghostInternalUseFlatReader(bytes) { reader ->
-            deserialize(reader)
+        source.request(Long.MAX_VALUE)
+        val limit = source.buffer.size.toInt()
+        val bytes = acquireScratchBuffer(limit)
+        try {
+            var offset = 0
+            while (offset < limit) {
+                val count = source.read(bytes, offset, limit - offset)
+                if (count == -1) {
+                    break
+                }
+                offset += count
+            }
+            return ghostInternalUseFlatReader(bytes, limit) { reader ->
+                deserialize(reader)
+            }
+        } finally {
+            releaseScratchBuffer(bytes)
         }
     }
 
@@ -423,7 +416,6 @@ object Ghost {
      */
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
-        checkPayloadSize(bytes.size)
         return ghostInternalUseFlatReader(bytes) { reader ->
             deserialize(reader)
         }
@@ -480,7 +472,6 @@ object Ghost {
     @Suppress("unused")
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>, limit: Int = bytes.size): T {
-        checkPayloadSize(limit)
         return ghostInternalUseFlatReader(bytes, limit) { reader ->
             val serializer = getSerializer(clazz)
                 ?: throwError("$NOT_FOUND ${clazz.simpleName}")
@@ -494,27 +485,26 @@ object Ghost {
      */
     @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
-        val bytes = source.readPayloadBytes()
-        return ghostInternalUseFlatReader(bytes) { reader ->
-            val serializer = getSerializer(clazz)
-                ?: throwError("$NOT_FOUND ${clazz.simpleName}")
+        source.request(Long.MAX_VALUE)
+        val limit = source.buffer.size.toInt()
+        val bytes = acquireScratchBuffer(limit)
+        try {
+            var offset = 0
+            while (offset < limit) {
+                val count = source.read(bytes, offset, limit - offset)
+                if (count == -1) {
+                    break
+                }
+                offset += count
+            }
+            return ghostInternalUseFlatReader(bytes, limit) { reader ->
+                val serializer = getSerializer(clazz)
+                    ?: throwError("$NOT_FOUND ${clazz.simpleName}")
 
-            serializer.deserialize(reader)
-        }
-    }
-
-    /** Alias for [decodeFromBytes]. */
-    fun <T : Any> deserializeFromBytes(bytes: ByteArray, clazz: KClass<T>): T = decodeFromBytes(bytes, clazz)
-
-    /** Alias for [decodeFromBytes] with reified type. */
-    inline fun <reified T : Any> deserializeFromBytes(bytes: ByteArray): T = decodeFromBytes(bytes, T::class)
-
-    /** Alias for [encodeToString] with [KClass]. */
-    fun <T : Any> serializeToString(value: T, clazz: KClass<T>): String {
-        return ghostInternalEncodeToString { writer ->
-            val serializer = getSerializer(clazz)
-                ?: throwError("$NOT_FOUND ${clazz.simpleName}. $MISSING_ANN")
-            serializer.serialize(writer, value)
+                serializer.deserialize(reader)
+            }
+        } finally {
+            releaseScratchBuffer(bytes)
         }
     }
 

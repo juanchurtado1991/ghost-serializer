@@ -34,8 +34,8 @@ expect object GhostHeuristics {
     val maxDiscriminatorPeekDistance: Int
 
     /**
-     * Maximum JSON body size (bytes) for stream/body adapters and [BufferedSource] reads.
-     * Prevents unbounded buffering on hostile or accidental huge payloads.
+     * Max retained capacity for [com.ghost.serialization.writer.FlatByteArrayWriter] after [com.ghost.serialization.writer.FlatByteArrayWriter.reset].
+     * Larger encoded payloads can reuse the grown buffer on the same thread; capacity above this is released.
      */
-    val maxPayloadBytes: Int
+    val maxWarmWriteBufferCapacity: Int
 }
