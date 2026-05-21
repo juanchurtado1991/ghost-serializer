@@ -103,20 +103,34 @@ val ciTestIos = tasks.register("ciTestIos") {
     )
 }
 
+/**
+ * JVM test modules run in GitHub Actions `test-jvm` and before `:ghost-benchmark:run` (via [ciTest]).
+ * When you add a new `:module:test`, append it here — do not wire CI/benchmark separately.
+ */
+val ciTestJvmModules = listOf(
+    ":ghost-serialization:jvmTest",
+    ":ghost-ktor:jvmTest",
+    ":ghost-compiler:test",
+    ":ghost-integration-test:test",
+    ":ghost-retrofit:test",
+    ":ghost-spring-boot-starter:test",
+    ":ghost-gradle-plugin:test",
+)
+
+val ciTestJvm = tasks.register("ciTestJvm") {
+    group = "verification"
+    description = "JVM test modules (CI test-jvm job; included in ciTest and ghost-benchmark:run)"
+    ciTestJvmModules.forEach { dependsOn(it) }
+}
+
 tasks.register("ciTest") {
     group = "verification"
     description = "Full CI test suite (GitHub Actions); iOS auto-skipped on Linux/Windows"
     dependsOn(
         ciTestIosSkipped,
         ciTestIos,
-        ":ghost-serialization:jvmTest",
-        ":ghost-ktor:jvmTest",
-        ":ghost-compiler:test",
-        ":ghost-integration-test:test",
-        ":ghost-retrofit:test",
-        ":ghost-spring-boot-starter:test",
+        ciTestJvm,
         ":ghost-serialization:testDebugUnitTest",
-        ":ghost-gradle-plugin:test",
     )
 }
 

@@ -4,14 +4,15 @@
 ### Added
 - **Encode API aliases**: `serialize` / `serializeToString` / `serializeToBytes` as aliases for `encodeToString` / `encodeToBytes` (API-compatible with earlier naming).
 - **Root `ciTest` task**: Mirrors GitHub Actions JVM + Android tests; runs iOS simulator tests on macOS only, logs skip on Linux/Windows.
-- **Platform write-buffer caps**: `GhostHeuristics.maxWarmWriteBufferCapacity` — Android / Native 4 MB, JVM 8 MB, Wasm 2 MB. `FlatByteArrayWriter.reset()` retains grown capacity up to this limit per target.
+- **Platform write-buffer caps**: `GhostHeuristics.maxWarmWriteBufferCapacity` — Android / Native 4 MB, JVM 8 MB. `FlatByteArrayWriter.reset()` retains grown capacity up to this limit per target.
 
 ### Changed
 - **`ghost-benchmark:run`**: Depends on `:ciTest` before the benchmark (unless `-PskipTests`), matching local validation to CI.
 - **KSP processor**: Fails the build on processor errors instead of silently continuing.
 - **Gradle plugin default version**: `DEFAULT_VERSION` updated to `1.1.17` for projects that omit an explicit Ghost version.
 - **Removed configurable HTTP payload limits**: Dropped `Ghost.maxPayloadBytes`, `GhostPayload`, Retrofit/Ktor/Spring body-size checks, and `ghost.max-payload-bytes`. Collection limits (`maxCollectionSize`) remain; HTTP body size belongs in OkHttp, Ktor engine, Spring codec, or reverse proxy.
-- **Spring Boot starter**: Split into `GhostAutoConfiguration`, `GhostWebMvcAutoConfiguration`, and `GhostWebFluxAutoConfiguration` (`open` classes) for Spring Framework 6.2 / Boot 3.4.
+- **Spring Boot starter**: Split into `GhostAutoConfiguration`, `GhostWebMvcAutoConfiguration`, and `GhostWebFluxAutoConfiguration` (`open` classes) for Spring Framework 6.2 / Boot 3.4.5 (verified in CI via `ciTestJvm`).
+- **CI / local tests**: `ciTestJvm` aggregates JVM modules; GitHub Actions `test-jvm` runs it. [CONTRIBUTING.md](./CONTRIBUTING.md) documents the workflow.
 
 ### Fixed
 - **CI — iOS**: `test-ios` job fails if `iosSimulatorArm64Test` is SKIPPED; runs `kspCommonMainKotlinMetadata` first on `macos-14`.
@@ -19,8 +20,9 @@
 ### Tests
 - **Compiler**: KSP compile-testing coverage (`GhostSerializationKspTest`, `GhostEmitterConstantsTest`, processor tests).
 - **CI**: Android `testDebugUnitTest` and iOS `iosSimulatorArm64Test` jobs in GitHub Actions.
+- **Spring Boot starter**: `@SpringBootTest` + MockMvc round-trip (`GhostSpringMvcIntegrationTest`) on **Spring Boot 3.4.5** with KSP-generated test DTOs.
 - **Style**: Removed unnecessary non-null assertions (`!!`) in test sources.
-- **Suite size**: **1117** tests in full CI on macOS (885 JVM/Android/Linux + 232 `iosSimulatorArm64Test`); **885** on Linux/Windows (`./gradlew ciTest`).
+- **Suite size**: **~874** tests with full `./gradlew ciTest` on macOS (642 JVM/Android/Linux + ~232 `iosSimulatorArm64Test`); **642** on Linux/Windows (iOS skipped).
 
 ## [1.1.16] - 2026-05-20
 ### Performance
