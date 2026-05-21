@@ -7,9 +7,9 @@
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
     <img src="https://img.shields.io/badge/version-1.1.17-brightgreen.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
-    <img src="https://img.shields.io/badge/tests-1117%20passing-success.svg?style=flat-square" alt="Tests">
+    <img src="https://img.shields.io/badge/tests-642%2B%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
-  <p><sub>1117 = full CI on macOS (<code>ciTest</code>); 885 on Linux/Windows (iOS simulator tests skipped).</sub></p>
+  <p><sub><strong>642</strong> = <code>./gradlew ciTest</code> on Linux/Windows (JVM + Android unit; iOS skipped). <strong>~874</strong> on macOS with Xcode (+232 <code>iosSimulatorArm64Test</code>).</sub></p>
 </div>
 
 ---
@@ -18,7 +18,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Current release:** `1.1.17` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Release version:** `1.1.17` (`com.ghostserializer`) — publish to [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) after tagging `v1.1.17`.
 
 ---
 
@@ -49,6 +49,7 @@ The standalone test apps consume Ghost from Maven Central only (no local checkou
 10. [Platform limits and memory](#platform-limits-and-memory)
 11. [Features](#features)
 12. [Architecture](#architecture)
+13. [Contributing](#contributing)
 
 ---
 
@@ -670,7 +671,7 @@ dependencies {
 }
 ```
 
-The starter auto-configures Spring MVC and WebFlux to use Ghost as the JSON engine via `GhostHttpMessageConverter`. No additional configuration is required.
+The starter auto-configures Spring MVC and WebFlux to use Ghost as the JSON engine via `GhostHttpMessageConverter`. No additional configuration is required. Integration tests in this repo run against **Spring Boot 3.4.5** (`@SpringBootTest` + MockMvc with KSP-generated DTOs).
 
 > **Large HTTP bodies (e.g. 50–100 MB):** Ghost does **not** cap JSON body size. Enforce limits at the edge (nginx, API gateway) or in Spring (`spring.codec.max-in-memory-size`, WebFlux codecs). Ghost targets typical API payloads (KB to a few MB). See [Platform limits and memory](#platform-limits-and-memory).
 
@@ -740,7 +741,7 @@ Ghost separates **parser safety** (collections, depth) from **HTTP / transport p
 
 | Limit | Purpose | Defaults (approx.) |
 |:---|:---|:---|
-| **`maxCollectionSize`** | Max elements per `List` / `Map` while parsing (DoS on huge arrays) | Android / Wasm **50k**, Native **500k**, JVM **1M** |
+| **`maxCollectionSize`** | Max elements per `List` / `Map` while parsing (DoS on huge arrays) | Android **50k**, Native **500k**, JVM **1M** |
 | **`maxDepth`** | Max JSON nesting (stack safety) | **255** (on readers) |
 
 These apply on every deserialize path, including `Ghost.deserialize` and HTTP adapters.
@@ -754,7 +755,6 @@ These apply on every deserialize path, including `Ghost.deserialize` and HTTP ad
 | Android | 4 MB | Mobile APIs, moderate JSON |
 | iOS / Kotlin Native | 4 MB | Same as Android |
 | JVM (server, desktop) | 8 MB | Frequent JSON ~5–8 MB (e.g. large list endpoints) |
-| Wasm | 2 MB | Tight heap in the browser |
 
 **Why this matters:** A global low MB cap forced **regrowth on every encode** for ~6 MB JSON on JVM, inflating `ThreadAllocatedBytes` in benchmarks without improving real throughput. Platform-specific caps keep mobile RAM low while letting server threads reuse a warm buffer for multi-MB responses.
 
@@ -777,33 +777,33 @@ Ghost **does not** enforce `maxPayloadBytes` on the core parser or adapters. Lim
 
 ## Features
 
-| Feature | Description |
-|:---|:---|
-| **Zero reflection** | All serializers generated at compile time via KSP. No `Class.forName`, no field scanning. |
-| **ProGuard / R8 safe** | Nothing to keep. Generated code is concrete, final, and directly called. |
-| **Null safety** | Nullable fields (`String?`) handled correctly. Missing required fields throw a descriptive `GhostJsonException`. |
-| **Default values** | Fields with Kotlin default values are optional in JSON. |
-| **Sealed classes** | Full polymorphism support (Standard or Inferred) with built-in or custom discriminator keys. |
-| **Value classes** | `@JvmInline value class` supported transparently — serialized as the wrapped type. |
-| **Collections** | `List<T>`, `Set<T>`, `Map<String, V>`, and all primitive arrays supported out of the box. |
-| **Registry Sharding** | **[New]** Automatic fragmentation of the global registry to support thousands of models without JVM limits. |
-| **Dynamic Imports** | **[New]** Property-aware import generation. Only the used parser functions are imported, keeping code lean. |
-| **Zero Magic Strings**| **[New]** 100% literal-free compiler logic. All templates and identifiers are centralized for stability. |
-| **Thread safety** | Reader and writer pools are thread-safe. Safe to use from coroutines and multiple threads. |
-| **Depth protection** | Configurable max nesting depth (default 255) to prevent stack overflow on malicious input. |
+| Feature | Description                                                                                                                                                               |
+|:---|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Zero reflection** | All serializers generated at compile time via KSP. No `Class.forName`, no field scanning.                                                                                 |
+| **ProGuard / R8 safe** | Nothing to keep. Generated code is concrete, final, and directly called.                                                                                                  |
+| **Null safety** | Nullable fields (`String?`) handled correctly. Missing required fields throw a descriptive `GhostJsonException`.                                                          |
+| **Default values** | Fields with Kotlin default values are optional in JSON.                                                                                                                   |
+| **Sealed classes** | Full polymorphism support (Standard or Inferred) with built-in or custom discriminator keys.                                                                              |
+| **Value classes** | `@JvmInline value class` supported transparently — serialized as the wrapped type.                                                                                        |
+| **Collections** | `List<T>`, `Set<T>`, `Map<String, V>`, and all primitive arrays supported out of the box.                                                                                 |
+| **Registry Sharding** | Automatic fragmentation of the global registry to support thousands of models without JVM limits.                                                                         |
+| **Dynamic Imports** | Property-aware import generation. Only the used parser functions are imported, keeping code lean.                                                                         |
+| **Zero Magic Strings**|  100% literal-free compiler logic. All templates and identifiers are centralized for stability.                                                                           |
+| **Thread safety** | Reader and writer pools are thread-safe. Safe to use from coroutines and multiple threads.                                                                                |
+| **Depth protection** | Configurable max nesting depth (default 255) to prevent stack overflow on malicious input.                                                                                |
 | **DoS protection** | Platform-aware `maxCollectionSize` and depth limits on parse; HTTP body size is the app's responsibility (see [Platform limits and memory](#platform-limits-and-memory)). |
-| **Ktor 2.3.x** | Native `ghost()` plugin for `ContentNegotiation` (tested with `ktor-client-*` 2.3.11). |
-| **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement with explicit `null` body handling. |
-| **Spring Boot** | Auto-configured converters (MVC + WebFlux); split `@AutoConfiguration` for Spring Boot 3.4+ (`open` nested configs). |
-| **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns safe defaults. |
-| **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types. |
-| **Custom Decoders** | `@GhostDecoder` / `@GhostEncoder` to delegate specific field logic to manual functions. |
-| **Structural Flattening** | `@GhostFlatten("a.b.c")` maps nested JSON values directly to class properties. |
-| **Structural Wrapping** | `@GhostWrap("metadata.info")` nests class properties inside JSON sub-objects. |
-| **Contextual Serializers**| Register manual `GhostSerializer<T>` for 3rd-party types via `Ghost.addRegistry()`. |
-| **Lazy Discovery** | O(1) cold-start optimization via specialized manual platform iterators. |
-| **Fragmented Emitters**| Automatic chunked emission for large models (+40 fields) to optimize JIT execution. |
-| **Incremental builds** | KSP only regenerates files for changed models. Unchanged modules are fully cached. |
+| **Ktor 2.3.x** | Native `ghost()` plugin for `ContentNegotiation` (tested with `ktor-client-*` 2.3.11).                                                                                    |
+| **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement with explicit `null` body handling.                                                                                           |
+| **Spring Boot** | Auto-configured converters (MVC + WebFlux); split `@AutoConfiguration` for Spring Boot 3.4+ (`open` nested configs).                                                      |
+| **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns safe defaults.                                                                                     |
+| **Fallbacks** | `@GhostFallback` provides a default subclass for unknown polymorphic types.                                                                                               |
+| **Custom Decoders** | `@GhostDecoder` / `@GhostEncoder` to delegate specific field logic to manual functions.                                                                                   |
+| **Structural Flattening** | `@GhostFlatten("a.b.c")` maps nested JSON values directly to class properties.                                                                                            |
+| **Structural Wrapping** | `@GhostWrap("metadata.info")` nests class properties inside JSON sub-objects.                                                                                             |
+| **Contextual Serializers**| Register manual `GhostSerializer<T>` for 3rd-party types via `Ghost.addRegistry()`.                                                                                       |
+| **Lazy Discovery** | O(1) cold-start optimization via specialized manual platform iterators.                                                                                                   |
+| **Fragmented Emitters**| Automatic chunked emission for large models (+40 fields) to optimize JIT execution.                                                                                       |
+| **Incremental builds** | KSP only regenerates files for changed models. Unchanged modules are fully cached.                                                                                        |
 
 ---
 
@@ -858,14 +858,75 @@ No reflection occurs at any step. The call graph is fully monomorphic — the JI
 ## Running the Benchmark Yourself
 
 ```bash
-# Quick sanity check (10 runs)
-./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10 --warmup 5000 --no-tests"
+  # Full run: executes ./gradlew ciTest first (same modules as CI), then the benchmark
+  ./gradlew :ghost-benchmark:run --args="--runs 10000 --warmup 20000 --no-tests"
 
-# Production-grade measurement (matches the numbers in this README)
-./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 20000 --no-tests"
+  # Benchmark only (skip ciTest)
+  ./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 20000 --no-tests"
 ```
 
 The benchmark is self-contained — no external harness needed. It runs inside a single JVM process, warms up the JIT once, then measures all engines in the same process with the same JIT state.
+
+See [Contributing](#contributing) for how to run the full test suite and register new test modules.
+
+---
+
+## Contributing
+
+We welcome issues, benchmarks, docs fixes, and pull requests. Full workflow details are in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+### Quick start
+
+| Requirement | Version |
+|:---|:---|
+| JDK | **17** |
+| Kotlin / KSP | **1.9.24** / **1.9.24-1.0.20** (see `gradle/libs.versions.toml`) |
+| Android SDK | For `:ghost-serialization:testDebugUnitTest` (API 36 in this repo) |
+| macOS + Xcode | Optional — iOS simulator tests (`ciTest` on Mac only) |
+
+```bash
+  git clone https://github.com/juanchurtado1991/GhostSerialization.git
+  cd GhostSerialization
+  
+  ./gradlew ciTestJvm          # JVM modules (Linux/macOS/Windows)
+  ./gradlew ciTest             # ciTestJvm + Android unit tests; + iOS on macOS
+```
+
+GitHub Actions runs the same split: `ciTestJvm` on Ubuntu, Android and iOS on separate jobs (see `.github/workflows/ci.yml`).
+
+### Adding or changing tests
+
+When you add a new Gradle module with tests, register **one** entry in `ciTestJvmModules` in the root [`build.gradle.kts`](./build.gradle.kts):
+
+```kotlin
+val ciTestJvmModules = listOf(
+    // ...
+    ":your-new-module:test",
+)
+```
+
+That wires the module into:
+
+- `./gradlew ciTestJvm` and `./gradlew ciTest`
+- GitHub Actions job **Tests (JVM)**
+- `./gradlew :ghost-benchmark:run` (unless you pass `-PskipTests`)
+
+Do **not** duplicate the module name only in `.github/workflows/ci.yml` or `ghost-benchmark/build.gradle.kts`.
+
+**Examples in this repo:** integration tests in `:ghost-integration-test`, Spring MVC round-trip in `:ghost-spring-boot-starter` (`@SpringBootTest` + KSP test fixtures).
+
+### Before you open a PR
+
+1. `./gradlew ciTest` on your machine (or at least `ciTestJvm` if you skip Android/iOS).
+2. If you touch performance-sensitive paths, run `./gradlew :ghost-benchmark:run` or document why a benchmark skip is acceptable.
+3. Update [CHANGELOG.md](./CHANGELOG.md) under `[Unreleased]` or the target version for user-visible changes.
+4. Keep diffs focused; match existing naming and KSP/compiler patterns.
+
+### Scope
+
+Published targets for **1.1.x** are **Android, iOS (KMP), and JVM** (plus Retrofit, Ktor, Spring adapters). **Wasm** sources exist in the tree but are not a supported/public platform until a `wasmJs` target is enabled and documented.
+
+Questions or ideas: open a [GitHub issue](https://github.com/juanchurtado1991/GhostSerialization/issues).
 
 ---
 
