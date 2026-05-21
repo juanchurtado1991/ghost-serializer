@@ -21,7 +21,7 @@ class GhostPluginFunctionalTest {
         get() = System.getProperty("kspVersion") ?: "1.9.24-1.0.20"
 
     private val ghostVersion: String
-        get() = System.getProperty("ghostVersion") ?: "1.1.16"
+        get() = System.getProperty("ghostVersion") ?: "1.1.17"
 
     @Test
     fun `plugin supports configuration cache`() {
