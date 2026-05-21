@@ -158,8 +158,7 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    source.request(Long.MAX_VALUE)
-    val bytes = source.buffer.readByteArray()
+    val bytes = source.readPayloadBytes()
 
     val reader = readerPool.get()
         ?: GhostJsonReader(bytes)
