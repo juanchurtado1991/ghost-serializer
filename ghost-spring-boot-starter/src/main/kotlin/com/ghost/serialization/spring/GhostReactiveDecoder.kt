@@ -2,7 +2,6 @@ package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.checkPayloadSize
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.ghostInternalUseReader
@@ -90,7 +89,6 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
     ): Any {
         val bytes = ByteArray(buffer.readableByteCount())
         buffer.read(bytes)
-        checkPayloadSize(bytes.size)
 
         return try {
             ghostInternalUseReader(bytes) { reader ->
