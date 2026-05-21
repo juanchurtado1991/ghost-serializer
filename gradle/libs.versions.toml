@@ -35,6 +35,8 @@ androidx-lifecycle              = "2.8.2"
 savedstate-compose              = "1.0.1"
 
 # Testing
+kotlin-compile-testing          = "1.6.0"
+kotlin-compile-testing-ksp      = "1.6.0"
 junit-jupiter                   = "5.10.2"
 kotlinx-coroutines-test         = "1.8.1"
 spring-boot-starter-web         = "3.2.5"
@@ -87,6 +89,8 @@ coil-compose                            = { group = "io.coil-kt.coil3", name = "
 coil-network-ktor                       = { group = "io.coil-kt.coil3", name = "coil-network-ktor", version.ref = "coil" }
 
 # Testing
+kotlin-compile-testing          = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing", version.ref = "kotlin-compile-testing" }
+kotlin-compile-testing-ksp      = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing-ksp", version.ref = "kotlin-compile-testing-ksp" }
 junit-jupiter-api               = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-jupiter-engine            = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-engine                    = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
