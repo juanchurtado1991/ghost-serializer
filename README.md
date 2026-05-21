@@ -5,10 +5,11 @@
   <p>
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin"></a>
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
-    <img src="https://img.shields.io/badge/version-1.1.16-brightgreen.svg?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.1.17-brightgreen.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
-    <img src="https://img.shields.io/badge/tests-345%20passing-success.svg?style=flat-square" alt="Tests">
+    <img src="https://img.shields.io/badge/tests-1117%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
+  <p><sub>1117 = full CI on macOS (<code>ciTest</code>); 885 on Linux/Windows (iOS simulator tests skipped).</sub></p>
 </div>
 
 ---
@@ -17,7 +18,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Current release:** `1.1.16` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Current release:** `1.1.17` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
@@ -174,7 +175,7 @@ Then build and run the `GhostSample` scheme in Xcode against an iOS simulator.
 - You process **large payloads** (hundreds to thousands of objects per response). Ghost's advantage grows with payload size.
 - **Memory matters**. Ghost allocates 6–32x less heap than the competition per parse call. On Android this reduces GC pressure and prevents jank on the main thread. On servers it allows higher throughput with the same heap budget.
 - You want **ProGuard/R8 safety without manual `@Keep` rules**. All serializers are generated at compile time; there is nothing to reflect on at runtime.
-- You are using **Ktor 3.0 or Retrofit 2.11** and want zero-configuration integration.
+- You are using **Ktor 2.3.x or Retrofit 2.11** and want zero-configuration integration.
 
 ### Ghost may not be the best fit when:
 
@@ -194,7 +195,7 @@ Ghost is published to **Maven Central** (`com.ghostserializer`).
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.1.16"
+ghost = "1.1.17"
 ksp = "1.9.24-1.0.20" # match your Kotlin version
 
 [libraries]
@@ -233,7 +234,7 @@ The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler art
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
-    id("com.ghostserializer.ghost") version "1.1.16"
+    id("com.ghostserializer.ghost") version "1.1.17"
 }
 ```
 
@@ -466,7 +467,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.1.16"
+    id("com.ghostserializer.ghost") version "1.1.17"
 }
 
 kotlin {
@@ -671,7 +672,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.16")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.17")
 }
 ```
 
@@ -799,7 +800,7 @@ There is **no separate** Ktor or Retrofit property. Both adapters use the global
 | **Thread safety** | Reader and writer pools are thread-safe. Safe to use from coroutines and multiple threads. |
 | **Depth protection** | Configurable max nesting depth (default 255) to prevent stack overflow on malicious input. |
 | **DoS protection** | Platform-aware `maxCollectionSize` and [`maxPayloadBytes`](#payload-size-limits) limits prevent memory exhaustion on all targets. |
-| **Ktor 3.0** | Native `ghost()` plugin for `ContentNegotiation` with full Ktor 3.x support. |
+| **Ktor 2.3.x** | Native `ghost()` plugin for `ContentNegotiation` (tested with `ktor-client-*` 2.3.11). |
 | **Retrofit 2.11** | `GhostConverterFactory` drop-in replacement with explicit `null` body handling. |
 | **Spring Boot** | Auto-configured `GhostHttpMessageConverter` via production-ready starter. |
 | **Resilience** | `@GhostResilient` catches type mismatches or unknown enums and assigns safe defaults. |
