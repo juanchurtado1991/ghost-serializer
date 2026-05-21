@@ -18,7 +18,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Release version:** `1.1.17` (`com.ghostserializer`) — publish to [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) after tagging `v1.1.17`.
+**Current release:** `1.1.17` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
