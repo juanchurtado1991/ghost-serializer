@@ -11,6 +11,13 @@ dependencies {
     implementation(libs.okio)
     
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.spring.boot.starter.web)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {
