@@ -29,6 +29,12 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
  */
 internal class GhostAnalyzer(private val logger: KSPLogger) {
 
+    /**
+     * Analyzes the given class declaration and resolves its properties to a list of models.
+     *
+     * @param classDeclaration The class metadata declaration to analyze.
+     * @return List of parsed [GhostPropertyModel] configurations.
+     */
     fun analyze(classDeclaration: KSClassDeclaration): List<GhostPropertyModel> {
         val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
         val isData = classDeclaration.modifiers.contains(Modifier.DATA)
@@ -37,6 +43,35 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
 
+        validateClassKind(classDeclaration, isData, isSealed, isValue, isEnum)
+
+        val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
+
+        val properties = classDeclaration.getAllProperties()
+            .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
+            .toList()
+
+        validatePropertyVisibility(classDeclaration, properties)
+
+        val enumValues = getEnumValues(classDeclaration, isEnum)
+        val propertyModels = resolvePropertyModels(classDeclaration, properties, parameters, isEnum, enumValues)
+
+        val finalModels = resolveSealedSubclasses(classDeclaration, propertyModels, isSealed)
+
+        validateNames(finalModels, classDeclaration)
+        return finalModels
+    }
+
+    /**
+     * Validates that the class kind is supported by the Ghost framework.
+     */
+    private fun validateClassKind(
+        classDeclaration: KSClassDeclaration,
+        isData: Boolean,
+        isSealed: Boolean,
+        isValue: Boolean,
+        isEnum: Boolean
+    ) {
         if (!isData && !isSealed && !isValue && !isEnum) {
             logger.error(
                 C.STR_ERR_CLASS_1 +
@@ -48,13 +83,15 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 classDeclaration
             )
         }
+    }
 
-        val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
-
-        val properties = classDeclaration.getAllProperties()
-            .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
-            .toList()
-
+    /**
+     * Validates that none of the serialization properties are declared as private.
+     */
+    private fun validatePropertyVisibility(
+        classDeclaration: KSClassDeclaration,
+        properties: List<KSPropertyDeclaration>
+    ) {
         val hasPrivateProperties = properties.any {
             it.modifiers.contains(Modifier.PRIVATE)
         }
@@ -69,10 +106,19 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 classDeclaration
             )
         }
+    }
 
-        val enumValues = getEnumValues(classDeclaration, isEnum)
-
-        val propertyModels = if (isEnum) {
+    /**
+     * Resolves the list of property models for standard or enum DTO classes.
+     */
+    private fun resolvePropertyModels(
+        classDeclaration: KSClassDeclaration,
+        properties: List<KSPropertyDeclaration>,
+        parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>,
+        isEnum: Boolean,
+        enumValues: Map<String, String>?
+    ): List<GhostPropertyModel> {
+        return if (isEnum) {
             properties
                 .filterNot { it.simpleName.asString() in listOf(C.NAME, C.ORDINAL) }
                 .map { prop -> buildPropertyModel(prop, parameters).copy(enumValues = enumValues) }
@@ -96,8 +142,17 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else {
             properties.map { prop -> buildPropertyModel(prop, parameters) }
         }
+    }
 
-        val finalModels = if (isSealed) {
+    /**
+     * Inspects the sealed subclass hierarchies and recursively builds inferred subclass metadata.
+     */
+    private fun resolveSealedSubclasses(
+        classDeclaration: KSClassDeclaration,
+        propertyModels: List<GhostPropertyModel>,
+        isSealed: Boolean
+    ): List<GhostPropertyModel> {
+        return if (isSealed) {
             val inferredSubclasses = classDeclaration
                 .getSealedSubclasses()
                 .map { subclass ->
@@ -109,8 +164,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 .toList()
             propertyModels.map { it.copy(inferredSubclasses = inferredSubclasses) }
                 .ifEmpty {
-                    // If the sealed class itself has no properties,
-                    // return a dummy one to carry the inferred info
                     listOf(
                         GhostPropertyModel(
                             kotlinName = C.STR_EMPTY, jsonName = C.STR_EMPTY,
@@ -124,9 +177,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else {
             propertyModels
         }
-
-        validateNames(finalModels, classDeclaration)
-        return finalModels
     }
 
     private fun getEnumValues(
@@ -147,7 +197,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     ) {
         val names = properties.groupBy { it.jsonName }
         names.forEach { (name, props) ->
-            if (props.size > 1) {
+            if (props.size > C.VAL_ONE) {
                 logger.error(
                     "${C.STR_ERR_DUP_1}$name${C.STR_ERR_DUP_2}${
                         clazz
@@ -171,17 +221,23 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val isList = qualifiedName == C.LIST_QUALIFIED
         val isMap = qualifiedName == C.MAP_QUALIFIED
 
-        val innerType = if (isList) resolveFirstTypeArg(type) else null
-        val mapKeyType = if (isMap) resolveFirstTypeArg(type) else null
-        val mapValueType = if (isMap) resolveSecondTypeArg(type) else null
-
-        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != C.STRING_QUALIFIED) {
-            logger.error(
-                "${C.STR_ERR_MAP_1}${prop.simpleName.asString()}${C.STR_ERR_MAP_2}" +
-                        C.STR_ERR_MAP_3,
-                prop
-            )
+        val innerType = if (isList) {
+            resolveFirstTypeArg(type)
+        } else {
+            null
         }
+        val mapKeyType = if (isMap) {
+            resolveFirstTypeArg(type)
+        } else {
+            null
+        }
+        val mapValueType = if (isMap) {
+            resolveSecondTypeArg(type)
+        } else {
+            null
+        }
+
+        validateMapKey(prop, isMap, mapKeyType)
 
         val param = parameters.find {
             it.name?.asString() == prop.simpleName.asString()
@@ -189,56 +245,19 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val isPrimitiveArray = qualifiedName in PRIMITIVE_ARRAYS
         val primitiveArrayType =
-            if (isPrimitiveArray) qualifiedName?.removePrefix(C.STR_KOTLIN_DOT) else null
+            if (isPrimitiveArray) {
+                qualifiedName?.removePrefix(C.STR_KOTLIN_DOT)
+            } else {
+                null
+            }
 
-        val customDecoder = prop.annotations.find {
-            it.shortName.asString() == C.GHOST_DECODER
-        }?.let { ann ->
-            val provider =
-                ann.arguments.find { it.name?.asString() == C.PROVIDER_ARG }?.value as? KSType
-            val function =
-                ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
-            if (provider != null && function != null) {
-                CustomCoderModel(provider.toTypeName(), function)
-            } else null
-        }
+        val customDecoder = resolveCustomCoder(prop, C.GHOST_DECODER)
+        val customEncoder = resolveCustomCoder(prop, C.GHOST_ENCODER)
 
-        val customEncoder = prop.annotations.find {
-            it.shortName.asString() == C.GHOST_ENCODER
-        }?.let { ann ->
-            val provider =
-                ann.arguments.find { it.name?.asString() == C.PROVIDER_ARG }?.value as? KSType
-            val function =
-                ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
-            if (provider != null && function != null) {
-                CustomCoderModel(provider.toTypeName(), function)
-            } else null
-        }
+        val flattenPath = resolvePathAnnotation(prop, C.GHOST_FLATTEN)
+        val wrapPath = resolvePathAnnotation(prop, C.GHOST_WRAP)
 
-        val flattenPath = prop.annotations.find {
-            it.shortName.asString() == C.GHOST_FLATTEN
-        }?.let { ann ->
-            val path = ann.arguments.find { it.name?.asString() == C.PATH_ARG }?.value as? String
-            path?.split(C.STR_DOT)
-        }
-
-        val wrapPath = prop.annotations.find {
-            it.shortName.asString() == C.GHOST_WRAP
-        }?.let { ann ->
-            val path = ann.arguments.find { it.name?.asString() == C.PATH_ARG }?.value as? String
-            path?.split(C.STR_DOT)
-        }
-
-        if (customDecoder != null || customEncoder != null) {
-            logger.warn(
-                C.STR_WARN_CUSTOM_CODER
-                    .format(
-                        prop.simpleName.asString(),
-                        customDecoder,
-                        customEncoder
-                    )
-            )
-        }
+        warnIfCustomCoder(prop.simpleName.asString(), customDecoder, customEncoder)
 
         val jsonName = flattenPath?.last() ?: getJsonName(prop)
 
@@ -261,18 +280,14 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             isPrimitiveArray = isPrimitiveArray,
             primitiveArrayType = primitiveArrayType,
             isValueClass = isValueClass(type),
-            valueClassProperty = if (isValueClass(type)) resolveValueClassProperty(type) else null,
-            isSealedClass = isSealedClass(type),
-            sealedSubclasses = if (isSealedClass(type)) {
-                (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()
+            valueClassProperty = if (isValueClass(type)) {
+                resolveValueClassProperty(type)
             } else {
-                emptyList()
+                null
             },
-            isResilient = prop.hasAnnotation(C.GHOST_RESILIENT) || prop.parentDeclaration
-                ?.let {
-                    it is KSClassDeclaration &&
-                            it.annotations.any { ann -> ann.shortName.asString() == C.GHOST_RESILIENT }
-                } ?: false,
+            isSealedClass = isSealedClass(type),
+            sealedSubclasses = resolveSealedSubclassesForType(type),
+            isResilient = isResilientProperty(prop),
             isContextual = isContextualType(type, isList, isMap, isPrimitiveArray),
             customDecoder = customDecoder,
             customEncoder = customEncoder,
@@ -282,15 +297,111 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         )
     }
 
+    /**
+     * Warns if a custom encoder or decoder is configured for the given property.
+     */
+    private fun warnIfCustomCoder(
+        propName: String,
+        customDecoder: CustomCoderModel?,
+        customEncoder: CustomCoderModel?
+    ) {
+        if (customDecoder != null || customEncoder != null) {
+            logger.info(
+                C.STR_WARN_CUSTOM_CODER.format(
+                    propName,
+                    customDecoder,
+                    customEncoder
+                )
+            )
+        }
+    }
+
+    /**
+     * Determines whether the property or its parent class is annotated as resilient.
+     */
+    private fun isResilientProperty(prop: KSPropertyDeclaration): Boolean {
+        return prop.hasAnnotation(C.GHOST_RESILIENT) || prop.parentDeclaration
+            ?.let {
+                it is KSClassDeclaration &&
+                        it.annotations.any { ann -> ann.shortName.asString() == C.GHOST_RESILIENT }
+            } ?: false
+    }
+
+    /**
+     * Resolves the sealed subclasses of the given type, if it represents a sealed class.
+     */
+    private fun resolveSealedSubclassesForType(type: KSType): List<KSClassDeclaration> {
+        return if (isSealedClass(type)) {
+            (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()
+        } else {
+            emptyList()
+        }
+    }
+
+    /**
+     * Resolves the custom decoder or encoder helper config model if declared.
+     */
+    private fun resolveCustomCoder(prop: KSPropertyDeclaration, annotationName: String): CustomCoderModel? {
+        return prop.annotations.find {
+            it.shortName.asString() == annotationName
+        }?.let { ann ->
+            val provider =
+                ann.arguments.find { it.name?.asString() == C.PROVIDER_ARG }?.value as? KSType
+            val function =
+                ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
+            if (provider != null && function != null) {
+                CustomCoderModel(provider.toTypeName(), function)
+            } else null
+        }
+    }
+
+    /**
+     * Resolves the flatten/wrap key paths from annotations.
+     */
+    private fun resolvePathAnnotation(prop: KSPropertyDeclaration, annotationName: String): List<String>? {
+        return prop.annotations.find {
+            it.shortName.asString() == annotationName
+        }?.let { ann ->
+            val path = ann.arguments.find { it.name?.asString() == C.PATH_ARG }?.value as? String
+            path?.split(C.STR_DOT)
+        }
+    }
+
+    /**
+     * Validates that map keys are Strings.
+     */
+    private fun validateMapKey(
+        prop: KSPropertyDeclaration,
+        isMap: Boolean,
+        mapKeyType: KSType?
+    ) {
+        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != C.STRING_QUALIFIED) {
+            logger.error(
+                "${C.STR_ERR_MAP_1}${prop.simpleName.asString()}${C.STR_ERR_MAP_2}" +
+                        C.STR_ERR_MAP_3,
+                prop
+            )
+        }
+    }
+
+    /**
+     * Checks if a type requires contextual serialization (e.g., non-built-in/third-party types).
+     */
     private fun isContextualType(
         type: KSType,
         isList: Boolean,
         isMap: Boolean,
         isPrimitiveArray: Boolean
     ): Boolean {
-        if (isList || isMap || isPrimitiveArray) return false
-        if (isGhostType(type)) return false
-        if (isEnumType(type)) return false
+        if (isList || isMap || isPrimitiveArray) {
+            return false
+        }
+        if (isGhostType(type)) {
+            return false
+        }
+        if (isEnumType(type)) {
+            return false
+        }
 
         val qualifiedName = type.declaration.qualifiedName?.asString()
         val isBuiltIn = qualifiedName?.startsWith(C.STR_KOTLIN_PREFIX) == true ||
@@ -308,17 +419,26 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return true // Third party types
     }
 
+    /**
+     * Checks if the type is a value class or inline class.
+     */
     private fun isValueClass(type: KSType): Boolean {
         val declaration = type.declaration as? KSClassDeclaration ?: return false
         return declaration.modifiers.contains(Modifier.VALUE) ||
                 declaration.modifiers.contains(Modifier.INLINE)
     }
 
+    /**
+     * Checks if the type is a sealed class.
+     */
     private fun isSealedClass(type: KSType): Boolean {
         val declaration = type.declaration as? KSClassDeclaration ?: return false
         return declaration.modifiers.contains(Modifier.SEALED)
     }
 
+    /**
+     * Resolves the underlying property model for a value class type.
+     */
     private fun resolveValueClassProperty(type: KSType): GhostPropertyModel? {
         val declaration = type.declaration as? KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
@@ -328,20 +448,35 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return buildPropertyModel(prop, listOf(param))
     }
 
+    /**
+     * Resolves the first type argument of a generic type.
+     */
     private fun resolveFirstTypeArg(type: KSType): KSType? {
         return type.arguments.firstOrNull()?.type?.resolve()
     }
 
+    /**
+     * Resolves the second type argument of a generic type.
+     */
     private fun resolveSecondTypeArg(type: KSType): KSType? {
         return type.arguments.getOrNull(1)?.type?.resolve()
     }
 
+    /**
+     * Returns the serialized JSON name of a property.
+     */
     private fun getJsonName(prop: KSPropertyDeclaration): String = getSerialName(prop)
 
+    /**
+     * Extension to check if a property has a specific annotation by name.
+     */
     private fun KSPropertyDeclaration.hasAnnotation(name: String): Boolean {
         return annotations.any { it.shortName.asString() == name }
     }
 
+    /**
+     * Resolves the serialized name for an annotated element, checking GhostName or kotlinx SerialName.
+     */
     internal fun getSerialName(declaration: KSAnnotated): String {
         val annotations = declaration.annotations.toList()
 
@@ -373,13 +508,22 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             ?: C.STR_EMPTY
     }
 
+    /**
+     * Checks if the type is an enum class.
+     */
     private fun isEnumType(type: KSType): Boolean =
         (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
 
+    /**
+     * Checks if the type is annotated with @GhostSerialization.
+     */
     private fun isGhostType(type: KSType): Boolean =
         type.declaration.annotations.any { it.shortName.asString() == C.GHOST_SERIALIZATION }
 
     companion object {
+        /**
+         * Set of fully qualified primitive array types.
+         */
         private val PRIMITIVE_ARRAYS = setOf(
             C.STR_TYPE_INT_ARRAY,
             C.STR_TYPE_LONG_ARRAY,

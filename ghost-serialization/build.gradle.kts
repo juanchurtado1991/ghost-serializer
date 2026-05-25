@@ -20,6 +20,8 @@ kotlin {
         withSourcesJar()
     }
 
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
         val commonMain by getting {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
@@ -28,24 +30,6 @@ kotlin {
                 api(libs.okio)
                 implementation(libs.kotlinx.serialization.json)
             }
-        }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        val iosMain by creating {
-            dependsOn(nativeMain)
-        }
-        val iosArm64Main by getting {
-            dependsOn(iosMain)
-        }
-        val iosSimulatorArm64Main by getting {
-            dependsOn(iosMain)
-        }
-        val androidMain by getting {
-            dependsOn(commonMain)
-        }
-        val jvmMain by getting {
-            dependsOn(commonMain)
         }
 
         commonTest.dependencies {

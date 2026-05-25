@@ -68,14 +68,6 @@ class GhostJsonFlatReader(
     }
 
     /**
-     * Helper to verify if the given byte is a valid JSON numeric digit.
-     */
-    @Suppress("NOTHING_TO_INLINE")
-    internal inline fun isDigit(byteCode: Int): Boolean {
-        return (byteCode xor C.ZERO_INT) < C.BASE_TEN
-    }
-
-    /**
      * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
      */
     fun throwError(message: String): Nothing {
@@ -119,7 +111,10 @@ class GhostJsonFlatReader(
      */
     fun skipWhitespace() {
         val localData = rawData
-        val nextPos = findNextNonWhitespaceImpl(position, limit) { localData[it].toInt() and C.BYTE_MASK }
+        val nextPos = findNextNonWhitespaceImpl(position, limit) {
+            localData[it].toInt() and C.BYTE_MASK
+        }
+
         if (nextPos != -1) {
             position = nextPos
             nextTokenByte = localData[position].toInt() and C.BYTE_MASK
@@ -397,6 +392,7 @@ class GhostJsonFlatReader(
         if (token == C.CLOSE_OBJ_INT) {
             return -1
         }
+
         if (token == C.COMMA_INT) {
             internalSkip(1)
             token = peekNextToken()
@@ -417,13 +413,17 @@ class GhostJsonFlatReader(
 
         val start = position + 1
         val localData = rawData
-        val end = findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
+        val end = findClosingQuoteImpl(start, limit) {
+            localData[it].toInt() and C.BYTE_MASK
+        }
+
         if (end == -1) {
             throwError(C.UNTERMINATED_STRING_ERROR)
         }
 
         val length = end - start
         val key = computeKeyHash(start, length)
+
         val hasIndex = ((key * options.multiplier + length) shr options.shift) and C.HASH_MASK
         val index = options.dispatch[hasIndex]
 

@@ -1,8 +1,8 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
 }
-
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 kotlin {
     jvmToolchain(17)
@@ -30,7 +30,7 @@ dependencies {
     testImplementation(libs.kotlin.compile.testing)
     testImplementation(libs.kotlin.compile.testing.ksp)
     testImplementation(libs.junit.jupiter.api)
-    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.engine)
 }
 
 tasks.test {
