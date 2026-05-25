@@ -1,0 +1,343 @@
+package com.ghost.serialization.compiler
+
+import com.google.devtools.ksp.symbol.KSType
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
+
+/**
+ * Abstract base class for all serialization emitters within the Ghost compiler.
+ *
+ * It manages shared state such as contextual serializers and provides common code
+ * generation utilities for serializing properties, collections (lists, maps), primitive types,
+ * value/inline classes, and custom-encoded fields.
+ *
+ * @property properties The list of [GhostPropertyModel] representing properties to serialize.
+ * @property originalClassName The [ClassName] of the DTO class being serialized.
+ * @property writerClass The [ClassName] of the JSON writer used (e.g., GhostJsonWriter).
+ */
+internal abstract class BaseSerializeEmitter(
+    protected val properties: List<GhostPropertyModel>,
+    protected val originalClassName: ClassName,
+    protected val writerClass: ClassName
+) {
+    protected val contextualSerializers = mutableMapOf<KSType, String>()
+
+    /**
+     * Determines whether the property is of a primitive or basic type that can be serialized
+     * using optimized fast-path writer methods directly.
+     *
+     * @param prop The property metadata model.
+     * @return True if the property can be written using a direct/fused writer method call.
+     */
+    protected fun isFusedType(prop: GhostPropertyModel): Boolean {
+        if (prop.customEncoder != null) {
+            return false
+        }
+        val type = prop.type.declaration.qualifiedName?.asString()
+        return when (type) {
+            C.K_INT,
+            C.K_LONG,
+            C.K_STRING,
+            C.K_BOOLEAN,
+            C.K_DOUBLE,
+            C.K_FLOAT -> {
+                true
+            }
+            else -> {
+                false
+            }
+        }
+    }
+
+    /**
+     * Generates a single property serialization step.
+     *
+     * It writes the key name, resolves nullable checks, wraps conditional default arguments,
+     * and delegates values writing to [emitValue].
+     *
+     * @param code The target [CodeBlock.Builder].
+     * @param prop The property metadata model.
+     */
+    fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
+        val cleanName = prop.jsonName
+            .replace(C.STR_DOT, C.STR_UNDERSCORE)
+            .uppercase()
+
+        val headerName = C.STR_H_VAL_PREFIX + cleanName
+        val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
+
+        if (prop.isNullable) {
+            emitNullableProperty(code, prop, headerName, accessor)
+            return
+        }
+
+        emitNonNullProperty(code, prop, headerName, accessor)
+    }
+
+    /**
+     * Helper to serialize a nullable property.
+     */
+    private fun emitNullableProperty(
+        code: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        headerName: String,
+        accessor: CodeBlock
+    ) {
+        val canUseFused = isFusedType(prop) && !prop.isContextual
+        if (prop.hasDefaultValue) {
+            code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
+            if (canUseFused) {
+                code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)
+            } else {
+                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)
+                emitValue(code, prop, accessor)
+            }
+            code.endControlFlow()
+        } else {
+            if (canUseFused) {
+                code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
+                code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)
+                code.nextControlFlow(C.STR_ELSE)
+                code.addStatement(C.STR_WRITE_NAME_RAW_NULL, headerName)
+                code.endControlFlow()
+            } else {
+                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)
+                code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
+                emitValue(code, prop, accessor)
+                code.nextControlFlow(C.STR_ELSE)
+                code.addStatement(C.STR_WRITER_NULL_VAL)
+                code.endControlFlow()
+            }
+        }
+    }
+
+    /**
+     * Helper to serialize a non-nullable property.
+     */
+    private fun emitNonNullProperty(
+        code: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        headerName: String,
+        accessor: CodeBlock
+    ) {
+        val canUseFused = isFusedType(prop) && !prop.isContextual
+        if (canUseFused) {
+            code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)
+        } else {
+            code.addStatement(C.STR_WRITE_NAME_RAW, headerName)
+            emitValue(code, prop, accessor)
+        }
+    }
+
+    /**
+     * Outputs the value serialization statement.
+     * Supports value classes, sealed classes, custom encoders, contextual serializers, and primitives.
+     *
+     * @param code The target [CodeBlock.Builder].
+     * @param prop The property metadata model.
+     * @param accessor The accessor expression string/object (e.g. `value.age`).
+     */
+    fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
+        if (prop.customEncoder != null) {
+            code.addStatement(
+                C.STR_CUSTOM_ENCODER_CALL,
+                prop.customEncoder.provider,
+                prop.customEncoder.functionName,
+                accessor
+            )
+            return
+        }
+        when {
+            prop.isValueClass && prop.valueClassProperty != null -> {
+                val innerAccessor = CodeBlock.of(
+                    C.TEMPLATE_ACCESSOR,
+                    accessor,
+                    prop.valueClassProperty.kotlinName
+                )
+                emitValue(code, prop.valueClassProperty, innerAccessor)
+            }
+
+            prop.isSealedClass -> {
+                code.addStatement(
+                    C.STR_T_SERIALIZE_WRITER_ACC,
+                    prop.type.serializerClassName(),
+                    accessor
+                )
+            }
+
+            prop.isPrimitiveArray -> {
+                code.addStatement(
+                    C.STR_T_SERIALIZE_WRITER_ACC,
+                    ClassName(
+                        C.STR_SERIALIZERS_PKG,
+                        prop.primitiveArrayType + C.STR_SERIALIZER_SUFFIX
+                    ),
+                    accessor
+                )
+            }
+
+            prop.isContextual -> {
+                val name = getContextualSerializerName(prop.type)
+                code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)
+            }
+
+            else -> {
+                emitTypeValue(code, prop.type, accessor, 0, skipNullCheck = true)
+            }
+        }
+    }
+
+    /**
+     * Resolves the serialization call for raw type objects recursively.
+     *
+     * @param code The target [CodeBlock.Builder].
+     * @param type The [KSType] of the target value.
+     * @param accessor Accessor key expression.
+     * @param depth Current recursion depth (used for unique list/map loop variables).
+     * @param skipNullCheck True if the outer check has already guaranteed non-null value.
+     */
+    protected fun emitTypeValue(
+        code: CodeBlock.Builder,
+        type: KSType,
+        accessor: Any,
+        depth: Int,
+        skipNullCheck: Boolean = false
+    ) {
+        val isNullable = type.isMarkedNullable
+        if (isNullable && !skipNullCheck) {
+            code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)
+            code.addStatement(C.STR_NULL_VAL_CALL)
+            code.nextControlFlow(C.STR_ELSE)
+        }
+
+        val typeName = type.declaration.qualifiedName?.asString()
+        when {
+            type.isGhost() -> {
+                code.addStatement(
+                    C.STR_T_SERIALIZE_WRITER_ACC,
+                    type.serializerClassName(),
+                    accessor
+                )
+            }
+
+            type.isEnum() -> {
+                code.addStatement(
+                    C.STR_T_SERIALIZE_WRITER_ACC,
+                    type.serializerClassName(),
+                    accessor
+                )
+            }
+
+            typeName == C.K_INT -> {
+                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+            }
+            typeName == C.K_LONG -> {
+                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+            }
+            typeName == C.K_STRING -> {
+                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+            }
+            typeName == C.K_BOOLEAN -> {
+                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+            }
+            typeName == C.K_DOUBLE -> {
+                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+            }
+            typeName == C.K_FLOAT -> {
+                code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)
+            }
+            type.isList() -> {
+                emitList(code, type, accessor, depth)
+            }
+            type.isMap() -> {
+                emitMap(code, type, accessor, depth)
+            }
+
+            else -> {
+                val name = getContextualSerializerName(type)
+                code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)
+            }
+        }
+
+        if (isNullable && !skipNullCheck) {
+            code.endControlFlow()
+        }
+    }
+
+    /**
+     * Emits list collection serialization statements.
+     */
+    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int) {
+        val itemName = C.STR_ITEM_PREFIX + depth
+        code.addStatement(C.STR_WRITER_BEGIN_ARR)
+        code.beginControlFlow(C.TEMPLATE_FOR_IN, itemName, accessor)
+        val innerType = type.arguments.firstOrNull()?.type?.resolve()
+
+        if (innerType != null) {
+            emitTypeValue(code, innerType, itemName, depth + 1, skipNullCheck = false)
+        } else {
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemName)
+        }
+        code.endControlFlow()
+        code.addStatement(C.STR_WRITER_END_ARR)
+    }
+
+    /**
+     * Emits map collection serialization statements.
+     */
+    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int) {
+        val keyName = C.STR_MAP_KEY_PREFIX + depth
+        val valName = C.STR_MAP_VAL_PREFIX + depth
+        code.addStatement(C.STR_WRITER_BEGIN_OBJ)
+        code.beginControlFlow(C.TEMPLATE_FOR_MAP, keyName, valName, accessor)
+        code.addStatement(C.TEMPLATE_WRITER_NAME, keyName)
+        val valueType = type.arguments.getOrNull(1)?.type?.resolve()
+        if (valueType != null) {
+            emitTypeValue(code, valueType, valName, depth + 1, skipNullCheck = false)
+        } else {
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, valName)
+        }
+        code.endControlFlow()
+        code.addStatement(C.STR_WRITER_END_OBJ)
+    }
+
+    /**
+     * Registers and caches the contextual serializer for the target type.
+     */
+    protected fun getContextualSerializerName(type: KSType): String {
+        return contextualSerializers.getOrPut(type) {
+            val simpleName = type.declaration.simpleName.asString()
+            C.STR_CONTEXTUAL_PREFIX +
+                simpleName.replaceFirstChar { it.lowercase() } +
+                C.STR_SERIALIZER_SUFFIX
+        }
+    }
+
+    /**
+     * Injects the required private fields for all resolved contextual serializers.
+     *
+     * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
+     */
+    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
+        val ghostClass = ClassName(C.STR_GHOST_PKG, C.STR_GHOST_OBJ)
+
+        contextualSerializers.forEach { (type, name) ->
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    name,
+                    ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)
+                        .parameterizedBy(type.toTypeName()),
+                    KModifier.PRIVATE
+                )
+                    .initializer(C.TEMPLATE_RESOLVE_SERIALIZER, ghostClass, type.toTypeName())
+                    .build()
+            )
+        }
+    }
+}

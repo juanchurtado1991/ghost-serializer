@@ -126,14 +126,6 @@ class GhostJsonReader(
     }
 
     /**
-     * Helper to verify if the given byte is a valid JSON numeric digit.
-     */
-    @Suppress("NOTHING_TO_INLINE")
-    internal inline fun isDigit(byteCode: Int): Boolean {
-        return (byteCode xor C.ZERO_INT) < C.BASE_TEN
-    }
-
-    /**
      * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
      */
     fun throwError(message: String): Nothing {

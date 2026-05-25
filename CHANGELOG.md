@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.1.18] - 2026-05-25
+
+### Refactoring — Compiler (KSP)
+- **Serialization pipeline decomposition**: Split the monolithic serialization emitter into dedicated modules — `BaseSerializeEmitter` (shared property/collection/value-class emit logic), `StandardSerializeEmitter` (objects with fewer than 40 properties), and `FragmentedSerializeEmitter` (chunked emission for large models). This mirrors the deserialization decomposition done in 1.1.16.
+- **`PerfectHashFinder` extracted**: Moved the compile-time brute-force hash optimizer into its own `object PerfectHashFinder`. Contains the full `JsonReaderOptions` dispatch walkthrough in KDoc for easier maintenance and teaching.
+- **`FlattenOptionsGenerator` extracted**: Recursive nested-options generation for `@GhostFlatten` properties is now an isolated `object FlattenOptionsGenerator`, removing quadratic path-lookup overhead from `GhostCodeGenerator`.
+- **Cleaner generated variable names**: Removed leading underscore prefix from generated local variables and mask fields (`_result` → `result`, `_mask0` → `mask0`, `_fieldName` → `fieldNameValue`). Generated code is now more readable and avoids Kotlin name-shadowing lint warnings.
+- **Mask constants hoisted to `private const val`**: Per-field bitmask literals (`1L shl N`) are now emitted as named `private const val MASK_FIELDNAME` and `private const val MASK_DEFAULTS_N` companion properties, making bytecode more JIT-friendly and removing magic number literals from generated bodies.
+- **`validateRequiredFields` helper**: Required-field validation logic extracted into a dedicated inline function in generated serializers, improving readability and enabling the JVM to optimize the validation path independently.
+- **Dead constant cleanup in `GhostEmitterConstants`**: Removed unused constants (`STR_NEWLINE`, `FMT_JSON_FIELD_COMMA`, `STR_OPTIONS_OF`, `STR_OPTIONS_OF_SEEDS`, `STR_EMPTY_OBJ`, `STR_WARM_UP_BODY`, `STR_SUPPRESS_FORMAT`, `LINT_UNUSED_EXPRESSION`, `LINT_USELESS_CAST`, `LINT_UNNECESSARY_NOT_NULL_ASSERTION`, `LINT_NAME_SHADOWING`, `LINT_UNUSED_RESULT`, `FMT_MASK_NAME`, `STR_MASK`). Added new constants for the 1.1.18 emission patterns (`TEMPLATE_OPTIONS_OF`, `TEMPLATE_OPTIONS_OF_SEEDS`, `TEMPLATE_VAR_VALUE_DECL`, `STR_FUN_VALIDATE_FIELDS`, etc.).
+- **`TypeHelpers` KDoc pass**: All extension functions (`isPrimitiveInt`, `isList`, `isGhost`, `serializerClassName`, etc.) now have individual KDoc comments. Single-expression bodies converted to block bodies for consistency with the rest of the compiler.
+
+### Changed
+- **`Ghost.deserialize(source: BufferedSource)`**: Rewritten to use `acquireScratchBuffer` / `releaseScratchBuffer` instead of the removed `GhostPayload` helper. Zero extra allocations; explicit loop to drain the Okio buffer into a flat scratch array before flat-reader dispatch.
+- **Removed deprecated aliases**: Dropped `Ghost.serializeToBytes()` and `Ghost.serializeToString()` (aliases introduced in 1.1.17 and removed in the same release cycle). Use `encodeToBytes()` and `encodeToString()` directly.
+- **`GhostJsonFlatWriter`**: Added `@Suppress("CascadeIf")` to suppress IDE warning on the intentional if-else-if chain in the hot-path write dispatch. Minor import reorder (no functional change).
+- **Gradle plugin default version**: `DEFAULT_VERSION` updated to `1.1.18`.
+
+### Documentation
+- **`GhostDoubleFormatter` KDoc**: Complete algorithm walkthrough added — thresholds, fast-path split/scale, carry-over correction, trailing-zero trim, and digit emission via `DOUBLE_DIGIT_LUT`.
+- **`Ghost` object KDoc**: Full KDoc added for all public methods (`serialize`, `encodeToString`, `encodeToBytes`, `encodeAndDiscard`, `deserialize` overloads, `decodeFromBytes`, `decodeFromSource`, `encodeToSink`, `addRegistry`, `getSerializer`, `prewarm`, `throwError`).
+- **`GhostRegistry` interface KDoc**: Interface-level and per-member KDocs for `getSerializer`, `getAllSerializers`, `prewarm`, `registeredCount`.
+- **`GhostJsonException` KDoc**: Class-level doc explaining lazy `line`/`column` computation; per-property KDocs for `path`, `line`, `column`; secondary constructor KDoc.
+- **`JsonReaderOptions` KDoc**: Factory method KDocs for both `of(vararg names)` and `of(shift, multiplier, vararg names)`.
+- **`InternalGhostApi` KDoc**: Annotation-level explanation of purpose, opt-in level, and compiler plugin usage.
+- **API Reference appendix added to English manual** (`docs/GHOST_MANUAL_EN.md`): New Appendix A covering `Ghost`, `GhostRegistry`, `GhostJsonException`, `JsonReaderOptions`, and `@InternalGhostApi` public APIs with tables generated from source KDocs.
+- **PDF manual regenerated** (`docs/Ghost-Serialization-Manual-1.1.18.pdf`): Built from `GHOST_MANUAL_EN.md` including the new API reference appendix.
+
+### Fixed
+- **CI — iOS**: `test-ios` job now trusts the Gradle exit code for Kotlin/Native tests instead of relying on log scraping. Prevents false-positive job failures when K/N test output formatting changes.
+
 ## [1.1.17] - 2026-05-21
 ### Added
 - **Encode API aliases**: `serialize` / `serializeToString` / `serializeToBytes` as aliases for `encodeToString` / `encodeToBytes` (API-compatible with earlier naming).
