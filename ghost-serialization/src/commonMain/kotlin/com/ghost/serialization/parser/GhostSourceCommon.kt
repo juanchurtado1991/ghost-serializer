@@ -28,22 +28,32 @@ internal inline fun findNextNonWhitespaceImpl(
 
     while (currentPos + INDEX_OFFSET_3 < limit) {
         val b0 = getByte(currentPos)
-        if ((mask shr b0) and BYTE_SHIFT_UNIT == RESULT_NONE) return currentPos
+        if ((mask shr b0) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPos
+        }
 
         val b1 = getByte(currentPos + INDEX_OFFSET_1)
-        if ((mask shr b1) and BYTE_SHIFT_UNIT == RESULT_NONE) return currentPos + INDEX_OFFSET_1
+        if ((mask shr b1) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPos + INDEX_OFFSET_1
+        }
 
         val b2 = getByte(currentPos + INDEX_OFFSET_2)
-        if ((mask shr b2) and BYTE_SHIFT_UNIT == RESULT_NONE) return currentPos + INDEX_OFFSET_2
+        if ((mask shr b2) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPos + INDEX_OFFSET_2
+        }
 
         val b3 = getByte(currentPos + INDEX_OFFSET_3)
-        if ((mask shr b3) and BYTE_SHIFT_UNIT == RESULT_NONE) return currentPos + INDEX_OFFSET_3
+        if ((mask shr b3) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPos + INDEX_OFFSET_3
+        }
 
         currentPos += UNROLL_STEP
     }
     while (currentPos < limit) {
         val b = getByte(currentPos)
-        if ((mask shr b) and BYTE_SHIFT_UNIT == RESULT_NONE) return currentPos
+        if ((mask shr b) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPos
+        }
         currentPos++
     }
     return MATCH_END
@@ -56,6 +66,7 @@ internal inline fun findClosingQuoteImpl(
 ): Int {
     var currentPos = position
     val masks = GhostJsonConstants.ESCAPE_MASKS
+
     while (currentPos + INDEX_OFFSET_3 < limit) {
         val b0 = getByte(currentPos)
         if (b0 < ASCII_LIMIT && (masks[b0 shr BITMASK_SHIFT] shr
@@ -83,6 +94,7 @@ internal inline fun findClosingQuoteImpl(
         }
         currentPos += UNROLL_STEP
     }
+
     while (currentPos < limit) {
         val b = getByte(currentPos)
         if (b < ASCII_LIMIT && (masks[b shr BITMASK_SHIFT] shr
@@ -109,60 +121,92 @@ internal inline fun scanStringImpl(
     val matchEndLong = MATCH_END.toLong()
 
     while (pos + INDEX_OFFSET_3 < limit) {
+
         val b0 = getByte(pos)
         if (b0 < asciiLimit && (masks[b0 shr BITMASK_SHIFT] shr
                     (b0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+
             if (b0 == QUOTE_INT) {
                 return packScanResult(pos - start, hash, is7Bit)
             }
+
             return matchEndLong
-        } else if (b0 >= asciiLimit) is7Bit = false
+
+        } else if (b0 >= asciiLimit) {
+            is7Bit = false
+        }
+
         hash = (hash shl shift) - hash + b0
 
         val b1 = getByte(pos + INDEX_OFFSET_1)
         if (b1 < asciiLimit && (masks[b1 shr BITMASK_SHIFT] shr
                     (b1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+
             if (b1 == QUOTE_INT) {
                 return packScanResult(pos + INDEX_OFFSET_1 - start, hash, is7Bit)
             }
+
             return matchEndLong
-        } else if (b1 >= asciiLimit) is7Bit = false
+
+        } else if (b1 >= asciiLimit) {
+            is7Bit = false
+        }
+
         hash = (hash shl shift) - hash + b1
 
         val b2 = getByte(pos + INDEX_OFFSET_2)
         if (b2 < asciiLimit && (masks[b2 shr BITMASK_SHIFT] shr
                     (b2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+
             if (b2 == QUOTE_INT) {
                 return packScanResult(pos + INDEX_OFFSET_2 - start, hash, is7Bit)
             }
+
             return matchEndLong
-        } else if (b2 >= asciiLimit) is7Bit = false
+
+        } else if (b2 >= asciiLimit) {
+            is7Bit = false
+        }
+
         hash = (hash shl shift) - hash + b2
 
         val b3 = getByte(pos + INDEX_OFFSET_3)
         if (b3 < asciiLimit && (masks[b3 shr BITMASK_SHIFT] shr
                     (b3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+
             if (b3 == QUOTE_INT) {
                 return packScanResult(pos + INDEX_OFFSET_3 - start, hash, is7Bit)
             }
-            return matchEndLong
-        } else if (b3 >= asciiLimit) is7Bit = false
-        hash = (hash shl shift) - hash + b3
 
+            return matchEndLong
+
+        } else if (b3 >= asciiLimit) {
+            is7Bit = false
+        }
+
+        hash = (hash shl shift) - hash + b3
         pos += UNROLL_STEP
     }
+
     while (pos < limit) {
         val b = getByte(pos)
         if (b < asciiLimit && (masks[b shr BITMASK_SHIFT] shr
                     (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
+
             if (b == QUOTE_INT) {
                 return packScanResult(pos - start, hash, is7Bit)
             }
+
             return matchEndLong
-        } else if (b >= asciiLimit) is7Bit = false
+
+        } else if (b >= asciiLimit) {
+            is7Bit = false
+        }
+
         hash = (hash shl shift) - hash + b
         pos++
     }
+
     return matchEndLong
 }
 
@@ -174,7 +218,7 @@ internal inline fun contentEqualsStringImpl(
 ): Boolean {
     if (str.length != length) return false
     var index = 0
-    // Unrolled x4 for instruction-level parallelism on typical field-name lengths.
+
     while (index + 3 < length) {
         if (str[index].code != getByte(start + index)) return false
         if (str[index + 1].code != getByte(start + index + 1)) return false
@@ -182,9 +226,11 @@ internal inline fun contentEqualsStringImpl(
         if (str[index + 3].code != getByte(start + index + 3)) return false
         index += 4
     }
+
     while (index < length) {
         if (str[index].code != getByte(start + index)) return false
         index++
     }
+
     return true
 }

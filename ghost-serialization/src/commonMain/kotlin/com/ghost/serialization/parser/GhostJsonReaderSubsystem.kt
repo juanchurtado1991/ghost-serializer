@@ -11,7 +11,7 @@ import okio.ByteString
 
 /**
  * Starts a new JSON object.
- * Increments [depth] and validates against [maxDepth].
+ * Increments depth and validates against maxDepth.
  * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.beginObject() {
@@ -26,7 +26,7 @@ fun GhostJsonReader.beginObject() {
 
 /**
  * Ends the current JSON object.
- * Decrements [depth].
+ * Decrements depth.
  * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.endObject() {
@@ -38,7 +38,7 @@ fun GhostJsonReader.endObject() {
 
 /**
  * Starts a new JSON array.
- * Increments [depth] and validates against [maxDepth].
+ * Increments depth and validates against maxDepth.
  * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.beginArray() {
@@ -53,7 +53,7 @@ fun GhostJsonReader.beginArray() {
 
 /**
  * Ends the current JSON array.
- * Decrements [depth].
+ * Decrements depth.
  * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.endArray() {
@@ -124,7 +124,7 @@ fun GhostJsonReader.consumeArraySeparator() {
 
 /**
  * Reads the next boolean value.
- * Supports string coercion if [coerceBooleans] is true.
+ * Supports string coercion if coerceBooleans is true.
  * Used by KSP-generated serializers.
  */
 fun GhostJsonReader.nextBoolean(): Boolean {
@@ -213,6 +213,7 @@ private fun GhostJsonReader.internalSelect(
     if (token == C.CLOSE_OBJ_INT) {
         return -1
     }
+
     if (token == C.COMMA_INT) {
         internalSkip(1)
         token = peekNextToken()
@@ -233,6 +234,7 @@ private fun GhostJsonReader.internalSelect(
 
     val start = position + 1
     val end = source.findClosingQuote(start, limit)
+
     if (end == -1) {
         throwError(C.UNTERMINATED_STRING_ERROR)
     }
