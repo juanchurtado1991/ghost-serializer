@@ -5,7 +5,7 @@
   <p>
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin"></a>
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
-    <img src="https://img.shields.io/badge/version-1.1.17-brightgreen.svg?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.1.18-brightgreen.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
     <img src="https://img.shields.io/badge/tests-642%2B%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
@@ -18,7 +18,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Current release:** `1.1.17` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Current release:** `1.1.18` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
@@ -196,7 +196,7 @@ Ghost is published to **Maven Central** (`com.ghostserializer`).
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.1.17"
+ghost = "1.1.18"
 ksp = "1.9.24-1.0.20" # match your Kotlin version
 
 [libraries]
@@ -235,7 +235,7 @@ The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler art
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
-    id("com.ghostserializer.ghost") version "1.1.17"
+    id("com.ghostserializer.ghost") version "1.1.18"
 }
 ```
 
@@ -464,7 +464,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.1.17"
+    id("com.ghostserializer.ghost") version "1.1.18"
 }
 
 kotlin {
@@ -667,7 +667,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.17")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.18")
 }
 ```
 
@@ -785,7 +785,7 @@ Ghost **does not** enforce `maxPayloadBytes` on the core parser or adapters. Lim
 | **Default values** | Fields with Kotlin default values are optional in JSON.                                                                                                                   |
 | **Sealed classes** | Full polymorphism support (Standard or Inferred) with built-in or custom discriminator keys.                                                                              |
 | **Value classes** | `@JvmInline value class` supported transparently — serialized as the wrapped type.                                                                                        |
-| **Collections** | `List<T>`, `Set<T>`, `Map<String, V>`, and all primitive arrays supported out of the box.                                                                                 |
+| **Collections** | `List<T>`, `Map<String, V>`, and all primitive arrays supported out of the box (`List`/`Map` via `KType`; `Set<T>` is not wired in runtime — use `List` or a custom `@GhostSerialization` model). |
 | **Registry Sharding** | Automatic fragmentation of the global registry to support thousands of models without JVM limits.                                                                         |
 | **Dynamic Imports** | Property-aware import generation. Only the used parser functions are imported, keeping code lean.                                                                         |
 | **Zero Magic Strings**|  100% literal-free compiler logic. All templates and identifiers are centralized for stability.                                                                           |

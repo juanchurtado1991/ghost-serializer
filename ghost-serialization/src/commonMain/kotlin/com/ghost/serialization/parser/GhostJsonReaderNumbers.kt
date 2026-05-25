@@ -2,17 +2,16 @@
 
 package com.ghost.serialization.parser
 
-import com.ghost.serialization.parser.GhostJsonConstants as C
-
 import com.ghost.serialization.InternalGhostApi
 import kotlin.math.pow
+import com.ghost.serialization.parser.GhostJsonConstants as C
 
 /**
  * Reads a JSON number and returns it as a Float.
  * Uses a zero-allocation, register-based loop for maximum speed.
  * Used by KSP-generated serializers.
  *
- * @throws GhostJsonException if float format is invalid or overflows.
+ * @throws com.ghost.serialization.exception.GhostJsonException if float format is invalid or overflows.
  */
 fun GhostJsonReader.nextFloat(): Float {
     val header = prepareNumericHeader()

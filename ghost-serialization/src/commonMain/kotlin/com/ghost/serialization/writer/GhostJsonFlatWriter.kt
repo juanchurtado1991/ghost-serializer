@@ -31,19 +31,17 @@ import com.ghost.serialization.parser.GhostJsonConstants.MINUS_INT
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
-import com.ghost.serialization.parser.GhostJsonConstants.NULL_BS
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_OBJ_INT
+import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_BYTE
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_12
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.TEN_LONG
-import com.ghost.serialization.parser.GhostJsonConstants.TWO_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.GhostJsonConstants.WRITER_SCRATCH_SIZE
@@ -57,6 +55,7 @@ import okio.ByteString
  * [FlatByteArrayWriter] instead of the segmented [okio.Buffer] used by the
  * streaming path.
  */
+@Suppress("CascadeIf")
 class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     @PublishedApi internal val buffer: FlatByteArrayWriter
 ) {

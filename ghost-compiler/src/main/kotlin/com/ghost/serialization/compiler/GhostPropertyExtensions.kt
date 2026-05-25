@@ -10,6 +10,14 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
  * and return expressions based on the property's metadata (e.g., nullability,
  * primitive types, value classes).
  */
+
+/**
+ * Resolves the appropriate KotlinPoet [TypeName] to declare the local tracking variable
+ * for this property. Handled cases include:
+ * - Non-nullable primitives: mapped directly to their unboxed Kotlin/JVM types.
+ * - Non-nullable inline/value classes: mapped to the underlying unboxed primitive type.
+ * - Nullable/Object types: coerced to a nullable KotlinPoet type representation.
+ */
 internal fun GhostPropertyModel.getVariableType(): TypeName {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
@@ -18,14 +26,21 @@ internal fun GhostPropertyModel.getVariableType(): TypeName {
         isPrimitive -> typeName
         isUnboxedValueClass -> {
             val underlying = valueClassProperty!!
-            if (underlying.type.isPrimitive()) underlying.typeName
-            else underlying.typeName.copy(nullable = true)
+            if (underlying.type.isPrimitive()) {
+                underlying.typeName
+            } else {
+                underlying.typeName.copy(nullable = true)
+            }
         }
 
         else -> typeName.copy(nullable = true)
     }
 }
 
+/**
+ * Resolves the initial placeholder value literal representation for the tracking variable.
+ * For example: `null` for objects, `0` for Int, `0L` for Long, `false` for Boolean.
+ */
 internal fun GhostPropertyModel.getInitialValue(): String {
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
     val targetProp = if (isUnboxedValueClass) valueClassProperty!! else this
@@ -41,6 +56,11 @@ internal fun GhostPropertyModel.getInitialValue(): String {
     }
 }
 
+/**
+ * Generates the expression string used to pass this property to the constructor
+ * in the standard deserializer return statement. Appends a null-assertion operator `!!`
+ * if the parameter is non-nullable but tracked as a nullable local variable.
+ */
 internal fun GhostPropertyModel.getReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
@@ -49,17 +69,32 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
     return when {
         isPrimitive -> varName
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
+            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+                C.STR_EMPTY
+            } else {
+                C.STR_BANG_BANG
+            }
             C.TEMPLATE_WRAP_TYPE.format(typeName, "$varName$bang")
         }
 
         else -> {
-            if (isNullable) varName
-            else "$varName${C.STR_BANG_BANG}"
+            if (isNullable) {
+                varName
+            } else {
+                "$varName${C.STR_BANG_BANG}"
+            }
         }
     }
 }
 
+/**
+ * Generates the conditional fallback return expression when standard deserialization
+ * supports default arguments. If the property mask bit is set, it resolves to the parsed variable,
+ * otherwise it resolves to the copy-based result field value.
+ *
+ * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
+ * @param bitMaskStr String representation of the bitmask representing this property.
+ */
 internal fun GhostPropertyModel.getDefaultValueReturnExpression(
     maskIdx: Int,
     bitMaskStr: String
@@ -76,7 +111,11 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
             C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)
 
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
+            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+                C.STR_EMPTY
+            } else {
+                C.STR_BANG_BANG
+            }
             C.TEMPLATE_IF_MASK_RETURN.format(
                 maskName,
                 bitMaskStr,
@@ -97,6 +136,10 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
     }
 }
 
+/**
+ * Generates the return expression string pointing to the generated `DecodingContext`
+ * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
+ */
 internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
@@ -115,12 +158,23 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
         }
 
         else -> {
-            if (isNullable) ctxVar
-            else "$ctxVar${C.STR_BANG_BANG}"
+            if (isNullable) {
+                ctxVar
+            } else {
+                "$ctxVar${C.STR_BANG_BANG}"
+            }
         }
     }
 }
 
+/**
+ * Generates the conditional fallback return expression when fragmented deserialization
+ * supports default arguments. It maps tracking mask checks directly to the fields on
+ * the `DecodingContext` instance.
+ *
+ * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
+ * @param bitMaskStr String representation of the bitmask representing this property.
+ */
 internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
     maskIdx: Int,
     bitMaskStr: String
@@ -138,7 +192,11 @@ internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
             C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)
 
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) C.STR_EMPTY else C.STR_BANG_BANG
+            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+                C.STR_EMPTY
+            } else {
+                C.STR_BANG_BANG
+            }
             C.TEMPLATE_WRAP_TYPE.format(
                 typeName,
                 C.TEMPLATE_IF_MASK_RETURN.format(
