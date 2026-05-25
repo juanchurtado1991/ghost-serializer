@@ -13,11 +13,19 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
+/**
+ * Resolves the generated serializer companion object's [ClassName] for this [KSType].
+ * For example: maps type `User` to `com.example.User_Serializer`.
+ */
 internal fun KSType.serializerClassName(): ClassName {
-    val classDecl = declaration as KSClassDeclaration
-    return classDecl.toClassName().serializerClassName()
+    val classDeclaration = declaration as KSClassDeclaration
+    return classDeclaration.toClassName().serializerClassName()
 }
 
+/**
+ * Resolves the generated serializer companion object's [ClassName] for this [ClassName].
+ * For example: maps `User` to `User_Serializer`.
+ */
 internal fun ClassName.serializerClassName(): ClassName {
     return ClassName(
         packageName,
@@ -25,27 +33,90 @@ internal fun ClassName.serializerClassName(): ClassName {
     )
 }
 
+/**
+ * Resolves a non-nullable representation of this [KSType]'s KotlinPoet TypeName.
+ */
 private fun KSType.nonNullTypeName() = toTypeName().copy(nullable = false)
 
-internal fun KSType.isPrimitiveInt(): Boolean = nonNullTypeName() == INT
-internal fun KSType.isPrimitiveBoolean(): Boolean = nonNullTypeName() == BOOLEAN
-internal fun KSType.isPrimitiveLong(): Boolean = nonNullTypeName() == LONG
-internal fun KSType.isPrimitiveDouble(): Boolean = nonNullTypeName() == DOUBLE
-internal fun KSType.isPrimitiveFloat(): Boolean = nonNullTypeName() == FLOAT
-internal fun KSType.isPrimitive(): Boolean = isPrimitiveInt() ||
+/**
+ * Checks whether this type matches the standard primitive [Int] type.
+ */
+internal fun KSType.isPrimitiveInt(): Boolean {
+    return nonNullTypeName() == INT
+}
+
+/**
+ * Checks whether this type matches the standard primitive [Boolean] type.
+ */
+internal fun KSType.isPrimitiveBoolean(): Boolean {
+    return nonNullTypeName() == BOOLEAN
+}
+
+/**
+ * Checks whether this type matches the standard primitive [Long] type.
+ */
+internal fun KSType.isPrimitiveLong(): Boolean {
+    return nonNullTypeName() == LONG
+}
+
+/**
+ * Checks whether this type matches the standard primitive [Double] type.
+ */
+internal fun KSType.isPrimitiveDouble(): Boolean {
+    return nonNullTypeName() == DOUBLE
+}
+
+/**
+ * Checks whether this type matches the standard primitive [Float] type.
+ */
+internal fun KSType.isPrimitiveFloat(): Boolean {
+    return nonNullTypeName() == FLOAT
+}
+
+/**
+ * Checks whether this type is a supported standard JVM/Kotlin primitive.
+ */
+internal fun KSType.isPrimitive(): Boolean {
+    return isPrimitiveInt() ||
         isPrimitiveBoolean() ||
         isPrimitiveLong() ||
         isPrimitiveDouble() ||
         isPrimitiveFloat()
-
-internal fun KSType.isList(): Boolean = declaration.qualifiedName?.asString() == C.LIST_QUALIFIED
-internal fun KSType.isMap(): Boolean = declaration.qualifiedName?.asString() == C.MAP_QUALIFIED
-internal fun KSType.isString(): Boolean = declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
-
-internal fun KSType.isGhost(): Boolean = declaration.annotations.any {
-    it.shortName.asString() == C.GHOST_SERIALIZATION
 }
 
+/**
+ * Checks whether this type matches the standard [List] type.
+ */
+internal fun KSType.isList(): Boolean {
+    return declaration.qualifiedName?.asString() == C.LIST_QUALIFIED
+}
+
+/**
+ * Checks whether this type matches the standard [Map] type.
+ */
+internal fun KSType.isMap(): Boolean {
+    return declaration.qualifiedName?.asString() == C.MAP_QUALIFIED
+}
+
+/**
+ * Checks whether this type matches the standard [String] type.
+ */
+internal fun KSType.isString(): Boolean {
+    return declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
+}
+
+/**
+ * Checks whether this type is annotated with `@GhostSerialization` indicating it is a serializable model.
+ */
+internal fun KSType.isGhost(): Boolean {
+    return declaration.annotations.any {
+        it.shortName.asString() == C.GHOST_SERIALIZATION
+    }
+}
+
+/**
+ * Checks whether this type declaration is a Kotlin enum class.
+ */
 internal fun KSType.isEnum(): Boolean {
     return (declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
 }

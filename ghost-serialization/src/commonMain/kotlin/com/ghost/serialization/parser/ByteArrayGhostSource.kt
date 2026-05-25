@@ -2,6 +2,7 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
+import okio.ByteString
 
 /**
  * High-performance [GhostSource] backed by an in-memory [ByteArray].
@@ -22,7 +23,7 @@ open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {
     override fun decodeToString(start: Int, end: Int): String =
         data.decodeToString(start, end)
 
-    override fun contentEquals(start: Int, expected: okio.ByteString): Boolean {
+    override fun contentEquals(start: Int, expected: ByteString): Boolean {
         if (start + expected.size > size) return false
         return expected.rangeEquals(0, data, start, expected.size)
     }

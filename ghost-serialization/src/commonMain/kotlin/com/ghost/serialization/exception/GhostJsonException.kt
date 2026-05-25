@@ -13,6 +13,10 @@ import com.ghost.serialization.InternalGhostApi
 class GhostJsonException @InternalGhostApi internal constructor(
     private val baseMessage: String,
     private val computeLineCol: () -> IntArray,
+    /**
+     * The dot-separated JSON path where the parsing/encoding error occurred.
+     * Defaults to the root element `"$"` if path is unknown or at startup.
+     */
     val path: String = "$"
 ) : RuntimeException() {
 
@@ -20,12 +24,23 @@ class GhostJsonException @InternalGhostApi internal constructor(
         computeLineCol()
     }
 
+    /** The 1-indexed line number in the JSON source where the error occurred. */
     val line: Int get() = lineCol[0]
+
+    /** The 1-indexed column number in the JSON source where the error occurred. */
     val column: Int get() = lineCol[1]
 
     override val message: String
         get() = "$baseMessage [at line $line, col $column, path $path]"
 
+    /**
+     * Constructs a [GhostJsonException] with an explicit line, column, and path.
+     *
+     * @param message The detailed error message.
+     * @param line The 1-indexed line number where the error occurred.
+     * @param column The 1-indexed column number where the error occurred.
+     * @param path The JSON path where the error occurred.
+     */
     @OptIn(InternalGhostApi::class)
     constructor(
         message: String,

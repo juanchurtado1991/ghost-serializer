@@ -40,3 +40,5 @@ trace_log.txt
 *.local
 node_modules/
 dist/
+.venv-pdf/
+docs/GHOST_MANUAL_ES.md
