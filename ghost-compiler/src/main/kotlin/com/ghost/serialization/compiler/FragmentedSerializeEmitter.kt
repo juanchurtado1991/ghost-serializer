@@ -1,7 +1,6 @@
 package com.ghost.serialization.compiler
 
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -15,12 +14,19 @@ import com.squareup.kotlinpoet.TypeSpec
  * the writing logic into multiple private "chunk" functions.
  */
 internal class FragmentedSerializeEmitter(
-    private val properties: List<GhostPropertyModel>,
-    private val originalClassName: ClassName,
-    private val writerClass: ClassName,
-    private val delegate: SerializeCodeEmitter
-) {
+    properties: List<GhostPropertyModel>,
+    originalClassName: ClassName,
+    writerClass: ClassName
+) : BaseSerializeEmitter(properties, originalClassName, writerClass) {
 
+    /**
+     * Emits the fragmented chunk-based serialization logic.
+     *
+     * @param code The target [CodeBlock.Builder].
+     * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
+     * @param discriminator Optional polymorphic sealed class discriminator value.
+     * @param sealedDiscriminatorKey Discriminator key name.
+     */
     fun emit(
         code: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder,
@@ -51,6 +57,9 @@ internal class FragmentedSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_OBJ)
     }
 
+    /**
+     * Generates a private chunk serialization method.
+     */
     private fun emitChunkFunction(
         index: Int,
         chunkProps: List<GhostPropertyModel>,
@@ -71,8 +80,7 @@ internal class FragmentedSerializeEmitter(
 
         val chunkCode = CodeBlock.builder()
         chunkProps.forEach { prop ->
-            // We use the delegate to reuse the property emission logic
-            delegate.emitProperty(chunkCode, prop)
+            emitProperty(chunkCode, prop)
         }
 
         chunkFun.addCode(chunkCode.build())

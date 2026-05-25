@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.compiler
 
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -15,9 +14,14 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
 /**
  * Emitter for fragmented deserialization logic.
  *
- * Used for large classes (typically > 40 properties) to avoid method size limits
- * by splitting the decoding logic into multiple "chunks" and using a helper
- * context class to maintain state across method calls.
+ * This emitter is designed for large classes (typically > 40 properties) to bypass JVM
+ * method size limits (64KB bytecode limit). It fragments the decoding process by creating
+ * a helper context class (`DecodingContext`) to store deserialized properties and bitmasks,
+ * and splitting the field assignment logic into multiple chunk methods (e.g. `decodeChunk0`, `decodeChunk1`).
+ *
+ * @property properties The list of property models.
+ * @property originalClassName The target class to deserialize.
+ * @property readerClass The reader implementation class used.
  */
 internal class FragmentedEmitter(
     properties: List<GhostPropertyModel>,
@@ -25,55 +29,32 @@ internal class FragmentedEmitter(
     readerClass: ClassName
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
+    /**
+     * Emits the fragmented deserialization logic.
+     *
+     * It delegates the construction of the private `DecodingContext` class, declarations
+     * of chunk functions, and the emission of the main parsing loop to smaller helper methods,
+     * then validates and instantiates the target DTO.
+     *
+     * @param body The target KotlinPoet [CodeBlock.Builder].
+     * @param typeSpecBuilder The serializer class builder.
+     * @param isFlatPath Whether the flat reader path is used.
+     */
     fun emit(
         body: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean = false
     ) {
+        emitPropertyMaskConstants(typeSpecBuilder)
         val contextClassName = ClassName(
             C.STR_EMPTY,
             C.STR_CTX_CLASS
         )
-
-        val contextBuilder = TypeSpec.classBuilder(contextClassName)
-            .addModifiers(KModifier.PRIVATE)
-
-        properties.forEach {
-            val varType = it.getVariableType()
-            val initialValue = it.getInitialValue()
-            contextBuilder.addProperty(
-                PropertySpec.builder(
-                    C.STR_UNDERSCORE + it.kotlinName,
-                    varType
-                )
-                    .mutable(true)
-                    .initializer(initialValue)
-                    .build()
-            )
-        }
-
-        for (index in 0 until maskCount) {
-            contextBuilder.addProperty(
-                PropertySpec.builder(
-                    C.FMT_MASK_NAME.format(
-                        C.STR_UNDERSCORE,
-                        C.STR_MASK,
-                        index
-                    ),
-                    com.squareup.kotlinpoet.LONG
-                )
-                    .mutable(true)
-                    .initializer(C.STR_ZERO_L)
-                    .build()
-            )
-        }
-
-        if (!isFlatPath) {
-            typeSpecBuilder.addType(contextBuilder.build())
-        }
-
         val chunkSize = C.DEFAULT_CHUNK_SIZE
         val chunks = properties.chunked(chunkSize)
+
+        buildDecodingContext(typeSpecBuilder, contextClassName, isFlatPath)
+
         chunks.forEachIndexed { chunkIdx, chunkProps ->
             emitChunkFunction(
                 chunkIdx,
@@ -85,6 +66,71 @@ internal class FragmentedEmitter(
             )
         }
 
+        emitMainParseLoop(body, chunks, chunkSize)
+        emitValidation(body)
+        emitReturn(body, typeSpecBuilder)
+
+        emitValidationHelper(typeSpecBuilder, contextClassName)
+    }
+
+    /**
+     * Builds and registers the private `DecodingContext` class to track properties and masks.
+     *
+     * @param typeSpecBuilder The serializer class builder.
+     * @param contextClassName Class name of the context object holding property variables.
+     * @param isFlatPath Whether the flat reader path is used.
+     */
+    private fun buildDecodingContext(
+        typeSpecBuilder: TypeSpec.Builder,
+        contextClassName: ClassName,
+        isFlatPath: Boolean
+    ) {
+        val contextBuilder = TypeSpec.classBuilder(contextClassName)
+            .addModifiers(KModifier.PRIVATE)
+
+        properties.forEach {
+            val varType = it.getVariableType()
+            val initialValue = it.getInitialValue()
+            contextBuilder.addProperty(
+                PropertySpec.builder(
+                    it.kotlinName,
+                    varType
+                )
+                    .mutable(true)
+                    .initializer(initialValue)
+                    .build()
+            )
+        }
+
+        for (index in C.VAL_ZERO until maskCount) {
+            contextBuilder.addProperty(
+                PropertySpec.builder(
+                    C.STR_MASK_INDEX_FMT.format(index),
+                    com.squareup.kotlinpoet.LONG
+                )
+                    .mutable(true)
+                    .initializer(C.STR_ZERO_L)
+                    .build()
+            )
+        }
+
+        if (!isFlatPath) {
+            typeSpecBuilder.addType(contextBuilder.build())
+        }
+    }
+
+    /**
+     * Emits the main parse loop mapping selector indexes to fragmented chunk calls.
+     *
+     * @param body The target KotlinPoet [CodeBlock.Builder].
+     * @param chunks Grouped DTO properties.
+     * @param chunkSize Size of a chunk.
+     */
+    private fun emitMainParseLoop(
+        body: CodeBlock.Builder,
+        chunks: List<List<GhostPropertyModel>>,
+        chunkSize: Int
+    ) {
         body.addStatement(C.STR_CTX_INIT)
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
@@ -93,7 +139,7 @@ internal class FragmentedEmitter(
         
         chunks.forEachIndexed { chunkIdx, chunkProps ->
             val start = chunkIdx * chunkSize
-            val end = start + chunkProps.size - 1
+            val end = start + chunkProps.size - C.VAL_ONE
             val chunkFunName = C.TEMPLATE_DECODE_CHUNK_NAME
                 .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
 
@@ -113,11 +159,21 @@ internal class FragmentedEmitter(
         body.endControlFlow() // when
         body.endControlFlow() // while
         body.addStatement(C.STR_END_OBJECT)
-
-        emitValidation(body)
-        emitReturn(body)
     }
 
+    /**
+     * Emits a private chunk decoding helper function.
+     *
+     * This generated method maps index selections directly to field assignments and tracking masks
+     * in the `DecodingContext` instance, keeping the size of each method small.
+     *
+     * @param chunkIdx The chunk index.
+     * @param chunkProps The list of DTO properties assigned to this chunk.
+     * @param chunkSize Size of a chunk.
+     * @param readerClass The reader class used.
+     * @param contextClassName Class name of the context object holding property variables.
+     * @param typeSpecBuilder Serializer class builder.
+     */
     private fun emitChunkFunction(
         chunkIdx: Int,
         chunkProps: List<GhostPropertyModel>,
@@ -141,20 +197,18 @@ internal class FragmentedEmitter(
         chunkProps.forEachIndexed { innerIdx, prop ->
             val globalIndex = chunkIdx * chunkSize + innerIdx
             val call = buildCall(prop)
-            val maskIdx = globalIndex / 64
-            val bitIdx = globalIndex % C.MASK_SIZE_BITS.toInt()
-            val bitMask = 1L shl bitIdx
-            val bitMaskStr = formatMaskString(bitMask)
+            val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()
+            val constName = "MASK_" + prop.kotlinName.uppercase()
             
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
             if (prop.isResilient) {
                 chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
                 chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.kotlinName)
-                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, bitMaskStr)
+                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
                 chunkBody.endControlFlow()
             } else {
                 chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_ASSIGN, prop.kotlinName, call)
-                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, bitMaskStr)
+                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
             }
             chunkBody.endControlFlow()
         }
@@ -163,17 +217,57 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(chunkFun.build())
     }
 
+    /**
+     * Emits required properties validation logic.
+     *
+     * Iterates over bitmasks. If a mask has required fields, it emits validation code that
+     * checks the tracking mask in `DecodingContext`.
+     *
+     * @param body The target KotlinPoet [CodeBlock.Builder].
+     */
     private fun emitValidation(body: CodeBlock.Builder) {
-        for (maskIdx in 0 until maskCount) {
-            val reqMask = requiredMasks[maskIdx]
-            if (reqMask != 0L) {
-                val reqMaskStr = formatMaskString(reqMask)
+        val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
+        if (hasRequired) {
+            body.addStatement(C.TEMPLATE_CALL_VALIDATION, C.STR_FUN_VALIDATE_FIELDS, C.STR_CTX_VAR, C.STR_READER_VAR)
+        }
+    }
 
-                body.beginControlFlow(
+    /**
+     * Generates a descriptive private helper method validating that all required properties
+     * were present in the bitmask of the context class, throwing a GhostJsonException for any missing field.
+     *
+     * @param typeSpecBuilder The serializer class builder.
+     * @param contextClassName Class name of the context object holding property variables.
+     */
+    /**
+     * Generates a descriptive private helper method validating that all required properties
+     * were present in the bitmask of the context class, throwing a GhostJsonException for any missing field.
+     *
+     * @param typeSpecBuilder The serializer class builder.
+     * @param contextClassName Class name of the context object holding property variables.
+     */
+    private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder, contextClassName: ClassName) {
+        val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
+        if (!hasRequired) {
+            return
+        }
+
+        val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)
+            .addModifiers(KModifier.PRIVATE)
+            .addParameter(C.STR_CTX_VAR, contextClassName)
+            .addParameter(C.STR_READER_VAR, readerClass)
+
+        val funBody = CodeBlock.builder()
+        for (maskIdx in C.VAL_ZERO until maskCount) {
+            val reqMask = requiredMasks[maskIdx]
+            if (reqMask != C.VAL_ZERO_L) {
+                val requiredMaskName = "MASK_REQUIRED_$maskIdx"
+
+                funBody.beginControlFlow(
                     C.TEMPLATE_IF_MASK_NOT_MET,
                     maskIdx,
-                    reqMaskStr,
-                    reqMaskStr
+                    requiredMaskName,
+                    requiredMaskName
                 )
 
                 var isFirst = true
@@ -183,40 +277,56 @@ internal class FragmentedEmitter(
                         !prop.hasDefaultValue
                         && (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx
                     ) {
-                        val bitIdx = propIdx % C.MASK_SIZE_BITS.toInt()
-                        val bitMask = 1L shl bitIdx
-                        val bitMaskStr = formatMaskString(bitMask)
+                        val constName = "MASK_" + prop.kotlinName.uppercase()
 
                         if (isFirst) {
-                            body.beginControlFlow(
+                            funBody.beginControlFlow(
                                 C.TEMPLATE_IF_MASK_MISSING,
                                 maskIdx,
-                                bitMaskStr
+                                constName
                             )
                             isFirst = false
                         } else {
-                            body.nextControlFlow(
+                            funBody.nextControlFlow(
                                 C.TEMPLATE_ELSE_IF_MASK_MISSING,
                                 maskIdx,
-                                bitMaskStr
+                                constName
                             )
                         }
 
-                        body.addStatement(
+                        funBody.addStatement(
                             C.TEMPLATE_THROW_S,
                             C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
                         )
                     }
                 }
                 if (!isFirst) {
-                    body.endControlFlow()
+                    funBody.endControlFlow()
                 }
-                body.endControlFlow()
+                funBody.endControlFlow()
             }
         }
+
+        funBuilder.addCode(funBody.build())
+        typeSpecBuilder.addFunction(funBuilder.build())
     }
 
-    private fun emitReturn(body: CodeBlock.Builder) {
+    /**
+     * Emits the target class instantiation return statement.
+     *
+     * Resolves variables from `DecodingContext`. Uses copy-based updates for default properties.
+     *
+     * @param body The target KotlinPoet [CodeBlock.Builder].
+     */
+    /**
+     * Emits the target class instantiation return statement.
+     *
+     * Resolves variables from `DecodingContext`. Uses copy-based updates for default properties.
+     *
+     * @param body The target KotlinPoet [CodeBlock.Builder].
+     * @param typeSpecBuilder The serializer class builder.
+     */
+    private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { !it.hasDefaultValue }
         body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
 
@@ -237,12 +347,12 @@ internal class FragmentedEmitter(
             val conditions = mutableListOf<String>()
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
-                if (defMask != 0L) {
-                    val defMaskStr = formatMaskString(defMask)
+                if (defMask != C.VAL_ZERO_L) {
+                    val constName = "MASK_DEFAULTS_$i"
 
                     conditions.add(
                         C.TEMPLATE_IF_MASK_MATCH_BIT_F
-                            .format(i, defMaskStr)
+                            .format(i, constName)
                     )
                 }
             }
@@ -262,12 +372,10 @@ internal class FragmentedEmitter(
 
             defaultPropsWithGlobalIndex.forEachIndexed { _, (propIndex, prop) ->
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
-                val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
-                val bitMask = 1L shl bitIdx
-                val bitMaskStr = formatMaskString(bitMask)
+                val constName = "MASK_" + prop.kotlinName.uppercase()
 
                 val valueExpr = prop
-                    .getFragmentedDefaultValueReturnExpression(maskIdx, bitMaskStr)
+                    .getFragmentedDefaultValueReturnExpression(maskIdx, constName)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)

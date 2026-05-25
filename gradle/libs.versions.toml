@@ -5,12 +5,11 @@ kotlin-sdk                      = "1.9.24"
 agp                             = "8.4.2"
 ksp                             = "1.9.24-1.0.20"
 compose-plugin                  = "1.6.11"
-publish-version                 = "1.1.17"
+publish-version                 = "1.1.18"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization
 ktor                            = "2.3.11"
-ktorfit                         = "2.7.3"
 kotlinx-serialization           = "1.6.3"
 okio                            = "3.9.0"
 okhttp                          = "4.12.0"
@@ -32,7 +31,6 @@ coil                            = "3.0.0-alpha06"
 androidx-activity               = "1.9.1"
 androidx-metrics                = "1.0.0-alpha04"
 androidx-lifecycle              = "2.8.2"
-savedstate-compose              = "1.0.1"
 
 # Testing
 kotlin-compile-testing          = "1.6.0"
@@ -57,7 +55,7 @@ retrofit                        = { group = "com.squareup.retrofit2", name = "re
 okhttp                          = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 mockwebserver                   = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "mockwebserver" }
 
-# Ktor & Ktorfit
+# Ktor
 ktor-client-core                = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp              = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin              = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
@@ -77,14 +75,8 @@ jackson-module-kotlin           = { group = "com.fasterxml.jackson.module", name
 # UI Components
 androidx-activity-compose               = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
 androidx-metrics                        = { group = "androidx.metrics", name = "metrics-performance", version.ref = "androidx-metrics" }
-androidx-lifecycle-common               = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-common", version.ref = "androidx-lifecycle" }
-androidx-lifecycle-runtime              = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime", version.ref = "androidx-lifecycle" }
-androidx-lifecycle-runtime-compose      = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel            = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel-compose    = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
-androidx-lifecycle-viewmodel-savedstate = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-savedstate", version.ref = "androidx-lifecycle" }
-androidx-savedstate                     = { group = "org.jetbrains.androidx.savedstate", name = "savedstate", version.ref = "savedstate-compose" }
-androidx-savedstate-compose             = { group = "org.jetbrains.androidx.savedstate", name = "savedstate-compose", version.ref = "savedstate-compose" }
 coil-compose                            = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-ktor                       = { group = "io.coil-kt.coil3", name = "coil-network-ktor", version.ref = "coil" }
 
@@ -92,7 +84,6 @@ coil-network-ktor                       = { group = "io.coil-kt.coil3", name = "
 kotlin-compile-testing          = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing", version.ref = "kotlin-compile-testing" }
 kotlin-compile-testing-ksp      = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing-ksp", version.ref = "kotlin-compile-testing-ksp" }
 junit-jupiter-api               = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
-junit-jupiter-engine            = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-engine                    = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 kotlinx-coroutines-core         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-test" }
 kotlinx-coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
@@ -112,7 +103,6 @@ kotlin-jvm                      = { id = "org.jetbrains.kotlin.jvm", version.ref
 kotlin-serialization            = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-sdk" }
 android-application             = { id = "com.android.application", version.ref = "agp" }
 android-library                 = { id = "com.android.library", version.ref = "agp" }
-compose-compiler                = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin-sdk" }
 jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 dokka                           = { id = "org.jetbrains.dokka", version.ref = "dokka" }
