@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.19] - 2026-05-27
+
+### Refactoring — Compiler (KSP)
+- **`subIndex` name shadowing eliminated**: `emitFlattenedGroup` now generates unique variable names per recursion depth (`subIndex0`, `subIndex1`, `subIndex2`...) instead of the fixed `subIndex`, removing `Name shadowed` compiler warnings in all generated serializers that use `@GhostFlatten`.
+- **Redundant `!!` removed from inferred sealed `.copy()` calls**: `TEMPLATE_IF_NOT_NULL_COPY` no longer emits `!!` on the variable inside a guarded `if (v != null)` block, eliminating the `Unnecessary non-null assertion` warning on primitives and booleans.
+- **Custom coder log level demoted**: Detection of `@GhostDecoder` / `@GhostEncoder` properties is now logged at `info` level instead of `warn`, keeping the build output clean in normal usage.
+
+### Refactoring — Runtime
+- **`GhostParserUtils.kt` extracted**: Shared inline utilities (`isDigit`, `isNumericSeparator`, `isExponentMarker`, `getFloatPowerOfTen`, `getDoublePowerOfTen`) consolidated from `GhostJsonReader`, `GhostJsonFlatReader`, `GhostJsonReaderNumbers`, and `GhostJsonFlatReaderNumbers` into a single package-level file. Functions remain `inline`, so zero runtime overhead — pure DRY improvement.
+- **`GhostJsonReader` / `GhostJsonFlatReader` numeric helpers**: Removed per-reader-class duplicates of `isNumericSeparator`, `isExponentMarker`, `getFloatPowerOfTen`, `getDoublePowerOfTen`, and `isDigit` in favour of the centralized `GhostParserUtils` versions.
+
+### Build
+- **KMP default hierarchy applied**: `ghost-serialization/build.gradle.kts` now calls `applyDefaultHierarchyTemplate()` and removes the manually declared `nativeMain` and `iosMain` source sets that conflicted with the Kotlin 1.9+ automatic hierarchy, eliminating the `Default Kotlin Hierarchy Template was not applied` Gradle warning.
+
+### Documentation
+- **Manual updated to 1.1.19**: All version references in `docs/GHOST_MANUAL_EN.md` and `scripts/build_ghost_manual_pdf.py` updated.
+
+---
+
 ## [1.1.18] - 2026-05-25
 
 ### Refactoring — Compiler (KSP)
