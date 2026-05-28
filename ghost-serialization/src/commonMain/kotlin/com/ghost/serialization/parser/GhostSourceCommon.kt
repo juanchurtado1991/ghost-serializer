@@ -4,12 +4,12 @@ import com.ghost.serialization.parser.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_UNIT
-import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_SHIFT_UNIT
 import com.ghost.serialization.parser.GhostJsonConstants.HASH_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.MATCH_END
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
+import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.WHITESPACE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.packScanResult
 
@@ -23,38 +23,38 @@ internal inline fun findNextNonWhitespaceImpl(
     limit: Int,
     getByte: (Int) -> Int
 ): Int {
-    var currentPos = position
-    val mask = WHITESPACE_MASK
+    var currentPosition = position
+    val whitespaceMask = WHITESPACE_MASK
 
-    while (currentPos + INDEX_OFFSET_3 < limit) {
-        val b0 = getByte(currentPos)
-        if ((mask shr b0) and BYTE_SHIFT_UNIT == RESULT_NONE) {
-            return currentPos
+    while (currentPosition + INDEX_OFFSET_3 < limit) {
+        val byte0 = getByte(currentPosition)
+        if (byte0 > SPACE_INT || (whitespaceMask shr byte0) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPosition
         }
 
-        val b1 = getByte(currentPos + INDEX_OFFSET_1)
-        if ((mask shr b1) and BYTE_SHIFT_UNIT == RESULT_NONE) {
-            return currentPos + INDEX_OFFSET_1
+        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)
+        if (byte1 > SPACE_INT || (whitespaceMask shr byte1) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPosition + INDEX_OFFSET_1
         }
 
-        val b2 = getByte(currentPos + INDEX_OFFSET_2)
-        if ((mask shr b2) and BYTE_SHIFT_UNIT == RESULT_NONE) {
-            return currentPos + INDEX_OFFSET_2
+        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)
+        if (byte2 > SPACE_INT || (whitespaceMask shr byte2) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPosition + INDEX_OFFSET_2
         }
 
-        val b3 = getByte(currentPos + INDEX_OFFSET_3)
-        if ((mask shr b3) and BYTE_SHIFT_UNIT == RESULT_NONE) {
-            return currentPos + INDEX_OFFSET_3
+        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)
+        if (byte3 > SPACE_INT || (whitespaceMask shr byte3) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPosition + INDEX_OFFSET_3
         }
 
-        currentPos += UNROLL_STEP
+        currentPosition += UNROLL_STEP
     }
-    while (currentPos < limit) {
-        val b = getByte(currentPos)
-        if ((mask shr b) and BYTE_SHIFT_UNIT == RESULT_NONE) {
-            return currentPos
+    while (currentPosition < limit) {
+        val singleByte = getByte(currentPosition)
+        if (singleByte > SPACE_INT || (whitespaceMask shr singleByte) and BYTE_SHIFT_UNIT == RESULT_NONE) {
+            return currentPosition
         }
-        currentPos++
+        currentPosition++
     }
     return MATCH_END
 }
@@ -64,45 +64,65 @@ internal inline fun findClosingQuoteImpl(
     limit: Int,
     getByte: (Int) -> Int
 ): Int {
-    var currentPos = position
-    val masks = GhostJsonConstants.ESCAPE_MASKS
+    var currentPosition = position
+    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
 
-    while (currentPos + INDEX_OFFSET_3 < limit) {
-        val b0 = getByte(currentPos)
-        if (b0 < ASCII_LIMIT && (masks[b0 shr BITMASK_SHIFT] shr
-                    (b0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b0 == QUOTE_INT) return currentPos
+    while (currentPosition + INDEX_OFFSET_3 < limit) {
+        val byte0 = getByte(currentPosition)
+        if (byte0 < ASCII_LIMIT &&
+            ((escapeMasks[byte0 shr BITMASK_SHIFT] shr
+                    (byte0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte0 == QUOTE_INT) {
+                return currentPosition
+            }
             return MATCH_END
         }
-        val b1 = getByte(currentPos + INDEX_OFFSET_1)
-        if (b1 < ASCII_LIMIT && (masks[b1 shr BITMASK_SHIFT] shr
-                    (b1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b1 == QUOTE_INT) return currentPos + INDEX_OFFSET_1
+        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)
+        if (byte1 < ASCII_LIMIT &&
+            ((escapeMasks[byte1 shr BITMASK_SHIFT] shr
+                    (byte1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte1 == QUOTE_INT) {
+                return currentPosition + INDEX_OFFSET_1
+            }
             return MATCH_END
         }
-        val b2 = getByte(currentPos + INDEX_OFFSET_2)
-        if (b2 < ASCII_LIMIT && (masks[b2 shr BITMASK_SHIFT] shr
-                    (b2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b2 == QUOTE_INT) return currentPos + INDEX_OFFSET_2
+        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)
+        if (byte2 < ASCII_LIMIT &&
+            ((escapeMasks[byte2 shr BITMASK_SHIFT] shr
+                    (byte2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte2 == QUOTE_INT) {
+                return currentPosition + INDEX_OFFSET_2
+            }
             return MATCH_END
         }
-        val b3 = getByte(currentPos + INDEX_OFFSET_3)
-        if (b3 < ASCII_LIMIT && (masks[b3 shr BITMASK_SHIFT] shr
-                    (b3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b3 == QUOTE_INT) return currentPos + INDEX_OFFSET_3
+        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)
+        if (byte3 < ASCII_LIMIT &&
+            ((escapeMasks[byte3 shr BITMASK_SHIFT] shr
+                    (byte3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte3 == QUOTE_INT) {
+                return currentPosition + INDEX_OFFSET_3
+            }
             return MATCH_END
         }
-        currentPos += UNROLL_STEP
+        currentPosition += UNROLL_STEP
     }
 
-    while (currentPos < limit) {
-        val b = getByte(currentPos)
-        if (b < ASCII_LIMIT && (masks[b shr BITMASK_SHIFT] shr
-                    (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-            if (b == QUOTE_INT) return currentPos
+    while (currentPosition < limit) {
+        val singleByte = getByte(currentPosition)
+        if (singleByte < ASCII_LIMIT &&
+            ((escapeMasks[singleByte shr BITMASK_SHIFT] shr
+                    (singleByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (singleByte == QUOTE_INT) {
+                return currentPosition
+            }
             return MATCH_END
         }
-        currentPos++
+        currentPosition++
     }
     return MATCH_END
 }
@@ -112,99 +132,105 @@ internal inline fun scanStringImpl(
     limit: Int,
     getByte: (Int) -> Int
 ): Long {
-    var pos = start
-    var hash = 0
-    var is7Bit = true
-    val masks = GhostJsonConstants.ESCAPE_MASKS
-    val shift = HASH_SHIFT
+    var currentPosition = start
+    var accumulatedHash = 0
+    var isPureAscii = true
+    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
+    val hashShift = HASH_SHIFT
     val asciiLimit = ASCII_LIMIT
     val matchEndLong = MATCH_END.toLong()
 
-    while (pos + INDEX_OFFSET_3 < limit) {
-
-        val b0 = getByte(pos)
-        if (b0 < asciiLimit && (masks[b0 shr BITMASK_SHIFT] shr
-                    (b0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-
-            if (b0 == QUOTE_INT) {
-                return packScanResult(pos - start, hash, is7Bit)
+    while (currentPosition + INDEX_OFFSET_3 < limit) {
+        val byte0 = getByte(currentPosition)
+        if (byte0 < asciiLimit &&
+            ((escapeMasks[byte0 shr BITMASK_SHIFT] shr
+                    (byte0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte0 == QUOTE_INT) {
+                return packScanResult(currentPosition - start, accumulatedHash, isPureAscii)
             }
-
             return matchEndLong
-
-        } else if (b0 >= asciiLimit) {
-            is7Bit = false
+        } else if (byte0 >= asciiLimit) {
+            isPureAscii = false
         }
 
-        hash = (hash shl shift) - hash + b0
+        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte0
 
-        val b1 = getByte(pos + INDEX_OFFSET_1)
-        if (b1 < asciiLimit && (masks[b1 shr BITMASK_SHIFT] shr
-                    (b1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-
-            if (b1 == QUOTE_INT) {
-                return packScanResult(pos + INDEX_OFFSET_1 - start, hash, is7Bit)
+        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)
+        if (byte1 < asciiLimit &&
+            ((escapeMasks[byte1 shr BITMASK_SHIFT] shr
+                    (byte1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte1 == QUOTE_INT) {
+                return packScanResult(
+                    currentPosition + INDEX_OFFSET_1 - start,
+                    accumulatedHash,
+                    isPureAscii
+                )
             }
-
             return matchEndLong
-
-        } else if (b1 >= asciiLimit) {
-            is7Bit = false
+        } else if (byte1 >= asciiLimit) {
+            isPureAscii = false
         }
 
-        hash = (hash shl shift) - hash + b1
+        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte1
 
-        val b2 = getByte(pos + INDEX_OFFSET_2)
-        if (b2 < asciiLimit && (masks[b2 shr BITMASK_SHIFT] shr
-                    (b2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-
-            if (b2 == QUOTE_INT) {
-                return packScanResult(pos + INDEX_OFFSET_2 - start, hash, is7Bit)
+        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)
+        if (byte2 < asciiLimit &&
+            ((escapeMasks[byte2 shr BITMASK_SHIFT] shr
+                    (byte2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte2 == QUOTE_INT) {
+                return packScanResult(
+                    currentPosition + INDEX_OFFSET_2 - start,
+                    accumulatedHash,
+                    isPureAscii
+                )
             }
-
             return matchEndLong
-
-        } else if (b2 >= asciiLimit) {
-            is7Bit = false
+        } else if (byte2 >= asciiLimit) {
+            isPureAscii = false
         }
 
-        hash = (hash shl shift) - hash + b2
+        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte2
 
-        val b3 = getByte(pos + INDEX_OFFSET_3)
-        if (b3 < asciiLimit && (masks[b3 shr BITMASK_SHIFT] shr
-                    (b3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-
-            if (b3 == QUOTE_INT) {
-                return packScanResult(pos + INDEX_OFFSET_3 - start, hash, is7Bit)
+        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)
+        if (byte3 < asciiLimit &&
+            ((escapeMasks[byte3 shr BITMASK_SHIFT] shr
+                    (byte3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (byte3 == QUOTE_INT) {
+                return packScanResult(
+                    currentPosition + INDEX_OFFSET_3 - start,
+                    accumulatedHash,
+                    isPureAscii
+                )
             }
-
             return matchEndLong
-
-        } else if (b3 >= asciiLimit) {
-            is7Bit = false
+        } else if (byte3 >= asciiLimit) {
+            isPureAscii = false
         }
 
-        hash = (hash shl shift) - hash + b3
-        pos += UNROLL_STEP
+        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte3
+        currentPosition += UNROLL_STEP
     }
 
-    while (pos < limit) {
-        val b = getByte(pos)
-        if (b < asciiLimit && (masks[b shr BITMASK_SHIFT] shr
-                    (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != 0L) {
-
-            if (b == QUOTE_INT) {
-                return packScanResult(pos - start, hash, is7Bit)
+    while (currentPosition < limit) {
+        val singleByte = getByte(currentPosition)
+        if (singleByte < asciiLimit &&
+            ((escapeMasks[singleByte shr BITMASK_SHIFT] shr
+                    (singleByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (singleByte == QUOTE_INT) {
+                return packScanResult(currentPosition - start, accumulatedHash, isPureAscii)
             }
-
             return matchEndLong
-
-        } else if (b >= asciiLimit) {
-            is7Bit = false
+        } else if (singleByte >= asciiLimit) {
+            isPureAscii = false
         }
 
-        hash = (hash shl shift) - hash + b
-        pos++
+        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + singleByte
+        currentPosition++
     }
 
     return matchEndLong
@@ -213,23 +239,35 @@ internal inline fun scanStringImpl(
 internal inline fun contentEqualsStringImpl(
     start: Int,
     length: Int,
-    str: String,
+    targetString: String,
     getByte: (Int) -> Int
 ): Boolean {
-    if (str.length != length) return false
-    var index = 0
+    if (targetString.length != length) {
+        return false
+    }
+    var currentIndex = 0
 
-    while (index + 3 < length) {
-        if (str[index].code != getByte(start + index)) return false
-        if (str[index + 1].code != getByte(start + index + 1)) return false
-        if (str[index + 2].code != getByte(start + index + 2)) return false
-        if (str[index + 3].code != getByte(start + index + 3)) return false
-        index += 4
+    while (currentIndex + 3 < length) {
+        if (targetString[currentIndex].code != getByte(start + currentIndex)) {
+            return false
+        }
+        if (targetString[currentIndex + 1].code != getByte(start + currentIndex + 1)) {
+            return false
+        }
+        if (targetString[currentIndex + 2].code != getByte(start + currentIndex + 2)) {
+            return false
+        }
+        if (targetString[currentIndex + 3].code != getByte(start + currentIndex + 3)) {
+            return false
+        }
+        currentIndex += 4
     }
 
-    while (index < length) {
-        if (str[index].code != getByte(start + index)) return false
-        index++
+    while (currentIndex < length) {
+        if (targetString[currentIndex].code != getByte(start + currentIndex)) {
+            return false
+        }
+        currentIndex++
     }
 
     return true

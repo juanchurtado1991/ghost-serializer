@@ -184,9 +184,12 @@ class GhostJsonReader(
      * Advances the position past any whitespace and caches the next non-whitespace token byte.
      */
     fun skipWhitespace() {
-        val nextPos = source.findNextNonWhitespace(
-            position, limit
-        )
+        val nextPos = if (isStreaming) {
+            source.findNextNonWhitespace(position, limit)
+        } else {
+            val localData = rawData
+            findNextNonWhitespaceImpl(position, limit) { localData[it].toInt() and C.BYTE_MASK }
+        }
 
         if (nextPos != -1) {
             position = nextPos
@@ -259,11 +262,17 @@ class GhostJsonReader(
      */
     @InternalGhostApi
     fun skipAndValidateLiteral(expected: ByteString) {
-        if (!source.contentEquals(position, expected)) {
+        val size = expected.size
+        val isValid = if (isStreaming) {
+            source.contentEquals(position, expected)
+        } else {
+            position + size <= limit && expected.rangeEquals(0, rawData, position, size)
+        }
+        if (!isValid) {
             throwError("Expected literal ${expected.utf8()}")
         }
 
-        position += expected.size
+        position += size
         nextTokenByte = -1
     }
 
@@ -281,7 +290,12 @@ class GhostJsonReader(
         }
 
         val start = position
-        val scanResult = source.scanString(start, limit)
+        val scanResult = if (isStreaming) {
+            source.scanString(start, limit)
+        } else {
+            val localData = rawData
+            scanStringImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
+        }
 
         if (scanResult != -1L) {
             val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()
@@ -304,10 +318,21 @@ class GhostJsonReader(
             val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
             val cachedString = stringPool[poolBucketIndex]
 
-            if (only7Bit && cachedString != null && source.contentEqualsString(start, length, cachedString)) {
+            val isMatch = if (only7Bit && cachedString != null) {
+                if (isStreaming) {
+                    source.contentEqualsString(start, length, cachedString)
+                } else {
+                    val localData = rawData
+                    contentEqualsStringImpl(start, length, cachedString) { localData[it].toInt() and C.BYTE_MASK }
+                }
+            } else {
+                false
+            }
+
+            if (isMatch) {
                 position = end + 1
                 nextTokenByte = -1
-                return cachedString
+                return cachedString!!
             }
 
             val decodedString = source.decodeJsonStringRange(start, end, only7Bit)
@@ -343,8 +368,7 @@ class GhostJsonReader(
                         position = pos
                         throwError(C.UNTERMINATED_ESCAPE_ERROR)
                     }
-                    val escaped = getByte(pos++)
-                    when (escaped) {
+                    when (val escaped = getByte(pos++)) {
                         C.UNICODE_PREFIX_U_INT -> {
                             if (pos + C.UNICODE_HEX_LENGTH > limit) {
                                 position = pos
@@ -472,7 +496,12 @@ class GhostJsonReader(
         }
 
         val start = position
-        val end = source.findClosingQuote(start, limit)
+        val end = if (isStreaming) {
+            source.findClosingQuote(start, limit)
+        } else {
+            val localData = rawData
+            findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
+        }
         if (end != -1) {
             position = end + 1
             return

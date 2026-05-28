@@ -2,7 +2,6 @@ package com.ghost.serialization.contract
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeAndDrainTo
-import com.ghost.serialization.parser.createByteArraySource
 import okio.BufferedSink
 import okio.BufferedSource
 import com.ghost.serialization.parser.GhostJsonReader
@@ -25,7 +24,7 @@ import com.ghost.serialization.writer.GhostJsonWriter
  * compiler/JIT can inline every byte-write fully. KSP-generated serializers
  * emit both with an identical body that differs only in parameter type.
  *
- * Hand-written serializers must do the same. Because the public API of both
+ * Handwritten serializers must do the same. Because the public API of both
  * writers is identical (same method names and signatures, only differing in
  * the `this` type), the body can usually be copy-pasted verbatim.
  */

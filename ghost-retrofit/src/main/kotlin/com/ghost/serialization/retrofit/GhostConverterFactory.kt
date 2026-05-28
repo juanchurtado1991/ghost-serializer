@@ -4,14 +4,13 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.ghostInternalUseFlatReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
-import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.releaseScratchBuffer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody

@@ -147,8 +147,7 @@ fun GhostJsonReader.nextBoolean(): Boolean {
             return false
         }
         if (token == C.QUOTE_INT) {
-            val s = readQuotedString().lowercase()
-            return when (s) {
+            return when (val s = readQuotedString().lowercase()) {
                 C.COERCE_TRUE_STR,
                 C.COERCE_YES_STR,
                 C.COERCE_ON_STR,
@@ -233,7 +232,12 @@ private fun GhostJsonReader.internalSelect(
     }
 
     val start = position + 1
-    val end = source.findClosingQuote(start, limit)
+    val end = if (isStreaming) {
+        source.findClosingQuote(start, limit)
+    } else {
+        val localData = rawData
+        findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
+    }
 
     if (end == -1) {
         throwError(C.UNTERMINATED_STRING_ERROR)

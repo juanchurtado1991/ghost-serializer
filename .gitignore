@@ -26,6 +26,9 @@ trace_log.txt
 
 # OS
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Native/KMP
 .externalNativeBuild
@@ -42,3 +45,29 @@ node_modules/
 dist/
 .venv-pdf/
 docs/GHOST_MANUAL_ES.md
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Scripts
+scripts/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# JVM Crash Logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Secrets and local configurations
+.env
+.env.local
+.env.*.local

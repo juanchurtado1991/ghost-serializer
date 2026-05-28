@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.20] - 2026-05-28
+
+### Performance — Reader (Parser)
+- **Bypassed Virtual Dispatch in General Reader**: In `GhostJsonReader` (the general-purpose JSON reader), optimized hot-path methods (`skipWhitespace`, `skipAndValidateLiteral`, `readQuotedString`, and `skipQuotedString`) to check `isStreaming` and perform direct, static array operations when `isStreaming` is false.
+- **Bypassed Virtual Dispatch in Subsystem Select**: In `internalSelect` (used by generated serializers for fast field name dispatch), replaced the virtual `source.findClosingQuote` call with `findClosingQuoteImpl` directly on the underlying `rawData` array.
+- **Benchmarking Gains**: These changes result in a **5% to 10%** deserialization speedup on flat payloads, and up to **60%** speedup for custom property-level decoders (`@GhostDecoder`) which leverage the reader APIs.
+
 ## [1.1.19] - 2026-05-27
 
 ### Refactoring — Compiler (KSP)

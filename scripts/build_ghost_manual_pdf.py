@@ -10,7 +10,7 @@ from fpdf import FPDF
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "GHOST_MANUAL_EN.md"
-OUTPUT = ROOT / "docs" / "Ghost-Serialization-Manual-1.1.19.pdf"
+OUTPUT = ROOT / "docs" / "Ghost-Serialization-Manual-1.1.20.pdf"
 
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -67,7 +67,7 @@ class ManualPDF(FPDF):
         self.set_font("body", "", 6)
         self.set_text_color(130, 130, 130)
         self.set_y(6)
-        self.cell(0, 4, "Ghost Serialization  1.1.19  —  API Manual", align="C")
+        self.cell(0, 4, "Ghost Serialization  1.1.20  —  API Manual", align="C")
         self.set_text_color(0, 0, 0)
         self.set_y(MARGIN_T)
 

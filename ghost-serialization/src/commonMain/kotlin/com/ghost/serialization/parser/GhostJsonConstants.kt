@@ -1,6 +1,5 @@
 package com.ghost.serialization.parser
 
-import com.ghost.serialization.InternalGhostApi
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.pow
 
@@ -123,14 +122,12 @@ internal object GhostJsonConstants {
     const val DOT_INT = '.'.code
     const val ZERO_INT = '0'.code
     const val ONE_INT = '1'.code
-    const val TWO_INT = '2'.code
     const val BACKSLASH_INT = '\\'.code
     const val UNICODE_PREFIX_U_INT = 'u'.code
     const val EXP_LOWER_INT = 'e'.code
     const val EXP_UPPER_INT = 'E'.code
 
     // --- ASCII Token Codes (Bytes) ---
-    const val COLON = ':'.code.toByte()
     const val QUOTE = '"'.code.toByte()
     const val OPEN_OBJ = '{'.code.toByte()
     const val CLOSE_OBJ = '}'.code.toByte()
@@ -315,12 +312,6 @@ internal object GhostJsonConstants {
     // --- Quote / Escape Layout ---
     /** Bytes consumed by the opening + closing quotes around a JSON string value. */
     const val STRING_QUOTE_PAIR_BYTES = 2
-
-    /** Number of UTF-16 code units in a Unicode surrogate pair. */
-    const val SURROGATE_PAIR_LENGTH = 2
-
-    /** Total bytes in a JSON `\uXXXX` escape sequence (`\` + `u` + 4 hex digits). */
-    const val UNICODE_ESCAPE_LENGTH = 6
 
     // --- UTF-8 Encoding (used by FlatByteArrayWriter) ---
     /** Code point upper bound (exclusive) for the 1-byte UTF-8 form (i.e. ASCII). */

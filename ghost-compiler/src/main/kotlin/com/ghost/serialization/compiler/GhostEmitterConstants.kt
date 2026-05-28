@@ -71,7 +71,6 @@ internal object GhostEmitterConstants {
     const val STR_PAREN = ")"
         const val TEMPLATE_VAL_RESULT = "val result = %T("
     const val STR_OR = " || "
-    const val STR_AND_AND = " && "
     const val STR_RETURN_RESULT_COPY = "return result.copy("
     const val STR_COMMA = ","
     const val STR_EMPTY = ""
@@ -451,4 +450,10 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_OPTIONS_OF = "%T.of("
     const val TEMPLATE_COMMA_FORMAT_S = ", %S"
     const val TEMPLATE_CALL_VALIDATION = "%L(%L, %L)"
+    const val STR_MASK_PREFIX = "MASK_"
+    const val STR_MASK_REQUIRED_0 = "MASK_REQUIRED_0"
+    const val STR_MASK_OPTS_PREFIX = "MASK_OPTS_"
+    const val STR_MASK_DEFAULTS_PREFIX = "MASK_DEFAULTS_"
+    const val STR_SUB_INDEX_PREFIX = "subIndex"
+    const val TEMPLATE_L = "%L"
 }

@@ -9,10 +9,11 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
 
 /**
  * Reads a double-quoted JSON string from the raw byte array, parsing escape sequences
- * and caching string instances in the [stringPool] when appropriate to save memory.
+ * and caching string instances in the stringPool when appropriate to save memory.
  *
  * @return The decoded string value.
- * @throws GhostJsonException if the string is malformed, unescaped control character is found,
+ * @throws com.ghost.serialization.exception.GhostJsonException
+ * if the string is malformed, unescaped control character is found,
  * or it is unterminated.
  */
 fun GhostJsonFlatReader.readQuotedString(): String {
@@ -45,7 +46,12 @@ fun GhostJsonFlatReader.readQuotedString(): String {
         val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
         val cachedString = stringPool[poolBucketIndex]
 
-        if (only7Bit && cachedString != null && contentEqualsStringImpl(start, length, cachedString) { localData[it].toInt() and C.BYTE_MASK }) {
+        if (only7Bit && cachedString != null && contentEqualsStringImpl(
+                start,
+                length,
+                cachedString
+            ) { localData[it].toInt() and C.BYTE_MASK }
+        ) {
             position = end + 1
             nextTokenByte = C.RESET_TOKEN_BYTE
             return cachedString
@@ -84,8 +90,7 @@ fun GhostJsonFlatReader.readQuotedString(): String {
                     position = pos
                     throwError(C.UNTERMINATED_ESCAPE_ERROR)
                 }
-                val escaped = getByte(pos++)
-                when (escaped) {
+                when (val escaped = getByte(pos++)) {
                     C.UNICODE_PREFIX_U_INT -> {
                         if (pos + C.UNICODE_HEX_LENGTH > limit) {
                             position = pos
@@ -128,23 +133,32 @@ fun GhostJsonFlatReader.readQuotedString(): String {
                             if (outPos + 2 > outBuffer.size) {
                                 outBuffer = growBuffer(outBuffer, outPos)
                             }
-                            outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         } else if (code <= C.BMP_LIMIT) {
                             if (outPos + 3 > outBuffer.size) {
                                 outBuffer = growBuffer(outBuffer, outPos)
                             }
-                            outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         } else {
                             if (outPos + 4 > outBuffer.size) {
                                 outBuffer = growBuffer(outBuffer, outPos)
                             }
-                            outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         }
                     }
 
@@ -207,7 +221,8 @@ fun GhostJsonFlatReader.readQuotedString(): String {
 /**
  * Skips a double-quoted JSON string in the raw byte array without decoding its content.
  *
- * @throws GhostJsonException if the string is malformed or unterminated.
+ * @throws com.ghost.serialization.exception.GhostJsonException
+ * if the string is malformed or unterminated.
  */
 fun GhostJsonFlatReader.skipQuotedString() {
     if (nextNonWhitespace() != C.QUOTE_INT) {

@@ -5,7 +5,7 @@
   <p>
     <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin"></a>
     <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
-    <img src="https://img.shields.io/badge/version-1.1.19-brightgreen.svg?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.1.20-brightgreen.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
     <img src="https://img.shields.io/badge/tests-642%2B%20passing-success.svg?style=flat-square" alt="Tests">
   </p>
@@ -18,7 +18,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Current release:** `1.1.19` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Current release:** `1.1.20` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
@@ -76,7 +76,7 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.048 ±0.021** | **51.3** | **0.042 ±0.006** | **24.8** | **0.043 ±0.004** | **24.8** |
+| **Ghost** | **0.043 ±0.008** | **51.3** | **0.040 ±0.006** | **24.8** | **0.041 ±0.005** | **24.8** |
 | Gson | 0.097 ±0.009 | 164.0 | 0.092 ±0.008 | 164.0 | 0.095 ±0.022 | 173.5 |
 | KSerialization | 0.108 ±0.010 | 194.4 | 0.107 ±0.017 | 194.4 | 0.180 ±0.025 | 194.5 |
 | Moshi | 0.177 ±0.026 | 324.4 | 0.174 ±0.024 | 324.4 | 0.156 ±0.013 | 324.4 |
@@ -86,7 +86,7 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.362 ±0.035** | **390.9** | **0.347 ±0.021** | **213.4** | **0.369 ±0.040** | **334.2** |
+| **Ghost** | **0.339 ±0.038** | **390.9** | **0.326 ±0.034** | **213.4** | **0.345 ±0.029** | **334.2** |
 | Gson | 0.598 ±0.061 | 1343.8 | 0.596 ±0.058 | 1343.8 | 0.616 ±0.078 | 1366.6 |
 | KSerialization | 0.767 ±0.077 | 1883.5 | 0.765 ±0.076 | 1883.5 | 1.365 ±0.104 | 2004.4 |
 | Moshi | 1.336 ±0.119 | 3084.6 | 1.356 ±0.138 | 3084.6 | 1.220 ±0.123 | 3084.5 |
@@ -96,7 +96,7 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.085 ±0.024** | **92.7** | **0.080 ±0.013** | **92.7** | **0.081 ±0.007** | **96.7** |
+| **Ghost** | **0.082 ±0.015** | **92.7** | **0.080 ±0.008** | **92.7** | **0.081 ±0.011** | **96.7** |
 | KSerialization | 0.133 ±0.024 | 202.6 | 0.134 ±0.023 | 263.9 | 0.216 ±0.016 | 205.6 |
 | Jackson | 0.201 ±0.018 | 396.2 | 0.153 ±0.019 | 249.7 | 0.151 ±0.024 | 303.5 |
 | Gson | 0.343 ±0.038 | 551.3 | 0.338 ±0.033 | 643.9 | 0.777 ±0.106 | 3908.6 |
@@ -106,10 +106,10 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.003 ±0.005** | 0.007 | 0.006 | 0.008 | 0.011 |
+| Deep Nesting — 20 levels (ms) | **0.002 ±0.005** | 0.007 | 0.006 | 0.008 | 0.011 |
 | Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.017 | 0.023 | 0.034 |
 
-**Ghost is #1 in all 11 categories.** The STDEV values confirm the measurements are stable under load.
+**Ghost is #1 in all 11 categories.** Under peak load, Ghost performs up to **6.6x faster** than the competition (consistently ~4x faster than Moshi) and allocates up to **17x less memory** (consistently 4x to 17x less heap). The STDEV values confirm the measurements are stable under load.
 
 ### Ghost Special Features
 
@@ -120,8 +120,8 @@ These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson
 | Polymorphism — Sealed Class Dispatch | **0.47** | 436 |
 | Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.22** | 128 |
 | Resilience — `@GhostResilient` (type mismatch recovery) | **1.43** | 2116 |
-| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **2.47** | 16748 |
-| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.31** | 376 |
+| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **0.98** | 16748 |
+| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.24** | 376 |
 
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.
@@ -196,7 +196,7 @@ Ghost is published to **Maven Central** (`com.ghostserializer`).
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.1.19"
+ghost = "1.1.20"
 ksp = "1.9.24-1.0.20" # match your Kotlin version
 
 [libraries]
@@ -235,7 +235,7 @@ The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler art
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
-    id("com.ghostserializer.ghost") version "1.1.19"
+    id("com.ghostserializer.ghost") version "1.1.20"
 }
 ```
 
@@ -464,7 +464,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.1.19"
+    id("com.ghostserializer.ghost") version "1.1.20"
 }
 
 kotlin {
@@ -667,7 +667,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.19")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.20")
 }
 ```
 

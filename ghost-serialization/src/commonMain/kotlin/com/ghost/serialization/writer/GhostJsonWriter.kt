@@ -29,6 +29,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.LONG_SCRATCH_SIZE
 import com.ghost.serialization.parser.GhostJsonConstants.MAX_DEPTH
 import com.ghost.serialization.parser.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.MINUS
+import com.ghost.serialization.parser.GhostJsonConstants.MINUS_INT
 import com.ghost.serialization.parser.GhostJsonConstants.MINUS_ONE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_BS
@@ -45,7 +46,6 @@ import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.GhostJsonConstants.TRUE_BS
-import com.ghost.serialization.parser.GhostJsonConstants.TWO_INT
 import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.GhostJsonConstants.WRITER_SCRATCH_SIZE
@@ -366,19 +366,20 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeIntValueRaw(value: Int) {
-        if (value == 0) {
-            buffer.writeByte(ZERO_INT)
-        } else if (value == 1) {
-            buffer.writeByte(ONE_INT)
-        } else if (value == 2) {
-            buffer.writeByte(TWO_INT)
-        } else if (value == -1) {
-            buffer.write(MINUS_ONE_BS)
-        } else if (value == Int.MIN_VALUE) {
-            buffer.write(MIN_INT_BS)
-        } else {
-            writeLongValueRawInternal(value.toLong())
+        if (value in 0..9) {
+            buffer.writeByte(ZERO_INT + value)
+            return
         }
+        if (value in -9..-1) {
+            buffer.writeByte(MINUS_INT)
+            buffer.writeByte(ZERO_INT - value)
+            return
+        }
+        if (value == Int.MIN_VALUE) {
+            buffer.write(MIN_INT_BS)
+            return
+        }
+        writeLongValueRawInternal(value.toLong())
     }
 
     /**
@@ -386,29 +387,26 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeLongValueRaw(value: Long) {
-        when (value) {
-            0L -> {
-                buffer.writeByte(ZERO_INT)
-            }
-            1L -> {
-                buffer.writeByte(ONE_INT)
-            }
-            2L -> {
-                buffer.writeByte(TWO_INT)
-            }
-            -1L -> {
-                buffer.write(MINUS_ONE_BS)
-            }
-            Int.MIN_VALUE.toLong() -> {
-                buffer.write(MIN_INT_BS)
-            }
-            Long.MIN_VALUE -> {
-                buffer.write(MIN_LONG_BS)
-            }
-            else -> {
-                writeLongValueRawInternal(value)
-            }
+        if (value in 0L..9L) {
+            val intVal = value.toInt()
+            buffer.writeByte(ZERO_INT + intVal)
+            return
         }
+        if (value in -9L..-1L) {
+            val intVal = value.toInt()
+            buffer.writeByte(MINUS_INT)
+            buffer.writeByte(ZERO_INT - intVal)
+            return
+        }
+        if (value == Int.MIN_VALUE.toLong()) {
+            buffer.write(MIN_INT_BS)
+            return
+        }
+        if (value == Long.MIN_VALUE) {
+            buffer.write(MIN_LONG_BS)
+            return
+        }
+        writeLongValueRawInternal(value)
     }
 
     /**

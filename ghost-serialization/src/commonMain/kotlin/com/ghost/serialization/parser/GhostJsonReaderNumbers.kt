@@ -47,7 +47,6 @@ fun GhostJsonReader.nextFloat(): Float {
     if (pos < lim && getByte(pos) == C.DOT_INT) {
         val newPos = pos + 1
         position = newPos
-        val startPos = newPos
         readNumericLoop { byte ->
             val digit = byte - C.ZERO_INT
             if (digitCount < C.FLOAT_PRECISION_LIMIT) {
@@ -56,7 +55,7 @@ fun GhostJsonReader.nextFloat(): Float {
                 exponent--
             }
         }
-        if (position == startPos) {
+        if (position == newPos) {
             throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
         }
     }
@@ -585,7 +584,7 @@ fun GhostJsonReader.skipNumber() {
 private inline fun GhostJsonReader.readNumericLoop(
     crossinline onDigit: (byte: Int) -> Unit
 ) {
-    readNumericLoop(onDigit, {})
+    readNumericLoop(onDigit) {}
 }
 
 /**

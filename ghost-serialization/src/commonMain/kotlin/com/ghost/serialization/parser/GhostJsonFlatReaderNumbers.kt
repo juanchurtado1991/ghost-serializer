@@ -4,7 +4,6 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
-import kotlin.math.pow
 import com.ghost.serialization.parser.GhostJsonConstants as C
 
 /**
@@ -12,7 +11,8 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
  *
  * Supports coercion from strings if enabled, exponent notations, decimal fractions, and range checks.
  *
- * @throws com.ghost.serialization.exception.GhostJsonException if float format is invalid or overflows.
+ * @throws com.ghost.serialization.exception.GhostJsonException
+ * if float format is invalid or overflows.
  */
 fun GhostJsonFlatReader.nextFloat(): Float {
     val header = prepareNumericHeader()
@@ -53,7 +53,6 @@ fun GhostJsonFlatReader.nextFloat(): Float {
     if (position < localLimit && getByte(position) == C.DOT_INT) {
         val newPos = position + 1
         position = newPos
-        val startPos = newPos
         while (position < localLimit) {
             val byte = data[position].toInt() and C.BYTE_MASK
             if (isDigit(byte)) {
@@ -68,7 +67,7 @@ fun GhostJsonFlatReader.nextFloat(): Float {
                 break
             }
         }
-        if (position == startPos) {
+        if (position == newPos) {
             throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
         }
     }
@@ -98,9 +97,11 @@ fun GhostJsonFlatReader.nextFloat(): Float {
 /**
  * Parses and returns the next [Double] value from the JSON stream.
  *
- * Supports coercion from strings if enabled, exponent notations, decimal fractions, and range checks.
+ * Supports coercion from strings if enabled,
+ * exponent notations, decimal fractions, and range checks.
  *
- * @throws GhostJsonException if double format is invalid or overflows.
+ * @throws com.ghost.serialization.exception.GhostJsonException
+ * if double format is invalid or overflows.
  */
 fun GhostJsonFlatReader.nextDouble(): Double {
     val header = prepareNumericHeader()
@@ -435,9 +436,14 @@ private inline fun GhostJsonFlatReader.consumeNumericCoercionFooter() {
 /**
  * Accumulates int value and throws if it overflows the safe JVM Int limit.
  */
-private inline fun GhostJsonFlatReader.calculateIntWithOverflowCheck(current: Int, digitValue: Int, isNegative: Boolean): Int {
+private inline fun GhostJsonFlatReader.calculateIntWithOverflowCheck(
+    current: Int,
+    digitValue: Int,
+    isNegative: Boolean
+): Int {
     if (current > C.INT_OVERFLOW_LIMIT ||
-        (current == C.INT_OVERFLOW_LIMIT && digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
+        (current == C.INT_OVERFLOW_LIMIT &&
+                digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
     ) {
         throwError(C.ERR_INT_OVERFLOW)
     }
@@ -447,9 +453,17 @@ private inline fun GhostJsonFlatReader.calculateIntWithOverflowCheck(current: In
 /**
  * Accumulates long value and throws if it overflows the safe JVM Long limit.
  */
-private inline fun GhostJsonFlatReader.calculateLongWithOverflowCheck(current: Long, digitValue: Int, isNegative: Boolean): Long {
-    if (current > C.LONG_OVERFLOW_LIMIT || (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)) {
-        if (isNegative && current == C.LONG_OVERFLOW_LIMIT && digitValue == C.LONG_MIN_LAST_DIGIT) {
+private inline fun GhostJsonFlatReader.calculateLongWithOverflowCheck(
+    current: Long,
+    digitValue: Int,
+    isNegative: Boolean
+): Long {
+    if (current > C.LONG_OVERFLOW_LIMIT ||
+        (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)
+    ) {
+        if (isNegative && current == C.LONG_OVERFLOW_LIMIT &&
+            digitValue == C.LONG_MIN_LAST_DIGIT
+        ) {
             return Long.MIN_VALUE
         }
         throwError(C.ERR_LONG_OVERFLOW)
@@ -461,7 +475,9 @@ private inline fun GhostJsonFlatReader.calculateLongWithOverflowCheck(current: L
  * Validates leading zero presence for numbers.
  */
 private fun GhostJsonFlatReader.validateLeadingZero() {
-    if (position < limit && getByte(position) == C.ZERO_INT && position + 1 < limit) {
+    if (position < limit && getByte(position) == C.ZERO_INT &&
+        position + 1 < limit
+    ) {
         val nextDigitByte = getByte(position + 1)
         if ((C.DIGIT_BITMASK shr nextDigitByte) and 1L != 0L) {
             throwError(C.ERR_LEADING_ZEROS)
