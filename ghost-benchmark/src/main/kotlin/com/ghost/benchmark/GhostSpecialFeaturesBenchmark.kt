@@ -4,11 +4,10 @@ package com.ghost.benchmark
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.integration.model.FlattenedModel
-import com.ghost.serialization.integration.model.SmartDevice
-import com.ghost.serialization.integration.model.SmartHome
-import com.ghost.serialization.integration.model.ResilientItem
 import com.ghost.serialization.integration.model.CustomCoderStressModel
+import com.ghost.serialization.integration.model.FlattenedModel
+import com.ghost.serialization.integration.model.ResilientItem
+import com.ghost.serialization.integration.model.SmartHome
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
@@ -21,8 +20,6 @@ import java.lang.management.ManagementFactory
  * Runs with the same ThreadMXBean methodology as the main benchmark.
  */
 object GhostSpecialFeaturesBenchmark {
-
-    private const val WARMUP_ITERATIONS = 5000
 
     fun run(runs: Int, warmupIters: Int) {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean

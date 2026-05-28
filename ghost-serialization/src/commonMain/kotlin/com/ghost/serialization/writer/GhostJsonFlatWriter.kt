@@ -360,14 +360,18 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
         // Fast-path: single digit positive (most common: IDs, counts, status codes)
         if (value in 0..9) {
             buffer.writeByte(ZERO_INT + value)
-        } else if (value in -9..-1) {
+            return
+        }
+        if (value in -9..-1) {
             // Single-digit negative: two bytes, one bounds-check
             buffer.write2Bytes(MINUS_INT, ZERO_INT - value)
-        } else if (value == Int.MIN_VALUE) {
-            buffer.write(MIN_INT_BS)
-        } else {
-            writeLongValueRawInternal(value.toLong())
+            return
         }
+        if (value == Int.MIN_VALUE) {
+            buffer.write(MIN_INT_BS)
+            return
+        }
+        writeLongValueRawInternal(value.toLong())
     }
 
     /**
@@ -377,17 +381,25 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     fun writeLongValueRaw(value: Long) {
         // Fast-path: single digit positive
         if (value in 0L..9L) {
-            buffer.writeByte((ZERO_INT + value).toInt())
-        } else if (value in -9L..-1L) {
-            // Single-digit negative: two bytes, one bounds-check
-            buffer.write2Bytes(MINUS_INT, (ZERO_INT - value).toInt())
-        } else if (value == Int.MIN_VALUE.toLong()) {
-            buffer.write(MIN_INT_BS)
-        } else if (value == Long.MIN_VALUE) {
-            buffer.write(MIN_LONG_BS)
-        } else {
-            writeLongValueRawInternal(value)
+            val intVal = value.toInt()
+            buffer.writeByte(ZERO_INT + intVal)
+            return
         }
+        if (value in -9L..-1L) {
+            // Single-digit negative: two bytes, one bounds-check
+            val intVal = value.toInt()
+            buffer.write2Bytes(MINUS_INT, ZERO_INT - intVal)
+            return
+        }
+        if (value == Int.MIN_VALUE.toLong()) {
+            buffer.write(MIN_INT_BS)
+            return
+        }
+        if (value == Long.MIN_VALUE) {
+            buffer.write(MIN_LONG_BS)
+            return
+        }
+        writeLongValueRawInternal(value)
     }
 
     /**
@@ -500,14 +512,14 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
         // array with a single ensureCapacity and an unrolled loop — no scratch buffer.
         if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
             var allPlain = true
-            var i = 0
-            while (i < length) {
-                val c = value[i].code
-                if (c < SPACE_INT || c >= ASCII_LIMIT || c == QUOTE_INT || c == BACKSLASH_INT) {
+            var index = 0
+            while (index < length) {
+                val code = value[index].code
+                if (code !in SPACE_INT..<ASCII_LIMIT || code == QUOTE_INT || code == BACKSLASH_INT) {
                     allPlain = false
                     break
                 }
-                i++
+                index++
             }
             if (allPlain) {
                 buffer.writeQuotedAscii(value, length)

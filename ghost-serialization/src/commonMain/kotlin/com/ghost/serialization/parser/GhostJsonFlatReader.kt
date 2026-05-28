@@ -334,8 +334,7 @@ class GhostJsonFlatReader(
                 return false
             }
             if (token == C.QUOTE_INT) {
-                val s = readQuotedString().lowercase()
-                return when (s) {
+                return when (val s = readQuotedString().lowercase()) {
                     C.COERCE_TRUE_STR,
                     C.COERCE_YES_STR,
                     C.COERCE_ON_STR,

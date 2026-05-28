@@ -175,10 +175,7 @@ internal class SerializeCodeEmitter(
      * Emits value class unboxing statement.
      */
     private fun emitValueUnboxing(code: CodeBlock.Builder) {
-        val prop = properties.firstOrNull()
-        if (prop == null) {
-            return
-        }
+        val prop = properties.firstOrNull() ?: return
         val accessor = CodeBlock.of(
             C.TEMPLATE_ACCESSOR,
             C.STR_PARAM_VALUE,

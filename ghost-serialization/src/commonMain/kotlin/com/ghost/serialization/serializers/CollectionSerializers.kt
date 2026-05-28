@@ -140,10 +140,7 @@ class MapSerializer<V>(
 
         return buildMap {
             while (true) {
-                val key = reader.nextKey()
-                if (key == null) {
-                    break
-                }
+                val key = reader.nextKey() ?: break
                 reader.consumeKeySeparator()
                 put(
                     key,
@@ -165,10 +162,7 @@ class MapSerializer<V>(
 
         return buildMap {
             while (true) {
-                val key = reader.nextKey()
-                if (key == null) {
-                    break
-                }
+                val key = reader.nextKey() ?: break
                 reader.consumeKeySeparator()
                 put(
                     key,

@@ -162,7 +162,7 @@ internal class StandardEmitter(
 
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
-        val subIndexName = "subIndex$pathIndex"
+        val subIndexName = "${C.STR_SUB_INDEX_PREFIX}$pathIndex"
         body.addStatement(C.STR_SELECT_SUB_NAME, subIndexName, optionsName)
         body.beginControlFlow(C.STR_WHEN_SUB_INDEX, subIndexName)
 
@@ -222,17 +222,6 @@ internal class StandardEmitter(
     }
 
     /**
-     * Generates a single property assignment step.
-     *
-     * It reads the property from the JSON stream, updates the local placeholder variable,
-     * and sets the corresponding bit in the tracking mask. If the property is marked as
-     * resilient, it wraps the read in a resilient decoding block.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param prop The property model metadata.
-     * @param index The global index of this property.
-     */
-    /**
      * Emits property value assignment statement and bitwise mask update.
      *
      * @param body The target KotlinPoet [CodeBlock.Builder].
@@ -246,7 +235,7 @@ internal class StandardEmitter(
     ) {
         val call = buildCall(prop)
         val maskIdx = index / C.MASK_SIZE_BITS.toInt()
-        val constName = "MASK_" + prop.kotlinName.uppercase()
+        val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
         val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)
         if (prop.isResilient) {
@@ -260,16 +249,6 @@ internal class StandardEmitter(
         }
     }
 
-    /**
-     * Generates required field presence validation checks using bitwise operations.
-     *
-     * Groups required fields based on their mask index. If a single field in a mask is required,
-     * it generates a simple bit-match check. If multiple fields in the same mask are required,
-     * it evaluates the entire mask with a single bitwise comparison `(mask & reqMask) != reqMask`,
-     * then routes inside to isolate and throw which specific field was missing.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     */
     /**
      * Emits a call to the descriptive private helper method validating that all required properties
      * were present in the parsed JSON stream.
@@ -295,7 +274,7 @@ internal class StandardEmitter(
             return
         }
 
-        val requiredMask0Name = "MASK_REQUIRED_0"
+        val requiredMask0Name = C.STR_MASK_REQUIRED_0
 
         val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)
             .addModifiers(KModifier.PRIVATE)
@@ -305,7 +284,7 @@ internal class StandardEmitter(
         val funBody = CodeBlock.builder()
         if (requiredProps.size == 1) {
             val prop = requiredProps[0]
-            val constName = "MASK_" + prop.kotlinName.uppercase()
+            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
             funBody.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_STMT, constName)
             funBody.addStatement(
@@ -316,7 +295,7 @@ internal class StandardEmitter(
         } else {
             funBody.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_STMT, requiredMask0Name, requiredMask0Name)
             requiredProps.forEachIndexed { propIdx, prop ->
-                val constName = "MASK_" + prop.kotlinName.uppercase()
+                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
                 if (propIdx == 0) {
                     funBody.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_STMT, constName)
@@ -336,14 +315,6 @@ internal class StandardEmitter(
         typeSpecBuilder.addFunction(funBuilder.build())
     }
 
-    /**
-     * Emits the class instantiation return statement.
-     *
-     * If no properties have class-level default values, it outputs a direct constructor return.
-     * If defaults exist, it delegates to [emitDefaultValueReturn] to choose the optimal dispatch strategy.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     */
     /**
      * Emits the return statements using optimal constructor dispatch or copy-based logic.
      *
@@ -472,14 +443,18 @@ internal class StandardEmitter(
                 maskGroups[maskIdx] = (maskGroups[maskIdx] ?: C.VAL_ZERO_L) or (C.VAL_ONE_L shl bitIdx)
             }
         }
-        val constName = "MASK_OPTS_" + defaultPropsInSubset.map { it.kotlinName.uppercase() }.sorted().joinToString("_")
+        val constName = C.STR_MASK_OPTS_PREFIX + defaultPropsInSubset
+            .map { it.kotlinName.uppercase() }
+            .sorted()
+            .joinToString(C.STR_UNDERSCORE)
+
         val combinedBits = maskGroups[0] ?: C.VAL_ZERO_L
         val bitsStr = formatMaskString(combinedBits)
         if (typeSpecBuilder.propertySpecs.none { it.name == constName }) {
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
                     .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                    .initializer("%L", bitsStr)
+                    .initializer(C.TEMPLATE_L, bitsStr)
                     .build()
             )
         }
@@ -524,12 +499,12 @@ internal class StandardEmitter(
                 val defMask = defaultMasks[i]
                 if (defMask != C.VAL_ZERO_L) {
                     val defMaskStr = formatMaskString(defMask)
-                    val constName = "MASK_DEFAULTS_$i"
+                    val constName = "${C.STR_MASK_DEFAULTS_PREFIX}$i"
                     if (typeSpecBuilder.propertySpecs.none { it.name == constName }) {
                         typeSpecBuilder.addProperty(
                             PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
                                 .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                                .initializer("%L", defMaskStr)
+                                .initializer(C.TEMPLATE_L, defMaskStr)
                                 .build()
                         )
                     }
@@ -542,10 +517,7 @@ internal class StandardEmitter(
             body.addStatement(C.STR_RETURN_RESULT_COPY)
             defaultPropsWithIndex.forEach { (propIndex, prop) ->
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
-                val bitIdx = propIndex % C.MASK_SIZE_BITS.toInt()
-                val bitMask = C.VAL_ONE_L shl bitIdx
-                val bitMaskStr = formatMaskString(bitMask)
-                val constName = "MASK_" + prop.kotlinName.uppercase()
+                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
                 val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, constName)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }
