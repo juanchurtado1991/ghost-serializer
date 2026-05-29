@@ -71,3 +71,10 @@ replay_pid*.log
 .env
 .env.local
 .env.*.local
+
+# Next.js / Frontend Lab
+ghost-compiler-lab/.next/
+ghost-compiler-lab/node_modules/
+ghost-compiler-lab/out/
+ghost-compiler-lab/build/
+ghost-compiler-lab/.turbo/

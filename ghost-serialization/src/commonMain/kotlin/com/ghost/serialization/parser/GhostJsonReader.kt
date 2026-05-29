@@ -233,9 +233,7 @@ class GhostJsonReader(
      */
     fun peekNextToken(): Int {
         val cached = nextTokenByte
-        if (cached != -1) {
-            return cached
-        }
+        if (cached != -1) return cached
         skipWhitespace()
         return nextTokenByte
     }
