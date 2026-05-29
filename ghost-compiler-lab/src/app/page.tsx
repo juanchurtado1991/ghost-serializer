@@ -15,7 +15,7 @@ const renderHTML = (text: string) => {
 };
 
 export default function Home() {
-  const [lang, setLang] = useState<Lang>("es");
+  const [lang, setLang] = useState<Lang>("en");
   const [activeStep, setActiveStep] = useState<number>(1);
 
   // Shared compilation outputs needed by other steps
