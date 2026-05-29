@@ -14,6 +14,10 @@ import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
  * [rawBytes] stores field names as raw [ByteArray] instead of Okio ByteString
  * so that [verifyKeyMatch] can compare bytes directly without virtual dispatch
  * or redundant bounds checks inside Okio's `rangeEquals`.
+ *
+ * @property rawBytes Array of field names represented as raw byte arrays (UTF-8).
+ * @property shift The bit-shift amount used to normalize key distributions.
+ * @property multiplier The prime multiplier used to spread key entropy across the address space.
  */
 class JsonReaderOptions(
     @PublishedApi internal val rawBytes: Array<ByteArray>,
@@ -25,8 +29,8 @@ class JsonReaderOptions(
 
     init {
         val tableMask = DISPATCH_TABLE_SIZE - 1
-        for (i in rawBytes.indices) {
-            val bytes = rawBytes[i]
+        for (index in rawBytes.indices) {
+            val bytes = rawBytes[index]
             // Note: Keeping size check for low-level consistency.
             if (bytes.isNotEmpty()) {
                 /**
@@ -47,16 +51,26 @@ class JsonReaderOptions(
                 if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
 
                 /**
-                 * Perfect Hash Mapping:
-                 * 1. (key * multiplier): Spreads the keys to reduce collisions.
-                 * 2. + bytes.size: Ensures fields with same prefix but different lengths differ.
-                 * 3. shr shift: Normalizes the distribution.
-                 * 4. & tableMask: Forces the result within the [0, 1023] dispatch table bounds.
+                 * Perfect Hash Mapping Engine.
+                 * Maps a packed multibyte key into a fixed dispatch table index.
+                 *
+                 * Mathematical formula:
+                 * ```
+                 * hashIndex = ((key * multiplier + length) >>> shift) & tableMask
+                 * ```
+                 *
+                 * Technical breakdown of the formula:
+                 * 1. `key * multiplier`: Spreads key entropy to minimize hash collisions.
+                 * 2. `+ length`: Resolves collisions ("breaks ties") for properties sharing the same
+                 * 4-byte prefix but having different physical lengths (e.g., "user" vs "userId").
+                 * 3. `>>> shift` (shr): Normalizes the distribution by extracting the highest entropy bits.
+                 * 4. `& tableMask`: Clamps the index safely within the `[0, DISPATCH_TABLE_SIZE - 1]` range
+                 * using an ultra-fast bitwise mask instead of an expensive modulo (`%`) division operator.
                  */
-                val h = ((key * multiplier + bytes.size) shr shift) and tableMask
+                val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
 
                 // Store index if slot is available.
-                if (dispatch[h] == -1) dispatch[h] = i
+                if (dispatch[perfectHashKey] == -1) dispatch[perfectHashKey] = index
             }
         }
     }

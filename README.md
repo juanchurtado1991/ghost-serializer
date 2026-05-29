@@ -1,16 +1,21 @@
-<div align="center">
-  <h1>👻 Ghost Serialization</h1>
-  <p><b>Zero-reflection, compile-time JSON serialization for Kotlin Multiplatform.</b></p>
+# 👻 Ghost Serialization
 
-  <p>
-    <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.svg?style=flat-square&logo=kotlin" alt="Kotlin"></a>
-    <a href="https://github.com/google/ksp"><img src="https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.svg?style=flat-square" alt="KSP"></a>
-    <img src="https://img.shields.io/badge/version-1.1.20-brightgreen.svg?style=flat-square" alt="Version">
-    <img src="https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.svg?style=flat-square" alt="Platforms">
-    <img src="https://img.shields.io/badge/tests-642%2B%20passing-success.svg?style=flat-square" alt="Tests">
-  </p>
-  <p><sub><strong>642</strong> = <code>./gradlew ciTest</code> on Linux/Windows (JVM + Android unit; iOS skipped). <strong>~874</strong> on macOS with Xcode (+232 <code>iosSimulatorArm64Test</code>).</sub></p>
-</div>
+**Zero-reflection, compile-time JSON serialization for Kotlin Multiplatform.**
+
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![KSP](https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.png?style=flat)](https://github.com/google/ksp)
+![Version](https://img.shields.io/badge/version-1.1.20-brightgreen.png?style=flat)
+![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.png?style=flat)
+![Tests](https://img.shields.io/badge/tests-642%2B%20passing-success.png?style=flat)
+
+[![Ghost Compiler Lab - Interactive Demo](https://img.shields.io/badge/Ghost_Compiler_Lab-Interactive_Demo-38bdf8.png?style=flat)](https://juanchurtado1991.github.io/ghost-serializer/)  
+👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
+
+
+*Perfect Hash O(1) · Bitmask Tracking · Zero-Alloc Key Matching · Constructor Dispatch*
+
+**642** tests = `./gradlew ciTest` on Linux/Windows. **~874** on macOS with Xcode.
+
 
 ---
 
