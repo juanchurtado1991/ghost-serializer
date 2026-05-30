@@ -1029,4 +1029,4 @@ Questions or ideas: open a [GitHub issue](https://github.com/juanchurtado1991/Gh
 
 ---
 
-*Developed with ❤️ by the Ghost Serialization team.* 👻
+*Developed with ❤️ by the Ghost Serializer team.* 👻
