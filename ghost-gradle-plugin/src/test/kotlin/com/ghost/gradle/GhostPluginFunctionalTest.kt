@@ -21,7 +21,7 @@ class GhostPluginFunctionalTest {
         get() = System.getProperty("kspVersion") ?: "1.9.24-1.0.20"
 
     private val ghostVersion: String
-        get() = System.getProperty("ghostVersion") ?: "1.1.20"
+        get() = System.getProperty("ghostVersion") ?: "1.2.0"
 
     @Test
     fun `plugin supports configuration cache`() {
@@ -126,5 +126,52 @@ class GhostPluginFunctionalTest {
         // Second build - should be successful and incremental
         val result = runner.build()
         assertTrue(result.output.contains("SUCCESS"), "Incremental build should succeed")
+    }
+
+    @Test
+    fun `plugin works when applied before KSP`() {
+        settingsFile.writeText("rootProject.name = \"order-test\"")
+
+        val srcDir = testProjectDir.resolve("src/main/kotlin/com/example")
+        srcDir.mkdirs()
+        val modelFile = srcDir.resolve("Model.kt")
+        modelFile.writeText(
+            """
+            package com.example
+            import com.ghost.serialization.annotations.GhostSerialization
+            @GhostSerialization
+            data class Model(val name: String)
+        """.trimIndent()
+        )
+
+        buildFile.writeText(
+            """
+            plugins {
+                id("com.ghostserializer.ghost")
+                kotlin("jvm") version "$kotlinVersion"
+                id("com.google.devtools.ksp") version "$kspVersion"
+            }
+            
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+            
+            ghost {
+                version.set("$ghostVersion")
+                autoInjectKtor.set(false)
+                autoInjectRetrofit.set(false)
+            }
+        """.trimIndent()
+        )
+
+        val runner = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withArguments("kspKotlin")
+            .withPluginClasspath()
+            .forwardOutput()
+
+        val result = runner.build()
+        assertTrue(result.output.contains("SUCCESS"), "Build with plugin applied before KSP should succeed")
     }
 }

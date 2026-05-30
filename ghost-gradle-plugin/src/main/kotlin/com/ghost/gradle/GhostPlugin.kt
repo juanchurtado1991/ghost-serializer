@@ -12,8 +12,46 @@ class GhostPlugin : Plugin<Project> {
         val ghostVersion = extension.version
 
         // 1. Core & KSP (Reactive)
-        project.plugins.withId(PLUGIN_KSP) { setupKsp(project, ghostVersion) }
-        project.plugins.withId(PLUGIN_KMP) { setupKmp(project, ghostVersion) }
+        var kspSetupDone = false
+        fun configureKspDependencies() {
+            if (kspSetupDone) return
+            if (!project.plugins.hasPlugin(PLUGIN_KSP)) return
+
+            val compilerDep = ghostVersion.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
+            if (project.plugins.hasPlugin(PLUGIN_KMP)) {
+                val kotlinExtension = project
+                    .extensions
+                    .findByType(KotlinMultiplatformExtension::class.java)
+
+                kotlinExtension?.targets?.configureEach {
+                    if (name == TARGET_METADATA) {
+                        project.dependencies.add(CONFIG_KSP_COMMON, compilerDep)
+                    } else {
+                        val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
+                        project.dependencies.add(
+                            "$PREFIX_KSP$capitalizedTarget",
+                            compilerDep
+                        )
+                    }
+                }
+                kspSetupDone = true
+            } else if (project.plugins.hasPlugin(PLUGIN_ANDROID_APP) ||
+                project.plugins.hasPlugin(PLUGIN_ANDROID_LIB) ||
+                project.plugins.hasPlugin(PLUGIN_JVM)
+            ) {
+                project.dependencies.add(
+                    PREFIX_KSP,
+                    compilerDep
+                )
+                kspSetupDone = true
+            }
+        }
+
+        project.plugins.withId(PLUGIN_KSP) { configureKspDependencies() }
+        project.plugins.withId(PLUGIN_KMP) {
+            setupKmp(project, ghostVersion)
+            configureKspDependencies()
+        }
         
         var coreApplied = false
         listOf(PLUGIN_ANDROID_APP, PLUGIN_ANDROID_LIB, PLUGIN_JVM).forEach { pluginId ->
@@ -22,6 +60,7 @@ class GhostPlugin : Plugin<Project> {
                     setupAndroidOrJvmCore(project, ghostVersion)
                     coreApplied = true
                 }
+                configureKspDependencies()
             }
         }
 
@@ -60,37 +99,6 @@ class GhostPlugin : Plugin<Project> {
         val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
         project.dependencies.add(CONFIG_IMPL, runtimeDep)
         project.dependencies.add(CONFIG_IMPL, apiDep)
-    }
-
-    private fun setupKsp(project: Project, version: Provider<String>) {
-        val compilerDep = version.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
-        
-        if (isMultiplatform(project)) {
-            val kotlinExtension = project
-                .extensions
-                .findByType(KotlinMultiplatformExtension::class.java)
-
-            kotlinExtension?.targets?.configureEach {
-                if (name == TARGET_METADATA) {
-                    project.dependencies
-                        .add(
-                            CONFIG_KSP_COMMON,
-                            compilerDep
-                        )
-                } else {
-                    val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
-                    project.dependencies.add(
-                        "$PREFIX_KSP$capitalizedTarget",
-                        compilerDep
-                    )
-                }
-            }
-        } else {
-            project.dependencies.add(
-                PREFIX_KSP,
-                compilerDep
-            )
-        }
     }
 
     private fun isMultiplatform(project: Project): Boolean {
@@ -133,7 +141,7 @@ class GhostPlugin : Plugin<Project> {
 
     companion object {
         private const val EXTENSION_NAME = "ghost"
-        private const val DEFAULT_VERSION = "1.1.20"
+        private const val DEFAULT_VERSION = "1.2.0"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
         private const val PLUGIN_KMP = "org.jetbrains.kotlin.multiplatform"

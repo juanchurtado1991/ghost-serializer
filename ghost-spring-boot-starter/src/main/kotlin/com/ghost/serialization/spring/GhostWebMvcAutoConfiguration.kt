@@ -16,4 +16,9 @@ open class GhostWebMvcAutoConfiguration : WebMvcConfigurer {
     override fun configureMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
         converters.add(0, GhostHttpMessageConverter())
     }
+
+    @org.springframework.context.annotation.Bean
+    open fun ghostRequestBodyAdvice(): GhostRequestBodyAdvice {
+        return GhostRequestBodyAdvice()
+    }
 }

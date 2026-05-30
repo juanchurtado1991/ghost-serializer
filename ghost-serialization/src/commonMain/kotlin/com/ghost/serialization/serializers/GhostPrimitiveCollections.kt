@@ -1,10 +1,12 @@
 package com.ghost.serialization.serializers
 
+import com.ghost.serialization.parser.GhostJsonConstants as C
+
 /**
  * Highly optimized, zero-allocation internal list implementation for [Int] primitives.
  * Avoids boxing overhead and memory allocation pressure.
  */
-internal class GhostIntList(initialCapacity: Int = 16) {
+internal class GhostIntList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {
     private var buffer = IntArray(initialCapacity)
     private var currentSize = 0
 
@@ -13,7 +15,8 @@ internal class GhostIntList(initialCapacity: Int = 16) {
      */
     fun add(value: Int) {
         if (currentSize == buffer.size) {
-            buffer = buffer.copyOf(buffer.size shl 1)
+            val newCapacity = if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
+            buffer = buffer.copyOf(newCapacity)
         }
         buffer[currentSize++] = value
     }
@@ -40,7 +43,7 @@ internal class GhostIntList(initialCapacity: Int = 16) {
  * Highly optimized, zero-allocation internal list implementation for [Long] primitives.
  * Avoids boxing overhead and memory allocation pressure.
  */
-internal class GhostLongList(initialCapacity: Int = 16) {
+internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {
     private var buffer = LongArray(initialCapacity)
     private var currentSize = 0
 
@@ -49,7 +52,8 @@ internal class GhostLongList(initialCapacity: Int = 16) {
      */
     fun add(value: Long) {
         if (currentSize == buffer.size) {
-            buffer = buffer.copyOf(buffer.size shl 1)
+            val newCapacity = if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
+            buffer = buffer.copyOf(newCapacity)
         }
         buffer[currentSize++] = value
     }

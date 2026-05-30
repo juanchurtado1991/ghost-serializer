@@ -44,4 +44,47 @@ class GhostSpringMvcIntegrationTest {
             .andExpect(jsonPath("$.id").value(42))
             .andExpect(jsonPath("$.name").value("BOOT"))
     }
+
+    @Test
+    fun strictEndpointThrowsOnMissingComma() {
+        org.junit.jupiter.api.assertThrows<Exception> {
+            mockMvc.perform(
+                post("/api/strict")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"id":1 "name":"boot"}"""),
+            )
+        }
+    }
+
+    @Test
+    fun strictParamEndpointThrowsOnMissingComma() {
+        org.junit.jupiter.api.assertThrows<Exception> {
+            mockMvc.perform(
+                post("/api/strict-param")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"id":1 "name":"boot"}"""),
+            )
+        }
+    }
+
+    @Test
+    fun lenientEndpointPassesOnMissingComma() {
+        mockMvc.perform(
+            post("/api/hello")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"id":42 "name":"boot"}"""),
+        )
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun coercedEndpointCoercesPrimitiveValues() {
+        mockMvc.perform(
+            post("/api/coerce")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"id":"42","name":"boot"}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(42))
+    }
 }

@@ -85,9 +85,10 @@ val isMacOsHost = OperatingSystem.current().isMacOsX
 val ciTestIosSkipped = tasks.register("ciTestIosSkipped") {
     group = "verification"
     description = "Logs when iOS CI tests are skipped on non-macOS hosts"
-    onlyIf { !isMacOsHost }
+    val isMac = isMacOsHost
+    onlyIf { !isMac }
     doLast {
-        logger.lifecycle(
+        println(
             "ciTest: skipping :ghost-serialization:iosSimulatorArm64Test (requires macOS + Xcode)"
         )
     }
@@ -96,7 +97,8 @@ val ciTestIosSkipped = tasks.register("ciTestIosSkipped") {
 val ciTestIos = tasks.register("ciTestIos") {
     group = "verification"
     description = "iOS simulator tests (same as CI test-ios job; macOS only)"
-    onlyIf { isMacOsHost }
+    val isMac = isMacOsHost
+    onlyIf { isMac }
     dependsOn(
         ":ghost-serialization:kspCommonMainKotlinMetadata",
         ":ghost-serialization:iosSimulatorArm64Test",

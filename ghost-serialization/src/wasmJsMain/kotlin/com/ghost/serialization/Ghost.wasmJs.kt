@@ -12,6 +12,7 @@ import okio.BufferedSource
 private var cachedWriterPair: WriterSinkPair? = null
 private var cachedReader: GhostJsonReader? = null
 private var cachedFlatReader: GhostJsonFlatReader? = null
+private var cachedSourceReader: GhostJsonReader? = null
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
@@ -45,14 +46,13 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    source.request(Long.MAX_VALUE)
-    val bytes = source.buffer.readByteArray()
+    // reset(BufferedSource) wraps source in a StreamingGhostSource — Okio pulls
+    // data in 8 KB segments on demand instead of loading the entire payload.
+    val reader = cachedSourceReader
+        ?: GhostJsonReader(source)
+            .also { cachedSourceReader = it }
 
-    val reader = cachedReader
-        ?: GhostJsonReader(bytes)
-            .also { cachedReader = it }
-
-    reader.reset(bytes)
+    reader.reset(source)
     return block(reader)
 }
 

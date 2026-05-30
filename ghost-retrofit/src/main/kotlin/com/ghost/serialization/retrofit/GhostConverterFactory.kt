@@ -39,6 +39,9 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
         val serializer = getSerializerWithCache(type)
             ?: return null
 
+        val isStrict = annotations.any { it is com.ghost.serialization.annotations.GhostStrict }
+        val isCoerce = annotations.any { it is com.ghost.serialization.annotations.GhostCoerce }
+
         return Converter { body ->
             body.use {
                 val stream = it.byteStream()
@@ -75,6 +78,11 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                     ghostInternalUseFlatReader(
                         scratch, offset
                     ) { reader ->
+                        reader.strictMode = isStrict
+                        if (isCoerce) {
+                            reader.coerceStringsToNumbers = true
+                            reader.coerceBooleans = true
+                        }
                         if (reader.isNextNullValue()) {
                             reader.consumeNull()
                             null

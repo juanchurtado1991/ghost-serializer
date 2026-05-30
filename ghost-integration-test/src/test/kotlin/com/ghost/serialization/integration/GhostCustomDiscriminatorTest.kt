@@ -291,4 +291,16 @@ class GhostCustomDiscriminatorTest {
         val decoded = Ghost.deserialize<GhostDiscriminatorTestPayload>(json)
         assertEquals(payload, decoded)
     }
+
+    @Test
+    fun `non-nested sealed subclass roundtrips correctly`() {
+        val event: ApiEventDefault = CustomAction(actionName = "click")
+        val json = Ghost.serialize(event)
+
+        assertContains(json, "\"type\"")
+        assertContains(json, "\"CustomAction\"")
+
+        val decoded = Ghost.deserialize<ApiEventDefault>(json)
+        assertEquals(event, decoded)
+    }
 }

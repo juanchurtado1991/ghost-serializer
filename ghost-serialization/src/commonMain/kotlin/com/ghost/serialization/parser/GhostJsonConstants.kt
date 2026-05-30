@@ -44,6 +44,8 @@ internal object GhostJsonConstants {
     const val ERR_EXPECTED_EXPONENT_DIGITS = "Expected digits in exponent"
     const val ERR_NUMERIC_OVERFLOW = "Numeric overflow or NaN is not allowed in JSON"
     const val ERR_HIGH_SURROGATE = "Lone high surrogate"
+    const val EXPONENT_CLAMP_THRESHOLD = 1000
+    const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
 
     // --- Boolean Coercion Values ---
     const val COERCE_TRUE_STR = "true"
@@ -51,12 +53,48 @@ internal object GhostJsonConstants {
     const val COERCE_ON_STR = "on"
     const val COERCE_1_STR = "1"
     const val COERCE_Y_STR = "y"
-    
+
     const val COERCE_FALSE_STR = "false"
     const val COERCE_NO_STR = "no"
     const val COERCE_OFF_STR = "off"
     const val COERCE_0_STR = "0"
     const val COERCE_N_STR = "n"
+
+    // --- Case-Folded ASCII Byte Constants ---
+    // Each constant is `'X'.code or 32` where 32 = CASE_INSENSITIVE_MASK.
+    // Folding sets bit 5 of the byte, which turns any ASCII uppercase letter into
+    // its lowercase equivalent. Allows zero-allocation case-insensitive comparisons:
+    //   `(rawByte or CASE_INSENSITIVE_MASK) == FOLD_X`
+
+    /** Case-folded byte for 'T' / 't'. Used in "true". */
+    const val FOLD_T = 't'.code or 32
+    /** Case-folded byte for 'R' / 'r'. Used in "true". */
+    const val FOLD_R = 'r'.code or 32
+    /** Case-folded byte for 'U' / 'u'. Used in "true". */
+    const val FOLD_U = 'u'.code or 32
+    /** Case-folded byte for 'E' / 'e'. Used in "true", "false", "yes". */
+    const val FOLD_E = 'e'.code or 32
+    /** Case-folded byte for 'F' / 'f'. Used in "false", "off". */
+    const val FOLD_F = 'f'.code or 32
+    /** Case-folded byte for 'A' / 'a'. Used in "false". */
+    const val FOLD_A = 'a'.code or 32
+    /** Case-folded byte for 'L' / 'l'. Used in "false". */
+    const val FOLD_L = 'l'.code or 32
+    /** Case-folded byte for 'S' / 's'. Used in "false", "yes". */
+    const val FOLD_S = 's'.code or 32
+    /** Case-folded byte for 'Y' / 'y'. Used in "yes", "y". */
+    const val FOLD_Y = 'y'.code or 32
+    /** Case-folded byte for 'N' / 'n'. Used in "no", "n". */
+    const val FOLD_N = 'n'.code or 32
+    /** Case-folded byte for 'O' / 'o'. Used in "on", "no", "off". */
+    const val FOLD_O = 'o'.code or 32
+
+    /** String lengths used as a fast gate before byte-level coercion matching. */
+    const val BOOL_STR_LEN_1 = 1   // "y", "n", "1", "0"
+    const val BOOL_STR_LEN_2 = 2   // "on", "no"
+    const val BOOL_STR_LEN_3 = 3   // "yes", "off"
+    const val BOOL_STR_LEN_4 = 4   // "true"
+    const val BOOL_STR_LEN_5 = 5   // "false"
 
     // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
     @PublishedApi
@@ -122,6 +160,8 @@ internal object GhostJsonConstants {
     const val DOT_INT = '.'.code
     const val ZERO_INT = '0'.code
     const val ONE_INT = '1'.code
+    const val NINE_INT = '9'.code
+    const val DEFAULT_PRIMITIVE_COLLECTION_CAPACITY = 16
     const val BACKSLASH_INT = '\\'.code
     const val UNICODE_PREFIX_U_INT = 'u'.code
     const val EXP_LOWER_INT = 'e'.code
@@ -216,6 +256,9 @@ internal object GhostJsonConstants {
 
     /** Mask to extract the bit index within a 64-bit Long. */
     const val BITMASK_INDEX_MASK = 63
+
+    /** Maximum depth supported by 64-bit Long bitmask. */
+    const val MAX_BITMASK_DEPTH = 64
 
     /** Shift to get the index in the LongArray bitmask (index = charCode shr 6). */
     const val BITMASK_SHIFT = 6

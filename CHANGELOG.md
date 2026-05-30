@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.2.0] - 2026-05-30
+
+### Added
+- **Native Declarative Annotations (@GhostStrict & @GhostCoerce)**: Shipped new dynamic annotations for elegant, declarative, and zero-allocation parsing customization.
+  - **Retrofit**: Supports `@GhostStrict` and `@GhostCoerce` on API service interface methods.
+  - **Spring Boot**: Fully supports `@GhostStrict` and `@GhostCoerce` at the controller class, method, or `@RequestBody` parameter levels with 100% thread-safety.
+  - **Ktor**: Enhanced `GhostContentConverter` with a customizable configurer lambda for direct reader tuning on KMP.
+
+### Fixed
+- **Iterative Comma Synchronization in hasNext()**: Fixed a critical parser state leak in `hasNext()` where `commaConsumedMask` and `needsCommaMask` were not correctly cleared and tracked during iterative loops like `skipValue()` on arrays or objects.
+- **Select Separator Comma Synchronization**: Fixed `internalSelect` in both flat and streaming readers to correctly synchronize and clear `commaConsumedMask` when a separator comma is consumed, resolving unexpected comma errors in subsequent field decodes.
+- **Strict Byte Checking**: Resolved a project rule violation in `expectByte` by replacing the prohibited `toChar()` extension method with the direct `Char(expected)` constructor path.
+- **Unbounded Surrogate Parser Checks**: Fixed a boundary bug in `GhostJsonReader` and `GhostJsonFlatReaderStrings` where checking for trailing unicode surrogate pairs at the end of truncated strings caused `IndexOutOfBoundsException` instead of structured `GhostJsonException`.
+- **Resilient Decoder State Management**: Fixed a parser state leak in `decodeResilient` where the nested object depth counter (`depth`) was not rolled back upon parsing errors, causing failure cascades on subsequent resilient segments.
+- **Long Overflow Check**: Fixed a silent overflow bug in `calculateLongWithOverflowCheck` where values matching `Long.MIN_VALUE` with additional trailing digits bypassed overflow verification and returned corrupted numbers.
+- **Non-Nested Sealed Subclasses**: Enhanced KSP generation to scan `superTypes` for sealed parents. This ensures that non-nested/top-level sealed subclasses correctly serialize and deserialize their type discriminator key.
+- **Gradle Plugin KSP Setup Order**: Refactored KSP compiler dependency injection in the Gradle plugin to be completely order-independent and reactive to KSP and KMP target application sequences.
+- **Flat Writer Infinite Loop**: Fixed an infinite loop in `ensureCapacity` when `FlatByteArrayWriter` was initialized with zero capacity.
+- **Primitive Collection Doubling**: Fixed an `ArrayIndexOutOfBoundsException` in `GhostIntList` and `GhostLongList` when initialized with zero capacity.
+- **Negative Zero Sign Loss**: Corrected double formatting in `GhostDoubleFormatter` to preserve the minus sign for `-0.0` by performing a zero-copy raw bits sign check.
+- **Strict Comma Validation**: Enforced strict JSON comma checking in both streaming and flat readers using zero-allocation bitwise mask tracking. Bound to `strictMode = true` to preserve maximum lenient parsing speed by default.
+- **Leading Zero Shift Masking**: Corrected shift-masking bug in `validateLeadingZero` where non-digit characters in the ASCII range of `112..121` were incorrectly validated as digits.
+- **Scientific Notation Exponent Integer Overflow**: Fixed integer overflow vulnerability in `parseExponentValue` for flat and streaming readers by clamping exponent values exceeding 1000.
+- **Geometric Capacity Overflow Protection**: Fixed a potential buffer overflow vulnerability in `FlatByteArrayWriter.ensureCapacity` by safely catching integer overflows and clamping growth to `Int.MAX_VALUE`.
+- **Double Formatter Precision Threshold**: Lowered `MASSIVE_DOUBLE_THRESHOLD` from `1e15` to `1e9` in `GhostDoubleFormatter` to guarantee standard-compliant shortest representation for larger Double values.
+- **Dynamic Key Hash Collision mixing**: Eliminated perfect hash collision vulnerabilities in `JsonReaderOptions` and reader subsystems by dynamically detecting perfect key collisions at initialization and conditionally applying a branchless last-byte mix, fully preserving maximum parsing performance for standard non-colliding models.
+- **Negative Depth Boundary Safety**: Protected reader depth decrement operations in `endObject()` and `endArray()` to stay non-negative, preventing bitmask corruption under malformed or resilient parsing.
+
+### Performance
+- **Zero-Allocation Stream Decoding**: In `StreamingGhostSource.decodeToString`, eliminated a temporary `Buffer` allocation and segment copy. Now leverages Okio's `snapshot(end).substring(start, end).utf8()` directly, resulting in zero-copy range views of existing buffered segments.
+- **Pool Tier Collision**: Resolved a collision in `GhostPools.kt` where `SCRATCH_BUFFER_SIZE` (48 bytes) and `TIER_SMALL` (1024 bytes) shared the same pool slot. Added a dedicated `scratch` field to `GhostPool` to prevent buffer eviction leaks and improve recycling of intermediate parsing arrays.
+
 ## [1.1.20] - 2026-05-28
 
 ### Performance — Reader (Parser)

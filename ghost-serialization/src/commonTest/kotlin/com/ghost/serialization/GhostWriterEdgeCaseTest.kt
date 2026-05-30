@@ -250,6 +250,30 @@ class GhostWriterEdgeCaseTest {
         assertEquals("{\"v\":0.0}", json)
     }
 
+    @Test
+    fun writesNegativeZeroDouble() {
+        val json = writerToString { w -> w.beginObject().name("v").value(-0.0).endObject() }
+        assertEquals("{\"v\":-0.0}", json)
+    }
+
+    @Test
+    fun writesWithZeroCapacityWriter() {
+        val writer = com.ghost.serialization.writer.FlatByteArrayWriter(0)
+        writer.writeByte('A'.code)
+        assertEquals("A", writer.array.decodeToString(0, 1))
+    }
+
+    @Test
+    fun testPrimitiveCollectionsZeroCapacity() {
+        val intList = com.ghost.serialization.serializers.GhostIntList(0)
+        intList.add(42)
+        assertEquals(42, intList.toArray()[0])
+
+        val longList = com.ghost.serialization.serializers.GhostLongList(0)
+        longList.add(99L)
+        assertEquals(99L, longList.toArray()[0])
+    }
+
     // ── F. COMPLEX STRUCTURES ────────────────────────────────────────
 
     @Test

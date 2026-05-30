@@ -30,12 +30,10 @@ import com.ghost.serialization.parser.GhostJsonConstants.MAX_DEPTH
 import com.ghost.serialization.parser.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.MINUS
 import com.ghost.serialization.parser.GhostJsonConstants.MINUS_INT
-import com.ghost.serialization.parser.GhostJsonConstants.MINUS_ONE_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_BS
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.NULL_BS
-import com.ghost.serialization.parser.GhostJsonConstants.ONE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_BYTE
@@ -124,14 +122,12 @@ class GhostJsonWriter(
      * Automatically handles comma insertion and indentation tracking.
      */
     fun beginObject(): GhostJsonWriter {
-        val d = depth
-        if (d >= MAX_DEPTH) {
-            throwDepthError()
-        }
+        val localDepth = depth
+        if (localDepth >= MAX_DEPTH) throwDepthError()
         appendSeparator()
         buffer.writeByte(OPEN_OBJ_INT)
         needsComma = false
-        depth = d + 1
+        depth = localDepth + 1
         return this
     }
 
@@ -149,14 +145,14 @@ class GhostJsonWriter(
      * Starts a new JSON array.
      */
     fun beginArray(): GhostJsonWriter {
-        val d = depth
-        if (d >= MAX_DEPTH) {
+        val localDepth = depth
+        if (localDepth >= MAX_DEPTH) {
             throwDepthError()
         }
         appendSeparator()
         buffer.writeByte(OPEN_ARR_INT)
         needsComma = false
-        depth = d + 1
+        depth = localDepth + 1
         return this
     }
 
@@ -454,7 +450,8 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
         if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
-            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
+            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &&
+            !(number == 0.0 && number.toRawBits() < 0)
         ) {
             writeLongValueRawInternal(number.toLong())
             buffer.write(DOT_ZERO, 0, DOT_ZERO.size)

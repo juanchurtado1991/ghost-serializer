@@ -27,28 +27,40 @@ class JsonReaderOptions(
     @PublishedApi
     internal val dispatch = IntArray(DISPATCH_TABLE_SIZE) { -1 }
 
+    @PublishedApi
+    internal val hasCollisions: Boolean
+
     init {
+        var detectedCollision = false
+        val seen = HashSet<Long>()
+        for (bytes in rawBytes) {
+            if (bytes.isNotEmpty()) {
+                var k = 0L
+                if (bytes.size >= 1) k = k or (bytes[0].toLong() and 0xFFL)
+                if (bytes.size >= 2) k = k or ((bytes[1].toLong() and 0xFFL) shl 8)
+                if (bytes.size >= 3) k = k or ((bytes[2].toLong() and 0xFFL) shl 16)
+                if (bytes.size >= 4) k = k or ((bytes[3].toLong() and 0xFFL) shl 24)
+                val packed = k or (bytes.size.toLong() shl 32)
+                if (!seen.add(packed)) {
+                    detectedCollision = true
+                    break
+                }
+            }
+        }
+        hasCollisions = detectedCollision
+
         val tableMask = DISPATCH_TABLE_SIZE - 1
         for (index in rawBytes.indices) {
             val bytes = rawBytes[index]
-            // Note: Keeping size check for low-level consistency.
             if (bytes.isNotEmpty()) {
-                /**
-                 * Byte Packing (Multi-byte Hashing):
-                 * We treat the first 4 bytes of the field name as a single 32-bit integer.
-                 * This allows us to perform hashing math on the entire field-prefix
-                 * in a single CPU cycle, rather than comparing strings char by char.
-                 *
-                 * Layout (Little-Endian packing):
-                 * [Byte 3] [Byte 2] [Byte 1] [Byte 0]
-                 * |        |        |        |
-                 * (24-31)  (16-23)   (8-15)   (0-7)  <- Bits in 32-bit Int
-                 */
                 var key = 0
                 if (bytes.size >= 1) key = key or (bytes[0].toInt() and BYTE_MASK)
                 if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
                 if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
                 if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
+                if (hasCollisions && bytes.size >= 4) {
+                    key = key xor (bytes[bytes.size - 1].toInt() and BYTE_MASK)
+                }
 
                 /**
                  * Perfect Hash Mapping Engine.
@@ -68,7 +80,6 @@ class JsonReaderOptions(
                  * using an ultra-fast bitwise mask instead of an expensive modulo (`%`) division operator.
                  */
                 val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
-
                 // Store index if slot is available.
                 if (dispatch[perfectHashKey] == -1) dispatch[perfectHashKey] = index
             }

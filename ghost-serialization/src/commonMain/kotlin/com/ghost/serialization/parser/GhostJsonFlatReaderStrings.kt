@@ -101,7 +101,7 @@ fun GhostJsonFlatReader.readQuotedString(): String {
                         pos += C.UNICODE_HEX_LENGTH
 
                         if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
-                            if (pos + C.SURROGATE_OFFSET > limit ||
+                            if (pos + C.SURROGATE_OFFSET <= limit &&
                                 getByte(pos) == C.BACKSLASH_INT &&
                                 getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT
                             ) {

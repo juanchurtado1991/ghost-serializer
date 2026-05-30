@@ -42,7 +42,7 @@ internal object GhostDoubleFormatter {
     private const val MICROSCOPIC_DOUBLE_THRESHOLD = 1e-9
 
     /** The maximum Double value processed by the fast-path without fallback */
-    private const val MASSIVE_DOUBLE_THRESHOLD = 1e15
+    private const val MASSIVE_DOUBLE_THRESHOLD = 1e9
 
     /** The carry-over boundary for fractional scaling (10^9) */
     private const val FRAC_LIMIT = 1_000_000_000L
@@ -70,7 +70,7 @@ internal object GhostDoubleFormatter {
         var pos = offset
         var localValue = value
 
-        if (localValue < 0.0) {
+        if (value.toRawBits() < 0) {
             scratch[pos++] = C.MINUS
             localValue = -localValue
         }

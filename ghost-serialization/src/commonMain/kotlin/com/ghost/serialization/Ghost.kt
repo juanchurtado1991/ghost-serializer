@@ -454,14 +454,24 @@ object Ghost {
     }
 
     /**
-     * Deserializes JSON data from an Okio [BufferedSource] stream into an instance of type [T].
+     * Deserializes JSON data from an Okio [BufferedSource] into an instance of type [T].
      *
-     * Reads all bytes eagerly into a reusable scratch buffer to execute high-performance
-     * flat-array parsing.
+     * **⚠️ Not suitable for payloads larger than ~10 MB.**
      *
-     * @param source The BufferedSource stream containing the JSON payload.
+     * This method calls `source.request(Long.MAX_VALUE)` internally, which forces Okio to
+     * download the **entire stream into heap memory** before parsing begins. The peak RAM usage
+     * is approximately **2× the payload size** (one copy in Okio's buffer, one in the scratch
+     * array). On constrained environments such as Android, this will cause an OutOfMemoryError
+     * for large files even if the individual buffers would fit, due to heap fragmentation.
+     *
+     * For payloads that may exceed available heap, use [deserializeStreaming] instead — it reads
+     * in ~8 KB Okio segments and keeps memory usage constant regardless of file size.
+     *
+     * @param source The [BufferedSource] containing the JSON payload. Must be a bounded stream
+     *   whose total size fits comfortably within the available heap (recommended < 10 MB).
      * @return A reconstructed instance of type [T].
-     * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
+     * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or the structure is invalid.
+     * @see deserializeStreaming for O(1)-memory streaming of large files.
      */
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
@@ -486,11 +496,33 @@ object Ghost {
     }
 
     /**
+     * Deserializes JSON data from an Okio [BufferedSource] using true O(1)-memory streaming.
+     *
+     * Unlike [deserialize], this method does **not** load the entire file into memory.
+     * Okio paginates the source in ~8 KB segments on demand, making it safe for database
+     * dumps or JSON files of hundreds of megabytes with a constant memory footprint.
+     *
+     * Use [deserialize] for normal REST payloads (faster flat-array parsing).
+     * Use this method when file size may exceed available heap.
+     *
+     * @param source The BufferedSource stream containing the JSON payload.
+     * @return A reconstructed instance of type [T].
+     * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
+     */
+    @OptIn(InternalGhostApi::class)
+    inline fun <reified T : Any> deserializeStreaming(source: BufferedSource): T {
+        return ghostInternalUseSource(source) { reader ->
+            deserialize(reader)
+        }
+    }
+
+    /**
      * Deserializes the JSON [bytes] array into an instance of type [T].
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @return A reconstructed instance of type [T].
-     * @throws GhostJsonException if the JSON payload is malformed or structure is invalid.
+     * @throws com.ghost.serialization.exception.GhostJsonException
+     * if the JSON payload is malformed or structure is invalid.
      */
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
