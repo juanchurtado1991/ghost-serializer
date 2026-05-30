@@ -1,4 +1,4 @@
-# 👻 Ghost Serialization
+# 👻 Ghost Serializer
 
 **Zero-reflection, compile-time JSON serialization for Kotlin Multiplatform.**
 
