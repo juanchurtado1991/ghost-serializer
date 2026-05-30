@@ -8,6 +8,8 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
@@ -18,7 +20,9 @@ import io.ktor.utils.io.charsets.Charset
 import kotlin.reflect.KClass
 
 @OptIn(InternalGhostApi::class)
-class GhostContentConverter : ContentConverter {
+class GhostContentConverter(
+    private val configurer: ((GhostJsonFlatReader) -> Unit)? = null
+) : ContentConverter {
 
     override suspend fun serializeNullable(
         contentType: ContentType,
@@ -78,7 +82,7 @@ class GhostContentConverter : ContentConverter {
             }
 
             return ghostInternalUseFlatReader(scratch, offset) { reader ->
-
+                configurer?.invoke(reader)
                 val serializer = Ghost.getSerializer(typeInfo.type as KClass<Any>)
                     ?: Ghost.throwError("${Ghost.NOT_FOUND} ${typeInfo.type.simpleName}. ${Ghost.MISSING_ANN}")
 

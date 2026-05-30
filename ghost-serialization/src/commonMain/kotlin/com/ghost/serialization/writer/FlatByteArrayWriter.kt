@@ -60,12 +60,25 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      */
     private fun ensureCapacity(extraBytes: Int) {
         val requiredCapacity = size + extraBytes
+        if (requiredCapacity < 0) {
+            throw IllegalStateException(C.ERR_CAPACITY_OVERFLOW_PREFIX + "size=$size, extraBytes=$extraBytes")
+        }
         if (requiredCapacity > array.size) {
             var newCapacity = array.size
-            while (newCapacity < requiredCapacity) {
-                newCapacity *= BUFFER_SCALE_FACTOR
+            if (newCapacity == 0) {
+                newCapacity = INITIAL_WRITE_BUFFER_SIZE
             }
-
+            while (newCapacity < requiredCapacity) {
+                val nextCapacity = newCapacity * BUFFER_SCALE_FACTOR
+                if (nextCapacity < 0) {
+                    newCapacity = Int.MAX_VALUE
+                    break
+                }
+                newCapacity = nextCapacity
+            }
+            if (newCapacity < requiredCapacity) {
+                newCapacity = requiredCapacity
+            }
             array = array.copyOf(newCapacity)
         }
     }

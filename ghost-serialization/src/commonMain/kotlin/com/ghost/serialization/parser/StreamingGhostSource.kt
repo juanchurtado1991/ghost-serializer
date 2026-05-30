@@ -1,7 +1,6 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
-import okio.Buffer
 import okio.BufferedSource
 import okio.ByteString
 
@@ -24,11 +23,11 @@ class StreamingGhostSource(
     }
 
     override fun decodeToString(start: Int, end: Int): String {
-        val length = (end - start).toLong()
         okioSource.request(end.toLong())
-        val tempBuffer = Buffer()
-        buffer.copyTo(tempBuffer, start.toLong(), length)
-        return tempBuffer.readUtf8()
+        // snapshot(end) returns a ByteString backed by existing Okio segments — no byte copy.
+        // substring(start, end) is a zero-copy range view over that ByteString.
+        // The only unavoidable allocation is the final String produced by utf8().
+        return buffer.snapshot(end).substring(start, end).utf8()
     }
 
     override fun contentEquals(start: Int, expected: ByteString): Boolean {

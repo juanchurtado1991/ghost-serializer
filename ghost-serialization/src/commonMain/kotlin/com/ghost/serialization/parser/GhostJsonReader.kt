@@ -27,6 +27,11 @@ class GhostJsonReader(
     @PublishedApi internal var source: GhostSource,
     @PublishedApi internal var limit: Int = source.size,
     var maxDepth: Int = C.MAX_DEPTH,
+    /**
+     * When true, enables strict JSON validation: rejects unknown/unmapped fields
+     * and performs strict bitwise syntax validation on missing or duplicate commas.
+     * Defaults to false for maximum lenient parsing performance.
+     */
     var strictMode: Boolean = false,
     var coerceStringsToNumbers: Boolean = false,
     var coerceBooleans: Boolean = false,
@@ -73,6 +78,9 @@ class GhostJsonReader(
     /** Current nesting depth (object/array).
      * Incremented on begin*, decremented on end*. */
     var depth: Int = 0
+
+    @PublishedApi internal var needsCommaMask: Long = 0L
+    @PublishedApi internal var commaConsumedMask: Long = 0L
 
     /** Convenience constructor for ByteArray —
      * used by KSP-generated serializers and tests. */
@@ -164,10 +172,15 @@ class GhostJsonReader(
     fun expectByte(expected: Int) {
         if (peekNextToken() != expected) {
             throwError(
-                "Expected '${
-                    expected.toChar()
-                }' but found ${nextTokenByte.toChar()}"
+                "Expected '${Char(expected)}' but found '${Char(nextTokenByte)}'"
             )
+        }
+        if (expected == C.COMMA_INT) {
+            if (depth < C.MAX_BITMASK_DEPTH) {
+                val bit = C.BITMASK_UNIT shl depth
+                commaConsumedMask = commaConsumedMask or bit
+                needsCommaMask = needsCommaMask and bit.inv()
+            }
         }
         internalSkip(1)
     }
@@ -377,7 +390,7 @@ class GhostJsonReader(
                             pos += C.UNICODE_HEX_LENGTH
 
                             if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
-                                if (pos + C.SURROGATE_OFFSET > limit ||
+                                if (pos + C.SURROGATE_OFFSET <= limit &&
                                     getByte(pos) == C.BACKSLASH_INT &&
                                     getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT
                                 ) {
@@ -606,6 +619,8 @@ class GhostJsonReader(
         this.limit = newLimit
         this.nextTokenByte = -1
         this.depth = 0
+        this.needsCommaMask = 0L
+        this.commaConsumedMask = 0L
         this.strictMode = false
         this.coerceStringsToNumbers = false
         this.coerceBooleans = false

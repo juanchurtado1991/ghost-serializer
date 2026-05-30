@@ -19,6 +19,17 @@ interface ExpandedApiService {
 
     @GET("/no_content")
     suspend fun getNoContent(): Unit
+
+    @com.ghost.serialization.annotations.GhostStrict
+    @GET("/strict")
+    suspend fun getStrictUser(): RetrofitUser
+
+    @com.ghost.serialization.annotations.GhostCoerce
+    @GET("/coerce")
+    suspend fun getCoercedUser(): RetrofitUser
+
+    @GET("/lenient")
+    suspend fun getLenientUser(): RetrofitUser
 }
 
 @OptIn(InternalGhostApi::class)
@@ -58,5 +69,30 @@ class GhostRetrofitExpansionTest {
         mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("null"))
         val response = apiService.getEmpty()
         assertNull(response.body())
+    }
+
+    @Test
+    fun `strict endpoint throws on missing comma`() = runTest {
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}"))
+        kotlin.test.assertFailsWith<Exception> {
+            apiService.getStrictUser()
+        }
+    }
+
+    @Test
+    fun `lenient endpoint passes on missing comma`() = runTest {
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}"))
+        val user = apiService.getLenientUser()
+        assertEquals(1, user.id)
+        assertEquals("John", user.name)
+    }
+
+    @Test
+    fun `coerced endpoint coerces primitive values`() = runTest {
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{\"id\":\"42\", \"name\":\"John\", \"isActive\":\"true\"}"))
+        val user = apiService.getCoercedUser()
+        assertEquals(42, user.id)
+        assertEquals("John", user.name)
+        assertEquals(true, user.isActive)
     }
 }

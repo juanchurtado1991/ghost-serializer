@@ -31,7 +31,19 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
 
     override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
         val bytes = inputMessage.body.readBytes()
-        return Ghost.decodeFromBytes(bytes, clazz.kotlin)
+        val isStrict = GhostSpringConfig.strict.get()
+        val isCoerce = GhostSpringConfig.coerce.get()
+        @Suppress("UNCHECKED_CAST")
+        return com.ghost.serialization.ghostInternalUseFlatReader(bytes) { reader ->
+            reader.strictMode = isStrict
+            if (isCoerce) {
+                reader.coerceStringsToNumbers = true
+                reader.coerceBooleans = true
+            }
+            val serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
+                ?: Ghost.throwError("${Ghost.NOT_FOUND} ${clazz.simpleName}")
+            serializer.deserialize(reader)
+        }
     }
 
     override fun writeInternal(t: Any, outputMessage: HttpOutputMessage) {

@@ -4,9 +4,9 @@
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.png?style=flat)](https://github.com/google/ksp)
-![Version](https://img.shields.io/badge/version-1.1.20-brightgreen.png?style=flat)
+![Version](https://img.shields.io/badge/version-1.2.0-brightgreen.png?style=flat)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.png?style=flat)
-![Tests](https://img.shields.io/badge/tests-642%2B%20passing-success.png?style=flat)
+![Tests](https://img.shields.io/badge/tests-667%2B%20passing-success.png?style=flat)
 
 [![Ghost Compiler Lab - Interactive Demo](https://img.shields.io/badge/Ghost_Compiler_Lab-Interactive_Demo-38bdf8.png?style=flat)](https://juanchurtado1991.github.io/ghost-serializer/)  
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
@@ -14,7 +14,7 @@
 
 *Perfect Hash O(1) · Bitmask Tracking · Zero-Alloc Key Matching · Constructor Dispatch*
 
-**642** tests = `./gradlew ciTest` on Linux/Windows. **~874** on macOS with Xcode.
+**667** tests = `./gradlew ciTest` on Linux/Windows. **~892** on macOS with Xcode.
 
 
 ---
@@ -23,7 +23,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Current release:** `1.1.20` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Current release:** `1.2.0` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
@@ -81,40 +81,38 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.043 ±0.008** | **51.3** | **0.040 ±0.006** | **24.8** | **0.041 ±0.005** | **24.8** |
-| Gson | 0.097 ±0.009 | 164.0 | 0.092 ±0.008 | 164.0 | 0.095 ±0.022 | 173.5 |
-| KSerialization | 0.108 ±0.010 | 194.4 | 0.107 ±0.017 | 194.4 | 0.180 ±0.025 | 194.5 |
-| Moshi | 0.177 ±0.026 | 324.4 | 0.174 ±0.024 | 324.4 | 0.156 ±0.013 | 324.4 |
-| Jackson | 0.248 ±0.031 | 700.7 | 0.241 ±0.033 | 700.7 | 0.241 ±0.037 | 700.8 |
+| **Ghost** | **0.048 ±0.010** | **51.3** | **0.044 ±0.006** | **24.8** | **0.045 ±0.010** | **24.8** |
+| Gson | 0.096 ±0.016 | 164.1 | 0.093 ±0.009 | 164.1 | 0.095 ±0.016 | 173.5 |
+| KSerialization | 0.103 ±0.011 | 194.4 | 0.101 ±0.017 | 194.4 | 0.176 ±0.014 | 194.5 |
+| Moshi | 0.171 ±0.018 | 319.7 | 0.169 ±0.022 | 319.7 | 0.156 ±0.017 | 319.7 |
+| Jackson | 0.237 ±0.029 | 696.0 | 0.226 ±0.023 | 696.0 | 0.226 ±0.030 | 696.1 |
 
 ### Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.339 ±0.038** | **390.9** | **0.326 ±0.034** | **213.4** | **0.345 ±0.029** | **334.2** |
-| Gson | 0.598 ±0.061 | 1343.8 | 0.596 ±0.058 | 1343.8 | 0.616 ±0.078 | 1366.6 |
-| KSerialization | 0.767 ±0.077 | 1883.5 | 0.765 ±0.076 | 1883.5 | 1.365 ±0.104 | 2004.4 |
-| Moshi | 1.336 ±0.119 | 3084.6 | 1.356 ±0.138 | 3084.6 | 1.220 ±0.123 | 3084.5 |
-| Jackson | 2.294 ±0.191 | 6897.7 | 2.216 ±0.187 | 6897.7 | 2.254 ±0.185 | 6897.8 |
+| **Ghost** | **0.370 ±0.033** | **391.0** | **0.356 ±0.025** | **213.4** | **0.377 ±0.029** | **334.3** |
+| Gson | 0.610 ±0.059 | 1343.8 | 0.605 ±0.050 | 1343.8 | 0.615 ±0.048 | 1366.7 |
+| KSerialization | 0.748 ±0.062 | 1883.5 | 0.746 ±0.064 | 1883.5 | 1.356 ±0.095 | 2004.4 |
+| Moshi | 1.335 ±0.095 | 3037.6 | 1.330 ±0.099 | 3037.6 | 1.225 ±0.098 | 3037.6 |
+| Jackson | 2.209 ±0.152 | 6850.8 | 2.106 ±0.157 | 6850.8 | 2.120 ±0.167 | 6850.9 |
 
 ### Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.082 ±0.015** | **92.7** | **0.080 ±0.008** | **92.7** | **0.081 ±0.011** | **96.7** |
-| KSerialization | 0.133 ±0.024 | 202.6 | 0.134 ±0.023 | 263.9 | 0.216 ±0.016 | 205.6 |
-| Jackson | 0.201 ±0.018 | 396.2 | 0.153 ±0.019 | 249.7 | 0.151 ±0.024 | 303.5 |
-| Gson | 0.343 ±0.038 | 551.3 | 0.338 ±0.033 | 643.9 | 0.777 ±0.106 | 3908.6 |
-| Moshi | 0.396 ±0.038 | 630.7 | 0.393 ±0.034 | 723.3 | 0.379 ±0.036 | 445.5 |
+| **Ghost** | **0.083 ±0.022** | **92.7** | **0.081 ±0.014** | **92.7** | **0.083 ±0.015** | **96.7** |
+| KSerialization | 0.124 ±0.012 | 202.6 | 0.125 ±0.016 | 263.9 | 0.210 ±0.019 | 205.6 |
+| Jackson | 0.196 ±0.026 | 396.2 | 0.157 ±0.024 | 249.8 | 0.158 ±0.019 | 303.6 |
+| Gson | 0.320 ±0.023 | 574.9 | 0.322 ±0.028 | 667.5 | 0.739 ±0.101 | 3932.1 |
+| Moshi | 0.366 ±0.030 | 630.8 | 0.370 ±0.033 | 723.4 | 0.356 ±0.027 | 445.5 |
 
 ### Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.002 ±0.005** | 0.007 | 0.006 | 0.008 | 0.011 |
-| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.017 | 0.023 | 0.034 |
-
-**Ghost is #1 in all 11 categories.** Under peak load, Ghost performs up to **6.6x faster** than the competition (consistently ~4x faster than Moshi) and allocates up to **17x less memory** (consistently 4x to 17x less heap). The STDEV values confirm the measurements are stable under load.
+| Deep Nesting — 20 levels (ms) | **0.003 ±0.007** | 0.005 | 0.006 | 0.006 | 0.010 |
+| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.017 | 0.022 | 0.032 |
 
 ### Ghost Special Features
 
@@ -122,11 +120,11 @@ These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson
 
 | Feature | µs/op | B/op |
 |:---|:---:|:---:|
-| Polymorphism — Sealed Class Dispatch | **0.47** | 436 |
+| Polymorphism — Sealed Class Dispatch | **0.41** | 436 |
 | Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.22** | 128 |
-| Resilience — `@GhostResilient` (type mismatch recovery) | **1.43** | 2116 |
-| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **0.98** | 16748 |
-| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.24** | 376 |
+| Resilience — `@GhostResilient` (type mismatch recovery) | **1.35** | 2116 |
+| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **2.35** | 16780 |
+| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.39** | 376 |
 
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.
@@ -201,7 +199,7 @@ Ghost is published to **Maven Central** (`com.ghostserializer`).
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.1.20"
+ghost = "1.2.0"
 ksp = "1.9.24-1.0.20" # match your Kotlin version
 
 [libraries]
@@ -240,7 +238,7 @@ The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler art
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
-    id("com.ghostserializer.ghost") version "1.1.20"
+    id("com.ghostserializer.ghost") version "1.2.0"
 }
 ```
 
@@ -286,6 +284,24 @@ val json: String = Ghost.encodeToString(user)
 val bytes: ByteArray = Ghost.encodeToBytes(user)
 ```
 
+#### Flat Deserialization vs. Streaming Deserialization
+
+When deserializing from an Okio `BufferedSource`, you must choose between flat and streaming modes based on payload size:
+
+##### 1. Flat Deserialization (`Ghost.deserialize(source: BufferedSource)`)
+Loads and flattens the entire stream into a contiguous `ByteArray` before parsing.
+- **When to use**: Standard API responses (typically < 10 MB). This is the default and fastest method because it utilizes the high-performance flat reader with zero-allocation thread-local pools.
+- **Limitations**:
+  - Do not use for payloads exceeding **~10 MB**.
+  - Forces Okio to load the entire stream into memory. Peak RAM is roughly **2x the payload size** (Okio buffer + scratch array), which can cause `OutOfMemoryError` on Android due to heap fragmentation.
+
+##### 2. Streaming Deserialization (`Ghost.deserializeStreaming(source: BufferedSource)`)
+Reads and parses the JSON stream on the fly in ~8 KB segments without flattening.
+- **When to use**: Large database dumps, file imports, or payloads where size is unpredictable and could exceed available memory.
+- **Limitations**:
+  - Slightly lower throughput and higher temporary allocations/GC pressure during execution due to Okio segment object overhead and virtual dispatch checks.
+  - Guarantees **true O(1) memory usage** that remains constant regardless of the total JSON file size.
+
 ### 4. With Retrofit
 
 ```kotlin
@@ -302,6 +318,28 @@ val retrofit = Retrofit.Builder()
     .build()
 
 val api = retrofit.create(UserApi::class.java)
+```
+
+#### Declarative Network Customization
+
+You can use `@GhostStrict` and `@GhostCoerce` directly on your Retrofit API service methods for granular control of parsing rules:
+
+```kotlin
+interface UserApi {
+    // 1. Lenient (Default): Bypasses all bitwise comma validation for maximum par speed (same as 1.1.20)
+    @GET("users/lenient")
+    suspend fun getStandardUsers(): List<User>
+
+    // 2. Strict Comma & Format Validation: Enforces correct comma placements and rejects trailing commas
+    @GhostStrict
+    @GET("users/strict")
+    suspend fun getStrictUsers(): List<User>
+
+    // 3. Coercion: Automatically parses stringified values (e.g. "42", "true") into primitive fields
+    @GhostCoerce
+    @GET("users/coerce")
+    suspend fun getCoercedUsers(): List<User>
+}
 ```
 
 > [!TIP]
@@ -356,6 +394,17 @@ Interpret `0` and `1` as `false` and `true` (useful for legacy APIs):
 ```kotlin
 val user = Ghost.deserialize<User>(json) {
     it.coerceBooleans = true
+}
+```
+
+#### 4. Strict Mode (`strictMode`)
+By default, Ghost runs in highly optimized **lenient mode** to guarantee maximum parsing speed (bypassing strict comma checks and ignoring unknown JSON fields). 
+
+If your application requires strict RFC 8259 syntax compliance (e.g. throwing exceptions on missing or duplicate commas, or rejecting unknown DTO fields at the networking layer), enable `strictMode`:
+
+```kotlin
+val user = Ghost.deserialize<User>(json) {
+    it.strictMode = true // Strict JSON validation & unknown key rejection
 }
 ```
 
@@ -469,7 +518,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.1.20"
+    id("com.ghostserializer.ghost") version "1.2.0"
 }
 
 kotlin {
@@ -655,7 +704,18 @@ dependencies {
 ```kotlin
 val client = HttpClient {
     install(ContentNegotiation) {
-        ghost() // registers Ghost as the JSON engine
+        ghost() // registers Ghost as the JSON engine (Default: lenient)
+    }
+}
+
+// Or configure strict mode & coercion dynamically for your KMP client:
+val strictClient = HttpClient {
+    install(ContentNegotiation) {
+        ghost { reader ->
+            reader.strictMode = true
+            reader.coerceStringsToNumbers = true
+            reader.coerceBooleans = true
+        }
     }
 }
 
@@ -672,7 +732,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.1.20")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.0")
 }
 ```
 
@@ -713,6 +773,34 @@ class UserController(private val userService: UserService) {
     @GetMapping("/{id}")
     fun getUser(@PathVariable id: Long): UserResponse {
         return userService.findById(id)
+    }
+}
+```
+
+#### Declarative Controller Customization
+
+You can use `@GhostStrict` and `@GhostCoerce` at the class (Controller), method (Endpoint), or parameter (`@RequestBody`) levels:
+
+```kotlin
+@RestController
+@RequestMapping("/users")
+class UserController(private val userService: UserService) {
+
+    // 1. Strict Request Parameter: Forces strict comma/syntax validation for this parameter
+    @PostMapping("/strict")
+    fun createUserStrict(
+        @RequestBody @GhostStrict request: CreateUserRequest
+    ): UserResponse {
+        return userService.create(request)
+    }
+
+    // 2. Coerce Endpoint: Automatically coerces stringified inputs into primitives for this endpoint
+    @GhostCoerce
+    @PostMapping("/coerce")
+    fun createUserCoerced(
+        @RequestBody request: CreateUserRequest
+    ): UserResponse {
+        return userService.create(request)
     }
 }
 ```

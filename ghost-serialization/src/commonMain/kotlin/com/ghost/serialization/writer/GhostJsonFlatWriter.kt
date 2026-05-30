@@ -447,7 +447,8 @@ class GhostJsonFlatWriter @InternalGhostApi internal constructor(
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
         if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
-            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE
+            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &&
+            !(number == 0.0 && number.toRawBits() < 0)
         ) {
             writeLongValueRawInternal(number.toLong())
             buffer.writeDotZero()

@@ -204,7 +204,9 @@ private inline fun GhostJsonFlatReader.parseExponentValue(): Int {
     while (position < limit) {
         val currentByteInt = getByte(position)
         if (isDigit(currentByteInt)) {
-            expValue = expValue * C.BASE_TEN + (currentByteInt - C.ZERO_INT)
+            if (expValue < C.EXPONENT_CLAMP_THRESHOLD) {
+                expValue = expValue * C.BASE_TEN + (currentByteInt - C.ZERO_INT)
+            }
             hasExpDigits = true
             position++
         } else {
@@ -331,7 +333,7 @@ private fun GhostJsonFlatReader.handleLeadingZero() {
     val nextCursor = position + 1
     if (nextCursor < limit) {
         val nextDigitByte = getByte(nextCursor)
-        if ((C.DIGIT_BITMASK shr nextDigitByte) and C.BYTE_SHIFT_UNIT != C.RESULT_NONE) {
+        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {
             throwError(C.ERR_LEADING_ZEROS)
         }
     }
@@ -458,7 +460,8 @@ private inline fun GhostJsonFlatReader.calculateLongWithOverflowCheck(
     digitValue: Int,
     isNegative: Boolean
 ): Long {
-    if (current > C.LONG_OVERFLOW_LIMIT ||
+    if (current == Long.MIN_VALUE ||
+        current > C.LONG_OVERFLOW_LIMIT ||
         (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)
     ) {
         if (isNegative && current == C.LONG_OVERFLOW_LIMIT &&
@@ -479,7 +482,7 @@ private fun GhostJsonFlatReader.validateLeadingZero() {
         position + 1 < limit
     ) {
         val nextDigitByte = getByte(position + 1)
-        if ((C.DIGIT_BITMASK shr nextDigitByte) and 1L != 0L) {
+        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {
             throwError(C.ERR_LEADING_ZEROS)
         }
     }

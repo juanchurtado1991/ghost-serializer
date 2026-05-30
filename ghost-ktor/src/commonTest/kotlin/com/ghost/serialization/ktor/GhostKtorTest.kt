@@ -231,4 +231,52 @@ class GhostKtorTest {
             client.get("/empty").body<KtorUser>()
         }
     }
+
+    @Test
+    fun testStrictConfiguredKtorConverterThrowsOnMissingComma() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = """{"id":42 "name":"John", "isActive":true}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                register(ContentType.Application.Json, GhostContentConverter { reader ->
+                    reader.strictMode = true
+                })
+            }
+        }
+
+        assertFailsWith<Exception> {
+            client.get("/user").body<KtorUser>()
+        }
+    }
+
+    @Test
+    fun testCoercedConfiguredKtorConverterCoercesValues() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = """{"id":"42", "name":"John", "isActive":"true"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                register(ContentType.Application.Json, GhostContentConverter { reader ->
+                    reader.coerceStringsToNumbers = true
+                    reader.coerceBooleans = true
+                })
+            }
+        }
+
+        val user: KtorUser = client.get("/user").body()
+        assertEquals(42, user.id)
+        assertEquals("John", user.name)
+        assertEquals(true, user.isActive)
+    }
 }

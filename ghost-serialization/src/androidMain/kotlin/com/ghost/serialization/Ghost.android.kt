@@ -13,10 +13,10 @@ import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 
-
 private val writerPool = ThreadLocal<WriterSinkPair>()
 private val readerPool = ThreadLocal<GhostJsonReader>()
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
+private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
 
@@ -107,13 +107,15 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    source.request(Long.MAX_VALUE)
-    val bytes = source.buffer.readByteArray()
-    val reader = readerPool.get()
-        ?: GhostJsonReader(bytes)
-            .also { readerPool.set(it) }
+    // Separate pool from readerPool to prevent re-entrancy corruption if the
+    // same thread nests a ByteArray read inside a streaming read.
+    val reader = sourceReaderPool.get()
+        ?: GhostJsonReader(source)
+            .also { sourceReaderPool.set(it) }
 
-    reader.reset(bytes)
+    // reset(BufferedSource) wraps source in a StreamingGhostSource — Okio pulls
+    // data in 8 KB segments on demand instead of loading the entire payload.
+    reader.reset(source)
     return block(reader)
 }
 

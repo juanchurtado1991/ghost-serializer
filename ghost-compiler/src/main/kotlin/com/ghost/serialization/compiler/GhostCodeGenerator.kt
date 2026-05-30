@@ -59,15 +59,26 @@ internal class GhostCodeGenerator(
         .simpleNames
         .joinToString(C.STR_UNDERSCORE)
 
-    // For a sealed subclass, this is the value written as the discriminator (i.e. the subclass name).
-    // This is different from sealedDiscriminatorKey which is the JSON field name on the parent sealed class.
-    private val discriminator = if (
-        !isSealed &&
-        !isValue &&
-        classDeclaration.parentDeclaration is KSClassDeclaration &&
-        (classDeclaration.parentDeclaration as KSClassDeclaration)
-            .modifiers.contains(Modifier.SEALED)
-    ) {
+    private val parentSealedClass: KSClassDeclaration? = run {
+        if (isSealed || isValue || isEnum) null else {
+            val parentDecl = classDeclaration.parentDeclaration as? KSClassDeclaration
+            if (parentDecl != null && parentDecl.modifiers.contains(Modifier.SEALED)) {
+                parentDecl
+            } else {
+                var found: KSClassDeclaration? = null
+                for (superType in classDeclaration.superTypes) {
+                    val resolved = superType.resolve().declaration as? KSClassDeclaration
+                    if (resolved != null && resolved.modifiers.contains(Modifier.SEALED)) {
+                        found = resolved
+                        break
+                    }
+                }
+                found
+            }
+        }
+    }
+
+    private val discriminator = if (parentSealedClass != null) {
         classDeclaration.simpleName.asString()
     } else {
         null
@@ -78,15 +89,9 @@ internal class GhostCodeGenerator(
     // sealed class annotation, not on the subclass. When the current class IS the sealed class,
     // it reads from its own annotation. Defaults to "type" if not set.
     private val sealedDiscriminatorKey: String = run {
-        val annotationSource = if (discriminator != null) {
-            // Current class is a subclass — look at the parent sealed class
-            classDeclaration.parentDeclaration as? KSClassDeclaration
-        } else {
-            // Current class is the sealed class itself
-            classDeclaration
-        }
-        annotationSource?.annotations
-            ?.find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+        val annotationSource = parentSealedClass ?: classDeclaration
+        annotationSource.annotations
+            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
             ?.arguments
             ?.find { it.name?.asString() == C.ARG_DISCRIMINATOR }
             ?.value as? String

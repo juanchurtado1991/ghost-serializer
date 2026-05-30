@@ -18,10 +18,12 @@ import com.ghost.serialization.parser.nextKey
 import com.ghost.serialization.parser.nextLong
 import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.parser.readList
+import com.ghost.serialization.parser.decodeResilient
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.assertNull
 
 @OptIn(InternalGhostApi::class)
 class GhostReaderEdgeCaseTest {
@@ -111,6 +113,15 @@ class GhostReaderEdgeCaseTest {
         reader.nextKey().unused()
         reader.consumeKeySeparator()
         assertFailsWith<GhostJsonException> { reader.nextInt() }
+    }
+
+    @Test
+    fun longOverflowNegativeThrowsException() {
+        val reader = readerOf("{\"v\":-92233720368547758089}")
+        reader.beginObject()
+        reader.nextKey().unused()
+        reader.consumeKeySeparator()
+        assertFailsWith<GhostJsonException> { reader.nextLong() }
     }
 
     // ── B. MALFORMATIONS & DoS ───────────────────────────────────────
@@ -346,5 +357,77 @@ class GhostReaderEdgeCaseTest {
     fun peeksEndDocument() {
         val reader = readerOf("")
         assertEquals(-1, reader.peekNextToken())
+    }
+
+    @Test
+    fun testResilientDecoderDepthLeak() {
+        val json = "{\"v\":{\"nested\": 42}}"
+        val reader = readerOf(json)
+        reader.beginObject()
+        reader.nextKey().unused()
+        reader.consumeKeySeparator()
+        assertEquals(1, reader.depth)
+        
+        // Try parsing nested object's int value as a string (throws non-structural exception)
+        val result = reader.decodeResilient {
+            reader.beginObject()
+            reader.nextKey().unused()
+            reader.consumeKeySeparator()
+            reader.nextString()
+            reader.endObject()
+        }
+        assertNull(result)
+        // Depth should be restored to 1 even after exception
+        assertEquals(1, reader.depth)
+    }
+
+    @Test
+    fun testSurrogateBoundaryCheck() {
+        // High surrogate \uD83D without low surrogate at the end of string
+        val json = "{\"v\":\"abc\\uD83D\"}"
+        val reader = readerOf(json)
+        reader.beginObject()
+        reader.nextKey().unused()
+        reader.consumeKeySeparator()
+        assertFailsWith<GhostJsonException> { reader.nextString() }
+    }
+
+    @Test
+    fun testPoolTierCollision() {
+        val scratch = acquireScratchBuffer(48)
+        val small = acquireScratchBuffer(1024)
+        assertEquals(48, scratch.size)
+        assertEquals(1024, small.size)
+        
+        releaseScratchBuffer(scratch)
+        releaseScratchBuffer(small)
+        
+        val scratch2 = acquireScratchBuffer(48)
+        val small2 = acquireScratchBuffer(1024)
+        assertEquals(48, scratch2.size)
+        assertEquals(1024, small2.size)
+    }
+
+    @Test
+    fun testStrictCommaEnforcement() {
+        val reader1 = readerOf("{\"a\": 1 \"b\": 2}")
+        reader1.strictMode = true
+        reader1.beginObject()
+        assertEquals("a", reader1.nextKey())
+        reader1.consumeKeySeparator()
+        assertEquals(1, reader1.nextInt())
+        assertFailsWith<GhostJsonException> { reader1.nextKey() }
+
+        val reader2 = readerOf("[1 2 3]")
+        reader2.strictMode = true
+        reader2.beginArray()
+        assertEquals(1, reader2.nextInt())
+        assertFailsWith<GhostJsonException> { reader2.consumeArraySeparator() }
+    }
+
+    @Test
+    fun testLeadingZeroValidationCorrectness() {
+        val reader = readerOf("0p")
+        assertEquals(0, reader.nextInt())
     }
 }

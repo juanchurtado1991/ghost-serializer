@@ -19,11 +19,52 @@ private var cachedReader: GhostJsonReader? = null
 private var cachedFlatReader: GhostJsonFlatReader? = null
 
 @ThreadLocal
+private var cachedSourceReader: GhostJsonReader? = null
+
+@ThreadLocal
 private var cachedWriterPair: WriterSinkPair? = null
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
-actual fun <K, V> createAtomicMap(): MutableMap<K, V> = mutableMapOf()
+/**
+ * Thread-safe map for Kotlin/Native (iOS).
+ *
+ * All mutations and reads are guarded by [objc_sync_enter]/[objc_sync_exit] — the same
+ * Objective-C @synchronized primitive used by [runSynchronized]. This guarantees
+ * correct visibility under K/N's new memory model where objects are shareable across threads.
+ *
+ * [entries], [keys] and [values] return **snapshots** (copies) so that callers iterating
+ * outside the lock cannot observe concurrent structural modifications.
+ */
+private class IosConcurrentMap<K, V> : MutableMap<K, V> {
+    private val delegate = mutableMapOf<K, V>()
+    private val lock = Any()
+
+    private inline fun <T> withLock(block: () -> T): T {
+        objc_sync_enter(lock)
+        return try { block() } finally { objc_sync_exit(lock) }
+    }
+
+    override val size: Int get() = withLock { delegate.size }
+    override fun isEmpty(): Boolean = withLock { delegate.isEmpty() }
+    override fun containsKey(key: K): Boolean = withLock { delegate.containsKey(key) }
+    override fun containsValue(value: V): Boolean = withLock { delegate.containsValue(value) }
+    override fun get(key: K): V? = withLock { delegate[key] }
+    override fun put(key: K, value: V): V? = withLock { delegate.put(key, value) }
+    override fun remove(key: K): V? = withLock { delegate.remove(key) }
+    override fun putAll(from: Map<out K, V>) = withLock { delegate.putAll(from) }
+    override fun clear() = withLock { delegate.clear() }
+
+    // Snapshots — callers iterate a frozen copy, never the live internal set.
+    override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
+        get() = withLock { delegate.entries.toMutableSet() }
+    override val keys: MutableSet<K>
+        get() = withLock { delegate.keys.toMutableSet() }
+    override val values: MutableCollection<V>
+        get() = withLock { delegate.values.toMutableList() }
+}
+
+actual fun <K, V> createAtomicMap(): MutableMap<K, V> = IosConcurrentMap()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = try {
     objc_sync_enter(lock)
@@ -61,14 +102,15 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    source.request(Long.MAX_VALUE)
-    val bytes = source.buffer.readByteArray()
+    // Separate pool from cachedReader to prevent re-entrancy corruption if the
+    // same thread nests a ByteArray read inside a streaming read.
+    val reader = cachedSourceReader
+        ?: GhostJsonReader(source)
+            .also { cachedSourceReader = it }
 
-    val reader = cachedReader
-        ?: GhostJsonReader(bytes)
-            .also { cachedReader = it }
-
-    reader.reset(bytes)
+    // reset(BufferedSource) wraps source in a StreamingGhostSource — Okio pulls
+    // data in 8 KB segments on demand instead of loading the entire payload.
+    reader.reset(source)
     return block(reader)
 }
 
