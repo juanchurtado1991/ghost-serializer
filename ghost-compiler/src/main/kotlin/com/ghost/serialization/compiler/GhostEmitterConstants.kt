@@ -28,8 +28,13 @@ internal object GhostEmitterConstants {
     const val STR_ZERO_F = "0.0f"
     const val VAL_ZERO = 0
     const val VAL_ONE = 1
+    const val VAL_TWO = 2
+    const val VAL_THREE = 3
+    const val VAL_FOUR = 4
     const val VAL_ZERO_L = 0L
     const val VAL_ONE_L = 1L
+    const val BIT_SHIFT_32 = 32
+    const val LONG_BYTE_MASK = 0xFFL
     const val STR_FALSE = "false"
     const val STR_CURLY_OPEN = "{"
     const val STR_CURLY_CLOSE = "}"

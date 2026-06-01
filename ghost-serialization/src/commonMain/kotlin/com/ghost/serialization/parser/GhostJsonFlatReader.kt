@@ -615,6 +615,7 @@ class GhostJsonFlatReader(
             key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)
             if (hasCollisions) {
                 key = key xor (rawData[start + length - 1].toInt() and C.BYTE_MASK)
+                key = key xor (rawData[start + (length shr C.SINGLE_CHAR_SIZE)].toInt() and C.BYTE_MASK)
             }
         } else {
             if (length >= 1) {
