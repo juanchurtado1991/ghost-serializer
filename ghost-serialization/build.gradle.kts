@@ -28,7 +28,6 @@ kotlin {
             dependencies {
                 api(project(":ghost-api"))
                 api(libs.okio)
-                implementation(libs.kotlinx.serialization.json)
             }
         }
 
