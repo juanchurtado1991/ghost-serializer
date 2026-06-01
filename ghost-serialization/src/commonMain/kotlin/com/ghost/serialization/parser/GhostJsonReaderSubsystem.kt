@@ -3,6 +3,7 @@
 
 package com.ghost.serialization.parser
 
+
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
@@ -520,6 +521,7 @@ private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollision
                 (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
             key = key xor getByte(start + length - 1)
+            key = key xor getByte(start + (length shr C.SINGLE_CHAR_SIZE))
         }
     } else {
         if (length >= 1) key = key or getByte(start)

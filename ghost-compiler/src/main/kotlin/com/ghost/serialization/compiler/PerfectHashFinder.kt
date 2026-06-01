@@ -44,6 +44,24 @@ internal object PerfectHashFinder {
             it.encodeToByteArray()
         }
 
+        // Mirror the runtime JsonReaderOptions collision detection logic
+        var hasCollisions = false
+        val seen = HashSet<Long>()
+        for (bytes in rawBytes) {
+            if (bytes.isNotEmpty()) {
+                var k = 0L
+                if (bytes.size >= C.VAL_ONE) k = k or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
+                if (bytes.size >= C.VAL_TWO) k = k or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
+                if (bytes.size >= C.VAL_THREE) k = k or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
+                if (bytes.size >= C.VAL_FOUR) k = k or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
+                val packed = k or (bytes.size.toLong() shl C.BIT_SHIFT_32)
+                if (!seen.add(packed)) {
+                    hasCollisions = true
+                    break
+                }
+            }
+        }
+
         // Brute force search for a collision-free multiplier and shift for 4-byte hashing
         for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
             for (shift in 0..C.HASH_SHIFT_LIMIT) {
@@ -53,17 +71,21 @@ internal object PerfectHashFinder {
                     val bytes = rawBytes[index]
                     if (bytes.isNotEmpty()) {
                         var key = 0
-                        if (bytes.size >= 1) {
-                            key = key or (bytes[0].toInt() and C.BYTE_MASK)
+                        if (bytes.size >= C.VAL_ONE) {
+                            key = key or (bytes[C.VAL_ZERO].toInt() and C.BYTE_MASK)
                         }
-                        if (bytes.size >= 2) {
-                            key = key or ((bytes[1].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
+                        if (bytes.size >= C.VAL_TWO) {
+                            key = key or ((bytes[C.VAL_ONE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
                         }
-                        if (bytes.size >= 3) {
-                            key = key or ((bytes[2].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
+                        if (bytes.size >= C.VAL_THREE) {
+                            key = key or ((bytes[C.VAL_TWO].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
                         }
-                        if (bytes.size >= 4) {
-                            key = key or ((bytes[3].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
+                        if (bytes.size >= C.VAL_FOUR) {
+                            key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
+                        }
+                        if (hasCollisions && bytes.size >= C.VAL_FOUR) {
+                            key = key xor (bytes[bytes.size - C.VAL_ONE].toInt() and C.BYTE_MASK)
+                            key = key xor (bytes[bytes.size shr C.VAL_ONE].toInt() and C.BYTE_MASK)
                         }
 
                         val hash = ((key * multiplier + bytes.size) shr shift) and C.HASH_MASK

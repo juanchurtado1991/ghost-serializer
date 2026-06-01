@@ -6,6 +6,8 @@ import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_16
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_24
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
+import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_HEX_LENGTH
+import com.ghost.serialization.parser.GhostJsonConstants.SINGLE_CHAR_SIZE
 
 /**
  * Dispatch options for optimized JSON field identification.
@@ -57,9 +59,10 @@ class JsonReaderOptions(
                 if (bytes.size >= 1) key = key or (bytes[0].toInt() and BYTE_MASK)
                 if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
                 if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
-                if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
-                if (hasCollisions && bytes.size >= 4) {
+                if (bytes.size >= UNICODE_HEX_LENGTH) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
+                if (hasCollisions && bytes.size >= UNICODE_HEX_LENGTH) {
                     key = key xor (bytes[bytes.size - 1].toInt() and BYTE_MASK)
+                    key = key xor (bytes[bytes.size shr SINGLE_CHAR_SIZE].toInt() and BYTE_MASK)
                 }
 
                 /**
@@ -87,6 +90,7 @@ class JsonReaderOptions(
     }
 
     companion object {
+
         /**
          * Creates an optimized options configuration for a predefined set of field names.
          *
