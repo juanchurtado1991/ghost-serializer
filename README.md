@@ -77,6 +77,25 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 > **Methodology**: Single JVM process. 5,000-iteration JIT warmup. 10,000 measured runs. Results are statistical averages ± standard deviation. Memory is measured via `ThreadMXBean.getThreadAllocatedBytes` (heap bytes allocated per call, not retained). Tested on JVM HotSpot.
 
+### Twitter Macro Dataset
+
+Below are the benchmark results on the [twitter_macro.json](file:///home/juan/AndroidStudioProjects/ghost-serializer/ghost-benchmark/src/main/resources/twitter_macro.json) dataset comparing Ghost with KotlinX Serialization (KSER) across String, Bytes, and Streaming modes:
+
+| Operation | Engine | Throughput (ops/s) | Mem (KB/op) |
+| :--- | :---: | :---: | :---: |
+| **Decode (String)** | KSER | **1092.1** | **1337.6** |
+| | Ghost | 744.9 | 2930.9 |
+| **Decode (Bytes)** | **Ghost** | **1156.3** | **650.3** |
+| | KSER | 664.4 | 4297.0 |
+| **Decode (Streaming)** | **Ghost** | **435.5** | **650.3** |
+| | KSER | 304.7 | 4297.0 |
+| **Encode (String)** | KSER | **2969.9** | **981.6** |
+| | Ghost | 1189.9 | 1984.6 |
+| **Encode (Bytes)** | **Ghost** | **2152.7** | **428.0** |
+| | KSER | 1646.4 | 2216.3 |
+| **Encode (Streaming)** | **Ghost** | **2150.3** | **434.6** |
+| | KSER | 1406.4 | 464.5 |
+
 ### Deserialization — 200 objects (LIST_MEDIUM)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
@@ -125,39 +144,6 @@ These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson
 | Resilience — `@GhostResilient` (type mismatch recovery) | **1.62** | 2172 |
 | Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **1.01** | 16780 |
 | Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.26** | 376 |
-
-### Twitter Macro Dataset
-
-Below are the benchmark results on the **Twitter Macro Dataset** comparing Ghost with KotlinX Serialization (KSER) across String, Bytes, and Streaming modes:
-
-| Operation | Engine | Throughput (ops/s) | Mem (KB/op) |
-| :--- | :---: | :---: | :---: |
-| **Decode (String)** | KSER | **1092.1** | **1337.6** |
-| | Ghost | 744.9 | 2930.9 |
-| **Decode (Bytes)** | **Ghost** | **1156.3** | **650.3** |
-| | KSER | 664.4 | 4297.0 |
-| **Decode (Streaming)** | **Ghost** | **435.5** | **650.3** |
-| | KSER | 304.7 | 4297.0 |
-| **Encode (String)** | KSER | **2969.9** | **981.6** |
-| | Ghost | 1189.9 | 1984.6 |
-| **Encode (Bytes)** | **Ghost** | **2152.7** | **428.0** |
-| | KSER | 1646.4 | 2216.3 |
-| **Encode (Streaming)** | **Ghost** | **2150.3** | **434.6** |
-| | KSER | 1406.4 | 464.5 |
-
-#### Architectural Analysis & Trade-Offs
-
-The Twitter Macro dataset highlights the trade-offs of Ghost's byte-level architecture:
-
-1. **Why Ghost Wins in Bytes Mode (`Decode` & `Encode`):**
-   * **Natively Byte-Based:** Ghost is designed to parse and serialize directly to/from UTF-8 byte arrays without intermediate JVM String allocations.
-   * **Massive Memory Savings:** On `Decode (Bytes)`, Ghost uses only **650.3 KB/op** (compared to KSER's **4297.0 KB/op**—**over 6.6x less memory!**), yielding a **74.0% speedup**. Similarly, on `Encode (Bytes)`, Ghost uses **5x less memory** (428.0 KB vs 2216.3 KB) and runs **30.7% faster**.
-
-2. **Why Ghost Loses in String Mode:**
-   * **Byte Conversion Overhead:** Since Ghost parses raw bytes under the hood, calling `Ghost.deserialize(String)` forces an intermediate `jsonString.encodeToByteArray()` copy. On small payloads, this is negligible. But on a large payload like the Twitter macro JSON (~0.5 MB), this conversion incurs **over 2.2 MB/op of intermediate garbage allocation**, which bottlenecks the CPU and offsets Ghost's faster structural parsing speed.
-
-3. **Why Ghost Wins in Streaming Decode:**
-   * **Segment-Buffered Streaming:** By implementing an internal 8 KB segment buffer directly in `StreamingGhostSource` that copies and holds active Okio segments, Ghost completely bypasses the virtual dispatch and segment-walking overhead associated with Okio's generic APIs on every character read. This allows GHOST to decode streams **42.9% faster** than KotlinX Serialization, while maintaining a much smaller memory footprint.
 
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.
