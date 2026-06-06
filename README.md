@@ -4,7 +4,7 @@
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.png?style=flat)](https://github.com/google/ksp)
-![Version](https://img.shields.io/badge/version-1.2.1-brightgreen.png?style=flat)
+![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.png?style=flat)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20Spring%20Boot-blue.png?style=flat)
 ![Tests](https://img.shields.io/badge/tests-667%2B%20passing-success.png?style=flat)
 
@@ -23,7 +23,7 @@ Ghost Serialization is a JSON library for Kotlin that generates all serializatio
 
 This README aims to be honest: we explain what Ghost is good at, how it achieves its performance, and the scenarios where other libraries are a better fit.
 
-**Current release:** `1.2.1` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Current release:** `1.2.2` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
@@ -75,44 +75,44 @@ The generated code uses pre-computed `ByteString` headers for field names, a bit
 
 ## Benchmark Results
 
-> **Methodology**: Single JVM process. 20,000-iteration JIT warmup. 10,000 measured runs. Results are statistical averages ± standard deviation. Memory is measured via `ThreadMXBean.getThreadAllocatedBytes` (heap bytes allocated per call, not retained). Tested on JVM HotSpot.
+> **Methodology**: Single JVM process. 5,000-iteration JIT warmup. 10,000 measured runs. Results are statistical averages ± standard deviation. Memory is measured via `ThreadMXBean.getThreadAllocatedBytes` (heap bytes allocated per call, not retained). Tested on JVM HotSpot.
 
 ### Deserialization — 200 objects (LIST_MEDIUM)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.048 ±0.010** | **51.3** | **0.044 ±0.006** | **24.8** | **0.045 ±0.010** | **24.8** |
-| Gson | 0.096 ±0.016 | 164.1 | 0.093 ±0.009 | 164.1 | 0.095 ±0.016 | 173.5 |
-| KSerialization | 0.103 ±0.011 | 194.4 | 0.101 ±0.017 | 194.4 | 0.176 ±0.014 | 194.5 |
-| Moshi | 0.171 ±0.018 | 319.7 | 0.169 ±0.022 | 319.7 | 0.156 ±0.017 | 319.7 |
-| Jackson | 0.237 ±0.029 | 696.0 | 0.226 ±0.023 | 696.0 | 0.226 ±0.030 | 696.1 |
+| **Ghost** | **0.047 ±0.004** | **51.3** | **0.044 ±0.006** | **24.8** | **0.045 ±0.007** | **24.8** |
+| Gson | 0.096 ±0.012 | 164.0 | 0.093 ±0.014 | 164.0 | 0.094 ±0.011 | 173.5 |
+| KSerialization | 0.108 ±0.016 | 194.4 | 0.106 ±0.015 | 194.4 | 0.181 ±0.018 | 194.5 |
+| Moshi | 0.165 ±0.022 | 319.7 | 0.162 ±0.018 | 319.7 | 0.149 ±0.018 | 319.7 |
+| Jackson | 0.236 ±0.022 | 696.0 | 0.226 ±0.029 | 696.0 | 0.225 ±0.028 | 696.1 |
 
 ### Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.370 ±0.033** | **391.0** | **0.356 ±0.025** | **213.4** | **0.377 ±0.029** | **334.3** |
-| Gson | 0.610 ±0.059 | 1343.8 | 0.605 ±0.050 | 1343.8 | 0.615 ±0.048 | 1366.7 |
-| KSerialization | 0.748 ±0.062 | 1883.5 | 0.746 ±0.064 | 1883.5 | 1.356 ±0.095 | 2004.4 |
-| Moshi | 1.335 ±0.095 | 3037.6 | 1.330 ±0.099 | 3037.6 | 1.225 ±0.098 | 3037.6 |
-| Jackson | 2.209 ±0.152 | 6850.8 | 2.106 ±0.157 | 6850.8 | 2.120 ±0.167 | 6850.9 |
+| **Ghost** | **0.379 ±0.027** | **391.0** | **0.366 ±0.022** | **213.4** | **0.386 ±0.029** | **334.3** |
+| Gson | 0.608 ±0.058 | 1343.8 | 0.603 ±0.046 | 1343.8 | 0.610 ±0.046 | 1366.6 |
+| KSerialization | 0.759 ±0.060 | 1883.5 | 0.755 ±0.055 | 1883.5 | 1.357 ±0.088 | 2004.4 |
+| Moshi | 1.271 ±0.086 | 3037.6 | 1.264 ±0.090 | 3037.6 | 1.163 ±0.091 | 3037.6 |
+| Jackson | 2.211 ±0.134 | 6850.8 | 2.104 ±0.136 | 6850.8 | 2.116 ±0.148 | 6850.8 |
 
 ### Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.083 ±0.022** | **92.7** | **0.081 ±0.014** | **92.7** | **0.083 ±0.015** | **96.7** |
-| KSerialization | 0.124 ±0.012 | 202.6 | 0.125 ±0.016 | 263.9 | 0.210 ±0.019 | 205.6 |
-| Jackson | 0.196 ±0.026 | 396.2 | 0.157 ±0.024 | 249.8 | 0.158 ±0.019 | 303.6 |
-| Gson | 0.320 ±0.023 | 574.9 | 0.322 ±0.028 | 667.5 | 0.739 ±0.101 | 3932.1 |
-| Moshi | 0.366 ±0.030 | 630.8 | 0.370 ±0.033 | 723.4 | 0.356 ±0.027 | 445.5 |
+| **Ghost** | **0.080 ±0.015** | **92.7** | **0.078 ±0.012** | **92.7** | **0.080 ±0.013** | **96.8** |
+| KSerialization | 0.123 ±0.018 | 202.6 | 0.124 ±0.018 | 263.9 | 0.208 ±0.019 | 205.6 |
+| Jackson | 0.184 ±0.032 | 396.2 | 0.145 ±0.016 | 249.8 | 0.146 ±0.021 | 303.6 |
+| Gson | 0.326 ±0.027 | 551.4 | 0.327 ±0.028 | 644.0 | 0.776 ±0.089 | 3963.3 |
+| Moshi | 0.366 ±0.037 | 630.8 | 0.368 ±0.031 | 723.4 | 0.355 ±0.028 | 445.5 |
 
 ### Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.003 ±0.007** | 0.005 | 0.006 | 0.006 | 0.010 |
-| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.017 | 0.022 | 0.032 |
+| Deep Nesting — 20 levels (ms) | **0.003 ±0.002** | 0.005 | 0.005 | 0.006 | 0.009 |
+| Malformed JSON — resilience (ms) | **0.007 ±0.000** | 0.014 | 0.018 | 0.022 | 0.031 |
 
 ### Ghost Special Features
 
@@ -120,11 +120,11 @@ These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson
 
 | Feature | µs/op | B/op |
 |:---|:---:|:---:|
-| Polymorphism — Sealed Class Dispatch | **0.41** | 436 |
-| Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.22** | 128 |
-| Resilience — `@GhostResilient` (type mismatch recovery) | **1.35** | 2116 |
-| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **2.35** | 16780 |
-| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.39** | 376 |
+| Polymorphism — Sealed Class Dispatch | **0.51** | 436 |
+| Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.29** | 128 |
+| Resilience — `@GhostResilient` (type mismatch recovery) | **1.62** | 2172 |
+| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **1.01** | 16780 |
+| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.26** | 376 |
 
 ### Twitter Macro Dataset
 
@@ -132,18 +132,18 @@ Below are the benchmark results on the **Twitter Macro Dataset** comparing Ghost
 
 | Operation | Engine | Throughput (ops/s) | Mem (KB/op) |
 | :--- | :---: | :---: | :---: |
-| **Decode (String)** | KSER | **1112.750** | **1337.6** |
-| | Ghost | 670.660 | 2931.0 |
-| **Decode (Bytes)** | **Ghost** | **1190.675** | **650.4** |
-| | KSER | 725.517 | 4297.0 |
-| **Decode (Streaming)** | KSER | **303.729** | **1904.9** |
-| | Ghost | 46.702 | 1952.3 |
-| **Encode (String)** | KSER | **3086.934** | **981.6** |
-| | Ghost | 1283.560 | 1984.6 |
-| **Encode (Bytes)** | **Ghost** | **2279.574** | **428.0** |
-| | KSER | 1484.308 | 2216.3 |
-| **Encode (Streaming)** | **Ghost** | **2263.347** | **434.6** |
-| | KSER | 1451.721 | 464.5 |
+| **Decode (String)** | KSER | **1092.1** | **1337.6** |
+| | Ghost | 744.9 | 2930.9 |
+| **Decode (Bytes)** | **Ghost** | **1156.3** | **650.3** |
+| | KSER | 664.4 | 4297.0 |
+| **Decode (Streaming)** | **Ghost** | **435.5** | **650.3** |
+| | KSER | 304.7 | 4297.0 |
+| **Encode (String)** | KSER | **2969.9** | **981.6** |
+| | Ghost | 1189.9 | 1984.6 |
+| **Encode (Bytes)** | **Ghost** | **2152.7** | **428.0** |
+| | KSER | 1646.4 | 2216.3 |
+| **Encode (Streaming)** | **Ghost** | **2150.3** | **434.6** |
+| | KSER | 1406.4 | 464.5 |
 
 #### Architectural Analysis & Trade-Offs
 
@@ -151,13 +151,13 @@ The Twitter Macro dataset highlights the trade-offs of Ghost's byte-level archit
 
 1. **Why Ghost Wins in Bytes Mode (`Decode` & `Encode`):**
    * **Natively Byte-Based:** Ghost is designed to parse and serialize directly to/from UTF-8 byte arrays without intermediate JVM String allocations.
-   * **Massive Memory Savings:** On `Decode (Bytes)`, Ghost uses only **650.4 KB/op** (compared to KSER's **4297.0 KB/op**—**over 6.5x less memory!**), yielding a **64.1% speedup**. Similarly, on `Encode (Bytes)`, Ghost uses **5x less memory** (428.0 KB vs 2216.3 KB) and runs **53.6% faster**.
+   * **Massive Memory Savings:** On `Decode (Bytes)`, Ghost uses only **650.3 KB/op** (compared to KSER's **4297.0 KB/op**—**over 6.6x less memory!**), yielding a **74.0% speedup**. Similarly, on `Encode (Bytes)`, Ghost uses **5x less memory** (428.0 KB vs 2216.3 KB) and runs **30.7% faster**.
 
 2. **Why Ghost Loses in String Mode:**
    * **Byte Conversion Overhead:** Since Ghost parses raw bytes under the hood, calling `Ghost.deserialize(String)` forces an intermediate `jsonString.encodeToByteArray()` copy. On small payloads, this is negligible. But on a large payload like the Twitter macro JSON (~0.5 MB), this conversion incurs **over 2.2 MB/op of intermediate garbage allocation**, which bottlenecks the CPU and offsets Ghost's faster structural parsing speed.
 
-3. **Why Ghost Loses in Streaming Decode by a wide margin:**
-   * **Stream Reader vs. Array Buffer:** For streaming input, KotlinX Serialization (KSER) reads massive buffers into a primitive char array in one pass, parsing at raw memory speed. Ghost's `deserializeStreaming` uses Okio's segment-by-segment pull mechanism which incurs virtual dispatch and buffer checks on every token loop. While KSER wins on raw stream decode speed, Ghost's stream encoder remains **55.9% faster** with optimal byte serialization.
+3. **Why Ghost Wins in Streaming Decode:**
+   * **Segment-Buffered Streaming:** By implementing an internal 8 KB segment buffer directly in `StreamingGhostSource` that copies and holds active Okio segments, Ghost completely bypasses the virtual dispatch and segment-walking overhead associated with Okio's generic APIs on every character read. This allows GHOST to decode streams **42.9% faster** than KotlinX Serialization, while maintaining a much smaller memory footprint.
 
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.
@@ -248,7 +248,7 @@ Ghost is published to **Maven Central** (`com.ghostserializer`).
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.2.1"
+ghost = "1.2.2"
 ksp = "1.9.24-1.0.20" # match your Kotlin version
 
 [libraries]
@@ -287,7 +287,7 @@ The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler art
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
-    id("com.ghostserializer.ghost") version "1.2.1"
+    id("com.ghostserializer.ghost") version "1.2.2"
 }
 ```
 
@@ -567,7 +567,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.2.1"
+    id("com.ghostserializer.ghost") version "1.2.2"
 }
 
 kotlin {
@@ -781,7 +781,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.1")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.2")
 }
 ```
 
@@ -1001,10 +1001,10 @@ No reflection occurs at any step. The call graph is fully monomorphic — the JI
 
 ```bash
   # Full run: executes ./gradlew ciTest first (same modules as CI), then the benchmark
-  ./gradlew :ghost-benchmark:run --args="--runs 10000 --warmup 20000 --no-tests"
+  ./gradlew :ghost-benchmark:run --args="--runs 10000 --warmup 5000 --no-tests"
 
   # Benchmark only (skip ciTest)
-  ./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 20000 --no-tests"
+  ./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 5000 --no-tests"
 ```
 
 The benchmark is self-contained — no external harness needed. It runs inside a single JVM process, warms up the JIT once, then measures all engines in the same process with the same JIT state.

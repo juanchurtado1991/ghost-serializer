@@ -221,6 +221,7 @@ internal object GhostJsonConstants {
     const val WRITER_SCRATCH_SIZE = 512
 
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
+    const val STREAMING_BUFFER_SIZE = 8192
 
     const val DEFAULT_DISCRIMINATOR_KEY = "type"
 
