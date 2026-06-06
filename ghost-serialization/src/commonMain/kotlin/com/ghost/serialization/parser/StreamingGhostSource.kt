@@ -17,9 +17,39 @@ class StreamingGhostSource(
 
     override val size: Int get() = Int.MAX_VALUE
 
+    private val bufferBytes = ByteArray(GhostJsonConstants.STREAMING_BUFFER_SIZE)
+    private var bufferStart = -1
+    private var bufferEnd = -1
+
     override fun get(index: Int): Int {
-        okioSource.request(index + 1L)
-        return buffer[index.toLong()].toInt() and GhostJsonConstants.BYTE_MASK
+        if (index >= bufferStart && index < bufferEnd) {
+            return bufferBytes[index - bufferStart].toInt() and GhostJsonConstants.BYTE_MASK
+        }
+        return getSlow(index)
+    }
+
+    private fun getSlow(index: Int): Int {
+        val requestedIndexL = index.toLong()
+        okioSource.request(requestedIndexL + 1L)
+        val available = buffer.size
+        if (requestedIndexL >= available) {
+            throw IndexOutOfBoundsException("Index $index is out of bounds (available: $available)")
+        }
+
+        val alignedStart = (index / GhostJsonConstants.STREAMING_BUFFER_SIZE) * GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val toCopy = minOf(GhostJsonConstants.STREAMING_BUFFER_SIZE.toLong(), available - alignedStart)
+
+        if (toCopy <= 0L) {
+            throw IndexOutOfBoundsException("Index $index is out of bounds")
+        }
+
+        val tempBuffer = okio.Buffer()
+        buffer.copyTo(tempBuffer, alignedStart.toLong(), toCopy)
+        tempBuffer.read(bufferBytes, 0, toCopy.toInt())
+        bufferStart = alignedStart
+        bufferEnd = (alignedStart + toCopy).toInt()
+
+        return bufferBytes[index - bufferStart].toInt() and GhostJsonConstants.BYTE_MASK
     }
 
     override fun decodeToString(start: Int, end: Int): String {

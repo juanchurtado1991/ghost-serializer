@@ -5,7 +5,7 @@ kotlin-sdk                      = "1.9.24"
 agp                             = "8.4.2"
 ksp                             = "1.9.24-1.0.20"
 compose-plugin                  = "1.6.11"
-publish-version                 = "1.2.1"
+publish-version                 = "1.2.2"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization
