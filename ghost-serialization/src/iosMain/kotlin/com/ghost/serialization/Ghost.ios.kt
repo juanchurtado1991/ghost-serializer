@@ -5,8 +5,10 @@ package com.ghost.serialization
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
+import com.ghost.serialization.writer.WriterStringPair
 import okio.BufferedSource
 import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
@@ -19,10 +21,16 @@ private var cachedReader: GhostJsonReader? = null
 private var cachedFlatReader: GhostJsonFlatReader? = null
 
 @ThreadLocal
+private var cachedStringReader: GhostJsonStringReader? = null
+
+@ThreadLocal
 private var cachedSourceReader: GhostJsonReader? = null
 
 @ThreadLocal
 private var cachedWriterPair: WriterSinkPair? = null
+
+@ThreadLocal
+private var cachedStringWriterPair: WriterStringPair? = null
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
@@ -114,6 +122,18 @@ actual fun <T> ghostInternalUseSource(
     return block(reader)
 }
 
+actual fun <T> ghostInternalUseStringReader(
+    json: String,
+    block: (GhostJsonStringReader) -> T
+): T {
+    val reader = cachedStringReader
+        ?: GhostJsonStringReader(json)
+            .also { cachedStringReader = it }
+
+    reader.reset(json)
+    return block(reader)
+}
+
 private fun acquireFlatWriterPair(): WriterSinkPair {
     val pair = cachedWriterPair
         ?: WriterSinkPair()
@@ -125,20 +145,13 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 }
 
 actual fun ghostInternalEncodeToString(
-    block: (GhostJsonFlatWriter) -> Unit
+    block: (com.ghost.serialization.writer.GhostJsonStringWriter) -> Unit
 ): String {
-    val pair = acquireFlatWriterPair()
+    val pair = cachedStringWriterPair
+        ?: WriterStringPair().also { cachedStringWriterPair = it }
     block(pair.writer)
-
-    val result = pair
-        .byteWriter
-        .array
-        .decodeToString(
-            0,
-            pair.byteWriter.size
-        )
-
-    pair.byteWriter.reset()
+    val result = pair.charWriter.array.concatToString(0, pair.charWriter.size)
+    pair.charWriter.reset()
     return result
 }
 

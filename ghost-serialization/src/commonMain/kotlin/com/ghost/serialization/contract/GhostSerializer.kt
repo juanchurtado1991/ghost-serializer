@@ -2,11 +2,14 @@ package com.ghost.serialization.contract
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeAndDrainTo
+import com.ghost.serialization.ghostInternalEncodeWithWriter
 import okio.BufferedSink
 import okio.BufferedSource
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
 /**
@@ -17,16 +20,9 @@ import com.ghost.serialization.writer.GhostJsonWriter
  *
  * # Two-writer design
  *
- * Implementations must provide *two* `serialize(writer, value)` overloads —
- * one for [GhostJsonWriter] (streaming I/O over [okio.BufferedSink]) and one
- * for [GhostJsonFlatWriter] (in-memory growing [ByteArray]). Both are
- * `final` concrete classes, so each overload sees a known receiver and the
- * compiler/JIT can inline every byte-write fully. KSP-generated serializers
- * emit both with an identical body that differs only in parameter type.
- *
- * Handwritten serializers must do the same. Because the public API of both
- * writers is identical (same method names and signatures, only differing in
- * the `this` type), the body can usually be copy-pasted verbatim.
+ * Implementations must provide overloads of `serialize(writer, value)` for
+ * [GhostJsonWriter] (streaming I/O), [GhostJsonFlatWriter] (in-memory bytes),
+ * and [GhostJsonStringWriter] (in-memory chars).
  */
 @OptIn(InternalGhostApi::class)
 interface GhostSerializer<T> {
@@ -65,6 +61,18 @@ interface GhostSerializer<T> {
      */
     fun serialize(writer: GhostJsonFlatWriter, value: T)
 
+    /**
+     * Serializes [value] using the in-memory text [writer] (contiguous
+     * [com.ghost.serialization.writer.FlatCharArrayWriter] under the hood).
+     * Used by `Ghost.encodeToString` to write characters directly.
+     */
+    fun serialize(writer: GhostJsonStringWriter, value: T) {
+        val bytes = ghostInternalEncodeWithWriter { flatWriter ->
+            serialize(flatWriter, value)
+        }
+        writer.buffer.writeString(bytes.decodeToString())
+    }
+
     /** Deserializes a new instance of [T] from the [source]. */
     fun deserialize(source: BufferedSource): T {
         val reader = GhostJsonFlatReader(source.readByteArray())
@@ -90,6 +98,25 @@ interface GhostSerializer<T> {
         reader.nextTokenByte = -1
         return result
     }
+
+    /** Deserializes a new instance of [T] using a specialized string [reader]. */
+    fun deserialize(reader: GhostJsonStringReader): T {
+        val bytes = reader.rawData.encodeToByteArray()
+        val flatReader = GhostJsonFlatReader(bytes).also {
+            it.position = com.ghost.serialization.parser.charToBytePosition(reader.rawData, reader.position)
+            it.limit = bytes.size
+            it.strictMode = reader.strictMode
+            it.coerceStringsToNumbers = reader.coerceStringsToNumbers
+            it.coerceBooleans = reader.coerceBooleans
+            it.maxDepth = reader.maxDepth
+            it.maxCollectionSize = reader.maxCollectionSize
+        }
+        val result = deserialize(flatReader)
+        reader.position = com.ghost.serialization.parser.byteToCharPosition(reader.rawData, flatReader.position)
+        reader.nextTokenByte = -1
+        return result
+    }
+
 
     /**
      * Optional warm-up cycle to trigger JIT (Just-In-Time) or ART optimization

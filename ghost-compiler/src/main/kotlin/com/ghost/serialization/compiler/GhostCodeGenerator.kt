@@ -30,7 +30,8 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
  */
 internal class GhostCodeGenerator(
     private val properties: List<GhostPropertyModel>,
-    classDeclaration: KSClassDeclaration
+    classDeclaration: KSClassDeclaration,
+    private val textChannel: Boolean = false
 ) {
 
     private val fullPaths = properties.map {
@@ -133,6 +134,11 @@ internal class GhostCodeGenerator(
     private val flatWriterClass = ClassName(
         C.PKG_WRITER,
         C.STR_GHOST_JSON_FLAT_WRITER
+    )
+
+    private val stringWriterClass = ClassName(
+        C.PKG_WRITER,
+        C.STR_GHOST_JSON_STRING_WRITER
     )
 
     private val streamingReaderClass = ClassName(
@@ -398,6 +404,28 @@ internal class GhostCodeGenerator(
             isInferred
         )
 
+        val stringReaderClass = ClassName(
+            C.PKG_PARSER,
+            C.STR_GHOST_JSON_STRING_READER
+        )
+
+        val deserializeEmitterString = if (textChannel) {
+            DeserializeCodeEmitter(
+                properties,
+                originalClassName,
+                stringReaderClass,
+                isSealed,
+                isValue,
+                isEnum,
+                sealedSubclasses,
+                sealedDiscriminatorKey,
+                isResilient,
+                isInferred
+            )
+        } else {
+            null
+        }
+
         val typeSpecBuilder = TypeSpec.objectBuilder(serializerName)
             .addKdoc(C.STR_KDOC_HIGH_PERF, originalClassName)
             .addKdoc(C.STR_KDOC_GENERATED)
@@ -427,12 +455,14 @@ internal class GhostCodeGenerator(
 
         deserializeEmitterStreaming.build(typeSpecBuilder, isFlatPath = false)
         deserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
+        deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
         return typeSpecBuilder
             .addFunction(serializeEmitter.build(streamingWriterClass, typeSpecBuilder))
             .addFunction(serializeEmitter.build(flatWriterClass, typeSpecBuilder))
+            .addFunction(serializeEmitter.build(stringWriterClass, typeSpecBuilder))
             .addFunction(buildWarmUpMethod())
             .build()
     }
@@ -496,6 +526,7 @@ internal class GhostCodeGenerator(
                 C.STR_UNDERSCORE
             ).uppercase()
 
+            // ByteString header for FlatWriter
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     C.STR_H_VAL_PREFIX + cleanName,
@@ -504,6 +535,20 @@ internal class GhostCodeGenerator(
                 )
                     .initializer(
                         C.TEMPLATE_ENCODE_UTF8,
+                        C.FMT_JSON_FIELD.format(name)
+                    )
+                    .build()
+            )
+
+            // String header for StringWriter
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    "HS_" + cleanName,
+                    String::class,
+                    KModifier.PRIVATE
+                )
+                    .initializer(
+                        "%S",
                         C.FMT_JSON_FIELD.format(name)
                     )
                     .build()

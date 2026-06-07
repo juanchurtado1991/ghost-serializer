@@ -7,6 +7,7 @@ import android.annotation.SuppressLint
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 private val writerPool = ThreadLocal<WriterSinkPair>()
 private val readerPool = ThreadLocal<GhostJsonReader>()
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
+private val stringReaderPool = ThreadLocal<GhostJsonStringReader>()
 private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
@@ -119,6 +121,18 @@ actual fun <T> ghostInternalUseSource(
     return block(reader)
 }
 
+actual fun <T> ghostInternalUseStringReader(
+    json: String,
+    block: (GhostJsonStringReader) -> T
+): T {
+    val reader = stringReaderPool.get()
+        ?: GhostJsonStringReader(json)
+            .also { stringReaderPool.set(it) }
+
+    reader.reset(json)
+    return block(reader)
+}
+
 /**
  * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
  * and returns it. The pair survives across calls so the underlying
@@ -134,18 +148,32 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
     return pair
 }
 
+private class WriterStringPair {
+    val charWriter = com.ghost.serialization.writer.FlatCharArrayWriter(com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE)
+    val writer = com.ghost.serialization.writer.GhostJsonStringWriter(charWriter)
+}
+
+private val stringWriterPool = ThreadLocal<WriterStringPair>()
+
+private fun acquireStringWriterPair(): WriterStringPair {
+    val pair = stringWriterPool.get()
+        ?: WriterStringPair().also { stringWriterPool.set(it) }
+    pair.writer.reset()
+    pair.charWriter.reset()
+    return pair
+}
+
 actual fun ghostInternalEncodeToString(
-    block: (GhostJsonFlatWriter) -> Unit
+    block: (com.ghost.serialization.writer.GhostJsonStringWriter) -> Unit
 ): String {
-    val pair = acquireFlatWriterPair()
+    val pair = acquireStringWriterPair()
     block(pair.writer)
     val result = String(
-        pair.byteWriter.array,
+        pair.charWriter.array,
         0,
-        pair.byteWriter.size,
-        Charsets.UTF_8
+        pair.charWriter.size
     )
-    pair.byteWriter.reset()
+    pair.charWriter.reset()
     return result
 }
 

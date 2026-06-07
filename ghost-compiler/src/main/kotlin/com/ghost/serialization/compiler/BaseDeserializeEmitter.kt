@@ -215,6 +215,16 @@ internal abstract class BaseDeserializeEmitter(
                 .add(C.STR_RUN_CLOSE)
                 .build()
         }
+        if (readerClass.simpleName == C.STR_GHOST_JSON_STRING_READER) {
+            return CodeBlock.builder()
+                .add(C.STR_RUN_OPEN)
+                .add(C.STR_CUSTOM_DECODER_TEMP_READER_STRING)
+                .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)
+                .add(C.STR_CUSTOM_DECODER_UPDATE_POS_STRING)
+                .add(C.STR_CUSTOM_DECODER_RETURN_RES)
+                .add(C.STR_RUN_CLOSE)
+                .build()
+        }
         return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
     }
 

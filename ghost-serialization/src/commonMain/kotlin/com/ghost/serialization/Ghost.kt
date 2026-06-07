@@ -4,8 +4,10 @@ package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.DoubleSerializer
 import com.ghost.serialization.serializers.IntSerializer
@@ -42,6 +44,12 @@ expect fun discoverRegistries(): Iterable<GhostRegistry>
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 
 /**
+ * Runs a block of operations using a pooled [GhostJsonStringReader] instance.
+ */
+@OptIn(InternalGhostApi::class)
+expect fun <T> ghostInternalUseStringReader(json: String, block: (GhostJsonStringReader) -> T): T
+
+/**
  * Runs a block of operations using a pooled [GhostJsonFlatReader] instance.
  */
 @OptIn(InternalGhostApi::class)
@@ -54,12 +62,12 @@ expect fun <T> ghostInternalUseFlatReader(bytes: ByteArray, limit: Int = bytes.s
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 /**
- * Encodes via the pooled in-memory [GhostJsonFlatWriter] and returns the
- * result as a [String]. The flat writer holds a contiguous [ByteArray]
+ * Encodes via the pooled in-memory [GhostJsonStringWriter] and returns the
+ * result as a [String]. The string writer holds a contiguous [CharArray]
  * (no Okio segments), so the returned string is decoded directly from
- * the produced byte slice with zero intermediate copies.
+ * the produced char slice with minimal allocations.
  */
-expect fun ghostInternalEncodeToString(block: (GhostJsonFlatWriter) -> Unit): String
+expect fun ghostInternalEncodeToString(block: (com.ghost.serialization.writer.GhostJsonStringWriter) -> Unit): String
 
 /**
  * Pools the in-memory [GhostJsonFlatWriter] per-thread and returns the
@@ -445,10 +453,8 @@ object Ghost {
      * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(json: String): T {
-        val bytes = json.encodeToByteArray()
-        return ghostInternalUseFlatReader(bytes) { reader ->
+        return ghostInternalUseStringReader(json) { reader ->
             deserialize(reader)
         }
     }
@@ -683,6 +689,15 @@ object Ghost {
      */
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(reader: GhostJsonFlatReader): T {
+        val serializer = resolveSerializer<T>()
+        return serializer.deserialize(reader)
+    }
+
+    /**
+     * Advanced: Deserializes directly from an existing [GhostJsonStringReader].
+     * Note: This bypassing of pooling means the caller is responsible for the reader lifecycle.
+     */
+    inline fun <reified T : Any> deserialize(reader: GhostJsonStringReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
     }

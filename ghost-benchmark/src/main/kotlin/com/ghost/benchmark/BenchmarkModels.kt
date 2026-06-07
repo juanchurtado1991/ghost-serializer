@@ -22,12 +22,12 @@ internal data class BenchmarkConfig(val runs: Int, val noTests: Boolean, val war
     companion object {
         fun fromArgs(args: Array<String>): BenchmarkConfig {
             val runs = args.indexOf("--runs")
-                .let { if (it != -1 && it + 1 < args.size) args[it + 1].toIntOrNull() ?: 1 else 1 }
+                .let { if (it != -1 && it + 1 < args.size) args[it + 1].toIntOrNull() ?: 100 else 100 }
             val noTests = args.contains("--no-tests")
             val warmupIters = args.indexOf("--warmup")
                 .let {
                     if (it != -1 && it + 1 < args.size) args[it + 1].toIntOrNull()
-                        ?: 15000 else 15000
+                        ?: 5000 else 5000
                 }
             return BenchmarkConfig(runs, noTests, warmupIters)
         }

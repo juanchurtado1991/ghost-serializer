@@ -3,6 +3,7 @@ package com.ghost.serialization.parser
 import com.ghost.serialization.InternalGhostApi
 import okio.BufferedSource
 import okio.ByteString
+import okio.Buffer
 
 /**
  * Implementation of [GhostSource] for streaming data from an [okio.BufferedSource].
@@ -14,6 +15,9 @@ class StreamingGhostSource(
 ) : GhostSource {
 
     private val buffer = okioSource.buffer
+
+    /** Reused across every [getSlow] call and every [decodeToString] call to avoid per-operation allocations. */
+    private val tempBuffer = Buffer()
 
     override val size: Int get() = Int.MAX_VALUE
 
@@ -43,7 +47,6 @@ class StreamingGhostSource(
             throw IndexOutOfBoundsException("Index $index is out of bounds")
         }
 
-        val tempBuffer = okio.Buffer()
         buffer.copyTo(tempBuffer, alignedStart.toLong(), toCopy)
         tempBuffer.read(bufferBytes, 0, toCopy.toInt())
         bufferStart = alignedStart
@@ -53,11 +56,13 @@ class StreamingGhostSource(
     }
 
     override fun decodeToString(start: Int, end: Int): String {
+        val length = end - start
         okioSource.request(end.toLong())
-        // snapshot(end) returns a ByteString backed by existing Okio segments — no byte copy.
-        // substring(start, end) is a zero-copy range view over that ByteString.
-        // The only unavoidable allocation is the final String produced by utf8().
-        return buffer.snapshot(end).substring(start, end).utf8()
+        // copyTo fills the reusable tempBuffer with exactly [length] bytes from the live Okio
+        // buffer without advancing its read position.  readUtf8 then decodes them in one pass
+        // and returns the final String — no intermediate ByteString, no snapshot, no substring.
+        buffer.copyTo(tempBuffer, start.toLong(), length.toLong())
+        return tempBuffer.readUtf8(length.toLong())
     }
 
     override fun contentEquals(start: Int, expected: ByteString): Boolean {
