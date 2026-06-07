@@ -9,9 +9,12 @@ import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
 
+import com.ghost.serialization.parser.GhostJsonStringReader
+
 private var cachedWriterPair: WriterSinkPair? = null
 private var cachedReader: GhostJsonReader? = null
 private var cachedFlatReader: GhostJsonFlatReader? = null
+private var cachedStringReader: GhostJsonStringReader? = null
 private var cachedSourceReader: GhostJsonReader? = null
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
@@ -53,6 +56,19 @@ actual fun <T> ghostInternalUseSource(
             .also { cachedSourceReader = it }
 
     reader.reset(source)
+    reader.reset(source)
+    return block(reader)
+}
+
+actual fun <T> ghostInternalUseStringReader(
+    json: String,
+    block: (GhostJsonStringReader) -> T
+): T {
+    val reader = cachedStringReader
+        ?: GhostJsonStringReader(json)
+            .also { cachedStringReader = it }
+
+    reader.reset(json)
     return block(reader)
 }
 
@@ -67,12 +83,13 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 }
 
 actual fun ghostInternalEncodeToString(
-    block: (GhostJsonFlatWriter) -> Unit
+    block: (GhostJsonStringWriter) -> Unit
 ): String {
-    val pair = acquireFlatWriterPair()
+    val pair = cachedStringWriterPair
+        ?: WriterStringPair().also { cachedStringWriterPair = it }
     block(pair.writer)
-    val result = pair.byteWriter.array.decodeToString(0, pair.byteWriter.size)
-    pair.byteWriter.reset()
+    val result = pair.charWriter.array.concatToString(0, pair.charWriter.size)
+    pair.charWriter.reset()
     return result
 }
 

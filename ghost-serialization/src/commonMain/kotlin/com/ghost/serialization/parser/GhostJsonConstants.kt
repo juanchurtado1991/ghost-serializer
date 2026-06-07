@@ -21,6 +21,8 @@ internal object GhostJsonConstants {
     const val ERR_EXPECTED_BEGIN_ARR = "Expected '['"
     const val ERR_EXPECTED_END_ARR = "Expected ']'"
     const val ERR_TRAILING_COMMA = "Trailing comma"
+    const val ERR_UNEXPECTED_COMMA = "Unexpected comma"
+    const val ERR_EXPECTED_COMMA = "Expected comma"
     const val ERR_EXPECTED_COLON = "Expected ':'"
     const val ERR_EXPECTED_BOOLEAN = "Expected boolean but found "
     const val ERR_EXPECTED_KEY = "Expected key but found "
@@ -45,7 +47,43 @@ internal object GhostJsonConstants {
     const val ERR_NUMERIC_OVERFLOW = "Numeric overflow or NaN is not allowed in JSON"
     const val ERR_HIGH_SURROGATE = "Lone high surrogate"
     const val EXPONENT_CLAMP_THRESHOLD = 1000
+    const val ERR_EXPECTED_LITERAL = "Expected literal "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
+
+    // --- Digit & Limit Constants ---
+    const val MIN_SINGLE_DIGIT = 0
+    const val MAX_SINGLE_DIGIT = 9
+    const val MIN_SINGLE_DIGIT_NEG = -9
+    const val MAX_SINGLE_DIGIT_NEG = -1
+    const val MIN_SINGLE_DIGIT_L = 0L
+    const val MAX_SINGLE_DIGIT_L = 9L
+    const val MIN_SINGLE_DIGIT_NEG_L = -9L
+    const val MAX_SINGLE_DIGIT_NEG_L = -1L
+    const val MIN_INT_STR = "-2147483648"
+    const val MIN_LONG_STR = "-9223372036854775808"
+
+    // --- Escape String Constants ---
+    const val ESCAPE_QUOTE = "\\\""
+    const val ESCAPE_BACKSLASH = "\\\\"
+    const val ESCAPE_BACKSPACE = "\\b"
+    const val ESCAPE_FORMFEED = "\\f"
+    const val ESCAPE_NEWLINE = "\\n"
+    const val ESCAPE_CARRIAGERETURN = "\\r"
+    const val ESCAPE_TAB = "\\t"
+
+    // --- Character Constants ---
+    const val CHAR_QUOTE = '"'
+    const val CHAR_T = 't'
+    const val CHAR_R = 'r'
+    const val CHAR_U = 'u'
+    const val CHAR_E = 'e'
+    const val CHAR_F = 'f'
+    const val CHAR_A = 'a'
+    const val CHAR_L = 'l'
+    const val CHAR_S = 's'
+    const val CHAR_N = 'n'
+    const val CHAR_DOT = '.'
+    const val CHAR_ZERO = '0'
 
     // --- Boolean Coercion Values ---
     const val COERCE_TRUE_STR = "true"
@@ -240,6 +278,9 @@ internal object GhostJsonConstants {
     /** Hexadecimal character bytes. */
     val HEX_CHARS = "0123456789abcdef".encodeToByteArray()
 
+    /** Hexadecimal characters. */
+    val HEX_CHARS_CHARS = CharArray(16) { i -> "0123456789abcdef"[i] }
+
     /** Maps ASCII bytes (0-255) to their hex numeric value (-1 if invalid). */
     val HEX_LUT = IntArray(256) { -1 }.apply {
         for (i in 0..9) this['0'.code + i] = i
@@ -253,6 +294,12 @@ internal object GhostJsonConstants {
     val DOUBLE_DIGIT_LUT = ByteArray(200) { i ->
         val num = i / 2
         if (i % 2 == 0) (num / 10 + '0'.code).toByte() else (num % 10 + '0'.code).toByte()
+    }
+
+    /** Stores two ASCII characters per number (00-99) for fast numeric formatting. */
+    val DOUBLE_DIGIT_LUT_CHARS = CharArray(200) { i ->
+        val num = i / 2
+        if (i % 2 == 0) (num / 10 + '0'.code).toChar() else (num % 10 + '0'.code).toChar()
     }
 
     /** Mask to extract the bit index within a 64-bit Long. */
@@ -346,6 +393,11 @@ internal object GhostJsonConstants {
     const val TAB_INT = 0x09
     const val BS_INT = 0x08
     const val FF_INT = 0x0C
+    const val LF_CHAR = '\n'
+    const val CR_CHAR = '\r'
+    const val TAB_CHAR = '\t'
+    const val BS_CHAR = '\b'
+    const val FF_CHAR = '\u000C'
 
     // --- Writer Formatting Constants ---
     const val SCRATCH_BUFFER_SIZE = 48
@@ -392,6 +444,21 @@ internal object GhostJsonConstants {
 
     /** Worst-case number of UTF-8 bytes for any BMP code point (3 + 1 trailing surrogate). */
     const val UTF8_MAX_BMP_BYTES = 4
+
+    // --- UTF-8 sequence sizes (char → byte width) ---
+    // Used by charToBytePosition / byteToCharPosition in GhostParserUtils.
+
+    /** Width in bytes of a 1-byte (ASCII) UTF-8 code point. */
+    const val UTF8_1BYTE_SIZE = 1
+
+    /** Width in bytes of a 2-byte UTF-8 code point (U+0080..U+07FF). */
+    const val UTF8_2BYTE_SIZE = 2
+
+    /** Width in bytes of a 3-byte UTF-8 code point (U+0800..U+FFFF, excluding surrogates). */
+    const val UTF8_3BYTE_SIZE = 3
+
+    /** Width in bytes of a 4-byte UTF-8 code point (U+10000..U+10FFFF, surrogate pair in Kotlin String). */
+    const val UTF8_4BYTE_SIZE = 4
 
     /** UTF-8 encoding of the Unicode replacement character `U+FFFD`. */
     val UTF8_REPLACEMENT_CHAR: ByteArray = byteArrayOf(

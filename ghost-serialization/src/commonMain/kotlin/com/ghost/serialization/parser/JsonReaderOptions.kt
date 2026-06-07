@@ -20,11 +20,13 @@ import com.ghost.serialization.parser.GhostJsonConstants.SINGLE_CHAR_SIZE
  * @property rawBytes Array of field names represented as raw byte arrays (UTF-8).
  * @property shift The bit-shift amount used to normalize key distributions.
  * @property multiplier The prime multiplier used to spread key entropy across the address space.
+ * @property rawStrings Array of field names as original strings.
  */
 class JsonReaderOptions(
     @PublishedApi internal val rawBytes: Array<ByteArray>,
     @PublishedApi internal val shift: Int,
-    @PublishedApi internal val multiplier: Int
+    @PublishedApi internal val multiplier: Int,
+    @PublishedApi internal val rawStrings: Array<String>
 ) {
     @PublishedApi
     internal val dispatch = IntArray(DISPATCH_TABLE_SIZE) { -1 }
@@ -110,8 +112,9 @@ class JsonReaderOptions(
          */
         fun of(shift: Int, multiplier: Int, vararg names: String): JsonReaderOptions {
             val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
+            val rawStrings = Array(names.size) { names[it] }
 
-            return JsonReaderOptions(rawBytes, shift, multiplier)
+            return JsonReaderOptions(rawBytes, shift, multiplier, rawStrings)
         }
 
         private const val DISPATCH_TABLE_SIZE = 1024

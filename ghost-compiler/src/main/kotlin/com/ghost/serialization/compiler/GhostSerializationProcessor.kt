@@ -41,7 +41,7 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
 class GhostSerializationProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
-    options: Map<String, String> = emptyMap()
+    private val options: Map<String, String> = emptyMap()
 ) : SymbolProcessor {
 
     /**
@@ -153,9 +153,11 @@ class GhostSerializationProcessor(
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>
     ): ClassName? {
+        val textChannel = options[C.OPTION_TEXT_CHANNEL] != C.STR_FALSE
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
-            properties = propertiesModel
+            properties = propertiesModel,
+            textChannel = textChannel
         )
 
         val fileSpec = fileGenerator.createSpec()

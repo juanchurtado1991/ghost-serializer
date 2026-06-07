@@ -6,6 +6,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.parser.nextBoolean
 import com.ghost.serialization.parser.nextDouble
 import com.ghost.serialization.parser.nextInt
@@ -35,6 +36,10 @@ object StringSerializer : GhostSerializer<String> {
     override fun deserialize(reader: GhostJsonFlatReader): String {
         return reader.readQuotedString()
     }
+
+    override fun deserialize(reader: GhostJsonStringReader): String {
+        return reader.readQuotedString()
+    }
 }
 
 /**
@@ -56,6 +61,10 @@ object IntSerializer : GhostSerializer<Int> {
     }
 
     override fun deserialize(reader: GhostJsonFlatReader): Int {
+        return reader.nextInt()
+    }
+
+    override fun deserialize(reader: GhostJsonStringReader): Int {
         return reader.nextInt()
     }
 }
@@ -81,6 +90,10 @@ object LongSerializer : GhostSerializer<Long> {
     override fun deserialize(reader: GhostJsonFlatReader): Long {
         return reader.nextLong()
     }
+
+    override fun deserialize(reader: GhostJsonStringReader): Long {
+        return reader.nextLong()
+    }
 }
 
 /**
@@ -104,6 +117,10 @@ object DoubleSerializer : GhostSerializer<Double> {
     override fun deserialize(reader: GhostJsonFlatReader): Double {
         return reader.nextDouble()
     }
+
+    override fun deserialize(reader: GhostJsonStringReader): Double {
+        return reader.nextDouble()
+    }
 }
 
 /**
@@ -125,6 +142,10 @@ object BooleanSerializer : GhostSerializer<Boolean> {
     }
 
     override fun deserialize(reader: GhostJsonFlatReader): Boolean {
+        return reader.nextBoolean()
+    }
+
+    override fun deserialize(reader: GhostJsonStringReader): Boolean {
         return reader.nextBoolean()
     }
 }

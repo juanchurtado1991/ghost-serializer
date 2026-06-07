@@ -6,6 +6,7 @@ private const val TIER_SMALL = 1024
 private const val TIER_MEDIUM = 16384
 private const val TIER_LARGE = 65536
 private const val TIER_XLARGE = 524288
+private const val TIER_XXLARGE = 4194304
 
 internal class GhostPool {
     var scratch: ByteArray? = null
@@ -13,6 +14,7 @@ internal class GhostPool {
     var medium: ByteArray? = null
     var large: ByteArray? = null
     var xlarge: ByteArray? = null
+    var xxlarge: ByteArray? = null
 }
 
 internal expect fun getLocalPool(): GhostPool
@@ -78,6 +80,16 @@ fun acquireScratchBuffer(minSize: Int = 48): ByteArray {
             }
         }
 
+        minSize <= TIER_XXLARGE -> {
+            val xxlargeLocal = pool.xxlarge
+            if (xxlargeLocal != null && xxlargeLocal.size >= minSize) {
+                pool.xxlarge = null
+                xxlargeLocal
+            } else {
+                ByteArray(TIER_XXLARGE)
+            }
+        }
+
         else -> ByteArray(minSize)
     }
 }
@@ -95,5 +107,6 @@ fun releaseScratchBuffer(buffer: ByteArray) {
         TIER_MEDIUM -> pool.medium = buffer
         TIER_LARGE -> pool.large = buffer
         TIER_XLARGE -> pool.xlarge = buffer
+        TIER_XXLARGE -> pool.xxlarge = buffer
     }
 }

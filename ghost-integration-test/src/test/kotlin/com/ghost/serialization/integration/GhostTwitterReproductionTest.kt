@@ -27,11 +27,31 @@ class GhostTwitterReproductionTest {
         val ghostResponse = Ghost.deserialize<TwitterResponse>(jsonString)
         
         // 3. Deep Structural Validation (Compare all fields/values parsed by both engines)
-        assertEquals(
-            referenceResponse, 
-            ghostResponse, 
-            "Data mismatch between Kotlinx Serialization and Ghost! Some values were parsed incorrectly or lost."
-        )
+        if (referenceResponse != ghostResponse) {
+            println("MISMATCH DETECTED!")
+            println("Reference status count: ${referenceResponse.statuses.size}")
+            println("Ghost status count: ${ghostResponse.statuses.size}")
+            val limit = minOf(referenceResponse.statuses.size, ghostResponse.statuses.size)
+            for (i in 0 until limit) {
+                val ref = referenceResponse.statuses[i]
+                val gh = ghostResponse.statuses[i]
+                if (ref != gh) {
+                    println("First mismatch at index $i:")
+                    println("  Ref: $ref")
+                    println("  Ghost: $gh")
+                    if (ref.text != gh.text) {
+                        println("    Text Ref: ${ref.text}")
+                        println("    Text Ghost: ${gh.text}")
+                    }
+                    if (ref.user != gh.user) {
+                        println("    User Ref: ${ref.user}")
+                        println("    User Ghost: ${gh.user}")
+                    }
+                    break
+                }
+            }
+            assertEquals(referenceResponse, ghostResponse)
+        }
         println("Deep validation passed! Ghost parsed 100% of the dataset structurally identical to Kotlinx.")
 
         // 4. Roundtrip Validation (Serialize with Ghost -> Deserialize with Ghost -> Verify Match)

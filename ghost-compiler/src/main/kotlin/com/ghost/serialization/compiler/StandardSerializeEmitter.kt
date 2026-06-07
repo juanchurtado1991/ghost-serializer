@@ -48,11 +48,13 @@ internal class StandardSerializeEmitter(
                 currentPath.removeAt(currentPath.size - 1)
             }
 
+            val isStringWriter = writerClass.simpleName == "GhostJsonStringWriter"
+            val prefix = if (isStringWriter) "HS_" else C.STR_H_VAL_PREFIX
             // Open new objects in the target path
             targetPath.drop(currentPath.size).forEach { segment ->
                 code.addStatement(
                     C.STR_WRITER_WRITE_NAME_VAL,
-                    C.STR_H_VAL_PREFIX + segment.uppercase()
+                    prefix + segment.uppercase()
                 )
                 code.addStatement(C.STR_WRITER_BEGIN_OBJ)
                 currentPath.add(segment)
