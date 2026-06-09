@@ -87,18 +87,18 @@ Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_m
 
 | Operation | Engine |      Throughput (ops/s)      |         Mem (KB/op)         |
 | :--- | :---: |:----------------------------:|:---------------------------:|
-| **Decode (String)** | **Ghost** | **1170.8** *(+8.8% faster)*  | **412.2** *(-69.2% memory)* |
-| | KSER |            1075.7            |           1337.5            |
-| **Decode (Bytes)** | **Ghost** | **1149.9** *(+46.1% faster)* | **677.1** *(-84.2% memory)* |
-| | KSER |            787.0             |           4297.0            |
-| **Decode (Streaming)** | **Ghost** | **483.0** *(+60.8% faster)*  | **1365.2** *(-28.3% memory)*|
-| | KSER |            300.4             |           1904.8            |
-| **Encode (String)** | **Ghost** | **3877.1** *(+29.2% faster)* |           1074.3            |
-| | KSER |            2999.9            |         **981.6**           |
-| **Encode (Bytes)** | **Ghost** | **2432.4** *(+90.3% faster)* | **420.2** *(-81.0% memory)* |
-| | KSER |            1278.2            |           2216.3            |
-| **Encode (Streaming)** | **Ghost** | **2397.3** *(+65.9% faster)* | **426.9** *(-8.1% memory)*  |
-| | KSER |            1444.7            |            464.5            |
+| **Decode (String)** | **Ghost** | **1443.9** *(+32.3% faster)* | **412.2** *(-69.2% memory)* |
+| | KSER |            1091.5            |           1337.5            |
+| **Decode (Bytes)** | **Ghost** | **1177.2** *(+84.1% faster)* | **677.1** *(-84.2% memory)* |
+| | KSER |            639.3             |           4297.0            |
+| **Decode (Streaming)** | **Ghost** | **484.1** *(+61.0% faster)*  | **1365.2** *(-28.3% memory)*|
+| | KSER |            300.6             |           1904.8            |
+| **Encode (String)** | **Ghost** | **3810.1** *(+23.9% faster)* |           1074.3            |
+| | KSER |            3074.5            |         **981.6**           |
+| **Encode (Bytes)** | **Ghost** | **2381.8** *(+39.6% faster)* | **420.2** *(-81.0% memory)* |
+| | KSER |            1706.3            |           2216.3            |
+| **Encode (Streaming)** | **Ghost** | **2364.1** *(+67.3% faster)* | **426.9** *(-8.1% memory)*  |
+| | KSER |            1413.1            |            464.5            |
 
 ### Deserialization — 200 objects (LIST_MEDIUM)
 
@@ -114,11 +114,11 @@ Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_m
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | 0.787 ±0.048 | **431.8** | **0.374 ±0.023** | **207.5** | **0.395 ±0.038** | **334.2** |
-| Gson | **0.592 ±0.059** | 1343.8 | 0.600 ±0.051 | 1343.8 | 0.609 ±0.050 | 1366.6 |
-| KSerialization | 0.769 ±0.062 | 1836.6 | 0.746 ±0.062 | 1836.6 | 1.340 ±0.085 | 1957.5 |
-| Moshi | 1.239 ±0.101 | 1.247 ±0.106 | 3131.4 | 1.150 ±0.107 | 3131.4 |
-| Jackson | 2.161 ±0.150 | 2.145 ±0.147 | 6944.6 | 2.159 ±0.153 | 6944.6 |
+| **Ghost** | **0.675 ±0.042** | **431.8** | **0.374 ±0.023** | **207.5** | **0.395 ±0.038** | **334.2** |
+| Gson | 0.603 ±0.056 | 1343.8 | 0.600 ±0.051 | 1343.8 | 0.609 ±0.050 | 1366.6 |
+| KSerialization | 0.746 ±0.063 | 1836.6 | 0.746 ±0.062 | 1836.6 | 1.340 ±0.085 | 1957.5 |
+| Moshi | 1.251 ±0.107 | 3131.4 | 1.247 ±0.106 | 3131.4 | 1.150 ±0.107 | 3131.4 |
+| Jackson | 2.246 ±0.144 | 6944.6 | 2.145 ±0.147 | 6944.6 | 2.159 ±0.153 | 6944.6 |
 
 ### Serialization — 1000 objects (WRITING)
 
