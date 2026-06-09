@@ -17,7 +17,8 @@ import com.ghost.serialization.parser.GhostJsonConstants.CHAR_S
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_N
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_DOT
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_ZERO
-import com.ghost.serialization.parser.GhostHeuristics.maxWarmWriteBufferCapacity
+import com.ghost.serialization.parser.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
+import com.ghost.serialization.parser.GhostHeuristics.maxWarmCharWriteBufferCapacity
 import okio.ByteString
 
 /**
@@ -26,7 +27,7 @@ import okio.ByteString
  * to allow direct JIT/AOT inlining.
  */
 @InternalGhostApi
-class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
+class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE / 8) {
 
     var array: CharArray = CharArray(initialCapacity)
         private set
@@ -45,8 +46,8 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
                 newCapacity = INITIAL_WRITE_BUFFER_SIZE
             }
             while (newCapacity < requiredCapacity) {
-                val nextCapacity = newCapacity * BUFFER_SCALE_FACTOR
-                if (nextCapacity < 0) {
+                val nextCapacity = newCapacity + (newCapacity shr CAPACITY_GROWTH_SHIFT)
+                if (nextCapacity < newCapacity) {
                     newCapacity = Int.MAX_VALUE
                     break
                 }
@@ -138,8 +139,8 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         ensureCapacity(length)
         val backingArray = array
         var writeIndex = size
-        for (i in 0 until length) {
-            backingArray[writeIndex++] = byteString[i].toInt().toChar()
+        for (index in 0 until length) {
+            backingArray[writeIndex++] = byteString[index].toInt().toChar()
         }
         size += length
     }
@@ -193,7 +194,7 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
 
     fun reset() {
         size = 0
-        if (array.size > maxWarmWriteBufferCapacity) {
+        if (array.size > maxWarmCharWriteBufferCapacity) {
             array = CharArray(initialCapacity)
         }
     }

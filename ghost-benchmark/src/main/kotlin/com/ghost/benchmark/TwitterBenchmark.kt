@@ -123,9 +123,19 @@ object TwitterBenchmark {
             val winner = sorted[0]
             val loser = sorted[1]
             val pct = ((winner.second.first - loser.second.first) / loser.second.first) * 100.0
+            val memPct = if (loser.second.second > 0) {
+                ((loser.second.second - winner.second.second) / loser.second.second) * 100.0
+            } else {
+                0.0
+            }
+            val memString = if (memPct >= 0.0) {
+                "%.1f%% less memory".format(memPct)
+            } else {
+                "but uses %.1f%% MORE memory".format(-memPct)
+            }
             println(
-                "   👉 WINNER for %s: %s (%6.1f%% faster than %s)".format(
-                    label, winner.first, pct, loser.first
+                "   👉 WINNER for %s: %s (%.1f%% faster, %s than %s)".format(
+                    label, winner.first, pct, memString, loser.first
                 )
             )
             println("|--------------------|--------|---------------------|-------------|")

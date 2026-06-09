@@ -38,4 +38,13 @@ expect object GhostHeuristics {
      * Larger encoded payloads can reuse the grown buffer on the same thread; capacity above this is released.
      */
     val maxWarmWriteBufferCapacity: Int
+
+    /**
+     * Max retained capacity for [com.ghost.serialization.writer.FlatCharArrayWriter] after
+     * [com.ghost.serialization.writer.FlatCharArrayWriter.reset].
+     * Deliberately smaller than [maxWarmWriteBufferCapacity] because the char writer only
+     * serves [ghostInternalEncodeToString] — producing text output — and very large String
+     * payloads are rare compared to binary encoding workloads.
+     */
+    val maxWarmCharWriteBufferCapacity: Int
 }

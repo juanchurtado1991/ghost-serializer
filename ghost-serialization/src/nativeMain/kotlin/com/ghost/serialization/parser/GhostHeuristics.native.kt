@@ -8,4 +8,5 @@ actual object GhostHeuristics {
     actual val maxCollectionSize: Int = 500_000
     actual val maxDiscriminatorPeekDistance: Int = 1024
     actual val maxWarmWriteBufferCapacity: Int = 4 * 1024 * 1024
+    actual val maxWarmCharWriteBufferCapacity: Int = 256 * 1024
 }

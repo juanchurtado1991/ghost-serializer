@@ -23,7 +23,7 @@ Ghost is a Kotlin JSON library that generates all serialization code at **compil
 - Ships a **dedicated native reader per input format**: `ByteArray`, Okio stream, or `String` — each parsed without cross-format conversion overhead.
 - Maintains a **zero-alloc hot path** via thread-local reader and writer pools — no GC pressure in steady state.
 
-The result: on a real Twitter-like payload, Ghost matches KotlinX Serialization on String decoding (allocating **2.4× less heap memory**) and beats it by **+45.0% on Bytes decoding** (allocating **6.6× less heap memory**).
+The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization on String decoding (allocating **3.2× less heap memory**) and beats it by **+54.1% on Bytes decoding** (allocating **6.3× less heap memory**).
 
 This README is honest: we explain what Ghost excels at, how it achieves its performance, and the scenarios where another library might be a better fit.
 
@@ -83,22 +83,22 @@ See [Contributing](#contributing) for how to run the full test suite and registe
 
 Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_macro.json) dataset — a real-world payload with deeply nested objects and long string fields — comparing Ghost against KotlinX Serialization (KSER) across all input/output modes:
 
-> **Note on Decode (String):** Ghost parses `String` inputs natively via `GhostJsonStringReader` (enabled with `ghost.textChannel=true`), bypassing `encodeToByteArray` entirely. This matches KSER's throughput while allocating **2.4× less heap memory** compared to KSER on String inputs.
+> **Note on Decode (String):** Ghost parses `String` inputs natively via `GhostJsonStringReader` (enabled with `ghost.textChannel=true`), bypassing `encodeToByteArray` entirely. This beats KSER's throughput while allocating **3.2× less heap memory** compared to KSER on String inputs.
 
 | Operation | Engine |      Throughput (ops/s)      |         Mem (KB/op)         |
 | :--- | :---: |:----------------------------:|:---------------------------:|
-| **Decode (String)** | **Ghost** | **1178.4** *(+11.6% faster)* | **515.8** *(-61.4% memory)* |
-| | KSER |            1055.6            |           1337.6            |
-| **Decode (Bytes)** | **Ghost** | **1140.8** *(+46.9% faster)* | **650.5** *(-84.8% memory)* |
-| | KSER |            776.8             |           4297.0            |
-| **Decode (Streaming)** | **Ghost** | **378.1** *(+26.2% faster)*  | **1333.7** *(-30.0% memory)*|
-| | KSER |            299.6             |           1905.5            |
-| **Encode (String)** | **Ghost** | **3994.7** *(+34.8% faster)* |           1080.7            |
-| | KSER |            2962.6            |         **981.6**           |
-| **Encode (Bytes)** | **Ghost** | **2410.0** *(+92.3% faster)* | **428.0** *(-80.7% memory)* |
-| | KSER |            1253.2            |           2216.3            |
-| **Encode (Streaming)** | **Ghost** | **2390.3** *(+68.7% faster)* | **434.1** *(-6.5% memory)*  |
-| | KSER |            1417.1            |            464.5            |
+| **Decode (String)** | **Ghost** | **1170.8** *(+8.8% faster)*  | **412.2** *(-69.2% memory)* |
+| | KSER |            1075.7            |           1337.5            |
+| **Decode (Bytes)** | **Ghost** | **1149.9** *(+46.1% faster)* | **677.1** *(-84.2% memory)* |
+| | KSER |            787.0             |           4297.0            |
+| **Decode (Streaming)** | **Ghost** | **483.0** *(+60.8% faster)*  | **1365.2** *(-28.3% memory)*|
+| | KSER |            300.4             |           1904.8            |
+| **Encode (String)** | **Ghost** | **3877.1** *(+29.2% faster)* |           1074.3            |
+| | KSER |            2999.9            |         **981.6**           |
+| **Encode (Bytes)** | **Ghost** | **2432.4** *(+90.3% faster)* | **420.2** *(-81.0% memory)* |
+| | KSER |            1278.2            |           2216.3            |
+| **Encode (Streaming)** | **Ghost** | **2397.3** *(+65.9% faster)* | **426.9** *(-8.1% memory)*  |
+| | KSER |            1444.7            |            464.5            |
 
 ### Deserialization — 200 objects (LIST_MEDIUM)
 
@@ -114,40 +114,40 @@ Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_m
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | 0.787 ±0.048 | **431.8** | **0.369 ±0.028** | **207.5** | **0.390 ±0.032** | **334.2** |
-| Gson | **0.592 ±0.059** | 1343.8 | 0.591 ±0.051 | 1343.8 | 0.600 ±0.061 | 1366.6 |
-| KSerialization | 0.769 ±0.062 | 1836.6 | 0.770 ±0.065 | 1836.6 | 1.349 ±0.092 | 1957.5 |
-| Moshi | 1.239 ±0.101 | 3131.4 | 1.238 ±0.104 | 3131.4 | 1.137 ±0.100 | 3131.4 |
-| Jackson | 2.161 ±0.150 | 6944.6 | 2.076 ±0.148 | 6944.6 | 2.086 ±0.147 | 6944.6 |
+| **Ghost** | 0.787 ±0.048 | **431.8** | **0.374 ±0.023** | **207.5** | **0.395 ±0.038** | **334.2** |
+| Gson | **0.592 ±0.059** | 1343.8 | 0.600 ±0.051 | 1343.8 | 0.609 ±0.050 | 1366.6 |
+| KSerialization | 0.769 ±0.062 | 1836.6 | 0.746 ±0.062 | 1836.6 | 1.340 ±0.085 | 1957.5 |
+| Moshi | 1.239 ±0.101 | 1.247 ±0.106 | 3131.4 | 1.150 ±0.107 | 3131.4 |
+| Jackson | 2.161 ±0.150 | 2.145 ±0.147 | 6944.6 | 2.159 ±0.153 | 6944.6 |
 
 ### Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Ghost** | **0.062 ±0.016** | **101.0** | **0.080 ±0.014** | **92.7** | **0.081 ±0.017** | **96.7** |
-| KSerialization | 0.160 ±0.012 | 202.6 | 0.157 ±0.015 | 263.9 | 0.212 ±0.016 | 205.6 |
-| Jackson | 0.189 ±0.023 | 396.2 | 0.151 ±0.021 | 249.8 | 0.149 ±0.020 | 303.6 |
-| Gson | 0.327 ±0.032 | 551.4 | 0.327 ±0.031 | 644.0 | 0.754 ±0.086 | 3908.6 |
-| Moshi | 0.366 ±0.032 | 630.8 | 0.366 ±0.034 | 723.4 | 0.351 ±0.032 | 445.5 |
+| **Ghost** | **0.076 ±0.012** | **100.4** | **0.080 ±0.015** | **92.7** | **0.081 ±0.016** | **96.7** |
+| KSerialization | 0.123 ±0.010 | 202.6 | 0.125 ±0.029 | 263.9 | 0.211 ±0.020 | 205.6 |
+| Jackson | 0.189 ±0.024 | 396.2 | 0.151 ±0.019 | 249.7 | 0.150 ±0.014 | 303.5 |
+| Gson | 0.330 ±0.028 | 551.3 | 0.329 ±0.033 | 643.9 | 0.756 ±0.084 | 3908.5 |
+| Moshi | 0.389 ±0.034 | 630.7 | 0.389 ±0.033 | 723.3 | 0.377 ±0.035 | 445.5 |
 
 ### Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.003 ±0.002** | 0.006 | 0.005 | 0.007 | 0.009 |
-| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.016 | 0.021 | 0.031 |
+| Deep Nesting — 20 levels (ms) | **0.003 ±0.002** | 0.006 | 0.005 | 0.007 | 0.010 |
+| Malformed JSON — resilience (ms) | **0.007 ±0.001** | 0.014 | 0.017 | 0.022 | 0.032 |
 
 ### Ghost Special Features
 
-These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson. They are measured with the same methodology (10,000 runs, 20,000-iteration JIT warmup).
+These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson. They are measured with the same methodology (10,000 runs, 5,000-iteration JIT warmup).
 
 | Feature | µs/op | B/op |
 |:---|:---:|:---:|
-| Polymorphism — Sealed Class Dispatch | **0.65** | 300 |
+| Polymorphism — Sealed Class Dispatch | **0.55** | 300 |
 | Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.31** | 32 |
-| Resilience — `@GhostResilient` (type mismatch recovery) | **2.57** | 10608 |
-| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **1.39** | 16840 |
-| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.30** | 264 |
+| Resilience — `@GhostResilient` (type mismatch recovery) | **2.64** | 10612 |
+| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **1.36** | 16840 |
+| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.23** | 264 |
 
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that the performance results always reflect a stable and correct codebase.

@@ -23,6 +23,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.UTF8_MAX_BMP_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.UTF8_REPLACEMENT_CHAR
 import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_18
 import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_6
+import com.ghost.serialization.parser.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
 import okio.ByteString
 
 /**
@@ -69,8 +70,8 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
                 newCapacity = INITIAL_WRITE_BUFFER_SIZE
             }
             while (newCapacity < requiredCapacity) {
-                val nextCapacity = newCapacity * BUFFER_SCALE_FACTOR
-                if (nextCapacity < 0) {
+                val nextCapacity = newCapacity + (newCapacity shr CAPACITY_GROWTH_SHIFT)
+                if (nextCapacity < newCapacity) {
                     newCapacity = Int.MAX_VALUE
                     break
                 }
@@ -105,19 +106,19 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      * Use instead of two consecutive [writeByte] calls whenever both bytes
      * are known at the call site (e.g. opening + closing quotes, escape pairs).
      */
-    fun write2Bytes(b1: Int, b2: Int) {
-        val s = size
-        val arr = array
-        if (s + 1 < arr.size) {
-            arr[s] = b1.toByte()
-            arr[s + 1] = b2.toByte()
-            size = s + 2
+    fun write2Bytes(firstByte: Int, secondByte: Int) {
+        val currentSize = size
+        val backingArray = array
+        if (currentSize + 1 < backingArray.size) {
+            backingArray[currentSize] = firstByte.toByte()
+            backingArray[currentSize + 1] = secondByte.toByte()
+            size = currentSize + 2
         } else {
             ensureCapacity(2)
-            val arr2 = array
-            arr2[s] = b1.toByte()
-            arr2[s + 1] = b2.toByte()
-            size = s + 2
+            val updatedArray = array
+            updatedArray[currentSize] = firstByte.toByte()
+            updatedArray[currentSize + 1] = secondByte.toByte()
+            size = currentSize + 2
         }
     }
 
@@ -130,25 +131,25 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      */
     fun writeQuotedAscii(text: String, length: Int) {
         ensureCapacity(length + C.STRING_QUOTE_PAIR_BYTES)
-        val arr = array
-        var w = size
-        arr[w++] = C.QUOTE_INT.toByte()
-        var i = 0
+        val backingArray = array
+        var writeIndex = size
+        backingArray[writeIndex++] = C.QUOTE_INT.toByte()
+        var charIndex = 0
         // Unrolled x4 for instruction-level parallelism
-        while (i + 3 < length) {
-            arr[w] = text[i].code.toByte()
-            arr[w + 1] = text[i + 1].code.toByte()
-            arr[w + 2] = text[i + 2].code.toByte()
-            arr[w + 3] = text[i + 3].code.toByte()
-            w += 4
-            i += 4
+        while (charIndex + 3 < length) {
+            backingArray[writeIndex] = text[charIndex].code.toByte()
+            backingArray[writeIndex + 1] = text[charIndex + 1].code.toByte()
+            backingArray[writeIndex + 2] = text[charIndex + 2].code.toByte()
+            backingArray[writeIndex + 3] = text[charIndex + 3].code.toByte()
+            writeIndex += 4
+            charIndex += 4
         }
-        while (i < length) {
-            arr[w++] = text[i].code.toByte()
-            i++
+        while (charIndex < length) {
+            backingArray[writeIndex++] = text[charIndex].code.toByte()
+            charIndex++
         }
-        arr[w++] = C.QUOTE_INT.toByte()
-        size = w
+        backingArray[writeIndex++] = C.QUOTE_INT.toByte()
+        size = writeIndex
     }
 
     /** Appends every byte from [bytes] to the live payload. */
@@ -206,16 +207,16 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
 
         // ASCII Fast-Path with unrolling
         while (sourceIndex + 3 < endIndex) {
-            val c0 = text[sourceIndex].code
-            val c1 = text[sourceIndex + 1].code
-            val c2 = text[sourceIndex + 2].code
-            val c3 = text[sourceIndex + 3].code
+            val charCode0 = text[sourceIndex].code
+            val charCode1 = text[sourceIndex + 1].code
+            val charCode2 = text[sourceIndex + 2].code
+            val charCode3 = text[sourceIndex + 3].code
 
-            if ((c0 or c1 or c2 or c3) < UTF8_1BYTE_LIMIT) {
-                backingArray[writeIndex] = c0.toByte()
-                backingArray[writeIndex + 1] = c1.toByte()
-                backingArray[writeIndex + 2] = c2.toByte()
-                backingArray[writeIndex + 3] = c3.toByte()
+            if ((charCode0 or charCode1 or charCode2 or charCode3) < UTF8_1BYTE_LIMIT) {
+                backingArray[writeIndex] = charCode0.toByte()
+                backingArray[writeIndex + 1] = charCode1.toByte()
+                backingArray[writeIndex + 2] = charCode2.toByte()
+                backingArray[writeIndex + 3] = charCode3.toByte()
                 sourceIndex += 4
                 writeIndex += 4
             } else {
@@ -281,47 +282,47 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     fun writeTrue() {
         ensureCapacity(4)
         val backingArray = array
-        var s = size
-        backingArray[s++] = C.T_BYTE_INT.toByte()
-        backingArray[s++] = C.R_BYTE_INT.toByte()
-        backingArray[s++] = C.U_BYTE_INT.toByte()
-        backingArray[s++] = C.E_BYTE_INT.toByte()
-        size = s
+        var writeIndex = size
+        backingArray[writeIndex++] = C.T_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.R_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()
+        size = writeIndex
     }
 
     /** Writes the literal "false" directly. */
     fun writeFalse() {
         ensureCapacity(5)
         val backingArray = array
-        var s = size
-        backingArray[s++] = C.F_BYTE_INT.toByte()
-        backingArray[s++] = C.A_BYTE_INT.toByte()
-        backingArray[s++] = C.L_BYTE_INT.toByte()
-        backingArray[s++] = C.S_BYTE_INT.toByte()
-        backingArray[s++] = C.E_BYTE_INT.toByte()
-        size = s
+        var writeIndex = size
+        backingArray[writeIndex++] = C.F_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.A_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.S_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()
+        size = writeIndex
     }
 
     /** Writes the literal "null" directly. */
     fun writeNull() {
         ensureCapacity(4)
         val backingArray = array
-        var s = size
-        backingArray[s++] = C.N_BYTE_INT.toByte()
-        backingArray[s++] = C.U_BYTE_INT.toByte()
-        backingArray[s++] = C.L_BYTE_INT.toByte()
-        backingArray[s++] = C.L_BYTE_INT.toByte()
-        size = s
+        var writeIndex = size
+        backingArray[writeIndex++] = C.N_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()
+        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()
+        size = writeIndex
     }
 
     /** Writes the literal ".0" directly. */
     fun writeDotZero() {
         ensureCapacity(2)
         val backingArray = array
-        var s = size
-        backingArray[s++] = C.DOT_INT.toByte()
-        backingArray[s++] = C.ZERO_INT.toByte()
-        size = s
+        var writeIndex = size
+        backingArray[writeIndex++] = C.DOT_INT.toByte()
+        backingArray[writeIndex++] = C.ZERO_INT.toByte()
+        size = writeIndex
     }
 
     /**

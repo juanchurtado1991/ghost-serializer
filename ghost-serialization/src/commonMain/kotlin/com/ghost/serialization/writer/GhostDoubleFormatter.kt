@@ -160,6 +160,109 @@ internal object GhostDoubleFormatter {
     }
 
     /**
+     * Formats and writes the given [Float] value directly into the [scratch] buffer starting at [offset].
+     * Uses 7 decimal places of precision suitable for the single-precision Float type to avoid representation noise.
+     */
+    fun writeFloatDirect(
+        value: Float,
+        scratch: ByteArray,
+        offset: Int,
+        fallback: (Float) -> Int
+    ): Int {
+        if (!value.isFinite()) return fallback(value)
+
+        var pos = offset
+        var localValue = value
+
+        if (value.toRawBits() < 0) {
+            scratch[pos++] = C.MINUS
+            localValue = -localValue
+        }
+
+        val doubleVal = localValue.toDouble()
+        // Fast path for small whole numbers
+        if (
+            doubleVal <= SMALL_WHOLE_THRESHOLD &&
+            doubleVal % C.WHOLE_NUMBER_CHECK == C.ZERO_DOUBLE
+        ) {
+            return writeLongDirect(
+                doubleVal.toLong(),
+                scratch,
+                pos,
+                scratchEnd = pos + 32,
+                writeDecimalZero = true
+            ) - offset
+        }
+
+        // If number is massive or microscopic, delegate to native system
+        if (
+            doubleVal > MASSIVE_DOUBLE_THRESHOLD ||
+            (localValue > 0.0f && doubleVal < MICROSCOPIC_DOUBLE_THRESHOLD)
+        ) {
+            return fallback(value)
+        }
+
+        val intPart = doubleVal.toLong()
+        val fracPart = doubleVal - intPart
+
+        // Float precision limit is 7 decimals (10^7)
+        var fracInt = (fracPart * 10_000_000.0).roundToInt()
+
+        if (fracInt >= 10_000_000L) {
+            return writeLongDirect(
+                intPart + 1,
+                scratch,
+                pos,
+                scratchEnd = pos + 32,
+                writeDecimalZero = true
+            ) - offset
+        }
+
+        pos = writeLongDirect(
+            intPart,
+            scratch,
+            pos,
+            scratchEnd = pos + 32,
+            writeDecimalZero = false
+        )
+
+        scratch[pos++] = C.DOT
+
+        if (fracInt == 0) {
+            scratch[pos++] = C.ZERO
+            return pos - offset
+        }
+
+        var decimalsToPrint = 7
+        while (decimalsToPrint > 1 && fracInt % 10 == 0) {
+            fracInt /= 10
+            decimalsToPrint--
+        }
+
+        pos += decimalsToPrint
+        var writePos = pos - 1
+
+        while (decimalsToPrint >= 2) {
+            val q = fracInt / 100
+            val r = (fracInt - (q * 100)) * 2
+            C.DOUBLE_DIGIT_LUT.copyInto(
+                scratch,
+                writePos - 1,
+                r,
+                r + 2
+            )
+            writePos -= 2
+            fracInt = q
+            decimalsToPrint -= 2
+        }
+        if (decimalsToPrint == 1) {
+            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()
+        }
+
+        return pos - offset
+    }
+
+    /**
      * Converts a [Long] integer value into its ASCII bytes and writes it directly to [scratch].
      *
      * Digits are extracted from right to left using division and base-100 modulo arithmetic.
