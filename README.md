@@ -23,7 +23,7 @@ Ghost is a Kotlin JSON library that generates all serialization code at **compil
 - Ships a **dedicated native reader per input format**: `ByteArray`, Okio stream, or `String` — each parsed without cross-format conversion overhead.
 - Maintains a **zero-alloc hot path** via thread-local reader and writer pools — no GC pressure in steady state.
 
-The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization on String decoding (allocating **3.2× less heap memory**) and beats it by **+54.1% on Bytes decoding** (allocating **6.3× less heap memory**).
+The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization on String decoding (allocating **3.2× less heap memory**) and beats it by **+84.1% on Bytes decoding** (allocating **6.3× less heap memory**).
 
 This README is honest: we explain what Ghost excels at, how it achieves its performance, and the scenarios where another library might be a better fit.
 
