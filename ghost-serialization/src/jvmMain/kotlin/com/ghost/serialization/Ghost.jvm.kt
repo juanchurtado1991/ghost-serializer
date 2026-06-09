@@ -38,7 +38,7 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 }
 
 private class WriterStringPair {
-    val charWriter = com.ghost.serialization.writer.FlatCharArrayWriter(com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE)
+    val charWriter = com.ghost.serialization.writer.FlatCharArrayWriter()
     val writer = com.ghost.serialization.writer.GhostJsonStringWriter(charWriter)
 }
 

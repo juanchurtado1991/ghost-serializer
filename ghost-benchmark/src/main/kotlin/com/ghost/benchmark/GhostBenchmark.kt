@@ -748,9 +748,20 @@ private fun printRankedTableBody(metrics: BenchmarkMetrics) {
     val slowest = rankings.last()
     if (winner.nanos > 0 && slowest.nanos > 0) {
         val speedVsSlowest = ((slowest.nanos.toDouble() / winner.nanos.toDouble()) - 1.0) * 100.0
+        val memSavedVsSlowest = if (slowest.mem > 0) {
+            ((slowest.mem.toDouble() - winner.mem.toDouble()) / slowest.mem.toDouble()) * 100.0
+        } else {
+            0.0
+        }
+        val memString = if (memSavedVsSlowest >= 0.0) {
+            "%.1f%% less memory".format(memSavedVsSlowest)
+        } else {
+            "but uses %.1f%% MORE memory".format(-memSavedVsSlowest)
+        }
         println(
-            "   WINNER: ${winner.name} (%.1f%% faster than ${slowest.name})".format(
-                speedVsSlowest
+            "   WINNER: ${winner.name} (%.1f%% faster than ${slowest.name}, %s)".format(
+                speedVsSlowest,
+                memString
             )
         )
     }

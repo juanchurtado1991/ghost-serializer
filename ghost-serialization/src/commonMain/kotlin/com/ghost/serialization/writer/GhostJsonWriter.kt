@@ -269,7 +269,11 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Float): GhostJsonWriter {
-        return writeField(header, value.toDouble())
+        appendSeparator()
+        buffer.write(header)
+        writeFloatValueRaw(value)
+        needsComma = true
+        return this
     }
 
     // ── value() public API ────────────────────────────────────────────────────
@@ -318,7 +322,10 @@ class GhostJsonWriter(
      * Writes a float value into the JSON stream.
      */
     fun value(number: Float): GhostJsonWriter {
-        return value(number.toDouble())
+        appendSeparator()
+        writeFloatValueRaw(number)
+        needsComma = true
+        return this
     }
 
     /**
@@ -460,6 +467,37 @@ class GhostJsonWriter(
 
         val scratchBuf = acquireScratch()
         val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
+            value = number,
+            scratch = scratchBuf,
+            offset = 0,
+            fallback = { fallbackNum ->
+                if (!fallbackNum.isFinite()) {
+                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+                }
+                buffer.writeUtf8(fallbackNum.toString())
+                -1
+            }
+        )
+
+        if (bytesWrittenLength > 0) {
+            buffer.write(scratchBuf, 0, bytesWrittenLength)
+        }
+    }
+
+    @InternalGhostApi
+    fun writeFloatValueRaw(number: Float) {
+        val doubleVal = number.toDouble()
+        if (doubleVal in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
+            doubleVal % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &&
+            !(number == 0.0f && number.toRawBits() < 0)
+        ) {
+            writeLongValueRawInternal(doubleVal.toLong())
+            buffer.write(DOT_ZERO, 0, DOT_ZERO.size)
+            return
+        }
+
+        val scratchBuf = acquireScratch()
+        val bytesWrittenLength = GhostDoubleFormatter.writeFloatDirect(
             value = number,
             scratch = scratchBuf,
             offset = 0,

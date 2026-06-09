@@ -84,19 +84,9 @@ internal object GhostJsonConstants {
     const val CHAR_N = 'n'
     const val CHAR_DOT = '.'
     const val CHAR_ZERO = '0'
+    const val CHAR_BACKSLASH = '\\'
 
-    // --- Boolean Coercion Values ---
-    const val COERCE_TRUE_STR = "true"
-    const val COERCE_YES_STR = "yes"
-    const val COERCE_ON_STR = "on"
-    const val COERCE_1_STR = "1"
-    const val COERCE_Y_STR = "y"
 
-    const val COERCE_FALSE_STR = "false"
-    const val COERCE_NO_STR = "no"
-    const val COERCE_OFF_STR = "off"
-    const val COERCE_0_STR = "0"
-    const val COERCE_N_STR = "n"
 
     // --- Case-Folded ASCII Byte Constants ---
     // Each constant is `'X'.code or 32` where 32 = CASE_INSENSITIVE_MASK.
@@ -151,8 +141,6 @@ internal object GhostJsonConstants {
     @PublishedApi
     internal val COLON_QUOTE_BS = "\":".encodeUtf8()
     @PublishedApi
-    internal val MINUS_ONE_BS = "-1".encodeUtf8()
-    @PublishedApi
     internal val TYPE_BS = "type".encodeUtf8()
 
     // --- Numeric Limits & Formatting ---
@@ -170,10 +158,6 @@ internal object GhostJsonConstants {
 
     /** Result of a bitwise check when no flags match. */
     const val RESULT_NONE = 0L
-
-    /** Bitmask for ASCII digits '0'-'9' (bits 48-57 set). Used for zero-cast validation. */
-    @PublishedApi
-    internal const val DIGIT_BITMASK = 0x03FF000000000000L
 
     /** Bitmask for JSON whitespace: Space (32), LF (10), CR (13), HT (9). */
     const val WHITESPACE_MASK = (1L shl 32) or (1L shl 10) or (1L shl 13) or (1L shl 9)
@@ -240,6 +224,9 @@ internal object GhostJsonConstants {
     /** Scaling factor when growing internal buffers. */
     const val BUFFER_SCALE_FACTOR = 2
 
+    /** Shift factor when growing buffer capacity by 1.5. */
+    const val CAPACITY_GROWTH_SHIFT = 1
+
     /** Byte sizes for common UTF/JSON sequences. */
     const val SINGLE_CHAR_SIZE = 1
     const val UNICODE_ESCAPE_PREFIX_SIZE = 2
@@ -265,14 +252,18 @@ internal object GhostJsonConstants {
 
     // --- Mathematical Tables ---
     /** Pre-calculated powers of ten to avoid expensive Math.pow calls. */
-    val POWERS_OF_TEN = DoubleArray(309)
-        .apply { for (i in indices) this[i] = 10.0.pow(i.toDouble()) }
-    val INVERSE_POWERS_OF_TEN = DoubleArray(309)
-        .apply { for (i in indices) this[i] = 1.0 / 10.0.pow(i.toDouble()) }
-    val POWERS_OF_TEN_FLOAT = FloatArray(39)
-        .apply { for (i in indices) this[i] = 10.0f.pow(i.toDouble().toFloat()) }
-    val INVERSE_POWERS_OF_TEN_FLOAT = FloatArray(39)
-        .apply { for (i in indices) this[i] = 1.0f / 10.0f.pow(i.toDouble().toFloat()) }
+    val POWERS_OF_TEN = DoubleArray(309).apply {
+        for (i in indices) this[i] = 10.0.pow(i.toDouble())
+    }
+    val INVERSE_POWERS_OF_TEN = DoubleArray(309).apply {
+        for (i in indices) this[i] = 1.0 / 10.0.pow(i.toDouble())
+    }
+    val POWERS_OF_TEN_FLOAT = FloatArray(39).apply {
+        for (i in indices) this[i] = 10.0f.pow(i.toDouble().toFloat())
+    }
+    val INVERSE_POWERS_OF_TEN_FLOAT = FloatArray(39).apply {
+        for (i in indices) this[i] = 1.0f / 10.0f.pow(i.toDouble().toFloat())
+    }
 
     // --- Lookup Tables (LUTs) ---
     /** Hexadecimal character bytes. */

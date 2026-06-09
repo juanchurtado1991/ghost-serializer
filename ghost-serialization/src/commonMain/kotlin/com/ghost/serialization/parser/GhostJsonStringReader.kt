@@ -28,11 +28,31 @@ class GhostJsonStringReader(
     var depth: Int = 0
     var needsCommaMask: Long = 0L
     var commaConsumedMask: Long = 0L
+    /** Reused CharArray cache to bypass String.charAt overhead. */
+    var rawChars: CharArray
     /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
     val stringPool: Array<String?> = arrayOfNulls(C.STR_POOL_SIZE)
 
+    // Reusable CharArray for decoding escapes in readQuotedString slow-path
+    var slowPathChars: CharArray = CharArray(256)
+
+    private fun growSlowPathChars(current: CharArray, requiredSize: Int): CharArray {
+        val newSize = (current.size * 2).coerceAtLeast(requiredSize)
+        val newArray = CharArray(newSize)
+        current.copyInto(newArray, 0, 0, current.size)
+        slowPathChars = newArray
+        return newArray
+    }
+
+    init {
+        val len = rawData.length
+        val chars = CharArray(len)
+        rawData.copyRangeToCharArray(chars, 0, 0, len)
+        rawChars = chars
+    }
+
     inline fun getByte(index: Int): Int {
-        return rawData[index].code
+        return rawChars[index].code
     }
 
     fun throwError(message: String): Nothing {
@@ -45,8 +65,9 @@ class GhostJsonStringReader(
                 var columnNumber = 0
                 var lineNumber = 0
                 var byteIndex = 0
+                val chars = rawChars
                 while (byteIndex < errorEnd) {
-                    if (rawData[byteIndex].code == C.NEWLINE_INT) {
+                    if (chars[byteIndex].code == C.NEWLINE_INT) {
                         lineNumber++
                         columnNumber = 0
                     } else {
@@ -65,20 +86,20 @@ class GhostJsonStringReader(
     }
 
     fun skipWhitespace() {
-        var pos = position
-        val lim = limit
-        val localData = rawData
-        while (pos < lim) {
-            val code = localData[pos].code
+        var scanPosition = position
+        val localLimit = limit
+        val chars = rawChars
+        while (scanPosition < localLimit) {
+            val code = chars[scanPosition].code
             if (code <= C.SPACE_INT && ((C.WHITESPACE_MASK shr code) and C.BYTE_SHIFT_UNIT) != C.RESULT_NONE) {
-                pos++
+                scanPosition++
             } else {
-                position = pos
+                position = scanPosition
                 nextTokenByte = code
                 return
             }
         }
-        position = lim
+        position = localLimit
         nextTokenByte = C.MATCH_END
     }
 
@@ -107,8 +128,9 @@ class GhostJsonStringReader(
         if (position + size > limit) {
             throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
+        val chars = rawChars
         for (i in 0 until size) {
-            if (rawData[position + i].code != (expected[i].toInt() and C.BYTE_MASK)) {
+            if (chars[position + i].code != (expected[i].toInt() and C.BYTE_MASK)) {
                 throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
             }
         }
@@ -130,8 +152,15 @@ class GhostJsonStringReader(
         this.maxDepth = C.MAX_DEPTH
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
-    }
 
+        val len = newData.length
+        var chars = rawChars
+        if (chars.size < len) {
+            chars = CharArray(len)
+            rawChars = chars
+        }
+        newData.copyRangeToCharArray(chars, 0, 0, len)
+    }
 
     fun readQuotedString(): String {
         if (nextNonWhitespace() != C.QUOTE_INT) {
@@ -163,19 +192,17 @@ class GhostJsonStringReader(
             return rawData.substring(start, start + length)
         }
 
-        val stringBuilder = StringBuilder(if (end != C.MATCH_END) {
-            end - start
-        } else {
-            C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY
-        })
+        var outChars = slowPathChars
+        var outPos = 0
 
         var startPosition = start
+        val chars = rawChars
         while (startPosition < limit) {
-            val byteValue = rawData[startPosition++].code
+            val byteValue = chars[startPosition++].code
             if (byteValue == C.QUOTE_INT) {
                 position = startPosition
                 nextTokenByte = C.RESET_TOKEN_BYTE
-                return stringBuilder.toString()
+                return outChars.concatToString(0, outPos)
             }
 
             if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
@@ -188,7 +215,7 @@ class GhostJsonStringReader(
                     position = startPosition
                     throwError(C.UNTERMINATED_ESCAPE_ERROR)
                 }
-                when (val escaped = rawData[startPosition++].code) {
+                when (val escaped = chars[startPosition++].code) {
                     C.UNICODE_PREFIX_U_INT -> {
                         if (startPosition + C.UNICODE_HEX_LENGTH > limit) {
                             position = startPosition
@@ -200,15 +227,18 @@ class GhostJsonStringReader(
 
                         if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
                             if (startPosition + C.SURROGATE_OFFSET <= limit &&
-                                rawData[startPosition].code == C.BACKSLASH_INT &&
-                                rawData[startPosition + C.SINGLE_CHAR_SIZE].code == C.UNICODE_PREFIX_U_INT
+                                chars[startPosition].code == C.BACKSLASH_INT &&
+                                chars[startPosition + C.SINGLE_CHAR_SIZE].code == C.UNICODE_PREFIX_U_INT
                             ) {
                                 startPosition += C.UNICODE_ESCAPE_PREFIX_SIZE
                                 val lowCode = parseUnicodeHex(startPosition)
                                 if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
                                     startPosition += C.UNICODE_HEX_LENGTH
-                                    stringBuilder.append(code.toChar())
-                                    stringBuilder.append(lowCode.toChar())
+                                    if (outPos + 2 > outChars.size) {
+                                        outChars = growSlowPathChars(outChars, outPos + 2)
+                                    }
+                                    outChars[outPos++] = code.toChar()
+                                    outChars[outPos++] = lowCode.toChar()
                                 } else {
                                     position = startPosition
                                     throwError(C.ERR_HIGH_SURROGATE)
@@ -218,36 +248,60 @@ class GhostJsonStringReader(
                                 throwError(C.ERR_HIGH_SURROGATE)
                             }
                         } else {
-                            stringBuilder.append(code.toChar())
+                            if (outPos + 1 > outChars.size) {
+                                outChars = growSlowPathChars(outChars, outPos + 1)
+                            }
+                            outChars[outPos++] = code.toChar()
                         }
                     }
 
                     C.N_BYTE_INT -> {
-                        stringBuilder.append(C.LF_CHAR)
+                        if (outPos + 1 > outChars.size) {
+                            outChars = growSlowPathChars(outChars, outPos + 1)
+                        }
+                        outChars[outPos++] = C.LF_CHAR
                     }
 
                     C.R_BYTE_INT -> {
-                        stringBuilder.append(C.CR_CHAR)
+                        if (outPos + 1 > outChars.size) {
+                            outChars = growSlowPathChars(outChars, outPos + 1)
+                        }
+                        outChars[outPos++] = C.CR_CHAR
                     }
 
                     C.T_BYTE_INT -> {
-                        stringBuilder.append(C.TAB_CHAR)
+                        if (outPos + 1 > outChars.size) {
+                            outChars = growSlowPathChars(outChars, outPos + 1)
+                        }
+                        outChars[outPos++] = C.TAB_CHAR
                     }
 
                     C.B_BYTE_INT -> {
-                        stringBuilder.append(C.BS_CHAR)
+                        if (outPos + 1 > outChars.size) {
+                            outChars = growSlowPathChars(outChars, outPos + 1)
+                        }
+                        outChars[outPos++] = C.BS_CHAR
                     }
 
                     C.F_BYTE_INT -> {
-                        stringBuilder.append(C.FF_CHAR)
+                        if (outPos + 1 > outChars.size) {
+                            outChars = growSlowPathChars(outChars, outPos + 1)
+                        }
+                        outChars[outPos++] = C.FF_CHAR
                     }
 
                     else -> {
-                        stringBuilder.append(escaped.toChar())
+                        if (outPos + 1 > outChars.size) {
+                            outChars = growSlowPathChars(outChars, outPos + 1)
+                        }
+                        outChars[outPos++] = escaped.toChar()
                     }
                 }
             } else {
-                stringBuilder.append(rawData[startPosition - 1])
+                if (outPos + 1 > outChars.size) {
+                    outChars = growSlowPathChars(outChars, outPos + 1)
+                }
+                outChars[outPos++] = chars[startPosition - 1]
             }
         }
         position = startPosition
@@ -266,46 +320,48 @@ class GhostJsonStringReader(
             return
         }
 
-        var pos = start
-        while (pos < limit) {
-            val byteValue = rawData[pos++].code
+        var scanPosition = start
+        val chars = rawChars
+        while (scanPosition < limit) {
+            val byteValue = chars[scanPosition++].code
             if (byteValue == C.QUOTE_INT) {
-                position = pos
+                position = scanPosition
                 nextTokenByte = C.RESET_TOKEN_BYTE
                 return
             }
 
             if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
-                position = pos
+                position = scanPosition
                 throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
             }
 
             if (byteValue == C.BACKSLASH_INT) {
-                if (pos >= limit) {
-                    position = pos
+                if (scanPosition >= limit) {
+                    position = scanPosition
                     throwError(C.UNTERMINATED_ESCAPE_ERROR)
                 }
-                val escaped = rawData[pos++].code
+                val escaped = chars[scanPosition++].code
 
                 if (escaped == C.UNICODE_PREFIX_U_INT) {
-                    if (pos + C.UNICODE_HEX_LENGTH > limit) {
-                        position = pos
+                    if (scanPosition + C.UNICODE_HEX_LENGTH > limit) {
+                        position = scanPosition
                         throwError(C.UNTERMINATED_UNICODE_ERROR)
                     }
-                    parseUnicodeHex(pos)
-                    pos += C.UNICODE_HEX_LENGTH
+                    parseUnicodeHex(scanPosition)
+                    scanPosition += C.UNICODE_HEX_LENGTH
                 }
             }
         }
-        position = pos
+        position = scanPosition
         throwError(C.UNTERMINATED_STRING_ERROR)
     }
 
     private fun parseUnicodeHex(currentPosition: Int): Int {
-        val hexByte0 = rawData[currentPosition].code
-        val hexByte1 = rawData[currentPosition + 1].code
-        val hexByte2 = rawData[currentPosition + 2].code
-        val hexByte3 = rawData[currentPosition + 3].code
+        val chars = rawChars
+        val hexByte0 = chars[currentPosition].code
+        val hexByte1 = chars[currentPosition + 1].code
+        val hexByte2 = chars[currentPosition + 2].code
+        val hexByte3 = chars[currentPosition + 3].code
 
         val hexLookupTable = C.HEX_LUT
         val digitValue0 = hexLookupTable[hexByte0]
@@ -348,17 +404,17 @@ class GhostJsonStringReader(
      * Mirrors the hash used in [GhostJsonFlatReader] for byte sources.
      */
     private fun computeStringPoolHash(start: Int, length: Int): Int {
-        val localData = rawData
+        val chars = rawChars
         return if (length >= 4) {
-            localData[start].code or
-                (localData[start + 1].code shl C.SHIFT_8) or
-                (localData[start + 2].code shl C.SHIFT_16) or
-                (localData[start + 3].code shl C.SHIFT_24)
+            chars[start].code or
+                (chars[start + 1].code shl C.SHIFT_8) or
+                (chars[start + 2].code shl C.SHIFT_16) or
+                (chars[start + 3].code shl C.SHIFT_24)
         } else {
             var key = 0
-            if (length >= 1) key = key or localData[start].code
-            if (length >= 2) key = key or (localData[start + 1].code shl C.SHIFT_8)
-            if (length >= 3) key = key or (localData[start + 2].code shl C.SHIFT_16)
+            if (length >= 1) key = key or chars[start].code
+            if (length >= 2) key = key or (chars[start + 1].code shl C.SHIFT_8)
+            if (length >= 3) key = key or (chars[start + 2].code shl C.SHIFT_16)
             key
         }
     }
@@ -369,9 +425,9 @@ class GhostJsonStringReader(
      */
     private fun poolContentEquals(start: Int, length: Int, cached: String): Boolean {
         if (cached.length != length) return false
-        val data = rawData
+        val chars = rawChars
         for (i in 0 until length) {
-            if (cached[i] != data[start + i]) return false
+            if (cached[i] != chars[start + i]) return false
         }
         return true
     }

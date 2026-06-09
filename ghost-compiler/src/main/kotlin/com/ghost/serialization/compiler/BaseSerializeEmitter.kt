@@ -29,6 +29,15 @@ internal abstract class BaseSerializeEmitter(
     protected val contextualSerializers = mutableMapOf<KSType, String>()
 
     /**
+     * Monotonically increasing counter to generate unique loop variable names
+     * (`sizeN`, `iN`, `keyN`, `valN`) within a single serialization function scope.
+     *
+     * Using [depth] alone caused collisions when a DTO had multiple list/map fields
+     * at the same nesting level (all start at depth=0 → duplicate `size0`, `i0`).
+     */
+    private var loopCounter = 0
+
+    /**
      * Determines whether the property is of a primitive or basic type that can be serialized
      * using optimized fast-path writer methods directly.
      *
@@ -200,7 +209,7 @@ internal abstract class BaseSerializeEmitter(
             }
 
             else -> {
-                emitTypeValue(code, prop.type, accessor, 0, skipNullCheck = true)
+                emitTypeValue(code, prop.type, accessor, skipNullCheck = true)
             }
         }
     }
@@ -211,14 +220,12 @@ internal abstract class BaseSerializeEmitter(
      * @param code The target [CodeBlock.Builder].
      * @param type The [KSType] of the target value.
      * @param accessor Accessor key expression.
-     * @param depth Current recursion depth (used for unique list/map loop variables).
      * @param skipNullCheck True if the outer check has already guaranteed non-null value.
      */
     protected fun emitTypeValue(
         code: CodeBlock.Builder,
         type: KSType,
         accessor: Any,
-        depth: Int,
         skipNullCheck: Boolean = false
     ) {
         val isNullable = type.isMarkedNullable
@@ -265,10 +272,10 @@ internal abstract class BaseSerializeEmitter(
                 code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)
             }
             type.isList() -> {
-                emitList(code, type, accessor, depth)
+                emitList(code, type, accessor)
             }
             type.isMap() -> {
-                emitMap(code, type, accessor, depth)
+                emitMap(code, type, accessor)
             }
 
             else -> {
@@ -284,17 +291,26 @@ internal abstract class BaseSerializeEmitter(
 
     /**
      * Emits list collection serialization statements.
+     *
+     * Variables are named using [loopCounter] (e.g. `size2`, `i2`, `item2`) to prevent
+     * name collisions when a DTO contains multiple list fields or nested list structures
+     * within the same generated function scope.
      */
-    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int) {
-        val itemName = C.STR_ITEM_PREFIX + depth
+    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any) {
+        val slot = loopCounter++
+        val sizeVar = "size$slot"
+        val indexVar = "i$slot"
+        val itemVar = C.STR_ITEM_PREFIX + slot
         code.addStatement(C.STR_WRITER_BEGIN_ARR)
-        code.beginControlFlow(C.TEMPLATE_FOR_IN, itemName, accessor)
+        code.addStatement("val %L = %L.size", sizeVar, accessor)
+        code.beginControlFlow("for (%L in 0 until %L)", indexVar, sizeVar)
+        code.addStatement("val %L = %L[%L]", itemVar, accessor, indexVar)
         val innerType = type.arguments.firstOrNull()?.type?.resolve()
 
         if (innerType != null) {
-            emitTypeValue(code, innerType, itemName, depth + 1, skipNullCheck = false)
+            emitTypeValue(code, innerType, itemVar, skipNullCheck = false)
         } else {
-            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemName)
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)
         }
         code.endControlFlow()
         code.addStatement(C.STR_WRITER_END_ARR)
@@ -302,18 +318,23 @@ internal abstract class BaseSerializeEmitter(
 
     /**
      * Emits map collection serialization statements.
+     *
+     * Variables are named using [loopCounter] (e.g. `key2`, `val2`) to prevent
+     * name collisions when a DTO contains multiple map fields or nested map structures
+     * within the same generated function scope.
      */
-    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any, depth: Int) {
-        val keyName = C.STR_MAP_KEY_PREFIX + depth
-        val valName = C.STR_MAP_VAL_PREFIX + depth
+    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any) {
+        val slot = loopCounter++
+        val keyVar = C.STR_MAP_KEY_PREFIX + slot
+        val valVar = C.STR_MAP_VAL_PREFIX + slot
         code.addStatement(C.STR_WRITER_BEGIN_OBJ)
-        code.beginControlFlow(C.TEMPLATE_FOR_MAP, keyName, valName, accessor)
-        code.addStatement(C.TEMPLATE_WRITER_NAME, keyName)
+        code.beginControlFlow(C.TEMPLATE_FOR_MAP, keyVar, valVar, accessor)
+        code.addStatement(C.TEMPLATE_WRITER_NAME, keyVar)
         val valueType = type.arguments.getOrNull(1)?.type?.resolve()
         if (valueType != null) {
-            emitTypeValue(code, valueType, valName, depth + 1, skipNullCheck = false)
+            emitTypeValue(code, valueType, valVar, skipNullCheck = false)
         } else {
-            code.addStatement(C.TEMPLATE_WRITER_VALUE, valName)
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, valVar)
         }
         code.endControlFlow()
         code.addStatement(C.STR_WRITER_END_OBJ)

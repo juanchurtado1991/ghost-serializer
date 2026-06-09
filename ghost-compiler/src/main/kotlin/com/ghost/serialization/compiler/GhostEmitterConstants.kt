@@ -240,7 +240,7 @@ internal object GhostEmitterConstants {
     const val STR_H_VAL_PREFIX = "H_"
     const val STR_SERIALIZE_CALL = "%L.serialize(writer, %L)"
     const val STR_WRITER_VAL_L = "writer.value(%L)"
-    const val STR_WRITER_VAL_FLOAT = "writer.value(%L.toDouble())"
+    const val STR_WRITER_VAL_FLOAT = "writer.value(%L)"
     const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"
     const val STR_WRITE_NAME_RAW = "writer.writeNameRaw(%L)"
     const val STR_WRITE_NAME_RAW_NULL = "writer.writeNameRaw(%L).nullValue()"
