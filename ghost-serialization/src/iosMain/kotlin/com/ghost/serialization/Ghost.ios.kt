@@ -7,12 +7,17 @@ import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.WriterSinkPair
-import com.ghost.serialization.writer.WriterStringPair
 import okio.BufferedSource
 import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
 import kotlin.native.concurrent.ThreadLocal
+
+private class WriterStringPair {
+    val charWriter = com.ghost.serialization.writer.FlatCharArrayWriter()
+    val writer = GhostJsonStringWriter(charWriter)
+}
 
 @ThreadLocal
 private var cachedReader: GhostJsonReader? = null

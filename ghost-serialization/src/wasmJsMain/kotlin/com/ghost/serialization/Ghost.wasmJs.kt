@@ -10,12 +10,19 @@ import com.ghost.serialization.writer.WriterSinkPair
 import okio.BufferedSource
 
 import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.writer.GhostJsonStringWriter
 
 private var cachedWriterPair: WriterSinkPair? = null
 private var cachedReader: GhostJsonReader? = null
 private var cachedFlatReader: GhostJsonFlatReader? = null
 private var cachedStringReader: GhostJsonStringReader? = null
 private var cachedSourceReader: GhostJsonReader? = null
+private var cachedStringWriterPair: WriterStringPair? = null
+
+private class WriterStringPair {
+    val charWriter = com.ghost.serialization.writer.FlatCharArrayWriter()
+    val writer = com.ghost.serialization.writer.GhostJsonStringWriter(charWriter)
+}
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
