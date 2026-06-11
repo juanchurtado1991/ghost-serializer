@@ -2,14 +2,25 @@
 
 ## [1.2.2] - (PENDING)
 
+### Performance
+- **Single-Pass String Scan (`GhostJsonStringReader`)**: Eliminated a redundant double-scan in the hot path of `internalSelect`. Previously, `findClosingQuote` and `computeKeyHash` were two separate passes over the same bytes. The new `findClosingQuoteWithHash` function combines both into a single unrolled loop that simultaneously locates the closing `"` and accumulates the 4-byte dispatch hash — cutting memory reads for key matching in half on the `String` deserialization path.
+
 ### Optimized
-- **Zero-Allocation String Decoding**: Completely eliminated UTF-8 array allocations in `GhostJsonStringReader`. Ghost now reads characters directly using intrinsic string access (`rawData[index].code`), pushing String decoding to 1178 ops/s (11.6% faster than KSer) and reducing heap usage by 61.4% (down to 515 KB) on the Twitter macro dataset. Ghost now sweeps 1st place in all 6 JSON benchmark categories (Decode/Encode × String/Bytes/Streaming).
-- **Streaming segment-buffering:** Implemented an internal 8 KB segment buffer directly in `StreamingGhostSource` that copies and holds active Okio segments. This completely bypasses the virtual dispatch and segment-walking overhead associated with Okio's generic APIs on every character read, making streaming deserialization **42.9% faster** than KotlinX Serialization, turning a -559.6% performance deficit into a solid lead.
-- **Dynamic String Writer Heap Sizing**: Reduced the default initial capacity of `FlatCharArrayWriter` (exclusively used for String encoding) from **8 KB (16 KB heap)** to **1 KB (2 KB heap)**. Built custom platforms heuristics defining `maxWarmCharWriteBufferCapacity` (JVM: `512 KB`, Android: `256 KB`), replacing the shared 8 MB/16 MB ceiling, yielding a massive heap memory footprint reduction per thread on the String serialization pool while fully retaining high-speed JIT performance (now +29.2% faster than KSer at 3877 ops/s).
+- **Zero-Allocation String Decoding**: Completely eliminated UTF-8 array allocations in `GhostJsonStringReader`. Ghost now reads characters directly using intrinsic string access (`rawData[index].code`), pushing String decoding to 1304.7 ops/s (**+31.5% faster than KSer, -69.6% memory**) on the Twitter macro dataset. Ghost now sweeps 1st place in all 6 JSON benchmark categories (Decode/Encode × String/Bytes/Streaming).
+- **Bytes Decode**: `GhostJsonFlatReader` reaches **1210.5 ops/s** (+91.7% faster than KSer) with **-84.4% memory** (671.7 KB vs 4297.0 KB).
+- **Streaming Decode**: `GhostJsonReader` reaches **500.6 ops/s** (+65.9% faster than KSer) with **-28.3% memory**.
+- **Streaming segment-buffering**: Implemented an internal 8 KB segment buffer directly in `StreamingGhostSource` that copies and holds active Okio segments. This completely bypasses the virtual dispatch and segment-walking overhead associated with Okio's generic APIs on every character read.
+- **Dynamic String Writer Heap Sizing**: Reduced the default initial capacity of `FlatCharArrayWriter` from **8 KB (16 KB heap)** to **1 KB (2 KB heap)**. Built custom platform heuristics defining `maxWarmCharWriteBufferCapacity` (JVM: `512 KB`, Android: `256 KB`), yielding a massive heap memory footprint reduction per thread on the String serialization pool.
+
+### Added
+- **Native String Reader opt-in (`ghost.textChannel`)**: `GhostJsonStringReader` deserialization overloads are now generated only when `arg("ghost.textChannel", "true")` is set in KSP options. When disabled (the default), the dispatch table is not pre-built, saving **4 KB of memory per DTO**. When accessed without the option enabled, the dispatch table is built lazily on first use. This makes the String channel fully opt-in and zero-cost by default.
+- **Lazy `stringDispatch` table in `JsonReaderOptions`**: The `stringDispatch` IntArray is now initialized lazily via a custom getter. Modules that do not enable `ghost.textChannel` incur zero initialization cost at class-loading time.
 
 ### Refactored
-- **Zero Magic Strings & Numbers**: Hardened `GhostStringUtil.jvm.kt` by replacing `Unsafe` literal names and offsets with explicit descriptive constants.
-- **KMP Deprecations Cleanup**: Replaced deprecated raw `String(CharArray, Int, Int)` platform constructors with the standard Kotlin Multiplatform `CharArray.concatToString(startIndex, endIndex)` inside the `GhostJsonStringReader` slow path to ensure compiler compatibility across all KMP targets.
+- **Zero Magic Strings & Numbers in compiler**: Hardened `GhostEmitterConstants` and `GhostJsonConstants` by centralizing all template strings, error messages, and identifiers. Compiler logic is now 100% literal-free.
+- **Zero Magic Strings in runtime**: Hardened `GhostStringUtil.jvm.kt` by replacing `Unsafe` literal names and offsets with explicit descriptive constants.
+- **KMP Deprecations Cleanup**: Replaced deprecated raw `String(CharArray, Int, Int)` platform constructors with the standard Kotlin Multiplatform `CharArray.concatToString(startIndex, endIndex)` inside the `GhostJsonStringReader` slow path.
+- **Removed deprecated String reader overload**: The KSP compiler no longer generates the `deserialize(json: String)` direct-string overload in modules without `ghost.textChannel=true`, eliminating dead code and the associated dispatch table allocation.
 
 
 ## [1.2.1] - 2026-06-01
