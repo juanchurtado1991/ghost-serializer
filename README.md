@@ -1,8 +1,8 @@
 # 👻 Ghost Serializer
 
-**JSON at the speed of bits — for Kotlin Multiplatform.**
+**JSON at the speed of bits — Byte-first serialization for Kotlin Multiplatform.**
 
-> ⚡ **Bitwise O(1) field matching. Native reader per input format. 6–32× less heap.** Ghost doesn't just skip reflection — it rethinks every step of the parse loop.
+> ⚡ **Bitwise O(1) field matching. Native reader per input format. Up to 6–32× less heap.** Ghost doesn't just skip reflection — it rethinks every step of the parse loop.
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.png?style=flat)](https://github.com/google/ksp)
@@ -23,7 +23,7 @@ Ghost is a Kotlin JSON library that generates all serialization code at **compil
 - Ships a **dedicated native reader per input format**: `ByteArray`, Okio stream, or `String` — each parsed without cross-format conversion overhead.
 - Maintains a **zero-alloc hot path** via thread-local reader and writer pools — no GC pressure in steady state.
 
-The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization on String decoding (allocating **3.2× less heap memory**) and beats it by **+84.1% on Bytes decoding** (allocating **6.3× less heap memory**).
+The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization by **+31.5% on String decoding** (allocating **3.3× less heap**) and by **+91.7% on Bytes decoding** (allocating **6.4× less heap**). On streaming decode it leads by **+65.9%** with **28.3% less memory**.
 
 This README is honest: we explain what Ghost excels at, how it achieves its performance, and the scenarios where another library might be a better fit.
 
@@ -63,17 +63,19 @@ The standalone test apps consume Ghost from Maven Central only (no local checkou
 
 ## Benchmark Results
 
-> **Methodology**: Single JVM process. 5,000-iteration JIT warmup. 10,000 measured runs. Results are statistical averages ± standard deviation. Memory is measured via `ThreadMXBean.getThreadAllocatedBytes` (heap bytes allocated per call, not retained). Tested on JVM HotSpot.
+> **Methodology**: Single JVM process. 20,000-iteration JIT warmup. 20,000 measured runs. Results are statistical averages ± standard deviation. Memory is measured via `ThreadMXBean.getThreadAllocatedBytes` (heap bytes allocated per call, not retained). Tested on JVM HotSpot.
 
 ### Running the Benchmark Yourself
 
 ```bash
   # Full run: executes ./gradlew ciTest first (same modules as CI), then the benchmark
-  ./gradlew :ghost-benchmark:run --args="--runs 10000 --warmup 5000 --no-tests"
+  ./gradlew :ghost-benchmark:run --args="--runs 20000 --warmup 20000 --no-tests"
 
   # Skip tests, benchmark only
-  ./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 5000 --no-tests"
+  ./gradlew :ghost-benchmark:run -PskipTests --args="--runs 20000 --warmup 20000 --no-tests"
 ```
+
+> ⏱️ **Note on execution time:** The full benchmark suite with the recommended configuration (20,000 runs and 20,000 warmups) takes approximately **15–18 minutes** to complete. The Twitter Macro Dataset phase accounts for a significant portion of this duration, as it evaluates 12 different serialization/deserialization scenarios using a large, real-world payload.
 
 The benchmark is self-contained — no external harness needed. It runs inside a single JVM process, warms up the JIT once, then measures all engines in the same process under identical JIT conditions.
 
@@ -83,16 +85,16 @@ See [Contributing](#contributing) for how to run the full test suite and registe
 
 Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_macro.json) dataset — a real-world payload with deeply nested objects and long string fields — comparing Ghost against KotlinX Serialization (KSER) across all input/output modes:
 
-> **Note on Decode (String):** Ghost parses `String` inputs natively via `GhostJsonStringReader` (enabled with `ghost.textChannel=true`), bypassing `encodeToByteArray` entirely. This beats KSER's throughput while allocating **3.2× less heap memory** compared to KSER on String inputs.
+> **Note on Decode (String):** Ghost parses `String` inputs natively via `GhostJsonStringReader` (enabled with `ghost.textChannel=true`), bypassing `encodeToByteArray` entirely. This beats KSER's throughput while allocating **3.3× less heap memory** compared to KSER on String inputs.
 
 | Operation | Engine |      Throughput (ops/s)      |         Mem (KB/op)         |
 | :--- | :---: |:----------------------------:|:---------------------------:|
-| **Decode (String)** | **Ghost** | **1443.9** *(+32.3% faster)* | **412.2** *(-69.2% memory)* |
-| | KSER |            1091.5            |           1337.5            |
-| **Decode (Bytes)** | **Ghost** | **1177.2** *(+84.1% faster)* | **677.1** *(-84.2% memory)* |
-| | KSER |            639.3             |           4297.0            |
-| **Decode (Streaming)** | **Ghost** | **484.1** *(+61.0% faster)*  | **1365.2** *(-28.3% memory)*|
-| | KSER |            300.6             |           1904.8            |
+| **Decode (String)** | **Ghost** | **1304.7** *(+31.5% faster)* | **406.8** *(-69.6% memory)* |
+| | KSER |             992.2            |           1337.6            |
+| **Decode (Bytes)** | **Ghost** | **1210.5** *(+91.7% faster)* | **671.7** *(-84.4% memory)* |
+| | KSER |             631.4            |           4297.0            |
+| **Decode (Streaming)** | **Ghost** | **500.6** *(+65.9% faster)*  | **1365.2** *(-28.3% memory)*|
+| | KSER |             301.7            |           1904.8            |
 | **Encode (String)** | **Ghost** | **3810.1** *(+23.9% faster)* |           1074.3            |
 | | KSER |            3074.5            |         **981.6**           |
 | **Encode (Bytes)** | **Ghost** | **2381.8** *(+39.6% faster)* | **420.2** *(-81.0% memory)* |
@@ -139,7 +141,7 @@ Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_m
 
 ### Ghost Special Features
 
-These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson. They are measured with the same methodology (10,000 runs, 5,000-iteration JIT warmup).
+These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson. They are measured with the same methodology (20,000 runs, 20,000-iteration JIT warmup).
 
 | Feature | µs/op | B/op |
 |:---|:---:|:---:|
@@ -204,9 +206,12 @@ Then build and run the `GhostSample` scheme in Xcode against an iOS simulator.
 - You want **ProGuard/R8 safety without manual `@Keep` rules**. All serializers are generated at compile time; there is nothing to reflect on at runtime.
 - You are using **Ktor 2.3.x or Retrofit 2.11** and want zero-configuration integration.
 
-### 💡 Parse What You Have — Natively
+### 💡 Byte-First Philosophy: Parse What You Have Natively
 
-Ghost ships a **dedicated native parser for each input format**, eliminating all cross-format conversion overhead:
+> [!IMPORTANT]
+> **Byte-First Philosophy**: For network operations, Ghost is built from the ground up to operate directly on raw UTF-8 bytes (`ByteArray`) via `GhostJsonFlatReader`. This completely bypasses the JVM's expensive UTF-8 to UTF-16 String conversion step that other engines force before parsing.
+>
+> Ghost ships a **dedicated native parser for each input format**, eliminating all cross-format conversion overhead:
 
 | Input available | Ghost reader | What is avoided |
 |:---|:---|:---|
@@ -285,7 +290,7 @@ ksp {
 When this option is set, the KSP compiler generates an additional `deserialize(reader: GhostJsonStringReader)` overload in every serializer. The `Ghost.deserialize(json: String)` entry point routes through this overload automatically — no API change required.
 
 > [!NOTE]
-> `ghost.textChannel=true` is an **opt-in** option. Without it, `Ghost.deserialize(json: String)` falls back to converting the `String` to a `ByteArray` first (identical behaviour to Ghost 1.2.1 and earlier). Enable it only in modules that frequently receive pre-decoded String inputs (e.g., from Room, SharedPreferences, or in-memory caches).
+> `ghost.textChannel=true` is an **opt-in** option. Without it, `Ghost.deserialize(json: String)` falls back to converting the `String` to a `ByteArray` first, which is slower as it incurs the UTF-16 to UTF-8 re-encoding cost. Furthermore, when disabled, the compiler saves **4 KB of memory per DTO** by not pre-generating the String perfect-hash dispatch table. If a String reader is used on a DTO without this option enabled, the dispatch table will be built lazily in-memory on demand upon the first access (which will incur a micro-overhead for the first call). Enable it only in modules that frequently receive pre-decoded String inputs (e.g., from Room, SharedPreferences, or in-memory caches) to get maximum steady-state performance.
 
 ---
 
@@ -986,6 +991,9 @@ Instead of a boolean array, required fields are tracked with a `Long` bitmask. S
 
 **Pre-encoded field name headers**  
 `JsonReaderOptions` pre-computes `ByteString` objects for every field name header (`"fieldName":`, `,fieldName":`) at class-loading time. The generated serializer writes these directly as a bulk buffer copy — no per-call string encoding.
+
+**Single-pass string scan**  
+During field dispatch, `GhostJsonStringReader` performs a single scan over each JSON key that simultaneously finds the closing `"` and computes the hash needed for dispatch table lookup. This eliminates the naive double-scan (find end → read hash) and is the primary driver of the String decode throughput advantage.
 
 **Triple reader / dual writer specialization**  
 Ghost has three dedicated native reader types and two writer types, all emitted by KSP with specialized overloads:
