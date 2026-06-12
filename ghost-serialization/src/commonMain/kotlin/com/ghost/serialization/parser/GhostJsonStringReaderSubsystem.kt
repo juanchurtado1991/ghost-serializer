@@ -323,19 +323,13 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
     }
 
     val length = end - start
-    val hasCollisions = options.hasCollisions
-    val multiplier = options.multiplier
-    val shift = options.shift
-    val dispatch = options.dispatch
-    val rawStrings = options.rawStrings
+    val key = computeKeyHash(start, length, options.hasCollisions)
 
-    val key = computeKeyHash(start, length, hasCollisions)
-
-    val hasIndex = ((key * multiplier + length) shr shift) and C.HASH_MASK
-    val index = dispatch[hasIndex]
+    val hasIndex = ((key * options.multiplier + length) shr options.shift) and C.HASH_MASK
+    val index = options.dispatch[hasIndex]
 
     if (index != C.MATCH_END) {
-        if (verifyKeyMatch(start, length, rawStrings[index], consumeSeparator)) {
+        if (verifyKeyMatch(start, length, options.rawStrings[index], consumeSeparator)) {
             return index
         }
     }
