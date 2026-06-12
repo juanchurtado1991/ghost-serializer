@@ -321,6 +321,39 @@ internal class StandardEmitter(
      * @param body The target KotlinPoet [CodeBlock.Builder].
      * @param typeSpecBuilder The serializer class builder.
      */
+    private fun emitCreateInstanceHelper(typeSpecBuilder: TypeSpec.Builder) {
+        val hasCreateInstance = typeSpecBuilder.funSpecs.any { it.name == "createInstance" }
+        if (hasCreateInstance) return
+
+        val funBuilder = FunSpec.builder("createInstance")
+            .addModifiers(KModifier.PRIVATE)
+            .returns(originalClassName)
+
+        for (i in 0 until maskCount) {
+            funBuilder.addParameter("mask$i", com.squareup.kotlinpoet.LONG)
+        }
+
+        properties.forEach { prop ->
+            val varType = prop.getVariableType()
+            funBuilder.addParameter("${prop.kotlinName}Value", varType)
+        }
+
+        val helperBody = CodeBlock.builder()
+        val requiredProps = properties.filter { !it.hasDefaultValue }
+        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
+            if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+        }
+
+        if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
+            emitMultiBranchReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
+        } else {
+            emitCopyReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
+        }
+
+        funBuilder.addCode(helperBody.build())
+        typeSpecBuilder.addFunction(funBuilder.build())
+    }
+
     private fun emitReturnStatement(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val hasDefaults = properties.any { it.hasDefaultValue }
 
@@ -340,7 +373,26 @@ internal class StandardEmitter(
             return
         }
 
-        emitDefaultValueReturn(body, typeSpecBuilder)
+        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
+            if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+        }
+
+        if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
+            val requiredProps = properties.filter { !it.hasDefaultValue }
+            emitMultiBranchReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
+            return
+        }
+
+        emitCreateInstanceHelper(typeSpecBuilder)
+
+        val args = mutableListOf<String>()
+        for (i in 0 until maskCount) {
+            args.add("mask$i")
+        }
+        properties.forEach { prop ->
+            args.add("${prop.kotlinName}Value")
+        }
+        body.addStatement("return createInstance(${args.joinToString(", ")})")
     }
 
     /**

@@ -26,7 +26,8 @@ internal object FlattenOptionsGenerator {
         typeSpecBuilder: TypeSpec.Builder,
         properties: List<GhostPropertyModel>,
         fullPaths: List<List<String>>,
-        readerClass: ClassName
+        readerClass: ClassName,
+        textChannel: Boolean
     ) {
         val rootNodes = mutableMapOf<String, FlattenNode>()
 
@@ -52,7 +53,8 @@ internal object FlattenOptionsGenerator {
                 node = node,
                 readerClass = readerClass,
                 parentPrefix = C.STR_EMPTY,
-                currentPath = listOf(node.segment)
+                currentPath = listOf(node.segment),
+                textChannel = textChannel
             )
         }
     }
@@ -75,7 +77,8 @@ internal object FlattenOptionsGenerator {
         node: FlattenNode,
         readerClass: ClassName,
         parentPrefix: String,
-        currentPath: List<String>
+        currentPath: List<String>,
+        textChannel: Boolean
     ) {
         if (node.children.isEmpty() && node.properties.isEmpty()) {
             return
@@ -103,12 +106,12 @@ internal object FlattenOptionsGenerator {
 
         val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
         val optionsBuilder = CodeBlock.builder()
-            .add(C.TEMPLATE_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
+            .add(C.TEMPLATE_OPTIONS_OF_SEEDS_START, optionsClass, shift, multiplier, textChannel)
 
         names.forEach { name ->
             optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
         }
-        optionsBuilder.add(C.STR_PAREN)
+        optionsBuilder.add(")")
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(optionsName, optionsClass)
@@ -125,7 +128,8 @@ internal object FlattenOptionsGenerator {
                 node = child,
                 readerClass = readerClass,
                 parentPrefix = currentPrefix,
-                currentPath = currentPath + child.segment
+                currentPath = currentPath + child.segment,
+                textChannel = textChannel
             )
         }
     }

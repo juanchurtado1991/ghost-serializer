@@ -13,6 +13,7 @@ import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.parser.nextLong
 import com.ghost.serialization.parser.readQuotedString
 import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
 /**
@@ -26,6 +27,10 @@ object StringSerializer : GhostSerializer<String> {
     }
 
     override fun serialize(writer: GhostJsonFlatWriter, value: String) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: String) {
         writer.value(value)
     }
 
@@ -56,6 +61,10 @@ object IntSerializer : GhostSerializer<Int> {
         writer.value(value)
     }
 
+    override fun serialize(writer: GhostJsonStringWriter, value: Int) {
+        writer.value(value)
+    }
+
     override fun deserialize(reader: GhostJsonReader): Int {
         return reader.nextInt()
     }
@@ -80,6 +89,10 @@ object LongSerializer : GhostSerializer<Long> {
     }
 
     override fun serialize(writer: GhostJsonFlatWriter, value: Long) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: Long) {
         writer.value(value)
     }
 
@@ -110,6 +123,10 @@ object DoubleSerializer : GhostSerializer<Double> {
         writer.value(value)
     }
 
+    override fun serialize(writer: GhostJsonStringWriter, value: Double) {
+        writer.value(value)
+    }
+
     override fun deserialize(reader: GhostJsonReader): Double {
         return reader.nextDouble()
     }
@@ -134,6 +151,10 @@ object BooleanSerializer : GhostSerializer<Boolean> {
     }
 
     override fun serialize(writer: GhostJsonFlatWriter, value: Boolean) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: Boolean) {
         writer.value(value)
     }
 

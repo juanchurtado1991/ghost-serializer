@@ -125,6 +125,7 @@ android {
 
 ksp {
     arg("ghost.moduleName", "serialization_sample")
+    arg("ghost.textChannel", "true")
 }
 
 dependencies {

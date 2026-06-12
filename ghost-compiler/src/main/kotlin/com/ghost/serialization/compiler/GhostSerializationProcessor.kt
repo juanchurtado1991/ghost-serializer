@@ -153,7 +153,7 @@ class GhostSerializationProcessor(
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>
     ): ClassName? {
-        val textChannel = options[C.OPTION_TEXT_CHANNEL] != C.STR_FALSE
+        val textChannel = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
             properties = propertiesModel,

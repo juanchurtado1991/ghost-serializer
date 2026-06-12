@@ -5,8 +5,6 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.exception.GhostJsonException
-
 
 fun GhostJsonStringReader.nextInt(): Int {
     val header = prepareNumericHeader()
@@ -57,7 +55,7 @@ fun GhostJsonStringReader.nextFloat(): Float {
 
     nextTokenByte = -1
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -136,7 +134,7 @@ fun GhostJsonStringReader.nextDouble(): Double {
 
     nextTokenByte = -1
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -292,7 +290,7 @@ private fun GhostJsonStringReader.parseIntDigits(isNegative: Boolean, startOfNum
     var earlyExitResult: Int? = null
 
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -331,7 +329,7 @@ private fun GhostJsonStringReader.parseLongDigits(isNegative: Boolean, startOfNu
     var earlyExitResult: Long? = null
 
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -422,7 +420,7 @@ fun GhostJsonStringReader.skipNumber() {
 
     val numberPosition = position
     val numberLimit = limit
-    val chars = rawChars
+    val chars = rawData
     if (numberPosition < numberLimit && chars[numberPosition].code == C.ZERO_INT) {
         val newPos = numberPosition + 1
         position = newPos

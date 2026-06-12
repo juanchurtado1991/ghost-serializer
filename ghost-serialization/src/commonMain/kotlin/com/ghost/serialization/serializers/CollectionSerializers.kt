@@ -21,6 +21,7 @@ import com.ghost.serialization.parser.nextKey
 import com.ghost.serialization.parser.nextLong
 import com.ghost.serialization.parser.readList
 import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
 /**
@@ -47,6 +48,17 @@ class ListSerializer<T>(
 
     override fun serialize(
         writer: GhostJsonFlatWriter,
+        value: List<T>
+    ) {
+        writer.beginArray()
+        for (item in value) {
+            itemSerializer.serialize(writer, item)
+        }
+        writer.endArray()
+    }
+
+    override fun serialize(
+        writer: GhostJsonStringWriter,
         value: List<T>
     ) {
         writer.beginArray()
@@ -116,6 +128,21 @@ class MapSerializer<V>(
 
     override fun serialize(
         writer: GhostJsonFlatWriter,
+        value: Map<String, V>
+    ) {
+        writer.beginObject()
+        for (entry in value) {
+            writer.name(entry.key)
+            valueSerializer.serialize(
+                writer,
+                entry.value
+            )
+        }
+        writer.endObject()
+    }
+
+    override fun serialize(
+        writer: GhostJsonStringWriter,
         value: Map<String, V>
     ) {
         writer.beginObject()
@@ -203,6 +230,17 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         writer.endArray()
     }
 
+    override fun serialize(
+        writer: GhostJsonStringWriter,
+        value: IntArray
+    ) {
+        writer.beginArray()
+        for (item in value) {
+            writer.value(item)
+        }
+        writer.endArray()
+    }
+
     override fun deserialize(
         reader: GhostJsonReader
     ): IntArray {
@@ -268,6 +306,17 @@ object LongArraySerializer : GhostSerializer<LongArray> {
 
     override fun serialize(
         writer: GhostJsonFlatWriter,
+        value: LongArray
+    ) {
+        writer.beginArray()
+        for (item in value) {
+            writer.value(item)
+        }
+        writer.endArray()
+    }
+
+    override fun serialize(
+        writer: GhostJsonStringWriter,
         value: LongArray
     ) {
         writer.beginArray()

@@ -20,3 +20,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+ksp {
+    arg("ghost.textChannel", "true")
+}

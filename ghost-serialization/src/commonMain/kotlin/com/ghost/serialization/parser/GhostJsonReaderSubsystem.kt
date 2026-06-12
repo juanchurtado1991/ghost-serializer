@@ -402,57 +402,16 @@ fun GhostJsonReader.selectString(options: JsonReaderOptions): Int =
  *
  * @return The matched options index, `-1` on object closing, or [GhostJsonConstants.MATCH_NONE] if not found.
  */
-private fun GhostJsonReader.internalSelect(
-    options: JsonReaderOptions,
-    consumeSeparator: Boolean
-): Int {
+private fun GhostJsonReader.internalSelect(options: JsonReaderOptions, consumeSeparator: Boolean): Int {
     var token = peekNextToken()
     if (token == C.CLOSE_OBJ_INT) {
         return -1
     }
 
-    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            commaConsumedMask = commaConsumedMask and bit.inv()
-            needsCommaMask = needsCommaMask or bit
-        } else {
-            val required = (needsCommaMask and bit) != C.RESULT_NONE
-            if (token == C.COMMA_INT) {
-                if (!required) {
-                    throwError("Unexpected comma")
-                }
-                internalSkip(1)
-                token = peekNextToken()
-                if (token == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-                commaConsumedMask = commaConsumedMask and bit.inv()
-                needsCommaMask = needsCommaMask or bit
-            } else {
-                if (required && consumeSeparator) {
-                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
-                }
-                needsCommaMask = needsCommaMask or bit
-            }
-        }
-    } else {
-        if (token == C.COMMA_INT) {
-            internalSkip(1)
-            token = peekNextToken()
-            if (token == C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-        }
-    }
+    token = selectValidateCommas(token, consumeSeparator)
+
     if (token != C.QUOTE_INT) {
-        throwError(
-            if (consumeSeparator) {
-                C.ERR_EXPECTED_KEY
-            } else {
-                C.ERR_EXPECTED_STRING
-            }
-        )
+        throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
     val end = if (isStreaming) {
@@ -465,7 +424,7 @@ private fun GhostJsonReader.internalSelect(
     }
 
     if (end == -1) {
-        throwError(C.UNTERMINATED_STRING_ERROR)
+        throwUnterminatedStringError()
     }
 
     val length = end - start
@@ -479,7 +438,49 @@ private fun GhostJsonReader.internalSelect(
         }
     }
 
-    // No match found
+    return handleSelectNoMatch(start, end, length, consumeSeparator)
+}
+
+private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int {
+    var currentToken = token
+    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
+        val bit = C.BITMASK_UNIT shl depth
+        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
+            commaConsumedMask = commaConsumedMask and bit.inv()
+            needsCommaMask = needsCommaMask or bit
+        } else {
+            val required = (needsCommaMask and bit) != C.RESULT_NONE
+            if (currentToken == C.COMMA_INT) {
+                if (!required) {
+                    throwError("Unexpected comma")
+                }
+                internalSkip(1)
+                currentToken = peekNextToken()
+                if (currentToken == C.CLOSE_OBJ_INT) {
+                    throwError(C.ERR_TRAILING_COMMA)
+                }
+                commaConsumedMask = commaConsumedMask and bit.inv()
+                needsCommaMask = needsCommaMask or bit
+            } else {
+                if (required && consumeSeparator) {
+                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
+                }
+                needsCommaMask = needsCommaMask or bit
+            }
+        }
+    } else {
+        if (currentToken == C.COMMA_INT) {
+            internalSkip(1)
+            currentToken = peekNextToken()
+            if (currentToken == C.CLOSE_OBJ_INT) {
+                throwError(C.ERR_TRAILING_COMMA)
+            }
+        }
+    }
+    return currentToken
+}
+
+private fun GhostJsonReader.handleSelectNoMatch(start: Int, end: Int, length: Int, consumeSeparator: Boolean): Int {
     val newPos = end + 1
     position = newPos
     nextTokenByte = C.MATCH_END
@@ -493,8 +494,15 @@ private fun GhostJsonReader.internalSelect(
         val unknownKey = source.decodeToString(start, end)
         throwError("${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey")
     }
-
     return C.MATCH_NONE
+}
+
+private fun GhostJsonReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
+    throwError(if (consumeSeparator) C.ERR_EXPECTED_KEY else C.ERR_EXPECTED_STRING)
+}
+
+private fun GhostJsonReader.throwUnterminatedStringError() {
+    throwError(C.UNTERMINATED_STRING_ERROR)
 }
 
 /**

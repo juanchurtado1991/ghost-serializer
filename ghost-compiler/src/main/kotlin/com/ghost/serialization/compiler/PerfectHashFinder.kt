@@ -49,12 +49,12 @@ internal object PerfectHashFinder {
         val seen = HashSet<Long>()
         for (bytes in rawBytes) {
             if (bytes.isNotEmpty()) {
-                var k = 0L
-                if (bytes.size >= C.VAL_ONE) k = k or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
-                if (bytes.size >= C.VAL_TWO) k = k or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
-                if (bytes.size >= C.VAL_THREE) k = k or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
-                if (bytes.size >= C.VAL_FOUR) k = k or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
-                val packed = k or (bytes.size.toLong() shl C.BIT_SHIFT_32)
+                var mask = 0L
+                if (bytes.size >= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
+                if (bytes.size >= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
+                if (bytes.size >= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
+                if (bytes.size >= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
+                val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)
                 if (!seen.add(packed)) {
                     hasCollisions = true
                     break
