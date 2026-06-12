@@ -35,6 +35,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.GhostJsonConstants.WRITER_SCRATCH_SIZE
+import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.MINUS_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_INT
@@ -523,23 +524,29 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             return
         }
 
-        var allPlain = true
-        var index = 0
-        val masks = ESCAPE_MASKS
-        while (index < length) {
-            val code = value[index].code
-            if (code >= ASCII_LIMIT || ((masks[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT) != 0L) {
-                allPlain = false
-                break
+        if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
+            var allPlain = true
+            var index = 0
+            val masks = ESCAPE_MASKS
+            while (index < length) {
+                val code = value[index].code
+                if (code >= ASCII_LIMIT || ((masks[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT) != 0L) {
+                    allPlain = false
+                    break
+                }
+                index++
             }
-            index++
-        }
-        if (allPlain) {
-            buffer.writeQuotedAscii(value, length)
-            return
+            if (allPlain) {
+                buffer.writeQuotedAscii(value, length)
+                return
+            }
         }
 
-        val scratchBuf = scratch ?: acquireScratch()
+        writeStringValueRawSlow(value, length)
+    }
+
+    private fun writeStringValueRawSlow(value: String, length: Int) {
+        val scratchBuf = acquireScratch()
         if (length + STRING_QUOTE_PAIR_BYTES > scratchBuf.size) {
             buffer.writeChar(QUOTE_INT)
             writeEscaped(value)
