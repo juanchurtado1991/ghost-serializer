@@ -311,9 +311,7 @@ class GhostJsonFlatReader(
                     commaConsumedMask = commaConsumedMask or bit
                     needsCommaMask = needsCommaMask and bit.inv()
                 } else {
-                    if (required) {
-                        throwError("Expected comma")
-                    }
+                    if (required) throwError(C.ERR_EXPECTED_COMMA)
                     needsCommaMask = needsCommaMask or bit
                 }
             }
@@ -573,19 +571,13 @@ class GhostJsonFlatReader(
         }
 
         val length = end - start
-        val hasCollisions = options.hasCollisions
-        val multiplier = options.multiplier
-        val shift = options.shift
-        val dispatch = options.dispatch
-        val rawBytes = options.rawBytes
+        val key = computeKeyHash(start, length, options.hasCollisions)
 
-        val key = computeKeyHash(start, length, hasCollisions)
-
-        val hasIndex = ((key * multiplier + length) shr shift) and C.HASH_MASK
-        val index = dispatch[hasIndex]
+        val hasIndex = ((key * options.multiplier + length) shr options.shift) and C.HASH_MASK
+        val index = options.dispatch[hasIndex]
 
         if (index != C.MATCH_END) {
-            if (verifyKeyMatch(start, length, rawBytes[index], consumeSeparator)) {
+            if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {
                 return index
             }
         }

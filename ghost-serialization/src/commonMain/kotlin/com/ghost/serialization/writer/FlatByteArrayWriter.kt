@@ -331,10 +331,6 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      */
     fun reset() {
         size = 0
-        contractCapacity()
-    }
-
-    private fun contractCapacity() {
         if (array.size > GhostHeuristics.maxWarmWriteBufferCapacity) {
             array = ByteArray(initialCapacity)
         }
