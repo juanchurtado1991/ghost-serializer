@@ -559,6 +559,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             return
         }
 
+        val escapeMasks = ESCAPE_MASKS
         val scratchSize = scratchBuf.size
 
         if (remaining <= scratchSize) {
@@ -570,7 +571,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 if (charCode < ASCII_LIMIT) {
                     val maskIndex = charCode shr BITMASK_SHIFT
                     val bitIndex = charCode and BITMASK_INDEX_MASK
-                    if ((ESCAPE_MASKS[maskIndex] shr bitIndex) and BITMASK_UNIT == 0L) {
+                    if ((escapeMasks[maskIndex] shr bitIndex) and BITMASK_UNIT == 0L) {
                         scratchBuf[scratchIndex++] = charCode.toChar()
                         charIndex++
                         continue
@@ -608,7 +609,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
 
             if (
                 charCode < ASCII_LIMIT &&
-                (ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
+                (escapeMasks[charCode shr BITMASK_SHIFT] shr
                         (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
             ) {
                 scratchBuf[scratchIndex++] = charCode.toChar()
@@ -644,6 +645,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     }
 
     private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: CharArray) {
+        val escapeMasks = ESCAPE_MASKS
         var scratchIndex = 1
         var charIndex = 0
 
@@ -652,7 +654,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
 
             if (
                 charCode < ASCII_LIMIT &&
-                (ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
+                (escapeMasks[charCode shr BITMASK_SHIFT] shr
                         (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
             ) {
                 scratchBuf[scratchIndex++] = charCode.toChar()

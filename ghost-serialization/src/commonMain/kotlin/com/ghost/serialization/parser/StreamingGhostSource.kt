@@ -122,6 +122,7 @@ class StreamingGhostSource(
 
     override fun findClosingQuote(position: Int, limit: Int): Int {
         var currentPosition = position
+        val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
 
         while (true) {
             val segmentStart = bufferStart
@@ -133,7 +134,7 @@ class StreamingGhostSource(
                 while (p + 3 < segmentLimit) {
                     val byte0 = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte0 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte0 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte0 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte0 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte0 == GhostJsonConstants.QUOTE_INT) return p
@@ -141,7 +142,7 @@ class StreamingGhostSource(
                     }
                     val byte1 = bufferBytes[p + 1 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte1 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte1 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte1 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte1 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte1 == GhostJsonConstants.QUOTE_INT) return p + 1
@@ -149,7 +150,7 @@ class StreamingGhostSource(
                     }
                     val byte2 = bufferBytes[p + 2 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte2 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte2 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte2 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte2 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte2 == GhostJsonConstants.QUOTE_INT) return p + 2
@@ -157,7 +158,7 @@ class StreamingGhostSource(
                     }
                     val byte3 = bufferBytes[p + 3 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte3 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte3 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte3 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte3 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte3 == GhostJsonConstants.QUOTE_INT) return p + 3
@@ -169,7 +170,7 @@ class StreamingGhostSource(
                 while (p < segmentLimit) {
                     val singleByte = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (singleByte < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[singleByte shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[singleByte shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (singleByte and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (singleByte == GhostJsonConstants.QUOTE_INT) return p
@@ -191,6 +192,7 @@ class StreamingGhostSource(
         var currentPosition = start
         var accumulatedHash = 0
         var isPureAscii = true
+        val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
 
         while (true) {
             val segmentStart = bufferStart
@@ -202,7 +204,7 @@ class StreamingGhostSource(
                 while (p + 3 < segmentLimit) {
                     val byte0 = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte0 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte0 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte0 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte0 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte0 == GhostJsonConstants.QUOTE_INT) {
@@ -216,7 +218,7 @@ class StreamingGhostSource(
 
                     val byte1 = bufferBytes[p + 1 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte1 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte1 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte1 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte1 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte1 == GhostJsonConstants.QUOTE_INT) {
@@ -230,7 +232,7 @@ class StreamingGhostSource(
 
                     val byte2 = bufferBytes[p + 2 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte2 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte2 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte2 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte2 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte2 == GhostJsonConstants.QUOTE_INT) {
@@ -244,7 +246,7 @@ class StreamingGhostSource(
 
                     val byte3 = bufferBytes[p + 3 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byte3 < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[byte3 shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[byte3 shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (byte3 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (byte3 == GhostJsonConstants.QUOTE_INT) {
@@ -262,7 +264,7 @@ class StreamingGhostSource(
                 while (p < segmentLimit) {
                     val singleByte = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (singleByte < GhostJsonConstants.ASCII_LIMIT &&
-                        (GhostJsonConstants.ESCAPE_MASKS[singleByte shr GhostJsonConstants.BITMASK_SHIFT] shr
+                        (escapeMasks[singleByte shr GhostJsonConstants.BITMASK_SHIFT] shr
                                 (singleByte and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
                     ) {
                         if (singleByte == GhostJsonConstants.QUOTE_INT) {

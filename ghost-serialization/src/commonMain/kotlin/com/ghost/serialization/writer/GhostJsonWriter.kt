@@ -592,6 +592,7 @@ class GhostJsonWriter(
         }
 
         val replacements = ESCAPE_REPLACEMENTS
+        val escapeMasks = ESCAPE_MASKS
         val scratchSize = scratchBuf.size
 
         if (remaining <= scratchSize) {
@@ -604,7 +605,7 @@ class GhostJsonWriter(
                 if (charCode < ASCII_LIMIT) {
                     val maskIdx = charCode shr BITMASK_SHIFT
                     val bitIdx = charCode and BITMASK_INDEX_MASK
-                    if ((ESCAPE_MASKS[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
+                    if ((escapeMasks[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
                         scratchBuf[scratchPos++] = charCode.toByte()
                         index++
                         continue
@@ -648,7 +649,7 @@ class GhostJsonWriter(
 
             if (
                 charCode < ASCII_LIMIT &&
-                (ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
+                (escapeMasks[charCode shr BITMASK_SHIFT] shr
                         (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
             ) {
                 scratchBuf[scratchPos++] = charCode.toByte()
@@ -693,6 +694,8 @@ class GhostJsonWriter(
      * Helper to write escaped character bytes directly into the scratch buffer.
      */
     private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: ByteArray) {
+        val escapeMasks = ESCAPE_MASKS
+        val escapeReplacements = ESCAPE_REPLACEMENTS
         var scratchPos = 1 // Start after the opening quote already written at index 0.
         var index = 0
 
@@ -701,7 +704,7 @@ class GhostJsonWriter(
 
             if (
                 charCode < ASCII_LIMIT &&
-                (ESCAPE_MASKS[charCode shr BITMASK_SHIFT] shr
+                (escapeMasks[charCode shr BITMASK_SHIFT] shr
                         (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
             ) {
                 scratchBuf[scratchPos++] = charCode.toByte()
@@ -717,7 +720,7 @@ class GhostJsonWriter(
 
             // Handle the escape
             if (charCode < ASCII_LIMIT) {
-                val replacement = ESCAPE_REPLACEMENTS[charCode]
+                val replacement = escapeReplacements[charCode]
                 if (replacement != null) {
                     buffer.write(replacement)
                 } else {
