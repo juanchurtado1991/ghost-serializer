@@ -355,6 +355,10 @@ class GhostJsonReader(
             return decodedString
         }
 
+        return readQuotedStringSlow(start)
+    }
+
+    private fun GhostJsonReader.readQuotedStringSlow(start: Int): String {
         // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
         var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)
         var outPos = 0
@@ -453,7 +457,7 @@ class GhostJsonReader(
 
                         C.T_BYTE_INT -> {
                             if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
+                                  outBuffer = growBuffer(outBuffer, outPos)
                             }
                             outBuffer[outPos++] = C.TAB_INT.toByte()
                         }
