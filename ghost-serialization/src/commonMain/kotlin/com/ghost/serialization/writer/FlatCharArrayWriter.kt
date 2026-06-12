@@ -194,8 +194,12 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
 
     fun reset() {
         size = 0
+        contractCapacity()
+    }
+
+    private fun contractCapacity() {
         if (array.size > maxWarmCharWriteBufferCapacity) {
-            array = CharArray(maxWarmCharWriteBufferCapacity)
+            array = CharArray(initialCapacity)
         }
     }
 
