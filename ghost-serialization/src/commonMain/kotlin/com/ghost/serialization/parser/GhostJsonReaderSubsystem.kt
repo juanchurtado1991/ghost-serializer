@@ -131,7 +131,7 @@ fun GhostJsonReader.hasNext(): Boolean {
             val required = (needsCommaMask and bit) != C.RESULT_NONE
             if (token == C.COMMA_INT) {
                 if (!required) {
-                    throwError("Unexpected comma")
+                    throwError(C.ERR_UNEXPECTED_COMMA)
                 }
                 internalSkip(1)
                 val next = peekNextToken()
@@ -185,7 +185,7 @@ fun GhostJsonReader.nextKey(): String? {
             val required = (needsCommaMask and bit) != C.RESULT_NONE
             if (token == C.COMMA_INT) {
                 if (!required) {
-                    throwError("Unexpected comma")
+                    throwError(C.ERR_UNEXPECTED_COMMA)
                 }
                 internalSkip(1)
                 if (peekNextToken() == C.CLOSE_OBJ_INT) {
@@ -458,7 +458,7 @@ private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: B
             val required = (needsCommaMask and bit) != C.RESULT_NONE
             if (currentToken == C.COMMA_INT) {
                 if (!required) {
-                    throwError("Unexpected comma")
+                    throwError(C.ERR_UNEXPECTED_COMMA)
                 }
                 internalSkip(1)
                 currentToken = peekNextToken()

@@ -411,11 +411,11 @@ private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int,
     var key = 0
     val chars = rawChars
     if (length >= 4) {
-        val b0 = chars[start].code
-        val b1 = chars[start + 1].code
-        val b2 = chars[start + 2].code
-        val b3 = chars[start + 3].code
-        key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)
+        val byte0 = chars[start].code
+        val byte1 = chars[start + 1].code
+        val byte2 = chars[start + 2].code
+        val byte3 = chars[start + 3].code
+        key = byte0 or (byte1 shl C.SHIFT_8) or (byte2 shl C.SHIFT_16) or (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
             key = key xor chars[start + length - 1].code
             key = key xor chars[start + (length shr C.SINGLE_CHAR_SIZE)].code
@@ -442,17 +442,17 @@ private inline fun GhostJsonStringReader.verifyKeyMatch(
 ): Boolean {
     if (expected.length == length) {
         val chars = rawChars
-        var i = 0
-        while (i + 3 < length) {
-            if (chars[start + i] != expected[i]) return false
-            if (chars[start + i + 1] != expected[i + 1]) return false
-            if (chars[start + i + 2] != expected[i + 2]) return false
-            if (chars[start + i + 3] != expected[i + 3]) return false
-            i += 4
+        var index = 0
+        while (index + 3 < length) {
+            if (chars[start + index] != expected[index]) return false
+            if (chars[start + index + 1] != expected[index + 1]) return false
+            if (chars[start + index + 2] != expected[index + 2]) return false
+            if (chars[start + index + 3] != expected[index + 3]) return false
+            index += 4
         }
-        while (i < length) {
-            if (chars[start + i] != expected[i]) return false
-            i++
+        while (index < length) {
+            if (chars[start + index] != expected[index]) return false
+            index++
         }
         val endPos = start + length
         val newPos = endPos + C.SINGLE_CHAR_SIZE
