@@ -27,12 +27,10 @@ import com.ghost.serialization.parser.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.GhostJsonConstants.OPEN_OBJ_INT
-import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_12
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
@@ -61,9 +59,9 @@ import com.ghost.serialization.parser.GhostJsonConstants.CHAR_U
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_QUOTE
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSLASH
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSPACE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_FORMFEED
+import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_FORM_FEED
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_NEWLINE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_CARRIAGERETURN
+import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_CARRIAGE_RETURN
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_TAB
 import okio.ByteString
 
@@ -80,9 +78,8 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
 
     internal fun acquireScratch(): CharArray {
         val currentScratch = scratch
-        if (currentScratch != null) {
-            return currentScratch
-        }
+        if (currentScratch != null) return currentScratch
+
         val newScratch = CharArray(WRITER_SCRATCH_SIZE)
         scratch = newScratch
         return newScratch
@@ -697,9 +694,9 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             QUOTE_INT -> ESCAPE_QUOTE
             BACKSLASH_INT -> ESCAPE_BACKSLASH
             BS_INT -> ESCAPE_BACKSPACE
-            FF_INT -> ESCAPE_FORMFEED
+            FF_INT -> ESCAPE_FORM_FEED
             LF_INT -> ESCAPE_NEWLINE
-            CR_INT -> ESCAPE_CARRIAGERETURN
+            CR_INT -> ESCAPE_CARRIAGE_RETURN
             TAB_INT -> ESCAPE_TAB
             else -> null
         }

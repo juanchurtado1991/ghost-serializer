@@ -150,7 +150,7 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
 }
 
 actual fun ghostInternalEncodeToString(
-    block: (com.ghost.serialization.writer.GhostJsonStringWriter) -> Unit
+    block: (GhostJsonStringWriter) -> Unit
 ): String {
     val pair = cachedStringWriterPair
         ?: WriterStringPair().also { cachedStringWriterPair = it }

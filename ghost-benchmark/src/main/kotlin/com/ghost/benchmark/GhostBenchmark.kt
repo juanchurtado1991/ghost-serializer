@@ -2,7 +2,7 @@
     ExperimentalStdlibApi::class, InternalGhostApi::class,
     ExperimentalSerializationApi::class
 )
-@file:Suppress("SameParameterValue")
+@file:Suppress("SameParameterValue", "UNCHECKED_CAST")
 
 package com.ghost.benchmark
 
@@ -82,14 +82,46 @@ fun main(args: Array<String>) {
     val smallComplex = generateComplexData(20)
     val smallBytes = generateNeutralJson(smallComplex).encodeUtf8()
 
+    val listMediumComplex = generateComplexData(200)
+    val listMediumBytes = generateNeutralJson(listMediumComplex).encodeUtf8()
+
+    val syncLargeComplex = generateComplexData(2000)
+    val syncLargeBytes = generateNeutralJson(syncLargeComplex).encodeUtf8()
+
+    val writingComplex = generateComplexData(1000)
+
+    val stressTree = createTree(20)
+    val stressTreeBytes = generateNeutralJson(stressTree).encodeUtf8()
+
+    val failureMalformed = smallBytes.utf8().substring(0, smallBytes.size / 2)
+    val failureBytes = failureMalformed.encodeUtf8()
+
+    if (config.twitterOnly) {
+        TwitterBenchmark.run(config.runs, config.warmupIters, threadBean)
+        println("\n[COMPLETE] Benchmark execution finished.")
+        exitProcess(0)
+    }
+
     // 1. Cold Start
     runAndPrintColdStart(smallBytes, engines)
 
     // 2. Warmup
+    performGc()
     runWarmupPhase(engines, smallBytes, smallComplex, config.warmupIters)
 
     // 3. Benchmarking Sessions
-    val sessions = runBenchmarkSessions(config.runs, threadBean, engines, smallBytes)
+    performGc()
+    val sessions = runBenchmarkSessions(
+        config.runs,
+        threadBean,
+        engines,
+        listMediumBytes = listMediumBytes,
+        syncLargeBytes = syncLargeBytes,
+        writingComplex = writingComplex,
+        stressTreeBytes = stressTreeBytes,
+        failureMalformed = failureMalformed,
+        failureBytes = failureBytes
+    )
 
     // 4. Calculate Final Results
     val finalResults = calculateFinalResults(sessions)
@@ -98,6 +130,7 @@ fun main(args: Array<String>) {
     printFinalResults(finalResults, config.runs)
 
     // 6. Ghost Special Features (exclusive capabilities, no competition)
+    performGc()
     GhostSpecialFeaturesBenchmark.run(config.runs, config.warmupIters)
 
     // 7. Verification Tests
@@ -107,6 +140,7 @@ fun main(args: Array<String>) {
     }
 
     // 8. Twitter Macro Benchmark
+    performGc()
     TwitterBenchmark.run(config.runs, config.warmupIters, threadBean)
 
     println("\n[COMPLETE] Benchmark execution finished.")
@@ -134,6 +168,7 @@ private fun runWarmupPhase(
     println("\n🔥 Warming up JIT ($warmupIters iterations × 3 modes)...")
     val jsonString = smallBytes.utf8()
     val rawBytes = smallBytes.toByteArray()
+    val stringFromBytes = String(rawBytes, Charsets.UTF_8)
 
     repeat(warmupIters) {
         // String mode
@@ -149,7 +184,6 @@ private fun runWarmupPhase(
         Ghost.encodeToString(smallComplex)
 
         // Bytes mode
-        val stringFromBytes = String(rawBytes, Charsets.UTF_8)
         engines.gson.fromJson(stringFromBytes, ComplexResponse::class.java)
         engines.moshiAdapter.fromJson(stringFromBytes)
         engines.kJson.decodeFromString<ComplexResponse>(stringFromBytes)
@@ -186,19 +220,26 @@ private fun runBenchmarkSessions(
     runs: Int,
     threadBean: ThreadMXBean,
     engines: BenchmarkEngines,
-    smallBytes: ByteString
+    listMediumBytes: ByteString,
+    syncLargeBytes: ByteString,
+    writingComplex: ComplexResponse,
+    stressTreeBytes: ByteString,
+    failureMalformed: String,
+    failureBytes: ByteString
 ): List<BenchmarkSessionResults> {
     val sessions = mutableListOf<BenchmarkSessionResults>()
 
     repeat(runs) { i ->
-        if (runs > 1) println("[Run ${i + 1}/$runs] Benchmarking...")
+        if (runs > 1 && (i + 1) % 5000 == 0) {
+            println("[Run ${i + 1}/$runs] Benchmarking...")
+        }
 
-        val listMediumMetrics = runListMediumDeserialization(threadBean, engines)
-        val syncLargeMetrics = runSyncLargeDeserialization(threadBean, engines)
-        val writingMetrics = runSerialization(threadBean, engines)
+        val listMediumMetrics = runListMediumDeserialization(threadBean, engines, listMediumBytes)
+        val syncLargeMetrics = runSyncLargeDeserialization(threadBean, engines, syncLargeBytes)
+        val writingMetrics = runSerialization(threadBean, engines, writingComplex)
         val stressMetrics =
-            runStressTests(engines.gson, engines.moshi, engines.kJson, engines.jackson)
-        val failureMetrics = runFailureTests(smallBytes)
+            runStressTests(engines.gson, engines.moshi, engines.kJson, engines.jackson, stressTreeBytes)
+        val failureMetrics = runFailureTests(engines.gson, engines.moshi, engines.kJson, engines.jackson, failureMalformed, failureBytes)
 
         sessions.add(
             BenchmarkSessionResults(
@@ -215,10 +256,9 @@ private fun runBenchmarkSessions(
 
 private fun runListMediumDeserialization(
     threadBean: ThreadMXBean,
-    engines: BenchmarkEngines
+    engines: BenchmarkEngines,
+    bytes: ByteString
 ): ModeMetrics {
-    val complex = generateComplexData(200)
-    val bytes = generateNeutralJson(complex).encodeUtf8()
     return runDeserializationAllModes(
         threadBean,
         engines.gson,
@@ -231,10 +271,9 @@ private fun runListMediumDeserialization(
 
 private fun runSyncLargeDeserialization(
     threadBean: ThreadMXBean,
-    engines: BenchmarkEngines
+    engines: BenchmarkEngines,
+    bytes: ByteString
 ): ModeMetrics {
-    val complex = generateComplexData(2000)
-    val bytes = generateNeutralJson(complex).encodeUtf8()
     return runDeserializationAllModes(
         threadBean,
         engines.gson,
@@ -245,8 +284,11 @@ private fun runSyncLargeDeserialization(
     )
 }
 
-private fun runSerialization(threadBean: ThreadMXBean, engines: BenchmarkEngines): ModeMetrics {
-    val complex = generateComplexData(1000)
+private fun runSerialization(
+    threadBean: ThreadMXBean,
+    engines: BenchmarkEngines,
+    complex: ComplexResponse
+): ModeMetrics {
     return runSerializationAllModes(
         threadBean,
         engines.gson,
@@ -516,23 +558,24 @@ private fun runStressTests(
     gson: Gson,
     moshi: Moshi,
     kJson: Json,
-    jackson: ObjectMapper
+    jackson: ObjectMapper,
+    treeBytes: ByteString
 ): StressMetrics {
-    val tree = createTree(20)
-    val treeBytes = generateNeutralJson(tree).encodeUtf8()
+    val treeString = treeBytes.utf8()
+    val treeRawBytes = treeBytes.toByteArray()
 
     val gsonTree = measureTimeNanos {
         gson.fromJson<Category>(
-            GsonReader(InputStreamReader(ByteArrayInputStream(treeBytes.toByteArray()))),
+            GsonReader(InputStreamReader(ByteArrayInputStream(treeRawBytes))),
             Category::class.java
         )
     }
     val moshiTree = measureTimeNanos {
-        moshi.adapter<Category>().fromJson(Buffer().write(treeBytes.toByteArray()))
+        moshi.adapter<Category>().fromJson(Buffer().write(treeRawBytes))
     }
-    val kSerTree = measureTimeNanos { kJson.decodeFromString<Category>(treeBytes.utf8()) }
-    val jacksonTree = measureTimeNanos { jackson.readValue<Category>(treeBytes.utf8()) }
-    val ghostTree = measureTimeNanos { Ghost.deserialize<Category>(treeBytes.toByteArray()) }
+    val kSerTree = measureTimeNanos { kJson.decodeFromString<Category>(treeString) }
+    val jacksonTree = measureTimeNanos { jackson.readValue<Category>(treeString) }
+    val ghostTree = measureTimeNanos { Ghost.deserialize<Category>(treeRawBytes) }
 
     return StressMetrics(
         nesting = BenchmarkMetrics(
@@ -553,14 +596,15 @@ private fun runStressTests(
 }
 
 @Suppress("CheckResult")
-private fun runFailureTests(data: ByteString): BenchmarkMetrics {
-    val malformed = data.utf8().substring(0, data.size / 2)
-    val bytes = malformed.encodeUtf8()
-
-    val gson = Gson()
-    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-    val kser = Json { ignoreUnknownKeys = true }
-    val jackson = ObjectMapper().registerModule(KotlinModule.Builder().build())
+private fun runFailureTests(
+    gson: Gson,
+    moshi: Moshi,
+    kser: Json,
+    jackson: ObjectMapper,
+    malformed: String,
+    bytes: ByteString
+): BenchmarkMetrics {
+    val rawBytes = bytes.toByteArray()
 
     val gsonTime = measureAvgFailSpeed {
         try {
@@ -588,7 +632,7 @@ private fun runFailureTests(data: ByteString): BenchmarkMetrics {
     }
     val ghostTime = measureAvgFailSpeed {
         try {
-            Ghost.deserialize<ComplexResponse>(bytes.toByteArray())
+            Ghost.deserialize<ComplexResponse>(rawBytes)
         } catch (_: Exception) {
         }
     }
@@ -858,5 +902,12 @@ private inline fun <T> measurePerf(
     val allocatedBytes = endAllocatedBytes - startAllocatedBytes
 
     return Triple(result, durationNanos, allocatedBytes)
+}
+
+private fun performGc() {
+    System.gc()
+    System.runFinalization()
+    Thread.sleep(100)
+    System.gc()
 }
 

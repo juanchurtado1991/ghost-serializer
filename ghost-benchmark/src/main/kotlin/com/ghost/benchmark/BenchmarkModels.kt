@@ -18,7 +18,7 @@ import kotlinx.serialization.json.Json
 // Data & Configuration Classes
 // ============================================================================
 
-internal data class BenchmarkConfig(val runs: Int, val noTests: Boolean, val warmupIters: Int) {
+internal data class BenchmarkConfig(val runs: Int, val noTests: Boolean, val warmupIters: Int, val twitterOnly: Boolean) {
     companion object {
         fun fromArgs(args: Array<String>): BenchmarkConfig {
             val runs = args.indexOf("--runs")
@@ -29,7 +29,8 @@ internal data class BenchmarkConfig(val runs: Int, val noTests: Boolean, val war
                     if (it != -1 && it + 1 < args.size) args[it + 1].toIntOrNull()
                         ?: 5000 else 5000
                 }
-            return BenchmarkConfig(runs, noTests, warmupIters)
+            val twitterOnly = args.contains("--twitter-only")
+            return BenchmarkConfig(runs, noTests, warmupIters, twitterOnly)
         }
     }
 }

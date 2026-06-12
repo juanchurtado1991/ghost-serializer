@@ -25,7 +25,29 @@ tasks.named<JavaExec>("run") {
     if (!project.hasProperty("skipTests")) {
         dependsOn(":ciTest")
     }
+
+    // JIT diagnostic mode: ./gradlew :ghost-benchmark:run -Pjit -PskipTests --args="..."
+    // Writes HotSpot compilation log to ghost-benchmark/jit-compilation.log
+    // Open the log with JITWatch (https://github.com/AdoptOpenJDK/jitwatch) to see:
+    //   - Which methods were inlined (and why some were rejected)
+    //   - Method bytecode sizes vs. JIT thresholds (MaxInlineSize, FreqInlineSize)
+    //   - OSR (On-Stack Replacement) events in hot loops
+    // Zero overhead in production — flags only apply to this forked JVM process.
+    if (project.hasProperty("jit")) {
+        val logFile = project.layout.projectDirectory.file("jit-compilation.log").asFile
+        // Only LogCompilation (XML) — do NOT add PrintCompilation/PrintInlining here.
+        // Those flags write to stdout synchronously on every JIT event, slowing the
+        // benchmark 3-5x and invalidating throughput measurements. JITWatch reads
+        // all inlining decisions (including rejection reasons) from the XML file.
+        jvmArgs(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+LogCompilation",
+            "-XX:LogFile=${logFile.absolutePath}",
+        )
+        println("🔬 JIT logging enabled → ${logFile.absolutePath}")
+    }
 }
+
 
 kotlin {
     jvmToolchain(17)

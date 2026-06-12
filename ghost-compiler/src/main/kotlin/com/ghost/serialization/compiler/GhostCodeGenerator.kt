@@ -451,11 +451,13 @@ internal class GhostCodeGenerator(
 
         // Generate nested OPTIONS for GhostFlatten
         FlattenOptionsGenerator
-            .generateNestedOptions(typeSpecBuilder, properties, fullPaths, readerClass)
+            .generateNestedOptions(typeSpecBuilder, properties, fullPaths, readerClass, textChannel)
 
         deserializeEmitterStreaming.build(typeSpecBuilder, isFlatPath = false)
         deserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
-        deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)
+        if (textChannel) {
+            deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)
+        }
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
@@ -496,12 +498,12 @@ internal class GhostCodeGenerator(
 
         val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
         val optionsBuilder = CodeBlock.builder()
-            .add(C.TEMPLATE_OPTIONS_OF_SEEDS, optionsClass, shift, multiplier)
+            .add(C.TEMPLATE_OPTIONS_OF_SEEDS_START, optionsClass, shift, multiplier, textChannel)
 
         names.forEach { name ->
             optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
         }
-        optionsBuilder.add(C.STR_PAREN)
+        optionsBuilder.add(")")
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(
@@ -543,7 +545,7 @@ internal class GhostCodeGenerator(
             // String header for StringWriter
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
-                    "HS_" + cleanName,
+                    C.STR_HS_PREFIX + cleanName,
                     String::class,
                     KModifier.PRIVATE
                 )

@@ -49,6 +49,7 @@ internal object GhostJsonConstants {
     const val EXPONENT_CLAMP_THRESHOLD = 1000
     const val ERR_EXPECTED_LITERAL = "Expected literal "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
+    const val ERR_TEXT_CHANNEL_DISABLED = "String deserialization is disabled. Please configure arg(\"ghost.textChannel\", \"true\") in your KSP options to use the String parser."
 
     // --- Digit & Limit Constants ---
     const val MIN_SINGLE_DIGIT = 0
@@ -66,9 +67,9 @@ internal object GhostJsonConstants {
     const val ESCAPE_QUOTE = "\\\""
     const val ESCAPE_BACKSLASH = "\\\\"
     const val ESCAPE_BACKSPACE = "\\b"
-    const val ESCAPE_FORMFEED = "\\f"
+    const val ESCAPE_FORM_FEED = "\\f"
     const val ESCAPE_NEWLINE = "\\n"
-    const val ESCAPE_CARRIAGERETURN = "\\r"
+    const val ESCAPE_CARRIAGE_RETURN = "\\r"
     const val ESCAPE_TAB = "\\t"
 
     // --- Character Constants ---
@@ -85,8 +86,6 @@ internal object GhostJsonConstants {
     const val CHAR_DOT = '.'
     const val CHAR_ZERO = '0'
     const val CHAR_BACKSLASH = '\\'
-
-
 
     // --- Case-Folded ASCII Byte Constants ---
     // Each constant is `'X'.code or 32` where 32 = CASE_INSENSITIVE_MASK.
@@ -164,6 +163,8 @@ internal object GhostJsonConstants {
 
     /** Standard mask for unsigned byte access. */
     const val BYTE_MASK = 0xFF
+    /** Standard mask for unsigned Long byte access. */
+    const val LONG_BYTE_MASK = 0xFFL
 
     // --- ASCII Token Codes (Integers) ---
     const val NEWLINE_INT = '\n'.code
@@ -206,6 +207,8 @@ internal object GhostJsonConstants {
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
     const val STR_POOL_SIZE = 2048
+    /** Multiplier for string pool hashing. */
+    const val STR_POOL_HASH_MULTIPLIER = 31
 
     /** Bit shift used for rolling hash calculation. */
     const val HASH_SHIFT = 5

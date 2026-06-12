@@ -49,6 +49,9 @@ import com.ghost.serialization.parser.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.GhostJsonConstants.WRITER_SCRATCH_SIZE
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.GhostJsonConstants.ZERO_INT
+import com.ghost.serialization.parser.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
+import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
+import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.releaseScratchBuffer
 import okio.BufferedSink
 import okio.ByteString
@@ -544,6 +547,25 @@ class GhostJsonWriter(
         if (length == 0) {
             buffer.write(EMPTY_STRING_BS)
             return
+        }
+
+        if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
+            var allPlain = true
+            var index = 0
+            while (index < length) {
+                val code = value[index].code
+                if (code !in SPACE_INT..<ASCII_LIMIT || code == QUOTE_INT || code == BACKSLASH_INT) {
+                    allPlain = false
+                    break
+                }
+                index++
+            }
+            if (allPlain) {
+                buffer.writeByte(QUOTE_INT)
+                buffer.writeUtf8(value)
+                buffer.writeByte(QUOTE_INT)
+                return
+            }
         }
 
         val scratchBuf = scratch ?: acquireScratch()

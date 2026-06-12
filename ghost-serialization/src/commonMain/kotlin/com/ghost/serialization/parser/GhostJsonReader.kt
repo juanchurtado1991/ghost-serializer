@@ -369,11 +369,6 @@ class GhostJsonReader(
                     return outBuffer.decodeToString(0, outPos)
                 }
 
-                if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
-                    position = pos
-                    throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
-                }
-
                 if (byteValue == C.BACKSLASH_INT) {
                     if (pos >= limit) {
                         position = pos
@@ -484,6 +479,9 @@ class GhostJsonReader(
                             outBuffer[outPos++] = escaped.toByte()
                         }
                     }
+                } else if (byteValue < C.SPACE_INT) {
+                    position = pos
+                    throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
                 } else {
                     if (outPos + 1 > outBuffer.size) {
                         outBuffer = growBuffer(outBuffer, outPos)
@@ -527,11 +525,6 @@ class GhostJsonReader(
                 return
             }
 
-            if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
-                position = pos
-                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
-            }
-
             if (byteValue == C.BACKSLASH_INT) {
                 if (pos >= limit) {
                     position = pos
@@ -547,6 +540,9 @@ class GhostJsonReader(
                     parseUnicodeHex(pos)
                     pos += C.UNICODE_HEX_LENGTH
                 }
+            } else if (byteValue < C.SPACE_INT) {
+                position = pos
+                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
             }
         }
         position = pos

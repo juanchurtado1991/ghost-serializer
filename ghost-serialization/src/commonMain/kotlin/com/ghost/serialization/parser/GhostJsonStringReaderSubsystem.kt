@@ -5,7 +5,6 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
-import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.InternalGhostApi
 
 fun GhostJsonStringReader.beginObject() {
@@ -236,9 +235,7 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
             ((escapeMasks[byte0 shr C.BITMASK_SHIFT] shr
                     (byte0 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
         ) {
-            if (byte0 == C.QUOTE_INT) {
-                return currentPosition
-            }
+            if (byte0 == C.QUOTE_INT) return currentPosition
             return C.MATCH_END
         }
         val byte1 = chars[currentPosition + indexOffset1].code
@@ -246,9 +243,7 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
             ((escapeMasks[byte1 shr C.BITMASK_SHIFT] shr
                     (byte1 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
         ) {
-            if (byte1 == C.QUOTE_INT) {
-                return currentPosition + indexOffset1
-            }
+            if (byte1 == C.QUOTE_INT) return currentPosition + indexOffset1
             return C.MATCH_END
         }
         val byte2 = chars[currentPosition + indexOffset2].code
@@ -256,9 +251,7 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
             ((escapeMasks[byte2 shr C.BITMASK_SHIFT] shr
                     (byte2 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
         ) {
-            if (byte2 == C.QUOTE_INT) {
-                return currentPosition + indexOffset2
-            }
+            if (byte2 == C.QUOTE_INT) return currentPosition + indexOffset2
             return C.MATCH_END
         }
         val byte3 = chars[currentPosition + indexOffset3].code
@@ -266,9 +259,7 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
             ((escapeMasks[byte3 shr C.BITMASK_SHIFT] shr
                     (byte3 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
         ) {
-            if (byte3 == C.QUOTE_INT) {
-                return currentPosition + indexOffset3
-            }
+            if (byte3 == C.QUOTE_INT) return currentPosition + indexOffset3
             return C.MATCH_END
         }
         currentPosition += unrollStep
@@ -319,55 +310,16 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
         return -1
     }
 
-    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            commaConsumedMask = commaConsumedMask and bit.inv()
-            needsCommaMask = needsCommaMask or bit
-        } else {
-            val required = (needsCommaMask and bit) != C.RESULT_NONE
-            if (token == C.COMMA_INT) {
-                if (!required) {
-                    throwError(C.ERR_UNEXPECTED_COMMA)
-                }
-                internalSkip(1)
-                token = peekNextToken()
-                if (token == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-                commaConsumedMask = commaConsumedMask and bit.inv()
-                needsCommaMask = needsCommaMask or bit
-            } else {
-                if (required && consumeSeparator) {
-                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
-                }
-                needsCommaMask = needsCommaMask or bit
-            }
-        }
-    } else {
-        if (token == C.COMMA_INT) {
-            internalSkip(1)
-            token = peekNextToken()
-            if (token == C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-        }
-    }
+    token = selectValidateCommas(token, consumeSeparator)
 
     if (token != C.QUOTE_INT) {
-        throwError(
-            if (consumeSeparator) {
-                C.ERR_EXPECTED_KEY
-            } else {
-                C.ERR_EXPECTED_STRING
-            }
-        )
+        throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
     val end = findClosingQuote(start, limit)
 
     if (end == -1) {
-        throwError(C.UNTERMINATED_STRING_ERROR)
+        throwUnterminatedStringError()
     }
 
     val length = end - start
@@ -382,7 +334,49 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
         }
     }
 
-    // No match found
+    return handleSelectNoMatch(start, end, length, consumeSeparator)
+}
+
+private fun GhostJsonStringReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int {
+    var currentToken = token
+    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
+        val bit = C.BITMASK_UNIT shl depth
+        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
+            commaConsumedMask = commaConsumedMask and bit.inv()
+            needsCommaMask = needsCommaMask or bit
+        } else {
+            val required = (needsCommaMask and bit) != C.RESULT_NONE
+            if (currentToken == C.COMMA_INT) {
+                if (!required) {
+                    throwError(C.ERR_UNEXPECTED_COMMA)
+                }
+                internalSkip(1)
+                currentToken = peekNextToken()
+                if (currentToken == C.CLOSE_OBJ_INT) {
+                    throwError(C.ERR_TRAILING_COMMA)
+                }
+                commaConsumedMask = commaConsumedMask and bit.inv()
+                needsCommaMask = needsCommaMask or bit
+            } else {
+                if (required && consumeSeparator) {
+                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
+                }
+                needsCommaMask = needsCommaMask or bit
+            }
+        }
+    } else {
+        if (currentToken == C.COMMA_INT) {
+            internalSkip(1)
+            currentToken = peekNextToken()
+            if (currentToken == C.CLOSE_OBJ_INT) {
+                throwError(C.ERR_TRAILING_COMMA)
+            }
+        }
+    }
+    return currentToken
+}
+
+private fun GhostJsonStringReader.handleSelectNoMatch(start: Int, end: Int, length: Int, consumeSeparator: Boolean): Int {
     val newPos = end + 1
     position = newPos
     nextTokenByte = C.MATCH_END
@@ -396,8 +390,15 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
         val unknownKey = rawData.substring(start, end)
         throwError("${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey")
     }
-
     return C.MATCH_NONE
+}
+
+private fun GhostJsonStringReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
+    throwError(if (consumeSeparator) C.ERR_EXPECTED_KEY else C.ERR_EXPECTED_STRING)
+}
+
+private fun GhostJsonStringReader.throwUnterminatedStringError() {
+    throwError(C.UNTERMINATED_STRING_ERROR)
 }
 
 private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
@@ -491,7 +492,9 @@ fun GhostJsonStringReader.peekStringField(name: String): String? {
     }
     if (!isValidStart) return null
 
-    val scanLimit = (pos + GhostHeuristics.maxDiscriminatorPeekDistance).coerceAtMost(localLimit)
+    val scanLimit = (pos + GhostHeuristics.maxDiscriminatorPeekDistance)
+        .coerceAtMost(localLimit)
+
     val keySize = name.length
 
     while (pos < scanLimit) {

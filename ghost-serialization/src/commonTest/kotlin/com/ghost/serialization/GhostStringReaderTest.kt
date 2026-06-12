@@ -1543,4 +1543,20 @@ class GhostStringReaderTest {
         reader.consumeKeySeparator()
         assertFailsWith<Exception> { reader.nextInt() }
     }
+
+    @Test
+    fun lazyBuildsStringDispatchWhenDisabledInitially() {
+        // Construct options with enableStringDispatch = false
+        val options = JsonReaderOptions(
+            rawBytes = arrayOf("id".encodeToByteArray()),
+            shift = 0,
+            multiplier = 31,
+            rawStrings = arrayOf("id"),
+            enableStringDispatch = false
+        )
+        val reader = GhostJsonStringReader("""{"id":1}""")
+        reader.beginObject()
+        // Accessing stringDispatch should trigger lazy build and find the field successfully
+        assertEquals(0, reader.selectString(options))
+    }
 }

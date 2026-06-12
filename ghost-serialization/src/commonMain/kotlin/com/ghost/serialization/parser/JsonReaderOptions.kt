@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.parser
 
+import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_16
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_24
@@ -26,10 +27,28 @@ class JsonReaderOptions(
     @PublishedApi internal val rawBytes: Array<ByteArray>,
     @PublishedApi internal val shift: Int,
     @PublishedApi internal val multiplier: Int,
-    @PublishedApi internal val rawStrings: Array<String>
+    @PublishedApi internal val rawStrings: Array<String>,
+    @PublishedApi internal val enableStringDispatch: Boolean = false
 ) {
     @PublishedApi
     internal val dispatch = IntArray(DISPATCH_TABLE_SIZE) { -1 }
+
+    @PublishedApi
+    internal var stringDispatch = if (enableStringDispatch) {
+        IntArray(DISPATCH_TABLE_SIZE) { -1 }
+    } else {
+        EMPTY_DISPATCH_TABLE
+    }
+        get() {
+            val table = field
+            if (table === EMPTY_DISPATCH_TABLE) {
+                val newTable = IntArray(DISPATCH_TABLE_SIZE) { -1 }
+                buildStringDispatchTable(newTable)
+                field = newTable
+                return newTable
+            }
+            return table
+        }
 
     @PublishedApi
     internal val hasCollisions: Boolean
@@ -39,12 +58,20 @@ class JsonReaderOptions(
         val seen = HashSet<Long>()
         for (bytes in rawBytes) {
             if (bytes.isNotEmpty()) {
-                var k = 0L
-                if (bytes.size >= 1) k = k or (bytes[0].toLong() and 0xFFL)
-                if (bytes.size >= 2) k = k or ((bytes[1].toLong() and 0xFFL) shl 8)
-                if (bytes.size >= 3) k = k or ((bytes[2].toLong() and 0xFFL) shl 16)
-                if (bytes.size >= 4) k = k or ((bytes[3].toLong() and 0xFFL) shl 24)
-                val packed = k or (bytes.size.toLong() shl 32)
+                var key = 0L
+                if (bytes.size >= SINGLE_CHAR_SIZE) {
+                    key = key or (bytes[0].toLong() and C.LONG_BYTE_MASK)
+                }
+                if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
+                    key = key or ((bytes[1].toLong() and C.LONG_BYTE_MASK) shl SHIFT_8)
+                }
+                if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
+                    key = key or ((bytes[2].toLong() and C.LONG_BYTE_MASK) shl SHIFT_16)
+                }
+                if (bytes.size >= UNICODE_HEX_LENGTH) {
+                    key = key or ((bytes[3].toLong() and C.LONG_BYTE_MASK) shl SHIFT_24)
+                }
+                val packed = key or (bytes.size.toLong() shl (SHIFT_24 + SHIFT_8))
                 if (!seen.add(packed)) {
                     detectedCollision = true
                     break
@@ -58,38 +85,68 @@ class JsonReaderOptions(
             val bytes = rawBytes[index]
             if (bytes.isNotEmpty()) {
                 var key = 0
-                if (bytes.size >= 1) key = key or (bytes[0].toInt() and BYTE_MASK)
-                if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
-                if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
-                if (bytes.size >= UNICODE_HEX_LENGTH) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
+                if (bytes.size >= SINGLE_CHAR_SIZE) {
+                    key = key or (bytes[0].toInt() and BYTE_MASK)
+                }
+                if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
+                    key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
+                }
+                if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
+                    key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
+                }
+                if (bytes.size >= UNICODE_HEX_LENGTH) {
+                    key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
+                }
                 if (hasCollisions && bytes.size >= UNICODE_HEX_LENGTH) {
-                    key = key xor (bytes[bytes.size - 1].toInt() and BYTE_MASK)
+                    key = key xor (bytes[bytes.size - SINGLE_CHAR_SIZE].toInt() and BYTE_MASK)
                     key = key xor (bytes[bytes.size shr SINGLE_CHAR_SIZE].toInt() and BYTE_MASK)
                 }
 
-                /**
-                 * Perfect Hash Mapping Engine.
-                 * Maps a packed multibyte key into a fixed dispatch table index.
-                 *
-                 * Mathematical formula:
-                 * ```
-                 * hashIndex = ((key * multiplier + length) >>> shift) & tableMask
-                 * ```
-                 *
-                 * Technical breakdown of the formula:
-                 * 1. `key * multiplier`: Spreads key entropy to minimize hash collisions.
-                 * 2. `+ length`: Resolves collisions ("breaks ties") for properties sharing the same
-                 * 4-byte prefix but having different physical lengths (e.g., "user" vs "userId").
-                 * 3. `>>> shift` (shr): Normalizes the distribution by extracting the highest entropy bits.
-                 * 4. `& tableMask`: Clamps the index safely within the `[0, DISPATCH_TABLE_SIZE - 1]` range
-                 * using an ultra-fast bitwise mask instead of an expensive modulo (`%`) division operator.
-                 */
                 val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
-                // Store index if slot is available.
-                if (dispatch[perfectHashKey] == -1) dispatch[perfectHashKey] = index
+                if (dispatch[perfectHashKey] == -1) {
+                    dispatch[perfectHashKey] = index
+                }
+            }
+        }
+
+        if (enableStringDispatch) {
+            buildStringDispatchTable(stringDispatch)
+        }
+    }
+
+
+
+    private fun buildStringDispatchTable(table: IntArray) {
+        val tableMask = DISPATCH_TABLE_SIZE - 1
+        for (index in rawStrings.indices) {
+            val keyString = rawStrings[index]
+            if (keyString.isNotEmpty()) {
+                var key = 0
+                if (keyString.length >= SINGLE_CHAR_SIZE) {
+                    key = key or (keyString[0].code and BYTE_MASK)
+                }
+                if (keyString.length >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
+                    key = key or ((keyString[1].code and BYTE_MASK) shl SHIFT_8)
+                }
+                if (keyString.length >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
+                    key = key or ((keyString[2].code and BYTE_MASK) shl SHIFT_16)
+                }
+                if (keyString.length >= UNICODE_HEX_LENGTH) {
+                    key = key or ((keyString[3].code and BYTE_MASK) shl SHIFT_24)
+                }
+                if (hasCollisions && keyString.length >= UNICODE_HEX_LENGTH) {
+                    key = key xor (keyString[keyString.length - SINGLE_CHAR_SIZE].code and BYTE_MASK)
+                    key = key xor (keyString[keyString.length shr SINGLE_CHAR_SIZE].code and BYTE_MASK)
+                }
+
+                val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask
+                if (table[perfectHashKey] == -1) {
+                    table[perfectHashKey] = index
+                }
             }
         }
     }
+
 
     companion object {
 
@@ -114,9 +171,17 @@ class JsonReaderOptions(
             val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
             val rawStrings = Array(names.size) { names[it] }
 
-            return JsonReaderOptions(rawBytes, shift, multiplier, rawStrings)
+            return JsonReaderOptions(rawBytes, shift, multiplier, rawStrings, enableStringDispatch = true)
+        }
+
+        fun of(shift: Int, multiplier: Int, enableStringDispatch: Boolean, vararg names: String): JsonReaderOptions {
+            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
+            val rawStrings = Array(names.size) { names[it] }
+
+            return JsonReaderOptions(rawBytes, shift, multiplier, rawStrings, enableStringDispatch)
         }
 
         private const val DISPATCH_TABLE_SIZE = 1024
+        private val EMPTY_DISPATCH_TABLE = IntArray(0)
     }
 }
