@@ -66,6 +66,10 @@ fun GhostJsonFlatReader.readQuotedString(): String {
         return decodedString
     }
 
+    return readQuotedStringSlow(start)
+}
+
+private fun GhostJsonFlatReader.readQuotedStringSlow(start: Int): String {
     // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
     var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)
     var outPos = 0

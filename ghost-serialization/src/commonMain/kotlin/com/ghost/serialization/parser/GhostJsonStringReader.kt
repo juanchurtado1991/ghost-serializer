@@ -192,6 +192,10 @@ class GhostJsonStringReader(
             return rawData.substring(start, start + length)
         }
 
+        return readQuotedStringSlow(start)
+    }
+
+    private fun readQuotedStringSlow(start: Int): String {
         var outChars = slowPathChars
         var outPos = 0
 
