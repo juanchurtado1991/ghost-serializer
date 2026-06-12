@@ -566,7 +566,11 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
             }
         }
 
-        val scratchBuf = scratch ?: acquireScratch()
+        writeStringValueRawSlow(value, length)
+    }
+
+    private fun writeStringValueRawSlow(value: String, length: Int) {
+        val scratchBuf = acquireScratch()
         if (length + STRING_QUOTE_PAIR_BYTES > scratchBuf.size) {
             buffer.writeByte(QUOTE_INT)
             writeEscaped(value)
