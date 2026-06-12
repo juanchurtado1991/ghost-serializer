@@ -301,7 +301,7 @@ class GhostJsonFlatReader(
                 val required = (needsCommaMask and bit) != C.RESULT_NONE
                 if (token == C.COMMA_INT) {
                     if (!required) {
-                        throwError("Unexpected comma")
+                        throwError(C.ERR_UNEXPECTED_COMMA)
                     }
                     internalSkip(1)
                     val next = peekNextToken()
@@ -347,7 +347,7 @@ class GhostJsonFlatReader(
                 val required = (needsCommaMask and bit) != C.RESULT_NONE
                 if (token == C.COMMA_INT) {
                     if (!required) {
-                        throwError("Unexpected comma")
+                        throwError(C.ERR_UNEXPECTED_COMMA)
                     }
                     internalSkip(1)
                     if (peekNextToken() == C.CLOSE_OBJ_INT) {
@@ -527,7 +527,7 @@ class GhostJsonFlatReader(
                 val required = (needsCommaMask and bit) != C.RESULT_NONE
                 if (token == C.COMMA_INT) {
                     if (!required) {
-                        throwError("Unexpected comma")
+                        throwError(C.ERR_UNEXPECTED_COMMA)
                     }
                     internalSkip(1)
                     token = peekNextToken()
