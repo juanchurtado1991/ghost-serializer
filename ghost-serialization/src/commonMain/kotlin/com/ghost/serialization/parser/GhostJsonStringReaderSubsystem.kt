@@ -229,56 +229,64 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
     val indexOffset2 = 2
     val indexOffset3 = 3
 
+    val localAsciiLimit = C.ASCII_LIMIT
+    val localBitmaskShift = C.BITMASK_SHIFT
+    val localBitmaskIndexMask = C.BITMASK_INDEX_MASK
+    val localBitmaskUnit = C.BITMASK_UNIT
+    val localResultNone = C.RESULT_NONE
+    val localQuoteInt = C.QUOTE_INT
+    val localMatchEnd = C.MATCH_END
+
     while (currentPosition + indexOffset3 < lim) {
         val byte0 = chars[currentPosition].code
-        if (byte0 < C.ASCII_LIMIT &&
-            ((escapeMasks[byte0 shr C.BITMASK_SHIFT] shr
-                    (byte0 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
+        if (byte0 < localAsciiLimit &&
+            ((escapeMasks[byte0 shr localBitmaskShift] shr
+                    (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
         ) {
-            if (byte0 == C.QUOTE_INT) return currentPosition
-            return C.MATCH_END
+            if (byte0 == localQuoteInt) return currentPosition
+            return localMatchEnd
         }
         val byte1 = chars[currentPosition + indexOffset1].code
-        if (byte1 < C.ASCII_LIMIT &&
-            ((escapeMasks[byte1 shr C.BITMASK_SHIFT] shr
-                    (byte1 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
+        if (byte1 < localAsciiLimit &&
+            ((escapeMasks[byte1 shr localBitmaskShift] shr
+                    (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
         ) {
-            if (byte1 == C.QUOTE_INT) return currentPosition + indexOffset1
-            return C.MATCH_END
+            if (byte1 == localQuoteInt) return currentPosition + indexOffset1
+            return localMatchEnd
         }
         val byte2 = chars[currentPosition + indexOffset2].code
-        if (byte2 < C.ASCII_LIMIT &&
-            ((escapeMasks[byte2 shr C.BITMASK_SHIFT] shr
-                    (byte2 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
+        if (byte2 < localAsciiLimit &&
+            ((escapeMasks[byte2 shr localBitmaskShift] shr
+                    (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
         ) {
-            if (byte2 == C.QUOTE_INT) return currentPosition + indexOffset2
-            return C.MATCH_END
+            if (byte2 == localQuoteInt) return currentPosition + indexOffset2
+            return localMatchEnd
         }
         val byte3 = chars[currentPosition + indexOffset3].code
-        if (byte3 < C.ASCII_LIMIT &&
-            ((escapeMasks[byte3 shr C.BITMASK_SHIFT] shr
-                    (byte3 and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
+        if (byte3 < localAsciiLimit &&
+            ((escapeMasks[byte3 shr localBitmaskShift] shr
+                    (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
         ) {
-            if (byte3 == C.QUOTE_INT) return currentPosition + indexOffset3
-            return C.MATCH_END
+            if (byte3 == localQuoteInt) return currentPosition + indexOffset3
+            return localMatchEnd
         }
         currentPosition += unrollStep
     }
 
     while (currentPosition < lim) {
         val singleByte = chars[currentPosition].code
-        if (singleByte < C.ASCII_LIMIT &&
-            ((escapeMasks[singleByte shr C.BITMASK_SHIFT] shr
-                    (singleByte and C.BITMASK_INDEX_MASK)) and C.BITMASK_UNIT != C.RESULT_NONE)
+        if (singleByte < localAsciiLimit &&
+            ((escapeMasks[singleByte shr localBitmaskShift] shr
+                    (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
         ) {
-            if (singleByte == C.QUOTE_INT) {
+            if (singleByte == localQuoteInt) {
                 return currentPosition
             }
-            return C.MATCH_END
+            return localMatchEnd
         }
         currentPosition++
     }
-    return C.MATCH_END
+    return localMatchEnd
 }
 
 private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {

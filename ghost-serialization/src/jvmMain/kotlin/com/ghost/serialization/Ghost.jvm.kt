@@ -7,7 +7,9 @@ import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.WriterSinkPair
+import com.ghost.serialization.writer.FlatCharArrayWriter
 import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
@@ -16,7 +18,8 @@ private val readerPool = ThreadLocal<GhostJsonReader>()
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 private val stringReaderPool = ThreadLocal<GhostJsonStringReader>()
 private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
-private val writerPool = ThreadLocal<WriterSinkPair>()
+@PublishedApi
+internal val writerPool = ThreadLocal<WriterSinkPair>()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
 
@@ -27,7 +30,8 @@ actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
  * and returns it. The pair survives across calls so the underlying
  * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
  */
-private fun acquireFlatWriterPair(): WriterSinkPair {
+@PublishedApi
+internal fun acquireFlatWriterPair(): WriterSinkPair {
     val pair = writerPool.get()
         ?: WriterSinkPair()
             .also { writerPool.set(it) }
@@ -37,14 +41,17 @@ private fun acquireFlatWriterPair(): WriterSinkPair {
     return pair
 }
 
-private class WriterStringPair {
-    val charWriter = com.ghost.serialization.writer.FlatCharArrayWriter()
-    val writer = com.ghost.serialization.writer.GhostJsonStringWriter(charWriter)
+@PublishedApi
+internal class WriterStringPair {
+    val charWriter = FlatCharArrayWriter()
+    val writer = GhostJsonStringWriter(charWriter)
 }
 
-private val stringWriterPool = ThreadLocal<WriterStringPair>()
+@PublishedApi
+internal val stringWriterPool = ThreadLocal<WriterStringPair>()
 
-private fun acquireStringWriterPair(): WriterStringPair {
+@PublishedApi
+internal fun acquireStringWriterPair(): WriterStringPair {
     val pair = stringWriterPool.get()
         ?: WriterStringPair().also { stringWriterPool.set(it) }
     pair.writer.reset()
@@ -52,8 +59,9 @@ private fun acquireStringWriterPair(): WriterStringPair {
     return pair
 }
 
-actual fun ghostInternalEncodeToString(
-    block: (com.ghost.serialization.writer.GhostJsonStringWriter) -> Unit
+@PublishedApi
+actual internal inline fun ghostInternalEncodeToString(
+    crossinline block: (GhostJsonStringWriter) -> Unit
 ): String {
     val pair = acquireStringWriterPair()
     block(pair.writer)
@@ -66,8 +74,9 @@ actual fun ghostInternalEncodeToString(
     return result
 }
 
-actual fun ghostInternalEncodeWithWriter(
-    block: (GhostJsonFlatWriter) -> Unit
+@PublishedApi
+actual internal inline fun ghostInternalEncodeWithWriter(
+    crossinline block: (GhostJsonFlatWriter) -> Unit
 ): ByteArray {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
@@ -76,17 +85,19 @@ actual fun ghostInternalEncodeWithWriter(
     return result
 }
 
-actual fun ghostInternalEncodeAndDiscard(
-    block: (GhostJsonFlatWriter) -> Unit
+@PublishedApi
+actual internal inline fun ghostInternalEncodeAndDiscard(
+    crossinline block: (GhostJsonFlatWriter) -> Unit
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
     pair.byteWriter.reset()
 }
 
-actual fun ghostInternalEncodeAndDrainTo(
+@PublishedApi
+actual internal inline fun ghostInternalEncodeAndDrainTo(
     sink: okio.BufferedSink,
-    block: (GhostJsonFlatWriter) -> Unit
+    crossinline block: (GhostJsonFlatWriter) -> Unit
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)

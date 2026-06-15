@@ -8,6 +8,7 @@ import com.ghost.serialization.parser.GhostJsonConstants
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.writer.GhostJsonFlatWriter
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,14 +34,14 @@ class GhostAuditTest {
         val serializerA = object : GhostSerializer<MockModelA> {
             override val typeName: String = "MockModelA"
             override fun serialize(writer: GhostJsonWriter, value: MockModelA) {}
-            override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: MockModelA) {}
+            override fun serialize(writer: GhostJsonFlatWriter, value: MockModelA) {}
             override fun deserialize(reader: GhostJsonReader): MockModelA = MockModelA()
         }
 
         val serializerB = object : GhostSerializer<MockModelB> {
             override val typeName: String = "MockModelB"
             override fun serialize(writer: GhostJsonWriter, value: MockModelB) {}
-            override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: MockModelB) {}
+            override fun serialize(writer: GhostJsonFlatWriter, value: MockModelB) {}
             override fun deserialize(reader: GhostJsonReader): MockModelB = MockModelB()
         }
 

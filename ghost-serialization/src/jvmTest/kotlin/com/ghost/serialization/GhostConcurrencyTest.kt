@@ -6,6 +6,7 @@ import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.writer.GhostJsonFlatWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -35,7 +36,7 @@ class GhostConcurrencyTest {
         override fun serialize(writer: GhostJsonWriter, value: Int) {
             writer.value(value.toLong())
         }
-        override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: Int) {
+        override fun serialize(writer: GhostJsonFlatWriter, value: Int) {
             writer.value(value.toLong())
         }
     }
