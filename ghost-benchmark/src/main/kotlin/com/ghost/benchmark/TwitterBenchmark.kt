@@ -79,34 +79,34 @@ object TwitterBenchmark {
         val kserSerializer = kJson.serializersModule.serializer<TwitterResponse>()
 
         // Decode Benchmarks
-        val ghostDecodeStr = measurePerf("GHOST Decode String", threadBean, runs) { Ghost.deserialize(ghostSerializer, jsonString) }
-        val kserDecodeStr = measurePerf("KSER Decode String", threadBean, runs) { kJson.decodeFromString(kserSerializer, jsonString) }
+        val ghostDecodeStr = measurePerf(threadBean, runs) { Ghost.deserialize(ghostSerializer, jsonString) }
+        val kserDecodeStr = measurePerf(threadBean, runs) { kJson.decodeFromString(kserSerializer, jsonString) }
 
-        val ghostDecodeBytes = measurePerf("GHOST Decode Bytes", threadBean, runs) { Ghost.deserialize(ghostSerializer, rawBytes) }
-        val kserDecodeBytes = measurePerf("KSER Decode Bytes", threadBean, runs) {
+        val ghostDecodeBytes = measurePerf(threadBean, runs) { Ghost.deserialize(ghostSerializer, rawBytes) }
+        val kserDecodeBytes = measurePerf(threadBean, runs) {
             kJson.decodeFromString(kserSerializer, String(rawBytes, Charsets.UTF_8))
         }
 
-        val ghostDecodeStream = measurePerf("GHOST Decode Streaming", threadBean, runs) {
+        val ghostDecodeStream = measurePerf(threadBean, runs) {
             Ghost.deserializeStreaming(ghostSerializer, Buffer().write(rawBytes))
         }
-        val kserDecodeStream = measurePerf("KSER Decode Streaming", threadBean, runs) {
+        val kserDecodeStream = measurePerf(threadBean, runs) {
             kJson.decodeFromBufferedSource(kserSerializer, Buffer().write(rawBytes))
         }
 
         // Encode Benchmarks
-        val ghostEncodeStr = measurePerf("GHOST Encode String", threadBean, runs) { Ghost.encodeToString(ghostSerializer, decodedObj) }
-        val kserEncodeStr = measurePerf("KSER Encode String", threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj) }
+        val ghostEncodeStr = measurePerf(threadBean, runs) { Ghost.encodeToString(ghostSerializer, decodedObj) }
+        val kserEncodeStr = measurePerf(threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj) }
 
-        val ghostEncodeBytes = measurePerf("GHOST Encode Bytes", threadBean, runs) { Ghost.encodeToBytes(ghostSerializer, decodedObj) }
-        val kserEncodeBytes = measurePerf("KSER Encode Bytes", threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj).toByteArray() }
+        val ghostEncodeBytes = measurePerf(threadBean, runs) { Ghost.encodeToBytes(ghostSerializer, decodedObj) }
+        val kserEncodeBytes = measurePerf(threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj).toByteArray() }
 
-        val ghostEncodeStream = measurePerf("GHOST Encode Streaming", threadBean, runs) {
+        val ghostEncodeStream = measurePerf(threadBean, runs) {
             val buf = Buffer()
             Ghost.serialize(ghostSerializer, buf, decodedObj)
             buf
         }
-        val kserEncodeStream = measurePerf("KSER Encode Streaming", threadBean, runs) {
+        val kserEncodeStream = measurePerf(threadBean, runs) {
             val buf = Buffer()
             kJson.encodeToBufferedSink(kserSerializer, decodedObj, buf)
             buf
@@ -124,23 +124,25 @@ object TwitterBenchmark {
         )
     }
 
-    private fun printResults(categories: List<Pair<String, Pair<Pair<Double, Double>, Pair<Double, Double>>>>) {
+    private fun printResults(categories: List<Pair<String, Pair<Triple<Double, Double, Double>, Triple<Double, Double, Double>>>>) {
         println("\n--- Twitter Dataset Performance Summary (Fastest First) ---")
-        println("| Operation          | Engine | Throughput (ops/s) | Mem (KB/op) |")
-        println("|--------------------|--------|---------------------|-------------|")
+        println("| Operation          | Engine | Throughput (ops/s) |  StDev (ops/s) | Mem (KB/op) |")
+        println("|--------------------|--------|---------------------|----------------|-------------|")
         for ((label, scores) in categories) {
             val sorted = listOf(
                 "GHOST" to scores.first,
                 "KSER" to scores.second
             ).sortedByDescending { it.second.first }
             for (res in sorted) {
-                println("| %-18s | %-6s | %19.3f | %11.1f |".format(label, res.first, res.second.first, res.second.second))
+                println("| %-18s | %-6s | %19.3f | %14.3f | %11.1f |".format(
+                    label, res.first, res.second.first, res.second.second, res.second.third
+                ))
             }
             val winner = sorted[0]
             val loser = sorted[1]
             val pct = ((winner.second.first - loser.second.first) / loser.second.first) * 100.0
-            val memPct = if (loser.second.second > 0) {
-                ((loser.second.second - winner.second.second) / loser.second.second) * 100.0
+            val memPct = if (loser.second.third > 0) {
+                ((loser.second.third - winner.second.third) / loser.second.third) * 100.0
             } else {
                 0.0
             }
@@ -154,7 +156,7 @@ object TwitterBenchmark {
                     label, winner.first, pct, memString, loser.first
                 )
             )
-            println("|--------------------|--------|---------------------|-------------|")
+            println("|--------------------|--------|---------------------|----------------|-------------|")
         }
     }
 
@@ -165,30 +167,46 @@ object TwitterBenchmark {
     }
 
     private inline fun <T> measurePerf(
-        label: String,
         threadBean: ThreadMXBean?,
         runs: Int,
         crossinline block: () -> T
-    ): Pair<Double, Double> {
+    ): Triple<Double, Double, Double> {
+        val numBatches = if (runs >= 10) 10 else 1
+        val runsPerBatch = runs / numBatches
+
         val currentThreadId = Thread.currentThread().id
         val startAllocatedBytes = threadBean?.getThreadAllocatedBytes(currentThreadId) ?: 0L
         val startTime = System.nanoTime()
 
-        repeat(runs) { i ->
-            val res = block()
-            consume(res)
-            if (runs > 1 && (i + 1) % 5000 == 0) {
-                println("   [Run ${i + 1}/$runs] $label...")
+        val batchThroughputs = DoubleArray(numBatches)
+        repeat(numBatches) { b ->
+            val start = System.nanoTime()
+            repeat(runsPerBatch) {
+                val res = block()
+                consume(res)
             }
+            val elapsed = System.nanoTime() - start
+            val batchThroughput = runsPerBatch / (elapsed.toDouble() / NANOSECONDS_IN_SECOND)
+            batchThroughputs[b] = batchThroughput
         }
 
         val elapsedNanos = System.nanoTime() - startTime
         val endAllocatedBytes = threadBean?.getThreadAllocatedBytes(currentThreadId) ?: 0L
 
-        val throughput = runs / (elapsedNanos.toDouble() / NANOSECONDS_IN_SECOND)
+        val avgThroughput = runs / (elapsedNanos.toDouble() / NANOSECONDS_IN_SECOND)
+
+        // Calculate Standard Deviation of Throughput
+        val stdDev = if (numBatches > 1) {
+            val mean = batchThroughputs.average()
+            val variance = batchThroughputs.map { (it - mean) * (it - mean) }.sum() / (numBatches - 1)
+            kotlin.math.sqrt(variance)
+        } else {
+            0.0
+        }
+
         val allocatedBytes = endAllocatedBytes - startAllocatedBytes
         val kbPerOp = if (allocatedBytes > 0) (allocatedBytes.toDouble() / runs) / 1024.0 else 0.0
 
-        return Pair(throughput, kbPerOp)
+        return Triple(avgThroughput, stdDev, kbPerOp)
     }
 }
