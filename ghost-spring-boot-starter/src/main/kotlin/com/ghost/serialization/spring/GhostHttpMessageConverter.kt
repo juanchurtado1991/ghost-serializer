@@ -1,7 +1,6 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.ghostInternalEncodeWithWriter
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
@@ -54,9 +53,7 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
                 "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}"
             )
 
-        val bytes = ghostInternalEncodeWithWriter { writer ->
-            serializer.serialize(writer, t)
-        }
+        val bytes = Ghost.encodeToBytes(serializer, t)
         outputMessage.body.write(bytes)
         outputMessage.body.flush()
     }

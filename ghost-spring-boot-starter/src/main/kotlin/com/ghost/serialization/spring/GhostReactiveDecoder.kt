@@ -1,10 +1,8 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.ghostInternalUseReader
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractDecoder
@@ -14,6 +12,7 @@ import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import kotlin.reflect.KClass
 
 /**
  * Reactive Decoder for Ghost Serialization.
@@ -82,7 +81,6 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
             }
         }
 
-    @OptIn(InternalGhostApi::class)
     private fun deserializeBuffer(
         buffer: DataBuffer,
         clazz: Class<*>
@@ -91,13 +89,11 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
         buffer.read(bytes)
 
         return try {
-            ghostInternalUseReader(bytes) { reader ->
-                val serializer = Ghost.getSerializer(clazz.kotlin)
-                    ?: throw IllegalArgumentException(
-                        "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
-                    )
-                serializer.deserialize(reader)
-            }
+            val serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
+                ?: throw IllegalArgumentException(
+                    "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
+                )
+            Ghost.deserialize(serializer, bytes)
         } catch (e: Exception) {
             throw GhostJsonException(
                 "$DECODE_ERROR ${clazz.simpleName}: ${e.message}"

@@ -68,8 +68,8 @@ expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonR
  * (no Okio segments), so the returned string is decoded directly from
  * the produced char slice with minimal allocations.
  */
-@PublishedApi
-internal expect inline fun ghostInternalEncodeToString(crossinline block: (GhostJsonStringWriter) -> Unit): String
+@InternalGhostApi
+expect inline fun ghostInternalEncodeToString(crossinline block: (GhostJsonStringWriter) -> Unit): String
 
 /**
  * Pools the in-memory [GhostJsonFlatWriter] per-thread and returns the
@@ -80,16 +80,16 @@ internal expect inline fun ghostInternalEncodeToString(crossinline block: (Ghost
  * scratch buffer is kept warm (not released) to avoid pool round-trips
  * between requests.
  */
-@PublishedApi
-internal expect inline fun ghostInternalEncodeWithWriter(crossinline block: (GhostJsonFlatWriter) -> Unit): ByteArray
+@InternalGhostApi
+expect inline fun ghostInternalEncodeWithWriter(crossinline block: (GhostJsonFlatWriter) -> Unit): ByteArray
 
 /**
  * Serializes via the pooled [GhostJsonFlatWriter] but discards the output
  * without allocating a result [ByteArray]. Useful for warm-up / JIT priming
  * where the encoded bytes are not needed.
  */
-@PublishedApi
-internal expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (GhostJsonFlatWriter) -> Unit)
+@InternalGhostApi
+expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (GhostJsonFlatWriter) -> Unit)
 
 /**
  * Encodes through the pooled [GhostJsonFlatWriter] and drains the resulting
@@ -99,8 +99,8 @@ internal expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (Gho
  * and the final flush is a single [BufferedSink.write] call which Okio
  * implements as a few `System.arraycopy`s into its segment buffer.
  */
-@PublishedApi
-internal expect inline fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, crossinline block: (GhostJsonFlatWriter) -> Unit)
+@InternalGhostApi
+expect inline fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, crossinline block: (GhostJsonFlatWriter) -> Unit)
 
 /**
  * Core entry point for Ghost Serialization.
@@ -394,6 +394,17 @@ object Ghost {
     }
 
     /**
+     * Encodes [value] and writes the resulting JSON payload into [sink] using a pre-resolved [serializer].
+     *
+     * Bypasses type lookup and resolution overhead.
+     */
+    fun <T : Any> serialize(serializer: GhostSerializer<T>, sink: BufferedSink, value: T) {
+        ghostInternalEncodeAndDrainTo(sink) { writer ->
+            serializer.serialize(writer, value)
+        }
+    }
+
+    /**
      * Convenience alias for [encodeToString] to maintain compatibility with standard APIs.
      *
      * @param value The value to serialize.
@@ -420,6 +431,17 @@ object Ghost {
     }
 
     /**
+     * Serializes [value] to an in-memory JSON string representation using a pre-resolved [serializer].
+     *
+     * Bypasses type lookup and resolution overhead.
+     */
+    fun <T : Any> encodeToString(serializer: GhostSerializer<T>, value: T): String {
+        return ghostInternalEncodeToString { writer ->
+            serializer.serialize(writer, value)
+        }
+    }
+
+    /**
      * Serializes [value] to an in-memory JSON byte array representation.
      *
      * Skips intermediate string formatting/decoding steps by exposing the raw
@@ -430,6 +452,17 @@ object Ghost {
      */
     inline fun <reified T : Any> encodeToBytes(value: T): ByteArray {
         val serializer = resolveSerializer<T>()
+        return ghostInternalEncodeWithWriter { writer ->
+            serializer.serialize(writer, value)
+        }
+    }
+
+    /**
+     * Serializes [value] to an in-memory JSON byte array representation using a pre-resolved [serializer].
+     *
+     * Bypasses type lookup and resolution overhead.
+     */
+    fun <T : Any> encodeToBytes(serializer: GhostSerializer<T>, value: T): ByteArray {
         return ghostInternalEncodeWithWriter { writer ->
             serializer.serialize(writer, value)
         }
@@ -461,6 +494,19 @@ object Ghost {
     inline fun <reified T : Any> deserialize(json: String): T {
         return ghostInternalUseStringReader(json) { reader ->
             deserialize(reader)
+        }
+    }
+
+    /**
+     * Deserializes the JSON [json] string using a pre-resolved [serializer].
+     *
+     * @param serializer The pre-resolved serializer.
+     * @param json The JSON string representation of the object.
+     * @return A reconstructed instance of type [T].
+     */
+    fun <T : Any> deserialize(serializer: GhostSerializer<T>, json: String): T {
+        return ghostInternalUseStringReader(json) { reader ->
+            serializer.deserialize(reader)
         }
     }
 
@@ -528,6 +574,17 @@ object Ghost {
     }
 
     /**
+     * Deserializes JSON data from [source] using a pre-resolved [serializer].
+     *
+     * Bypasses type lookup and resolution overhead.
+     */
+    fun <T : Any> deserializeStreaming(serializer: GhostSerializer<T>, source: BufferedSource): T {
+        return ghostInternalUseSource(source) { reader ->
+            serializer.deserialize(reader)
+        }
+    }
+
+    /**
      * Deserializes the JSON [bytes] array into an instance of type [T].
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
@@ -539,6 +596,17 @@ object Ghost {
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
         return ghostInternalUseFlatReader(bytes) { reader ->
             deserialize(reader)
+        }
+    }
+
+    /**
+     * Deserializes the JSON [bytes] array using a pre-resolved [serializer].
+     *
+     * Bypasses type lookup and resolution overhead.
+     */
+    fun <T : Any> deserialize(serializer: GhostSerializer<T>, bytes: ByteArray): T {
+        return ghostInternalUseFlatReader(bytes) { reader ->
+            serializer.deserialize(reader)
         }
     }
 

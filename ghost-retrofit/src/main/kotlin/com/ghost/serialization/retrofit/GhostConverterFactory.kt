@@ -6,7 +6,6 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
@@ -107,9 +106,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
             ?: return null
 
         return Converter<Any, RequestBody> { value ->
-            ghostInternalEncodeWithWriter { writer ->
-                serializer.serialize(writer, value)
-            }
+            Ghost.encodeToBytes(serializer, value)
                 .toRequestBody(MEDIA_TYPE)
         }
     }
