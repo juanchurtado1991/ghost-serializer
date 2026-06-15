@@ -94,8 +94,8 @@ internal fun acquireFlatWriterPair(): WriterSinkPair {
     return pair
 }
 
-@PublishedApi
-actual internal inline fun ghostInternalEncodeToString(
+@InternalGhostApi
+actual inline fun ghostInternalEncodeToString(
     crossinline block: (GhostJsonStringWriter) -> Unit
 ): String {
     val pair = cachedStringWriterPair
@@ -106,8 +106,8 @@ actual internal inline fun ghostInternalEncodeToString(
     return result
 }
 
-@PublishedApi
-actual internal inline fun ghostInternalEncodeWithWriter(
+@InternalGhostApi
+actual inline fun ghostInternalEncodeWithWriter(
     crossinline block: (GhostJsonFlatWriter) -> Unit
 ): ByteArray {
     val pair = acquireFlatWriterPair()
@@ -117,8 +117,8 @@ actual internal inline fun ghostInternalEncodeWithWriter(
     return result
 }
 
-@PublishedApi
-actual internal inline fun ghostInternalEncodeAndDiscard(
+@InternalGhostApi
+actual inline fun ghostInternalEncodeAndDiscard(
     crossinline block: (GhostJsonFlatWriter) -> Unit
 ) {
     val pair = acquireFlatWriterPair()
@@ -126,8 +126,8 @@ actual internal inline fun ghostInternalEncodeAndDiscard(
     pair.byteWriter.reset()
 }
 
-@PublishedApi
-actual internal inline fun ghostInternalEncodeAndDrainTo(
+@InternalGhostApi
+actual inline fun ghostInternalEncodeAndDrainTo(
     sink: okio.BufferedSink,
     crossinline block: (GhostJsonFlatWriter) -> Unit
 ) {

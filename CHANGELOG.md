@@ -6,6 +6,7 @@
 - **Single-Pass String Scan (`GhostJsonStringReader`)**: Eliminated a redundant double-scan in the hot path of `internalSelect`. Previously, `findClosingQuote` and `computeKeyHash` were two separate passes over the same bytes. The new `findClosingQuoteWithHash` function combines both into a single unrolled loop that simultaneously locates the closing `"` and accumulates the 4-byte dispatch hash — cutting memory reads for key matching in half on the `String` deserialization path.
 
 ### Optimized
+- **Adapter Integration (Ktor, Retrofit, Spring Boot)**: Migrated the Ktor (`GhostContentConverter`), Retrofit (`GhostConverterFactory`), and Spring Boot (`GhostHttpMessageConverter`, `GhostReactiveEncoder`, `GhostReactiveDecoder`) adapters to use the new public cached-serializer APIs (`Ghost.encodeToBytes` and `Ghost.deserialize`), eliminating internal helpers and ensuring maximum performance.
 - **RandomAccess List & Primitive Array Loops**: Replaced default `Iterator`-based loops with index-based loops in `ListSerializer`, `IntArraySerializer`, and `LongArraySerializer` for collections implementing `RandomAccess` (e.g., `ArrayList`). This avoids millions of `Iterator` allocations during serialization of list-heavy payloads.
 - **Map Entry-Set Iteration**: Optimized `MapSerializer` to iterate over `entries` directly instead of doing double hash lookups via `keys` iteration.
 - **Fast-Path ASCII String Writer Scans**: Refactored plain ASCII boundary checks in `GhostJsonStringWriter.writeStringValueRaw` to execute inline with hoisted local variables, routing to native bulk copies via `writeQuotedAscii` to maximize throughput.
@@ -17,6 +18,7 @@
 - **Dynamic String Writer Heap Sizing**: Reduced the default initial capacity of `FlatCharArrayWriter` from **8 KB (16 KB heap)** to **1 KB (2 KB heap)**. Built custom platform heuristics defining `maxWarmCharWriteBufferCapacity` (JVM: `512 KB`, Android: `256 KB`), yielding a massive heap memory footprint reduction per thread on the String serialization pool.
 
 ### Added
+- **Cached Serializer Overloads**: Exposed new public overloads for `encodeToString`, `encodeToBytes`, `deserialize`, and `deserializeStreaming` accepting pre-resolved `GhostSerializer<T>` parameters. This allows consumers to bypass class-registry mapping and type lookups in critical paths.
 - **Native String Reader opt-in (`ghost.textChannel`)**: `GhostJsonStringReader` deserialization overloads are now generated only when `arg("ghost.textChannel", "true")` is set in KSP options. When disabled (the default), the dispatch table is not pre-built, saving **4 KB of memory per DTO**. When accessed without the option enabled, the dispatch table is built lazily on first use. This makes the String channel fully opt-in and zero-cost by default.
 - **Lazy `stringDispatch` table in `JsonReaderOptions`**: The `stringDispatch` IntArray is now initialized lazily via a custom getter. Modules that do not enable `ghost.textChannel` incur zero initialization cost at class-loading time.
 

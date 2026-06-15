@@ -8,6 +8,7 @@ import com.ghost.serialization.integration.model.TwitterResponse
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.json.okio.encodeToBufferedSink
@@ -74,37 +75,40 @@ object TwitterBenchmark {
 
         println("\n🚀 Running Twitter performance measurements ($runs iterations per category)...")
 
-        // Decode Benchmarks
-        val ghostDecodeStr = measurePerf("GHOST Decode String", threadBean, runs) { Ghost.deserialize<TwitterResponse>(jsonString) }
-        val kserDecodeStr = measurePerf("KSER Decode String", threadBean, runs) { kJson.decodeFromString<TwitterResponse>(jsonString) }
+        val ghostSerializer = Ghost.getSerializer(TwitterResponse::class)!!
+        val kserSerializer = kJson.serializersModule.serializer<TwitterResponse>()
 
-        val ghostDecodeBytes = measurePerf("GHOST Decode Bytes", threadBean, runs) { Ghost.deserialize<TwitterResponse>(rawBytes) }
+        // Decode Benchmarks
+        val ghostDecodeStr = measurePerf("GHOST Decode String", threadBean, runs) { Ghost.deserialize(ghostSerializer, jsonString) }
+        val kserDecodeStr = measurePerf("KSER Decode String", threadBean, runs) { kJson.decodeFromString(kserSerializer, jsonString) }
+
+        val ghostDecodeBytes = measurePerf("GHOST Decode Bytes", threadBean, runs) { Ghost.deserialize(ghostSerializer, rawBytes) }
         val kserDecodeBytes = measurePerf("KSER Decode Bytes", threadBean, runs) {
-            kJson.decodeFromString<TwitterResponse>(String(rawBytes, Charsets.UTF_8))
+            kJson.decodeFromString(kserSerializer, String(rawBytes, Charsets.UTF_8))
         }
 
         val ghostDecodeStream = measurePerf("GHOST Decode Streaming", threadBean, runs) {
-            Ghost.deserializeStreaming<TwitterResponse>(Buffer().write(rawBytes))
+            Ghost.deserializeStreaming(ghostSerializer, Buffer().write(rawBytes))
         }
         val kserDecodeStream = measurePerf("KSER Decode Streaming", threadBean, runs) {
-            kJson.decodeFromBufferedSource<TwitterResponse>(Buffer().write(rawBytes))
+            kJson.decodeFromBufferedSource(kserSerializer, Buffer().write(rawBytes))
         }
 
         // Encode Benchmarks
-        val ghostEncodeStr = measurePerf("GHOST Encode String", threadBean, runs) { Ghost.encodeToString(decodedObj) }
-        val kserEncodeStr = measurePerf("KSER Encode String", threadBean, runs) { kJson.encodeToString(decodedObj) }
+        val ghostEncodeStr = measurePerf("GHOST Encode String", threadBean, runs) { Ghost.encodeToString(ghostSerializer, decodedObj) }
+        val kserEncodeStr = measurePerf("KSER Encode String", threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj) }
 
-        val ghostEncodeBytes = measurePerf("GHOST Encode Bytes", threadBean, runs) { Ghost.encodeToBytes(decodedObj) }
-        val kserEncodeBytes = measurePerf("KSER Encode Bytes", threadBean, runs) { kJson.encodeToString(decodedObj).toByteArray() }
+        val ghostEncodeBytes = measurePerf("GHOST Encode Bytes", threadBean, runs) { Ghost.encodeToBytes(ghostSerializer, decodedObj) }
+        val kserEncodeBytes = measurePerf("KSER Encode Bytes", threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj).toByteArray() }
 
         val ghostEncodeStream = measurePerf("GHOST Encode Streaming", threadBean, runs) {
             val buf = Buffer()
-            Ghost.serialize(buf, decodedObj)
+            Ghost.serialize(ghostSerializer, buf, decodedObj)
             buf
         }
         val kserEncodeStream = measurePerf("KSER Encode Streaming", threadBean, runs) {
             val buf = Buffer()
-            kJson.encodeToBufferedSink(decodedObj, buf)
+            kJson.encodeToBufferedSink(kserSerializer, decodedObj, buf)
             buf
         }
 

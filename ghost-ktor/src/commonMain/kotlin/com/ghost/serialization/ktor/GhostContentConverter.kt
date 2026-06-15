@@ -5,7 +5,6 @@ package com.ghost.serialization.ktor
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.parser.GhostJsonReader
@@ -38,9 +37,7 @@ class GhostContentConverter(
             .getSerializer(clazz as KClass<Any>)
             ?: return null
 
-        val bytes = ghostInternalEncodeWithWriter { writer ->
-            serializer.serialize(writer, value)
-        }
+        val bytes = Ghost.encodeToBytes(serializer, value)
 
         return ByteArrayContent(bytes, contentType)
     }

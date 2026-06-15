@@ -2,7 +2,6 @@ package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.annotations.GhostSerialization
-import com.ghost.serialization.ghostInternalEncodeWithWriter
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractEncoder
@@ -59,9 +58,7 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
                 "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}"
             )
 
-        val encoded = ghostInternalEncodeWithWriter { writer ->
-            serializer.serialize(writer, value)
-        }
+        val encoded = Ghost.encodeToBytes(serializer, value)
 
         if (!isNdJson) return bufferFactory.wrap(encoded)
 
