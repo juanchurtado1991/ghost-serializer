@@ -448,7 +448,7 @@ class GhostJsonFlatReader(
                 return false
             }
             if (token == C.QUOTE_INT) {
-                // Zero-copy: scan the quoted string bytes directly. No String allocation.
+                // can the quoted string bytes directly. No String allocation.
                 return matchCoerceBooleanBytes()
             }
         }
@@ -479,7 +479,7 @@ class GhostJsonFlatReader(
     private fun matchCoerceBooleanBytes(): Boolean {
         val localData = rawData
         val lim = limit
-        val contentStart = position + 1 // skip opening '"'
+        val contentStart = position + 1 // skip opening
         val end = findClosingQuoteImpl(contentStart, lim) {
             localData[it].toInt() and C.BYTE_MASK
         }
