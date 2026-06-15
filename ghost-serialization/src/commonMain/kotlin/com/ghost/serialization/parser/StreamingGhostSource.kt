@@ -71,47 +71,52 @@ class StreamingGhostSource(
 
     override fun findNextNonWhitespace(position: Int, limit: Int): Int {
         var currentPosition = position
+        val localByteMask = GhostJsonConstants.BYTE_MASK
+        val localSpaceInt = GhostJsonConstants.SPACE_INT
+        val localWhitespaceMask = GhostJsonConstants.WHITESPACE_MASK
+        val localByteShiftUnit = GhostJsonConstants.BYTE_SHIFT_UNIT
+        val localResultNone = GhostJsonConstants.RESULT_NONE
 
         while (true) {
             val segmentStart = bufferStart
             val segmentEnd = bufferEnd
             if (currentPosition >= segmentStart && currentPosition < segmentEnd) {
                 val segmentLimit = minOf(limit, segmentEnd)
-                var p = currentPosition
+                var localPosition = currentPosition
 
-                while (p + 3 < segmentLimit) {
-                    val byte0 = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte0 > GhostJsonConstants.SPACE_INT ||
-                        (GhostJsonConstants.WHITESPACE_MASK shr byte0) and GhostJsonConstants.BYTE_SHIFT_UNIT == GhostJsonConstants.RESULT_NONE
-                    ) return p
+                while (localPosition + 3 < segmentLimit) {
+                    val byte0 = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    if (byte0 > localSpaceInt ||
+                        (localWhitespaceMask shr byte0) and localByteShiftUnit == localResultNone
+                    ) return localPosition
 
-                    val byte1 = bufferBytes[p + 1 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte1 > GhostJsonConstants.SPACE_INT ||
-                        (GhostJsonConstants.WHITESPACE_MASK shr byte1) and GhostJsonConstants.BYTE_SHIFT_UNIT == GhostJsonConstants.RESULT_NONE
-                    ) return p + 1
+                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask
+                    if (byte1 > localSpaceInt ||
+                        (localWhitespaceMask shr byte1) and localByteShiftUnit == localResultNone
+                    ) return localPosition + 1
 
-                    val byte2 = bufferBytes[p + 2 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte2 > GhostJsonConstants.SPACE_INT ||
-                        (GhostJsonConstants.WHITESPACE_MASK shr byte2) and GhostJsonConstants.BYTE_SHIFT_UNIT == GhostJsonConstants.RESULT_NONE
-                    ) return p + 2
+                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask
+                    if (byte2 > localSpaceInt ||
+                        (localWhitespaceMask shr byte2) and localByteShiftUnit == localResultNone
+                    ) return localPosition + 2
 
-                    val byte3 = bufferBytes[p + 3 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte3 > GhostJsonConstants.SPACE_INT ||
-                        (GhostJsonConstants.WHITESPACE_MASK shr byte3) and GhostJsonConstants.BYTE_SHIFT_UNIT == GhostJsonConstants.RESULT_NONE
-                    ) return p + 3
+                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask
+                    if (byte3 > localSpaceInt ||
+                        (localWhitespaceMask shr byte3) and localByteShiftUnit == localResultNone
+                    ) return localPosition + 3
 
-                    p += 4
+                    localPosition += 4
                 }
 
-                while (p < segmentLimit) {
-                    val singleByte = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (singleByte > GhostJsonConstants.SPACE_INT ||
-                        (GhostJsonConstants.WHITESPACE_MASK shr singleByte) and GhostJsonConstants.BYTE_SHIFT_UNIT == GhostJsonConstants.RESULT_NONE
-                    ) return p
-                    p++
+                while (localPosition < segmentLimit) {
+                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    if (singleByte > localSpaceInt ||
+                        (localWhitespaceMask shr singleByte) and localByteShiftUnit == localResultNone
+                    ) return localPosition
+                    localPosition++
                 }
 
-                currentPosition = p
+                currentPosition = localPosition
                 if (currentPosition >= limit) return -1
             } else {
                 getSlow(currentPosition)
@@ -123,63 +128,70 @@ class StreamingGhostSource(
     override fun findClosingQuote(position: Int, limit: Int): Int {
         var currentPosition = position
         val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
+        val localByteMask = GhostJsonConstants.BYTE_MASK
+        val localAsciiLimit = GhostJsonConstants.ASCII_LIMIT
+        val localBitmaskShift = GhostJsonConstants.BITMASK_SHIFT
+        val localBitmaskIndexMask = GhostJsonConstants.BITMASK_INDEX_MASK
+        val localBitmaskUnit = GhostJsonConstants.BITMASK_UNIT
+        val localResultNone = GhostJsonConstants.RESULT_NONE
+        val localQuoteInt = GhostJsonConstants.QUOTE_INT
 
         while (true) {
             val segmentStart = bufferStart
             val segmentEnd = bufferEnd
             if (currentPosition >= segmentStart && currentPosition < segmentEnd) {
                 val segmentLimit = minOf(limit, segmentEnd)
-                var p = currentPosition
+                var localPosition = currentPosition
 
-                while (p + 3 < segmentLimit) {
-                    val byte0 = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte0 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte0 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte0 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                while (localPosition + 3 < segmentLimit) {
+                    val byte0 = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    if (byte0 < localAsciiLimit &&
+                        (escapeMasks[byte0 shr localBitmaskShift] shr
+                                (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte0 == GhostJsonConstants.QUOTE_INT) return p
+                        if (byte0 == localQuoteInt) return localPosition
                         return -1
                     }
-                    val byte1 = bufferBytes[p + 1 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte1 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte1 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte1 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask
+                    if (byte1 < localAsciiLimit &&
+                        (escapeMasks[byte1 shr localBitmaskShift] shr
+                                (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte1 == GhostJsonConstants.QUOTE_INT) return p + 1
+                        if (byte1 == localQuoteInt) return localPosition + 1
                         return -1
                     }
-                    val byte2 = bufferBytes[p + 2 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte2 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte2 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte2 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask
+                    if (byte2 < localAsciiLimit &&
+                        (escapeMasks[byte2 shr localBitmaskShift] shr
+                                (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte2 == GhostJsonConstants.QUOTE_INT) return p + 2
+                        if (byte2 == localQuoteInt) return localPosition + 2
                         return -1
                     }
-                    val byte3 = bufferBytes[p + 3 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte3 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte3 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte3 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask
+                    if (byte3 < localAsciiLimit &&
+                        (escapeMasks[byte3 shr localBitmaskShift] shr
+                                (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte3 == GhostJsonConstants.QUOTE_INT) return p + 3
+                        if (byte3 == localQuoteInt) return localPosition + 3
                         return -1
                     }
-                    p += 4
+                    localPosition += 4
                 }
 
-                while (p < segmentLimit) {
-                    val singleByte = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (singleByte < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[singleByte shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (singleByte and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                while (localPosition < segmentLimit) {
+                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    if (singleByte < localAsciiLimit &&
+                        (escapeMasks[singleByte shr localBitmaskShift] shr
+                                (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (singleByte == GhostJsonConstants.QUOTE_INT) return p
+                        if (singleByte == localQuoteInt) return localPosition
                         return -1
                     }
-                    p++
+                    localPosition++
                 }
 
-                currentPosition = p
+                currentPosition = localPosition
                 if (currentPosition >= limit) return -1
             } else {
                 getSlow(currentPosition)
@@ -193,96 +205,105 @@ class StreamingGhostSource(
         var accumulatedHash = 0
         var isPureAscii = true
         val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
+        val localByteMask = GhostJsonConstants.BYTE_MASK
+        val localAsciiLimit = GhostJsonConstants.ASCII_LIMIT
+        val localBitmaskShift = GhostJsonConstants.BITMASK_SHIFT
+        val localBitmaskIndexMask = GhostJsonConstants.BITMASK_INDEX_MASK
+        val localBitmaskUnit = GhostJsonConstants.BITMASK_UNIT
+        val localResultNone = GhostJsonConstants.RESULT_NONE
+        val localQuoteInt = GhostJsonConstants.QUOTE_INT
+        val localHashShift = GhostJsonConstants.HASH_SHIFT
+        val localMatchEnd = GhostJsonConstants.MATCH_END
 
         while (true) {
             val segmentStart = bufferStart
             val segmentEnd = bufferEnd
             if (currentPosition >= segmentStart && currentPosition < segmentEnd) {
                 val segmentLimit = minOf(limit, segmentEnd)
-                var p = currentPosition
+                var localPosition = currentPosition
 
-                while (p + 3 < segmentLimit) {
-                    val byte0 = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte0 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte0 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte0 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                while (localPosition + 3 < segmentLimit) {
+                    val byte0 = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    if (byte0 < localAsciiLimit &&
+                        (escapeMasks[byte0 shr localBitmaskShift] shr
+                                (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte0 == GhostJsonConstants.QUOTE_INT) {
-                            return GhostJsonConstants.packScanResult(p - start, accumulatedHash, isPureAscii)
+                        if (byte0 == localQuoteInt) {
+                            return GhostJsonConstants.packScanResult(localPosition - start, accumulatedHash, isPureAscii)
                         }
-                        return GhostJsonConstants.MATCH_END.toLong()
-                    } else if (byte0 >= GhostJsonConstants.ASCII_LIMIT) {
+                        return localMatchEnd.toLong()
+                    } else if (byte0 >= localAsciiLimit) {
                         isPureAscii = false
                     }
-                    accumulatedHash = (accumulatedHash shl GhostJsonConstants.HASH_SHIFT) - accumulatedHash + byte0
+                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte0
 
-                    val byte1 = bufferBytes[p + 1 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte1 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte1 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte1 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask
+                    if (byte1 < localAsciiLimit &&
+                        (escapeMasks[byte1 shr localBitmaskShift] shr
+                                (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte1 == GhostJsonConstants.QUOTE_INT) {
-                            return GhostJsonConstants.packScanResult(p + 1 - start, accumulatedHash, isPureAscii)
+                        if (byte1 == localQuoteInt) {
+                            return GhostJsonConstants.packScanResult(localPosition + 1 - start, accumulatedHash, isPureAscii)
                         }
-                        return GhostJsonConstants.MATCH_END.toLong()
-                    } else if (byte1 >= GhostJsonConstants.ASCII_LIMIT) {
+                        return localMatchEnd.toLong()
+                    } else if (byte1 >= localAsciiLimit) {
                         isPureAscii = false
                     }
-                    accumulatedHash = (accumulatedHash shl GhostJsonConstants.HASH_SHIFT) - accumulatedHash + byte1
+                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte1
 
-                    val byte2 = bufferBytes[p + 2 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte2 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte2 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte2 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask
+                    if (byte2 < localAsciiLimit &&
+                        (escapeMasks[byte2 shr localBitmaskShift] shr
+                                (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte2 == GhostJsonConstants.QUOTE_INT) {
-                            return GhostJsonConstants.packScanResult(p + 2 - start, accumulatedHash, isPureAscii)
+                        if (byte2 == localQuoteInt) {
+                            return GhostJsonConstants.packScanResult(localPosition + 2 - start, accumulatedHash, isPureAscii)
                         }
-                        return GhostJsonConstants.MATCH_END.toLong()
-                    } else if (byte2 >= GhostJsonConstants.ASCII_LIMIT) {
+                        return localMatchEnd.toLong()
+                    } else if (byte2 >= localAsciiLimit) {
                         isPureAscii = false
                     }
-                    accumulatedHash = (accumulatedHash shl GhostJsonConstants.HASH_SHIFT) - accumulatedHash + byte2
+                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte2
 
-                    val byte3 = bufferBytes[p + 3 - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byte3 < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[byte3 shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (byte3 and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask
+                    if (byte3 < localAsciiLimit &&
+                        (escapeMasks[byte3 shr localBitmaskShift] shr
+                                (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (byte3 == GhostJsonConstants.QUOTE_INT) {
-                            return GhostJsonConstants.packScanResult(p + 3 - start, accumulatedHash, isPureAscii)
+                        if (byte3 == localQuoteInt) {
+                            return GhostJsonConstants.packScanResult(localPosition + 3 - start, accumulatedHash, isPureAscii)
                         }
-                        return GhostJsonConstants.MATCH_END.toLong()
-                    } else if (byte3 >= GhostJsonConstants.ASCII_LIMIT) {
+                        return localMatchEnd.toLong()
+                    } else if (byte3 >= localAsciiLimit) {
                         isPureAscii = false
                     }
-                    accumulatedHash = (accumulatedHash shl GhostJsonConstants.HASH_SHIFT) - accumulatedHash + byte3
+                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte3
 
-                    p += 4
+                    localPosition += 4
                 }
 
-                while (p < segmentLimit) {
-                    val singleByte = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (singleByte < GhostJsonConstants.ASCII_LIMIT &&
-                        (escapeMasks[singleByte shr GhostJsonConstants.BITMASK_SHIFT] shr
-                                (singleByte and GhostJsonConstants.BITMASK_INDEX_MASK)) and GhostJsonConstants.BITMASK_UNIT != GhostJsonConstants.RESULT_NONE
+                while (localPosition < segmentLimit) {
+                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    if (singleByte < localAsciiLimit &&
+                        (escapeMasks[singleByte shr localBitmaskShift] shr
+                                (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
-                        if (singleByte == GhostJsonConstants.QUOTE_INT) {
-                            return GhostJsonConstants.packScanResult(p - start, accumulatedHash, isPureAscii)
+                        if (singleByte == localQuoteInt) {
+                            return GhostJsonConstants.packScanResult(localPosition - start, accumulatedHash, isPureAscii)
                         }
-                        return GhostJsonConstants.MATCH_END.toLong()
-                    } else if (singleByte >= GhostJsonConstants.ASCII_LIMIT) {
+                        return localMatchEnd.toLong()
+                    } else if (singleByte >= localAsciiLimit) {
                         isPureAscii = false
                     }
-                    accumulatedHash = (accumulatedHash shl GhostJsonConstants.HASH_SHIFT) - accumulatedHash + singleByte
-                    p++
+                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + singleByte
+                    localPosition++
                 }
 
-                currentPosition = p
-                if (currentPosition >= limit) return GhostJsonConstants.MATCH_END.toLong()
+                currentPosition = localPosition
+                if (currentPosition >= limit) return localMatchEnd.toLong()
             } else {
                 getSlow(currentPosition)
-                if (bufferStart == -1 || currentPosition >= bufferEnd) return GhostJsonConstants.MATCH_END.toLong()
+                if (bufferStart == -1 || currentPosition >= bufferEnd) return localMatchEnd.toLong()
             }
         }
     }
@@ -300,15 +321,15 @@ class StreamingGhostSource(
             val segmentEnd = bufferEnd
             if (currentPosition >= segmentStart && currentPosition < segmentEnd) {
                 val segmentLimit = minOf(start + length, segmentEnd)
-                var p = currentPosition
+                var localPosition = currentPosition
 
-                while (p < segmentLimit) {
-                    val byteValue = bufferBytes[p - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byteValue != str[p - start].code) return false
-                    p++
+                while (localPosition < segmentLimit) {
+                    val byteValue = bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
+                    if (byteValue != str[localPosition - start].code) return false
+                    localPosition++
                 }
 
-                currentPosition = p
+                currentPosition = localPosition
                 if (currentPosition >= start + length) return true
             } else {
                 getSlow(currentPosition)

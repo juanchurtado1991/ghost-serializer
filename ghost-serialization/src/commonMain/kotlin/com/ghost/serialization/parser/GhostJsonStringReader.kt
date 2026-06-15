@@ -89,9 +89,13 @@ class GhostJsonStringReader(
         var scanPosition = position
         val localLimit = limit
         val chars = rawChars
+        val localSpaceInt = C.SPACE_INT
+        val localWhitespaceMask = C.WHITESPACE_MASK
+        val localByteShiftUnit = C.BYTE_SHIFT_UNIT
+        val localResultNone = C.RESULT_NONE
         while (scanPosition < localLimit) {
             val code = chars[scanPosition].code
-            if (code <= C.SPACE_INT && ((C.WHITESPACE_MASK shr code) and C.BYTE_SHIFT_UNIT) != C.RESULT_NONE) {
+            if (code <= localSpaceInt && ((localWhitespaceMask shr code) and localByteShiftUnit) != localResultNone) {
                 scanPosition++
             } else {
                 position = scanPosition
@@ -201,43 +205,62 @@ class GhostJsonStringReader(
 
         var startPosition = start
         val chars = rawChars
+
+        val localQuoteInt = C.QUOTE_INT
+        val localControlCharStartInt = C.CONTROL_CHAR_START_INT
+        val localControlCharLimitInt = C.CONTROL_CHAR_LIMIT_INT
+        val localBackslashInt = C.BACKSLASH_INT
+        val localUnicodePrefixUInt = C.UNICODE_PREFIX_U_INT
+        val localUnicodeHexLength = C.UNICODE_HEX_LENGTH
+        val localHighSurrogateStart = C.HIGH_SURROGATE_START
+        val localHighSurrogateEnd = C.HIGH_SURROGATE_END
+        val localSurrogateOffset = C.SURROGATE_OFFSET
+        val localUnicodeEscapePrefixSize = C.UNICODE_ESCAPE_PREFIX_SIZE
+        val localLowSurrogateStart = C.LOW_SURROGATE_START
+        val localLowSurrogateEnd = C.LOW_SURROGATE_END
+        val localNByteInt = C.N_BYTE_INT
+        val localRByteInt = C.R_BYTE_INT
+        val localTByteInt = C.T_BYTE_INT
+        val localBByteInt = C.B_BYTE_INT
+        val localFByteInt = C.F_BYTE_INT
+
         while (startPosition < limit) {
             val byteValue = chars[startPosition++].code
-            if (byteValue == C.QUOTE_INT) {
+            if (byteValue == localQuoteInt) {
                 position = startPosition
                 nextTokenByte = C.RESET_TOKEN_BYTE
                 return outChars.concatToString(0, outPos)
             }
 
-            if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
+            if (byteValue in localControlCharStartInt..localControlCharLimitInt) {
                 position = startPosition
                 throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
             }
 
-            if (byteValue == C.BACKSLASH_INT) {
+            if (byteValue == localBackslashInt) {
                 if (startPosition >= limit) {
                     position = startPosition
                     throwError(C.UNTERMINATED_ESCAPE_ERROR)
                 }
                 when (val escaped = chars[startPosition++].code) {
-                    C.UNICODE_PREFIX_U_INT -> {
-                        if (startPosition + C.UNICODE_HEX_LENGTH > limit) {
+                    localUnicodePrefixUInt -> {
+                        if (startPosition + localUnicodeHexLength > limit) {
                             position = startPosition
                             throwError(C.UNTERMINATED_UNICODE_ERROR)
                         }
 
                         val code = parseUnicodeHex(startPosition)
-                        startPosition += C.UNICODE_HEX_LENGTH
+                        startPosition += localUnicodeHexLength
 
-                        if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
-                            if (startPosition + C.SURROGATE_OFFSET <= limit &&
-                                chars[startPosition].code == C.BACKSLASH_INT &&
-                                chars[startPosition + C.SINGLE_CHAR_SIZE].code == C.UNICODE_PREFIX_U_INT
+                        if (code in localHighSurrogateStart..localHighSurrogateEnd) {
+                            if (startPosition + localSurrogateOffset <= limit &&
+                                chars[startPosition].code == localBackslashInt &&
+                                chars[startPosition + C.SINGLE_CHAR_SIZE].code == localUnicodePrefixUInt
                             ) {
-                                startPosition += C.UNICODE_ESCAPE_PREFIX_SIZE
+                                startPosition += localUnicodeEscapePrefixSize
                                 val lowCode = parseUnicodeHex(startPosition)
-                                if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
-                                    startPosition += C.UNICODE_HEX_LENGTH
+                                if (lowCode in localLowSurrogateStart..localLowSurrogateEnd) {
+                                    startPosition += localUnicodeHexLength
                                     if (outPos + 2 > outChars.size) {
                                         outChars = growSlowPathChars(outChars, outPos + 2)
                                     }
@@ -259,35 +282,35 @@ class GhostJsonStringReader(
                         }
                     }
 
-                    C.N_BYTE_INT -> {
+                    localNByteInt -> {
                         if (outPos + 1 > outChars.size) {
                             outChars = growSlowPathChars(outChars, outPos + 1)
                         }
                         outChars[outPos++] = C.LF_CHAR
                     }
 
-                    C.R_BYTE_INT -> {
+                    localRByteInt -> {
                         if (outPos + 1 > outChars.size) {
                             outChars = growSlowPathChars(outChars, outPos + 1)
                         }
                         outChars[outPos++] = C.CR_CHAR
                     }
 
-                    C.T_BYTE_INT -> {
+                    localTByteInt -> {
                         if (outPos + 1 > outChars.size) {
                             outChars = growSlowPathChars(outChars, outPos + 1)
                         }
                         outChars[outPos++] = C.TAB_CHAR
                     }
 
-                    C.B_BYTE_INT -> {
+                    localBByteInt -> {
                         if (outPos + 1 > outChars.size) {
                             outChars = growSlowPathChars(outChars, outPos + 1)
                         }
                         outChars[outPos++] = C.BS_CHAR
                     }
 
-                    C.F_BYTE_INT -> {
+                    localFByteInt -> {
                         if (outPos + 1 > outChars.size) {
                             outChars = growSlowPathChars(outChars, outPos + 1)
                         }
@@ -326,33 +349,41 @@ class GhostJsonStringReader(
 
         var scanPosition = start
         val chars = rawChars
+
+        val localQuoteInt = C.QUOTE_INT
+        val localControlCharStartInt = C.CONTROL_CHAR_START_INT
+        val localControlCharLimitInt = C.CONTROL_CHAR_LIMIT_INT
+        val localBackslashInt = C.BACKSLASH_INT
+        val localUnicodePrefixUInt = C.UNICODE_PREFIX_U_INT
+        val localUnicodeHexLength = C.UNICODE_HEX_LENGTH
+
         while (scanPosition < limit) {
             val byteValue = chars[scanPosition++].code
-            if (byteValue == C.QUOTE_INT) {
+            if (byteValue == localQuoteInt) {
                 position = scanPosition
                 nextTokenByte = C.RESET_TOKEN_BYTE
                 return
             }
 
-            if (byteValue in C.CONTROL_CHAR_START_INT..C.CONTROL_CHAR_LIMIT_INT) {
+            if (byteValue in localControlCharStartInt..localControlCharLimitInt) {
                 position = scanPosition
                 throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
             }
 
-            if (byteValue == C.BACKSLASH_INT) {
+            if (byteValue == localBackslashInt) {
                 if (scanPosition >= limit) {
                     position = scanPosition
                     throwError(C.UNTERMINATED_ESCAPE_ERROR)
                 }
                 val escaped = chars[scanPosition++].code
 
-                if (escaped == C.UNICODE_PREFIX_U_INT) {
-                    if (scanPosition + C.UNICODE_HEX_LENGTH > limit) {
+                if (escaped == localUnicodePrefixUInt) {
+                    if (scanPosition + localUnicodeHexLength > limit) {
                         position = scanPosition
                         throwError(C.UNTERMINATED_UNICODE_ERROR)
                     }
                     parseUnicodeHex(scanPosition)
-                    scanPosition += C.UNICODE_HEX_LENGTH
+                    scanPosition += localUnicodeHexLength
                 }
             }
         }

@@ -16,6 +16,7 @@ import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.writer.GhostJsonStringWriter
 import okio.BufferedSink
 import okio.BufferedSource
 import kotlin.reflect.KClass
@@ -67,7 +68,8 @@ expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonR
  * (no Okio segments), so the returned string is decoded directly from
  * the produced char slice with minimal allocations.
  */
-expect fun ghostInternalEncodeToString(block: (com.ghost.serialization.writer.GhostJsonStringWriter) -> Unit): String
+@PublishedApi
+internal expect inline fun ghostInternalEncodeToString(crossinline block: (GhostJsonStringWriter) -> Unit): String
 
 /**
  * Pools the in-memory [GhostJsonFlatWriter] per-thread and returns the
@@ -78,14 +80,16 @@ expect fun ghostInternalEncodeToString(block: (com.ghost.serialization.writer.Gh
  * scratch buffer is kept warm (not released) to avoid pool round-trips
  * between requests.
  */
-expect fun ghostInternalEncodeWithWriter(block: (GhostJsonFlatWriter) -> Unit): ByteArray
+@PublishedApi
+internal expect inline fun ghostInternalEncodeWithWriter(crossinline block: (GhostJsonFlatWriter) -> Unit): ByteArray
 
 /**
  * Serializes via the pooled [GhostJsonFlatWriter] but discards the output
  * without allocating a result [ByteArray]. Useful for warm-up / JIT priming
  * where the encoded bytes are not needed.
  */
-expect fun ghostInternalEncodeAndDiscard(block: (GhostJsonFlatWriter) -> Unit)
+@PublishedApi
+internal expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (GhostJsonFlatWriter) -> Unit)
 
 /**
  * Encodes through the pooled [GhostJsonFlatWriter] and drains the resulting
@@ -95,7 +99,8 @@ expect fun ghostInternalEncodeAndDiscard(block: (GhostJsonFlatWriter) -> Unit)
  * and the final flush is a single [BufferedSink.write] call which Okio
  * implements as a few `System.arraycopy`s into its segment buffer.
  */
-expect fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, block: (GhostJsonFlatWriter) -> Unit)
+@PublishedApi
+internal expect inline fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, crossinline block: (GhostJsonFlatWriter) -> Unit)
 
 /**
  * Core entry point for Ghost Serialization.

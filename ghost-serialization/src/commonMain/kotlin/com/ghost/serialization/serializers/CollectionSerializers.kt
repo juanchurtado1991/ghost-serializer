@@ -23,6 +23,7 @@ import com.ghost.serialization.parser.readList
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
+import kotlin.collections.RandomAccess
 
 /**
  * Serializer implementation for standard Kotlin [List] collections.
@@ -40,8 +41,15 @@ class ListSerializer<T>(
         value: List<T>
     ) {
         writer.beginArray()
-        for (item in value) {
-            itemSerializer.serialize(writer, item)
+        if (value is RandomAccess) {
+            val size = value.size
+            for (i in 0 until size) {
+                itemSerializer.serialize(writer, value[i])
+            }
+        } else {
+            for (item in value) {
+                itemSerializer.serialize(writer, item)
+            }
         }
         writer.endArray()
     }
@@ -51,8 +59,15 @@ class ListSerializer<T>(
         value: List<T>
     ) {
         writer.beginArray()
-        for (item in value) {
-            itemSerializer.serialize(writer, item)
+        if (value is RandomAccess) {
+            val size = value.size
+            for (i in 0 until size) {
+                itemSerializer.serialize(writer, value[i])
+            }
+        } else {
+            for (item in value) {
+                itemSerializer.serialize(writer, item)
+            }
         }
         writer.endArray()
     }
@@ -62,8 +77,15 @@ class ListSerializer<T>(
         value: List<T>
     ) {
         writer.beginArray()
-        for (item in value) {
-            itemSerializer.serialize(writer, item)
+        if (value is RandomAccess) {
+            val size = value.size
+            for (i in 0 until size) {
+                itemSerializer.serialize(writer, value[i])
+            }
+        } else {
+            for (item in value) {
+                itemSerializer.serialize(writer, item)
+            }
         }
         writer.endArray()
     }
@@ -116,12 +138,10 @@ class MapSerializer<V>(
         value: Map<String, V>
     ) {
         writer.beginObject()
-        for (entry in value) {
+        for (entry in value.entries) {
             writer.name(entry.key)
-            valueSerializer.serialize(
-                writer,
-                entry.value
-            )
+            @Suppress("UNCHECKED_CAST")
+            valueSerializer.serialize(writer, entry.value as V)
         }
         writer.endObject()
     }
@@ -131,12 +151,10 @@ class MapSerializer<V>(
         value: Map<String, V>
     ) {
         writer.beginObject()
-        for (entry in value) {
+        for (entry in value.entries) {
             writer.name(entry.key)
-            valueSerializer.serialize(
-                writer,
-                entry.value
-            )
+            @Suppress("UNCHECKED_CAST")
+            valueSerializer.serialize(writer, entry.value as V)
         }
         writer.endObject()
     }
@@ -146,12 +164,10 @@ class MapSerializer<V>(
         value: Map<String, V>
     ) {
         writer.beginObject()
-        for (entry in value) {
+        for (entry in value.entries) {
             writer.name(entry.key)
-            valueSerializer.serialize(
-                writer,
-                entry.value
-            )
+            @Suppress("UNCHECKED_CAST")
+            valueSerializer.serialize(writer, entry.value as V)
         }
         writer.endObject()
     }
@@ -213,8 +229,9 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         value: IntArray
     ) {
         writer.beginArray()
-        for (item in value) {
-            writer.value(item)
+        val size = value.size
+        for (i in 0 until size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }
@@ -224,8 +241,9 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         value: IntArray
     ) {
         writer.beginArray()
-        for (item in value) {
-            writer.value(item)
+        val size = value.size
+        for (i in 0 until size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }
@@ -235,8 +253,9 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         value: IntArray
     ) {
         writer.beginArray()
-        for (item in value) {
-            writer.value(item)
+        val size = value.size
+        for (i in 0 until size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }
@@ -298,8 +317,9 @@ object LongArraySerializer : GhostSerializer<LongArray> {
         value: LongArray
     ) {
         writer.beginArray()
-        for (item in value) {
-            writer.value(item)
+        val size = value.size
+        for (i in 0 until size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }
@@ -309,8 +329,9 @@ object LongArraySerializer : GhostSerializer<LongArray> {
         value: LongArray
     ) {
         writer.beginArray()
-        for (item in value) {
-            writer.value(item)
+        val size = value.size
+        for (i in 0 until size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }
@@ -320,8 +341,9 @@ object LongArraySerializer : GhostSerializer<LongArray> {
         value: LongArray
     ) {
         writer.beginArray()
-        for (item in value) {
-            writer.value(item)
+        val size = value.size
+        for (i in 0 until size) {
+            writer.value(value[i])
         }
         writer.endArray()
     }

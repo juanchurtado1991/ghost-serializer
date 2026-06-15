@@ -6,6 +6,10 @@
 - **Single-Pass String Scan (`GhostJsonStringReader`)**: Eliminated a redundant double-scan in the hot path of `internalSelect`. Previously, `findClosingQuote` and `computeKeyHash` were two separate passes over the same bytes. The new `findClosingQuoteWithHash` function combines both into a single unrolled loop that simultaneously locates the closing `"` and accumulates the 4-byte dispatch hash — cutting memory reads for key matching in half on the `String` deserialization path.
 
 ### Optimized
+- **RandomAccess List & Primitive Array Loops**: Replaced default `Iterator`-based loops with index-based loops in `ListSerializer`, `IntArraySerializer`, and `LongArraySerializer` for collections implementing `RandomAccess` (e.g., `ArrayList`). This avoids millions of `Iterator` allocations during serialization of list-heavy payloads.
+- **Map Entry-Set Iteration**: Optimized `MapSerializer` to iterate over `entries` directly instead of doing double hash lookups via `keys` iteration.
+- **Fast-Path ASCII String Writer Scans**: Refactored plain ASCII boundary checks in `GhostJsonStringWriter.writeStringValueRaw` to execute inline with hoisted local variables, routing to native bulk copies via `writeQuotedAscii` to maximize throughput.
+- **Static Constant Hoisting**: Hoisted static lookup and delimiter constants to local registers in the hot loop scopes of string parsing and parsing subsystems (`GhostJsonStringReaderSubsystem`, `StreamingGhostSource`).
 - **Zero-Allocation String Decoding**: Completely eliminated UTF-8 array allocations in `GhostJsonStringReader`. Ghost now reads characters directly using intrinsic string access (`rawData[index].code`), pushing String decoding to 1304.7 ops/s (**+31.5% faster than KSer, -69.6% memory**) on the Twitter macro dataset. Ghost now sweeps 1st place in all 6 JSON benchmark categories (Decode/Encode × String/Bytes/Streaming).
 - **Bytes Decode**: `GhostJsonFlatReader` reaches **1210.5 ops/s** (+91.7% faster than KSer) with **-84.4% memory** (671.7 KB vs 4297.0 KB).
 - **Streaming Decode**: `GhostJsonReader` reaches **500.6 ops/s** (+65.9% faster than KSer) with **-28.3% memory**.

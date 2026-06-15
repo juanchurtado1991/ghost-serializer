@@ -9,6 +9,7 @@ import com.ghost.serialization.parser.beginArray
 import com.ghost.serialization.parser.endArray
 import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.writer.GhostJsonFlatWriter
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.BeforeTest
@@ -26,7 +27,7 @@ class GhostMemoryTest {
     private object RecursiveSerializer : GhostSerializer<Any> {
         override val typeName: String = "Recursive"
         override fun serialize(writer: GhostJsonWriter, value: Any) {}
-        override fun serialize(writer: com.ghost.serialization.writer.GhostJsonFlatWriter, value: Any) {}
+        override fun serialize(writer: GhostJsonFlatWriter, value: Any) {}
         override fun deserialize(reader: GhostJsonReader): Any {
             reader.beginArray()
             val result = if (reader.peekByte() == '['.code.toByte()) {
