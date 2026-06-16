@@ -64,6 +64,11 @@ import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_FORM_FEED
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_NEWLINE
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_CARRIAGE_RETURN
 import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_TAB
+import com.ghost.serialization.parser.GhostJsonConstants.ESC_B_INT
+import com.ghost.serialization.parser.GhostJsonConstants.ESC_F_INT
+import com.ghost.serialization.parser.GhostJsonConstants.ESC_N_INT
+import com.ghost.serialization.parser.GhostJsonConstants.ESC_R_INT
+import com.ghost.serialization.parser.GhostJsonConstants.ESC_T_INT
 import okio.ByteString
 
 @Suppress("SameParameterValue", "NOTHING_TO_INLINE")
@@ -556,6 +561,19 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         buffer.writeChar(QUOTE_INT)
     }
 
+    private inline fun getEscapeSecondChar(code: Int): Int {
+        return when (code) {
+            QUOTE_INT -> QUOTE_INT
+            BACKSLASH_INT -> BACKSLASH_INT
+            BS_INT -> ESC_B_INT
+            FF_INT -> ESC_F_INT
+            LF_INT -> ESC_N_INT
+            CR_INT -> ESC_R_INT
+            TAB_INT -> ESC_T_INT
+            else -> 0
+        }
+    }
+
     private fun writeEscaped(text: String, start: Int = 0) {
         val scratchBuf = acquireScratch()
         val length = text.length
@@ -588,9 +606,9 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 }
 
                 if (charCode < localAsciiLimit) {
-                    val replacement = getEscapedChar(charCode)
-                    if (replacement != null) {
-                        buffer.writeString(replacement)
+                    val esc = getEscapeSecondChar(charCode)
+                    if (esc != 0) {
+                        buffer.write2Chars(BACKSLASH_INT, esc)
                     } else {
                         writeUnicodeEscape(charCode, scratchBuf)
                     }
@@ -627,9 +645,9 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             }
 
             if (charCode < localAsciiLimit) {
-                val replacement = getEscapedChar(charCode)
-                if (replacement != null) {
-                    buffer.writeString(replacement)
+                val esc = getEscapeSecondChar(charCode)
+                if (esc != 0) {
+                    buffer.write2Chars(BACKSLASH_INT, esc)
                 } else {
                     writeUnicodeEscape(charCode, scratchBuf)
                 }
@@ -667,9 +685,9 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             }
 
             if (charCode < localAsciiLimit) {
-                val replacement = getEscapedChar(charCode)
-                if (replacement != null) {
-                    buffer.writeString(replacement)
+                val esc = getEscapeSecondChar(charCode)
+                if (esc != 0) {
+                    buffer.write2Chars(BACKSLASH_INT, esc)
                 } else {
                     writeUnicodeEscape(charCode, scratchBuf)
                 }
@@ -687,19 +705,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         } else {
             scratchBuf[scratchIndex++] = CHAR_QUOTE
             buffer.write(scratchBuf, 0, scratchIndex)
-        }
-    }
-
-    private fun getEscapedChar(code: Int): String? {
-        return when (code) {
-            QUOTE_INT -> ESCAPE_QUOTE
-            BACKSLASH_INT -> ESCAPE_BACKSLASH
-            BS_INT -> ESCAPE_BACKSPACE
-            FF_INT -> ESCAPE_FORM_FEED
-            LF_INT -> ESCAPE_NEWLINE
-            CR_INT -> ESCAPE_CARRIAGE_RETURN
-            TAB_INT -> ESCAPE_TAB
-            else -> null
         }
     }
 

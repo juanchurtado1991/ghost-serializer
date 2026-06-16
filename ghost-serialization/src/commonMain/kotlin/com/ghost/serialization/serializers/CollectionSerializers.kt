@@ -41,8 +41,12 @@ class ListSerializer<T>(
         value: List<T>
     ) {
         writer.beginArray()
+        val size = value.size
+        if (size == 0) {
+            writer.endArray()
+            return
+        }
         if (value is RandomAccess) {
-            val size = value.size
             for (i in 0 until size) {
                 itemSerializer.serialize(writer, value[i])
             }
@@ -59,8 +63,12 @@ class ListSerializer<T>(
         value: List<T>
     ) {
         writer.beginArray()
+        val size = value.size
+        if (size == 0) {
+            writer.endArray()
+            return
+        }
         if (value is RandomAccess) {
-            val size = value.size
             for (i in 0 until size) {
                 itemSerializer.serialize(writer, value[i])
             }
@@ -77,8 +85,12 @@ class ListSerializer<T>(
         value: List<T>
     ) {
         writer.beginArray()
+        val size = value.size
+        if (size == 0) {
+            writer.endArray()
+            return
+        }
         if (value is RandomAccess) {
-            val size = value.size
             for (i in 0 until size) {
                 itemSerializer.serialize(writer, value[i])
             }
