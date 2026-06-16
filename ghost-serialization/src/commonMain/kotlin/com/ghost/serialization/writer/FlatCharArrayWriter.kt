@@ -135,13 +135,10 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
 
     /** Writes a ByteString interpreting its bytes directly as ASCII chars. */
     fun writeAscii(byteString: ByteString) {
-        val length = byteString.size
+        val str = byteString.utf8()
+        val length = str.length
         ensureCapacity(length)
-        val backingArray = array
-        var writeIndex = size
-        for (index in 0 until length) {
-            backingArray[writeIndex++] = byteString[index].toInt().toChar()
-        }
+        str.copyRangeToCharArray(array, size, 0, length)
         size += length
     }
 

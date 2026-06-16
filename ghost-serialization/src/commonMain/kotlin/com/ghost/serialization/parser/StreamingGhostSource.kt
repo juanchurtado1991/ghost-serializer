@@ -26,7 +26,7 @@ class StreamingGhostSource(
     private var bufferEnd = -1
 
     override fun get(index: Int): Int {
-        if (index >= bufferStart && index < bufferEnd) {
+        if (index in bufferStart..<bufferEnd) {
             return bufferBytes[index - bufferStart].toInt() and GhostJsonConstants.BYTE_MASK
         }
         return getSlow(index)
@@ -57,6 +57,11 @@ class StreamingGhostSource(
 
     override fun decodeToString(start: Int, end: Int): String {
         val length = end - start
+        val segmentStart = bufferStart
+        val segmentEnd = bufferEnd
+        if (start >= segmentStart && end <= segmentEnd) {
+            return bufferBytes.decodeToString(start - segmentStart, end - segmentStart)
+        }
         okioSource.request(end.toLong())
         // copyTo fills the reusable tempBuffer with exactly [length] bytes from the live Okio
         // buffer without advancing its read position.  readUtf8 then decodes them in one pass
@@ -139,7 +144,7 @@ class StreamingGhostSource(
         while (true) {
             val segmentStart = bufferStart
             val segmentEnd = bufferEnd
-            if (currentPosition >= segmentStart && currentPosition < segmentEnd) {
+            if (currentPosition in segmentStart..<segmentEnd) {
                 val segmentLimit = minOf(limit, segmentEnd)
                 var localPosition = currentPosition
 
@@ -243,7 +248,10 @@ class StreamingGhostSource(
                                 (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
                         if (byte1 == localQuoteInt) {
-                            return GhostJsonConstants.packScanResult(localPosition + 1 - start, accumulatedHash, isPureAscii)
+                            return GhostJsonConstants.packScanResult(
+                                localPosition + 1 - start, accumulatedHash,
+                                isPureAscii
+                            )
                         }
                         return localMatchEnd.toLong()
                     } else if (byte1 >= localAsciiLimit) {
@@ -257,7 +265,10 @@ class StreamingGhostSource(
                                 (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
                         if (byte2 == localQuoteInt) {
-                            return GhostJsonConstants.packScanResult(localPosition + 2 - start, accumulatedHash, isPureAscii)
+                            return GhostJsonConstants.packScanResult(
+                                localPosition + 2 - start, accumulatedHash,
+                                isPureAscii
+                            )
                         }
                         return localMatchEnd.toLong()
                     } else if (byte2 >= localAsciiLimit) {
@@ -271,7 +282,10 @@ class StreamingGhostSource(
                                 (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
                         if (byte3 == localQuoteInt) {
-                            return GhostJsonConstants.packScanResult(localPosition + 3 - start, accumulatedHash, isPureAscii)
+                            return GhostJsonConstants.packScanResult(
+                                localPosition + 3 - start, accumulatedHash,
+                                isPureAscii
+                            )
                         }
                         return localMatchEnd.toLong()
                     } else if (byte3 >= localAsciiLimit) {
@@ -289,7 +303,10 @@ class StreamingGhostSource(
                                 (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
                     ) {
                         if (singleByte == localQuoteInt) {
-                            return GhostJsonConstants.packScanResult(localPosition - start, accumulatedHash, isPureAscii)
+                            return GhostJsonConstants.packScanResult(
+                                localPosition - start, accumulatedHash,
+                                isPureAscii
+                            )
                         }
                         return localMatchEnd.toLong()
                     } else if (singleByte >= localAsciiLimit) {
@@ -319,7 +336,7 @@ class StreamingGhostSource(
         while (true) {
             val segmentStart = bufferStart
             val segmentEnd = bufferEnd
-            if (currentPosition >= segmentStart && currentPosition < segmentEnd) {
+            if (currentPosition in segmentStart..<segmentEnd) {
                 val segmentLimit = minOf(start + length, segmentEnd)
                 var localPosition = currentPosition
 

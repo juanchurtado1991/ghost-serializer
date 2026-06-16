@@ -86,6 +86,13 @@ internal object GhostJsonConstants {
     const val CHAR_DOT = '.'
     const val CHAR_ZERO = '0'
     const val CHAR_BACKSLASH = '\\'
+    const val CHAR_B = 'b'
+
+    const val ESC_B_INT = 98
+    const val ESC_F_INT = 102
+    const val ESC_N_INT = 110
+    const val ESC_R_INT = 114
+    const val ESC_T_INT = 116
 
     // --- Case-Folded ASCII Byte Constants ---
     // Each constant is `'X'.code or 32` where 32 = CASE_INSENSITIVE_MASK.

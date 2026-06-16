@@ -16,6 +16,11 @@
 - **Streaming Decode**: `GhostJsonReader` reaches **500.6 ops/s** (+65.9% faster than KSer) with **-28.3% memory**.
 - **Streaming segment-buffering**: Implemented an internal 8 KB segment buffer directly in `StreamingGhostSource` that copies and holds active Okio segments. This completely bypasses the virtual dispatch and segment-walking overhead associated with Okio's generic APIs on every character read.
 - **Dynamic String Writer Heap Sizing**: Reduced the default initial capacity of `FlatCharArrayWriter` from **8 KB (16 KB heap)** to **1 KB (2 KB heap)**. Built custom platform heuristics defining `maxWarmCharWriteBufferCapacity` (JVM: `512 KB`, Android: `256 KB`), yielding a massive heap memory footprint reduction per thread on the String serialization pool.
+- **String reference-equality check in string reader**: Changed structural equality checking (`!=`) to pointer reference checking (`!==`) in `GhostJsonStringReader.reset`, bypassing expensive full string scans of large payloads.
+- **Fast-path empty list serialization**: Added a quick check in `ListSerializer.serialize` for empty lists to return immediately, avoiding unnecessary loop overhead and `Iterator` allocations.
+- **Direct String-Copy in ByteString writer**: Optimized `FlatCharArrayWriter.writeAscii` to copy the cached UTF-8 string representation of `ByteString` in a single native copy, avoiding slow byte-by-byte loops and virtual calls.
+- **Direct Character Escape Emitting**: Refactored string escape sequences in `GhostJsonStringWriter` to map characters straight to their escape codes and call `write2Chars` directly, eliminating intermediate `String` constants and bounds-checks.
+- **Garbage Collection isolation in benchmarks**: Added explicit heap cleanups and JVM settling pauses between measured categories in `TwitterBenchmark` to stabilize the standard deviation and isolate GC impacts.
 
 ### Added
 - **Cached Serializer Overloads**: Exposed new public overloads for `encodeToString`, `encodeToBytes`, `deserialize`, and `deserializeStreaming` accepting pre-resolved `GhostSerializer<T>` parameters. This allows consumers to bypass class-registry mapping and type lookups in critical paths.

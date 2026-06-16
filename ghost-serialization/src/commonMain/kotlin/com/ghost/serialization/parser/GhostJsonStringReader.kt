@@ -28,8 +28,10 @@ class GhostJsonStringReader(
     var depth: Int = 0
     var needsCommaMask: Long = 0L
     var commaConsumedMask: Long = 0L
+
     /** Reused CharArray cache to bypass String.charAt overhead. */
     var rawChars: CharArray
+
     /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
     val stringPool: Array<String?> = arrayOfNulls(C.STR_POOL_SIZE)
 
@@ -95,7 +97,11 @@ class GhostJsonStringReader(
         val localResultNone = C.RESULT_NONE
         while (scanPosition < localLimit) {
             val code = chars[scanPosition].code
-            if (code <= localSpaceInt && ((localWhitespaceMask shr code) and localByteShiftUnit) != localResultNone) {
+            if (
+                code <= localSpaceInt &&
+                ((localWhitespaceMask shr code) and localByteShiftUnit) !=
+                localResultNone
+            ) {
                 scanPosition++
             } else {
                 position = scanPosition
@@ -142,7 +148,9 @@ class GhostJsonStringReader(
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
+    @Suppress("StringReferentialEquality")
     fun reset(newData: String, newLimit: Int = newData.length) {
+        val oldData = this.rawData
         this.rawData = newData
         this.position = 0
         this.limit = newLimit
@@ -157,13 +165,15 @@ class GhostJsonStringReader(
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
 
-        val len = newData.length
-        var chars = rawChars
-        if (chars.size < len) {
-            chars = CharArray(len)
-            rawChars = chars
+        if (newData !== oldData) {
+            val len = newData.length
+            var chars = rawChars
+            if (chars.size < len) {
+                chars = CharArray(len)
+                rawChars = chars
+            }
+            newData.copyRangeToCharArray(chars, 0, 0, len)
         }
-        newData.copyRangeToCharArray(chars, 0, 0, len)
     }
 
     fun readQuotedString(): String {
@@ -442,9 +452,9 @@ class GhostJsonStringReader(
         val chars = rawChars
         return if (length >= 4) {
             chars[start].code or
-                (chars[start + 1].code shl C.SHIFT_8) or
-                (chars[start + 2].code shl C.SHIFT_16) or
-                (chars[start + 3].code shl C.SHIFT_24)
+                    (chars[start + 1].code shl C.SHIFT_8) or
+                    (chars[start + 2].code shl C.SHIFT_16) or
+                    (chars[start + 3].code shl C.SHIFT_24)
         } else {
             var key = 0
             if (length >= 1) key = key or chars[start].code

@@ -68,10 +68,7 @@ object TwitterBenchmark {
         println("Done.")
 
         // Clean heap before starting the measured benchmarks
-        System.gc()
-        System.runFinalization()
-        Thread.sleep(100)
-        System.gc()
+        cleanHeap()
 
         println("\n🚀 Running Twitter performance measurements ($runs iterations per category)...")
 
@@ -79,33 +76,45 @@ object TwitterBenchmark {
         val kserSerializer = kJson.serializersModule.serializer<TwitterResponse>()
 
         // Decode Benchmarks
+        cleanHeap()
         val ghostDecodeStr = measurePerf(threadBean, runs) { Ghost.deserialize(ghostSerializer, jsonString) }
+        cleanHeap()
         val kserDecodeStr = measurePerf(threadBean, runs) { kJson.decodeFromString(kserSerializer, jsonString) }
 
+        cleanHeap()
         val ghostDecodeBytes = measurePerf(threadBean, runs) { Ghost.deserialize(ghostSerializer, rawBytes) }
+        cleanHeap()
         val kserDecodeBytes = measurePerf(threadBean, runs) {
             kJson.decodeFromString(kserSerializer, String(rawBytes, Charsets.UTF_8))
         }
 
+        cleanHeap()
         val ghostDecodeStream = measurePerf(threadBean, runs) {
             Ghost.deserializeStreaming(ghostSerializer, Buffer().write(rawBytes))
         }
+        cleanHeap()
         val kserDecodeStream = measurePerf(threadBean, runs) {
             kJson.decodeFromBufferedSource(kserSerializer, Buffer().write(rawBytes))
         }
 
         // Encode Benchmarks
+        cleanHeap()
         val ghostEncodeStr = measurePerf(threadBean, runs) { Ghost.encodeToString(ghostSerializer, decodedObj) }
+        cleanHeap()
         val kserEncodeStr = measurePerf(threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj) }
 
+        cleanHeap()
         val ghostEncodeBytes = measurePerf(threadBean, runs) { Ghost.encodeToBytes(ghostSerializer, decodedObj) }
+        cleanHeap()
         val kserEncodeBytes = measurePerf(threadBean, runs) { kJson.encodeToString(kserSerializer, decodedObj).toByteArray() }
 
+        cleanHeap()
         val ghostEncodeStream = measurePerf(threadBean, runs) {
             val buf = Buffer()
             Ghost.serialize(ghostSerializer, buf, decodedObj)
             buf
         }
+        cleanHeap()
         val kserEncodeStream = measurePerf(threadBean, runs) {
             val buf = Buffer()
             kJson.encodeToBufferedSink(kserSerializer, decodedObj, buf)
@@ -208,5 +217,13 @@ object TwitterBenchmark {
         val kbPerOp = if (allocatedBytes > 0) (allocatedBytes.toDouble() / runs) / 1024.0 else 0.0
 
         return Triple(avgThroughput, stdDev, kbPerOp)
+    }
+
+    private fun cleanHeap() {
+        System.gc()
+        System.runFinalization()
+        Thread.sleep(150)
+        System.gc()
+        Thread.sleep(50)
     }
 }
