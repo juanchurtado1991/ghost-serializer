@@ -5,6 +5,7 @@ package com.ghost.serialization.sample.api
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sample
+import com.ghost.serialization.ktor.bodyGhost
 import com.ghost.serialization.ktor.ghost
 import com.ghost.serialization.sample.model.CharacterResponse
 import com.ghost.serialization.sample.model.PageInfo
@@ -31,6 +32,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.json.okio.encodeToBufferedSink
 import okio.Buffer
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 class RickAndMortyRepository {
@@ -107,7 +109,7 @@ class RickAndMortyRepository {
             allBytes.add(response.body<ByteArray>())
 
             // Respect the API rate limit
-            delay(150)
+            delay(150.milliseconds)
         }
 
         val jsonString = mergePages(allBytes, pageCount)
@@ -148,9 +150,47 @@ class RickAndMortyRepository {
     ) {
         onStatusChange("Aggressive JIT Warmup (${WARMUP_ITERATIONS}x)...")
 
+        val obj = Ghost.deserialize<CharacterResponse>(data.bytes)
+
         repeat(WARMUP_ITERATIONS) {
+            // 1. Warmup Deserialization (Parse)
+            // Bytes path
             Ghost.deserialize<CharacterResponse>(data.bytes)
+            kSerJson.decodeFromString<CharacterResponse>(data.bytes.decodeToString())
+
+            // String path
+            Ghost.deserialize<CharacterResponse>(data.jsonString)
             kSerJson.decodeFromString<CharacterResponse>(data.jsonString)
+
+            // Stream/Buffer path (Okio)
+            val bufReadGhost = Buffer().write(data.bytes)
+            Ghost.deserialize<CharacterResponse>(bufReadGhost)
+            
+            val bufReadKser = Buffer().write(data.bytes)
+            kSerJson.decodeFromBufferedSource(
+                deserializer = CharacterResponse.serializer(),
+                source = bufReadKser
+            )
+
+            // 2. Warmup Serialization (Write)
+            // Bytes path
+            Ghost.encodeToBytes(obj)
+            kSerJson.encodeToString(CharacterResponse.serializer(), obj).encodeToByteArray()
+
+            // String path
+            Ghost.serialize(obj)
+            kSerJson.encodeToString(CharacterResponse.serializer(), obj)
+
+            // Stream/Buffer path (Okio)
+            val bufWriteGhost = Buffer()
+            Ghost.encodeToSink(bufWriteGhost, obj)
+
+            val bufWriteKser = Buffer()
+            kSerJson.encodeToBufferedSink(
+                serializer = CharacterResponse.serializer(),
+                value = obj,
+                sink = bufWriteKser
+            )
         }
 
         forceGC()
@@ -394,7 +434,7 @@ class RickAndMortyRepository {
     ): CharacterResponse = withContext(Dispatchers.Default) {
         downloadClient.get("https://rickandmortyapi.com/api/character") {
             parameter("page", page)
-        }.body()
+        }.bodyGhost()
     }
 
     @Suppress("ArrayInDataClass")

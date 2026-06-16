@@ -62,6 +62,7 @@ ktor-client-darwin              = { group = "io.ktor", name = "ktor-client-darwi
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-mock                = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-core                = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
 
 # Serialization Engines (Benchmarks)
 gson                            = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
