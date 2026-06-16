@@ -4,15 +4,15 @@
 
 > ⚡ **Bitwise O(1) field matching. Native reader per input format. Up to 6–32× less heap.** Ghost doesn't just skip reflection — it rethinks every step of the parse loop.
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
-[![KSP](https://img.shields.io/badge/KSP-1.9.24--1.0.20-black.png?style=flat)](https://github.com/google/ksp)
-![Version](https://img.shields.io/badge/version-1.2.1-brightgreen.png?style=flat)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat)](https://github.com/google/ksp)
+![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.png?style=flat)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20iOS%20%7C%20Spring%20Boot-blue.png?style=flat)
 ![Tests](https://img.shields.io/badge/tests-667%2B%20passing-success.png?style=flat)
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 
-**667** tests = `./gradlew ciTest` on Linux/Windows. **~892** on macOS with Xcode.
+**An estimated 667+** tests = `./gradlew ciTest` on Linux/Windows. **~892** on macOS with Xcode.
 
 ---
 
@@ -23,11 +23,11 @@ Ghost is a Kotlin JSON library that generates all serialization code at **compil
 - Ships a **dedicated native reader per input format**: `ByteArray`, Okio stream, or `String` — each parsed without cross-format conversion overhead.
 - Maintains a **zero-alloc hot path** via thread-local reader and writer pools — no GC pressure in steady state.
 
-The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization by **+32.1% on String decoding** (allocating **3.3× less heap**) and by **+71.4% on Bytes decoding** (allocating **6.4× less heap**). On streaming decode it leads by **+63.2%** with **30.7% less memory**.
+The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization by **+31.0% on String decoding** (allocating **3.3× less heap**) and by **+72.2% on Bytes decoding** (allocating **6.4× less heap**). On streaming decode it leads by **+68.7%** with **30.7% less memory**.
 
 This README is honest: we explain what Ghost excels at, how it achieves its performance, and the scenarios where another library might be a better fit.
 
-**Current release:** `1.2.1` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
+**Current release:** `1.2.2` on [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (`com.ghostserializer`).
 
 ---
 
@@ -89,18 +89,18 @@ Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_m
 
 | Operation | Engine |      Throughput (ops/s)      |         Mem (KB/op)         |
 | :--- | :---: |:----------------------------:|:---------------------------:|
-| **Decode (String)** | **Ghost** | **1412.6** *(+32.1% faster)* | **406.8** *(-69.6% memory)* |
-| | KSER |            1069.6            |           1337.6            |
-| **Decode (Bytes)** | **Ghost** | **1120.0** *(+71.4% faster)* | **671.7** *(-84.4% memory)* |
-| | KSER |            653.5             |           4297.0            |
-| **Decode (Streaming)** | **Ghost** | **501.7** *(+63.2% faster)*  | **1320.1** *(-30.7% memory)*|
-| | KSER |            307.4             |           1904.8            |
-| **Encode (String)** | **Ghost** | **4148.8** *(+34.4% faster)* |           1074.3            |
-| | KSER |            3087.3            |         **981.6**           |
-| **Encode (Bytes)** | **Ghost** | **2303.3** *(+91.1% faster)* | **420.2** *(-81.0% memory)* |
-| | KSER |            1205.1            |           2216.3            |
-| **Encode (Streaming)** | **Ghost** | **2290.2** *(+56.1% faster)* | **426.9** *(-8.1% memory)*  |
-| | KSER |            1466.9            |            464.5            |
+| **Decode (String)** | **Ghost** | **1465.5** *(+31.0% faster)* | **406.8** *(-69.6% memory)* |
+| | KSER |            1118.7            |           1337.6            |
+| **Decode (Bytes)** | **Ghost** | **1174.1** *(+72.2% faster)* | **671.7** *(-84.4% memory)* |
+| | KSER |            681.8             |           4297.0            |
+| **Decode (Streaming)** | **Ghost** | **512.5** *(+68.7% faster)*  | **1320.1** *(-30.7% memory)*|
+| | KSER |            303.8             |           1904.8            |
+| **Encode (String)** | **Ghost** | **4288.6** *(+48.8% faster)* |           1074.3            |
+| | KSER |            2882.9            |         **972.1**           |
+| **Encode (Bytes)** | **Ghost** | **2292.1** *(+91.6% faster)* | **420.2** *(-81.0% memory)* |
+| | KSER |            1196.1            |           2206.8            |
+| **Encode (Streaming)** | **Ghost** | **2289.2** *(+50.2% faster)* | **426.9** *(-6.2% memory)*  |
+| | KSER |            1524.1            |            455.0            |
 
 ### Deserialization — 200 objects (LIST_MEDIUM)
 
@@ -250,8 +250,8 @@ Ghost is published to **Maven Central** (`com.ghostserializer`).
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.2.1"
-ksp = "1.9.24-1.0.20" # match your Kotlin version
+ghost = "1.2.2"
+ksp = "2.1.10-1.0.31" # match your Kotlin version
 
 [libraries]
 ghost-api            = { module = "com.ghostserializer:ghost-api", version.ref = "ghost" }
@@ -304,8 +304,8 @@ The Ghost Gradle plugin adds runtime dependencies and wires the KSP compiler art
 // build.gradle.kts (app module)
 plugins {
     id("com.android.application")
-    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
-    id("com.ghostserializer.ghost") version "1.2.1"
+    id("com.google.devtools.ksp") version "2.1.10-1.0.31"
+    id("com.ghostserializer.ghost") version "1.2.2"
 }
 
 // Optional: enable native String parsing (see Installation › Native String Reader)
@@ -590,7 +590,7 @@ data class User(
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.2.1"
+    id("com.ghostserializer.ghost") version "1.2.2"
 }
 
 kotlin {
@@ -804,7 +804,7 @@ val response: List<Product> = client.get("https://api.example.com/products").bod
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.1")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.2")
 }
 ```
 
@@ -1053,7 +1053,7 @@ We welcome issues, benchmarks, docs fixes, and pull requests. Full workflow deta
 | Requirement | Version |
 |:---|:---|
 | JDK | **17** |
-| Kotlin / KSP | **1.9.24** / **1.9.24-1.0.20** (see `gradle/libs.versions.toml`) |
+| Kotlin / KSP | **2.1.10** / **2.1.10-1.0.31** (see `gradle/libs.versions.toml`) |
 | Android SDK | For `:ghost-serialization:testDebugUnitTest` (API 36 in this repo) |
 | macOS + Xcode | Optional — iOS simulator tests (`ciTest` on Mac only) |
 

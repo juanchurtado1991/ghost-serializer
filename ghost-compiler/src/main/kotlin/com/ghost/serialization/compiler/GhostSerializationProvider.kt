@@ -10,6 +10,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
  */
 class GhostSerializationProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+        println("=== KSP GhostSerializationProvider.create called ===")
         return GhostSerializationProcessor(
             codeGenerator = environment.codeGenerator,
             logger = environment.logger,

@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.2] - (PENDING)
+## [1.2.2] - 2026-06-16
 
 ### Performance
 - **Single-Pass String Scan (`GhostJsonStringReader`)**: Eliminated a redundant double-scan in the hot path of `internalSelect`. Previously, `findClosingQuote` and `computeKeyHash` were two separate passes over the same bytes. The new `findClosingQuoteWithHash` function combines both into a single unrolled loop that simultaneously locates the closing `"` and accumulates the 4-byte dispatch hash — cutting memory reads for key matching in half on the `String` deserialization path.
@@ -33,6 +33,13 @@
 - **Zero Magic Strings in runtime**: Hardened `GhostStringUtil.jvm.kt` by replacing `Unsafe` literal names and offsets with explicit descriptive constants.
 - **KMP Deprecations Cleanup**: Replaced deprecated raw `String(CharArray, Int, Int)` platform constructors with the standard Kotlin Multiplatform `CharArray.concatToString(startIndex, endIndex)` inside the `GhostJsonStringReader` slow path.
 - **Removed deprecated String reader overload**: The KSP compiler no longer generates the `deserialize(json: String)` direct-string overload in modules without `ghost.textChannel=true`, eliminating dead code and the associated dispatch table allocation.
+
+### Build
+- **Kotlin 2.1.10 & KSP2**: Migrated to Kotlin 2.1.10 and KSP `2.1.10-1.0.31` with KSP2 enabled (`ksp.useKSP2=true`). All modules verified via `./gradlew ciTest`.
+- **Gradle plugin default version**: `DEFAULT_VERSION` updated to `1.2.2`.
+
+### Documentation
+- **README restructured into multi-file wiki** (`docs/wiki/`): Split the monolithic README into dedicated pages — `benchmarks.md`, `installation.md`, `usage-android.md` — with cross-links and a table of contents in the main README. Video demo (`ghost.mp4`) added alongside benchmark results.
 
 
 ## [1.2.1] - 2026-06-01

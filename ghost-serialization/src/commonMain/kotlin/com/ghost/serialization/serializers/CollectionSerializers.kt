@@ -152,8 +152,7 @@ class MapSerializer<V>(
         writer.beginObject()
         for (entry in value.entries) {
             writer.name(entry.key)
-            @Suppress("UNCHECKED_CAST")
-            valueSerializer.serialize(writer, entry.value as V)
+            valueSerializer.serialize(writer, entry.value)
         }
         writer.endObject()
     }
@@ -165,8 +164,7 @@ class MapSerializer<V>(
         writer.beginObject()
         for (entry in value.entries) {
             writer.name(entry.key)
-            @Suppress("UNCHECKED_CAST")
-            valueSerializer.serialize(writer, entry.value as V)
+            valueSerializer.serialize(writer, entry.value)
         }
         writer.endObject()
     }
@@ -178,8 +176,7 @@ class MapSerializer<V>(
         writer.beginObject()
         for (entry in value.entries) {
             writer.name(entry.key)
-            @Suppress("UNCHECKED_CAST")
-            valueSerializer.serialize(writer, entry.value as V)
+            valueSerializer.serialize(writer, entry.value)
         }
         writer.endObject()
     }

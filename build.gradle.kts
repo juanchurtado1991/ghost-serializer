@@ -1,4 +1,5 @@
 import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply(from = "publish.gradle.kts")
@@ -16,6 +17,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.nexus.publish)
     alias(libs.plugins.dokka)
 }
@@ -27,8 +29,8 @@ allprojects {
 
 subprojects {
     tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions {
-            jvmTarget = "17"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 

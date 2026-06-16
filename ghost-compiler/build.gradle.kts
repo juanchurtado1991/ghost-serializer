@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -13,9 +14,9 @@ kotlin {
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
         freeCompilerArgs.addAll(
             "-opt-in=org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi",
-            "-Xskip-metadata-version-check",
         )
     }
 }
@@ -27,6 +28,7 @@ dependencies {
     implementation(libs.kotlinpoet.ksp)
 
     testImplementation(libs.kotlin.test)
+    testImplementation(project(":ghost-serialization"))
     testImplementation(libs.kotlin.compile.testing)
     testImplementation(libs.kotlin.compile.testing.ksp)
     testImplementation(libs.junit.jupiter.api)

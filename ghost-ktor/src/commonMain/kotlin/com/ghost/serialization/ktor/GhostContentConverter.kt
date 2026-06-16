@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
@@ -23,6 +21,7 @@ class GhostContentConverter(
     private val configurer: ((GhostJsonFlatReader) -> Unit)? = null
 ) : ContentConverter {
 
+    @Suppress("UNCHECKED_CAST")
     override suspend fun serializeNullable(
         contentType: ContentType,
         charset: Charset,
@@ -42,6 +41,7 @@ class GhostContentConverter(
         return ByteArrayContent(bytes, contentType)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override suspend fun deserialize(
         charset: Charset,
         typeInfo: TypeInfo,
