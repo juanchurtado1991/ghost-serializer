@@ -23,7 +23,7 @@ Ghost is a Kotlin JSON library that generates all serialization code at **compil
 - Ships a **dedicated native reader per input format**: `ByteArray`, Okio stream, or `String` — each parsed without cross-format conversion overhead.
 - Maintains a **zero-alloc hot path** via thread-local reader and writer pools — no GC pressure in steady state.
 
-The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization by **+31.5% on String decoding** (allocating **3.3× less heap**) and by **+91.7% on Bytes decoding** (allocating **6.4× less heap**). On streaming decode it leads by **+65.9%** with **28.3% less memory**.
+The result: on a real Twitter-like payload, Ghost beats KotlinX Serialization by **+32.1% on String decoding** (allocating **3.3× less heap**) and by **+71.4% on Bytes decoding** (allocating **6.4× less heap**). On streaming decode it leads by **+63.2%** with **30.7% less memory**.
 
 This README is honest: we explain what Ghost excels at, how it achieves its performance, and the scenarios where another library might be a better fit.
 
@@ -89,18 +89,18 @@ Results on the [twitter_macro.json](ghost-benchmark/src/main/resources/twitter_m
 
 | Operation | Engine |      Throughput (ops/s)      |         Mem (KB/op)         |
 | :--- | :---: |:----------------------------:|:---------------------------:|
-| **Decode (String)** | **Ghost** | **1304.7** *(+31.5% faster)* | **406.8** *(-69.6% memory)* |
-| | KSER |             992.2            |           1337.6            |
-| **Decode (Bytes)** | **Ghost** | **1210.5** *(+91.7% faster)* | **671.7** *(-84.4% memory)* |
-| | KSER |             631.4            |           4297.0            |
-| **Decode (Streaming)** | **Ghost** | **500.6** *(+65.9% faster)*  | **1365.2** *(-28.3% memory)*|
-| | KSER |             301.7            |           1904.8            |
-| **Encode (String)** | **Ghost** | **3810.1** *(+23.9% faster)* |           1074.3            |
-| | KSER |            3074.5            |         **981.6**           |
-| **Encode (Bytes)** | **Ghost** | **2381.8** *(+39.6% faster)* | **420.2** *(-81.0% memory)* |
-| | KSER |            1706.3            |           2216.3            |
-| **Encode (Streaming)** | **Ghost** | **2364.1** *(+67.3% faster)* | **426.9** *(-8.1% memory)*  |
-| | KSER |            1413.1            |            464.5            |
+| **Decode (String)** | **Ghost** | **1412.6** *(+32.1% faster)* | **406.8** *(-69.6% memory)* |
+| | KSER |            1069.6            |           1337.6            |
+| **Decode (Bytes)** | **Ghost** | **1120.0** *(+71.4% faster)* | **671.7** *(-84.4% memory)* |
+| | KSER |            653.5             |           4297.0            |
+| **Decode (Streaming)** | **Ghost** | **501.7** *(+63.2% faster)*  | **1320.1** *(-30.7% memory)*|
+| | KSER |            307.4             |           1904.8            |
+| **Encode (String)** | **Ghost** | **4148.8** *(+34.4% faster)* |           1074.3            |
+| | KSER |            3087.3            |         **981.6**           |
+| **Encode (Bytes)** | **Ghost** | **2303.3** *(+91.1% faster)* | **420.2** *(-81.0% memory)* |
+| | KSER |            1205.1            |           2216.3            |
+| **Encode (Streaming)** | **Ghost** | **2290.2** *(+56.1% faster)* | **426.9** *(-8.1% memory)*  |
+| | KSER |            1466.9            |            464.5            |
 
 ### Deserialization — 200 objects (LIST_MEDIUM)
 

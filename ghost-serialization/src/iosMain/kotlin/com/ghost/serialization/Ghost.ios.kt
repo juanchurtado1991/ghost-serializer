@@ -15,12 +15,6 @@ import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
 import kotlin.native.concurrent.ThreadLocal
 
-@PublishedApi
-internal class WriterStringPair {
-    val charWriter = FlatCharArrayWriter()
-    val writer = GhostJsonStringWriter(charWriter)
-}
-
 @ThreadLocal
 private var cachedReader: GhostJsonReader? = null
 
@@ -36,11 +30,15 @@ private var cachedSourceReader: GhostJsonReader? = null
 @ThreadLocal
 @PublishedApi
 internal var cachedWriterPair: WriterSinkPair? = null
+@PublishedApi
+internal class WriterStringPair {
+    val charWriter = FlatCharArrayWriter()
+    val writer = GhostJsonStringWriter(charWriter)
+}
 
 @ThreadLocal
 @PublishedApi
 internal var cachedStringWriterPair: WriterStringPair? = null
-
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
 /**

@@ -552,9 +552,10 @@ class GhostJsonWriter(
         if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
             var allPlain = true
             var index = 0
+            val escapeMasks = ESCAPE_MASKS
             while (index < length) {
                 val code = value[index].code
-                if (code !in SPACE_INT..<ASCII_LIMIT || code == QUOTE_INT || code == BACKSLASH_INT) {
+                if (code >= ASCII_LIMIT || ((escapeMasks[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT) != 0L) {
                     allPlain = false
                     break
                 }

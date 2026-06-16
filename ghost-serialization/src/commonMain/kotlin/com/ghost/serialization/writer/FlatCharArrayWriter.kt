@@ -27,7 +27,7 @@ import okio.ByteString
  * to allow direct JIT/AOT inlining.
  */
 @InternalGhostApi
-class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE / 8) {
+class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
 
     var array: CharArray = CharArray(initialCapacity)
         private set
