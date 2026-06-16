@@ -26,12 +26,12 @@ subprojects {
         val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
             archiveClassifier.set("javadoc")
 
-            val dokkaTask = tasks.named("dokkaHtml")
+            val dokkaTask = tasks.named("dokkaGenerate")
             dependsOn(dokkaTask)
             from(dokkaTask.map { it.outputs.files })
         }
 
-        tasks.matching { it.name == "dokkaHtml" }.configureEach {
+        tasks.matching { it.name == "dokkaGenerate" }.configureEach {
             dependsOn(tasks.matching { it.name.startsWith("ksp") })
         }
 

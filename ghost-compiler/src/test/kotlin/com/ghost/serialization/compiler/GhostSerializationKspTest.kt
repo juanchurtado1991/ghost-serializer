@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.compiler
 
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
@@ -33,7 +34,7 @@ class GhostSerializationKspTest {
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
             kspOutput.any { "UserSerializer.kt" in it },
-            "Expected UserSerializer.kt in ksp output: $kspOutput"
+            "Expected UserSerializer.kt in kspSourcesDir walk. Compiler Output:\n${result.messages}\nFiles:\n$kspOutput"
         )
     }
 
@@ -103,14 +104,14 @@ class GhostSerializationKspTest {
         )
     }
 
-    private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, KotlinCompilation.Result> {
+    private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
-            symbolProcessorProviders = listOf(GhostSerializationProvider())
-            // KSP-only: generated serializers depend on ghost-serialization runtime (integration-test covers full compile).
-            kspWithCompilation = false
+            symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
+            kspWithCompilation = true
+            languageVersion = "1.9"
+            apiVersion = "1.9"
         }
         return compilation to compilation.compile()
     }

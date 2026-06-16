@@ -1,16 +1,16 @@
 [versions]
 # Core Ecosystem
-kotlin-sdk                      = "1.9.24"
+kotlin-sdk                      = "2.1.10"
 #noinspection AndroidGradlePluginVersion
 agp                             = "8.4.2"
-ksp                             = "1.9.24-1.0.20"
-compose-plugin                  = "1.6.11"
+ksp                             = "2.1.10-1.0.31"
+compose-plugin                  = "1.8.2"
 publish-version                 = "1.2.2"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization
 ktor                            = "2.3.11"
-kotlinx-serialization           = "1.6.3"
+kotlinx-serialization           = "1.8.1"
 okio                            = "3.9.0"
 okhttp                          = "4.12.0"
 mockwebserver                   = "4.12.0"
@@ -18,23 +18,22 @@ retrofit                        = "2.11.0"
 
 # Serialization Engines (Benchmark)
 gson                            = "2.14.0"
-moshi                           = "1.14.0"
-jackson                         = "2.15.2"
+moshi                           = "1.15.2"
+jackson                         = "2.18.8"
 
 # Tooling & Generation
-kotlinpoet                      = "1.16.0"
-dokka                           = "1.9.20"
+kotlinpoet                      = "2.1.0"
+dokka                           = "2.2.0"
 nexus-publish                   = "2.0.0"
 
 # UI & Sample App
-coil                            = "3.0.0-alpha06"
-androidx-activity               = "1.9.1"
+coil                            = "3.4.0"
+androidx-activity               = "1.10.0"
 androidx-metrics                = "1.0.0-alpha04"
-androidx-lifecycle              = "2.8.2"
+androidx-lifecycle              = "2.8.7"
 
 # Testing
-kotlin-compile-testing          = "1.6.0"
-kotlin-compile-testing-ksp      = "1.6.0"
+kotlin-compile-testing          = "0.7.0"
 junit-jupiter                   = "5.10.2"
 kotlinx-coroutines-test         = "1.8.1"
 spring-boot                     = "3.4.5"
@@ -82,8 +81,8 @@ coil-compose                            = { group = "io.coil-kt.coil3", name = "
 coil-network-ktor                       = { group = "io.coil-kt.coil3", name = "coil-network-ktor", version.ref = "coil" }
 
 # Testing
-kotlin-compile-testing          = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing", version.ref = "kotlin-compile-testing" }
-kotlin-compile-testing-ksp      = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing-ksp", version.ref = "kotlin-compile-testing-ksp" }
+kotlin-compile-testing          = { group = "dev.zacsweers.kctfork", name = "core", version.ref = "kotlin-compile-testing" }
+kotlin-compile-testing-ksp      = { group = "dev.zacsweers.kctfork", name = "ksp", version.ref = "kotlin-compile-testing" }
 junit-jupiter-api               = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-engine                    = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 kotlinx-coroutines-core         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-test" }
@@ -102,6 +101,7 @@ kotlin-multiplatform            = { id = "org.jetbrains.kotlin.multiplatform", v
 kotlin-android                  = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin-sdk" }
 kotlin-jvm                      = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-sdk" }
 kotlin-serialization            = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-sdk" }
+kotlin-compose                  = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin-sdk" }
 android-application             = { id = "com.android.application", version.ref = "agp" }
 android-library                 = { id = "com.android.library", version.ref = "agp" }
 jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }

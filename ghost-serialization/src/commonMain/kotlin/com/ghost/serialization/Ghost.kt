@@ -739,7 +739,7 @@ object Ghost {
      * @param clazz The KClass of the target type to serialize.
      */
     @OptIn(InternalGhostApi::class)
-    @Suppress("UNCHECKED_CAST", "unused")
+    @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
         val serializer = getSerializer(clazz)
             ?: throwError("$NOT_FOUND ${clazz.simpleName}. $MISSING_ANN")
