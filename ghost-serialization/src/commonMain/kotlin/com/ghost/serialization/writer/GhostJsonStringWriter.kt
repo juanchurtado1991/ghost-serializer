@@ -69,6 +69,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.ESC_F_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_N_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_R_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_T_INT
+import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
 import okio.ByteString
 
 @Suppress("SameParameterValue", "NOTHING_TO_INLINE")
@@ -530,14 +531,26 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             return
         }
 
-        val localSpaceInt = SPACE_INT
         val localAsciiLimit = ASCII_LIMIT
-        val localQuoteInt = QUOTE_INT
-        val localBackslashInt = BACKSLASH_INT
+        val localEscapeMasks = ESCAPE_MASKS
+        val localShift = BITMASK_SHIFT
+        val localIndexMask = BITMASK_INDEX_MASK
+        val localUnit = BITMASK_UNIT
+        val resultNone = RESULT_NONE
+
         var index = 0
         while (index < length) {
             val code = value[index].code
-            if (!isPlainAscii(code, localSpaceInt, localAsciiLimit, localQuoteInt, localBackslashInt)) {
+            if (!isPlainAscii(
+                    code,
+                    localAsciiLimit,
+                    localEscapeMasks,
+                    localShift,
+                    localIndexMask,
+                    localUnit,
+                    resultNone
+                )
+            ) {
                 writeStringValueRawSlow(value, length, index)
                 return
             }
@@ -583,10 +596,12 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         }
 
         val scratchSize = scratchBuf.size
-        val localSpaceInt = SPACE_INT
         val localAsciiLimit = ASCII_LIMIT
-        val localQuoteInt = QUOTE_INT
-        val localBackslashInt = BACKSLASH_INT
+        val localEscapeMasks = ESCAPE_MASKS
+        val localShift = BITMASK_SHIFT
+        val localIndexMask = BITMASK_INDEX_MASK
+        val localUnit = BITMASK_UNIT
+        val resultNone = RESULT_NONE
 
         if (remaining <= scratchSize) {
             var scratchIndex = 0
@@ -594,7 +609,16 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             while (charIndex < length) {
                 val charCode = text[charIndex].code
 
-                if (isPlainAscii(charCode, localSpaceInt, localAsciiLimit, localQuoteInt, localBackslashInt)) {
+                if (isPlainAscii(
+                        charCode,
+                        localAsciiLimit,
+                        localEscapeMasks,
+                        localShift,
+                        localIndexMask,
+                        localUnit,
+                        resultNone
+                    )
+                ) {
                     scratchBuf[scratchIndex++] = charCode.toChar()
                     charIndex++
                     continue
@@ -629,7 +653,16 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         while (charIndex < length) {
             val charCode = text[charIndex].code
 
-            if (isPlainAscii(charCode, localSpaceInt, localAsciiLimit, localQuoteInt, localBackslashInt)) {
+            if (isPlainAscii(
+                    charCode,
+                    localAsciiLimit,
+                    localEscapeMasks,
+                    localShift,
+                    localIndexMask,
+                    localUnit,
+                    resultNone
+                )
+            ) {
                 scratchBuf[scratchIndex++] = charCode.toChar()
                 if (scratchIndex == scratchSize) {
                     buffer.write(scratchBuf, 0, scratchIndex)
@@ -665,15 +698,26 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: CharArray) {
         var scratchIndex = 1
         var charIndex = 0
-        val localSpaceInt = SPACE_INT
         val localAsciiLimit = ASCII_LIMIT
-        val localQuoteInt = QUOTE_INT
-        val localBackslashInt = BACKSLASH_INT
+        val localEscapeMasks = ESCAPE_MASKS
+        val localShift = BITMASK_SHIFT
+        val localIndexMask = BITMASK_INDEX_MASK
+        val localUnit = BITMASK_UNIT
+        val resultNone = RESULT_NONE
 
         while (charIndex < length) {
             val charCode = text[charIndex].code
 
-            if (isPlainAscii(charCode, localSpaceInt, localAsciiLimit, localQuoteInt, localBackslashInt)) {
+            if (isPlainAscii(
+                    charCode,
+                    localAsciiLimit,
+                    localEscapeMasks,
+                    localShift,
+                    localIndexMask,
+                    localUnit,
+                    resultNone
+                )
+            ) {
                 scratchBuf[scratchIndex++] = charCode.toChar()
                 charIndex++
                 continue
@@ -724,16 +768,17 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
 
         buffer.write(scratchBuf, 0, 6)
     }
-    
+
     private inline fun isPlainAscii(
         charCode: Int,
-        spaceInt: Int,
         asciiLimit: Int,
-        quoteInt: Int,
-        backslashInt: Int
+        escapeMasks: LongArray,
+        shift: Int,
+        indexMask: Int,
+        unit: Long,
+        resultNone: Long
     ): Boolean {
-        return charCode in spaceInt..<asciiLimit &&
-                charCode != quoteInt &&
-                charCode != backslashInt
+        return charCode < asciiLimit &&
+                ((escapeMasks[charCode shr shift] shr (charCode and indexMask)) and unit) == resultNone
     }
 }

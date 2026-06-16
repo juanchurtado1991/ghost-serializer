@@ -27,7 +27,6 @@ internal class WriterStringPair {
     val charWriter = FlatCharArrayWriter()
     val writer = GhostJsonStringWriter(charWriter)
 }
-
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = block()
