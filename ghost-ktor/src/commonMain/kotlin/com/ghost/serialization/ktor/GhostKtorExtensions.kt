@@ -1,5 +1,6 @@
 package com.ghost.serialization.ktor
 
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import io.ktor.http.ContentType
 import io.ktor.serialization.Configuration
 
@@ -8,7 +9,7 @@ import io.ktor.serialization.Configuration
  */
 fun Configuration.ghost(
     contentType: ContentType = ContentType.Application.Json,
-    configurer: ((com.ghost.serialization.parser.GhostJsonFlatReader) -> Unit)? = null
+    configurer: ((GhostJsonFlatReader) -> Unit)? = null
 ) {
     register(contentType, GhostContentConverter(configurer))
 }
