@@ -1,4 +1,6 @@
-# 🍎 Usage — iOS (Native / Swift)
+# Usage — iOS (Native / Swift)
+
+[![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](usage-ios.md)
 
 Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Because Kotlin/Native does not support `ServiceLoader`, manual registry registration is required once at startup.
 

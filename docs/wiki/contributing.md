@@ -1,4 +1,6 @@
-# 🤝 Contributing to Ghost Serializer
+# Contributing to Ghost Serializer
+
+[![Community](https://img.shields.io/badge/Community-blue.png?style=flat&logo=git&logoColor=white)](contributing.md)
 
 Thank you for helping improve Ghost!
 

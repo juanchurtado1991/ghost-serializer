@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 @PublishedApi
 internal const val ERROR_PREFIX = "Ghost serializer not found for class "
 @PublishedApi
-internal const val ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerializable."
+internal const val ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
 
 /**
  * Serializes the [value] directly using Ghost Serializer and responds,

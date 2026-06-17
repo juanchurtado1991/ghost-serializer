@@ -5,10 +5,12 @@
 > ⚡ Bitwise O(1) field matching · Native reader per input format · Up to 6–32× less heap · Zero reflection
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
-[![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat)](https://github.com/google/ksp)
-![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.png?style=flat)
-![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20KMP%20%7C%20iOS%20%7C%20Spring%20Boot-blue.png?style=flat)
-![Tests](https://img.shields.io/badge/tests-667%2B%20passing-success.png?style=flat)
+[![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
+[![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
+[![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
+[![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -16,7 +18,7 @@
 
 ---
 
-## ✨ What makes Ghost different
+## What makes Ghost different
 
 Ghost generates all serialization code at **compile time** via KSP — and then goes several steps further:
 
@@ -35,19 +37,20 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 | Decode (String) | **+31.0% faster** | **−69.6% heap** |
 | Decode (Bytes) | **+72.2% faster** | **−84.4% heap** |
 | Decode (Streaming) | **+68.7% faster** | **−30.7% heap** |
+| Encode (String) | **+48.8% faster** | +10.5% heap |
 | Encode (Bytes) | **+91.6% faster** | **−81.0% heap** |
 
 ---
 
-## 🎬 Demo
+## Demo
 
-https://github.com/user-attachments/assets/ghost.mp4
+▶️ **[Watch the Demo Video (docs/ghost.mp4) →](docs/ghost.mp4)**
 
-> Real benchmark on Android vs Gson, Moshi, KotlinX Serialization, and Jackson — running in the `ghost-sample` Compose Multiplatform app.
+> Real benchmark on Android vs KotlinX Serialization — running in the `ghost-sample` Compose Multiplatform app.
 
 ---
 
-## 📊 Full Benchmark Results
+## Full Benchmark Results
 
 → **[benchmarks.md](docs/wiki/benchmarks.md)** — Twitter macro dataset, multi-engine comparison tables, stress tests, special feature benchmarks, and instructions to run locally.
 
@@ -87,20 +90,21 @@ val json: String = Ghost.encodeToString(user)
 
 ## 📚 Documentation
 
-| Guide | Description |
-|:---|:---|
-| [⚙️ Installation](docs/wiki/installation.md) | Version catalog, repositories, KSP setup, `ghost.textChannel` opt-in |
-| [🤖 Usage — Android](docs/wiki/usage-android.md) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
-| [🌐 Usage — KMP](docs/wiki/usage-kmp.md) | Shared module, Ktor, Sealed classes, Structural Transformations |
-| [🍎 Usage — iOS / Swift](docs/wiki/usage-ios.md) | XCFramework export, Bridge setup, Alamofire integration |
-| [🌿 Usage — Spring Boot](docs/wiki/usage-spring-boot.md) | Auto-config, MVC + WebFlux, `@GhostStrict`, `@GhostCoerce` |
-| [🧠 Advanced Features](docs/wiki/advanced-features.md) | Byte-first, `@GhostFlatten`, `@GhostWrap`, Contextual Serializers, Platform limits |
-| [📊 Benchmarks](docs/wiki/benchmarks.md) | Full results, run instructions, JIT log analysis |
-| [🤝 Contributing](docs/wiki/contributing.md) | Dev environment, test modules, PR checklist, supported platforms |
+| Guide                                                 | Platform / Category | Description |
+|:------------------------------------------------------|:---:|:---|
+| [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, repositories, KSP setup, `ghost.textChannel` opt-in |
+| [Usage — Android](docs/wiki/usage-android.md)         | ![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat-square&logo=android&logoColor=white) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
+| [Usage — KMP](docs/wiki/usage-kmp.md)                 | ![Kotlin](https://img.shields.io/badge/KMP-7F52FF.png?style=flat-square&logo=kotlin&logoColor=white) | Shared module, Ktor, Sealed classes, Structural Transformations |
+| [Usage — iOS / Swift](docs/wiki/usage-ios.md)         | ![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat-square&logo=apple&logoColor=white) | XCFramework export, Bridge setup, Alamofire integration |
+| [Usage — Spring Boot](docs/wiki/usage-spring-boot.md) | ![Spring](https://img.shields.io/badge/Spring-6DB33F.png?style=flat-square&logo=spring&logoColor=white) | Auto-config, MVC + WebFlux, `@GhostStrict`, `@GhostCoerce` |
+| [Advanced Features](docs/wiki/advanced-features.md)   | ![Core](https://img.shields.io/badge/Core-gray.png?style=flat-square&logo=cpu-z&logoColor=white) | Byte-first, `@GhostFlatten`, `@GhostWrap`, Contextual Serializers, Platform limits |
+| [Architecture](docs/wiki/architecture.md)             | ![Design](https://img.shields.io/badge/Design-blueviolet.png?style=flat-square&logo=diagrams.net&logoColor=white) | Compiler pipeline, buffer pool mechanics, O(1) bitwise field matching |
+| [Benchmarks](docs/wiki/benchmarks.md)                 | ![Speed](https://img.shields.io/badge/Speed-red.png?style=flat-square&logo=speedtest&logoColor=white) | Full results, run instructions, JIT log analysis |
+| [Contributing](docs/wiki/contributing.md)           | ![Community](https://img.shields.io/badge/Community-blue.png?style=flat-square&logo=git&logoColor=white) | Dev environment, test modules, PR checklist, supported platforms |
 
 ---
 
-## 🚀 Related Projects
+## Related Projects
 
 | Project | Description |
 |:---|:---|
@@ -128,6 +132,8 @@ Ghost.encodeToString(user)        → FlatCharArrayWriter (pooled, platform-tune
 ```
 
 All paths are fully monomorphic — the JIT compiles them to near-native throughput after warmup.
+
+For a deep dive into the compiler plugin, thread-local buffer pool mechanics, and fast parsing architecture, see the **[Architecture Guide →](docs/wiki/architecture.md)**.
 
 ---
 

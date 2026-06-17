@@ -1,4 +1,6 @@
-# 🌿 Usage — Spring Boot
+# Usage — Spring Boot
+
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](usage-spring-boot.md)
 
 Ghost integrates with Spring Boot via the `ghost-spring-boot-starter`. It auto-configures both **Spring MVC** and **Spring WebFlux** to use Ghost as the JSON engine. No manual bean wiring is needed.
 

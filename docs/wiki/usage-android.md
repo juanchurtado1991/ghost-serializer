@@ -1,4 +1,6 @@
-# 🤖 Usage — Android
+# Usage — Android
+
+[![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](usage-android.md)
 
 This guide covers integrating Ghost Serializer in an Android project (app module or library module).
 
@@ -93,7 +95,7 @@ When deserializing from a `BufferedSource`, choose the mode based on payload siz
 
 ---
 
-## 5. Retrofit Integration {#retrofit}
+## 5. Retrofit Integration
 
 ```kotlin
 // build.gradle.kts

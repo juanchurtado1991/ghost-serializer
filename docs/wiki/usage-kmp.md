@@ -1,4 +1,6 @@
-# 🌐 Usage — Kotlin Multiplatform (KMP)
+# Usage — Kotlin Multiplatform (KMP)
+
+[![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](usage-kmp.md)
 
 This guide covers using Ghost in a shared KMP module targeting Android, iOS, and JVM simultaneously.
 
@@ -108,7 +110,8 @@ sealed class SmartEvent {
 
 ---
 
-## 4. Ktor Integration (`ghost-ktor`) {#ktor}
+<a name="ktor"></a>
+## 4. Ktor Integration (`ghost-ktor`) 
 
 `ghost-ktor` ships two integration modes: the standard **`ContentNegotiation` plugin** for transparent request/response handling, and **direct serialization extensions** (`respondGhost` / `bodyGhost`) that bypass the plugin pipeline entirely for maximum throughput.
 

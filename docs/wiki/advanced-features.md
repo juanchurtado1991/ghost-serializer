@@ -1,4 +1,6 @@
-# 🧠 Advanced Features
+# Advanced Features
+
+[![Core](https://img.shields.io/badge/Core-gray.png?style=flat&logo=cpu-z&logoColor=white)](advanced-features.md)
 
 This page documents Ghost's advanced capabilities that have no equivalent in Gson, Moshi, KotlinX Serialization, or Jackson.
 
