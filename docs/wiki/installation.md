@@ -1,4 +1,6 @@
-# ⚙️ Installation
+# Installation
+
+[![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat&logo=gradle&logoColor=white)](installation.md)
 
 Ghost is published to **Maven Central** under the `com.ghostserializer` group.
 

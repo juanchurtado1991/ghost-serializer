@@ -1,4 +1,6 @@
-# ⚡ Benchmark Results
+# Benchmark Results
+
+[![Speed](https://img.shields.io/badge/Speed-red.png?style=flat&logo=speedtest&logoColor=white)](benchmarks.md)
 
 > **Methodology**: Single JVM process. 20,000-iteration JIT warmup. 20,000 measured runs. Results are statistical averages ± standard deviation. Memory is measured via `ThreadMXBean.getThreadAllocatedBytes` (heap bytes allocated per call, not retained). Tested on JVM HotSpot with Kotlin 2.1.10 / KSP2.
 
@@ -19,7 +21,7 @@
 
 ---
 
-## 🐦 Twitter Macro Dataset
+## Twitter Macro Dataset
 
 Results on the [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter_macro.json) dataset — a real-world payload with deeply nested objects and long string fields.
 
@@ -42,7 +44,7 @@ Results on the [twitter_macro.json](../../ghost-benchmark/src/main/resources/twi
 
 ---
 
-## 📋 Deserialization — 200 objects (LIST_MEDIUM)
+## Deserialization — 200 objects (LIST_MEDIUM)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -54,7 +56,7 @@ Results on the [twitter_macro.json](../../ghost-benchmark/src/main/resources/twi
 
 ---
 
-## 📋 Deserialization — 2000 objects (SYNC_FULL_LARGE)
+## Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -66,7 +68,7 @@ Results on the [twitter_macro.json](../../ghost-benchmark/src/main/resources/twi
 
 ---
 
-## ✏️ Serialization — 1000 objects (WRITING)
+##  Serialization — 1000 objects (WRITING)
 
 | Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -78,7 +80,7 @@ Results on the [twitter_macro.json](../../ghost-benchmark/src/main/resources/twi
 
 ---
 
-## 💀 Stress Tests
+## Stress Tests
 
 | Test | Ghost | Gson | KSer | Moshi | Jackson |
 |:---|:---:|:---:|:---:|:---:|:---:|
