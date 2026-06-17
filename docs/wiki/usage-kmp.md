@@ -108,53 +108,147 @@ sealed class SmartEvent {
 
 ---
 
-## 4. Ktor Integration {#ktor}
+## 4. Ktor Integration (`ghost-ktor`) {#ktor}
 
-Ghost ships a first-class Ktor plugin. Uses **Ktor 2.3.x** (`io.ktor:ktor-client-*:2.3.11`).
+`ghost-ktor` ships two integration modes: the standard **`ContentNegotiation` plugin** for transparent request/response handling, and **direct serialization extensions** (`respondGhost` / `bodyGhost`) that bypass the plugin pipeline entirely for maximum throughput.
+
+Tested against **Ktor 2.3.x** (`io.ktor:ktor-client-*:2.3.11`).
+
+### Dependency
 
 ```kotlin
-// commonMain
+// commonMain dependencies (shared module) or app module
 dependencies {
     implementation(libs.ghost.ktor)
 }
 ```
 
+```toml
+# gradle/libs.versions.toml
+[libraries]
+ghost-ktor = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" }
+```
+
+---
+
+### Mode A — `ContentNegotiation` Plugin (standard)
+
+Registers Ghost as the JSON engine globally. All `body<T>()` calls and response serialization go through Ghost automatically.
+
 ```kotlin
-val client = HttpClient {
+import com.ghost.serialization.ktor.ghost
+
+val client = HttpClient(OkHttp) {
     install(ContentNegotiation) {
-        ghost() // Registers Ghost as the JSON engine (default: lenient)
+        ghost() // lenient mode (default) — maximum parse speed
     }
 }
 
-// With strict mode + coercion
-val strictClient = HttpClient {
+// Deserialize response body
+val products: List<Product> = client.get("https://api.example.com/products").body()
+
+// Serialize request body
+client.post("https://api.example.com/orders") {
+    contentType(ContentType.Application.Json)
+    setBody(order)
+}
+```
+
+#### Configurer Lambda (per-client tuning)
+
+Pass a lambda to customize the `GhostJsonFlatReader` for every request on this client:
+
+```kotlin
+val strictClient = HttpClient(OkHttp) {
     install(ContentNegotiation) {
         ghost { reader ->
-            reader.strictMode = true
-            reader.coerceStringsToNumbers = true
-            reader.coerceBooleans = true
+            reader.strictMode = true              // RFC 8259 validation + reject unknown fields
+            reader.coerceStringsToNumbers = true   // parse "42" as Int/Long
+            reader.coerceBooleans = true           // parse 0/1 as Boolean
         }
     }
 }
-
-// Use normally — Ghost handles bytes ↔ object transparently
-val products: List<Product> = client.get("https://api.example.com/products").body()
 ```
 
-### High-Performance Direct Serialization (bypass ContentNegotiation)
+> [!NOTE]
+> The configurer runs on every deserialization call for this client instance. Use separate `HttpClient` instances if you need different modes per endpoint.
 
-For maximum throughput, use `respondGhost` (server) and `bodyGhost` (client) to bypass the generic ContentNegotiation pipeline:
+---
+
+### Mode B — Direct Serialization (max performance)
+
+Bypasses the `ContentNegotiation` pipeline entirely. Ghost serializes or deserializes directly to/from `ByteArray`, removing all Ktor plugin overhead from the hot path.
+
+#### Client — `HttpResponse.bodyGhost<T>()`
 
 ```kotlin
-// Ktor Server
-get("/users/{id}") {
-    val user = userService.findById(id)
-    call.respondGhost(user) // Direct serialization — max RPS
-}
+import com.ghost.serialization.ktor.bodyGhost
 
-// Ktor Client
+// No ContentNegotiation needed — Ghost reads raw bytes directly
 val user: User = client.get("https://api.example.com/users/1").bodyGhost()
+val users: List<User> = client.get("https://api.example.com/users").bodyGhost()
 ```
+
+Internally:
+```
+response.body<ByteArray>()                 // pulls raw bytes from Ktor
+  → Ghost.getSerializer(T::class)          // O(1) cached lookup, no reflection
+  → Ghost.deserialize(serializer, bytes)   // GhostJsonFlatReader — zero alloc hot path
+```
+
+#### Server — `ApplicationCall.respondGhost(value, status?)`
+
+```kotlin
+import com.ghost.serialization.ktor.respondGhost
+import io.ktor.http.HttpStatusCode
+
+routing {
+    get("/users/{id}") {
+        val user = userService.findById(call.parameters["id"]!!)
+        call.respondGhost(user)                              // 200 OK
+    }
+
+    post("/users") {
+        val created = userService.create(newUser)
+        call.respondGhost(created, HttpStatusCode.Created)   // 201 Created
+    }
+}
+```
+
+Internally:
+```
+Ghost.getSerializer(T::class)              // O(1) cached lookup
+  → Ghost.encodeToBytes(serializer, value) // GhostJsonFlatWriter — pre-encoded field headers
+  → respond(ByteArrayContent(bytes, ContentType.Application.Json, status))
+```
+
+---
+
+### Mode A vs Mode B — When to Use Which
+
+| | `ContentNegotiation` (Mode A) | Direct `bodyGhost` / `respondGhost` (Mode B) |
+|:---|:---|:---|
+| **Setup** | One-time plugin install | No plugin needed — call extension directly |
+| **Overhead** | Ktor plugin pipeline | None |
+| **Content-type negotiation** | ✅ Handled by Ktor | ❌ Always `application/json` |
+| **Configurer / `strictMode`** | ✅ Via lambda | ❌ Use `Ghost.deserialize { it.strictMode = true }` manually |
+| **Best for** | APIs with multiple content types, existing Ktor plugin setup | High-RPS endpoints where every µs matters |
+
+> [!TIP]
+> For a typical mobile app, **Mode A** is fine. For a Ktor server handling thousands of requests per second, use **Mode B** on hot endpoints.
+
+---
+
+### Error Handling
+
+Both modes throw `IllegalArgumentException` if no serializer is found:
+
+```
+Ghost serializer not found for class Foo.
+Make sure it is annotated with @GhostSerialization.
+```
+
+Ensure all response/request types are annotated with `@GhostSerialization`.
 
 ---
 
