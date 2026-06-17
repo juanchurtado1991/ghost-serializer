@@ -34,11 +34,11 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 | | Throughput | Memory |
 |:---|:---:|:---:|
-| Decode (String) | **+31.0% faster** | **−69.6% heap** |
-| Decode (Bytes) | **+72.2% faster** | **−84.4% heap** |
-| Decode (Streaming) | **+68.7% faster** | **−30.7% heap** |
-| Encode (String) | **+48.8% faster** | +10.5% heap |
-| Encode (Bytes) | **+91.6% faster** | **−81.0% heap** |
+| Decode (String) | **+26.7% faster** | **−69.6% heap** |
+| Decode (Bytes) | **+71.9% faster** | **−84.4% heap** |
+| Decode (Streaming) | **+78.8% faster** | **−30.7% heap** |
+| Encode (String) | **+39.5% faster** | +10.5% heap |
+| Encode (Bytes) | **+80.5% faster** | **−81.0% heap** |
 
 ---
 
