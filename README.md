@@ -39,6 +39,7 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 | Decode (Streaming) | **+78.8% faster** | **−30.7% heap** |
 | Encode (String) | **+39.5% faster** | +10.5% heap |
 | Encode (Bytes) | **+80.5% faster** | **−81.0% heap** |
+| Encode (Streaming) | **+49.0% faster** | **−6.2% heap** |
 
 ---
 
