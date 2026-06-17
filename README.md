@@ -45,7 +45,7 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 ## Demo
 
-<video src="docs/ghost.mp4" width="100%" controls></video>
+<video src="https://github.com/juanchurtado1991/ghost-serializer/raw/main/docs/ghost.mp4" width="100%" controls></video>
 
 > Real benchmark on Android vs KotlinX Serialization — running in the `ghost-sample` Compose Multiplatform app.
 
