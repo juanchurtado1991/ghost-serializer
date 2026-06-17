@@ -96,6 +96,7 @@ val json: String = Ghost.encodeToString(user)
 | [🌿 Usage — Spring Boot](docs/wiki/usage-spring-boot.md) | Auto-config, MVC + WebFlux, `@GhostStrict`, `@GhostCoerce` |
 | [🧠 Advanced Features](docs/wiki/advanced-features.md) | Byte-first, `@GhostFlatten`, `@GhostWrap`, Contextual Serializers, Platform limits |
 | [📊 Benchmarks](docs/wiki/benchmarks.md) | Full results, run instructions, JIT log analysis |
+| [🤝 Contributing](docs/wiki/contributing.md) | Dev environment, test modules, PR checklist, supported platforms |
 
 ---
 
@@ -144,7 +145,10 @@ git clone https://github.com/juanchurtado1991/GhostSerialization.git
 | Kotlin / KSP | **2.1.10** / **2.1.10-1.0.31** |
 | Android SDK | API 36 (for unit tests) |
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) and [CHANGELOG.md](./CHANGELOG.md) for details.
+→ **[Full contributing guide →](docs/wiki/contributing.md)** — dev environment, adding test modules, benchmarks, PR checklist.
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history.
+
 
 ---
 
