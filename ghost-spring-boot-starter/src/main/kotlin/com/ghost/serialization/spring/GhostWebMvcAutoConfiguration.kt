@@ -13,7 +13,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @Configuration(proxyBeanMethods = false)
 open class GhostWebMvcAutoConfiguration : WebMvcConfigurer {
-    override fun configureMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
+    override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
         converters.add(0, GhostHttpMessageConverter())
     }
 
