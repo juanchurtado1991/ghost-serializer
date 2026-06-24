@@ -1,9 +1,6 @@
 package com.ghost.serialization.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants.COLON_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.COMMA_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.RIGHT_BRACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.RIGHT_BRACKET_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
  * Subsystem for parsing YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]).
@@ -14,15 +11,19 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     position++ // consume '{'
     val result = LinkedHashMap<String, Any?>(8)
     skipWhitespaceAndComments()
-    if (position < limit && rawData[position] == RIGHT_BRACE_BYTE) {
+    
+    val localRawData = rawData
+    val localLimit = limit
+    
+    if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
         position++
         return result
     }
 
-    while (position < limit) {
+    while (position < localLimit) {
         skipWhitespaceAndComments()
-        if (position >= limit) break
-        if (rawData[position] == RIGHT_BRACE_BYTE) {
+        if (position >= localLimit) break
+        if (localRawData[position] == C.RIGHT_BRACE_BYTE) {
             position++
             break
         }
@@ -31,7 +32,7 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
         val key = readKey() ?: break
         skipWhitespaceAndComments()
 
-        if (position >= limit || rawData[position] != COLON_BYTE) {
+        if (position >= localLimit || localRawData[position] != C.COLON_BYTE) {
             yamlError("Expected ':' after flow mapping key '$key'")
         }
         position++ // consume ':'
@@ -42,9 +43,9 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
         result[key] = value
 
         skipWhitespaceAndComments()
-        if (position < limit && rawData[position] == COMMA_BYTE) {
+        if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
             position++ // consume ','
-        } else if (position < limit && rawData[position] == RIGHT_BRACE_BYTE) {
+        } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
             position++ // consume '}'
             break
         } else {
@@ -59,15 +60,19 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
     position++ // consume '['
     val result = mutableListOf<Any?>()
     skipWhitespaceAndComments()
-    if (position < limit && rawData[position] == RIGHT_BRACKET_BYTE) {
+    
+    val localRawData = rawData
+    val localLimit = limit
+    
+    if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
         position++
         return result
     }
 
-    while (position < limit) {
+    while (position < localLimit) {
         skipWhitespaceAndComments()
-        if (position >= limit) break
-        if (rawData[position] == RIGHT_BRACKET_BYTE) {
+        if (position >= localLimit) break
+        if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {
             position++
             break
         }
@@ -76,9 +81,9 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
         result.add(item)
 
         skipWhitespaceAndComments()
-        if (position < limit && rawData[position] == COMMA_BYTE) {
+        if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
             position++ // consume ','
-        } else if (position < limit && rawData[position] == RIGHT_BRACKET_BYTE) {
+        } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
             position++ // consume ']'
             break
         } else {
