@@ -58,10 +58,10 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     val limit: Int = rawData.size
 
     /** Current indentation column (0-based). Updated on every line. */
-    private var currentIndent: Int = 0
+    internal var currentIndent: Int = 0
 
     /** Depth counter — guards against stack overflow on extreme nesting. */
-    private var depth: Int = 0
+    internal var depth: Int = 0
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * @param indent The indentation level of the enclosing context (INDENT_UNSET for root).
      * @param inFlow Whether we are inside a flow collection `{...}` or `[...]`.
      */
-    private fun readValue(indent: Int, inFlow: Boolean): Any? {
+    internal fun readValue(indent: Int, inFlow: Boolean): Any? {
         skipInlineWhitespace()
         if (position >= limit) return null
 
@@ -137,7 +137,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      *
      * @param blockIndent The indentation of the first key in this mapping.
      */
-    private fun readBlockMapping(blockIndent: Int): Map<String, Any?> {
+    internal fun readBlockMapping(blockIndent: Int): Map<String, Any?> {
         if (depth >= MAX_DEPTH) yamlError("Maximum nesting depth ($MAX_DEPTH) exceeded")
         depth++
         val result = LinkedHashMap<String, Any?>(8)
@@ -210,7 +210,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      *
      * @param seqIndent Indentation of the '-' markers.
      */
-    private fun readBlockSequence(seqIndent: Int): List<Any?> {
+    internal fun readBlockSequence(seqIndent: Int): List<Any?> {
         if (depth >= MAX_DEPTH) yamlError("Maximum nesting depth ($MAX_DEPTH) exceeded")
         depth++
         val result = mutableListOf<Any?>()
@@ -319,7 +319,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * Reads a mapping key. Keys are plain scalars ending at ':'.
      * Quoted keys are supported.
      */
-    private fun readKey(): String? {
+    internal fun readKey(): String? {
         skipInlineWhitespace()
         if (position >= limit) return null
         return when (rawData[position]) {
@@ -381,7 +381,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     // ── Quoted strings ─────────────────────────────────────────────────────────
 
-    private fun readDoubleQuotedString(): String {
+    internal fun readDoubleQuotedString(): String {
         position++ // consume opening '"'
         val sb = StringBuilder()
         while (position < limit) {
@@ -408,7 +408,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
         yamlError("Unterminated double-quoted string")
     }
 
-    private fun readSingleQuotedString(): String {
+    internal fun readSingleQuotedString(): String {
         position++ // consume opening '\''
         val sb = StringBuilder()
         while (position < limit) {
@@ -487,242 +487,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     // ── Group B-G hooks (stubs) ────────────────────────────────────────────────
 
-    /** Group B — Block scalar (| and >). Stub: throws until implemented. */
-    private fun readBlockScalar(indicator: Byte): String {
-        // Skip the indicator and any chomp/indent modifiers on the same line
-        position++ // consume '|' or '>'
-        val isFolded = indicator == GT_BYTE
 
-        // Read optional chomp indicator and indentation indicator
-        var chomp = ChompStyle.CLIP
-        var explicitIndent = -1
-
-        while (position < limit) {
-            val b = rawData[position]
-            when {
-                b == PLUS_BYTE  -> { chomp = ChompStyle.KEEP; position++ }
-                b == DASH_BYTE  -> { chomp = ChompStyle.STRIP; position++ }
-                isDigit(b)      -> { explicitIndent = (b - ZERO_BYTE).toInt(); position++ }
-                b == SPACE_BYTE || b == TAB_BYTE -> position++
-                b == HASH_BYTE  -> { skipToEndOfLine(); break }
-                else            -> break
-            }
-        }
-        // Skip to next line
-        skipToEndOfLine()
-        if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-        else if (position < limit && rawData[position] == CR_BYTE) {
-            position++
-            if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-        }
-
-        // Determine block indentation from first non-empty line
-        val blockIndent = if (explicitIndent >= 0) {
-            explicitIndent
-        } else {
-            detectBlockScalarIndent(currentIndent)
-        }
-
-        return readBlockScalarContent(blockIndent, isFolded, chomp)
-    }
-
-    private fun detectBlockScalarIndent(parentIndent: Int): Int {
-        var scanPos = position
-        while (scanPos < limit) {
-            val b = rawData[scanPos]
-            if (b == NEWLINE_BYTE || b == CR_BYTE) {
-                scanPos++
-                continue
-            }
-            // Count leading spaces
-            var spaces = 0
-            var p = scanPos
-            while (p < limit && rawData[p] == SPACE_BYTE) { spaces++; p++ }
-            if (p < limit && rawData[p] != NEWLINE_BYTE && rawData[p] != CR_BYTE) {
-                if (spaces <= parentIndent) {
-                    return parentIndent + 2
-                }
-                return spaces
-            }
-            scanPos = p
-        }
-        return parentIndent + 2
-    }
-
-    private fun readBlockScalarContent(blockIndent: Int, isFolded: Boolean, chomp: ChompStyle): String {
-        val sb = StringBuilder()
-        var trailingNewlines = 0
-        var isFirstLine = true
-        var lastLineWasIndented = false
-
-        while (position < limit) {
-            // Count indentation
-            var spaces = 0
-            val lineStart = position
-            while (position < limit && rawData[position] == SPACE_BYTE) { spaces++; position++ }
-
-            if (position >= limit || rawData[position] == NEWLINE_BYTE || rawData[position] == CR_BYTE) {
-                // Empty line
-                trailingNewlines++
-                skipToEndOfLine()
-                if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-                else if (position < limit && rawData[position] == CR_BYTE) {
-                    position++
-                    if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-                }
-                continue
-            }
-
-            if (spaces < blockIndent) {
-                // De-indented content — end of block scalar
-                position = lineStart
-                break
-            }
-
-            // We have skipped spaces when counting them. Position is currently at lineStart + spaces.
-            val effectiveSpaces = spaces - blockIndent
-            val isIndented = effectiveSpaces > 0
-
-            // If we have accumulated trailing newlines, append them
-            if (trailingNewlines > 0) {
-                if (!isFirstLine) {
-                    if (trailingNewlines == 1) {
-                        if (isFolded && !isIndented && !lastLineWasIndented) {
-                            sb.append(' ')
-                        } else {
-                            sb.append('\n')
-                        }
-                    } else {
-                        val toAppend = if (isFolded) trailingNewlines - 1 else trailingNewlines
-                        repeat(toAppend) { sb.append('\n') }
-                    }
-                }
-                trailingNewlines = 0
-            }
-            isFirstLine = false
-            lastLineWasIndented = isIndented
-
-            // Append remaining spaces (effectiveSpaces)
-            repeat(effectiveSpaces) { sb.append(' ') }
-
-            // Append line content
-            val contentStart = position
-            while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
-                position++
-            }
-            sb.append(rawData.decodeToString(contentStart, position))
-
-            // Consume the newline
-            skipToEndOfLine()
-            if (position < limit && rawData[position] == NEWLINE_BYTE) {
-                position++
-            } else if (position < limit && rawData[position] == CR_BYTE) {
-                position++
-                if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-            }
-            trailingNewlines = 1 // Count the newline ending this content line
-        }
-
-        // Apply chomping style on the final string
-        val content = sb.toString()
-        return when (chomp) {
-            ChompStyle.STRIP -> {
-                // Strip all trailing newlines
-                var end = content.length
-                while (end > 0 && content[end - 1] == '\n') end--
-                content.substring(0, end)
-            }
-            ChompStyle.CLIP  -> {
-                // Keep exactly one newline if content is not empty
-                var end = content.length
-                while (end > 0 && content[end - 1] == '\n') end--
-                if (end > 0) content.substring(0, end) + "\n" else ""
-            }
-            ChompStyle.KEEP  -> {
-                val trailing = if (trailingNewlines > 0) "\n".repeat(trailingNewlines) else ""
-                content + trailing
-            }
-        }
-    }
-
-    /** Group C — Flow mapping. */
-    private fun readFlowMapping(): Map<String, Any?> {
-        position++ // consume '{'
-        val result = LinkedHashMap<String, Any?>(8)
-        skipWhitespaceAndComments()
-        if (position < limit && rawData[position] == RIGHT_BRACE_BYTE) {
-            position++
-            return result
-        }
-
-        while (position < limit) {
-            skipWhitespaceAndComments()
-            if (position >= limit) break
-            if (rawData[position] == RIGHT_BRACE_BYTE) {
-                position++
-                break
-            }
-
-            // Read key
-            val key = readKey() ?: break
-            skipWhitespaceAndComments()
-
-            if (position >= limit || rawData[position] != COLON_BYTE) {
-                yamlError("Expected ':' after flow mapping key '$key'")
-            }
-            position++ // consume ':'
-            skipWhitespaceAndComments()
-
-            // Read value
-            val value = readValue(indent = 0, inFlow = true)
-            result[key] = value
-
-            skipWhitespaceAndComments()
-            if (position < limit && rawData[position] == COMMA_BYTE) {
-                position++ // consume ','
-            } else if (position < limit && rawData[position] == RIGHT_BRACE_BYTE) {
-                position++ // consume '}'
-                break
-            } else {
-                yamlError("Expected ',' or '}' in flow mapping")
-            }
-        }
-        return result
-    }
-
-    /** Group C — Flow sequence. */
-    private fun readFlowSequence(): List<Any?> {
-        position++ // consume '['
-        val result = mutableListOf<Any?>()
-        skipWhitespaceAndComments()
-        if (position < limit && rawData[position] == RIGHT_BRACKET_BYTE) {
-            position++
-            return result
-        }
-
-        while (position < limit) {
-            skipWhitespaceAndComments()
-            if (position >= limit) break
-            if (rawData[position] == RIGHT_BRACKET_BYTE) {
-                position++
-                break
-            }
-
-            val item = readValue(indent = 0, inFlow = true)
-            result.add(item)
-
-            skipWhitespaceAndComments()
-            if (position < limit && rawData[position] == COMMA_BYTE) {
-                position++ // consume ','
-            } else if (position < limit && rawData[position] == RIGHT_BRACKET_BYTE) {
-                position++ // consume ']'
-                break
-            } else {
-                yamlError("Expected ',' or ']' in flow sequence")
-            }
-        }
-        return result
-    }
 
     /** Group D/F — Tagged value (!<Type>, !!str, etc.). Stub until implemented. */
     private fun readTaggedValue(indent: Int): Any? {
@@ -742,7 +507,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     // ── Whitespace & positioning helpers ──────────────────────────────────────
 
     /** Skips spaces and tabs (inline whitespace — NOT newlines). */
-    private fun skipInlineWhitespace() {
+    internal fun skipInlineWhitespace() {
         while (position < limit) {
             val b = rawData[position]
             if (b != SPACE_BYTE && b != TAB_BYTE) break
@@ -754,7 +519,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * Skips all whitespace (including newlines) and full-line comments.
      * Updates [currentIndent] to the column of the next non-whitespace byte.
      */
-    private fun skipWhitespaceAndComments() {
+    internal fun skipWhitespaceAndComments() {
         while (position < limit) {
             skipInlineWhitespace()
             if (position >= limit) break
@@ -795,14 +560,14 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     }
 
     /** Advances [position] to the next newline (exclusive). */
-    private fun skipToEndOfLine() {
+    internal fun skipToEndOfLine() {
         while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
             position++
         }
     }
 
     /** Advances past the current newline character(s). */
-    private fun advanceLine() {
+    internal fun advanceLine() {
         while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
             position++
         }
@@ -850,7 +615,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     }
 
     /** Returns true if current position is at a `---` marker at column 0. */
-    private fun isDocumentMarker(): Boolean {
+    internal fun isDocumentMarker(): Boolean {
         if (position + 2 >= limit) return false
         return rawData[position] == DASH_BYTE &&
             rawData[position + 1] == DASH_BYTE &&
@@ -863,7 +628,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     }
 
     /** Returns true if current position is at the start of a block sequence entry `- `. */
-    private fun isBlockSequenceEntry(): Boolean {
+    internal fun isBlockSequenceEntry(): Boolean {
         if (position >= limit || rawData[position] != DASH_BYTE) return false
         val next = position + 1
         return next >= limit ||
@@ -874,7 +639,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     }
 
     /** Trims trailing spaces between [start] and [end], returning the new end. */
-    private fun trimTrailingSpaces(start: Int, end: Int): Int {
+    internal fun trimTrailingSpaces(start: Int, end: Int): Int {
         var e = end
         while (e > start && rawData[e - 1] == SPACE_BYTE) e--
         return e
@@ -883,7 +648,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     // ── Bitwise scalar type checks ─────────────────────────────────────────────
 
     /** Bitwise digit check — no `.toChar()`, no range object allocation. */
-    private fun isDigit(b: Byte): Boolean =
+    internal fun isDigit(b: Byte): Boolean =
         (b - DIGIT_LOWER_BOUND).toUByte() <= (DIGIT_UPPER_BOUND - DIGIT_LOWER_BOUND).toUByte()
 
     /** Checks if bytes[start..start+len) match 'null', 'Null', or 'NULL'. */
@@ -986,11 +751,11 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     // ── Error handling ────────────────────────────────────────────────────────
 
-    private fun yamlError(message: String): Nothing {
+    internal fun yamlError(message: String): Nothing {
         throw GhostYamlException("$message (position=$position)")
     }
 
     // ── Chomp style enum ──────────────────────────────────────────────────────
 
-    private enum class ChompStyle { STRIP, CLIP, KEEP }
+    internal enum class ChompStyle { STRIP, CLIP, KEEP }
 }
