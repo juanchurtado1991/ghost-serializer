@@ -40,7 +40,11 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
 
         // Read value
         val value = readValue(indent = 0, inFlow = true)
-        result[key] = value
+        if (key == C.STR_MERGE_KEY) {
+            mergeInto(result, value)
+        } else {
+            result[key] = value
+        }
 
         skipWhitespaceAndComments()
         if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {

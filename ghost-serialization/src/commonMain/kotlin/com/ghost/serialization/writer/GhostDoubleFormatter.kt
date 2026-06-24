@@ -140,16 +140,16 @@ internal object GhostDoubleFormatter {
         var writePos = pos - 1
 
         while (decimalsToPrint >= 2) {
-            val q = fracInt / 100
-            val r = (fracInt - (q * 100)) * 2
+            val quotient = fracInt / 100
+            val remainder = (fracInt - (quotient * 100)) * 2
             C.DOUBLE_DIGIT_LUT.copyInto(
                 scratch,
                 writePos - 1,
-                r,
-                r + 2
+                remainder,
+                remainder + 2
             )
             writePos -= 2
-            fracInt = q
+            fracInt = quotient
             decimalsToPrint -= 2
         }
         if (decimalsToPrint == 1) {
@@ -243,16 +243,16 @@ internal object GhostDoubleFormatter {
         var writePos = pos - 1
 
         while (decimalsToPrint >= 2) {
-            val q = fracInt / 100
-            val r = (fracInt - (q * 100)) * 2
+            val quotient = fracInt / 100
+            val remainder = (fracInt - (quotient * 100)) * 2
             C.DOUBLE_DIGIT_LUT.copyInto(
                 scratch,
                 writePos - 1,
-                r,
-                r + 2
+                remainder,
+                remainder + 2
             )
             writePos -= 2
-            fracInt = q
+            fracInt = quotient
             decimalsToPrint -= 2
         }
         if (decimalsToPrint == 1) {
@@ -300,16 +300,16 @@ internal object GhostDoubleFormatter {
         var end = scratchEnd
 
         while (localValue >= C.BASE_HUNDRED) {
-            val q = localValue / C.BASE_HUNDRED
-            val r = (localValue - (q * C.BASE_HUNDRED)).toInt()
-            localValue = q
-            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]
-            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]
+            val quotient = localValue / C.BASE_HUNDRED
+            val remainder = (localValue - (quotient * C.BASE_HUNDRED)).toInt()
+            localValue = quotient
+            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]
+            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]
         }
         if (localValue >= C.BASE_TEN) {
-            val r = localValue.toInt()
-            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]
-            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]
+            val singleDigitVal = localValue.toInt()
+            scratch[--end] = C.FormatUtils.DIGIT_ONES[singleDigitVal]
+            scratch[--end] = C.FormatUtils.DIGIT_TENS[singleDigitVal]
         } else {
             scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()
         }
