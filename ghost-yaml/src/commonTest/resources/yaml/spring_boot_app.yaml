@@ -1,0 +1,111 @@
+# Spring Boot Application Configuration Dataset
+# Covers: Group A - block mappings, sequences, scalars, nested objects
+
+spring:
+  application:
+    name: ghost-yaml-demo
+  profiles:
+    active: production
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ghostdb
+    username: ghost_user
+    password: s3cr3t_p@ssword!
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 20
+      minimum-idle: 5
+      pool-name: GhostHikariPool
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+  cache:
+    type: redis
+  redis:
+    host: redis.internal.example.com
+    port: 6379
+    password: redis_s3cr3t
+    timeout: 2000
+    lettuce:
+      pool:
+        max-active: 16
+        max-idle: 8
+        min-idle: 2
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: noreply@example.com
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types:
+      - application/json
+      - application/yaml
+      - text/html
+    min-response-size: 1024
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    accept-count: 100
+    max-connections: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.ghost: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/ghost/application.log
+
+ghost:
+  serializer:
+    strict-mode: true
+    coerce-strings-to-numbers: false
+    max-depth: 64
+    max-collection-size: 10000
+  features:
+    yaml-support: true
+    ktor-integration: true
+    retrofit-integration: false
+  allowed-origins:
+    - https://app.example.com
+    - https://admin.example.com
+    - https://api.example.com
