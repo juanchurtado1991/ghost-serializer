@@ -1,50 +1,6 @@
 package com.ghost.serialization.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants.AMPERSAND_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.ASTERISK_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.BACKSLASH_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.COLON_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.COMMA_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CR_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.DASH_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.DIGIT_LOWER_BOUND
-import com.ghost.serialization.yaml.GhostYamlConstants.DIGIT_UPPER_BOUND
-import com.ghost.serialization.yaml.GhostYamlConstants.DOT_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.DOUBLE_QUOTE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.EXCLAMATION_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.GT_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.HASH_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.INDENT_UNSET
-import com.ghost.serialization.yaml.GhostYamlConstants.LEFT_BRACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LEFT_BRACKET_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_F_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_N_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_T_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.MAX_DEPTH
-import com.ghost.serialization.yaml.GhostYamlConstants.NEWLINE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.PERCENT_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.PIPE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.PLUS_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.RIGHT_BRACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.RIGHT_BRACKET_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.SINGLE_QUOTE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.SPACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.TAB_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.TILDE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_F_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_N_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_T_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.ZERO_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_X_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_X_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_O_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_O_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_B_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_B_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_A_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_A_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.ONE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.SEVEN_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
  * High-performance, zero-intermediate-allocation YAML reader operating on a [ByteArray].
@@ -83,7 +39,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
         skipDirectivesAndDocumentStart()
         skipWhitespaceAndComments()
         if (position >= limit) return emptyMap<String, Any?>()
-        return readValue(indent = INDENT_UNSET, inFlow = false)
+        return readValue(indent = C.INDENT_UNSET, inFlow = false)
     }
 
     /**
@@ -91,13 +47,14 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      */
     fun readAllDocuments(): List<Any?> {
         val results = mutableListOf<Any?>()
-        while (position < limit) {
+        val localLimit = limit
+        while (position < localLimit) {
             skipWhitespaceAndComments()
-            if (position >= limit) break
+            if (position >= localLimit) break
             skipDocumentStart()
             skipWhitespaceAndComments()
-            if (position >= limit) break
-            results.add(readValue(indent = INDENT_UNSET, inFlow = false))
+            if (position >= localLimit) break
+            results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
             skipDocumentEnd()
         }
         return results
@@ -113,23 +70,25 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      */
     internal fun readValue(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? {
         skipInlineWhitespace()
-        if (position >= limit) return null
+        val localLimit = limit
+        if (position >= localLimit) return null
 
-        return when (val b = rawData[position]) {
-            PIPE_BYTE, GT_BYTE          -> readBlockScalar(b)           // Group B hook
-            LEFT_BRACE_BYTE             -> readFlowMapping()            // Group C hook
-            LEFT_BRACKET_BYTE           -> readFlowSequence()           // Group C hook
-            EXCLAMATION_BYTE            -> readTaggedValue(indent)      // Group D/F hook
-            AMPERSAND_BYTE              -> readAnchoredValue(indent)    // Group E hook
-            ASTERISK_BYTE               -> readAlias()                  // Group E hook
-            DOUBLE_QUOTE_BYTE           -> readDoubleQuotedString()
-            SINGLE_QUOTE_BYTE           -> readSingleQuotedString()
-            DASH_BYTE                   -> {
+        val currentByte = rawData[position]
+        return when (currentByte) {
+            C.PIPE_BYTE, C.GT_BYTE          -> readBlockScalar(currentByte)           // Group B hook
+            C.LEFT_BRACE_BYTE             -> readFlowMapping()            // Group C hook
+            C.LEFT_BRACKET_BYTE           -> readFlowSequence()           // Group C hook
+            C.EXCLAMATION_BYTE            -> readTaggedValue(indent)      // Group D/F hook
+            C.AMPERSAND_BYTE              -> readAnchoredValue(indent)    // Group E hook
+            C.ASTERISK_BYTE               -> readAlias()                  // Group E hook
+            C.DOUBLE_QUOTE_BYTE           -> readDoubleQuotedString()
+            C.SINGLE_QUOTE_BYTE           -> readSingleQuotedString()
+            C.DASH_BYTE                   -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
-                val next = if (position + 1 < limit) rawData[position + 1] else 0
+                val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
                 when {
-                    expectedTag != GhostYamlTags.TAG_STR && isDigit(next) -> readNumber()
-                    next == SPACE_BYTE || next == NEWLINE_BYTE || next == CR_BYTE ->
+                    expectedTag != GhostYamlTags.TAG_STR && isDigit(nextByte) -> readNumber()
+                    nextByte == C.SPACE_BYTE || nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE ->
                         readBlockSequence(indent)
                     isDocumentMarker()      -> null  // document end
                     else                    -> readPlainScalar(indent, inFlow, expectedTag)
@@ -148,13 +107,15 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * @param blockIndent The indentation of the first key in this mapping.
      */
     internal fun readBlockMapping(blockIndent: Int): Map<String, Any?> {
-        if (depth >= MAX_DEPTH) yamlError("Maximum nesting depth ($MAX_DEPTH) exceeded")
+        if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
         depth++
         val result = LinkedHashMap<String, Any?>(8)
+        val localLimit = limit
+        val localRawData = rawData
         try {
-            while (position < limit) {
+            while (position < localLimit) {
                 skipWhitespaceAndComments()
-                if (position >= limit) break
+                if (position >= localLimit) break
 
                 val lineIndent = currentIndent
                 if (result.isNotEmpty() && lineIndent < blockIndent) break  // dedented — end of this mapping
@@ -165,7 +126,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                 skipInlineWhitespace()
 
                 // Expect ':' after the key
-                if (position >= limit || rawData[position] != COLON_BYTE) {
+                if (position >= localLimit || localRawData[position] != C.COLON_BYTE) {
                     yamlError("Expected ':' after key '$key' at position $position")
                 }
                 position++ // consume ':'
@@ -173,24 +134,24 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                 // After ':', determine if value is on the same line or next line
                 skipInlineWhitespace()
                 val value = when {
-                    position >= limit                       -> null
-                    rawData[position] == NEWLINE_BYTE ||
-                    rawData[position] == CR_BYTE            -> {
+                    position >= localLimit                       -> null
+                    localRawData[position] == C.NEWLINE_BYTE ||
+                    localRawData[position] == C.CR_BYTE            -> {
                         // Value is on next line(s) — block scalar, mapping, or sequence
                         advanceLine()
                         skipWhitespaceAndComments()
-                        if (position >= limit) null
+                        if (position >= localLimit) null
                         else {
                             val valueIndent = currentIndent
                             if (valueIndent <= blockIndent) {
                                 // No actual indented content — treat as null
                                 null
                             } else {
-                                val firstByte = rawData[position]
+                                val firstByte = localRawData[position]
                                 when {
-                                    firstByte == DASH_BYTE && isBlockSequenceEntry() ->
+                                    firstByte == C.DASH_BYTE && isBlockSequenceEntry() ->
                                         readBlockSequence(valueIndent)
-                                    firstByte == PIPE_BYTE || firstByte == GT_BYTE   ->
+                                    firstByte == C.PIPE_BYTE || firstByte == C.GT_BYTE   ->
                                         readBlockScalar(firstByte)
                                     else                                              ->
                                         readBlockMapping(valueIndent)
@@ -198,7 +159,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                             }
                         }
                     }
-                    rawData[position] == HASH_BYTE          -> {
+                    localRawData[position] == C.HASH_BYTE          -> {
                         skipToEndOfLine()
                         null
                     }
@@ -221,13 +182,15 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * @param seqIndent Indentation of the '-' markers.
      */
     internal fun readBlockSequence(seqIndent: Int): List<Any?> {
-        if (depth >= MAX_DEPTH) yamlError("Maximum nesting depth ($MAX_DEPTH) exceeded")
+        if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
         depth++
         val result = mutableListOf<Any?>()
+        val localLimit = limit
+        val localRawData = rawData
         try {
-            while (position < limit) {
+            while (position < localLimit) {
                 skipWhitespaceAndComments()
-                if (position >= limit) break
+                if (position >= localLimit) break
 
                 val lineIndent = currentIndent
                 if (result.isNotEmpty() && lineIndent < seqIndent) break
@@ -241,17 +204,17 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                 val elementIndent = lineIndent + 2
                 
                 // Skip the optional inline space after '-'
-                if (position < limit && rawData[position] == SPACE_BYTE) {
+                if (position < localLimit && localRawData[position] == C.SPACE_BYTE) {
                     position++
                 }
 
                 val item: Any? = when {
-                    position >= limit                       -> null
-                    rawData[position] == NEWLINE_BYTE ||
-                    rawData[position] == CR_BYTE            -> {
+                    position >= localLimit                       -> null
+                    localRawData[position] == C.NEWLINE_BYTE ||
+                    localRawData[position] == C.CR_BYTE            -> {
                         advanceLine()
                         skipWhitespaceAndComments()
-                        if (position >= limit) null
+                        if (position >= localLimit) null
                         else {
                             val itemIndent = currentIndent
                             if (itemIndent < elementIndent) null
@@ -281,43 +244,45 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * that the current content is actually a block mapping key.
      */
     internal fun readPlainScalarOrMapping(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? {
-        val startPos = position
+        val startPosition = position
+        val localLimit = limit
+        val localRawData = rawData
 
         // Scan forward to find ':' or end-of-line
-        var scanPos = position
-        while (scanPos < limit) {
-            val b = rawData[scanPos]
+        var scanPosition = position
+        while (scanPosition < localLimit) {
+            val currentByte = localRawData[scanPosition]
             when {
-                b == COLON_BYTE -> {
+                currentByte == C.COLON_BYTE -> {
                     // ':' followed by space/newline/EOF → this is a mapping key
-                    val afterColon = scanPos + 1
-                    if (afterColon >= limit ||
-                        rawData[afterColon] == SPACE_BYTE ||
-                        rawData[afterColon] == NEWLINE_BYTE ||
-                        rawData[afterColon] == CR_BYTE ||
-                        rawData[afterColon] == TAB_BYTE) {
+                    val afterColon = scanPosition + 1
+                    if (afterColon >= localLimit ||
+                        localRawData[afterColon] == C.SPACE_BYTE ||
+                        localRawData[afterColon] == C.NEWLINE_BYTE ||
+                        localRawData[afterColon] == C.CR_BYTE ||
+                        localRawData[afterColon] == C.TAB_BYTE) {
                         // Rewind and parse as block mapping
-                        position = startPos
+                        position = startPosition
                         return readBlockMapping(indent.coerceAtLeast(0))
                     }
-                    scanPos++
+                    scanPosition++
                 }
-                b == NEWLINE_BYTE || b == CR_BYTE -> break
-                b == HASH_BYTE -> {
+                currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -> break
+                currentByte == C.HASH_BYTE -> {
                     // Inline comment — the plain scalar ends before '#'
                     // (only if preceded by a space)
-                    if (scanPos > startPos && rawData[scanPos - 1] == SPACE_BYTE) break
-                    scanPos++
+                    if (scanPosition > startPosition && localRawData[scanPosition - 1] == C.SPACE_BYTE) break
+                    scanPosition++
                 }
-                inFlow && (b == COMMA_BYTE || b == RIGHT_BRACE_BYTE || b == RIGHT_BRACKET_BYTE) -> break
-                else -> scanPos++
+                inFlow && (currentByte == C.COMMA_BYTE || currentByte == C.RIGHT_BRACE_BYTE || currentByte == C.RIGHT_BRACKET_BYTE) -> break
+                else -> scanPosition++
             }
         }
 
         // Extract the plain scalar bytes
-        val end = trimTrailingSpaces(startPos, scanPos)
-        position = scanPos
-        return interpretScalar(rawData, startPos, end, expectedTag)
+        val endPosition = trimTrailingSpaces(startPosition, scanPosition)
+        position = scanPosition
+        return interpretScalar(localRawData, startPosition, endPosition, expectedTag)
     }
 
     private fun readPlainScalar(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? =
@@ -331,28 +296,30 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      */
     internal fun readKey(): String? {
         skipInlineWhitespace()
-        if (position >= limit) return null
-        return when (rawData[position]) {
-            DOUBLE_QUOTE_BYTE -> readDoubleQuotedString() as String
-            SINGLE_QUOTE_BYTE -> readSingleQuotedString() as String
+        val localLimit = limit
+        val localRawData = rawData
+        if (position >= localLimit) return null
+        return when (localRawData[position]) {
+            C.DOUBLE_QUOTE_BYTE -> readDoubleQuotedString() as String
+            C.SINGLE_QUOTE_BYTE -> readSingleQuotedString() as String
             else -> {
-                val start = position
-                while (position < limit) {
-                    val b = rawData[position]
-                    if (b == COLON_BYTE) {
-                        val next = position + 1
-                        if (next >= limit ||
-                            rawData[next] == SPACE_BYTE ||
-                            rawData[next] == NEWLINE_BYTE ||
-                            rawData[next] == CR_BYTE ||
-                            rawData[next] == TAB_BYTE) break
+                val startPosition = position
+                while (position < localLimit) {
+                    val currentByte = localRawData[position]
+                    if (currentByte == C.COLON_BYTE) {
+                        val nextPosition = position + 1
+                        if (nextPosition >= localLimit ||
+                            localRawData[nextPosition] == C.SPACE_BYTE ||
+                            localRawData[nextPosition] == C.NEWLINE_BYTE ||
+                            localRawData[nextPosition] == C.CR_BYTE ||
+                            localRawData[nextPosition] == C.TAB_BYTE) break
                     }
-                    if (b == NEWLINE_BYTE || b == CR_BYTE) break
+                    if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) break
                     position++
                 }
-                val end = trimTrailingSpaces(start, position)
-                if (end == start) return null
-                rawData.decodeToString(start, end)
+                val endPosition = trimTrailingSpaces(startPosition, position)
+                if (endPosition == startPosition) return null
+                localRawData.decodeToString(startPosition, endPosition)
             }
         }
     }
@@ -367,10 +334,10 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      *   null → bool → int → float → string
      */
     private fun interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
-        val len = end - start
-        if (len == 0) return null
+        val length = end - start
+        if (length == 0) return null
 
-        val b0 = data[start]
+        val firstByte = data[start]
 
         if (expectedTag == GhostYamlTags.TAG_STR) {
             return data.decodeToString(start, end)
@@ -379,8 +346,8 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
             return null
         }
         if (expectedTag == GhostYamlTags.TAG_BOOL) {
-            if (isTrueLiteral(data, start, len)) return true
-            if (isFalseLiteral(data, start, len)) return false
+            if (isTrueLiteral(data, start, length)) return true
+            if (isFalseLiteral(data, start, length)) return false
             return data.decodeToString(start, end) == "true"
         }
         if (expectedTag == GhostYamlTags.TAG_INT) {
@@ -399,15 +366,15 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
         }
 
         // null: ~, null, Null, NULL
-        if (b0 == TILDE_BYTE && len == 1) return null
-        if (isNullLiteral(data, start, len)) return null
+        if (firstByte == C.TILDE_BYTE && length == 1) return null
+        if (isNullLiteral(data, start, length)) return null
 
         // bool: true, True, TRUE, false, False, FALSE
-        if (isTrueLiteral(data, start, len)) return true
-        if (isFalseLiteral(data, start, len)) return false
+        if (isTrueLiteral(data, start, length)) return true
+        if (isFalseLiteral(data, start, length)) return false
 
         // number: starts with digit, '-', or '.' (for .inf/.nan)
-        if (b0 == DASH_BYTE || isDigit(b0) || b0 == DOT_BYTE) {
+        if (firstByte == C.DASH_BYTE || isDigit(firstByte) || firstByte == C.DOT_BYTE) {
             tryParseNumber(data, start, end)?.let { return it }
         }
 
@@ -419,25 +386,27 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     internal fun readDoubleQuotedString(): String {
         position++ // consume opening '"'
-        val sb = StringBuilder()
-        while (position < limit) {
-            val b = rawData[position]
+        val stringBuilder = StringBuilder()
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit) {
+            val currentByte = localRawData[position]
             when {
-                b == DOUBLE_QUOTE_BYTE -> { position++; return sb.toString() }
-                b == BACKSLASH_BYTE    -> {
+                currentByte == C.DOUBLE_QUOTE_BYTE -> { position++; return stringBuilder.toString() }
+                currentByte == C.BACKSLASH_BYTE    -> {
                     position++
-                    if (position >= limit) break
-                    sb.append(processEscapeSequence())
+                    if (position >= localLimit) break
+                    stringBuilder.append(processEscapeSequence())
                 }
                 else -> {
                     // Fast path: accumulate bytes until special char
-                    val start = position
-                    while (position < limit &&
-                        rawData[position] != DOUBLE_QUOTE_BYTE &&
-                        rawData[position] != BACKSLASH_BYTE) {
+                    val startPosition = position
+                    while (position < localLimit &&
+                        localRawData[position] != C.DOUBLE_QUOTE_BYTE &&
+                        localRawData[position] != C.BACKSLASH_BYTE) {
                         position++
                     }
-                    sb.append(rawData.decodeToString(start, position))
+                    stringBuilder.append(localRawData.decodeToString(startPosition, position))
                 }
             }
         }
@@ -446,26 +415,28 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     internal fun readSingleQuotedString(): String {
         position++ // consume opening '\''
-        val sb = StringBuilder()
-        while (position < limit) {
-            val b = rawData[position]
+        val stringBuilder = StringBuilder()
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit) {
+            val currentByte = localRawData[position]
             when {
-                b == SINGLE_QUOTE_BYTE -> {
+                currentByte == C.SINGLE_QUOTE_BYTE -> {
                     position++
                     // Single-quote escape: '' → '
-                    if (position < limit && rawData[position] == SINGLE_QUOTE_BYTE) {
-                        sb.append('\'')
+                    if (position < localLimit && localRawData[position] == C.SINGLE_QUOTE_BYTE) {
+                        stringBuilder.append('\'')
                         position++
                     } else {
-                        return sb.toString()
+                        return stringBuilder.toString()
                     }
                 }
                 else -> {
-                    val start = position
-                    while (position < limit && rawData[position] != SINGLE_QUOTE_BYTE) {
+                    val startPosition = position
+                    while (position < localLimit && localRawData[position] != C.SINGLE_QUOTE_BYTE) {
                         position++
                     }
-                    sb.append(rawData.decodeToString(start, position))
+                    stringBuilder.append(localRawData.decodeToString(startPosition, position))
                 }
             }
         }
@@ -473,8 +444,9 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     }
 
     private fun processEscapeSequence(): String {
-        val b = rawData[position++]
-        return when (b) {
+        val currentByte = rawData[position++]
+        val localLimit = limit
+        return when (currentByte) {
             0x22.toByte()  -> "\""     // \"
             0x5C.toByte()  -> "\\"     // \\
             0x2F.toByte()  -> "/"      // \/
@@ -484,16 +456,16 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
             0x72.toByte()  -> "\r"     // \r
             0x74.toByte()  -> "\t"     // \t
             0x75.toByte()  -> {        // \uXXXX
-                if (position + 4 > limit) yamlError("Incomplete \\u escape")
-                val hex = rawData.decodeToString(position, position + 4)
+                if (position + 4 > localLimit) yamlError("Incomplete \\u escape")
+                val hexString = rawData.decodeToString(position, position + 4)
                 position += 4
-                hex.toInt(16).toChar().toString()
+                hexString.toInt(16).toChar().toString()
             }
             0x55.toByte()  -> {        // \UXXXXXXXX
-                if (position + 8 > limit) yamlError("Incomplete \\U escape")
-                val hex = rawData.decodeToString(position, position + 8)
+                if (position + 8 > localLimit) yamlError("Incomplete \\U escape")
+                val hexString = rawData.decodeToString(position, position + 8)
                 position += 8
-                String(Character.toChars(hex.toInt(16)))
+                String(Character.toChars(hexString.toInt(16)))
             }
             0x30.toByte()  -> "\u0000" // \0
             0x61.toByte()  -> "\u0007" // \a (bell)
@@ -503,29 +475,27 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
             0x5F.toByte()  -> "\u00A0" // \_ (non-breaking space)
             0x4C.toByte()  -> "\u2028" // \L (line separator)
             0x50.toByte()  -> "\u2029" // \P (paragraph separator)
-            else           -> yamlError("Unknown escape: \\${b.toInt().toChar()}")
+            else           -> yamlError("Unknown escape: \\${currentByte.toInt().toChar()}")
         }
     }
 
     // ── Number parsing ─────────────────────────────────────────────────────────
 
     private fun readNumber(): Any? {
-        val start = position
-        while (position < limit) {
-            val b = rawData[position]
-            if (!isDigit(b) && b != DASH_BYTE && b != PLUS_BYTE && b != DOT_BYTE &&
-                b != 0x65.toByte() && b != 0x45.toByte()) break  // e, E for scientific
+        val startPosition = position
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit) {
+            val currentByte = localRawData[position]
+            if (!isDigit(currentByte) && currentByte != C.DASH_BYTE && currentByte != C.PLUS_BYTE && currentByte != C.DOT_BYTE &&
+                currentByte != 0x65.toByte() && currentByte != 0x45.toByte()) break  // e, E for scientific
             position++
         }
-        return tryParseNumber(rawData, start, position)
-            ?: rawData.decodeToString(start, position)
+        return tryParseNumber(localRawData, startPosition, position)
+            ?: localRawData.decodeToString(startPosition, position)
     }
 
     // ── Group B-G hooks (stubs) ────────────────────────────────────────────────
-
-
-
-
 
     /** Group E — Anchored value (&anchor). Stub until implemented. */
     private fun readAnchoredValue(indent: Int): Any? {
@@ -541,9 +511,11 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     /** Skips spaces and tabs (inline whitespace — NOT newlines). */
     internal fun skipInlineWhitespace() {
-        while (position < limit) {
-            val b = rawData[position]
-            if (b != SPACE_BYTE && b != TAB_BYTE) break
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit) {
+            val currentByte = localRawData[position]
+            if (currentByte != C.SPACE_BYTE && currentByte != C.TAB_BYTE) break
             position++
         }
     }
@@ -553,77 +525,83 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * Updates [currentIndent] to the column of the next non-whitespace byte.
      */
     internal fun skipWhitespaceAndComments() {
-        while (position < limit) {
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit) {
             skipInlineWhitespace()
-            if (position >= limit) break
-            val b = rawData[position]
+            if (position >= localLimit) break
+            val currentByte = localRawData[position]
             when {
-                b == NEWLINE_BYTE -> {
+                currentByte == C.NEWLINE_BYTE -> {
                     position++
                     currentIndent = 0
                 }
-                b == CR_BYTE -> {
+                currentByte == C.CR_BYTE -> {
                     position++
-                    if (position < limit && rawData[position] == NEWLINE_BYTE) position++
+                    if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
                     currentIndent = 0
                 }
-                b == HASH_BYTE -> skipToEndOfLine()
+                currentByte == C.HASH_BYTE -> skipToEndOfLine()
                 else -> {
-                    // Update currentIndent based on how far from start-of-line we are
-                    // (already counted by skipInlineWhitespace)
                     break
                 }
             }
         }
-        // Recompute currentIndent from start of current line
         recomputeCurrentIndent()
     }
 
     /** Recomputes [currentIndent] by counting leading spaces on the current line. */
     private fun recomputeCurrentIndent() {
-        // Walk back to the last newline to count forward spaces
+        val localLimit = limit
+        val localRawData = rawData
         var lineStart = position
-        while (lineStart > 0 && rawData[lineStart - 1] != NEWLINE_BYTE && rawData[lineStart - 1] != CR_BYTE) {
+        while (lineStart > 0 && localRawData[lineStart - 1] != C.NEWLINE_BYTE && localRawData[lineStart - 1] != C.CR_BYTE) {
             lineStart--
         }
         var spaces = 0
-        var p = lineStart
-        while (p < limit && rawData[p] == SPACE_BYTE) { spaces++; p++ }
+        var pointer = lineStart
+        while (pointer < localLimit && localRawData[pointer] == C.SPACE_BYTE) { spaces++; pointer++ }
         currentIndent = spaces
     }
 
     /** Advances [position] to the next newline (exclusive). */
     internal fun skipToEndOfLine() {
-        while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
             position++
         }
     }
 
     /** Advances past the current newline character(s). */
     internal fun advanceLine() {
-        while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
             position++
         }
-        if (position < limit && rawData[position] == CR_BYTE) position++
-        if (position < limit && rawData[position] == NEWLINE_BYTE) position++
+        if (position < localLimit && localRawData[position] == C.CR_BYTE) position++
+        if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
         currentIndent = 0
     }
 
     /** Skips `%YAML` and `%TAG` directives at the top of a document. */
     private fun skipDirectivesAndDocumentStart() {
-        while (position < limit) {
+        val localLimit = limit
+        val localRawData = rawData
+        while (position < localLimit) {
             skipInlineWhitespace()
-            if (position >= limit) break
-            when (rawData[position]) {
-                PERCENT_BYTE -> skipToEndOfLine()
-                DASH_BYTE    -> if (isDocumentMarker()) { position += 3; break } else break
-                NEWLINE_BYTE -> { position++; currentIndent = 0 }
-                CR_BYTE      -> {
+            if (position >= localLimit) break
+            when (localRawData[position]) {
+                C.PERCENT_BYTE -> skipToEndOfLine()
+                C.DASH_BYTE    -> if (isDocumentMarker()) { position += 3; break } else break
+                C.NEWLINE_BYTE -> { position++; currentIndent = 0 }
+                C.CR_BYTE      -> {
                     position++
-                    if (position < limit && rawData[position] == NEWLINE_BYTE) position++
+                    if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
                     currentIndent = 0
                 }
-                HASH_BYTE    -> skipToEndOfLine()
+                C.HASH_BYTE    -> skipToEndOfLine()
                 else         -> break
             }
         }
@@ -638,10 +616,12 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
     /** Skips a `...` document end marker if present. */
     private fun skipDocumentEnd() {
         skipWhitespaceAndComments()
-        if (position + 2 < limit &&
-            rawData[position] == DOT_BYTE &&
-            rawData[position + 1] == DOT_BYTE &&
-            rawData[position + 2] == DOT_BYTE) {
+        val localLimit = limit
+        val localRawData = rawData
+        if (position + 2 < localLimit &&
+            localRawData[position] == C.DOT_BYTE &&
+            localRawData[position + 1] == C.DOT_BYTE &&
+            localRawData[position + 2] == C.DOT_BYTE) {
             position += 3
             skipToEndOfLine()
         }
@@ -649,71 +629,75 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     /** Returns true if current position is at a `---` marker at column 0. */
     internal fun isDocumentMarker(): Boolean {
-        if (position + 2 >= limit) return false
-        return rawData[position] == DASH_BYTE &&
-            rawData[position + 1] == DASH_BYTE &&
-            rawData[position + 2] == DASH_BYTE &&
-            (position + 3 >= limit ||
-                rawData[position + 3] == SPACE_BYTE ||
-                rawData[position + 3] == NEWLINE_BYTE ||
-                rawData[position + 3] == CR_BYTE ||
-                rawData[position + 3] == TAB_BYTE)
+        val localLimit = limit
+        val localRawData = rawData
+        if (position + 2 >= localLimit) return false
+        return localRawData[position] == C.DASH_BYTE &&
+            localRawData[position + 1] == C.DASH_BYTE &&
+            localRawData[position + 2] == C.DASH_BYTE &&
+            (position + 3 >= localLimit ||
+                localRawData[position + 3] == C.SPACE_BYTE ||
+                localRawData[position + 3] == C.NEWLINE_BYTE ||
+                localRawData[position + 3] == C.CR_BYTE ||
+                localRawData[position + 3] == C.TAB_BYTE)
     }
 
     /** Returns true if current position is at the start of a block sequence entry `- `. */
     internal fun isBlockSequenceEntry(): Boolean {
-        if (position >= limit || rawData[position] != DASH_BYTE) return false
-        val next = position + 1
-        return next >= limit ||
-            rawData[next] == SPACE_BYTE ||
-            rawData[next] == NEWLINE_BYTE ||
-            rawData[next] == CR_BYTE ||
-            rawData[next] == TAB_BYTE
+        val localLimit = limit
+        val localRawData = rawData
+        if (position >= localLimit || localRawData[position] != C.DASH_BYTE) return false
+        val nextPosition = position + 1
+        return nextPosition >= localLimit ||
+            localRawData[nextPosition] == C.SPACE_BYTE ||
+            localRawData[nextPosition] == C.NEWLINE_BYTE ||
+            localRawData[nextPosition] == C.CR_BYTE ||
+            localRawData[nextPosition] == C.TAB_BYTE
     }
 
     /** Trims trailing spaces between [start] and [end], returning the new end. */
     internal fun trimTrailingSpaces(start: Int, end: Int): Int {
-        var e = end
-        while (e > start && rawData[e - 1] == SPACE_BYTE) e--
-        return e
+        val localRawData = rawData
+        var endPos = end
+        while (endPos > start && localRawData[endPos - 1] == C.SPACE_BYTE) endPos--
+        return endPos
     }
 
     // ── Bitwise scalar type checks ─────────────────────────────────────────────
 
     /** Bitwise digit check — no `.toChar()`, no range object allocation. */
-    internal fun isDigit(b: Byte): Boolean =
-        (b - DIGIT_LOWER_BOUND).toUByte() <= (DIGIT_UPPER_BOUND - DIGIT_LOWER_BOUND).toUByte()
+    internal fun isDigit(currentByte: Byte): Boolean =
+        (currentByte - C.DIGIT_LOWER_BOUND).toUByte() <= (C.DIGIT_UPPER_BOUND - C.DIGIT_LOWER_BOUND).toUByte()
 
     /** Checks if bytes[start..start+len) match 'null', 'Null', or 'NULL'. */
-    private fun isNullLiteral(data: ByteArray, start: Int, len: Int): Boolean {
-        if (len != 4) return false
-        // Normalize to lowercase using bitwise OR 0x20 (works for ASCII letters only)
-        val b0 = data[start].toInt() or 0x20
-        val b1 = data[start + 1].toInt() or 0x20
-        val b2 = data[start + 2].toInt() or 0x20
-        val b3 = data[start + 3].toInt() or 0x20
-        return b0 == 0x6E && b1 == 0x75 && b2 == 0x6C && b3 == 0x6C  // n,u,l,l
+    private fun isNullLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+        if (length != 4) return false
+        val byte0 = data[start].toInt() or 0x20
+        val byte1 = data[start + 1].toInt() or 0x20
+        val byte2 = data[start + 2].toInt() or 0x20
+        val byte3 = data[start + 3].toInt() or 0x20
+        return byte0 == 0x6E && byte1 == 0x75 && byte2 == 0x6C && byte3 == 0x6C  // n,u,l,l
     }
 
     /** Checks if bytes[start..start+len) match 'true', 'True', or 'TRUE'. */
-    private fun isTrueLiteral(data: ByteArray, start: Int, len: Int): Boolean {
-        if (len != 4) return false
-        val b0 = data[start].toInt() or 0x20
-        val b1 = data[start + 1].toInt() or 0x20
-        val b2 = data[start + 2].toInt() or 0x20
-        val b3 = data[start + 3].toInt() or 0x20
-        return b0 == 0x74 && b1 == 0x72 && b2 == 0x75 && b3 == 0x65  // t,r,u,e
+    private fun isTrueLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+        if (length != 4) return false
+        val byte0 = data[start].toInt() or 0x20
+        val byte1 = data[start + 1].toInt() or 0x20
+        val byte2 = data[start + 2].toInt() or 0x20
+        val byte3 = data[start + 3].toInt() or 0x20
+        return byte0 == 0x74 && byte1 == 0x72 && byte2 == 0x75 && byte3 == 0x65  // t,r,u,e
     }
 
     /** Checks if bytes[start..start+len) match 'false', 'False', or 'FALSE'. */
-    private fun isFalseLiteral(data: ByteArray, start: Int, len: Int): Boolean {
-        if (len != 5) return false
-        val b0 = data[start].toInt() or 0x20
-        val b1 = data[start + 1].toInt() or 0x20
-        val b2 = data[start + 2].toInt() or 0x20
-        val b3 = data[start + 3].toInt() or 0x20
-        val b4 = data[start + 4].toInt() or 0x20
-        return b0 == 0x66 && b1 == 0x61 && b2 == 0x6C && b3 == 0x73 && b4 == 0x65  // f,a,l,s,e
+    private fun isFalseLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+        if (length != 5) return false
+        val byte0 = data[start].toInt() or 0x20
+        val byte1 = data[start + 1].toInt() or 0x20
+        val byte2 = data[start + 2].toInt() or 0x20
+        val byte3 = data[start + 3].toInt() or 0x20
+        val byte4 = data[start + 4].toInt() or 0x20
+        return byte0 == 0x66 && byte1 == 0x61 && byte2 == 0x6C && byte3 == 0x73 && byte4 == 0x65  // f,a,l,s,e
     }
 
     /**
@@ -722,58 +706,58 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * PROHIBITED: `.toInt()`, `.toDouble()` on the whole string — we parse byte by byte.
      */
     private fun tryParseNumber(data: ByteArray, start: Int, end: Int): Any? {
-        val len = end - start
-        if (len == 0) return null
+        val length = end - start
+        if (length == 0) return null
 
-        var pos = start
-        var isNeg = false
+        var currentPosition = start
+        var isNegative = false
 
-        if (data[pos] == DASH_BYTE) { isNeg = true; pos++ }
-        if (pos >= end) return null
+        if (data[currentPosition] == C.DASH_BYTE) { isNegative = true; currentPosition++ }
+        if (currentPosition >= end) return null
 
         // Check for hex (0x), octal (0o), binary (0b)
-        if (end - pos >= 3 && data[pos] == ZERO_BYTE) {
-            val nextByte = data[pos + 1]
-            if (nextByte == LOWERCASE_X_BYTE || nextByte == UPPERCASE_X_BYTE) { // x or X
+        if (end - currentPosition >= 3 && data[currentPosition] == C.ZERO_BYTE) {
+            val nextByte = data[currentPosition + 1]
+            if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X
                 var value = 0L
-                for (i in pos + 2 until end) {
-                    val b = data[i]
+                for (i in currentPosition + 2 until end) {
+                    val currentByte = data[i]
                     val digit = when {
-                        isDigit(b) -> (b - ZERO_BYTE).toLong()
-                        b in LOWERCASE_A_BYTE..LOWERCASE_F_BYTE -> (b - LOWERCASE_A_BYTE + 10).toLong() // a-f
-                        b in UPPERCASE_A_BYTE..UPPERCASE_F_BYTE -> (b - UPPERCASE_A_BYTE + 10).toLong() // A-F
+                        isDigit(currentByte) -> (currentByte - C.ZERO_BYTE).toLong()
+                        currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f
+                        currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F
                         else -> return null
                     }
                     value = (value shl 4) or digit
                 }
-                return if (isNeg) -value else value
+                return if (isNegative) -value else value
             }
-            if (nextByte == LOWERCASE_O_BYTE || nextByte == UPPERCASE_O_BYTE) { // o or O
+            if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O
                 var value = 0L
-                for (i in pos + 2 until end) {
-                    val b = data[i]
-                    if (b < ZERO_BYTE || b > SEVEN_BYTE) return null // 0-7
-                    val digit = (b - ZERO_BYTE).toLong()
+                for (i in currentPosition + 2 until end) {
+                    val currentByte = data[i]
+                    if (currentByte < C.ZERO_BYTE || currentByte > C.SEVEN_BYTE) return null // 0-7
+                    val digit = (currentByte - C.ZERO_BYTE).toLong()
                     value = (value shl 3) or digit
                 }
-                return if (isNeg) -value else value
+                return if (isNegative) -value else value
             }
-            if (nextByte == LOWERCASE_B_BYTE || nextByte == UPPERCASE_B_BYTE) { // b or B
+            if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B
                 var value = 0L
-                for (i in pos + 2 until end) {
-                    val b = data[i]
-                    if (b != ZERO_BYTE && b != ONE_BYTE) return null // 0 or 1
-                    val digit = (b - ZERO_BYTE).toLong()
+                for (i in currentPosition + 2 until end) {
+                    val currentByte = data[i]
+                    if (currentByte != C.ZERO_BYTE && currentByte != C.ONE_BYTE) return null // 0 or 1
+                    val digit = (currentByte - C.ZERO_BYTE).toLong()
                     value = (value shl 1) or digit
                 }
-                return if (isNeg) -value else value
+                return if (isNegative) -value else value
             }
         }
 
         // Check for .inf / .nan
-        if (data[pos] == DOT_BYTE) {
-            val str = data.decodeToString(start, end)
-            return when (str.lowercase()) {
+        if (data[currentPosition] == C.DOT_BYTE) {
+            val stringRepresentation = data.decodeToString(start, end)
+            return when (stringRepresentation.lowercase()) {
                 ".inf", "+.inf" -> Double.POSITIVE_INFINITY
                 "-.inf"         -> Double.NEGATIVE_INFINITY
                 ".nan"          -> Double.NaN
@@ -782,43 +766,40 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
         }
 
         // Parse integer part byte by byte
-        var longVal = 0L
+        var accumulatedLongValue = 0L
         var hasDigit = false
-        var isFloat = false
+        var isFloatingPoint = false
 
-        while (pos < end) {
-            val b = data[pos]
+        while (currentPosition < end) {
+            val currentByte = data[currentPosition]
             when {
-                isDigit(b) -> {
+                isDigit(currentByte) -> {
                     hasDigit = true
-                    val digit = (b - ZERO_BYTE).toLong()
+                    val digit = (currentByte - C.ZERO_BYTE).toLong()
                     // Overflow check
-                    if (longVal > (Long.MAX_VALUE - digit) / 10) {
-                        // Too large for Long — try Double
-                        isFloat = true
+                    if (accumulatedLongValue > (Long.MAX_VALUE - digit) / 10) {
+                        isFloatingPoint = true
                         break
                     }
-                    longVal = longVal * 10 + digit
-                    pos++
+                    accumulatedLongValue = accumulatedLongValue * 10 + digit
+                    currentPosition++
                 }
-                b == DOT_BYTE || b == 0x65.toByte() || b == 0x45.toByte() -> {
-                    // Decimal point or exponent → float
-                    isFloat = true
+                currentByte == C.DOT_BYTE || currentByte == 0x65.toByte() || currentByte == 0x45.toByte() -> {
+                    isFloatingPoint = true
                     break
                 }
-                else -> return null  // unexpected character
+                else -> return null
             }
         }
 
         if (!hasDigit) return null
 
-        if (!isFloat && pos == end) {
-            return if (isNeg) -longVal else longVal
+        if (!isFloatingPoint && currentPosition == end) {
+            return if (isNegative) -accumulatedLongValue else accumulatedLongValue
         }
 
-        // Float path — we must decode the string (only for non-hot-path scalars)
-        val str = data.decodeToString(start, end)
-        return str.toDoubleOrNull()
+        val stringRepresentation = data.decodeToString(start, end)
+        return stringRepresentation.toDoubleOrNull()
     }
 
     // ── Error handling ────────────────────────────────────────────────────────
