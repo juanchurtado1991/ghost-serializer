@@ -143,6 +143,19 @@ internal object GhostYamlConstants {
     const val ONE_BYTE: Byte = 0x31
     const val SEVEN_BYTE: Byte = 0x37
 
+    const val ESCAPE_SLASH_BYTE: Byte = 0x2F
+    const val LOWERCASE_E_BYTE: Byte = 0x65
+    const val UPPERCASE_E_BYTE: Byte = 0x45
+    const val LOWERCASE_L_BYTE: Byte = 0x6C
+    const val UPPERCASE_L_BYTE: Byte = 0x4C
+    const val LOWERCASE_R_BYTE: Byte = 0x72
+    const val LOWERCASE_U_BYTE: Byte = 0x75
+    const val UPPERCASE_U_BYTE: Byte = 0x55
+    const val LOWERCASE_V_BYTE: Byte = 0x76
+    const val UPPERCASE_P_BYTE: Byte = 0x50
+    const val UNDERSCORE_BYTE: Byte = 0x5F
+    const val LOWERCASE_S_BYTE: Byte = 0x73
+
     // ── Boolean / null scalar first bytes ────────────────────────────────────
 
     /** 't' — start of 'true' */
@@ -206,4 +219,41 @@ internal object GhostYamlConstants {
 
     /** Maximum supported nesting depth. */
     const val MAX_DEPTH: Int = 64
+
+    // ── String literals / Control strings ──────────────────────────────────────
+    const val STR_TRUE = "true"
+    const val STR_FALSE = "false"
+    const val STR_DOT_INF = ".inf"
+    const val STR_PLUS_DOT_INF = "+.inf"
+    const val STR_MINUS_DOT_INF = "-.inf"
+    const val STR_DOT_NAN = ".nan"
+
+    const val ESCAPE_DOUBLE_QUOTE = "\""
+    const val ESCAPE_BACKSLASH = "\\"
+    const val ESCAPE_SLASH = "/"
+    const val ESCAPE_B = "\b"
+    const val ESCAPE_F = "\u000C"
+    const val ESCAPE_N = "\n"
+    const val ESCAPE_R = "\r"
+    const val ESCAPE_T = "\t"
+    const val ESCAPE_ZERO = "\u0000"
+    const val ESCAPE_A = "\u0007"
+    const val ESCAPE_V = "\u000B"
+    const val ESCAPE_E = "\u001B"
+    const val ESCAPE_NEXT_LINE = "\u0085"
+    const val ESCAPE_NBSP = "\u00A0"
+    const val ESCAPE_LINE_SEP = "\u2028"
+    const val ESCAPE_PARA_SEP = "\u2029"
+    const val STR_MERGE_KEY = "<<"
+    const val STR_TAG_KEY = "_tag"
+    const val STR_LT = "<"
+    const val STR_GT = ">"
+    const val STR_TAG_DIRECTIVE = "TAG"
+    const val STR_YAML_DIRECTIVE = "YAML"
+    const val STR_EXCLAMATION = "!"
+
+    // ── Bit shift constants for parsing numeric bases ──────────────────────────
+    const val HEX_SHIFT = 4
+    const val OCTAL_SHIFT = 3
+    const val BINARY_SHIFT = 1
 }

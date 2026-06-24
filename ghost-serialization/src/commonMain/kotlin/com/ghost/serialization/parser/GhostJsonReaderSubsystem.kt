@@ -558,32 +558,32 @@ private fun GhostJsonReader.verifyKeyMatch(
     consumeSeparator: Boolean
 ): Boolean {
     if (expected.size == length) {
-        var i = 0
+        var idx = 0
         if (!isStreaming) {
             val localData = rawData
-            while (i + 3 < length) {
-                if (localData[start + i] != expected[i]) return false
-                if (localData[start + i + 1] != expected[i + 1]) return false
-                if (localData[start + i + 2] != expected[i + 2]) return false
-                if (localData[start + i + 3] != expected[i + 3]) return false
-                i += 4
+            while (idx + 3 < length) {
+                if (localData[start + idx] != expected[idx]) return false
+                if (localData[start + idx + 1] != expected[idx + 1]) return false
+                if (localData[start + idx + 2] != expected[idx + 2]) return false
+                if (localData[start + idx + 3] != expected[idx + 3]) return false
+                idx += 4
             }
-            while (i < length) {
-                if (localData[start + i] != expected[i]) return false
-                i++
+            while (idx < length) {
+                if (localData[start + idx] != expected[idx]) return false
+                idx++
             }
         } else {
             val localSource = source
-            while (i + 3 < length) {
-                if (localSource[start + i].toByte() != expected[i]) return false
-                if (localSource[start + i + 1].toByte() != expected[i + 1]) return false
-                if (localSource[start + i + 2].toByte() != expected[i + 2]) return false
-                if (localSource[start + i + 3].toByte() != expected[i + 3]) return false
-                i += 4
+            while (idx + 3 < length) {
+                if (localSource[start + idx].toByte() != expected[idx]) return false
+                if (localSource[start + idx + 1].toByte() != expected[idx + 1]) return false
+                if (localSource[start + idx + 2].toByte() != expected[idx + 2]) return false
+                if (localSource[start + idx + 3].toByte() != expected[idx + 3]) return false
+                idx += 4
             }
-            while (i < length) {
-                if (localSource[start + i].toByte() != expected[i]) return false
-                i++
+            while (idx < length) {
+                if (localSource[start + idx].toByte() != expected[idx]) return false
+                idx++
             }
         }
         val endPos = start + length

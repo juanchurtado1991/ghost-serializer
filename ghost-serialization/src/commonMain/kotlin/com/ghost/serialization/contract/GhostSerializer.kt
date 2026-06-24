@@ -11,6 +11,8 @@ import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.parser.byteToCharPosition
+import com.ghost.serialization.parser.charToBytePosition
 
 /**
  * Base contract for high-performance JSON serializers.
@@ -103,7 +105,7 @@ interface GhostSerializer<T> {
     fun deserialize(reader: GhostJsonStringReader): T {
         val bytes = reader.rawData.encodeToByteArray()
         val flatReader = GhostJsonFlatReader(bytes).also {
-            it.position = com.ghost.serialization.parser.charToBytePosition(reader.rawData, reader.position)
+            it.position = charToBytePosition(reader.rawData, reader.position)
             it.limit = bytes.size
             it.strictMode = reader.strictMode
             it.coerceStringsToNumbers = reader.coerceStringsToNumbers
@@ -112,7 +114,7 @@ interface GhostSerializer<T> {
             it.maxCollectionSize = reader.maxCollectionSize
         }
         val result = deserialize(flatReader)
-        reader.position = com.ghost.serialization.parser.byteToCharPosition(reader.rawData, flatReader.position)
+        reader.position = byteToCharPosition(reader.rawData, flatReader.position)
         reader.nextTokenByte = -1
         return result
     }

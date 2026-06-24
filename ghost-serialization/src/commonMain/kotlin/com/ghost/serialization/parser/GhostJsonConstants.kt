@@ -33,6 +33,8 @@ internal object GhostJsonConstants {
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
     const val ERR_EXPECTED_QUOTE = "Expected '\"'"
     const val ERR_DEPTH_EXCEEDED = "Reached maximum recursion depth"
+    /** Combined depth exceeded message including the max depth value. */
+    const val ERR_DEPTH_EXCEEDED_MSG = "Reached maximum recursion depth (255)"
     const val ERR_NON_FINITE = "JSON does not support non-finite numbers like NaN or Infinity"
     const val ERR_INT_OVERFLOW = "Integer overflow: "
     const val ERR_LONG_OVERFLOW = "Long overflow"

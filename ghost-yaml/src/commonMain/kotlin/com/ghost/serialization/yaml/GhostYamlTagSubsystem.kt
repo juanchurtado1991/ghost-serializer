@@ -25,23 +25,76 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
         position++
     }
 
-    // Read tag name
-    val tagStart = position
-    while (position < localLimit) {
-        val b = localRawData[position]
-        if (b == C.SPACE_BYTE || b == C.TAB_BYTE || b == C.NEWLINE_BYTE || b == C.CR_BYTE) break
-        position++
-    }
-    val tagLen = position - tagStart
-
+    var resolvedTag: String? = null
     var tagType = GhostYamlTags.TAG_NONE
-    if (isDoubleExcl && tagLen > 0) {
-        tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
+
+    if (isDoubleExcl) {
+        val tagStart = position
+        while (position < localLimit) {
+            val currByte = localRawData[position]
+            if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break
+            position++
+        }
+        val tagLen = position - tagStart
+        if (tagLen > 0) {
+            tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
+        }
+    } else {
+        // Custom tag
+        if (position < localLimit && localRawData[position] == C.LT_BYTE) {
+            // Verbose tag like !<Circle>
+            position++ // consume '<'
+            val tagStart = position
+            while (position < localLimit && localRawData[position] != C.GT_BYTE) {
+                position++
+            }
+            val tagLen = position - tagStart
+            resolvedTag = localRawData.decodeToString(tagStart, tagStart + tagLen)
+            if (position < localLimit && localRawData[position] == C.GT_BYTE) {
+                position++ // consume '>'
+            }
+        } else {
+            // Short tag like !Circle or !m!Circle
+            val tagStart = position
+            while (position < localLimit) {
+                val currByte = localRawData[position]
+                if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break
+                position++
+            }
+            val tagLen = position - tagStart
+            if (tagLen > 0) {
+                val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)
+                // Check for namespace prefix mapping (Group G)
+                val exclamationIdx = rawTagName.indexOf('!')
+                if (exclamationIdx != -1) {
+                    val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)
+                    val suffix = rawTagName.substring(exclamationIdx + 1)
+                    val prefix = tagDirectives[handle]
+                    resolvedTag = if (prefix != null) {
+                        prefix + suffix
+                    } else {
+                        rawTagName
+                    }
+                } else {
+                    resolvedTag = rawTagName
+                }
+            }
+        }
     }
 
+    // Skip inline space after tag
     skipInlineWhitespace()
 
-    return when (tagType) {
+    // If value is on next line, advance and use next line's indentation
+    val valueIndent = if (position < localLimit && (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
+        advanceLine()
+        skipWhitespaceAndComments()
+        currentIndent
+    } else {
+        indent
+    }
+
+    val value = when (tagType) {
         GhostYamlTags.TAG_SEQ -> {
             if (position < localLimit && localRawData[position] == C.LEFT_BRACKET_BYTE) {
                 readFlowSequence()
@@ -59,9 +112,18 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
             }
         }
         else -> {
-            readValue(indent, inFlow = false, expectedTag = tagType)
+            readValue(valueIndent, inFlow = false, expectedTag = tagType)
         }
     }
+
+    // Inject tag into the Map if it's a custom tag and value is a Map
+    if (resolvedTag != null && value is MutableMap<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val map = value as MutableMap<String, Any?>
+        map[C.STR_TAG_KEY] = resolvedTag
+    }
+
+    return value
 }
 
 private fun GhostYamlFlatReader.matchDoubleExclamationTag(localRawData: ByteArray, start: Int, len: Int): Int {

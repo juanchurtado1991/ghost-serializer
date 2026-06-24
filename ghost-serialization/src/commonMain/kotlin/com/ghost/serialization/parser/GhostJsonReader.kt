@@ -171,9 +171,7 @@ class GhostJsonReader(
      */
     fun expectByte(expected: Int) {
         if (peekNextToken() != expected) {
-            throwError(
-                "Expected '${Char(expected)}' but found '${Char(nextTokenByte)}'"
-            )
+            throwError("Expected '${Char(expected)}' but found '${Char(nextTokenByte)}'")
         }
         if (expected == C.COMMA_INT) {
             if (depth < C.MAX_BITMASK_DEPTH) {

@@ -20,22 +20,22 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
     val localLimit = limit
 
     while (position < localLimit) {
-        val b = localRawData[position]
+        val currByte = localRawData[position]
         when {
-            b == C.PLUS_BYTE -> {
+            currByte == C.PLUS_BYTE -> {
                 chomp = GhostYamlFlatReader.ChompStyle.KEEP; position++
             }
 
-            b == C.DASH_BYTE -> {
+            currByte == C.DASH_BYTE -> {
                 chomp = GhostYamlFlatReader.ChompStyle.STRIP; position++
             }
 
-            isDigit(b) -> {
-                explicitIndent = (b - C.ZERO_BYTE); position++
+            isDigit(currByte) -> {
+                explicitIndent = (currByte - C.ZERO_BYTE); position++
             }
 
-            b == C.SPACE_BYTE || b == C.TAB_BYTE -> position++
-            b == C.HASH_BYTE -> {
+            currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE -> position++
+            currByte == C.HASH_BYTE -> {
                 skipToEndOfLine(); break
             }
 
@@ -61,28 +61,28 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
 }
 
 internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int): Int {
-    var scanPos = position
+    var scannerPos = position
     val localRawData = rawData
     val localLimit = limit
-    while (scanPos < localLimit) {
-        val b = localRawData[scanPos]
-        if (b == C.NEWLINE_BYTE || b == C.CR_BYTE) {
-            scanPos++
+    while (scannerPos < localLimit) {
+        val currByte = localRawData[scannerPos]
+        if (currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) {
+            scannerPos++
             continue
         }
         // Count leading spaces
         var spaces = 0
-        var p = scanPos
-        while (p < localLimit && localRawData[p] == C.SPACE_BYTE) {
-            spaces++; p++
+        var peekPos = scannerPos
+        while (peekPos < localLimit && localRawData[peekPos] == C.SPACE_BYTE) {
+            spaces++; peekPos++
         }
-        if (p < localLimit && localRawData[p] != C.NEWLINE_BYTE && localRawData[p] != C.CR_BYTE) {
+        if (peekPos < localLimit && localRawData[peekPos] != C.NEWLINE_BYTE && localRawData[peekPos] != C.CR_BYTE) {
             if (spaces <= parentIndent) {
                 return parentIndent + 2
             }
             return spaces
         }
-        scanPos = p
+        scannerPos = peekPos
     }
     return parentIndent + 2
 }

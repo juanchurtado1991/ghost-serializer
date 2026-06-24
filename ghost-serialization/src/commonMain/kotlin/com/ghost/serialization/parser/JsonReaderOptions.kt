@@ -56,7 +56,11 @@ class JsonReaderOptions(
     init {
         var detectedCollision = false
         val seen = HashSet<Long>()
-        for (bytes in rawBytes) {
+        val rawBytesSize = rawBytes.size
+        var rawBytesIdx = 0
+        while (rawBytesIdx < rawBytesSize) {
+            val bytes = rawBytes[rawBytesIdx]
+            rawBytesIdx++
             if (bytes.isNotEmpty()) {
                 var key = 0L
                 if (bytes.size >= SINGLE_CHAR_SIZE) {
@@ -81,7 +85,8 @@ class JsonReaderOptions(
         hasCollisions = detectedCollision
 
         val tableMask = DISPATCH_TABLE_SIZE - 1
-        for (index in rawBytes.indices) {
+        var index = 0
+        while (index < rawBytes.size) {
             val bytes = rawBytes[index]
             if (bytes.isNotEmpty()) {
                 var key = 0
@@ -107,6 +112,7 @@ class JsonReaderOptions(
                     dispatch[perfectHashKey] = index
                 }
             }
+            index++
         }
 
         if (enableStringDispatch) {
@@ -118,7 +124,8 @@ class JsonReaderOptions(
 
     private fun buildStringDispatchTable(table: IntArray) {
         val tableMask = DISPATCH_TABLE_SIZE - 1
-        for (index in rawStrings.indices) {
+        var index = 0
+        while (index < rawStrings.size) {
             val keyString = rawStrings[index]
             if (keyString.isNotEmpty()) {
                 var key = 0
@@ -144,6 +151,7 @@ class JsonReaderOptions(
                     table[perfectHashKey] = index
                 }
             }
+            index++
         }
     }
 
@@ -156,7 +164,7 @@ class JsonReaderOptions(
          * @param names The list of JSON property names to be matched.
          * @return A [JsonReaderOptions] instance configured with default perfect hashing parameters.
          */
-        fun of(vararg names: String): JsonReaderOptions = of(0, 31, *names)
+        fun of(vararg names: String): JsonReaderOptions = of(0, C.STR_POOL_HASH_MULTIPLIER, *names)
 
         /**
          * Creates an optimized options configuration for a predefined set of field names,

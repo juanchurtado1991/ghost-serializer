@@ -139,10 +139,12 @@ class GhostJsonStringReader(
             throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
         val chars = rawChars
-        for (i in 0 until size) {
-            if (chars[position + i].code != (expected[i].toInt() and C.BYTE_MASK)) {
+        var idx = 0
+        while (idx < size) {
+            if (chars[position + idx].code != (expected[idx].toInt() and C.BYTE_MASK)) {
                 throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
             }
+            idx++
         }
         position += size
         nextTokenByte = C.RESET_TOKEN_BYTE
@@ -194,7 +196,7 @@ class GhostJsonStringReader(
                 val hash = computeStringPoolHash(start, length)
                 // XOR length into bucket selection to disambiguate strings that share
                 // the same first-4-chars prefix but have different lengths.
-                val bucketIndex = (hash xor (length * 31)) and (C.STR_POOL_SIZE - 1)
+                val bucketIndex = (hash xor (length * C.STR_POOL_HASH_MULTIPLIER)) and (C.STR_POOL_SIZE - 1)
                 val cached = stringPool[bucketIndex]
                 if (cached != null && poolContentEquals(start, length, cached)) {
                     return cached  // zero allocation — reuse existing String object
@@ -234,7 +236,8 @@ class GhostJsonStringReader(
         val localBByteInt = C.B_BYTE_INT
         val localFByteInt = C.F_BYTE_INT
 
-        while (startPosition < limit) {
+        val localLimit = limit
+        while (startPosition < localLimit) {
             val byteValue = chars[startPosition++].code
             if (byteValue == localQuoteInt) {
                 position = startPosition
@@ -367,7 +370,8 @@ class GhostJsonStringReader(
         val localUnicodePrefixUInt = C.UNICODE_PREFIX_U_INT
         val localUnicodeHexLength = C.UNICODE_HEX_LENGTH
 
-        while (scanPosition < limit) {
+        val localLimit = limit
+        while (scanPosition < localLimit) {
             val byteValue = chars[scanPosition++].code
             if (byteValue == localQuoteInt) {
                 position = scanPosition
@@ -471,8 +475,10 @@ class GhostJsonStringReader(
     private fun poolContentEquals(start: Int, length: Int, cached: String): Boolean {
         if (cached.length != length) return false
         val chars = rawChars
-        for (i in 0 until length) {
-            if (cached[i] != chars[start + i]) return false
+        var idx = 0
+        while (idx < length) {
+            if (cached[idx] != chars[start + idx]) return false
+            idx++
         }
         return true
     }
