@@ -53,7 +53,8 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 ## Full Benchmark Results
 
-→ **[benchmarks.md](docs/wiki/benchmarks.md)** — Twitter macro dataset, multi-engine comparison tables, stress tests, special feature benchmarks, and instructions to run locally.
+* 📊 **[HTTP Arena Benchmarks →](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** — Official community benchmarks showing `ktor-ghost` achieving **+66% throughput** and **50% RAM reduction** vs standard Ktor.
+* 📈 **[benchmarks.md](docs/wiki/benchmarks.md)** — Twitter macro dataset, multi-engine comparison tables, stress tests, special feature benchmarks, and instructions to run locally.
 
 ---
 
