@@ -35,6 +35,16 @@ import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_F_BYTE
 import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_N_BYTE
 import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_T_BYTE
 import com.ghost.serialization.yaml.GhostYamlConstants.ZERO_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_X_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_X_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_O_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_O_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_B_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_B_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.LOWERCASE_A_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.UPPERCASE_A_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.ONE_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants.SEVEN_BYTE
 
 /**
  * High-performance, zero-intermediate-allocation YAML reader operating on a [ByteArray].
@@ -101,7 +111,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * @param indent The indentation level of the enclosing context (INDENT_UNSET for root).
      * @param inFlow Whether we are inside a flow collection `{...}` or `[...]`.
      */
-    internal fun readValue(indent: Int, inFlow: Boolean): Any? {
+    internal fun readValue(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? {
         skipInlineWhitespace()
         if (position >= limit) return null
 
@@ -118,14 +128,14 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val next = if (position + 1 < limit) rawData[position + 1] else 0
                 when {
-                    isDigit(next)           -> readNumber()
+                    expectedTag != GhostYamlTags.TAG_STR && isDigit(next) -> readNumber()
                     next == SPACE_BYTE || next == NEWLINE_BYTE || next == CR_BYTE ->
                         readBlockSequence(indent)
                     isDocumentMarker()      -> null  // document end
-                    else                    -> readPlainScalar(indent, inFlow)
+                    else                    -> readPlainScalar(indent, inFlow, expectedTag)
                 }
             }
-            else                        -> readPlainScalarOrMapping(indent, inFlow)
+            else                        -> readPlainScalarOrMapping(indent, inFlow, expectedTag)
         }
     }
 
@@ -270,7 +280,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * Reads either a plain scalar (string, int, float, bool, null) or detects
      * that the current content is actually a block mapping key.
      */
-    private fun readPlainScalarOrMapping(indent: Int, inFlow: Boolean): Any? {
+    internal fun readPlainScalarOrMapping(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? {
         val startPos = position
 
         // Scan forward to find ':' or end-of-line
@@ -307,11 +317,11 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
         // Extract the plain scalar bytes
         val end = trimTrailingSpaces(startPos, scanPos)
         position = scanPos
-        return interpretScalar(rawData, startPos, end)
+        return interpretScalar(rawData, startPos, end, expectedTag)
     }
 
-    private fun readPlainScalar(indent: Int, inFlow: Boolean): Any? =
-        readPlainScalarOrMapping(indent, inFlow)
+    private fun readPlainScalar(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? =
+        readPlainScalarOrMapping(indent, inFlow, expectedTag)
 
     // ── Key reading ────────────────────────────────────────────────────────────
 
@@ -356,11 +366,37 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
      * Type priority (YAML 1.2 core schema):
      *   null → bool → int → float → string
      */
-    private fun interpretScalar(data: ByteArray, start: Int, end: Int): Any? {
+    private fun interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
         val len = end - start
         if (len == 0) return null
 
         val b0 = data[start]
+
+        if (expectedTag == GhostYamlTags.TAG_STR) {
+            return data.decodeToString(start, end)
+        }
+        if (expectedTag == GhostYamlTags.TAG_NULL) {
+            return null
+        }
+        if (expectedTag == GhostYamlTags.TAG_BOOL) {
+            if (isTrueLiteral(data, start, len)) return true
+            if (isFalseLiteral(data, start, len)) return false
+            return data.decodeToString(start, end) == "true"
+        }
+        if (expectedTag == GhostYamlTags.TAG_INT) {
+            tryParseNumber(data, start, end)?.let {
+                if (it is Long) return it
+                if (it is Double) return it.toLong()
+            }
+            return data.decodeToString(start, end).toLongOrNull() ?: 0L
+        }
+        if (expectedTag == GhostYamlTags.TAG_FLOAT) {
+            tryParseNumber(data, start, end)?.let {
+                if (it is Double) return it
+                if (it is Long) return it.toDouble()
+            }
+            return data.decodeToString(start, end).toDoubleOrNull() ?: 0.0
+        }
 
         // null: ~, null, Null, NULL
         if (b0 == TILDE_BYTE && len == 1) return null
@@ -489,10 +525,7 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
 
 
-    /** Group D/F — Tagged value (!<Type>, !!str, etc.). Stub until implemented. */
-    private fun readTaggedValue(indent: Int): Any? {
-        throw UnsupportedOperationException("YAML tags (Group D/F) not yet implemented")
-    }
+
 
     /** Group E — Anchored value (&anchor). Stub until implemented. */
     private fun readAnchoredValue(indent: Int): Any? {
@@ -697,6 +730,45 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
         if (data[pos] == DASH_BYTE) { isNeg = true; pos++ }
         if (pos >= end) return null
+
+        // Check for hex (0x), octal (0o), binary (0b)
+        if (end - pos >= 3 && data[pos] == ZERO_BYTE) {
+            val nextByte = data[pos + 1]
+            if (nextByte == LOWERCASE_X_BYTE || nextByte == UPPERCASE_X_BYTE) { // x or X
+                var value = 0L
+                for (i in pos + 2 until end) {
+                    val b = data[i]
+                    val digit = when {
+                        isDigit(b) -> (b - ZERO_BYTE).toLong()
+                        b in LOWERCASE_A_BYTE..LOWERCASE_F_BYTE -> (b - LOWERCASE_A_BYTE + 10).toLong() // a-f
+                        b in UPPERCASE_A_BYTE..UPPERCASE_F_BYTE -> (b - UPPERCASE_A_BYTE + 10).toLong() // A-F
+                        else -> return null
+                    }
+                    value = (value shl 4) or digit
+                }
+                return if (isNeg) -value else value
+            }
+            if (nextByte == LOWERCASE_O_BYTE || nextByte == UPPERCASE_O_BYTE) { // o or O
+                var value = 0L
+                for (i in pos + 2 until end) {
+                    val b = data[i]
+                    if (b < ZERO_BYTE || b > SEVEN_BYTE) return null // 0-7
+                    val digit = (b - ZERO_BYTE).toLong()
+                    value = (value shl 3) or digit
+                }
+                return if (isNeg) -value else value
+            }
+            if (nextByte == LOWERCASE_B_BYTE || nextByte == UPPERCASE_B_BYTE) { // b or B
+                var value = 0L
+                for (i in pos + 2 until end) {
+                    val b = data[i]
+                    if (b != ZERO_BYTE && b != ONE_BYTE) return null // 0 or 1
+                    val digit = (b - ZERO_BYTE).toLong()
+                    value = (value shl 1) or digit
+                }
+                return if (isNeg) -value else value
+            }
+        }
 
         // Check for .inf / .nan
         if (data[pos] == DOT_BYTE) {
