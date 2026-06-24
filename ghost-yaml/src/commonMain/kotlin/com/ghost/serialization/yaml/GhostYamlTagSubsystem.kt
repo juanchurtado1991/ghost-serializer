@@ -1,27 +1,6 @@
 package com.ghost.serialization.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants.EXCLAMATION_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.SPACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.TAB_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.NEWLINE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CR_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LEFT_BRACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.LEFT_BRACKET_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_S_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_T_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_R_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_I_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_N_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_E_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_Q_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_M_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_A_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_P_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_B_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_O_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_L_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_U_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.CHAR_F_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 internal object GhostYamlTags {
     const val TAG_NONE = 0
@@ -36,33 +15,35 @@ internal object GhostYamlTags {
 
 internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
     position++ // consume '!'
-    if (position >= limit) yamlError("Unexpected end of input after tag indicator")
+    val localRawData = rawData
+    val localLimit = limit
+    if (position >= localLimit) yamlError("Unexpected end of input after tag indicator")
 
     var isDoubleExcl = false
-    if (rawData[position] == EXCLAMATION_BYTE) {
+    if (localRawData[position] == C.EXCLAMATION_BYTE) {
         isDoubleExcl = true
         position++
     }
 
     // Read tag name
     val tagStart = position
-    while (position < limit) {
-        val b = rawData[position]
-        if (b == SPACE_BYTE || b == TAB_BYTE || b == NEWLINE_BYTE || b == CR_BYTE) break
+    while (position < localLimit) {
+        val b = localRawData[position]
+        if (b == C.SPACE_BYTE || b == C.TAB_BYTE || b == C.NEWLINE_BYTE || b == C.CR_BYTE) break
         position++
     }
     val tagLen = position - tagStart
 
     var tagType = GhostYamlTags.TAG_NONE
     if (isDoubleExcl && tagLen > 0) {
-        tagType = matchDoubleExclamationTag(tagStart, tagLen)
+        tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
     }
 
     skipInlineWhitespace()
 
     return when (tagType) {
         GhostYamlTags.TAG_SEQ -> {
-            if (position < limit && rawData[position] == LEFT_BRACKET_BYTE) {
+            if (position < localLimit && localRawData[position] == C.LEFT_BRACKET_BYTE) {
                 readFlowSequence()
             } else {
                 skipWhitespaceAndComments()
@@ -70,7 +51,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
             }
         }
         GhostYamlTags.TAG_MAP -> {
-            if (position < limit && rawData[position] == LEFT_BRACE_BYTE) {
+            if (position < localLimit && localRawData[position] == C.LEFT_BRACE_BYTE) {
                 readFlowMapping()
             } else {
                 skipWhitespaceAndComments()
@@ -83,29 +64,29 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
     }
 }
 
-private fun GhostYamlFlatReader.matchDoubleExclamationTag(start: Int, len: Int): Int {
+private fun GhostYamlFlatReader.matchDoubleExclamationTag(localRawData: ByteArray, start: Int, len: Int): Int {
     if (len == 3) {
-        if (rawData[start] == CHAR_S_BYTE && rawData[start + 1] == CHAR_T_BYTE && rawData[start + 2] == CHAR_R_BYTE) {
+        if (localRawData[start] == C.CHAR_S_BYTE && localRawData[start + 1] == C.CHAR_T_BYTE && localRawData[start + 2] == C.CHAR_R_BYTE) {
             return GhostYamlTags.TAG_STR
         }
-        if (rawData[start] == CHAR_I_BYTE && rawData[start + 1] == CHAR_N_BYTE && rawData[start + 2] == CHAR_T_BYTE) {
+        if (localRawData[start] == C.CHAR_I_BYTE && localRawData[start + 1] == C.CHAR_N_BYTE && localRawData[start + 2] == C.CHAR_T_BYTE) {
             return GhostYamlTags.TAG_INT
         }
-        if (rawData[start] == CHAR_S_BYTE && rawData[start + 1] == CHAR_E_BYTE && rawData[start + 2] == CHAR_Q_BYTE) {
+        if (localRawData[start] == C.CHAR_S_BYTE && localRawData[start + 1] == C.CHAR_E_BYTE && localRawData[start + 2] == C.CHAR_Q_BYTE) {
             return GhostYamlTags.TAG_SEQ
         }
-        if (rawData[start] == CHAR_M_BYTE && rawData[start + 1] == CHAR_A_BYTE && rawData[start + 2] == CHAR_P_BYTE) {
+        if (localRawData[start] == C.CHAR_M_BYTE && localRawData[start + 1] == C.CHAR_A_BYTE && localRawData[start + 2] == C.CHAR_P_BYTE) {
             return GhostYamlTags.TAG_MAP
         }
     } else if (len == 4) {
-        if (rawData[start] == CHAR_B_BYTE && rawData[start + 1] == CHAR_O_BYTE && rawData[start + 2] == CHAR_O_BYTE && rawData[start + 3] == CHAR_L_BYTE) {
+        if (localRawData[start] == C.CHAR_B_BYTE && localRawData[start + 1] == C.CHAR_O_BYTE && localRawData[start + 2] == C.CHAR_O_BYTE && localRawData[start + 3] == C.CHAR_L_BYTE) {
             return GhostYamlTags.TAG_BOOL
         }
-        if (rawData[start] == CHAR_N_BYTE && rawData[start + 1] == CHAR_U_BYTE && rawData[start + 2] == CHAR_L_BYTE && rawData[start + 3] == CHAR_L_BYTE) {
+        if (localRawData[start] == C.CHAR_N_BYTE && localRawData[start + 1] == C.CHAR_U_BYTE && localRawData[start + 2] == C.CHAR_L_BYTE && localRawData[start + 3] == C.CHAR_L_BYTE) {
             return GhostYamlTags.TAG_NULL
         }
     } else if (len == 5) {
-        if (rawData[start] == CHAR_F_BYTE && rawData[start + 1] == CHAR_L_BYTE && rawData[start + 2] == CHAR_O_BYTE && rawData[start + 3] == CHAR_A_BYTE && rawData[start + 4] == CHAR_T_BYTE) {
+        if (localRawData[start] == C.CHAR_F_BYTE && localRawData[start + 1] == C.CHAR_L_BYTE && localRawData[start + 2] == C.CHAR_O_BYTE && localRawData[start + 3] == C.CHAR_A_BYTE && localRawData[start + 4] == C.CHAR_T_BYTE) {
             return GhostYamlTags.TAG_FLOAT
         }
     }

@@ -1,15 +1,6 @@
 package com.ghost.serialization.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants.CR_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.DASH_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.GT_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.HASH_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.NEWLINE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.PIPE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.PLUS_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.SPACE_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.TAB_BYTE
-import com.ghost.serialization.yaml.GhostYamlConstants.ZERO_BYTE
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
  * Subsystem for parsing YAML Block Scalars (Literal | and Folded > styles).
@@ -19,29 +10,44 @@ import com.ghost.serialization.yaml.GhostYamlConstants.ZERO_BYTE
 internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
     // Skip the indicator and any chomp/indent modifiers on the same line
     position++ // consume '|' or '>'
-    val isFolded = indicator == GT_BYTE
+    val isFolded = indicator == C.GT_BYTE
 
     // Read optional chomp indicator and indentation indicator
     var chomp = GhostYamlFlatReader.ChompStyle.CLIP
     var explicitIndent = -1
 
-    while (position < limit) {
-        val b = rawData[position]
+    val localRawData = rawData
+    val localLimit = limit
+
+    while (position < localLimit) {
+        val b = localRawData[position]
         when {
-            b == PLUS_BYTE  -> { chomp = GhostYamlFlatReader.ChompStyle.KEEP; position++ }
-            b == DASH_BYTE  -> { chomp = GhostYamlFlatReader.ChompStyle.STRIP; position++ }
-            isDigit(b)      -> { explicitIndent = (b - ZERO_BYTE).toInt(); position++ }
-            b == SPACE_BYTE || b == TAB_BYTE -> position++
-            b == HASH_BYTE  -> { skipToEndOfLine(); break }
-            else            -> break
+            b == C.PLUS_BYTE -> {
+                chomp = GhostYamlFlatReader.ChompStyle.KEEP; position++
+            }
+
+            b == C.DASH_BYTE -> {
+                chomp = GhostYamlFlatReader.ChompStyle.STRIP; position++
+            }
+
+            isDigit(b) -> {
+                explicitIndent = (b - C.ZERO_BYTE); position++
+            }
+
+            b == C.SPACE_BYTE || b == C.TAB_BYTE -> position++
+            b == C.HASH_BYTE -> {
+                skipToEndOfLine(); break
+            }
+
+            else -> break
         }
     }
     // Skip to next line
     skipToEndOfLine()
-    if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-    else if (position < limit && rawData[position] == CR_BYTE) {
+    if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
+    else if (position < localLimit && localRawData[position] == C.CR_BYTE) {
         position++
-        if (position < limit && rawData[position] == NEWLINE_BYTE) position++
+        if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
     }
 
     // Determine block indentation from first non-empty line
@@ -56,17 +62,21 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
 
 internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int): Int {
     var scanPos = position
-    while (scanPos < limit) {
-        val b = rawData[scanPos]
-        if (b == NEWLINE_BYTE || b == CR_BYTE) {
+    val localRawData = rawData
+    val localLimit = limit
+    while (scanPos < localLimit) {
+        val b = localRawData[scanPos]
+        if (b == C.NEWLINE_BYTE || b == C.CR_BYTE) {
             scanPos++
             continue
         }
         // Count leading spaces
         var spaces = 0
         var p = scanPos
-        while (p < limit && rawData[p] == SPACE_BYTE) { spaces++; p++ }
-        if (p < limit && rawData[p] != NEWLINE_BYTE && rawData[p] != CR_BYTE) {
+        while (p < localLimit && localRawData[p] == C.SPACE_BYTE) {
+            spaces++; p++
+        }
+        if (p < localLimit && localRawData[p] != C.NEWLINE_BYTE && localRawData[p] != C.CR_BYTE) {
             if (spaces <= parentIndent) {
                 return parentIndent + 2
             }
@@ -77,26 +87,35 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int): Int
     return parentIndent + 2
 }
 
-internal fun GhostYamlFlatReader.readBlockScalarContent(blockIndent: Int, isFolded: Boolean, chomp: GhostYamlFlatReader.ChompStyle): String {
+internal fun GhostYamlFlatReader.readBlockScalarContent(
+    blockIndent: Int,
+    isFolded: Boolean,
+    chomp: GhostYamlFlatReader.ChompStyle
+): String {
     val sb = StringBuilder()
     var trailingNewlines = 0
     var isFirstLine = true
     var lastLineWasIndented = false
 
-    while (position < limit) {
+    val localRawData = rawData
+    val localLimit = limit
+
+    while (position < localLimit) {
         // Count indentation
         var spaces = 0
         val lineStart = position
-        while (position < limit && rawData[position] == SPACE_BYTE) { spaces++; position++ }
+        while (position < localLimit && localRawData[position] == C.SPACE_BYTE) {
+            spaces++; position++
+        }
 
-        if (position >= limit || rawData[position] == NEWLINE_BYTE || rawData[position] == CR_BYTE) {
+        if (position >= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {
             // Empty line
             trailingNewlines++
             skipToEndOfLine()
-            if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-            else if (position < limit && rawData[position] == CR_BYTE) {
+            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
+            else if (position < localLimit && localRawData[position] == C.CR_BYTE) {
                 position++
-                if (position < limit && rawData[position] == NEWLINE_BYTE) position++
+                if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
             }
             continue
         }
@@ -135,18 +154,18 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(blockIndent: Int, isFold
 
         // Append line content
         val contentStart = position
-        while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
+        while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
             position++
         }
-        sb.append(rawData.decodeToString(contentStart, position))
+        sb.append(localRawData.decodeToString(contentStart, position))
 
         // Consume the newline
         skipToEndOfLine()
-        if (position < limit && rawData[position] == NEWLINE_BYTE) {
+        if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) {
             position++
-        } else if (position < limit && rawData[position] == CR_BYTE) {
+        } else if (position < localLimit && localRawData[position] == C.CR_BYTE) {
             position++
-            if (position < limit && rawData[position] == NEWLINE_BYTE) position++
+            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
         }
         trailingNewlines = 1 // Count the newline ending this content line
     }
@@ -160,13 +179,15 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(blockIndent: Int, isFold
             while (end > 0 && content[end - 1] == '\n') end--
             content.substring(0, end)
         }
-        GhostYamlFlatReader.ChompStyle.CLIP  -> {
+
+        GhostYamlFlatReader.ChompStyle.CLIP -> {
             // Keep exactly one newline if content is not empty
             var end = content.length
             while (end > 0 && content[end - 1] == '\n') end--
             if (end > 0) content.substring(0, end) + "\n" else ""
         }
-        GhostYamlFlatReader.ChompStyle.KEEP  -> {
+
+        GhostYamlFlatReader.ChompStyle.KEEP -> {
             val trailing = if (trailingNewlines > 0) "\n".repeat(trailingNewlines) else ""
             content + trailing
         }
