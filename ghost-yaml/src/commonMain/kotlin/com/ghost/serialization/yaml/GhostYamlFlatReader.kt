@@ -518,15 +518,15 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
         // Determine block indentation from first non-empty line
         val blockIndent = if (explicitIndent >= 0) {
-            currentIndent + explicitIndent
+            explicitIndent
         } else {
-            detectBlockScalarIndent()
+            detectBlockScalarIndent(currentIndent)
         }
 
         return readBlockScalarContent(blockIndent, isFolded, chomp)
     }
 
-    private fun detectBlockScalarIndent(): Int {
+    private fun detectBlockScalarIndent(parentIndent: Int): Int {
         var scanPos = position
         while (scanPos < limit) {
             val b = rawData[scanPos]
@@ -539,16 +539,21 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
             var p = scanPos
             while (p < limit && rawData[p] == SPACE_BYTE) { spaces++; p++ }
             if (p < limit && rawData[p] != NEWLINE_BYTE && rawData[p] != CR_BYTE) {
+                if (spaces <= parentIndent) {
+                    return parentIndent + 2
+                }
                 return spaces
             }
             scanPos = p
         }
-        return 0
+        return parentIndent + 2
     }
 
     private fun readBlockScalarContent(blockIndent: Int, isFolded: Boolean, chomp: ChompStyle): String {
         val sb = StringBuilder()
         var trailingNewlines = 0
+        var isFirstLine = true
+        var lastLineWasIndented = false
 
         while (position < limit) {
             // Count indentation
@@ -558,9 +563,6 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
             if (position >= limit || rawData[position] == NEWLINE_BYTE || rawData[position] == CR_BYTE) {
                 // Empty line
-                if (spaces < blockIndent) {
-                    // De-indented empty line → end of block scalar if truly less
-                }
                 trailingNewlines++
                 skipToEndOfLine()
                 if (position < limit && rawData[position] == NEWLINE_BYTE) position++
@@ -577,39 +579,69 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                 break
             }
 
-            // Append pending newlines
-            if (isFolded && sb.isNotEmpty()) {
-                if (trailingNewlines == 1) {
-                    sb.append(' ')
-                } else {
-                    repeat(trailingNewlines - 1) { sb.append('\n') }
-                }
-            } else {
-                repeat(trailingNewlines) { sb.append('\n') }
-            }
-            trailingNewlines = 0
+            // We have skipped spaces when counting them. Position is currently at lineStart + spaces.
+            val effectiveSpaces = spaces - blockIndent
+            val isIndented = effectiveSpaces > 0
 
-            // Append line content (from blockIndent offset)
+            // If we have accumulated trailing newlines, append them
+            if (trailingNewlines > 0) {
+                if (!isFirstLine) {
+                    if (trailingNewlines == 1) {
+                        if (isFolded && !isIndented && !lastLineWasIndented) {
+                            sb.append(' ')
+                        } else {
+                            sb.append('\n')
+                        }
+                    } else {
+                        val toAppend = if (isFolded) trailingNewlines - 1 else trailingNewlines
+                        repeat(toAppend) { sb.append('\n') }
+                    }
+                }
+                trailingNewlines = 0
+            }
+            isFirstLine = false
+            lastLineWasIndented = isIndented
+
+            // Append remaining spaces (effectiveSpaces)
+            repeat(effectiveSpaces) { sb.append(' ') }
+
+            // Append line content
             val contentStart = position
             while (position < limit && rawData[position] != NEWLINE_BYTE && rawData[position] != CR_BYTE) {
                 position++
             }
             sb.append(rawData.decodeToString(contentStart, position))
 
+            // Consume the newline
             skipToEndOfLine()
-            if (position < limit && rawData[position] == NEWLINE_BYTE) position++
-            else if (position < limit && rawData[position] == CR_BYTE) {
+            if (position < limit && rawData[position] == NEWLINE_BYTE) {
+                position++
+            } else if (position < limit && rawData[position] == CR_BYTE) {
                 position++
                 if (position < limit && rawData[position] == NEWLINE_BYTE) position++
             }
-            trailingNewlines = 1
+            trailingNewlines = 1 // Count the newline ending this content line
         }
 
-        // Apply chomp
+        // Apply chomping style on the final string
+        val content = sb.toString()
         return when (chomp) {
-            ChompStyle.STRIP -> sb.toString()
-            ChompStyle.CLIP  -> if (trailingNewlines > 0) sb.append('\n').toString() else sb.toString()
-            ChompStyle.KEEP  -> { repeat(trailingNewlines) { sb.append('\n') }; sb.toString() }
+            ChompStyle.STRIP -> {
+                // Strip all trailing newlines
+                var end = content.length
+                while (end > 0 && content[end - 1] == '\n') end--
+                content.substring(0, end)
+            }
+            ChompStyle.CLIP  -> {
+                // Keep exactly one newline if content is not empty
+                var end = content.length
+                while (end > 0 && content[end - 1] == '\n') end--
+                if (end > 0) content.substring(0, end) + "\n" else ""
+            }
+            ChompStyle.KEEP  -> {
+                val trailing = if (trailingNewlines > 0) "\n".repeat(trailingNewlines) else ""
+                content + trailing
+            }
         }
     }
 
