@@ -104,7 +104,44 @@ internal object GhostYamlConstants {
     /** '9' */
     const val NINE_BYTE: Byte = 0x39
 
-    /** '+' is reused as PLUS_BYTE above */
+    /** 'x' */
+    const val LOWERCASE_X_BYTE: Byte = 0x78
+
+    /** 'X' */
+    const val UPPERCASE_X_BYTE: Byte = 0x58
+
+    /** 'o' */
+    const val LOWERCASE_O_BYTE: Byte = 0x6F
+
+    /** 'O' */
+    const val UPPERCASE_O_BYTE: Byte = 0x4F
+
+    /** 'b' */
+    const val LOWERCASE_B_BYTE: Byte = 0x62
+
+    /** 'B' */
+    const val UPPERCASE_B_BYTE: Byte = 0x42
+
+    // ── Tag Character constants ──────────────────────────────────────────────
+    const val CHAR_A_BYTE: Byte = 0x61
+    const val CHAR_B_BYTE: Byte = 0x62
+    const val CHAR_E_BYTE: Byte = 0x65
+    const val CHAR_F_BYTE: Byte = 0x66
+    const val CHAR_I_BYTE: Byte = 0x69
+    const val CHAR_L_BYTE: Byte = 0x6C
+    const val CHAR_M_BYTE: Byte = 0x6D
+    const val CHAR_N_BYTE: Byte = 0x6E
+    const val CHAR_O_BYTE: Byte = 0x6F
+    const val CHAR_P_BYTE: Byte = 0x70
+    const val CHAR_Q_BYTE: Byte = 0x71
+    const val CHAR_R_BYTE: Byte = 0x72
+    const val CHAR_S_BYTE: Byte = 0x73
+    const val CHAR_T_BYTE: Byte = 0x74
+    const val CHAR_U_BYTE: Byte = 0x75
+    const val LOWERCASE_A_BYTE: Byte = 0x61
+    const val UPPERCASE_A_BYTE: Byte = 0x41
+    const val ONE_BYTE: Byte = 0x31
+    const val SEVEN_BYTE: Byte = 0x37
 
     // ── Boolean / null scalar first bytes ────────────────────────────────────
 
