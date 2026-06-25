@@ -330,7 +330,7 @@ internal abstract class BaseDeserializeEmitter(
             val bitIdx = index % C.MASK_SIZE_BITS.toInt()
             val bitMask = C.VAL_ONE_L shl bitIdx
             val bitMaskStr = formatMaskString(bitMask)
-            val name = "MASK_" + prop.kotlinName.uppercase()
+            val name = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
             if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                 typeSpecBuilder.addProperty(
                     PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)
@@ -345,7 +345,7 @@ internal abstract class BaseDeserializeEmitter(
             val reqMask = requiredMasks[i]
             if (reqMask != C.VAL_ZERO_L) {
                 val reqMaskStr = formatMaskString(reqMask)
-                val name = "MASK_REQUIRED_$i"
+                val name = C.STR_MASK_REQUIRED_PREFIX + i
                 if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                     typeSpecBuilder.addProperty(
                         PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)
@@ -361,7 +361,7 @@ internal abstract class BaseDeserializeEmitter(
             val defMask = defaultMasks[i]
             if (defMask != C.VAL_ZERO_L) {
                 val defMaskStr = formatMaskString(defMask)
-                val name = "MASK_DEFAULTS_$i"
+                val name = C.STR_MASK_DEFAULTS_PREFIX + i
                 if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                     typeSpecBuilder.addProperty(
                         PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)

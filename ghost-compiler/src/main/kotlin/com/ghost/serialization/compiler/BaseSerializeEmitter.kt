@@ -78,8 +78,8 @@ internal abstract class BaseSerializeEmitter(
             .replace(C.STR_DOT, C.STR_UNDERSCORE)
             .uppercase()
 
-        val isStringWriter = writerClass.simpleName == "GhostJsonStringWriter"
-        val headerName = if (isStringWriter) "HS_" + cleanName else C.STR_H_VAL_PREFIX + cleanName
+        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
+        val headerName = if (isStringWriter) C.STR_HS_PREFIX + cleanName else C.STR_H_VAL_PREFIX + cleanName
         val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
 
         if (prop.isNullable) {
@@ -155,15 +155,15 @@ internal abstract class BaseSerializeEmitter(
      */
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
-            if (writerClass.simpleName == "GhostJsonStringWriter") {
-                code.addStatement("val tempFlatWriter = com.ghost.serialization.writer.GhostJsonFlatWriter(com.ghost.serialization.writer.FlatByteArrayWriter())")
+            if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {
+                code.addStatement(C.STR_TEMP_FLAT_WRITER_INIT)
                 code.addStatement(
                     "%T.%L(tempFlatWriter, %L)",
                     prop.customEncoder.provider,
                     prop.customEncoder.functionName,
                     accessor
                 )
-                code.addStatement("writer.buffer.writeString(tempFlatWriter.buffer.toStringUtf8())")
+                code.addStatement(C.STR_WRITE_TEMP_FLAT_WRITER)
             } else {
                 code.addStatement(
                     C.STR_CUSTOM_ENCODER_CALL,
