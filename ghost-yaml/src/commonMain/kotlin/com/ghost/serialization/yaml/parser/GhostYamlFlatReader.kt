@@ -1,5 +1,6 @@
 package com.ghost.serialization.yaml.parser
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.yaml.exception.GhostYamlException
 
 import com.ghost.serialization.acquireScratchBuffer
@@ -14,7 +15,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  *
  * ## Philosophy (Ghost rules)
  * - Byte vs Byte always — never `.toChar()` in the hot path.
- * - All control bytes via [GhostYamlConstants] — zero magic numbers.
+ * - All control bytes via [com.ghost.serialization.yaml.GhostYamlConstants] — zero magic numbers.
  * - Bitwise ops for all validations (digit, whitespace, alpha).
  * - No `decodeToString` during field matching — only at final value decode.
  * - Hooks for Groups B-G are present as stubs from the start so the architecture
@@ -22,6 +23,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  *
  * @param rawData The full YAML document as a UTF-8 [ByteArray].
  */
+@OptIn(InternalGhostApi::class)
 class GhostYamlFlatReader(var rawData: ByteArray) {
 
     /** Current read position in [rawData]. */
@@ -112,33 +114,39 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
      * @param indent The indentation level of the enclosing context (INDENT_UNSET for root).
      * @param inFlow Whether we are inside a flow collection `{...}` or `[...]`.
      */
-    internal fun readValue(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? {
+    internal fun readValue(
+        indent: Int,
+        inFlow: Boolean,
+        expectedTag: Int = GhostYamlTags.TAG_NONE
+    ): Any? {
         skipInlineWhitespace()
         val localLimit = limit
         if (position >= localLimit) return null
 
         val currentByte = rawData[position]
         return when (currentByte) {
-            C.PIPE_BYTE, C.GT_BYTE          -> readBlockScalar(currentByte)           // Group B hook
-            C.LEFT_BRACE_BYTE             -> readFlowMapping()            // Group C hook
-            C.LEFT_BRACKET_BYTE           -> readFlowSequence()           // Group C hook
-            C.EXCLAMATION_BYTE            -> readTaggedValue(indent)      // Group D/F hook
-            C.AMPERSAND_BYTE              -> readAnchoredValue(indent, inFlow)    // Group E hook
-            C.ASTERISK_BYTE               -> readAlias()                  // Group E hook
-            C.DOUBLE_QUOTE_BYTE           -> readDoubleQuotedString()
-            C.SINGLE_QUOTE_BYTE           -> readSingleQuotedString()
-            C.DASH_BYTE                   -> {
+            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte)           // Group B hook
+            C.LEFT_BRACE_BYTE -> readFlowMapping()            // Group C hook
+            C.LEFT_BRACKET_BYTE -> readFlowSequence()           // Group C hook
+            C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // Group D/F hook
+            C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow)    // Group E hook
+            C.ASTERISK_BYTE -> readAlias()                  // Group E hook
+            C.DOUBLE_QUOTE_BYTE -> readDoubleQuotedString()
+            C.SINGLE_QUOTE_BYTE -> readSingleQuotedString()
+            C.DASH_BYTE -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
                 when {
                     expectedTag != GhostYamlTags.TAG_STR && isDigit(nextByte) -> readNumber()
                     nextByte == C.SPACE_BYTE || nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE ->
                         readBlockSequence(indent)
-                    isDocumentMarker()      -> null  // document end
-                    else                    -> readPlainScalar(indent, inFlow, expectedTag)
+
+                    isDocumentMarker() -> null  // document end
+                    else -> readPlainScalar(indent, inFlow, expectedTag)
                 }
             }
-            else                        -> readPlainScalarOrMapping(indent, inFlow, expectedTag)
+
+            else -> readPlainScalarOrMapping(indent, inFlow, expectedTag)
         }
     }
 
@@ -178,9 +186,9 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                 // After ':', determine if value is on the same line or next line
                 skipInlineWhitespace()
                 val value = when {
-                    position >= localLimit                       -> null
+                    position >= localLimit -> null
                     localRawData[position] == C.NEWLINE_BYTE ||
-                    localRawData[position] == C.CR_BYTE            -> {
+                            localRawData[position] == C.CR_BYTE -> {
                         // Value is on next line(s) — block scalar, mapping, or sequence
                         advanceLine()
                         skipWhitespaceAndComments()
@@ -197,19 +205,23 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                                 when {
                                     firstByte == C.DASH_BYTE && isBlockSequenceEntry() ->
                                         readBlockSequence(valueIndent)
-                                    firstByte == C.PIPE_BYTE || firstByte == C.GT_BYTE   ->
+
+                                    firstByte == C.PIPE_BYTE || firstByte == C.GT_BYTE ->
                                         readBlockScalar(firstByte)
-                                    else                                              ->
+
+                                    else ->
                                         readBlockMapping(valueIndent)
                                 }
                             }
                         }
                     }
-                    localRawData[position] == C.HASH_BYTE          -> {
+
+                    localRawData[position] == C.HASH_BYTE -> {
                         skipToEndOfLine()
                         null
                     }
-                    else                                    -> readValue(blockIndent, inFlow = false)
+
+                    else -> readValue(blockIndent, inFlow = false)
                 }
 
                 if (key == C.STR_MERGE_KEY) {
@@ -249,19 +261,19 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
 
                 // Consume '-'
                 position++ // '-'
-                
+
                 // Indentation of the element value is the position of '-' plus 2.
                 val elementIndent = lineIndent + 2
-                
+
                 // Skip the optional inline space after '-'
                 if (position < localLimit && localRawData[position] == C.SPACE_BYTE) {
                     position++
                 }
 
                 val item: Any? = when {
-                    position >= localLimit                       -> null
+                    position >= localLimit -> null
                     localRawData[position] == C.NEWLINE_BYTE ||
-                    localRawData[position] == C.CR_BYTE            -> {
+                            localRawData[position] == C.CR_BYTE -> {
                         advanceLine()
                         skipWhitespaceAndComments()
                         if (position >= localLimit) null
@@ -272,7 +284,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                             else readBlockMapping(itemIndent)
                         }
                     }
-                    else                                    -> {
+
+                    else -> {
                         // Value starts on the same line after '- '
                         // Try reading plain scalar or mapping or sequence.
                         // Since we are parsing the list item, we can call readValue with elementIndent.
@@ -293,7 +306,11 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
      * Reads either a plain scalar (string, int, float, bool, null) or detects
      * that the current content is actually a block mapping key.
      */
-    internal fun readPlainScalarOrMapping(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? {
+    internal fun readPlainScalarOrMapping(
+        indent: Int,
+        inFlow: Boolean,
+        expectedTag: Int = GhostYamlTags.TAG_NONE
+    ): Any? {
         val startPosition = position
         val localLimit = limit
         val localRawData = rawData
@@ -310,13 +327,15 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                         localRawData[afterColon] == C.SPACE_BYTE ||
                         localRawData[afterColon] == C.NEWLINE_BYTE ||
                         localRawData[afterColon] == C.CR_BYTE ||
-                        localRawData[afterColon] == C.TAB_BYTE) {
+                        localRawData[afterColon] == C.TAB_BYTE
+                    ) {
                         // Rewind and parse as block mapping
                         position = startPosition
                         return readBlockMapping(indent.coerceAtLeast(0))
                     }
                     scanPosition++
                 }
+
                 currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -> break
                 currentByte == C.HASH_BYTE -> {
                     // Inline comment — the plain scalar ends before '#'
@@ -324,6 +343,7 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                     if (scanPosition > startPosition && localRawData[scanPosition - 1] == C.SPACE_BYTE) break
                     scanPosition++
                 }
+
                 inFlow && (currentByte == C.COMMA_BYTE || currentByte == C.RIGHT_BRACE_BYTE || currentByte == C.RIGHT_BRACKET_BYTE) -> break
                 else -> scanPosition++
             }
@@ -335,7 +355,11 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         return interpretScalar(localRawData, startPosition, endPosition, expectedTag)
     }
 
-    private fun readPlainScalar(indent: Int, inFlow: Boolean, expectedTag: Int = GhostYamlTags.TAG_NONE): Any? =
+    private fun readPlainScalar(
+        indent: Int,
+        inFlow: Boolean,
+        expectedTag: Int = GhostYamlTags.TAG_NONE
+    ): Any? =
         readPlainScalarOrMapping(indent, inFlow, expectedTag)
 
     // ── Key reading ────────────────────────────────────────────────────────────
@@ -362,7 +386,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                             localRawData[nextPosition] == C.SPACE_BYTE ||
                             localRawData[nextPosition] == C.NEWLINE_BYTE ||
                             localRawData[nextPosition] == C.CR_BYTE ||
-                            localRawData[nextPosition] == C.TAB_BYTE) break
+                            localRawData[nextPosition] == C.TAB_BYTE
+                        ) break
                     }
                     if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) break
                     position++
@@ -483,7 +508,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                         val code = processEscapeSequence()
                         if (code <= C.UTF8_1BYTE_MAX) {
                             if (outPos + 1 > outBuffer.size) {
-                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                val newBuffer =
+                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
                                 outBuffer.copyInto(newBuffer, 0, 0, outPos)
                                 releaseScratchBuffer(outBuffer)
                                 outBuffer = newBuffer
@@ -491,41 +517,54 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                             outBuffer[outPos++] = code.toByte()
                         } else if (code <= C.UTF8_2BYTE_MAX) {
                             if (outPos + 2 > outBuffer.size) {
-                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                val newBuffer =
+                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
                                 outBuffer.copyInto(newBuffer, 0, 0, outPos)
                                 releaseScratchBuffer(outBuffer)
                                 outBuffer = newBuffer
                             }
-                            outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         } else if (code <= C.UTF8_3BYTE_MAX) {
                             if (outPos + 3 > outBuffer.size) {
-                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                val newBuffer =
+                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
                                 outBuffer.copyInto(newBuffer, 0, 0, outPos)
                                 releaseScratchBuffer(outBuffer)
                                 outBuffer = newBuffer
                             }
-                            outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         } else {
                             if (outPos + 4 > outBuffer.size) {
-                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                val newBuffer =
+                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
                                 outBuffer.copyInto(newBuffer, 0, 0, outPos)
                                 releaseScratchBuffer(outBuffer)
                                 outBuffer = newBuffer
                             }
-                            outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] =
+                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         }
                     }
                 } else {
                     val startPos = position
                     while (position < localLimit &&
                         localRawData[position] != C.DOUBLE_QUOTE_BYTE &&
-                        localRawData[position] != C.BACKSLASH_BYTE) {
+                        localRawData[position] != C.BACKSLASH_BYTE
+                    ) {
                         position++
                     }
                     val rangeLength = position - startPos
@@ -584,7 +623,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                     position++
                     if (position < localLimit && localRawData[position] == C.SINGLE_QUOTE_BYTE) {
                         if (outPos + 1 > outBuffer.size) {
-                            val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                            val newBuffer =
+                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
                             outBuffer.copyInto(newBuffer, 0, 0, outPos)
                             releaseScratchBuffer(outBuffer)
                             outBuffer = newBuffer
@@ -622,37 +662,42 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
 
     private fun processEscapeSequence(): Int {
         val currentByte = rawData[position++]
+        val currentByteInt = currentByte.toInt()
         val localLimit = limit
         return when (currentByte) {
-            C.DOUBLE_QUOTE_BYTE  -> C.DOUBLE_QUOTE_BYTE.toInt()
-            C.BACKSLASH_BYTE     -> C.BACKSLASH_BYTE.toInt()
-            C.ESCAPE_SLASH_BYTE  -> C.ESCAPE_SLASH_BYTE.toInt()
-            C.LOWERCASE_B_BYTE   -> C.CODE_BS
-            C.LOWERCASE_F_BYTE   -> C.CODE_FF
-            C.LOWERCASE_N_BYTE   -> C.CODE_LF
-            C.LOWERCASE_R_BYTE   -> C.CODE_CR
-            C.LOWERCASE_T_BYTE   -> C.CODE_TAB
-            C.LOWERCASE_U_BYTE   -> {        // \uXXXX
+            C.DOUBLE_QUOTE_BYTE -> currentByteInt
+            C.BACKSLASH_BYTE -> currentByteInt
+            C.ESCAPE_SLASH_BYTE -> currentByteInt
+            C.SPACE_BYTE -> currentByteInt
+            C.TAB_BYTE -> currentByteInt
+            C.LOWERCASE_B_BYTE -> C.CODE_BS
+            C.LOWERCASE_F_BYTE -> C.CODE_FF
+            C.LOWERCASE_N_BYTE -> C.CODE_LF
+            C.LOWERCASE_R_BYTE -> C.CODE_CR
+            C.LOWERCASE_T_BYTE -> C.CODE_TAB
+            C.LOWERCASE_U_BYTE -> {        // \uXXXX
                 if (position + 4 > localLimit) yamlError("Incomplete \\u escape")
                 val hexVal = parseHex(rawData, position, 4)
                 position += 4
                 hexVal
             }
-            C.UPPERCASE_U_BYTE   -> {        // \UXXXXXXXX
+
+            C.UPPERCASE_U_BYTE -> {        // \UXXXXXXXX
                 if (position + 8 > localLimit) yamlError("Incomplete \\U escape")
                 val hexVal = parseHex(rawData, position, 8)
                 position += 8
                 hexVal
             }
-            C.ZERO_BYTE          -> C.CODE_ZERO
-            C.LOWERCASE_A_BYTE   -> C.CODE_BEL
-            C.LOWERCASE_V_BYTE   -> C.CODE_VTAB
-            C.LOWERCASE_E_BYTE   -> C.CODE_ESC
-            C.UPPERCASE_N_BYTE   -> C.CODE_NEXT_LINE
-            C.UNDERSCORE_BYTE    -> C.CODE_NBSP
-            C.UPPERCASE_L_BYTE   -> C.CODE_LINE_SEP
-            C.UPPERCASE_P_BYTE   -> C.CODE_PARA_SEP
-            else           -> yamlError("Unknown escape: \\${currentByte.toInt().toChar()}")
+
+            C.ZERO_BYTE -> C.CODE_ZERO
+            C.LOWERCASE_A_BYTE -> C.CODE_BEL
+            C.LOWERCASE_V_BYTE -> C.CODE_VTAB
+            C.LOWERCASE_E_BYTE -> C.CODE_ESC
+            C.UPPERCASE_N_BYTE -> C.CODE_NEXT_LINE
+            C.UNDERSCORE_BYTE -> C.CODE_NBSP
+            C.UPPERCASE_L_BYTE -> C.CODE_LINE_SEP
+            C.UPPERCASE_P_BYTE -> C.CODE_PARA_SEP
+            else -> yamlError("Unknown escape: \\${currentByteInt.toChar()}")
         }
     }
 
@@ -675,14 +720,15 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
 
     // ── Number parsing ─────────────────────────────────────────────────────────
 
-    private fun readNumber(): Any? {
+    private fun readNumber(): Any {
         val startPosition = position
         val localLimit = limit
         val localRawData = rawData
         while (position < localLimit) {
             val currentByte = localRawData[position]
             if (!isDigit(currentByte) && currentByte != C.DASH_BYTE && currentByte != C.PLUS_BYTE && currentByte != C.DOT_BYTE &&
-                currentByte != C.LOWERCASE_E_BYTE && currentByte != C.UPPERCASE_E_BYTE) break  // e, E for scientific
+                currentByte != C.LOWERCASE_E_BYTE && currentByte != C.UPPERCASE_E_BYTE
+            ) break  // e, E for scientific
             position++
         }
         return tryParseNumber(localRawData, startPosition, position)
@@ -720,11 +766,13 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                     position++
                     currentIndent = 0
                 }
+
                 currentByte == C.CR_BYTE -> {
                     position++
                     if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
                     currentIndent = 0
                 }
+
                 currentByte == C.HASH_BYTE -> skipToEndOfLine()
                 else -> {
                     break
@@ -744,7 +792,9 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         }
         var spaces = 0
         var pointer = lineStart
-        while (pointer < localLimit && localRawData[pointer] == C.SPACE_BYTE) { spaces++; pointer++ }
+        while (pointer < localLimit && localRawData[pointer] == C.SPACE_BYTE) {
+            spaces++; pointer++
+        }
         currentIndent = spaces
     }
 
@@ -794,7 +844,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                         skipInlineWhitespace()
                         val prefixStart = position
                         while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE &&
-                               localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
+                            localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE
+                        ) {
                             position++
                         }
                         val prefix = localRawData.decodeToString(prefixStart, position)
@@ -802,15 +853,23 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                     }
                     skipToEndOfLine()
                 }
-                C.DASH_BYTE    -> if (isDocumentMarker()) { position += 3; break } else break
-                C.NEWLINE_BYTE -> { position++; currentIndent = 0 }
-                C.CR_BYTE      -> {
+
+                C.DASH_BYTE -> if (isDocumentMarker()) {
+                    position += 3; break
+                } else break
+
+                C.NEWLINE_BYTE -> {
+                    position++; currentIndent = 0
+                }
+
+                C.CR_BYTE -> {
                     position++
                     if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
                     currentIndent = 0
                 }
-                C.HASH_BYTE    -> skipToEndOfLine()
-                else         -> break
+
+                C.HASH_BYTE -> skipToEndOfLine()
+                else -> break
             }
         }
     }
@@ -829,7 +888,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         if (position + 2 < localLimit &&
             localRawData[position] == C.DOT_BYTE &&
             localRawData[position + 1] == C.DOT_BYTE &&
-            localRawData[position + 2] == C.DOT_BYTE) {
+            localRawData[position + 2] == C.DOT_BYTE
+        ) {
             position += 3
             skipToEndOfLine()
         }
@@ -841,13 +901,13 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         val localRawData = rawData
         if (position + 2 >= localLimit) return false
         return localRawData[position] == C.DASH_BYTE &&
-            localRawData[position + 1] == C.DASH_BYTE &&
-            localRawData[position + 2] == C.DASH_BYTE &&
-            (position + 3 >= localLimit ||
-                localRawData[position + 3] == C.SPACE_BYTE ||
-                localRawData[position + 3] == C.NEWLINE_BYTE ||
-                localRawData[position + 3] == C.CR_BYTE ||
-                localRawData[position + 3] == C.TAB_BYTE)
+                localRawData[position + 1] == C.DASH_BYTE &&
+                localRawData[position + 2] == C.DASH_BYTE &&
+                (position + 3 >= localLimit ||
+                        localRawData[position + 3] == C.SPACE_BYTE ||
+                        localRawData[position + 3] == C.NEWLINE_BYTE ||
+                        localRawData[position + 3] == C.CR_BYTE ||
+                        localRawData[position + 3] == C.TAB_BYTE)
     }
 
     /** Returns true if current position is at the start of a block sequence entry `- `. */
@@ -857,10 +917,10 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         if (position >= localLimit || localRawData[position] != C.DASH_BYTE) return false
         val nextPosition = position + 1
         return nextPosition >= localLimit ||
-            localRawData[nextPosition] == C.SPACE_BYTE ||
-            localRawData[nextPosition] == C.NEWLINE_BYTE ||
-            localRawData[nextPosition] == C.CR_BYTE ||
-            localRawData[nextPosition] == C.TAB_BYTE
+                localRawData[nextPosition] == C.SPACE_BYTE ||
+                localRawData[nextPosition] == C.NEWLINE_BYTE ||
+                localRawData[nextPosition] == C.CR_BYTE ||
+                localRawData[nextPosition] == C.TAB_BYTE
     }
 
     /** Trims trailing spaces between [start] and [end], returning the new end. */
@@ -920,7 +980,9 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         var currentPosition = start
         var isNegative = false
 
-        if (data[currentPosition] == C.DASH_BYTE) { isNegative = true; currentPosition++ }
+        if (data[currentPosition] == C.DASH_BYTE) {
+            isNegative = true; currentPosition++
+        }
         if (currentPosition >= end) return null
 
         // Check for hex (0x), octal (0o), binary (0b)
@@ -973,9 +1035,9 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
             val stringRepresentation = data.decodeToString(start, end)
             return when (stringRepresentation.lowercase()) {
                 C.STR_DOT_INF, C.STR_PLUS_DOT_INF -> Double.POSITIVE_INFINITY
-                C.STR_MINUS_DOT_INF               -> Double.NEGATIVE_INFINITY
-                C.STR_DOT_NAN                     -> Double.NaN
-                else            -> null
+                C.STR_MINUS_DOT_INF -> Double.NEGATIVE_INFINITY
+                C.STR_DOT_NAN -> Double.NaN
+                else -> null
             }
         }
 
@@ -998,10 +1060,12 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                     accumulatedLongValue = accumulatedLongValue * 10 + digit
                     currentPosition++
                 }
+
                 currentByte == C.DOT_BYTE || currentByte == C.LOWERCASE_E_BYTE || currentByte == C.UPPERCASE_E_BYTE -> {
                     isFloatingPoint = true
                     break
                 }
+
                 else -> return null
             }
         }
@@ -1038,34 +1102,37 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
 
     private var rootParsed = false
     private var rootObject: Any? = null
-    
+
     // Stack for object/list traversal (stores state elements)
     @PublishedApi
     internal val traversalStack = ArrayList<StateFrame>()
-    
+
     @PublishedApi
     internal var currentMap: Map<String, Any?>? = null
+
     @PublishedApi
     internal var mapIterator: Iterator<Map.Entry<String, Any?>>? = null
+
     @PublishedApi
     internal var currentEntry: Map.Entry<String, Any?>? = null
+
     @PublishedApi
     internal var currentList: List<Any?>? = null
+
     @PublishedApi
     internal var listIterator: Iterator<Any?>? = null
-    
+
     var nextValue: Any? = null
-    
+
     var strictMode: Boolean = false
     var coerceStringsToNumbers: Boolean = false
     var coerceBooleans: Boolean = false
     var maxDepth: Int = C.MAX_DEPTH
     var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
-    val initialCollectionCapacity: Int = GhostHeuristics.initialCollectionCapacity
 
     private val tokenEndObject = -1
     private val tokenUnknownName = -2
-    
+
     private fun ensureRootParsed() {
         if (!rootParsed) {
             rootObject = readDocument()
@@ -1076,10 +1143,19 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
 
     fun beginObject() {
         ensureRootParsed()
-        val map = nextValue as? Map<*, *> ?: throw GhostYamlException("Expected Map but found $nextValue")
-        
-        traversalStack.add(StateFrame(currentMap, mapIterator, currentEntry, currentList, listIterator))
-        
+        val map =
+            nextValue as? Map<*, *> ?: throw GhostYamlException("Expected Map but found $nextValue")
+
+        traversalStack.add(
+            StateFrame(
+                currentMap,
+                mapIterator,
+                currentEntry,
+                currentList,
+                listIterator
+            )
+        )
+
         @Suppress("UNCHECKED_CAST")
         currentMap = map as Map<String, Any?>
         mapIterator = currentMap!!.entries.iterator()
@@ -1115,7 +1191,7 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         val entry = iterator.next()
         currentEntry = entry
         nextValue = entry.value
-        
+
         val index = options.findOptionIndex(entry.key)
         if (index >= 0) {
             return index
@@ -1257,12 +1333,20 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
 
     fun beginArray() {
         ensureRootParsed()
-        val list = nextValue as? List<*> ?: throw GhostYamlException("Expected List but found $nextValue")
-        
-        traversalStack.add(StateFrame(currentMap, mapIterator, currentEntry, currentList, listIterator))
-        
-        @Suppress("UNCHECKED_CAST")
-        currentList = list as List<Any?>
+        val list = nextValue as? List<*>
+            ?: throw GhostYamlException("Expected List but found $nextValue")
+
+        traversalStack.add(
+            StateFrame(
+                currentMap,
+                mapIterator,
+                currentEntry,
+                currentList,
+                listIterator
+            )
+        )
+
+        currentList = list
         listIterator = currentList!!.iterator()
         currentMap = null
         mapIterator = null
