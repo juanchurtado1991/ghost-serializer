@@ -1014,7 +1014,8 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
     internal enum class ChompStyle { STRIP, CLIP, KEEP }
 
     // ── JSON stream-compatible cursor traversal APIs ──────────────────────────
-    private class StateFrame(
+    @PublishedApi
+    internal class StateFrame(
         val map: Map<String, Any?>?,
         val mapIterator: Iterator<Map.Entry<String, Any?>>?,
         val entry: Map.Entry<String, Any?>?,
@@ -1026,13 +1027,19 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
     private var rootObject: Any? = null
     
     // Stack for object/list traversal (stores state elements)
-    private val traversalStack = ArrayList<StateFrame>()
+    @PublishedApi
+    internal val traversalStack = ArrayList<StateFrame>()
     
-    private var currentMap: Map<String, Any?>? = null
-    private var mapIterator: Iterator<Map.Entry<String, Any?>>? = null
-    private var currentEntry: Map.Entry<String, Any?>? = null
-    private var currentList: List<Any?>? = null
-    private var listIterator: Iterator<Any?>? = null
+    @PublishedApi
+    internal var currentMap: Map<String, Any?>? = null
+    @PublishedApi
+    internal var mapIterator: Iterator<Map.Entry<String, Any?>>? = null
+    @PublishedApi
+    internal var currentEntry: Map.Entry<String, Any?>? = null
+    @PublishedApi
+    internal var currentList: List<Any?>? = null
+    @PublishedApi
+    internal var listIterator: Iterator<Any?>? = null
     
     var nextValue: Any? = null
     
