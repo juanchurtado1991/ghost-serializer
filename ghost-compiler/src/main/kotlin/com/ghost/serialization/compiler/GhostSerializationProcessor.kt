@@ -157,7 +157,15 @@ class GhostSerializationProcessor(
         resolver: Resolver
     ): ClassName? {
         val textChannel = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE
-        val hasYaml = resolver.getClassDeclarationByName(resolver.getKSNameFromString(C.STR_YAML_SERIALIZER_FQN)) != null
+        var hasYaml = resolver.getClassDeclarationByName(resolver.getKSNameFromString(C.STR_YAML_SERIALIZER_FQN)) != null
+        if (hasYaml) {
+            for (prop in propertiesModel) {
+                if (prop.isContextual || prop.customDecoder != null || prop.customEncoder != null) {
+                    hasYaml = false
+                    break
+                }
+            }
+        }
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
             properties = propertiesModel,
