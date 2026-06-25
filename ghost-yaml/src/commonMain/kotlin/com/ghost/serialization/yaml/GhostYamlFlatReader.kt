@@ -400,9 +400,30 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     internal fun readDoubleQuotedString(): String {
         position++ // consume opening '"'
-        val stringBuilder = StringBuilder()
+        val startPosition = position
         val localLimit = limit
         val localRawData = rawData
+
+        var hasEscape = false
+        var scanPos = position
+        while (scanPos < localLimit) {
+            val byteVal = localRawData[scanPos]
+            if (byteVal == C.DOUBLE_QUOTE_BYTE) {
+                break
+            }
+            if (byteVal == C.BACKSLASH_BYTE) {
+                hasEscape = true
+                break
+            }
+            scanPos++
+        }
+
+        if (!hasEscape && scanPos < localLimit) {
+            position = scanPos + 1 // consume string and closing quote
+            return localRawData.decodeToString(startPosition, scanPos)
+        }
+
+        val stringBuilder = StringBuilder()
         while (position < localLimit) {
             val currentByte = localRawData[position]
             when {
@@ -413,14 +434,13 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                     stringBuilder.append(processEscapeSequence())
                 }
                 else -> {
-                    // Fast path: accumulate bytes until special char
-                    val startPosition = position
+                    val startPos = position
                     while (position < localLimit &&
                         localRawData[position] != C.DOUBLE_QUOTE_BYTE &&
                         localRawData[position] != C.BACKSLASH_BYTE) {
                         position++
                     }
-                    stringBuilder.append(localRawData.decodeToString(startPosition, position))
+                    stringBuilder.append(localRawData.decodeToString(startPos, position))
                 }
             }
         }
@@ -429,15 +449,36 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
 
     internal fun readSingleQuotedString(): String {
         position++ // consume opening '\''
-        val stringBuilder = StringBuilder()
+        val startPosition = position
         val localLimit = limit
         val localRawData = rawData
+
+        var hasEscape = false
+        var scanPos = position
+        while (scanPos < localLimit) {
+            val byteVal = localRawData[scanPos]
+            if (byteVal == C.SINGLE_QUOTE_BYTE) {
+                if (scanPos + 1 < localLimit && localRawData[scanPos + 1] == C.SINGLE_QUOTE_BYTE) {
+                    hasEscape = true
+                    scanPos += 2
+                    continue
+                }
+                break
+            }
+            scanPos++
+        }
+
+        if (!hasEscape && scanPos < localLimit) {
+            position = scanPos + 1 // consume string and closing quote
+            return localRawData.decodeToString(startPosition, scanPos)
+        }
+
+        val stringBuilder = StringBuilder()
         while (position < localLimit) {
             val currentByte = localRawData[position]
             when {
                 currentByte == C.SINGLE_QUOTE_BYTE -> {
                     position++
-                    // Single-quote escape: '' → '
                     if (position < localLimit && localRawData[position] == C.SINGLE_QUOTE_BYTE) {
                         stringBuilder.append('\'')
                         position++
@@ -446,11 +487,11 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
                     }
                 }
                 else -> {
-                    val startPosition = position
+                    val startPos = position
                     while (position < localLimit && localRawData[position] != C.SINGLE_QUOTE_BYTE) {
                         position++
                     }
-                    stringBuilder.append(localRawData.decodeToString(startPosition, position))
+                    stringBuilder.append(localRawData.decodeToString(startPos, position))
                 }
             }
         }
