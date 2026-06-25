@@ -47,14 +47,6 @@ object KtorYamlUserSerializer : GhostSerializer<KtorYamlUser>, GhostYamlSerializ
         return KtorYamlUser(0, "", false)
     }
 
-    override fun serialize(sink: okio.BufferedSink, value: KtorYamlUser) {
-        super<GhostYamlSerializer>.serialize(sink, value)
-    }
-
-    override fun deserialize(source: okio.BufferedSource): KtorYamlUser {
-        return super<GhostYamlSerializer>.deserialize(source)
-    }
-
     override fun serialize(writer: GhostYamlWriter, value: KtorYamlUser) {
         writer.beginObject()
         writer.name("id")
