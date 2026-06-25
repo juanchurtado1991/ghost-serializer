@@ -1,0 +1,82 @@
+# Edge case: Polymorphism - tag-based and property-based
+# Covers: Group F - !<TypeName>, type discriminator property
+
+# Tag-based polymorphism (kaml PolymorphismStyle.Tag equivalent)
+# The YAML tag indicates the concrete type
+
+shapes:
+  - !<Circle>
+    radius: 5.0
+    color: red
+  - !<Rectangle>
+    width: 10.0
+    height: 3.0
+    color: blue
+  - !<Triangle>
+    base: 6.0
+    height: 4.0
+    color: green
+
+# Property-based polymorphism (kaml PolymorphismStyle.Property equivalent)
+# A 'type' discriminator field determines the concrete class
+
+animals:
+  - type: Dog
+    name: Rex
+    breed: German Shepherd
+    age: 3
+  - type: Cat
+    name: Whiskers
+    indoor: true
+    lives: 9
+  - type: Bird
+    name: Tweety
+    wingspan: 0.15
+    canFly: true
+
+# Mixed in a real-world scenario: event sourcing
+events:
+  - !<UserCreatedEvent>
+    eventId: evt-001
+    timestamp: 2024-01-15T10:00:00Z
+    userId: usr-123
+    email: alice@example.com
+    name: Alice
+  - !<UserUpdatedEvent>
+    eventId: evt-002
+    timestamp: 2024-01-15T10:05:00Z
+    userId: usr-123
+    updatedFields:
+      - email
+      - name
+  - !<UserDeletedEvent>
+    eventId: evt-003
+    timestamp: 2024-01-15T10:10:00Z
+    userId: usr-123
+    reason: user_request
+
+# Property-based with custom discriminator name (not 'type')
+notifications:
+  - kind: EmailNotification
+    to: alice@example.com
+    subject: Welcome to Ghost
+    body: Thank you for joining!
+  - kind: SmsNotification
+    phoneNumber: "+1234567890"
+    message: Your code is 123456
+  - kind: PushNotification
+    deviceToken: abc123def456
+    title: New message
+    body: You have a new message from Bob
+
+# Sealed class scenario
+results:
+  - !<Success>
+    value: 42
+    message: Operation completed
+  - !<Failure>
+    errorCode: 404
+    errorMessage: Resource not found
+  - !<Pending>
+    jobId: job-789
+    estimatedMs: 5000
