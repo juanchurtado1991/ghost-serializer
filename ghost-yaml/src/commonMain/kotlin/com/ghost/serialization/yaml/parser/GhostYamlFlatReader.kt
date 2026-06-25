@@ -1116,6 +1116,34 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         nextValue = null
     }
 
+    @com.ghost.serialization.InternalGhostApi
+    inline fun <T> decodeResilient(crossinline block: () -> T): T? {
+        val savedPos = position
+        val savedStackSize = traversalStack.size
+        val savedCurrentMap = currentMap
+        val savedMapIterator = mapIterator
+        val savedCurrentEntry = currentEntry
+        val savedCurrentList = currentList
+        val savedListIterator = listIterator
+        val savedNextValue = nextValue
+        try {
+            return block()
+        } catch (_: Exception) {
+            position = savedPos
+            while (traversalStack.size > savedStackSize) {
+                traversalStack.removeAt(traversalStack.size - 1)
+            }
+            currentMap = savedCurrentMap
+            mapIterator = savedMapIterator
+            currentEntry = savedCurrentEntry
+            currentList = savedCurrentList
+            listIterator = savedListIterator
+            nextValue = savedNextValue
+            skipValue()
+            return null
+        }
+    }
+
     fun isNextNullValue(): Boolean {
         ensureRootParsed()
         return nextValue == null
