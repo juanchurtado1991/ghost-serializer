@@ -9,6 +9,9 @@ package com.ghost.benchmark
 
 import com.charleskorn.kaml.Yaml
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.ghost.serialization.Ghost
@@ -90,7 +93,13 @@ object GhostYamlBenchmark {
 
     private val kaml = Yaml.default
     private val jacksonYaml = YAMLMapper().apply {
-        registerModule(KotlinModule.Builder().build())
+        registerModule(
+            KotlinModule.Builder()
+                .configure(KotlinFeature.NullIsSameAsDefault, true)
+                .build()
+        )
+        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        propertyNamingStrategy = PropertyNamingStrategies.SNAKE_CASE
     }
 
     fun run(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
