@@ -470,45 +470,56 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                 } else if (currentByte == C.BACKSLASH_BYTE) {
                     position++
                     if (position >= localLimit) break
-                    val code = processEscapeSequence()
-                    if (code <= C.UTF8_1BYTE_MAX) {
-                        if (outPos + 1 > outBuffer.size) {
-                            val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                            releaseScratchBuffer(outBuffer)
-                            outBuffer = newBuffer
+                    val nextByte = localRawData[position]
+                    if (nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE) {
+                        if (nextByte == C.CR_BYTE && position + 1 < localLimit && localRawData[position + 1] == C.NEWLINE_BYTE) {
+                            position++
                         }
-                        outBuffer[outPos++] = code.toByte()
-                    } else if (code <= C.UTF8_2BYTE_MAX) {
-                        if (outPos + 2 > outBuffer.size) {
-                            val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                            releaseScratchBuffer(outBuffer)
-                            outBuffer = newBuffer
+                        position++
+                        while (position < localLimit && (localRawData[position] == C.SPACE_BYTE || localRawData[position] == C.TAB_BYTE)) {
+                            position++
                         }
-                        outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()
-                        outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                    } else if (code <= C.UTF8_3BYTE_MAX) {
-                        if (outPos + 3 > outBuffer.size) {
-                            val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                            releaseScratchBuffer(outBuffer)
-                            outBuffer = newBuffer
-                        }
-                        outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()
-                        outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
-                        outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                     } else {
-                        if (outPos + 4 > outBuffer.size) {
-                            val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                            releaseScratchBuffer(outBuffer)
-                            outBuffer = newBuffer
+                        val code = processEscapeSequence()
+                        if (code <= C.UTF8_1BYTE_MAX) {
+                            if (outPos + 1 > outBuffer.size) {
+                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                                releaseScratchBuffer(outBuffer)
+                                outBuffer = newBuffer
+                            }
+                            outBuffer[outPos++] = code.toByte()
+                        } else if (code <= C.UTF8_2BYTE_MAX) {
+                            if (outPos + 2 > outBuffer.size) {
+                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                                releaseScratchBuffer(outBuffer)
+                                outBuffer = newBuffer
+                            }
+                            outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                        } else if (code <= C.UTF8_3BYTE_MAX) {
+                            if (outPos + 3 > outBuffer.size) {
+                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                                releaseScratchBuffer(outBuffer)
+                                outBuffer = newBuffer
+                            }
+                            outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                        } else {
+                            if (outPos + 4 > outBuffer.size) {
+                                val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
+                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                                releaseScratchBuffer(outBuffer)
+                                outBuffer = newBuffer
+                            }
+                            outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                         }
-                        outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()
-                        outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()
-                        outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
-                        outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                     }
                 } else {
                     val startPos = position
