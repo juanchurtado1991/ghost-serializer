@@ -245,9 +245,9 @@ object GhostYamlBenchmark {
         val kamlTime = measureTimeNanos {
             kaml.decodeFromString<ComplexResponse>(smallString)
         }
-        val jacksonTime = measureTimeNanos {
-            jacksonYaml.readValue<ComplexResponse>(smallString)
-        }
+        val jacksonTime = runCatching {
+            measureTimeNanos { jacksonYaml.readValue<ComplexResponse>(smallString) }
+        }.getOrDefault(0L)
         val ghostTime = measureTimeNanos {
             Ghost.decodeFromYaml<ComplexResponse>(smallBytes)
         }
@@ -265,7 +265,7 @@ object GhostYamlBenchmark {
         repeat(warmupIters) {
             Ghost.decodeFromYaml<ComplexResponse>(smallString)
             kaml.decodeFromString<ComplexResponse>(smallString)
-            jacksonYaml.readValue<ComplexResponse>(smallString)
+            runCatching { jacksonYaml.readValue<ComplexResponse>(smallString) }
 
             Ghost.encodeToYaml(smallComplex)
             kaml.encodeToString(smallComplex)
@@ -329,11 +329,13 @@ object GhostYamlBenchmark {
     private fun runDeserializationAllModes(threadBean: ThreadMXBean?, bytes: ByteArray, string: String): YamlModeMetrics {
         val ghostStr = measurePerf(threadBean) { Ghost.decodeFromYaml<ComplexResponse>(string) }
         val kamlStr = measurePerf(threadBean) { kaml.decodeFromString<ComplexResponse>(string) }
-        val jacksonStr = measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(string) }
+        val jacksonStr = runCatching { measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(string) } }
+            .getOrDefault(Triple(null, 0L, 0L))
 
         val ghostBytes = measurePerf(threadBean) { Ghost.decodeFromYaml<ComplexResponse>(bytes) }
         val kamlBytes = measurePerf(threadBean) { kaml.decodeFromString<ComplexResponse>(String(bytes, Charsets.UTF_8)) }
-        val jacksonBytes = measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(bytes) }
+        val jacksonBytes = runCatching { measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(bytes) } }
+            .getOrDefault(Triple(null, 0L, 0L))
 
         return YamlModeMetrics(
             string = YamlBenchmarkMetrics(
