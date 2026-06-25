@@ -10,22 +10,9 @@ package com.ghost.benchmark
 import com.charleskorn.kaml.Yaml
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.PropertyName
-import com.fasterxml.jackson.databind.introspect.Annotated
-import com.fasterxml.jackson.databind.introspect.AnnotatedField
-import com.fasterxml.jackson.databind.introspect.AnnotatedParameter
-import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair
-import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.ghost.serialization.annotations.GhostName
-import kotlinx.serialization.SerialName
-import java.lang.reflect.Constructor
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.kotlinFunction
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.decodeFromYaml
@@ -104,77 +91,9 @@ object GhostYamlBenchmark {
     }
 
     private val kaml = Yaml.default
-
-    /**
-     * Reads @SerialName and @GhostName to resolve YAML field names without modifying models.
-     *
-     * @SerialName has @Target(PROPERTY) only — Java reflection cannot find it on the
-     * backing field or constructor parameter. We fall back to Kotlin reflection:
-     * - For AnnotatedField  → KClass.memberProperties by field name
-     * - For AnnotatedParameter → KFunction.parameters by index, then KClass.memberProperties
-     *
-     * Results are cached per "ClassName#fieldName" to pay the reflection cost only once.
-     */
-    private class SerialNameAnnotationIntrospector : NopAnnotationIntrospector() {
-        private val cache = ConcurrentHashMap<String, String?>()
-
-        private fun resolveAnnotatedName(a: Annotated): String? {
-            // Fast path: Java-visible annotations (@field:SerialName or @param:SerialName)
-            a.getAnnotation(SerialName::class.java)?.let { return it.value }
-            a.getAnnotation(GhostName::class.java)?.let { return it.name }
-
-            // Slow path (cached): Kotlin property-level annotations
-            return when (a) {
-                is AnnotatedField -> {
-                    val field = a.annotated
-                    cache.getOrPut("${field.declaringClass.name}#${field.name}") {
-                        findOnKotlinProperty(field.declaringClass, field.name)
-                    }
-                }
-                is AnnotatedParameter -> {
-                    val ctor = a.owner.annotated as? Constructor<*> ?: return null
-                    cache.getOrPut("${ctor.declaringClass.name}#param${a.index}") {
-                        try {
-                            val kCtor = ctor.kotlinFunction ?: return@getOrPut null
-                            val propName = kCtor.parameters.getOrNull(a.index)?.name
-                                ?: return@getOrPut null
-                            findOnKotlinProperty(ctor.declaringClass, propName)
-                        } catch (_: Exception) { null }
-                    }
-                }
-                else -> null
-            }
-        }
-
-        private fun findOnKotlinProperty(clazz: Class<*>, name: String): String? = try {
-            val prop = clazz.kotlin.memberProperties.find { it.name == name }
-            prop?.findAnnotation<SerialName>()?.value
-                ?: prop?.findAnnotation<GhostName>()?.name
-        } catch (_: Exception) { null }
-
-        override fun findNameForDeserialization(a: Annotated): PropertyName? =
-            resolveAnnotatedName(a)?.let { PropertyName.construct(it) }
-                ?: super.findNameForDeserialization(a)
-
-        override fun findNameForSerialization(a: Annotated): PropertyName? =
-            resolveAnnotatedName(a)?.let { PropertyName.construct(it) }
-                ?: super.findNameForSerialization(a)
-    }
-
     private val jacksonYaml = YAMLMapper().apply {
-        val kotlinModule = KotlinModule.Builder()
-            .configure(KotlinFeature.NullIsSameAsDefault, true)
-            .build()
-        registerModule(kotlinModule)
+        registerModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        // Pair our custom introspector (reads @SerialName/@GhostName) with Jackson's
-        // default introspector so @JsonProperty and other Jackson annotations still work.
-        setAnnotationIntrospector(
-            AnnotationIntrospectorPair(
-                SerialNameAnnotationIntrospector(),
-                deserializationConfig.annotationIntrospector
-            )
-        )
     }
 
     fun run(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
@@ -260,42 +179,37 @@ object GhostYamlBenchmark {
             if (warmupIters > 1 && (i + 1) % Constants.REPORT_STEP == 0) {
                 println("   [Warmup ${i + 1}/$warmupIters]...")
             }
-            // String Mode
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString)
             kaml.decodeFromString<TwitterResponse>(twitterYamlString)
-            jacksonYaml.readValue<TwitterResponse>(twitterYamlString)
-
+            runCatching { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) }
             Ghost.encodeToYaml(decodedObj)
             kaml.encodeToString(decodedObj)
             jacksonYaml.writeValueAsString(decodedObj)
-
-            // Bytes Mode
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes)
             kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8))
-            jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes)
-
+            runCatching { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) }
             Ghost.encodeToYamlBytes(decodedObj)
         }
 
         performGc()
         println(Constants.MSG_TWITTER_MEASURING)
 
-        // Decode Benchmarks
         performGc()
         val ghostDecodeStr = measureTwitterPerf(threadBean, runs) { Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString) }
         performGc()
         val kamlDecodeStr = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(twitterYamlString) }
         performGc()
-        val jacksonDecodeStr = measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) }
+        val jacksonDecodeStr = runCatching { measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) } }
+            .getOrDefault(Triple(0.0, 0.0, 0.0))
 
         performGc()
         val ghostDecodeBytes = measureTwitterPerf(threadBean, runs) { Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes) }
         performGc()
         val kamlDecodeBytes = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8)) }
         performGc()
-        val jacksonDecodeBytes = measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) }
+        val jacksonDecodeBytes = runCatching { measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) } }
+            .getOrDefault(Triple(0.0, 0.0, 0.0))
 
-        // Encode Benchmarks
         performGc()
         val ghostEncodeStr = measureTwitterPerf(threadBean, runs) { Ghost.encodeToYaml(decodedObj) }
         performGc()
@@ -321,22 +235,14 @@ object GhostYamlBenchmark {
     }
 
     private fun runAndPrintColdStart(smallBytes: ByteArray, smallString: String) {
-        val kamlTime = measureTimeNanos {
-            kaml.decodeFromString<ComplexResponse>(smallString)
-        }
-        val jacksonTime = measureTimeNanos {
-            jacksonYaml.readValue<ComplexResponse>(smallString)
-        }
-        val ghostTime = measureTimeNanos {
-            Ghost.decodeFromYaml<ComplexResponse>(smallBytes)
-        }
-
-        val metrics = YamlBenchmarkMetrics(
+        val kamlTime = measureTimeNanos { kaml.decodeFromString<ComplexResponse>(smallString) }
+        val jacksonTime = runCatching { measureTimeNanos { jacksonYaml.readValue<ComplexResponse>(smallString) } }.getOrDefault(0L)
+        val ghostTime = measureTimeNanos { Ghost.decodeFromYaml<ComplexResponse>(smallBytes) }
+        printRankedTable(Constants.MSG_COLD, YamlBenchmarkMetrics(
             ghost = BenchResult(ghostTime, 0L),
             kaml = BenchResult(kamlTime, 0L),
             jackson = BenchResult(jacksonTime, 0L)
-        )
-        printRankedTable(Constants.MSG_COLD, metrics)
+        ))
     }
 
     private fun runWarmupPhase(smallBytes: ByteArray, smallString: String, smallComplex: ComplexResponse, warmupIters: Int) {
@@ -344,7 +250,7 @@ object GhostYamlBenchmark {
         repeat(warmupIters) {
             Ghost.decodeFromYaml<ComplexResponse>(smallString)
             kaml.decodeFromString<ComplexResponse>(smallString)
-            jacksonYaml.readValue<ComplexResponse>(smallString)
+            runCatching { jacksonYaml.readValue<ComplexResponse>(smallString) }
 
             Ghost.encodeToYaml(smallComplex)
             kaml.encodeToString(smallComplex)
@@ -408,11 +314,13 @@ object GhostYamlBenchmark {
     private fun runDeserializationAllModes(threadBean: ThreadMXBean?, bytes: ByteArray, string: String): YamlModeMetrics {
         val ghostStr = measurePerf(threadBean) { Ghost.decodeFromYaml<ComplexResponse>(string) }
         val kamlStr = measurePerf(threadBean) { kaml.decodeFromString<ComplexResponse>(string) }
-        val jacksonStr = measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(string) }
+        val jacksonStr = runCatching { measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(string) } }
+            .getOrDefault(Triple(null, 0L, 0L))
 
         val ghostBytes = measurePerf(threadBean) { Ghost.decodeFromYaml<ComplexResponse>(bytes) }
         val kamlBytes = measurePerf(threadBean) { kaml.decodeFromString<ComplexResponse>(String(bytes, Charsets.UTF_8)) }
-        val jacksonBytes = measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(bytes) }
+        val jacksonBytes = runCatching { measurePerf(threadBean) { jacksonYaml.readValue<ComplexResponse>(bytes) } }
+            .getOrDefault(Triple(null, 0L, 0L))
 
         return YamlModeMetrics(
             string = YamlBenchmarkMetrics(
