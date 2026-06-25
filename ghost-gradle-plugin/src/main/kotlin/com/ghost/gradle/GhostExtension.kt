@@ -13,6 +13,12 @@ interface GhostExtension {
     val autoInjectKtor: Property<Boolean>
 
     /**
+     * Whether to automatically apply the ghost-yaml dependency if the YAML module is needed.
+     * Defaults to true.
+     */
+    val autoInjectYaml: Property<Boolean>
+
+    /**
      * Whether to automatically apply the ghost-retrofit dependency if retrofit is detected.
      * Defaults to true.
      */
