@@ -22,20 +22,6 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     private var pendingSpace = false
     private var justWroteDash = false
 
-    companion object {
-        private const val SPACES_PER_LEVEL = 2
-        private const val TYPE_ROOT = 0
-        private const val TYPE_OBJECT = 1
-        private const val TYPE_ARRAY = 2
-        private const val PLAIN_ASCII_LIMIT = 64
-        private const val SHIFT_12 = 12
-        private const val SHIFT_8 = 8
-        private const val SHIFT_4 = 4
-        private const val HEX_MASK = 0x0F
-        private const val TEN_LONG = 10L
-        private const val ASCII_LIMIT = 128
-    }
-
     internal fun acquireScratch(): ByteArray {
         val currentScratch = scratch
         if (currentScratch != null) return currentScratch
@@ -64,7 +50,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     }
 
     private fun writeIndentation(level: Int) {
-        val spacesCount = level * SPACES_PER_LEVEL
+        val spacesCount = level * C.SPACES_PER_LEVEL
         var count = 0
         while (count < spacesCount) {
             buffer.writeByte(C.SPACE_INT)
@@ -74,7 +60,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
 
     private fun prepareValue(isStructural: Boolean) {
         val currentDepth = depth
-        if (currentDepth > 0 && contexts[currentDepth] == TYPE_ARRAY) {
+        if (currentDepth > 0 && contexts[currentDepth] == C.TYPE_ARRAY) {
             if (justWroteDash) {
                 buffer.writeByte(C.DASH_INT)
                 buffer.writeByte(C.SPACE_INT)
@@ -105,7 +91,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         }
         prepareValue(isStructural = true)
         val nextDepth = currentDepth + 1
-        contexts[nextDepth] = TYPE_OBJECT
+        contexts[nextDepth] = C.TYPE_OBJECT
         itemCounts[nextDepth] = 0
         depth = nextDepth
         return this
@@ -124,7 +110,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         }
         prepareValue(isStructural = true)
         val nextDepth = currentDepth + 1
-        contexts[nextDepth] = TYPE_ARRAY
+        contexts[nextDepth] = C.TYPE_ARRAY
         itemCounts[nextDepth] = 0
         depth = nextDepth
         return this
@@ -237,7 +223,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
             return
         }
 
-        if (length <= PLAIN_ASCII_LIMIT) {
+        if (length <= C.PLAIN_ASCII_LIMIT) {
             var allPlain = true
             var index = 0
             while (index < length) {
@@ -303,7 +289,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
                             buffer.writeByte(C.BACKSLASH_INT)
                             buffer.writeByte(C.CHAR_U_INT)
                             writeUnicodeHex(charCode)
-                        } else if (charCode < ASCII_LIMIT) {
+                        } else if (charCode < C.ASCII_LIMIT) {
                             buffer.writeByte(charCode)
                         } else {
                             val charVal = text[index]
@@ -323,10 +309,10 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
 
     private fun writeUnicodeHex(code: Int) {
         val hexChars = C.HEX_CHARS_ARR
-        buffer.writeByte(hexChars[(code shr SHIFT_12) and HEX_MASK].toInt())
-        buffer.writeByte(hexChars[(code shr SHIFT_8) and HEX_MASK].toInt())
-        buffer.writeByte(hexChars[(code shr SHIFT_4) and HEX_MASK].toInt())
-        buffer.writeByte(hexChars[code and HEX_MASK].toInt())
+        buffer.writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())
+        buffer.writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())
+        buffer.writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())
+        buffer.writeByte(hexChars[code and C.HEX_MASK].toInt())
     }
 
     private fun writeLong(value: Long) {
@@ -347,9 +333,9 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         val scratchBuf = scratch ?: acquireScratch()
         var pos = scratchBuf.size
         while (temp > 0L) {
-            val digit = (temp % TEN_LONG).toInt()
+            val digit = (temp % C.TEN_LONG).toInt()
             scratchBuf[--pos] = (C.ZERO_INT + digit).toByte()
-            temp /= TEN_LONG
+            temp /= C.TEN_LONG
         }
         buffer.write(scratchBuf, pos, scratchBuf.size - pos)
     }

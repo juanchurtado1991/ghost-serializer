@@ -286,5 +286,18 @@ internal object GhostYamlConstants {
     const val STR_MIN_LONG_ABS = "9223372036854775808"
 
     val HEX_CHARS_ARR = STR_HEX_CHARS.encodeToByteArray()
+
+    // ── Structural & formatting helpers (Writer path) ──────────────────────────
+    const val SPACES_PER_LEVEL = 2
+    const val TYPE_ROOT = 0
+    const val TYPE_OBJECT = 1
+    const val TYPE_ARRAY = 2
+    const val PLAIN_ASCII_LIMIT = 64
+    const val SHIFT_12 = 12
+    const val SHIFT_8 = 8
+    const val SHIFT_4 = 4
+    const val HEX_MASK = 0x0F
+    const val TEN_LONG = 10L
+    const val ASCII_LIMIT = 128
 }
 
