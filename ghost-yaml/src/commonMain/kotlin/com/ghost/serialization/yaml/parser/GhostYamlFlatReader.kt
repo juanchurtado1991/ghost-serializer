@@ -187,8 +187,10 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
                         if (position >= localLimit) null
                         else {
                             val valueIndent = currentIndent
-                            if (valueIndent <= blockIndent) {
+                            if (valueIndent < blockIndent) {
                                 // No actual indented content — treat as null
+                                null
+                            } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
                                 null
                             } else {
                                 val firstByte = localRawData[position]
