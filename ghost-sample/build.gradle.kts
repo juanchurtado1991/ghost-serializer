@@ -43,6 +43,7 @@ kotlin {
 
             implementation(project(":ghost-serialization"))
             implementation(project(":ghost-ktor"))
+            implementation(project(":ghost-yaml"))
             
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.mock)
@@ -63,10 +64,13 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.bundles.serialization.engines)
+            implementation(libs.jackson.dataformat.yaml)
+            implementation(libs.kaml)
         }
         
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.kaml)
         }
         
         jvmMain.dependencies {
@@ -74,6 +78,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.bundles.serialization.engines)
+            implementation(libs.jackson.dataformat.yaml)
+            implementation(libs.kaml)
         }
     }
 }
