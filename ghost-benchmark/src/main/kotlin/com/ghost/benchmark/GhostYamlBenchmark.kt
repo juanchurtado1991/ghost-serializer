@@ -95,6 +95,11 @@ object GhostYamlBenchmark {
         registerModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
+    private val jacksonYamlTwitter = YAMLMapper().apply {
+        registerModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
+        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        setPropertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE)
+    }
 
     fun run(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
         println(Constants.MSG_HEADER)
@@ -181,13 +186,13 @@ object GhostYamlBenchmark {
             }
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString)
             kaml.decodeFromString<TwitterResponse>(twitterYamlString)
-            runCatching { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) }
+            runCatching { jacksonYamlTwitter.readValue<TwitterResponse>(twitterYamlString) }
             Ghost.encodeToYaml(decodedObj)
             kaml.encodeToString(decodedObj)
-            jacksonYaml.writeValueAsString(decodedObj)
+            jacksonYamlTwitter.writeValueAsString(decodedObj)
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes)
             kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8))
-            runCatching { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) }
+            runCatching { jacksonYamlTwitter.readValue<TwitterResponse>(twitterYamlBytes) }
             Ghost.encodeToYamlBytes(decodedObj)
         }
 
@@ -199,7 +204,7 @@ object GhostYamlBenchmark {
         performGc()
         val kamlDecodeStr = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(twitterYamlString) }
         performGc()
-        val jacksonDecodeStr = runCatching { measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) } }
+        val jacksonDecodeStr = runCatching { measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.readValue<TwitterResponse>(twitterYamlString) } }
             .getOrDefault(Triple(0.0, 0.0, 0.0))
 
         performGc()
@@ -207,7 +212,7 @@ object GhostYamlBenchmark {
         performGc()
         val kamlDecodeBytes = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8)) }
         performGc()
-        val jacksonDecodeBytes = runCatching { measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) } }
+        val jacksonDecodeBytes = runCatching { measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.readValue<TwitterResponse>(twitterYamlBytes) } }
             .getOrDefault(Triple(0.0, 0.0, 0.0))
 
         performGc()
@@ -215,14 +220,14 @@ object GhostYamlBenchmark {
         performGc()
         val kamlEncodeStr = measureTwitterPerf(threadBean, runs) { kaml.encodeToString(decodedObj) }
         performGc()
-        val jacksonEncodeStr = measureTwitterPerf(threadBean, runs) { jacksonYaml.writeValueAsString(decodedObj) }
+        val jacksonEncodeStr = measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.writeValueAsString(decodedObj) }
 
         performGc()
         val ghostEncodeBytes = measureTwitterPerf(threadBean, runs) { Ghost.encodeToYamlBytes(decodedObj) }
         performGc()
         val kamlEncodeBytes = measureTwitterPerf(threadBean, runs) { kaml.encodeToString(decodedObj).encodeToByteArray() }
         performGc()
-        val jacksonEncodeBytes = measureTwitterPerf(threadBean, runs) { jacksonYaml.writeValueAsBytes(decodedObj) }
+        val jacksonEncodeBytes = measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.writeValueAsBytes(decodedObj) }
 
         printTwitterResults(
             listOf(
