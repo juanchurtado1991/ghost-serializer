@@ -157,13 +157,20 @@ internal abstract class BaseDeserializeEmitter(
                 prop.type.serializerClassName()
             )
 
-            prop.isPrimitiveArray -> CodeBlock.of(
-                C.TEMPLATE_DESERIALIZE_T,
-                ClassName(
-                    C.STR_SERIALIZERS_PKG,
-                    "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
+            prop.isPrimitiveArray -> {
+                val serializerClass = if (readerClass.simpleName.startsWith("GhostYaml")) {
+                    ClassName("com.ghost.serialization.yaml.serializer", "GhostYaml${prop.primitiveArrayType}Serializer")
+                } else {
+                    ClassName(
+                        C.STR_SERIALIZERS_PKG,
+                        "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
+                    )
+                }
+                CodeBlock.of(
+                    C.TEMPLATE_DESERIALIZE_T,
+                    serializerClass
                 )
-            )
+            }
 
             prop.isContextual -> {
                 val name = getContextualSerializerName(prop.type)
@@ -184,13 +191,18 @@ internal abstract class BaseDeserializeEmitter(
         }
 
         if (prop.isPrimitiveArray) {
+            val serializerClass = if (readerClass.simpleName.startsWith("GhostYaml")) {
+                ClassName("com.ghost.serialization.yaml.serializer", "GhostYaml${prop.primitiveArrayType}Serializer")
+            } else {
+                ClassName(
+                    C.STR_SERIALIZERS_PKG,
+                    "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
+                )
+            }
             return nullGuarded(
                 CodeBlock.of(
                     C.TEMPLATE_DESERIALIZE_T,
-                    ClassName(
-                        C.STR_SERIALIZERS_PKG,
-                        "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
-                    )
+                    serializerClass
                 )
             )
         }
