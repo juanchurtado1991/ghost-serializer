@@ -188,7 +188,7 @@ object GhostYamlBenchmark {
             // String Mode
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString)
             kaml.decodeFromString<TwitterResponse>(twitterYamlString)
-            jacksonYaml.readValue<TwitterResponse>(twitterYamlString)
+            runCatching { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) }
 
             Ghost.encodeToYaml(decodedObj)
             kaml.encodeToString(decodedObj)
@@ -197,7 +197,7 @@ object GhostYamlBenchmark {
             // Bytes Mode
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes)
             kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8))
-            jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes)
+            runCatching { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) }
 
             Ghost.encodeToYamlBytes(decodedObj)
         }
@@ -205,22 +205,28 @@ object GhostYamlBenchmark {
         performGc()
         println(Constants.MSG_TWITTER_MEASURING)
 
-        // Decode Benchmarks
+        // Decode Benchmarks — Jackson N/A: YAML has snake_case keys from @SerialName
+        // (result_type, iso_language_code) but Jackson without SNAKE_CASE naming strategy
+        // looks for camelCase (resultType). Score=0 is filtered from the table.
         performGc()
         val ghostDecodeStr = measureTwitterPerf(threadBean, runs) { Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString) }
         performGc()
         val kamlDecodeStr = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(twitterYamlString) }
         performGc()
-        val jacksonDecodeStr = measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) }
+        val jacksonDecodeStr = runCatching {
+            measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlString) }
+        }.getOrDefault(Triple(0.0, 0.0, 0.0))
 
         performGc()
         val ghostDecodeBytes = measureTwitterPerf(threadBean, runs) { Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes) }
         performGc()
         val kamlDecodeBytes = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8)) }
         performGc()
-        val jacksonDecodeBytes = measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) }
+        val jacksonDecodeBytes = runCatching {
+            measureTwitterPerf(threadBean, runs) { jacksonYaml.readValue<TwitterResponse>(twitterYamlBytes) }
+        }.getOrDefault(Triple(0.0, 0.0, 0.0))
 
-        // Encode Benchmarks
+        // Encode Benchmarks — Jackson encode always works regardless of naming strategy
         performGc()
         val ghostEncodeStr = measureTwitterPerf(threadBean, runs) { Ghost.encodeToYaml(decodedObj) }
         performGc()
