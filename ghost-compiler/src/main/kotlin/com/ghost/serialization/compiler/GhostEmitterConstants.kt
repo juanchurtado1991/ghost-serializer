@@ -118,6 +118,7 @@ internal object GhostEmitterConstants {
     const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
     const val STR_GHOST_OBJ = "Ghost"
     const val STR_GHOST_SERIALIZER = "GhostSerializer"
+    const val STR_YAML_SERIALIZER_FQN = "com.ghost.serialization.yaml.contract.GhostYamlSerializer"
     const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
     val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
     const val DEFAULT_DISCRIMINATOR_KEY = "key"
