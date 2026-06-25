@@ -66,7 +66,6 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.jackson.dataformat.yaml)
-    implementation(kotlin("reflect"))
     implementation(libs.kaml)
     implementation(libs.okio)
     implementation(libs.kotlinx.coroutines.core)
