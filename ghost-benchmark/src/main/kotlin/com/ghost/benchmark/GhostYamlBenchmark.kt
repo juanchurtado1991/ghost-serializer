@@ -10,7 +10,6 @@ package com.ghost.benchmark
 import com.charleskorn.kaml.Yaml
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -99,31 +98,36 @@ object GhostYamlBenchmark {
                 .build()
         )
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        propertyNamingStrategy = PropertyNamingStrategies.SNAKE_CASE
+        // No SNAKE_CASE: Ghost (and the Kotlin property names) use camelCase for
+        // unannotated fields. Jackson default (camelCase) matches Ghost output directly.
     }
 
     fun run(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
         println(Constants.MSG_HEADER)
 
         val smallComplex = generateComplexData(Constants.VAL_20)
-        val smallYamlString = kaml.encodeToString(smallComplex)
+        // Use Ghost to generate YAML: it writes camelCase for unannotated fields
+        // (accessHistory, lastLogin, etc.) which matches Jackson's default naming.
+        // KAML was writing camelCase too but we previously (wrongly) added SNAKE_CASE
+        // to Jackson trying to fix @SerialName fields, breaking unannotated fields.
+        val smallYamlString = Ghost.encodeToYaml(smallComplex)
         val smallYamlBytes = smallYamlString.encodeToByteArray()
 
         val listMediumComplex = generateComplexData(Constants.VAL_200)
-        val listMediumString = kaml.encodeToString(listMediumComplex)
+        val listMediumString = Ghost.encodeToYaml(listMediumComplex)
         val listMediumBytes = listMediumString.encodeToByteArray()
 
         val syncLargeComplex = generateComplexData(Constants.VAL_2000)
-        val syncLargeString = kaml.encodeToString(syncLargeComplex)
+        val syncLargeString = Ghost.encodeToYaml(syncLargeComplex)
         val syncLargeBytes = syncLargeString.encodeToByteArray()
 
         val writingComplex = generateComplexData(Constants.VAL_1000)
 
         val stressTree = createTree(Constants.VAL_20)
-        val stressTreeString = kaml.encodeToString(stressTree)
+        val stressTreeString = Ghost.encodeToYaml(stressTree)
         val stressTreeBytes = stressTreeString.encodeToByteArray()
 
-        val failureMalformed = smallYamlString.substring(0, smallYamlString.length / Constants.VAL_20) // Use division factor
+        val failureMalformed = smallYamlString.substring(0, smallYamlString.length / Constants.VAL_20)
         val failureBytes = failureMalformed.encodeToByteArray()
 
         // 1. Cold Start
