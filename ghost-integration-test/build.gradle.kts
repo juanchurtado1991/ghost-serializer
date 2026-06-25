@@ -11,6 +11,7 @@ kotlin {
 dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-serialization"))
+    implementation(project(":ghost-yaml"))
     implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
     ksp(project(":ghost-compiler"))

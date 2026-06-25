@@ -177,27 +177,27 @@ internal inline fun matchCoerceBooleanBytes(
 @com.ghost.serialization.InternalGhostApi
 fun charToBytePosition(s: String, charPos: Int): Int {
     var bytePos = 0
-    var i = 0
-    while (i < charPos && i < s.length) {
-        val code = s[i].code
+    var charIdx = 0
+    while (charIdx < charPos && charIdx < s.length) {
+        val code = s[charIdx].code
         when {
             code <= C.UTF8_1BYTE_MAX -> {
                 bytePos += C.UTF8_1BYTE_SIZE
-                i++
+                charIdx++
             }
             code <= C.UTF8_2BYTE_MAX -> {
                 bytePos += C.UTF8_2BYTE_SIZE
-                i++
+                charIdx++
             }
             code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
-                    i + 1 < s.length &&
-                    s[i + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
+                    charIdx + 1 < s.length &&
+                    s[charIdx + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
                 bytePos += C.UTF8_4BYTE_SIZE
-                i += 2
+                charIdx += 2
             }
             else -> {
                 bytePos += C.UTF8_3BYTE_SIZE
-                i++
+                charIdx++
             }
         }
     }
@@ -217,29 +217,29 @@ fun charToBytePosition(s: String, charPos: Int): Int {
 @com.ghost.serialization.InternalGhostApi
 fun byteToCharPosition(s: String, targetBytePos: Int): Int {
     var bytePos = 0
-    var i = 0
-    while (bytePos < targetBytePos && i < s.length) {
-        val code = s[i].code
+    var charIdx = 0
+    while (bytePos < targetBytePos && charIdx < s.length) {
+        val code = s[charIdx].code
         when {
             code <= C.UTF8_1BYTE_MAX -> {
                 bytePos += C.UTF8_1BYTE_SIZE
-                i++
+                charIdx++
             }
             code <= C.UTF8_2BYTE_MAX -> {
                 bytePos += C.UTF8_2BYTE_SIZE
-                i++
+                charIdx++
             }
             code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
-                    i + 1 < s.length &&
-                    s[i + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
+                    charIdx + 1 < s.length &&
+                    s[charIdx + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
                 bytePos += C.UTF8_4BYTE_SIZE
-                i += 2
+                charIdx += 2
             }
             else -> {
                 bytePos += C.UTF8_3BYTE_SIZE
-                i++
+                charIdx++
             }
         }
     }
-    return i
+    return charIdx
 }

@@ -118,6 +118,7 @@ internal object GhostEmitterConstants {
     const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
     const val STR_GHOST_OBJ = "Ghost"
     const val STR_GHOST_SERIALIZER = "GhostSerializer"
+    const val STR_YAML_SERIALIZER_FQN = "com.ghost.serialization.yaml.contract.GhostYamlSerializer"
     const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
     val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
     const val DEFAULT_DISCRIMINATOR_KEY = "key"
@@ -468,4 +469,18 @@ internal object GhostEmitterConstants {
     const val STR_MASK_DEFAULTS_PREFIX = "MASK_DEFAULTS_"
     const val STR_SUB_INDEX_PREFIX = "subIndex"
     const val TEMPLATE_L = "%L"
+
+    const val PKG_YAML_CONTRACT = "com.ghost.serialization.yaml.contract"
+    const val PKG_YAML_WRITER = "com.ghost.serialization.yaml.writer"
+    const val PKG_YAML_PARSER = "com.ghost.serialization.yaml.parser"
+    const val PKG_YAML_SERIALIZER = "com.ghost.serialization.yaml.serializer"
+    const val STR_GHOST_YAML_SERIALIZER = "GhostYamlSerializer"
+    const val STR_GHOST_YAML_WRITER = "GhostYamlWriter"
+    const val STR_GHOST_YAML_FLAT_WRITER = "GhostYamlFlatWriter"
+    const val STR_GHOST_YAML_FLAT_READER = "GhostYamlFlatReader"
+    const val STR_GHOST_YAML_PREFIX = "GhostYaml"
+    const val TEMPLATE_YAML_ARRAY_SERIALIZER = "GhostYaml%sSerializer"
+    const val STR_TEMP_FLAT_WRITER_INIT = "val tempFlatWriter = com.ghost.serialization.writer.GhostJsonFlatWriter(com.ghost.serialization.writer.FlatByteArrayWriter())"
+    const val STR_WRITE_TEMP_FLAT_WRITER = "writer.buffer.writeString(tempFlatWriter.buffer.toStringUtf8())"
+    const val STR_MASK_REQUIRED_PREFIX = "MASK_REQUIRED_"
 }

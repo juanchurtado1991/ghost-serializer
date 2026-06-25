@@ -105,7 +105,7 @@ class GhostSerializationProcessor(
         println("=== Found annotated symbols: ${symbols.toList().size}, valid classes: ${validClasses.size} ===")
         val unableToProcess = symbols.filterNot { it is KSClassDeclaration }
 
-        validClasses.forEach { classDeclaration -> processClass(classDeclaration) }
+        validClasses.forEach { classDeclaration -> processClass(classDeclaration, resolver) }
 
         if (validClasses.isNotEmpty()) {
             generateModuleRegistry()
@@ -121,11 +121,11 @@ class GhostSerializationProcessor(
      *
      * @param classDeclaration KSP class declaration of the target serializable model.
      */
-    private fun processClass(classDeclaration: KSClassDeclaration) {
+    private fun processClass(classDeclaration: KSClassDeclaration, resolver: Resolver) {
         val className = classDeclaration.simpleName.asString()
         try {
             val propertiesModel = analyzer.analyze(classDeclaration)
-            val serializerClassName = generateSerializer(classDeclaration, propertiesModel) ?: return
+            val serializerClassName = generateSerializer(classDeclaration, propertiesModel, resolver) ?: return
 
             registerSerializer(classDeclaration, serializerClassName)
 
@@ -153,13 +153,24 @@ class GhostSerializationProcessor(
      */
     private fun generateSerializer(
         classDeclaration: KSClassDeclaration,
-        propertiesModel: List<GhostPropertyModel>
+        propertiesModel: List<GhostPropertyModel>,
+        resolver: Resolver
     ): ClassName? {
         val textChannel = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE
+        var hasYaml = resolver.getClassDeclarationByName(resolver.getKSNameFromString(C.STR_YAML_SERIALIZER_FQN)) != null
+        if (hasYaml) {
+            for (prop in propertiesModel) {
+                if (prop.isContextual || prop.customDecoder != null || prop.customEncoder != null) {
+                    hasYaml = false
+                    break
+                }
+            }
+        }
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
             properties = propertiesModel,
-            textChannel = textChannel
+            textChannel = textChannel,
+            hasYaml = hasYaml
         )
 
         val fileSpec = fileGenerator.createSpec()

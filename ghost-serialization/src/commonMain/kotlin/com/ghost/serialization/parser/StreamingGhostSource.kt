@@ -219,6 +219,7 @@ class StreamingGhostSource(
         val localQuoteInt = GhostJsonConstants.QUOTE_INT
         val localHashShift = GhostJsonConstants.HASH_SHIFT
         val localMatchEnd = GhostJsonConstants.MATCH_END
+        val localMatchEndLong = localMatchEnd.toLong()
 
         while (true) {
             val segmentStart = bufferStart
@@ -236,7 +237,7 @@ class StreamingGhostSource(
                         if (byte0 == localQuoteInt) {
                             return GhostJsonConstants.packScanResult(localPosition - start, accumulatedHash, isPureAscii)
                         }
-                        return localMatchEnd.toLong()
+                        return localMatchEndLong
                     } else if (byte0 >= localAsciiLimit) {
                         isPureAscii = false
                     }
@@ -253,7 +254,7 @@ class StreamingGhostSource(
                                 isPureAscii
                             )
                         }
-                        return localMatchEnd.toLong()
+                        return localMatchEndLong
                     } else if (byte1 >= localAsciiLimit) {
                         isPureAscii = false
                     }
@@ -270,7 +271,7 @@ class StreamingGhostSource(
                                 isPureAscii
                             )
                         }
-                        return localMatchEnd.toLong()
+                        return localMatchEndLong
                     } else if (byte2 >= localAsciiLimit) {
                         isPureAscii = false
                     }
@@ -287,7 +288,7 @@ class StreamingGhostSource(
                                 isPureAscii
                             )
                         }
-                        return localMatchEnd.toLong()
+                        return localMatchEndLong
                     } else if (byte3 >= localAsciiLimit) {
                         isPureAscii = false
                     }
@@ -308,7 +309,7 @@ class StreamingGhostSource(
                                 isPureAscii
                             )
                         }
-                        return localMatchEnd.toLong()
+                        return localMatchEndLong
                     } else if (singleByte >= localAsciiLimit) {
                         isPureAscii = false
                     }
@@ -317,10 +318,10 @@ class StreamingGhostSource(
                 }
 
                 currentPosition = localPosition
-                if (currentPosition >= limit) return localMatchEnd.toLong()
+                if (currentPosition >= limit) return localMatchEndLong
             } else {
                 getSlow(currentPosition)
-                if (bufferStart == -1 || currentPosition >= bufferEnd) return localMatchEnd.toLong()
+                if (bufferStart == -1 || currentPosition >= bufferEnd) return localMatchEndLong
             }
         }
     }

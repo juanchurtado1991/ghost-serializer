@@ -511,20 +511,22 @@ fun GhostJsonStringReader.peekStringField(name: String): String? {
             val keyStart = pos + 1
             if (keyStart + keySize < scanLimit && chars[keyStart + keySize].code == C.QUOTE_INT) {
                 var match = true
-                for (i in 0 until keySize) {
-                    if (chars[keyStart + i] != name[i]) {
+                var idx = 0
+                while (idx < keySize) {
+                    if (chars[keyStart + idx] != name[idx]) {
                         match = false
                         break
                     }
+                    idx++
                 }
                 if (match) {
                     val afterKey = keyStart + keySize + 1
                     var colonPos = afterKey
                     var foundColon = false
                     while (colonPos < scanLimit) {
-                        val c = chars[colonPos].code
-                        if (c > C.SPACE_INT || (whitespaceMask shr c) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
-                            if (c == C.COLON_INT) {
+                        val charCode = chars[colonPos].code
+                        if (charCode > C.SPACE_INT || (whitespaceMask shr charCode) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
+                            if (charCode == C.COLON_INT) {
                                 foundColon = true
                                 colonPos++
                             }
@@ -537,9 +539,9 @@ fun GhostJsonStringReader.peekStringField(name: String): String? {
                     var quotePos = colonPos
                     var foundQuote = false
                     while (quotePos < scanLimit) {
-                        val c = chars[quotePos].code
-                        if (c > C.SPACE_INT || (whitespaceMask shr c) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
-                            if (c == C.QUOTE_INT) {
+                        val charCode = chars[quotePos].code
+                        if (charCode > C.SPACE_INT || (whitespaceMask shr charCode) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
+                            if (charCode == C.QUOTE_INT) {
                                 foundQuote = true
                                 quotePos++
                             }

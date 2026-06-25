@@ -155,7 +155,7 @@ object Ghost {
         clazz: KClass<T>
     ): GhostSerializer<T>? {
         // 1. Check manual registries
-        for (registry in mutableRegistries) {
+        for (registry in mutableRegistries) { // unavoidable
             registry.getSerializer(clazz)?.let { return it }
         }
 
@@ -165,7 +165,7 @@ object Ghost {
         }
         val disc = _discoveredRegistries!!
 
-        for (registry in disc) {
+        for (registry in disc) { // unavoidable
             registry.getSerializer(clazz)?.let { return it }
         }
 

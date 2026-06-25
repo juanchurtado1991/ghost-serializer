@@ -138,4 +138,11 @@ tasks.register("ciTest") {
     )
 }
 
+apply(from = "ghost-lint.gradle.kts")
+
+tasks.named("check") {
+    dependsOn("ghostLint")
+}
+
+
 

@@ -1,0 +1,106 @@
+# Edge case: Anchors, Aliases, and Merge Keys
+# Covers: Group E - &anchor, *alias, <<: *merge
+
+# Simple anchor and alias
+base_config: &base
+  timeout: 30
+  retries: 3
+  log_level: INFO
+
+# Reuse with alias
+service_a:
+  <<: *base
+  name: service-a
+  port: 8080
+
+service_b:
+  <<: *base
+  name: service-b
+  port: 8081
+  timeout: 60  # override timeout from base
+
+# Anchor on a scalar value
+default_host: &default_host "localhost"
+db_host: *default_host
+cache_host: *default_host
+
+# Anchor on a sequence
+common_tags: &tags
+  - kotlin
+  - kmp
+  - ghost
+
+project_a:
+  name: ghost-serializer
+  tags: *tags
+
+project_b:
+  name: ghost-ktor
+  tags: *tags
+
+# Complex merge: multiple inheritance
+defaults: &defaults
+  enabled: true
+  log_level: WARN
+  max_connections: 10
+
+production_overrides: &prod
+  log_level: ERROR
+  max_connections: 100
+
+service_prod:
+  <<: [*defaults, *prod]
+  name: production-service
+  host: prod.example.com
+
+# Anchors inside sequences
+environments:
+  - &dev_env
+    name: development
+    debug: true
+    base_url: http://localhost:8080
+  - &staging_env
+    name: staging
+    debug: false
+    base_url: https://staging.example.com
+  - name: production
+    debug: false
+    base_url: https://api.example.com
+
+# Alias used inside a nested structure
+current_env: *dev_env
+
+# Anchor on a complex nested object
+database_defaults: &db_defaults
+  host: db.internal
+  port: 5432
+  pool:
+    min: 5
+    max: 20
+    timeout: 30000
+
+databases:
+  primary:
+    <<: *db_defaults
+    name: ghost_primary
+    username: ghost_user
+  replica:
+    <<: *db_defaults
+    name: ghost_replica
+    username: ghost_readonly
+    host: db-replica.internal  # override host
+
+# Self-referencing prevention: anchor used before its full definition completes
+# (valid YAML - anchor is defined at the point of the key, before the value)
+nodes:
+  - &node1
+    id: 1
+    label: root
+    children:
+      - id: 2
+        label: child1
+      - id: 3
+        label: child2
+  - id: 4
+    label: sibling
+    parent_ref: *node1

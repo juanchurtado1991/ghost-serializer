@@ -98,6 +98,7 @@ fun main(args: Array<String>) {
 
     if (config.twitterOnly) {
         TwitterBenchmark.run(config.runs, config.warmupIters, threadBean)
+        GhostYamlBenchmark.runTwitter(config.runs, config.warmupIters, threadBean)
         println("\n[COMPLETE] Benchmark execution finished.")
         exitProcess(0)
     }
@@ -142,6 +143,14 @@ fun main(args: Array<String>) {
     // 8. Twitter Macro Benchmark
     performGc()
     TwitterBenchmark.run(config.runs, config.warmupIters, threadBean)
+
+    // 9. YAML Benchmarks
+    performGc()
+    GhostYamlBenchmark.run(config.runs, config.warmupIters, threadBean)
+
+    // 10. YAML Twitter Macro Benchmark
+    performGc()
+    GhostYamlBenchmark.runTwitter(config.runs, config.warmupIters, threadBean)
 
     println("\n[COMPLETE] Benchmark execution finished.")
     exitProcess(0)

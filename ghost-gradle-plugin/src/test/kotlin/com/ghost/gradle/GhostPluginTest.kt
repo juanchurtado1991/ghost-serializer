@@ -40,4 +40,42 @@ class GhostPluginTest {
             "Should inject ghost-api"
         )
     }
+
+    @Test
+    fun `plugin auto-injects yaml when enabled`() {
+        val project = ProjectBuilder.builder().build()
+
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        project.pluginManager.apply(GhostPlugin::class.java)
+
+        val extension = project.extensions.findByName("ghost") as GhostExtension
+        extension.autoInjectYaml.set(true)
+
+        (project as DefaultProject).evaluate()
+
+        val implDependencies = project.configurations.getByName("implementation").dependencies
+        assertTrue(
+            implDependencies.any { it.name == "ghost-yaml" },
+            "Should automatically inject ghost-yaml"
+        )
+    }
+
+    @Test
+    fun `plugin does not inject yaml when disabled`() {
+        val project = ProjectBuilder.builder().build()
+
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        project.pluginManager.apply(GhostPlugin::class.java)
+
+        val extension = project.extensions.findByName("ghost") as GhostExtension
+        extension.autoInjectYaml.set(false)
+
+        (project as DefaultProject).evaluate()
+
+        val implDependencies = project.configurations.getByName("implementation").dependencies
+        assertTrue(
+            implDependencies.none { it.name == "ghost-yaml" },
+            "Should not inject ghost-yaml when disabled"
+        )
+    }
 }

@@ -56,7 +56,11 @@ class JsonReaderOptions(
     init {
         var detectedCollision = false
         val seen = HashSet<Long>()
-        for (bytes in rawBytes) {
+        val rawBytesSize = rawBytes.size
+        var rawBytesIdx = 0
+        while (rawBytesIdx < rawBytesSize) {
+            val bytes = rawBytes[rawBytesIdx]
+            rawBytesIdx++
             if (bytes.isNotEmpty()) {
                 var key = 0L
                 if (bytes.size >= SINGLE_CHAR_SIZE) {
@@ -81,7 +85,8 @@ class JsonReaderOptions(
         hasCollisions = detectedCollision
 
         val tableMask = DISPATCH_TABLE_SIZE - 1
-        for (index in rawBytes.indices) {
+        var index = 0
+        while (index < rawBytes.size) {
             val bytes = rawBytes[index]
             if (bytes.isNotEmpty()) {
                 var key = 0
@@ -107,6 +112,7 @@ class JsonReaderOptions(
                     dispatch[perfectHashKey] = index
                 }
             }
+            index++
         }
 
         if (enableStringDispatch) {
@@ -118,7 +124,8 @@ class JsonReaderOptions(
 
     private fun buildStringDispatchTable(table: IntArray) {
         val tableMask = DISPATCH_TABLE_SIZE - 1
-        for (index in rawStrings.indices) {
+        var index = 0
+        while (index < rawStrings.size) {
             val keyString = rawStrings[index]
             if (keyString.isNotEmpty()) {
                 var key = 0
@@ -144,9 +151,46 @@ class JsonReaderOptions(
                     table[perfectHashKey] = index
                 }
             }
+            index++
         }
     }
 
+    fun findOptionIndex(name: String): Int {
+        val table = stringDispatch
+        val tableSize = table.size
+        if (tableSize == 0 || name.isEmpty()) return -1
+        
+        val len = name.length
+        var key = 0
+        if (len >= SINGLE_CHAR_SIZE) {
+            key = key or (name[0].code and BYTE_MASK)
+        }
+        if (len >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
+            key = key or ((name[1].code and BYTE_MASK) shl SHIFT_8)
+        }
+        if (len >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
+            key = key or ((name[2].code and BYTE_MASK) shl SHIFT_16)
+        }
+        if (len >= UNICODE_HEX_LENGTH) {
+            key = key or ((name[3].code and BYTE_MASK) shl SHIFT_24)
+        }
+        if (hasCollisions && len >= UNICODE_HEX_LENGTH) {
+            key = key xor (name[len - SINGLE_CHAR_SIZE].code and BYTE_MASK)
+            key = key xor (name[len shr SINGLE_CHAR_SIZE].code and BYTE_MASK)
+        }
+        
+        val tableMask = tableSize - 1
+        val perfectHashKey = ((key * multiplier + len) shr shift) and tableMask
+        val index = table[perfectHashKey]
+        if (index != -1 && rawStrings[index] == name) {
+            return index
+        }
+        return -1
+    }
+
+    fun getOptionString(index: Int): String {
+        return rawStrings[index]
+    }
 
     companion object {
 
@@ -156,7 +200,7 @@ class JsonReaderOptions(
          * @param names The list of JSON property names to be matched.
          * @return A [JsonReaderOptions] instance configured with default perfect hashing parameters.
          */
-        fun of(vararg names: String): JsonReaderOptions = of(0, 31, *names)
+        fun of(vararg names: String): JsonReaderOptions = of(0, C.STR_POOL_HASH_MULTIPLIER, *names)
 
         /**
          * Creates an optimized options configuration for a predefined set of field names,

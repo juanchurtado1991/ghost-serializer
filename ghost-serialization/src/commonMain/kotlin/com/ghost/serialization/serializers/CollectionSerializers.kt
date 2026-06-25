@@ -47,11 +47,13 @@ class ListSerializer<T>(
             return
         }
         if (value is RandomAccess) {
-            for (i in 0 until size) {
-                itemSerializer.serialize(writer, value[i])
+            var idx = 0
+            while (idx < size) {
+                itemSerializer.serialize(writer, value[idx])
+                idx++
             }
         } else {
-            for (item in value) {
+            for (item in value) { // non-RandomAccess: Iterator is unavoidable
                 itemSerializer.serialize(writer, item)
             }
         }
@@ -69,11 +71,13 @@ class ListSerializer<T>(
             return
         }
         if (value is RandomAccess) {
-            for (i in 0 until size) {
-                itemSerializer.serialize(writer, value[i])
+            var idx = 0
+            while (idx < size) {
+                itemSerializer.serialize(writer, value[idx])
+                idx++
             }
         } else {
-            for (item in value) {
+            for (item in value) { // non-RandomAccess: Iterator is unavoidable
                 itemSerializer.serialize(writer, item)
             }
         }
@@ -91,11 +95,13 @@ class ListSerializer<T>(
             return
         }
         if (value is RandomAccess) {
-            for (i in 0 until size) {
-                itemSerializer.serialize(writer, value[i])
+            var idx = 0
+            while (idx < size) {
+                itemSerializer.serialize(writer, value[idx])
+                idx++
             }
         } else {
-            for (item in value) {
+            for (item in value) { // non-RandomAccess: Iterator is unavoidable
                 itemSerializer.serialize(writer, item)
             }
         }
@@ -239,8 +245,10 @@ object IntArraySerializer : GhostSerializer<IntArray> {
     ) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
         }
         writer.endArray()
     }
@@ -251,8 +259,10 @@ object IntArraySerializer : GhostSerializer<IntArray> {
     ) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
         }
         writer.endArray()
     }
@@ -263,8 +273,10 @@ object IntArraySerializer : GhostSerializer<IntArray> {
     ) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
         }
         writer.endArray()
     }
@@ -327,8 +339,10 @@ object LongArraySerializer : GhostSerializer<LongArray> {
     ) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
         }
         writer.endArray()
     }
@@ -339,8 +353,10 @@ object LongArraySerializer : GhostSerializer<LongArray> {
     ) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
         }
         writer.endArray()
     }
@@ -351,8 +367,10 @@ object LongArraySerializer : GhostSerializer<LongArray> {
     ) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
         }
         writer.endArray()
     }
