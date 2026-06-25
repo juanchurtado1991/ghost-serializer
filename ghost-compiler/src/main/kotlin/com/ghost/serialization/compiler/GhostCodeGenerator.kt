@@ -31,8 +31,18 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
 internal class GhostCodeGenerator(
     private val properties: List<GhostPropertyModel>,
     classDeclaration: KSClassDeclaration,
-    private val textChannel: Boolean = false
+    private val textChannel: Boolean = false,
+    private val hasYaml: Boolean = false
 ) {
+
+    private val yamlSerializerInterface = ClassName(
+        "com.ghost.serialization.yaml.contract",
+        "GhostYamlSerializer"
+    )
+
+    private val yamlWriterClass = ClassName("com.ghost.serialization.yaml.writer", "GhostYamlWriter")
+    private val yamlFlatWriterClass = ClassName("com.ghost.serialization.yaml.writer", "GhostYamlFlatWriter")
+    private val yamlFlatReaderClass = ClassName("com.ghost.serialization.yaml.parser", "GhostYamlFlatReader")
 
     private val fullPaths = properties.map {
         it.flattenPath
@@ -433,12 +443,20 @@ internal class GhostCodeGenerator(
                 serializerInterface
                     .parameterizedBy(originalClassName)
             )
-            .addProperty(
-                PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
-                    .addModifiers(KModifier.OVERRIDE)
-                    .initializer(C.MARKER, finalTypeName)
-                    .build()
+
+        if (hasYaml) {
+            typeSpecBuilder.addSuperinterface(
+                yamlSerializerInterface
+                    .parameterizedBy(originalClassName)
             )
+        }
+
+        typeSpecBuilder.addProperty(
+            PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
+                .addModifiers(KModifier.OVERRIDE)
+                .initializer(C.MARKER, finalTypeName)
+                .build()
+        )
 
         if (!isEnum && !isValue) {
             addPerfectHashOptions(typeSpecBuilder, readerClass)
@@ -459,12 +477,45 @@ internal class GhostCodeGenerator(
             deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)
         }
 
+        if (hasYaml) {
+            val yamlDeserializeEmitterFlat = DeserializeCodeEmitter(
+                properties,
+                originalClassName,
+                yamlFlatReaderClass,
+                isSealed,
+                isValue,
+                isEnum,
+                sealedSubclasses,
+                sealedDiscriminatorKey,
+                isResilient,
+                isInferred
+            )
+            yamlDeserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
+        }
+
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
-        return typeSpecBuilder
+        typeSpecBuilder
             .addFunction(serializeEmitter.build(streamingWriterClass, typeSpecBuilder))
             .addFunction(serializeEmitter.build(flatWriterClass, typeSpecBuilder))
             .addFunction(serializeEmitter.build(stringWriterClass, typeSpecBuilder))
+
+        if (hasYaml) {
+            val yamlSerializeEmitter = SerializeCodeEmitter(
+                properties,
+                originalClassName,
+                isSealed,
+                isValue,
+                isEnum,
+                sealedSubclasses,
+                discriminator,
+                sealedDiscriminatorKey
+            )
+            typeSpecBuilder.addFunction(yamlSerializeEmitter.build(yamlWriterClass, typeSpecBuilder))
+            typeSpecBuilder.addFunction(yamlSerializeEmitter.build(yamlFlatWriterClass, typeSpecBuilder))
+        }
+
+        return typeSpecBuilder
             .addFunction(buildWarmUpMethod())
             .build()
     }
