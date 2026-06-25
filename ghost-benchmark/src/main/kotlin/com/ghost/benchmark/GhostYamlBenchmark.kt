@@ -8,11 +8,6 @@
 package com.ghost.benchmark
 
 import com.charleskorn.kaml.Yaml
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.decodeFromYaml
@@ -38,7 +33,7 @@ import kotlin.math.sqrt
 
 /**
  * Performance benchmarks for YAML serialization and deserialization engines:
- * compares Ghost (YAML) vs Kaml (KotlinX Serialization YAML) vs Jackson (YAML).
+ * compares Ghost (YAML) vs Kaml (KotlinX Serialization YAML).
  */
 object GhostYamlBenchmark {
 
@@ -59,7 +54,6 @@ object GhostYamlBenchmark {
 
         const val STR_GHOST = "GHOST"
         const val STR_KAML = "KAML"
-        const val STR_JACKSON = "JACKSON"
         const val STR_BETA = "beta"
         const val STR_SUCCESS = "success"
         const val STR_42 = "42"
@@ -91,18 +85,12 @@ object GhostYamlBenchmark {
     }
 
     private val kaml = Yaml.default
-    private val jacksonYaml = ObjectMapper(YAMLFactory()).registerKotlinModule()
-    private val jacksonYamlTwitter = ObjectMapper(YAMLFactory()).apply {
-        propertyNamingStrategy = PropertyNamingStrategies.SNAKE_CASE
-        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    }.registerKotlinModule()
 
     fun run(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
         println(Constants.MSG_HEADER)
 
         val smallComplex = generateComplexData(Constants.VAL_20)
         val smallYamlString = kaml.encodeToString(smallComplex)
-        println("SMALL YAML:\n$smallYamlString")
         val smallYamlBytes = smallYamlString.encodeToByteArray()
 
         val listMediumComplex = generateComplexData(Constants.VAL_200)
@@ -180,19 +168,15 @@ object GhostYamlBenchmark {
             // String Mode
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString)
             kaml.decodeFromString<TwitterResponse>(twitterYamlString)
-            jacksonYamlTwitter.readValue(twitterYamlString, TwitterResponse::class.java)
 
             Ghost.encodeToYaml(decodedObj)
             kaml.encodeToString(decodedObj)
-            jacksonYamlTwitter.writeValueAsString(decodedObj)
 
             // Bytes Mode
             Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes)
             kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8))
-            jacksonYamlTwitter.readValue(twitterYamlBytes, TwitterResponse::class.java)
 
             Ghost.encodeToYamlBytes(decodedObj)
-            jacksonYamlTwitter.writeValueAsBytes(decodedObj)
         }
 
         performGc()
@@ -203,45 +187,34 @@ object GhostYamlBenchmark {
         val ghostDecodeStr = measureTwitterPerf(threadBean, runs) { Ghost.decodeFromYaml<TwitterResponse>(twitterYamlString) }
         performGc()
         val kamlDecodeStr = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(twitterYamlString) }
-        performGc()
-        val jacksonDecodeStr = measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.readValue(twitterYamlString, TwitterResponse::class.java) }
 
         performGc()
         val ghostDecodeBytes = measureTwitterPerf(threadBean, runs) { Ghost.decodeFromYaml<TwitterResponse>(twitterYamlBytes) }
         performGc()
         val kamlDecodeBytes = measureTwitterPerf(threadBean, runs) { kaml.decodeFromString<TwitterResponse>(String(twitterYamlBytes, Charsets.UTF_8)) }
-        performGc()
-        val jacksonDecodeBytes = measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.readValue(twitterYamlBytes, TwitterResponse::class.java) }
 
         // Encode Benchmarks
         performGc()
         val ghostEncodeStr = measureTwitterPerf(threadBean, runs) { Ghost.encodeToYaml(decodedObj) }
         performGc()
         val kamlEncodeStr = measureTwitterPerf(threadBean, runs) { kaml.encodeToString(decodedObj) }
-        performGc()
-        val jacksonEncodeStr = measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.writeValueAsString(decodedObj) }
 
         performGc()
         val ghostEncodeBytes = measureTwitterPerf(threadBean, runs) { Ghost.encodeToYamlBytes(decodedObj) }
         performGc()
         val kamlEncodeBytes = measureTwitterPerf(threadBean, runs) { kaml.encodeToString(decodedObj).encodeToByteArray() }
-        performGc()
-        val jacksonEncodeBytes = measureTwitterPerf(threadBean, runs) { jacksonYamlTwitter.writeValueAsBytes(decodedObj) }
 
         printTwitterResults(
             listOf(
-                "Decode (String)" to Triple(ghostDecodeStr, kamlDecodeStr, jacksonDecodeStr),
-                "Decode (Bytes)" to Triple(ghostDecodeBytes, kamlDecodeBytes, jacksonDecodeBytes),
-                "Encode (String)" to Triple(ghostEncodeStr, kamlEncodeStr, jacksonEncodeStr),
-                "Encode (Bytes)" to Triple(ghostEncodeBytes, kamlEncodeBytes, jacksonEncodeBytes)
+                "Decode (String)" to Pair(ghostDecodeStr, kamlDecodeStr),
+                "Decode (Bytes)" to Pair(ghostDecodeBytes, kamlDecodeBytes),
+                "Encode (String)" to Pair(ghostEncodeStr, kamlEncodeStr),
+                "Encode (Bytes)" to Pair(ghostEncodeBytes, kamlEncodeBytes)
             )
         )
     }
 
     private fun runAndPrintColdStart(smallBytes: ByteArray, smallString: String) {
-        val jacksonTime = measureTimeNanos {
-            jacksonYaml.readValue(smallString, ComplexResponse::class.java)
-        }
         val kamlTime = measureTimeNanos {
             kaml.decodeFromString<ComplexResponse>(smallString)
         }
@@ -251,8 +224,7 @@ object GhostYamlBenchmark {
 
         val metrics = YamlBenchmarkMetrics(
             ghost = BenchResult(ghostTime, 0L),
-            kaml = BenchResult(kamlTime, 0L),
-            jackson = BenchResult(jacksonTime, 0L)
+            kaml = BenchResult(kamlTime, 0L)
         )
         printRankedTable(Constants.MSG_COLD, metrics)
     }
@@ -262,16 +234,12 @@ object GhostYamlBenchmark {
         repeat(warmupIters) {
             Ghost.decodeFromYaml<ComplexResponse>(smallString)
             kaml.decodeFromString<ComplexResponse>(smallString)
-            jacksonYaml.readValue(smallString, ComplexResponse::class.java)
 
             Ghost.encodeToYaml(smallComplex)
             kaml.encodeToString(smallComplex)
-            jacksonYaml.writeValueAsString(smallComplex)
 
             Ghost.decodeFromYaml<ComplexResponse>(smallBytes)
-            jacksonYaml.readValue(smallBytes, ComplexResponse::class.java)
             Ghost.encodeToYamlBytes(smallComplex)
-            jacksonYaml.writeValueAsBytes(smallComplex)
         }
     }
 
@@ -328,22 +296,18 @@ object GhostYamlBenchmark {
     private fun runDeserializationAllModes(threadBean: ThreadMXBean?, bytes: ByteArray, string: String): YamlModeMetrics {
         val ghostStr = measurePerf(threadBean) { Ghost.decodeFromYaml<ComplexResponse>(string) }
         val kamlStr = measurePerf(threadBean) { kaml.decodeFromString<ComplexResponse>(string) }
-        val jacksonStr = measurePerf(threadBean) { jacksonYaml.readValue(string, ComplexResponse::class.java) }
 
         val ghostBytes = measurePerf(threadBean) { Ghost.decodeFromYaml<ComplexResponse>(bytes) }
         val kamlBytes = measurePerf(threadBean) { kaml.decodeFromString<ComplexResponse>(String(bytes, Charsets.UTF_8)) }
-        val jacksonBytes = measurePerf(threadBean) { jacksonYaml.readValue(bytes, ComplexResponse::class.java) }
 
         return YamlModeMetrics(
             string = YamlBenchmarkMetrics(
                 ghost = BenchResult(ghostStr.second, ghostStr.third),
-                kaml = BenchResult(kamlStr.second, kamlStr.third),
-                jackson = BenchResult(jacksonStr.second, jacksonStr.third)
+                kaml = BenchResult(kamlStr.second, kamlStr.third)
             ),
             bytes = YamlBenchmarkMetrics(
                 ghost = BenchResult(ghostBytes.second, ghostBytes.third),
-                kaml = BenchResult(kamlBytes.second, kamlBytes.third),
-                jackson = BenchResult(jacksonBytes.second, jacksonBytes.third)
+                kaml = BenchResult(kamlBytes.second, kamlBytes.third)
             )
         )
     }
@@ -351,22 +315,18 @@ object GhostYamlBenchmark {
     private fun runSerializationAllModes(threadBean: ThreadMXBean?, complex: ComplexResponse): YamlModeMetrics {
         val ghostStr = measurePerf(threadBean) { Ghost.encodeToYaml(complex) }
         val kamlStr = measurePerf(threadBean) { kaml.encodeToString(complex) }
-        val jacksonStr = measurePerf(threadBean) { jacksonYaml.writeValueAsString(complex) }
 
         val ghostBytes = measurePerf(threadBean) { Ghost.encodeToYamlBytes(complex) }
         val kamlBytes = measurePerf(threadBean) { kaml.encodeToString(complex).encodeToByteArray() }
-        val jacksonBytes = measurePerf(threadBean) { jacksonYaml.writeValueAsBytes(complex) }
 
         return YamlModeMetrics(
             string = YamlBenchmarkMetrics(
                 ghost = BenchResult(ghostStr.second, ghostStr.third),
-                kaml = BenchResult(kamlStr.second, kamlStr.third),
-                jackson = BenchResult(jacksonStr.second, jacksonStr.third)
+                kaml = BenchResult(kamlStr.second, kamlStr.third)
             ),
             bytes = YamlBenchmarkMetrics(
                 ghost = BenchResult(ghostBytes.second, ghostBytes.third),
-                kaml = BenchResult(kamlBytes.second, kamlBytes.third),
-                jackson = BenchResult(jacksonBytes.second, jacksonBytes.third)
+                kaml = BenchResult(kamlBytes.second, kamlBytes.third)
             )
         )
     }
@@ -375,17 +335,13 @@ object GhostYamlBenchmark {
         val kamlTime = measureTimeNanos {
             kaml.decodeFromString<Category>(treeString)
         }
-        val jacksonTime = measureTimeNanos {
-            jacksonYaml.readValue(treeString, Category::class.java)
-        }
         val ghostTime = measureTimeNanos {
             Ghost.decodeFromYaml<Category>(treeBytes)
         }
 
         return YamlBenchmarkMetrics(
             ghost = BenchResult(ghostTime, 0L),
-            kaml = BenchResult(kamlTime, 0L),
-            jackson = BenchResult(jacksonTime, 0L)
+            kaml = BenchResult(kamlTime, 0L)
         )
     }
 
@@ -393,12 +349,6 @@ object GhostYamlBenchmark {
         val kamlTime = measureAvgFailSpeed {
             try {
                 kaml.decodeFromString<ComplexResponse>(malformed)
-            } catch (_: Exception) {
-            }
-        }
-        val jacksonTime = measureAvgFailSpeed {
-            try {
-                jacksonYaml.readValue(malformed, ComplexResponse::class.java)
             } catch (_: Exception) {
             }
         }
@@ -411,8 +361,7 @@ object GhostYamlBenchmark {
 
         return YamlBenchmarkMetrics(
             ghost = BenchResult(ghostTime, 0L),
-            kaml = BenchResult(kamlTime, 0L),
-            jackson = BenchResult(jacksonTime, 0L)
+            kaml = BenchResult(kamlTime, 0L)
         )
     }
 
@@ -438,8 +387,7 @@ object GhostYamlBenchmark {
     private fun averageMetrics(list: List<YamlBenchmarkMetrics>): YamlBenchmarkMetrics {
         return YamlBenchmarkMetrics(
             ghost = averageBenchResult(list.map { it.ghost }),
-            kaml = averageBenchResult(list.map { it.kaml }),
-            jackson = averageBenchResult(list.map { it.jackson })
+            kaml = averageBenchResult(list.map { it.kaml })
         )
     }
 
@@ -517,12 +465,6 @@ object GhostYamlBenchmark {
                 metrics.ghost.stdevNanos
             ),
             YamlEngineRank(
-                Constants.STR_JACKSON,
-                metrics.jackson.nanos,
-                metrics.jackson.allocBytes,
-                metrics.jackson.stdevNanos
-            ),
-            YamlEngineRank(
                 Constants.STR_KAML,
                 metrics.kaml.nanos,
                 metrics.kaml.allocBytes,
@@ -573,7 +515,7 @@ object GhostYamlBenchmark {
     }
 
     private fun printTwitterResults(
-        categories: List<Pair<String, Triple<Triple<Double, Double, Double>, Triple<Double, Double, Double>, Triple<Double, Double, Double>>>>
+        categories: List<Pair<String, Pair<Triple<Double, Double, Double>, Triple<Double, Double, Double>>>>
     ) {
         println(Constants.MSG_TWITTER_SUMMARY)
         println("| Operation          | Engine | Throughput (ops/s) |  StDev (ops/s) | Mem (KB/op) |")
@@ -581,8 +523,7 @@ object GhostYamlBenchmark {
         for ((label, scores) in categories) {
             val sorted = listOf(
                 Constants.STR_GHOST to scores.first,
-                Constants.STR_KAML to scores.second,
-                Constants.STR_JACKSON to scores.third
+                Constants.STR_KAML to scores.second
             ).sortedByDescending { it.second.first }
 
             for (res in sorted) {
@@ -591,7 +532,7 @@ object GhostYamlBenchmark {
                 ))
             }
             val winner = sorted[0]
-            val loser = sorted[2] // Comparing winner to the slowest (third one)
+            val loser = sorted[1]
             val pct = ((winner.second.first - loser.second.first) / loser.second.first) * Constants.PERCENT_MULTIPLIER
             val memPct = if (loser.second.third > 0) {
                 ((loser.second.third - winner.second.third) / loser.second.third) * Constants.PERCENT_MULTIPLIER
@@ -757,7 +698,6 @@ object GhostYamlBenchmark {
             repeat(warmupIters) {
                 try { GhostYamlFlatReader(yamlBytes).readDocument() } catch (t: Throwable) {}
                 try { kaml.parseToYamlNode(yamlString) } catch (t: Throwable) {}
-                try { jacksonYaml.readValue(yamlString, Any::class.java) } catch (t: Throwable) {}
             }
 
             performGc()
@@ -780,19 +720,10 @@ object GhostYamlBenchmark {
                 Triple(0.0, 0.0, 0.0)
             }
 
-            performGc()
-            val jacksonScore = try {
-                measureTwitterPerf(threadBean, runs) {
-                    jacksonYaml.readValue(yamlString, Any::class.java)
-                }
-            } catch (t: Throwable) {
-                Triple(0.0, 0.0, 0.0)
-            }
-
             println("\n--- Performance Summary for $fileName ---")
             printTwitterResults(
                 listOf(
-                    "Parse Generic" to Triple(ghostScore, kamlScore, jacksonScore)
+                    "Parse Generic" to Pair(ghostScore, kamlScore)
                 )
             )
         }
@@ -822,6 +753,5 @@ internal data class YamlModeMetrics(
 
 internal data class YamlBenchmarkMetrics(
     val ghost: BenchResult,
-    val kaml: BenchResult,
-    val jackson: BenchResult
+    val kaml: BenchResult
 )
