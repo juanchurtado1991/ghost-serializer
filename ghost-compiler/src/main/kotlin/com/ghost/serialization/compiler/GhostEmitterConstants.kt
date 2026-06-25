@@ -480,4 +480,7 @@ internal object GhostEmitterConstants {
     const val STR_GHOST_YAML_FLAT_READER = "GhostYamlFlatReader"
     const val STR_GHOST_YAML_PREFIX = "GhostYaml"
     const val TEMPLATE_YAML_ARRAY_SERIALIZER = "GhostYaml%sSerializer"
+    const val STR_TEMP_FLAT_WRITER_INIT = "val tempFlatWriter = com.ghost.serialization.writer.GhostJsonFlatWriter(com.ghost.serialization.writer.FlatByteArrayWriter())"
+    const val STR_WRITE_TEMP_FLAT_WRITER = "writer.buffer.writeString(tempFlatWriter.buffer.toStringUtf8())"
+    const val STR_MASK_REQUIRED_PREFIX = "MASK_REQUIRED_"
 }
