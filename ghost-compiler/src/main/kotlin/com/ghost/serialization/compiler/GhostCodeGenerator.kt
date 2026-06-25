@@ -36,13 +36,13 @@ internal class GhostCodeGenerator(
 ) {
 
     private val yamlSerializerInterface = ClassName(
-        "com.ghost.serialization.yaml.contract",
-        "GhostYamlSerializer"
+        C.PKG_YAML_CONTRACT,
+        C.STR_GHOST_YAML_SERIALIZER
     )
 
-    private val yamlWriterClass = ClassName("com.ghost.serialization.yaml.writer", "GhostYamlWriter")
-    private val yamlFlatWriterClass = ClassName("com.ghost.serialization.yaml.writer", "GhostYamlFlatWriter")
-    private val yamlFlatReaderClass = ClassName("com.ghost.serialization.yaml.parser", "GhostYamlFlatReader")
+    private val yamlWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_WRITER)
+    private val yamlFlatWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_FLAT_WRITER)
+    private val yamlFlatReaderClass = ClassName(C.PKG_YAML_PARSER, C.STR_GHOST_YAML_FLAT_READER)
 
     private val fullPaths = properties.map {
         it.flattenPath

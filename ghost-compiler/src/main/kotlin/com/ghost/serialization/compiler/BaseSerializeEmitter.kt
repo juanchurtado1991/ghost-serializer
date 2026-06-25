@@ -193,8 +193,8 @@ internal abstract class BaseSerializeEmitter(
             }
 
             prop.isPrimitiveArray -> {
-                val serializerClass = if (writerClass.simpleName.startsWith("GhostYaml")) {
-                    ClassName("com.ghost.serialization.yaml.serializer", "GhostYaml${prop.primitiveArrayType}Serializer")
+                val serializerClass = if (writerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
+                    ClassName(C.PKG_YAML_SERIALIZER, C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType))
                 } else {
                     ClassName(
                         C.STR_SERIALIZERS_PKG,
