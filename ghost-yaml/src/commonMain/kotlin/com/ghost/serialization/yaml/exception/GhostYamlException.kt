@@ -1,4 +1,4 @@
-package com.ghost.serialization.yaml
+package com.ghost.serialization.yaml.exception
 
 /**
  * Exception thrown when Ghost encounters invalid or unsupported YAML content.

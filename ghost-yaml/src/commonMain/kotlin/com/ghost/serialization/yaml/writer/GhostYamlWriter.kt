@@ -1,19 +1,23 @@
-package com.ghost.serialization.yaml
+package com.ghost.serialization.yaml.writer
+
+import com.ghost.serialization.yaml.exception.GhostYamlException
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.writer.FlatByteArrayWriter
 import com.ghost.serialization.yaml.GhostYamlConstants as C
+import okio.BufferedSink
 import okio.ByteString
 
 /**
- * Contiguous in-memory specialized YAML writer backed by FlatByteArrayWriter.
+ * A highly optimized, low-allocation YAML writer for Kotlin Multiplatform.
  */
-@Suppress("CascadeIf")
-class GhostYamlFlatWriter @InternalGhostApi constructor(
-    @InternalGhostApi val buffer: FlatByteArrayWriter
+class GhostYamlWriter(
+    internal val sink: BufferedSink
 ) {
+    @PublishedApi
+    internal val buffer = sink.buffer
+
     internal var depth = 0
     internal var scratch: ByteArray? = null
 
@@ -47,6 +51,11 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         depth = 0
         pendingSpace = false
         justWroteDash = false
+    }
+
+    @InternalGhostApi
+    fun flush() {
+        sink.emit()
     }
 
     private fun writeIndentation(level: Int) {
@@ -84,7 +93,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         }
     }
 
-    fun beginObject(): GhostYamlFlatWriter {
+    fun beginObject(): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth >= C.MAX_DEPTH) {
             throw GhostYamlException("Max depth exceeded")
@@ -97,13 +106,13 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
-    fun endObject(): GhostYamlFlatWriter {
+    fun endObject(): GhostYamlWriter {
         depth--
         justWroteDash = false
         return this
     }
 
-    fun beginArray(): GhostYamlFlatWriter {
+    fun beginArray(): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth >= C.MAX_DEPTH) {
             throw GhostYamlException("Max depth exceeded")
@@ -116,13 +125,13 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
-    fun endArray(): GhostYamlFlatWriter {
+    fun endArray(): GhostYamlWriter {
         depth--
         justWroteDash = false
         return this
     }
 
-    fun name(key: String): GhostYamlFlatWriter {
+    fun name(key: String): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth <= 0) {
             throw GhostYamlException("Cannot write name outside of object scope")
@@ -146,7 +155,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
-    fun name(key: ByteString): GhostYamlFlatWriter {
+    fun name(key: ByteString): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth <= 0) {
             throw GhostYamlException("Cannot write name outside of object scope")
@@ -169,37 +178,37 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
-    fun value(text: String): GhostYamlFlatWriter {
+    fun value(text: String): GhostYamlWriter {
         prepareValue(isStructural = false)
         writeStringValueRaw(text)
         return this
     }
 
-    fun value(number: Int): GhostYamlFlatWriter {
+    fun value(number: Int): GhostYamlWriter {
         prepareValue(isStructural = false)
         writeLong(number.toLong())
         return this
     }
 
-    fun value(number: Long): GhostYamlFlatWriter {
+    fun value(number: Long): GhostYamlWriter {
         prepareValue(isStructural = false)
         writeLong(number)
         return this
     }
 
-    fun value(number: Double): GhostYamlFlatWriter {
+    fun value(number: Double): GhostYamlWriter {
         prepareValue(isStructural = false)
         buffer.writeUtf8(number.toString())
         return this
     }
 
-    fun value(number: Float): GhostYamlFlatWriter {
+    fun value(number: Float): GhostYamlWriter {
         prepareValue(isStructural = false)
         buffer.writeUtf8(number.toString())
         return this
     }
 
-    fun value(value: Boolean): GhostYamlFlatWriter {
+    fun value(value: Boolean): GhostYamlWriter {
         prepareValue(isStructural = false)
         if (value) {
             buffer.writeUtf8(C.STR_TRUE)
@@ -209,7 +218,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
-    fun nullValue(): GhostYamlFlatWriter {
+    fun nullValue(): GhostYamlWriter {
         prepareValue(isStructural = false)
         buffer.writeUtf8(C.STR_NULL)
         return this
@@ -219,7 +228,8 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     fun writeStringValueRaw(value: String) {
         val length = value.length
         if (length == 0) {
-            buffer.write2Bytes(C.DOUBLE_QUOTE_INT, C.DOUBLE_QUOTE_INT)
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
             return
         }
 
@@ -338,5 +348,65 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
             temp /= C.TEN_LONG
         }
         buffer.write(scratchBuf, pos, scratchBuf.size - pos)
+    }
+
+    private fun extractKey(header: ByteString): String {
+        val size = header.size
+        if (size >= C.HEADER_MIN_SIZE &&
+            header[C.HEADER_QUOTE_START_OFFSET] == C.DOUBLE_QUOTE_BYTE &&
+            header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &&
+            header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE
+        ) {
+            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB).utf8()
+        }
+        return header.utf8()
+    }
+
+    fun writeNameRaw(header: ByteString): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: String): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: Int): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: Long): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: Double): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: Float): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: Boolean): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
     }
 }

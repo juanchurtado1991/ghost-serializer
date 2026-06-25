@@ -1,4 +1,4 @@
-package com.ghost.serialization.yaml
+package com.ghost.serialization.yaml.parser
 
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
