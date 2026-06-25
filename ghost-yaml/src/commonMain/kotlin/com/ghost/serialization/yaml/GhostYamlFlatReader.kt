@@ -1,6 +1,36 @@
 package com.ghost.serialization.yaml
 
+import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.GhostYamlConstants as C
+
+private const val BUFFER_SCALE_FACTOR = 2
+private const val UTF8_1BYTE_MAX = 0x7F
+private const val UTF8_2BYTE_MAX = 0x7FF
+private const val UTF8_3BYTE_MAX = 0xFFFF
+private const val UTF8_2BYTE_PREFIX = 0xC0
+private const val UTF8_3BYTE_PREFIX = 0xE0
+private const val UTF8_4BYTE_PREFIX = 0xF0
+private const val UTF8_CONT_PREFIX = 0x80
+private const val UTF8_CONT_MASK = 0x3F
+private const val HEX_SHIFT_4 = 4
+private const val HEX_RADIX_10 = 10
+private const val SHIFT_12_BITS = 12
+private const val SHIFT_18_BITS = 18
+
+private const val CODE_ZERO = 0
+private const val CODE_BEL = 7
+private const val CODE_BS = 8
+private const val CODE_TAB = 9
+private const val CODE_LF = 10
+private const val CODE_FF = 12
+private const val CODE_CR = 13
+private const val CODE_VTAB = 11
+private const val CODE_ESC = 27
+private const val CODE_NEXT_LINE = 133
+private const val CODE_NBSP = 160
+private const val CODE_LINE_SEP = 8232
+private const val CODE_PARA_SEP = 8233
 
 /**
  * High-performance, zero-intermediate-allocation YAML reader operating on a [ByteArray].
@@ -423,26 +453,81 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
             return localRawData.decodeToString(startPosition, scanPos)
         }
 
-        val stringBuilder = StringBuilder()
-        while (position < localLimit) {
-            val currentByte = localRawData[position]
-            when {
-                currentByte == C.DOUBLE_QUOTE_BYTE -> { position++; return stringBuilder.toString() }
-                currentByte == C.BACKSLASH_BYTE    -> {
+        var outBuffer = acquireScratchBuffer(256)
+        var outPos = 0
+        try {
+            while (position < localLimit) {
+                val currentByte = localRawData[position]
+                if (currentByte == C.DOUBLE_QUOTE_BYTE) {
+                    position++
+                    return outBuffer.decodeToString(0, outPos)
+                } else if (currentByte == C.BACKSLASH_BYTE) {
                     position++
                     if (position >= localLimit) break
-                    stringBuilder.append(processEscapeSequence())
-                }
-                else -> {
+                    val code = processEscapeSequence()
+                    if (code <= UTF8_1BYTE_MAX) {
+                        if (outPos + 1 > outBuffer.size) {
+                            val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
+                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                            releaseScratchBuffer(outBuffer)
+                            outBuffer = newBuffer
+                        }
+                        outBuffer[outPos++] = code.toByte()
+                    } else if (code <= UTF8_2BYTE_MAX) {
+                        if (outPos + 2 > outBuffer.size) {
+                            val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
+                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                            releaseScratchBuffer(outBuffer)
+                            outBuffer = newBuffer
+                        }
+                        outBuffer[outPos++] = (UTF8_2BYTE_PREFIX or (code shr 6)).toByte()
+                        outBuffer[outPos++] = (UTF8_CONT_PREFIX or (code and UTF8_CONT_MASK)).toByte()
+                    } else if (code <= UTF8_3BYTE_MAX) {
+                        if (outPos + 3 > outBuffer.size) {
+                            val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
+                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                            releaseScratchBuffer(outBuffer)
+                            outBuffer = newBuffer
+                        }
+                        outBuffer[outPos++] = (UTF8_3BYTE_PREFIX or (code shr SHIFT_12_BITS)).toByte()
+                        outBuffer[outPos++] = (UTF8_CONT_PREFIX or ((code shr 6) and UTF8_CONT_MASK)).toByte()
+                        outBuffer[outPos++] = (UTF8_CONT_PREFIX or (code and UTF8_CONT_MASK)).toByte()
+                    } else {
+                        if (outPos + 4 > outBuffer.size) {
+                            val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
+                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                            releaseScratchBuffer(outBuffer)
+                            outBuffer = newBuffer
+                        }
+                        outBuffer[outPos++] = (UTF8_4BYTE_PREFIX or (code shr SHIFT_18_BITS)).toByte()
+                        outBuffer[outPos++] = (UTF8_CONT_PREFIX or ((code shr SHIFT_12_BITS) and UTF8_CONT_MASK)).toByte()
+                        outBuffer[outPos++] = (UTF8_CONT_PREFIX or ((code shr 6) and UTF8_CONT_MASK)).toByte()
+                        outBuffer[outPos++] = (UTF8_CONT_PREFIX or (code and UTF8_CONT_MASK)).toByte()
+                    }
+                } else {
                     val startPos = position
                     while (position < localLimit &&
                         localRawData[position] != C.DOUBLE_QUOTE_BYTE &&
                         localRawData[position] != C.BACKSLASH_BYTE) {
                         position++
                     }
-                    stringBuilder.append(localRawData.decodeToString(startPos, position))
+                    val rangeLength = position - startPos
+                    if (outPos + rangeLength > outBuffer.size) {
+                        var newSize = outBuffer.size * BUFFER_SCALE_FACTOR
+                        while (outPos + rangeLength > newSize) {
+                            newSize *= BUFFER_SCALE_FACTOR
+                        }
+                        val newBuffer = acquireScratchBuffer(newSize)
+                        outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                        releaseScratchBuffer(outBuffer)
+                        outBuffer = newBuffer
+                    }
+                    localRawData.copyInto(outBuffer, outPos, startPos, position)
+                    outPos += rangeLength
                 }
             }
+        } finally {
+            releaseScratchBuffer(outBuffer)
         }
         yamlError("Unterminated double-quoted string")
     }
@@ -473,65 +558,102 @@ class GhostYamlFlatReader(val rawData: ByteArray) {
             return localRawData.decodeToString(startPosition, scanPos)
         }
 
-        val stringBuilder = StringBuilder()
-        while (position < localLimit) {
-            val currentByte = localRawData[position]
-            when {
-                currentByte == C.SINGLE_QUOTE_BYTE -> {
+        var outBuffer = acquireScratchBuffer(256)
+        var outPos = 0
+        try {
+            while (position < localLimit) {
+                val currentByte = localRawData[position]
+                if (currentByte == C.SINGLE_QUOTE_BYTE) {
                     position++
                     if (position < localLimit && localRawData[position] == C.SINGLE_QUOTE_BYTE) {
-                        stringBuilder.append('\'')
+                        if (outPos + 1 > outBuffer.size) {
+                            val newBuffer = acquireScratchBuffer(outBuffer.size * BUFFER_SCALE_FACTOR)
+                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                            releaseScratchBuffer(outBuffer)
+                            outBuffer = newBuffer
+                        }
+                        outBuffer[outPos++] = C.SINGLE_QUOTE_BYTE
                         position++
                     } else {
-                        return stringBuilder.toString()
+                        return outBuffer.decodeToString(0, outPos)
                     }
-                }
-                else -> {
+                } else {
                     val startPos = position
                     while (position < localLimit && localRawData[position] != C.SINGLE_QUOTE_BYTE) {
                         position++
                     }
-                    stringBuilder.append(localRawData.decodeToString(startPos, position))
+                    val rangeLength = position - startPos
+                    if (outPos + rangeLength > outBuffer.size) {
+                        var newSize = outBuffer.size * BUFFER_SCALE_FACTOR
+                        while (outPos + rangeLength > newSize) {
+                            newSize *= BUFFER_SCALE_FACTOR
+                        }
+                        val newBuffer = acquireScratchBuffer(newSize)
+                        outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                        releaseScratchBuffer(outBuffer)
+                        outBuffer = newBuffer
+                    }
+                    localRawData.copyInto(outBuffer, outPos, startPos, position)
+                    outPos += rangeLength
                 }
             }
+        } finally {
+            releaseScratchBuffer(outBuffer)
         }
         yamlError("Unterminated single-quoted string")
     }
 
-    private fun processEscapeSequence(): String {
+    private fun processEscapeSequence(): Int {
         val currentByte = rawData[position++]
         val localLimit = limit
         return when (currentByte) {
-            C.DOUBLE_QUOTE_BYTE  -> C.ESCAPE_DOUBLE_QUOTE
-            C.BACKSLASH_BYTE     -> C.ESCAPE_BACKSLASH
-            C.ESCAPE_SLASH_BYTE  -> C.ESCAPE_SLASH
-            C.LOWERCASE_B_BYTE   -> C.ESCAPE_B
-            C.LOWERCASE_F_BYTE   -> C.ESCAPE_F
-            C.LOWERCASE_N_BYTE   -> C.ESCAPE_N
-            C.LOWERCASE_R_BYTE   -> C.ESCAPE_R
-            C.LOWERCASE_T_BYTE   -> C.ESCAPE_T
+            C.DOUBLE_QUOTE_BYTE  -> C.DOUBLE_QUOTE_BYTE.toInt()
+            C.BACKSLASH_BYTE     -> C.BACKSLASH_BYTE.toInt()
+            C.ESCAPE_SLASH_BYTE  -> C.ESCAPE_SLASH_BYTE.toInt()
+            C.LOWERCASE_B_BYTE   -> CODE_BS
+            C.LOWERCASE_F_BYTE   -> CODE_FF
+            C.LOWERCASE_N_BYTE   -> CODE_LF
+            C.LOWERCASE_R_BYTE   -> CODE_CR
+            C.LOWERCASE_T_BYTE   -> CODE_TAB
             C.LOWERCASE_U_BYTE   -> {        // \uXXXX
                 if (position + 4 > localLimit) yamlError("Incomplete \\u escape")
-                val hexString = rawData.decodeToString(position, position + 4)
+                val hexVal = parseHex(rawData, position, 4)
                 position += 4
-                Char(hexString.toInt(16)).toString()
+                hexVal
             }
             C.UPPERCASE_U_BYTE   -> {        // \UXXXXXXXX
                 if (position + 8 > localLimit) yamlError("Incomplete \\U escape")
-                val hexString = rawData.decodeToString(position, position + 8)
+                val hexVal = parseHex(rawData, position, 8)
                 position += 8
-                String(Character.toChars(hexString.toInt(16)))
+                hexVal
             }
-            C.ZERO_BYTE          -> C.ESCAPE_ZERO
-            C.LOWERCASE_A_BYTE   -> C.ESCAPE_A
-            C.LOWERCASE_V_BYTE   -> C.ESCAPE_V
-            C.LOWERCASE_E_BYTE   -> C.ESCAPE_E
-            C.UPPERCASE_N_BYTE   -> C.ESCAPE_NEXT_LINE
-            C.UNDERSCORE_BYTE    -> C.ESCAPE_NBSP
-            C.UPPERCASE_L_BYTE   -> C.ESCAPE_LINE_SEP
-            C.UPPERCASE_P_BYTE   -> C.ESCAPE_PARA_SEP
+            C.ZERO_BYTE          -> CODE_ZERO
+            C.LOWERCASE_A_BYTE   -> CODE_BEL
+            C.LOWERCASE_V_BYTE   -> CODE_VTAB
+            C.LOWERCASE_E_BYTE   -> CODE_ESC
+            C.UPPERCASE_N_BYTE   -> CODE_NEXT_LINE
+            C.UNDERSCORE_BYTE    -> CODE_NBSP
+            C.UPPERCASE_L_BYTE   -> CODE_LINE_SEP
+            C.UPPERCASE_P_BYTE   -> CODE_PARA_SEP
             else           -> yamlError("Unknown escape: \\${currentByte.toInt().toChar()}")
         }
+    }
+
+    private fun parseHex(data: ByteArray, start: Int, length: Int): Int {
+        var value = 0
+        var index = 0
+        while (index < length) {
+            val byteVal = data[start + index]
+            val digit = when {
+                byteVal in C.ZERO_BYTE..C.NINE_BYTE -> byteVal - C.ZERO_BYTE
+                byteVal in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> byteVal - C.LOWERCASE_A_BYTE + HEX_RADIX_10
+                byteVal in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> byteVal - C.UPPERCASE_A_BYTE + HEX_RADIX_10
+                else -> yamlError("Invalid hex char in escape sequence")
+            }
+            value = (value shl HEX_SHIFT_4) or digit
+            index++
+        }
+        return value
     }
 
     // ── Number parsing ─────────────────────────────────────────────────────────
