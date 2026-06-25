@@ -36,35 +36,6 @@ class GhostYamlWriter(
         private const val HEX_MASK = 0x0F
         private const val TEN_LONG = 10L
         private const val ASCII_LIMIT = 128
-
-        private const val STR_HEX_CHARS = "0123456789abcdef"
-        private const val STR_NULL = "null"
-        private const val STR_MIN_LONG_ABS = "9223372036854775808"
-
-        private val HEX_CHARS = STR_HEX_CHARS.encodeToByteArray()
-
-        private const val SPACE_INT = 0x20
-        private const val DASH_INT = 0x2D
-        private const val NEWLINE_INT = 0x0A
-        private const val DOUBLE_QUOTE_INT = 0x22
-        private const val BACKSLASH_INT = 0x5C
-        private const val COLON_INT = 0x3A
-        private const val ZERO_INT = 0x30
-        private const val TILDE_INT = 0x7E
-
-        private const val CHAR_LF_INT = 10
-        private const val CHAR_CR_INT = 13
-        private const val CHAR_TAB_INT = 9
-        private const val CHAR_BS_INT = 8
-        private const val CHAR_FF_INT = 12
-        private const val CHAR_SPACE_INT = 32
-
-        private const val CHAR_N_INT = 0x6E
-        private const val CHAR_R_INT = 0x72
-        private const val CHAR_T_INT = 0x74
-        private const val CHAR_B_INT = 0x62
-        private const val CHAR_F_INT = 0x66
-        private const val CHAR_U_INT = 0x75
     }
 
     internal fun acquireScratch(): ByteArray {
@@ -103,7 +74,7 @@ class GhostYamlWriter(
         val spacesCount = level * SPACES_PER_LEVEL
         var count = 0
         while (count < spacesCount) {
-            buffer.writeByte(SPACE_INT)
+            buffer.writeByte(C.SPACE_INT)
             count++
         }
     }
@@ -112,13 +83,13 @@ class GhostYamlWriter(
         val currentDepth = depth
         if (currentDepth > 0 && contexts[currentDepth] == TYPE_ARRAY) {
             if (justWroteDash) {
-                buffer.writeByte(DASH_INT)
-                buffer.writeByte(SPACE_INT)
+                buffer.writeByte(C.DASH_INT)
+                buffer.writeByte(C.SPACE_INT)
             } else {
-                buffer.writeByte(NEWLINE_INT)
+                buffer.writeByte(C.NEWLINE_INT)
                 writeIndentation(currentDepth - 1)
-                buffer.writeByte(DASH_INT)
-                buffer.writeByte(SPACE_INT)
+                buffer.writeByte(C.DASH_INT)
+                buffer.writeByte(C.SPACE_INT)
             }
             itemCounts[currentDepth]++
             justWroteDash = isStructural
@@ -127,7 +98,7 @@ class GhostYamlWriter(
                 pendingSpace = false
             } else {
                 if (pendingSpace) {
-                    buffer.writeByte(SPACE_INT)
+                    buffer.writeByte(C.SPACE_INT)
                     pendingSpace = false
                 }
             }
@@ -182,15 +153,15 @@ class GhostYamlWriter(
         } else {
             val count = itemCounts[currentDepth]
             if (count > 0) {
-                buffer.writeByte(NEWLINE_INT)
+                buffer.writeByte(C.NEWLINE_INT)
                 writeIndentation(currentDepth - 1)
             } else if (currentDepth > 1) {
-                buffer.writeByte(NEWLINE_INT)
+                buffer.writeByte(C.NEWLINE_INT)
                 writeIndentation(currentDepth - 1)
             }
         }
         buffer.writeUtf8(key)
-        buffer.writeByte(COLON_INT)
+        buffer.writeByte(C.COLON_INT)
         itemCounts[currentDepth]++
         pendingSpace = true
         return this
@@ -206,10 +177,10 @@ class GhostYamlWriter(
         } else {
             val count = itemCounts[currentDepth]
             if (count > 0) {
-                buffer.writeByte(NEWLINE_INT)
+                buffer.writeByte(C.NEWLINE_INT)
                 writeIndentation(currentDepth - 1)
             } else if (currentDepth > 1) {
-                buffer.writeByte(NEWLINE_INT)
+                buffer.writeByte(C.NEWLINE_INT)
                 writeIndentation(currentDepth - 1)
             }
         }
@@ -261,7 +232,7 @@ class GhostYamlWriter(
 
     fun nullValue(): GhostYamlWriter {
         prepareValue(isStructural = false)
-        buffer.writeUtf8(STR_NULL)
+        buffer.writeUtf8(C.STR_NULL)
         return this
     }
 
@@ -269,8 +240,8 @@ class GhostYamlWriter(
     fun writeStringValueRaw(value: String) {
         val length = value.length
         if (length == 0) {
-            buffer.writeByte(DOUBLE_QUOTE_INT)
-            buffer.writeByte(DOUBLE_QUOTE_INT)
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
             return
         }
 
@@ -279,9 +250,9 @@ class GhostYamlWriter(
             var index = 0
             while (index < length) {
                 val code = value[index].code
-                if (code !in SPACE_INT..TILDE_INT ||
-                    code == DOUBLE_QUOTE_INT ||
-                    code == BACKSLASH_INT
+                if (code !in C.SPACE_INT..C.TILDE_INT ||
+                    code == C.DOUBLE_QUOTE_INT ||
+                    code == C.BACKSLASH_INT
                 ) {
                     allPlain = false
                     break
@@ -289,16 +260,16 @@ class GhostYamlWriter(
                 index++
             }
             if (allPlain) {
-                buffer.writeByte(DOUBLE_QUOTE_INT)
+                buffer.writeByte(C.DOUBLE_QUOTE_INT)
                 buffer.writeUtf8(value)
-                buffer.writeByte(DOUBLE_QUOTE_INT)
+                buffer.writeByte(C.DOUBLE_QUOTE_INT)
                 return
             }
         }
 
-        buffer.writeByte(DOUBLE_QUOTE_INT)
+        buffer.writeByte(C.DOUBLE_QUOTE_INT)
         writeEscaped(value)
-        buffer.writeByte(DOUBLE_QUOTE_INT)
+        buffer.writeByte(C.DOUBLE_QUOTE_INT)
     }
 
     private fun writeEscaped(text: String) {
@@ -307,38 +278,38 @@ class GhostYamlWriter(
 
         while (index < length) {
             val charCode = text[index].code
-            if (charCode == DOUBLE_QUOTE_INT) {
-                buffer.writeByte(BACKSLASH_INT)
-                buffer.writeByte(DOUBLE_QUOTE_INT)
-            } else if (charCode == BACKSLASH_INT) {
-                buffer.writeByte(BACKSLASH_INT)
-                buffer.writeByte(BACKSLASH_INT)
+            if (charCode == C.DOUBLE_QUOTE_INT) {
+                buffer.writeByte(C.BACKSLASH_INT)
+                buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            } else if (charCode == C.BACKSLASH_INT) {
+                buffer.writeByte(C.BACKSLASH_INT)
+                buffer.writeByte(C.BACKSLASH_INT)
             } else {
                 when (charCode) {
-                    CHAR_LF_INT -> {
-                        buffer.writeByte(BACKSLASH_INT)
-                        buffer.writeByte(CHAR_N_INT)
+                    C.CHAR_LF_INT -> {
+                        buffer.writeByte(C.BACKSLASH_INT)
+                        buffer.writeByte(C.CHAR_N_INT)
                     }
-                    CHAR_CR_INT -> {
-                        buffer.writeByte(BACKSLASH_INT)
-                        buffer.writeByte(CHAR_R_INT)
+                    C.CHAR_CR_INT -> {
+                        buffer.writeByte(C.BACKSLASH_INT)
+                        buffer.writeByte(C.CHAR_R_INT)
                     }
-                    CHAR_TAB_INT -> {
-                        buffer.writeByte(BACKSLASH_INT)
-                        buffer.writeByte(CHAR_T_INT)
+                    C.CHAR_TAB_INT -> {
+                        buffer.writeByte(C.BACKSLASH_INT)
+                        buffer.writeByte(C.CHAR_T_INT)
                     }
-                    CHAR_BS_INT -> {
-                        buffer.writeByte(BACKSLASH_INT)
-                        buffer.writeByte(CHAR_B_INT)
+                    C.CHAR_BS_INT -> {
+                        buffer.writeByte(C.BACKSLASH_INT)
+                        buffer.writeByte(C.CHAR_B_INT)
                     }
-                    CHAR_FF_INT -> {
-                        buffer.writeByte(BACKSLASH_INT)
-                        buffer.writeByte(CHAR_F_INT)
+                    C.CHAR_FF_INT -> {
+                        buffer.writeByte(C.BACKSLASH_INT)
+                        buffer.writeByte(C.CHAR_F_INT)
                     }
                     else -> {
-                        if (charCode < CHAR_SPACE_INT) {
-                            buffer.writeByte(BACKSLASH_INT)
-                            buffer.writeByte(CHAR_U_INT)
+                        if (charCode < C.CHAR_SPACE_INT) {
+                            buffer.writeByte(C.BACKSLASH_INT)
+                            buffer.writeByte(C.CHAR_U_INT)
                             writeUnicodeHex(charCode)
                         } else if (charCode < ASCII_LIMIT) {
                             buffer.writeByte(charCode)
@@ -359,7 +330,7 @@ class GhostYamlWriter(
     }
 
     private fun writeUnicodeHex(code: Int) {
-        val hexChars = HEX_CHARS
+        val hexChars = C.HEX_CHARS_ARR
         buffer.writeByte(hexChars[(code shr SHIFT_12) and HEX_MASK].toInt())
         buffer.writeByte(hexChars[(code shr SHIFT_8) and HEX_MASK].toInt())
         buffer.writeByte(hexChars[(code shr SHIFT_4) and HEX_MASK].toInt())
@@ -368,15 +339,15 @@ class GhostYamlWriter(
 
     private fun writeLong(value: Long) {
         if (value == 0L) {
-            buffer.writeByte(ZERO_INT)
+            buffer.writeByte(C.ZERO_INT)
             return
         }
         var temp = value
         val isNegative = temp < 0
         if (isNegative) {
-            buffer.writeByte(DASH_INT)
+            buffer.writeByte(C.DASH_INT)
             if (temp == Long.MIN_VALUE) {
-                buffer.writeUtf8(STR_MIN_LONG_ABS)
+                buffer.writeUtf8(C.STR_MIN_LONG_ABS)
                 return
             }
             temp = -temp
@@ -385,7 +356,7 @@ class GhostYamlWriter(
         var pos = scratchBuf.size
         while (temp > 0L) {
             val digit = (temp % TEN_LONG).toInt()
-            scratchBuf[--pos] = (ZERO_INT + digit).toByte()
+            scratchBuf[--pos] = (C.ZERO_INT + digit).toByte()
             temp /= TEN_LONG
         }
         buffer.write(scratchBuf, pos, scratchBuf.size - pos)

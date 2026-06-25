@@ -256,4 +256,35 @@ internal object GhostYamlConstants {
     const val HEX_SHIFT = 4
     const val OCTAL_SHIFT = 3
     const val BINARY_SHIFT = 1
+
+    // ── Int counterparts for control characters (Writer path) ──────────────────
+    const val SPACE_INT: Int = 0x20
+    const val DASH_INT: Int = 0x2D
+    const val NEWLINE_INT: Int = 0x0A
+    const val DOUBLE_QUOTE_INT: Int = 0x22
+    const val BACKSLASH_INT: Int = 0x5C
+    const val COLON_INT: Int = 0x3A
+    const val ZERO_INT: Int = 0x30
+    const val TILDE_INT: Int = 0x7E
+
+    const val CHAR_LF_INT: Int = 10
+    const val CHAR_CR_INT: Int = 13
+    const val CHAR_TAB_INT: Int = 9
+    const val CHAR_BS_INT: Int = 8
+    const val CHAR_FF_INT: Int = 12
+    const val CHAR_SPACE_INT: Int = 32
+
+    const val CHAR_N_INT: Int = 0x6E
+    const val CHAR_R_INT: Int = 0x72
+    const val CHAR_T_INT: Int = 0x74
+    const val CHAR_B_INT: Int = 0x62
+    const val CHAR_F_INT: Int = 0x66
+    const val CHAR_U_INT: Int = 0x75
+
+    const val STR_HEX_CHARS = "0123456789abcdef"
+    const val STR_NULL = "null"
+    const val STR_MIN_LONG_ABS = "9223372036854775808"
+
+    val HEX_CHARS_ARR = STR_HEX_CHARS.encodeToByteArray()
 }
+
