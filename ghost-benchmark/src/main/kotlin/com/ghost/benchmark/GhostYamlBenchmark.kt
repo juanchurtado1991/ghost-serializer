@@ -18,6 +18,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.encodeToYamlBytes
+import com.ghost.serialization.yaml.parser.GhostYamlFlatReader
 import com.ghost.serialization.integration.model.BenchResult
 import com.ghost.serialization.integration.model.BenchUser
 import com.ghost.serialization.integration.model.Category
@@ -149,6 +150,9 @@ object GhostYamlBenchmark {
 
         // 5. Print Final Results
         printFinalResults(finalResults, runs)
+
+        // 6. Run Edge/Test Datasets Benchmark
+        runEdgeDatasetsBenchmark(runs, warmupIters, threadBean)
     }
 
     fun runTwitter(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
@@ -724,6 +728,74 @@ object GhostYamlBenchmark {
         val kbPerOp = if (allocatedBytes > 0) (allocatedBytes.toDouble() / runs) / Constants.DIVISOR_KB else 0.0
 
         return Triple(avgThroughput, stdDev, kbPerOp)
+    }
+
+    fun runEdgeDatasetsBenchmark(runs: Int, warmupIters: Int, threadBean: ThreadMXBean?) {
+        val files = listOf(
+            "spring_boot_app.yaml",
+            "edge_multiline.yaml",
+            "edge_flow_style.yaml",
+            "edge_explicit_tags.yaml",
+            "edge_anchors.yaml",
+            "edge_polymorphism.yaml"
+        )
+
+        println("\n========================================================")
+        println("BENCHMARK: YAML EDGE CASE / TEST DATASETS (GENERIC PARSING)")
+        println("========================================================")
+
+        for (fileName in files) {
+            val resource = object {}.javaClass.classLoader.getResource("yaml/$fileName")
+            if (resource == null) {
+                println("  ⚠️  Skipping $fileName benchmark: not found.")
+                continue
+            }
+            val yamlString = resource.readText()
+            val yamlBytes = yamlString.encodeToByteArray()
+
+            println("\n🔥 Warming up $fileName models...")
+            repeat(warmupIters) {
+                try { GhostYamlFlatReader(yamlBytes).readDocument() } catch (t: Throwable) {}
+                try { kaml.parseToYamlNode(yamlString) } catch (t: Throwable) {}
+                try { jacksonYaml.readValue(yamlString, Any::class.java) } catch (t: Throwable) {}
+            }
+
+            performGc()
+            println("🚀 Measuring $fileName performance...")
+
+            val ghostScore = try {
+                measureTwitterPerf(threadBean, runs) {
+                    GhostYamlFlatReader(yamlBytes).readDocument()
+                }
+            } catch (t: Throwable) {
+                Triple(0.0, 0.0, 0.0)
+            }
+
+            performGc()
+            val kamlScore = try {
+                measureTwitterPerf(threadBean, runs) {
+                    kaml.parseToYamlNode(yamlString)
+                }
+            } catch (t: Throwable) {
+                Triple(0.0, 0.0, 0.0)
+            }
+
+            performGc()
+            val jacksonScore = try {
+                measureTwitterPerf(threadBean, runs) {
+                    jacksonYaml.readValue(yamlString, Any::class.java)
+                }
+            } catch (t: Throwable) {
+                Triple(0.0, 0.0, 0.0)
+            }
+
+            println("\n--- Performance Summary for $fileName ---")
+            printTwitterResults(
+                listOf(
+                    "Parse Generic" to Triple(ghostScore, kamlScore, jacksonScore)
+                )
+            )
+        }
     }
 
     private fun performGc() {
