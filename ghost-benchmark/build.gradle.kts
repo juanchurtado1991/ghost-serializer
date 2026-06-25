@@ -56,6 +56,7 @@ kotlin {
 dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-serialization"))
+    implementation(project(":ghost-yaml"))
     implementation(project(":ghost-integration-test"))
     implementation(libs.gson)
     implementation(libs.moshi)
@@ -64,6 +65,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json.okio)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.module.kotlin)
+    implementation(libs.jackson.dataformat.yaml)
+    implementation(libs.kaml)
     implementation(libs.okio)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.test)
