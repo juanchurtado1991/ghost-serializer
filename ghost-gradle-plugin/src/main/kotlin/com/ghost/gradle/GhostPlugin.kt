@@ -72,6 +72,12 @@ class GhostPlugin : Plugin<Project> {
             if (extension.autoInjectKtor.get() && hasKtorDependency(project)) {
                 injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_KTOR:$version")
             }
+            if (extension.autoInjectYaml.get()) {
+                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_YAML:$version")
+                if (hasKtorDependency(project)) {
+                    injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_YAML_KTOR:$version")
+                }
+            }
             if (extension.autoInjectRetrofit.get() && hasRetrofitDependency(project)) {
                 injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_RETROFIT:$version")
             }
@@ -81,6 +87,7 @@ class GhostPlugin : Plugin<Project> {
     private fun createExtension(project: Project): GhostExtension {
         return project.extensions.create(EXTENSION_NAME, GhostExtension::class.java).apply {
             autoInjectKtor.convention(true)
+            autoInjectYaml.convention(true)
             autoInjectRetrofit.convention(true)
             version.convention(DEFAULT_VERSION)
         }
@@ -155,6 +162,8 @@ class GhostPlugin : Plugin<Project> {
         private const val ARTIFACT_API = "ghost-api"
         private const val ARTIFACT_KTOR = "ghost-ktor"
         private const val ARTIFACT_RETROFIT = "ghost-retrofit"
+        private const val ARTIFACT_YAML = "ghost-yaml"
+        private const val ARTIFACT_YAML_KTOR = "ghost-yaml-ktor"
 
         private const val CONFIG_COMMON_MAIN_IMPL = "commonMainImplementation"
         private const val CONFIG_IMPL = "implementation"
