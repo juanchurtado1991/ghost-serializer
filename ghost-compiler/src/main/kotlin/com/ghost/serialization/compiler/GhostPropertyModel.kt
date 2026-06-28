@@ -76,6 +76,7 @@ internal data class GhostPropertyModel(
     val listInnerIsGhost: Boolean = false,
     val listInnerIsEnum: Boolean = false,
     val hasDefaultValue: Boolean = false,
+    val isInConstructor: Boolean = true,
     val isMap: Boolean = false,
     val mapValueType: KSType? = null,
     val mapValueIsGhost: Boolean = false,

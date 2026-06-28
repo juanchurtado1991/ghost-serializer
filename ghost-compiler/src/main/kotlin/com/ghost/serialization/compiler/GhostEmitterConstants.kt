@@ -198,8 +198,8 @@ internal object GhostEmitterConstants {
     const val STR_NEWLINE_CLOSE_CURLY = "\n}"
     const val TEMPLATE_GET_SHARD_CALL = "getShard%L(clazz)?.let { return it as %T }"
     const val STR_RETURN_NULL = "return null"
-    const val TEMPLATE_SHARD_MAP_NAME = "getShardMap%L"
-    const val TEMPLATE_SHARD_NAME = "getShard%L"
+    const val TEMPLATE_SHARD_MAP_NAME = "getShardMap%d"
+    const val TEMPLATE_SHARD_NAME = "getShard%d"
     
     const val STR_LIST = "List"
     const val STR_SET = "Set"

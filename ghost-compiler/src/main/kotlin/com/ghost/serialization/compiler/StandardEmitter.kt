@@ -19,7 +19,7 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
  * and instantiate the target class with an optimized return statement.
  *
  * @property properties The list of property models containing metadata for code generation.
- * @property originalClassName The target class class name to instantiate.
+ * @property originalClassName The target class name to instantiate.
  * @property readerClass The reader class used for deserialization.
  */
 internal class StandardEmitter(
@@ -190,9 +190,13 @@ internal class StandardEmitter(
                 currentName == subName
             }
 
+            if (subProps.size > 1 && subProps.all { pathIndex >= fullPaths[propertyIndices[it]!!].size }) {
+                throw IllegalStateException("Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class $originalClassName: " + subProps.map { it.kotlinName + " -> " + it.jsonName })
+            }
+
             if (
                 subProps.size == C.VAL_ONE &&
-                pathIndex == fullPaths[propertyIndices[subProps[C.VAL_ZERO]]!!].size - C.VAL_ONE
+                pathIndex >= fullPaths[propertyIndices[subProps[C.VAL_ZERO]]!!].size - C.VAL_ONE
             ) {
                 emitPropertyAssignment(
                     body,
@@ -339,9 +343,9 @@ internal class StandardEmitter(
         }
 
         val helperBody = CodeBlock.builder()
-        val requiredProps = properties.filter { !it.hasDefaultValue }
+        val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
         val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-            if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+            if (prop.isInConstructor && prop.hasDefaultValue) Pair(globalIdx, prop) else null
         }
 
         if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
@@ -355,14 +359,14 @@ internal class StandardEmitter(
     }
 
     private fun emitReturnStatement(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val hasDefaults = properties.any { it.hasDefaultValue }
+        val hasDefaults = properties.any { it.isInConstructor && it.hasDefaultValue }
 
         if (!hasDefaults) {
             body.addStatement(
                 C.TEMPLATE_RETURN_T_PAREN,
                 originalClassName
             )
-            properties.forEach { prop ->
+            properties.filter { it.isInConstructor }.forEach { prop ->
                 body.addStatement(
                     C.TEMPLATE_NAMED_ARG,
                     prop.kotlinName,
@@ -374,11 +378,11 @@ internal class StandardEmitter(
         }
 
         val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-            if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+            if (prop.isInConstructor && prop.hasDefaultValue) Pair(globalIdx, prop) else null
         }
 
         if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
-            val requiredProps = properties.filter { !it.hasDefaultValue }
+            val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
             emitMultiBranchReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
             return
         }
@@ -405,9 +409,9 @@ internal class StandardEmitter(
      * @param typeSpecBuilder The serializer class builder.
      */
     private fun emitDefaultValueReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val requiredProps = properties.filter { !it.hasDefaultValue }
+        val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
         val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-            if (prop.hasDefaultValue) Pair(globalIdx, prop) else null
+            if (prop.isInConstructor && prop.hasDefaultValue) Pair(globalIdx, prop) else null
         }
 
         if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {

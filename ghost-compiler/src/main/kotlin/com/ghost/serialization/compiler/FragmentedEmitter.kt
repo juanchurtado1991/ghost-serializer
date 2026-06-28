@@ -239,13 +239,6 @@ internal class FragmentedEmitter(
      * @param typeSpecBuilder The serializer class builder.
      * @param contextClassName Class name of the context object holding property variables.
      */
-    /**
-     * Generates a descriptive private helper method validating that all required properties
-     * were present in the bitmask of the context class, throwing a GhostJsonException for any missing field.
-     *
-     * @param typeSpecBuilder The serializer class builder.
-     * @param contextClassName Class name of the context object holding property variables.
-     */
     private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder, contextClassName: ClassName) {
         val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
         if (!hasRequired) {
@@ -310,14 +303,7 @@ internal class FragmentedEmitter(
         funBuilder.addCode(funBody.build())
         typeSpecBuilder.addFunction(funBuilder.build())
     }
-
-    /**
-     * Emits the target class instantiation return statement.
-     *
-     * Resolves variables from `DecodingContext`. Uses copy-based updates for default properties.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     */
+    
     /**
      * Emits the target class instantiation return statement.
      *
@@ -327,7 +313,7 @@ internal class FragmentedEmitter(
      * @param typeSpecBuilder The serializer class builder.
      */
     private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val requiredProps = properties.filter { !it.hasDefaultValue }
+        val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
         body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
 
         requiredProps.forEach { prop ->
@@ -340,7 +326,7 @@ internal class FragmentedEmitter(
 
         body.addStatement(C.STR_PAREN)
 
-        val defaultProps = properties.filter { it.hasDefaultValue }
+        val defaultProps = properties.filter { it.isInConstructor && it.hasDefaultValue }
         if (defaultProps.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
 
@@ -363,7 +349,7 @@ internal class FragmentedEmitter(
             val defaultPropsWithGlobalIndex = properties
                 .mapIndexedNotNull { globalIdx, prop ->
 
-                if (prop.hasDefaultValue) {
+                if (prop.isInConstructor && prop.hasDefaultValue) {
                     Pair(globalIdx, prop)
                 } else {
                     null

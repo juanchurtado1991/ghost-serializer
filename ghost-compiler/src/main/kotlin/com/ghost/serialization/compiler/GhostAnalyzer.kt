@@ -40,14 +40,20 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val isData = classDeclaration.modifiers.contains(Modifier.DATA)
         val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||
                 classDeclaration.modifiers.contains(Modifier.INLINE)
+        val isObject = classDeclaration.classKind == ClassKind.OBJECT
 
         val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
+
+        if (isObject) return emptyList()
 
         validateClassKind(classDeclaration, isData, isSealed, isValue, isEnum)
 
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
 
-        val properties = classDeclaration.getAllProperties()
+        val allProps = classDeclaration.getAllProperties().toList()
+        val overriddenProps = allProps.mapNotNull { it.findOverridee() }.toSet()
+        val properties = allProps
+            .filterNot { it in overriddenProps }
             .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
             .toList()
 
@@ -119,26 +125,19 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         enumValues: Map<String, String>?
     ): List<GhostPropertyModel> {
         return if (isEnum) {
-            properties
-                .filterNot { it.simpleName.asString() in listOf(C.NAME, C.ORDINAL) }
-                .map { prop -> buildPropertyModel(prop, parameters).copy(enumValues = enumValues) }
-                .let {
-                    it.ifEmpty {
-                        listOf(
-                            GhostPropertyModel(
-                                kotlinName = C.NAME,
-                                jsonName = C.NAME,
-                                type = classDeclaration.asType(emptyList()),
-                                typeName = classDeclaration.toClassName(),
-                                isNullable = false,
-                                isGhost = false,
-                                isList = false,
-                                isEnum = true,
-                                enumValues = enumValues
-                            )
-                        )
-                    }
-                }
+            listOf(
+                GhostPropertyModel(
+                    kotlinName = C.NAME,
+                    jsonName = C.NAME,
+                    type = classDeclaration.asType(emptyList()),
+                    typeName = classDeclaration.toClassName(),
+                    isNullable = false,
+                    isGhost = false,
+                    isList = false,
+                    isEnum = true,
+                    enumValues = enumValues
+                )
+            )
         } else {
             properties.map { prop -> buildPropertyModel(prop, parameters) }
         }
@@ -274,6 +273,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             listInnerIsGhost = innerType?.let { isGhostType(it) } ?: false,
             listInnerIsEnum = innerType?.let { isEnumType(it) } ?: false,
             hasDefaultValue = param?.hasDefault ?: false,
+            isInConstructor = param != null,
             isMap = isMap,
             mapValueType = mapValueType,
             mapValueIsGhost = mapValueType?.let { isGhostType(it) } ?: false,

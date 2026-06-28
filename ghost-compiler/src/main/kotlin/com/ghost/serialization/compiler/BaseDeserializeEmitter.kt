@@ -300,8 +300,10 @@ internal abstract class BaseDeserializeEmitter(
     private fun getContextualSerializerName(type: KSType): String {
         return contextualSerializers.getOrPut(type) {
             val simpleName = type.declaration.simpleName.asString()
+            val nullableSuffix = if (type.isMarkedNullable) "Nullable" else ""
             C.STR_CONTEXTUAL_PREFIX +
                     simpleName.replaceFirstChar { it.lowercase() } +
+                    nullableSuffix +
                     C.STR_SERIALIZER_SUFFIX
         }
     }
@@ -378,6 +380,7 @@ internal abstract class BaseDeserializeEmitter(
         )
 
         contextualSerializers.forEach { (type, name) ->
+            val nonNullableType = type.makeNotNullable()
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     name,
@@ -385,13 +388,13 @@ internal abstract class BaseDeserializeEmitter(
                         C.STR_CONTRACT_PKG,
                         C.STR_GHOST_SERIALIZER
                     )
-                        .parameterizedBy(type.toTypeName()),
+                        .parameterizedBy(nonNullableType.toTypeName()),
                     KModifier.PRIVATE
                 )
                     .initializer(
                         C.TEMPLATE_RESOLVE_SERIALIZER,
                         ghostClass,
-                        type.toTypeName()
+                        nonNullableType.toTypeName()
                     )
                     .build()
             )

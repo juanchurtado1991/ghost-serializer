@@ -35,7 +35,8 @@ internal class FragmentedSerializeEmitter(
     ) {
         code.addStatement(C.STR_WRITER_BEGIN_OBJ)
 
-        if (discriminator != null) {
+        val hasDiscriminatorProperty = properties.any { it.jsonName == sealedDiscriminatorKey }
+        if (discriminator != null && !hasDiscriminatorProperty) {
             code.addStatement(
                 C.STR_WRITER_NAME_TYPE_VAL,
                 sealedDiscriminatorKey,

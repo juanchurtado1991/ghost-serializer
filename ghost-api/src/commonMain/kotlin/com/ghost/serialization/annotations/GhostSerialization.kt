@@ -8,7 +8,7 @@ package com.ghost.serialization.annotations
  * Kotlin Multiplatform environments.
  *
  * @param name Optional custom name for the model to avoid registry collisions.
- * @param discriminator The JSON field name used to identify the concrete type of a `sealed class`.
+ * @param discriminator The JSON field name used to identify the concrete type of `sealed class`.
  *   Defaults to `"type"`. Override this when consuming third-party APIs that use a different
  *   convention (e.g. `"kind"`, `"object"`, `"@type"`).
  *   Has no effect on non-sealed classes.

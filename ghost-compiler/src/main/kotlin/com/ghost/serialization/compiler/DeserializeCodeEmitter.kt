@@ -44,7 +44,8 @@ internal class DeserializeCodeEmitter(
     private val sealedSubclasses: List<KSClassDeclaration>,
     private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY,
     private val isResilientClass: Boolean = false,
-    private val isInferred: Boolean = false
+    private val isInferred: Boolean = false,
+    private val isObject: Boolean = false
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
@@ -64,6 +65,9 @@ internal class DeserializeCodeEmitter(
         val body = CodeBlock.builder()
 
         when {
+            isObject -> {
+                emitObjectReturn(body)
+            }
             isSealed && isInferred -> {
                 emitInferredSealed(body)
             }
@@ -124,6 +128,35 @@ internal class DeserializeCodeEmitter(
         if (!isFlatPath) {
             emitter.injectContextualSerializers(typeSpecBuilder)
         }
+    }
+
+    /**
+     * Emits deserialization logic for object types (singletons). Consumes the JSON object
+     * body and returns the singleton instance.
+     */
+    private fun emitObjectReturn(body: CodeBlock.Builder) {
+        body.addStatement(C.STR_BEGIN_OBJECT)
+        body.beginControlFlow(C.STR_WHILE_TRUE)
+        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
+        body.beginControlFlow(C.STR_WHEN_INDEX)
+        body.addStatement(C.STR_MINUS_ONE_BREAK)
+        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
+        body.addStatement(C.STR_SKIP_VALUE)
+        body.endControlFlow()
+        body.endControlFlow()
+        body.endControlFlow()
+        body.addStatement(C.STR_END_OBJECT)
+        body.addStatement("return %T", originalClassName)
+    }
+
+    /**
+     * Reads @GhostSerialization(name) from a class declaration, falling back to simple class name.
+     */
+    private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
+        val customName = subclass.annotations
+            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+            ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String
+        return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()
     }
 
     /**
@@ -201,9 +234,10 @@ internal class DeserializeCodeEmitter(
         regularSubclasses.forEach { subclass ->
             val subClassName = subclass.toClassName()
             val serializerName = subClassName.serializerClassName()
+            val discriminatorValue = getSubclassDiscriminator(subclass)
             body.addStatement(
                 C.TEMPLATE_DESERIALIZE_BRANCH,
-                subClassName.simpleName,
+                discriminatorValue,
                 serializerName
             )
         }

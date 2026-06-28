@@ -45,6 +45,7 @@ internal class GhostCodeGenerator(
             classDeclaration.modifiers.contains(Modifier.INLINE)
 
     private val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
+    private val isObject = classDeclaration.classKind == ClassKind.OBJECT
     private val isResilient =
         classDeclaration.annotations.any { it.shortName.asString() == C.GHOST_RESILIENT }
 
@@ -80,7 +81,10 @@ internal class GhostCodeGenerator(
     }
 
     private val discriminator = if (parentSealedClass != null) {
-        classDeclaration.simpleName.asString()
+        val customName = classDeclaration.annotations
+            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+            ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String
+        if (!customName.isNullOrEmpty()) customName else classDeclaration.simpleName.asString()
     } else {
         null
     }
@@ -388,7 +392,8 @@ internal class GhostCodeGenerator(
             sealedSubclasses,
             sealedDiscriminatorKey,
             isResilient,
-            isInferred
+            isInferred,
+            isObject
         )
 
         val deserializeEmitterFlat = DeserializeCodeEmitter(
@@ -401,7 +406,8 @@ internal class GhostCodeGenerator(
             sealedSubclasses,
             sealedDiscriminatorKey,
             isResilient,
-            isInferred
+            isInferred,
+            isObject
         )
 
         val stringReaderClass = ClassName(
@@ -420,7 +426,8 @@ internal class GhostCodeGenerator(
                 sealedSubclasses,
                 sealedDiscriminatorKey,
                 isResilient,
-                isInferred
+                isInferred,
+                isObject
             )
         } else {
             null
