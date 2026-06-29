@@ -215,23 +215,24 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>
     ): GhostPropertyModel {
         val type = prop.type.resolve()
-        val qualifiedName = type.declaration.qualifiedName?.asString()
+        val resolvedType = type.resolveAliases()
+        val qualifiedName = resolvedType.declaration.qualifiedName?.asString()
 
         val isList = qualifiedName == C.LIST_QUALIFIED
         val isMap = qualifiedName == C.MAP_QUALIFIED
 
         val innerType = if (isList) {
-            resolveFirstTypeArg(type)
+            resolveFirstTypeArg(resolvedType)
         } else {
             null
         }
         val mapKeyType = if (isMap) {
-            resolveFirstTypeArg(type)
+            resolveFirstTypeArg(resolvedType)
         } else {
             null
         }
         val mapValueType = if (isMap) {
-            resolveSecondTypeArg(type)
+            resolveSecondTypeArg(resolvedType)
         } else {
             null
         }
@@ -332,7 +333,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      */
     private fun resolveSealedSubclassesForType(type: KSType): List<KSClassDeclaration> {
         return if (isSealedClass(type)) {
-            (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()
+            (type.resolveAliases().declaration as KSClassDeclaration).getSealedSubclasses().toList()
         } else {
             emptyList()
         }
@@ -375,7 +376,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         isMap: Boolean,
         mapKeyType: KSType?
     ) {
-        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != C.STRING_QUALIFIED) {
+        if (isMap && mapKeyType?.resolveAliases()?.declaration?.qualifiedName?.asString() != C.STRING_QUALIFIED) {
             logger.error(
                 "${C.STR_ERR_MAP_1}${prop.simpleName.asString()}${C.STR_ERR_MAP_2}" +
                         C.STR_ERR_MAP_3,
@@ -403,14 +404,15 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             return false
         }
 
-        val qualifiedName = type.declaration.qualifiedName?.asString()
+        val qualifiedName = type.resolveAliases().declaration.qualifiedName?.asString()
         val isBuiltIn = qualifiedName?.startsWith(C.STR_KOTLIN_PREFIX) == true ||
                 qualifiedName?.startsWith(C.STR_JAVA_PREFIX) == true
 
         if (isBuiltIn) {
             return when (qualifiedName) {
                 C.K_STRING, C.K_INT, C.K_LONG, C.K_DOUBLE, C.K_FLOAT,
-                C.K_BOOLEAN, C.K_BYTE, C.K_SHORT, C.K_CHAR, C.K_UNIT, C.K_ANY -> false
+                C.K_BOOLEAN, C.K_BYTE, C.K_SHORT, C.K_CHAR, C.K_UNIT, C.K_ANY,
+                C.K_BYTE_ARRAY -> false
 
                 else -> true
             }
@@ -423,7 +425,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      * Checks if the type is a value class or inline class.
      */
     private fun isValueClass(type: KSType): Boolean {
-        val declaration = type.declaration as? KSClassDeclaration ?: return false
+        val declaration = type.resolveAliases().declaration as? KSClassDeclaration ?: return false
         return declaration.modifiers.contains(Modifier.VALUE) ||
                 declaration.modifiers.contains(Modifier.INLINE)
     }
@@ -432,7 +434,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      * Checks if the type is a sealed class.
      */
     private fun isSealedClass(type: KSType): Boolean {
-        val declaration = type.declaration as? KSClassDeclaration ?: return false
+        val declaration = type.resolveAliases().declaration as? KSClassDeclaration ?: return false
         return declaration.modifiers.contains(Modifier.SEALED)
     }
 
@@ -440,7 +442,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      * Resolves the underlying property model for a value class type.
      */
     private fun resolveValueClassProperty(type: KSType): GhostPropertyModel? {
-        val declaration = type.declaration as? KSClassDeclaration ?: return null
+        val declaration = type.resolveAliases().declaration as? KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null
         val prop = declaration.getAllProperties()
@@ -512,13 +514,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      * Checks if the type is an enum class.
      */
     private fun isEnumType(type: KSType): Boolean =
-        (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
+        (type.resolveAliases().declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
 
     /**
      * Checks if the type is annotated with @GhostSerialization.
      */
     private fun isGhostType(type: KSType): Boolean =
-        type.declaration.annotations.any { it.shortName.asString() == C.GHOST_SERIALIZATION }
+        type.resolveAliases().declaration.annotations.any { it.shortName.asString() == C.GHOST_SERIALIZATION }
 
     companion object {
         /**
