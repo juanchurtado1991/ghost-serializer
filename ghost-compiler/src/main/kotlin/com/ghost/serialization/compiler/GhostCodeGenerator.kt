@@ -382,6 +382,8 @@ internal class GhostCodeGenerator(
             sealedDiscriminatorKey
         )
 
+        val hasFallbackEnum = classDeclaration.annotations.any { it.shortName.asString() == C.STR_FALLBACK_ANNOTATION }
+
         val deserializeEmitterStreaming = DeserializeCodeEmitter(
             properties,
             originalClassName,
@@ -393,7 +395,8 @@ internal class GhostCodeGenerator(
             sealedDiscriminatorKey,
             isResilient,
             isInferred,
-            isObject
+            isObject,
+            hasFallback = hasFallbackEnum
         )
 
         val deserializeEmitterFlat = DeserializeCodeEmitter(
@@ -407,7 +410,8 @@ internal class GhostCodeGenerator(
             sealedDiscriminatorKey,
             isResilient,
             isInferred,
-            isObject
+            isObject,
+            hasFallback = hasFallbackEnum
         )
 
         val stringReaderClass = ClassName(
@@ -427,7 +431,8 @@ internal class GhostCodeGenerator(
                 sealedDiscriminatorKey,
                 isResilient,
                 isInferred,
-                isObject
+                isObject,
+                hasFallback = hasFallbackEnum
             )
         } else {
             null

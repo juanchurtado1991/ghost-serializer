@@ -45,7 +45,8 @@ internal class DeserializeCodeEmitter(
     private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY,
     private val isResilientClass: Boolean = false,
     private val isInferred: Boolean = false,
-    private val isObject: Boolean = false
+    private val isObject: Boolean = false,
+    private val hasFallback: Boolean = false
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
@@ -576,7 +577,13 @@ internal class DeserializeCodeEmitter(
             }
 
         body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)
-        body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)
+        val fallbackEntry = properties.firstOrNull()?.enumValues?.entries?.find { it.key.equals("UNKNOWN", ignoreCase = true) }
+            ?: if (hasFallback) properties.firstOrNull()?.enumValues?.entries?.lastOrNull() else null
+        if (fallbackEntry != null) {
+            body.addStatement("else -> %T.%L", originalClassName, fallbackEntry.key)
+        } else {
+            body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)
+        }
         body.endControlFlow()
     }
 }
