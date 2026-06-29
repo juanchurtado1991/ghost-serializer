@@ -30,7 +30,7 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
  */
 internal class GhostCodeGenerator(
     private val properties: List<GhostPropertyModel>,
-    classDeclaration: KSClassDeclaration,
+    private val classDeclaration: KSClassDeclaration,
     private val textChannel: Boolean = false
 ) {
 
