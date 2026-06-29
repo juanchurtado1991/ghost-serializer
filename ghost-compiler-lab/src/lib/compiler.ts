@@ -9,6 +9,11 @@ export interface FieldMetadata {
   hasDefault: boolean;
 }
 
+export interface ClassMetadata {
+  className: string;
+  fields: FieldMetadata[];
+}
+
 export interface PackedField {
   name: string;
   key: number;
@@ -44,6 +49,22 @@ const HASH_MULTIPLIER_LIMIT = 2000;
 const HASH_MULTIPLIER_STEP = 2;
 const HASH_SHIFT_LIMIT = 16;
 const BYTE_MASK = 0xFF;
+
+/**
+ * Splits input containing one or more @GhostSerialization-annotated classes and returns
+ * per-class field lists, mirroring how the KSP processor handles each class independently.
+ */
+export function parseClasses(dtoText: string): ClassMetadata[] {
+  const parts = dtoText.split(/@GhostSerialization(?:\s*\([^)]*\))?/);
+  return parts
+    .filter((chunk) => chunk.trim().length > 0)
+    .reduce<ClassMetadata[]>((acc, chunk) => {
+      const classMatch = chunk.match(/(?:data\s+|sealed\s+|enum\s+|value\s+)?class\s+(\w+)/);
+      if (!classMatch) return acc;
+      acc.push({ className: classMatch[1], fields: parseFields(chunk) });
+      return acc;
+    }, []);
+}
 
 /**
  * Parses a Kotlin data class string to extract field metadata.

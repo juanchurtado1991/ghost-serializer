@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import {
+  ClassMetadata,
   FieldMetadata,
   PackedField,
   TraceInfo,
-  parseFields,
+  parseClasses,
   packFieldName,
   findPerfectHash,
 } from "../lib/compiler";
@@ -42,6 +43,10 @@ export default function Step1Compiler({
   const [multiplier, setMultiplier] = useState<number>(31);
   const [shift, setShift] = useState<number>(0);
 
+  // Multi-class support
+  const [detectedClasses, setDetectedClasses] = useState<ClassMetadata[]>([]);
+  const [selectedClassIdx, setSelectedClassIdx] = useState<number>(0);
+
   // Sub-step flow navigation
   const [activeSubStep, setActiveSubStep] = useState<number>(1);
 
@@ -56,7 +61,8 @@ export default function Step1Compiler({
 
   const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const handleCompile = async () => {
+  const handleCompile = async (classIdx?: number) => {
+    const activeClassIdx = classIdx ?? selectedClassIdx;
     setIsCompiling(true);
     setCompilerLogs([]);
     setDispatchTable(new Array(1024).fill(-1));
@@ -75,7 +81,22 @@ export default function Step1Compiler({
     addLog(t("log.start"), "system");
     await delay(250);
 
-    const parsed = parseFields(dtoInput);
+    const parsedClasses = parseClasses(dtoInput);
+    setDetectedClasses(parsedClasses);
+
+    if (parsedClasses.length === 0) {
+      addLog(t("log.error.nofields"), "error");
+      setIsCompiling(false);
+      return;
+    }
+
+    const activeClass = parsedClasses[activeClassIdx] ?? parsedClasses[0];
+    const parsed = activeClass.fields;
+
+    if (parsedClasses.length > 1) {
+      addLog(t("log.multiclass", parsedClasses.length, activeClass.className), "system");
+    }
+
     if (parsed.length === 0) {
       addLog(t("log.error.nofields"), "error");
       setIsCompiling(false);
@@ -170,7 +191,7 @@ export default function Step1Compiler({
               <button
                 id="btn-compile"
                 className="btn-primary w-full"
-                onClick={handleCompile}
+                onClick={() => handleCompile()}
                 disabled={isCompiling}
               >
                 <svg
@@ -190,6 +211,32 @@ export default function Step1Compiler({
               </button>
             </div>
           </div>
+
+          {/* Class selector — shown only when multiple @GhostSerialization classes are detected */}
+          {detectedClasses.length > 1 && (
+            <div className="px-1">
+              <p className="text-xs text-slate-500 mb-1.5">{t("p1.class.select.label")}:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {detectedClasses.map((cls, i) => (
+                  <button
+                    key={cls.className}
+                    disabled={isCompiling}
+                    className={`px-2.5 py-1 text-xs font-mono rounded border transition-colors disabled:opacity-50 ${
+                      selectedClassIdx === i
+                        ? "bg-sky-500/20 border-sky-500 text-sky-300"
+                        : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-600 cursor-pointer"
+                    }`}
+                    onClick={() => {
+                      setSelectedClassIdx(i);
+                      handleCompile(i);
+                    }}
+                  >
+                    {cls.className}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Terminal */}
           <div className="terminal-card" role="log" aria-live="polite">

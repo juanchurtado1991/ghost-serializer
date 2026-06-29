@@ -136,7 +136,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, TranslationValue>> = {
     'footer.text': '👻 Ghost Compiler Lab · Construido con la velocidad del metal · Cero Allocations en el Hot Path',
 
     // Dynamic Logs
+    'p1.class.select.label': 'Simulando clase',
     'log.start': 'Iniciando KSP Compiler Pipeline...',
+    'log.multiclass': (n: number, name: string) => `Nota: ${n} clases detectadas. El KSP procesa cada una de forma independiente. Simulando: <strong>${name}</strong>`,
     'log.parsed': (n: number) => `DTO parseado. ${n} campo(s) detectado(s):`,
     'log.field': (name: string, type: string, hasDef: boolean) => `  — <strong>${name}</strong>: ${type} (default: ${hasDef})`,
     'log.pack.step': (name: string, packStr: string, key: number) => `  → Pack <strong>"${name}"</strong>: ${packStr} = <span class="text-indigo-400 font-bold font-mono">${key}</span>`,
@@ -333,7 +335,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, TranslationValue>> = {
     'footer.text': '👻 Ghost Compiler Lab · Built at the speed of metal · Zero Allocations on the Hot Path',
 
     // Dynamic Logs
+    'p1.class.select.label': 'Simulating class',
     'log.start': 'Starting KSP Compiler Pipeline...',
+    'log.multiclass': (n: number, name: string) => `Note: ${n} classes detected. KSP processes each independently. Simulating: <strong>${name}</strong>`,
     'log.parsed': (n: number) => `DTO parsed successfully. ${n} field(s) detected:`,
     'log.field': (name: string, type: string, hasDef: boolean) => `  — <strong>${name}</strong>: ${type} (default: ${hasDef})`,
     'log.pack.step': (name: string, packStr: string, key: number) => `  → Pack <strong>"${name}"</strong>: ${packStr} = <span class="text-indigo-400 font-bold font-mono">${key}</span>`,
