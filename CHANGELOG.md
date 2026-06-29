@@ -6,8 +6,6 @@
 - **`classDeclaration` inaccessible in `GhostCodeGenerator`**: The `classDeclaration` constructor parameter was not declared as a `val`, making it invisible to annotation-reading helpers inside `buildSerializerObject()`. Changed to `private val`.
 - **`@GhostFallback` support for enum deserialization**: Enums annotated with `@GhostFallback` no longer throw `GhostJsonException` on an unrecognized ordinal. The compiler reads the annotation and emits an `else ->` branch pointing to the marked constant.
 - **Auto-UNKNOWN fallback for enums**: If an enum class has a constant named `UNKNOWN` (any case variation), the compiler automatically generates a fallback to it without requiring `@GhostFallback`.
-- **`typealias` fields not recognized by the type system**: `KSType.declaration` for a typealias field returns `KSTypeAlias`, not the underlying class, causing `isMap()`, `isList()`, `isString()`, `isGhost()`, and `isEnum()` to silently return `false`. Added `resolveAliases()` which recursively unwraps `KSTypeAlias` chains before any qualified-name or class-kind comparison. All type predicates in `TypeHelpers` and `GhostAnalyzer` now call `resolveAliases()` first.
-
 ### Added
 - **`ByteArray` field type support**: Fields declared as `ByteArray` are serialized by writing the pre-encoded bytes directly into the JSON stream via `rawValue()`, and deserialized by capturing the raw token span via `captureRawJsonBytes()`. Adds `GhostJsonReaderCapture`, `GhostJsonFlatReaderCapture`, and `GhostJsonStringReaderCapture` for all three reader flavors.
 

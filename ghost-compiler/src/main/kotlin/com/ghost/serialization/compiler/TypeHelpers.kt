@@ -3,7 +3,6 @@ package com.ghost.serialization.compiler
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
@@ -15,29 +14,11 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
- * Recursively resolves typealias chains to the underlying concrete type.
- *
- * KSP reports a field whose declared type is a `typealias` with a [KSType] whose
- * [KSType.declaration] is a [KSTypeAlias], not the aliased class. Without resolution,
- * `isMap()`, `isList()`, `isString()`, and friends all compare the wrong `qualifiedName`
- * and silently fall through to `Ghost.getSerializer(Alias::class)!!` → `null` → NPE at
- * class-initialization time.
- *
- * Example: `typealias AttributeStateMap = Map<String, AttributeState>`
- *   Without this function: `isMap()` → `false` → serializer NPE
- *   With this function:    `isMap()` → `true`  → `MapSerializer` generated correctly
- */
-internal fun KSType.resolveAliases(): KSType {
-    val decl = declaration
-    return if (decl is KSTypeAlias) decl.type.resolve().resolveAliases() else this
-}
-
-/**
  * Resolves the generated serializer companion object's [ClassName] for this [KSType].
  * For example: maps type `User` to `com.example.User_Serializer`.
  */
 internal fun KSType.serializerClassName(): ClassName {
-    val classDeclaration = resolveAliases().declaration as KSClassDeclaration
+    val classDeclaration = declaration as KSClassDeclaration
     return classDeclaration.toClassName().serializerClassName()
 }
 
@@ -53,10 +34,9 @@ internal fun ClassName.serializerClassName(): ClassName {
 }
 
 /**
- * Resolves a non-nullable representation of this [KSType]'s KotlinPoet TypeName,
- * after expanding any typealias chain.
+ * Resolves a non-nullable representation of this [KSType]'s KotlinPoet TypeName.
  */
-private fun KSType.nonNullTypeName() = resolveAliases().toTypeName().copy(nullable = false)
+private fun KSType.nonNullTypeName() = toTypeName().copy(nullable = false)
 
 /**
  * Checks whether this type matches the standard primitive [Int] type.
@@ -108,28 +88,28 @@ internal fun KSType.isPrimitive(): Boolean {
  * Checks whether this type matches the standard [List] type.
  */
 internal fun KSType.isList(): Boolean {
-    return resolveAliases().declaration.qualifiedName?.asString() == C.LIST_QUALIFIED
+    return declaration.qualifiedName?.asString() == C.LIST_QUALIFIED
 }
 
 /**
  * Checks whether this type matches the standard [Map] type.
  */
 internal fun KSType.isMap(): Boolean {
-    return resolveAliases().declaration.qualifiedName?.asString() == C.MAP_QUALIFIED
+    return declaration.qualifiedName?.asString() == C.MAP_QUALIFIED
 }
 
 /**
  * Checks whether this type matches the standard [String] type.
  */
 internal fun KSType.isString(): Boolean {
-    return resolveAliases().declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
+    return declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
 }
 
 /**
  * Checks whether this type is annotated with `@GhostSerialization` indicating it is a serializable model.
  */
 internal fun KSType.isGhost(): Boolean {
-    return resolveAliases().declaration.annotations.any {
+    return declaration.annotations.any {
         it.shortName.asString() == C.GHOST_SERIALIZATION
     }
 }
@@ -138,7 +118,7 @@ internal fun KSType.isGhost(): Boolean {
  * Checks whether this type declaration is a Kotlin enum class.
  */
 internal fun KSType.isEnum(): Boolean {
-    return (resolveAliases().declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
+    return (declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
 }
 
 /**
@@ -146,5 +126,5 @@ internal fun KSType.isEnum(): Boolean {
  * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
  */
 internal fun KSType.isByteArray(): Boolean {
-    return resolveAliases().declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY
+    return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY
 }
