@@ -32,8 +32,8 @@ class GhostContentConverter(
         val clazz = typeInfo.type
 
 
-        val serializer = Ghost
-            .getSerializer(clazz as KClass<Any>)
+        val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }
+            ?: Ghost.getSerializer(clazz as KClass<Any>)
             ?: return null
 
         val bytes = Ghost.encodeToBytes(serializer, value)
@@ -80,7 +80,8 @@ class GhostContentConverter(
 
             return ghostInternalUseFlatReader(scratch, offset) { reader ->
                 configurer?.invoke(reader)
-                val serializer = Ghost.getSerializer(typeInfo.type as KClass<Any>)
+                val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }
+                    ?: Ghost.getSerializer(typeInfo.type as KClass<Any>)
                     ?: Ghost.throwError("${Ghost.NOT_FOUND} ${typeInfo.type.simpleName}. ${Ghost.MISSING_ANN}")
 
                 serializer.deserialize(reader)
