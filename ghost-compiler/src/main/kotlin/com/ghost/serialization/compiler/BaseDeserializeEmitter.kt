@@ -276,6 +276,8 @@ internal abstract class BaseDeserializeEmitter(
                 )
             }
 
+            type.isByteArray() -> CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
+
             else -> {
                 if (type.isString()) {
                     CodeBlock.of(C.STR_NEXT_STRING)

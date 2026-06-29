@@ -340,6 +340,12 @@ internal class GhostCodeGenerator(
                 C.STR_NEXT_BOOLEAN_NAME
             )
         }
+        if (allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE)) {
+            fileBuilder.addImport(
+                C.PKG_PARSER,
+                C.STR_CAPTURE_RAW_JSON_BYTES_NAME
+            )
+        }
 
         if (isEnum || isSealed || properties.any { it.isResilient }) {
             fileBuilder.addImport(

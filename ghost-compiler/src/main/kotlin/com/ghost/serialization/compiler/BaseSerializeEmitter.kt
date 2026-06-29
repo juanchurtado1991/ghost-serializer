@@ -271,6 +271,9 @@ internal abstract class BaseSerializeEmitter(
             typeName == C.K_FLOAT -> {
                 code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)
             }
+            typeName == C.K_BYTE_ARRAY -> {
+                code.addStatement(C.STR_WRITER_RAW_VALUE_L, accessor)
+            }
             type.isList() -> {
                 emitList(code, type, accessor)
             }

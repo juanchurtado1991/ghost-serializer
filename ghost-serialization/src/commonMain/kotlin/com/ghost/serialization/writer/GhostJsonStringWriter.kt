@@ -345,6 +345,17 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         return this
     }
 
+    /**
+     * Writes raw JSON bytes directly into the stream without quoting or escaping.
+     * The bytes are decoded from UTF-8 to the internal char buffer.
+     */
+    fun rawValue(bytes: ByteArray): GhostJsonStringWriter {
+        appendSeparator()
+        buffer.writeString(bytes.decodeToString())
+        needsComma = true
+        return this
+    }
+
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
         if (value) {

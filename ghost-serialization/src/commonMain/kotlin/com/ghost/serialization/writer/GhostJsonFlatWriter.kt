@@ -352,6 +352,18 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     }
 
     /**
+     * Writes raw JSON bytes directly into the stream without quoting or escaping.
+     * Use this to emit a pre-serialized JSON fragment (object, array, or primitive)
+     * captured via [com.ghost.serialization.parser.captureRawJsonBytes].
+     */
+    fun rawValue(bytes: ByteArray): GhostJsonFlatWriter {
+        appendSeparator()
+        buffer.write(bytes)
+        needsComma = true
+        return this
+    }
+
+    /**
      * Writes a boolean value without a field name or separator.
      */
     @InternalGhostApi
