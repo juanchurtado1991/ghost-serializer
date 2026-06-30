@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && rm -rf ../docs && mkdir -p ../docs && cp -r out/* ../docs/ && touch ../docs/.nojekyll",
+    "build": "next build && find ../docs -mindepth 1 -maxdepth 1 ! -name 'wiki' ! -name 'ghost.mp4' -exec rm -rf {} + && cp -r out/* ../docs/ && touch ../docs/.nojekyll",
     "start": "next start",
     "lint": "eslint"
   },
