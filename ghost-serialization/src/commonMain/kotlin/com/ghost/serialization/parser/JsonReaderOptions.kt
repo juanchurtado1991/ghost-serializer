@@ -149,30 +149,9 @@ class JsonReaderOptions(
     }
 
     companion object {
-        /**
-         * Canonical collision disambiguation — polynomial accumulation over bytes after the 4-byte prefix.
-         * MUST stay identical to the `hasCollisions` block inside:
-         *   - `computeKeyHash` in GhostJsonReaderSubsystem, GhostJsonFlatReader, GhostJsonStringReaderSubsystem
-         *   - `findPerfectHash` in PerfectHashFinder (compiler-side)
-         * XOR of just lastByte+middleByte is insufficient when two fields share the same length,
-         * same last byte, and same middle byte (e.g. "eventType" vs "eventTime"). Polynomial over
-         * all bytes beyond the 4-byte prefix is collision-free for all real-world field name pairs.
-         */
-        @JvmStatic
-        internal fun collisionHash(key: Int, bytes: ByteArray): Int {
-            var k = key
-            var i = UNICODE_HEX_LENGTH
-            while (i < bytes.size) { k = k * COLLISION_HASH_MULTIPLIER + (bytes[i].toInt() and BYTE_MASK); i++ }
-            return k
-        }
-
-        @JvmStatic
-        internal fun collisionHash(key: Int, str: String): Int {
-            var k = key
-            var i = UNICODE_HEX_LENGTH
-            while (i < str.length) { k = k * COLLISION_HASH_MULTIPLIER + (str[i].code and BYTE_MASK); i++ }
-            return k
-        }
+        // Collision disambiguation uses polynomial accumulation inlined directly in init,
+        // buildStringDispatchTable, and each computeKeyHash. See COLLISION_HASH_MULTIPLIER.
+        // All five sites must stay identical; PerfectHashFinder (compiler-side) is the sixth.
 
         fun of(vararg names: String): JsonReaderOptions = of(
             C.DEFAULT_DISPATCH_SHIFT,
