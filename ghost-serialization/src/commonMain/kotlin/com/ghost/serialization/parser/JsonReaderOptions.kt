@@ -9,6 +9,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_24
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_HEX_LENGTH
 import com.ghost.serialization.parser.GhostJsonConstants.SINGLE_CHAR_SIZE
+import kotlin.jvm.JvmStatic
 
 /**
  * Dispatch options for optimized JSON field identification.
@@ -153,20 +154,24 @@ class JsonReaderOptions(
             key xor lastByte xor middleByte
 
         @JvmStatic
-        internal fun collisionXor(key: Int, bytes: ByteArray): Int =
-            collisionXor(
+        internal fun collisionXor(key: Int, bytes: ByteArray): Int {
+            if (bytes.size < UNICODE_HEX_LENGTH) return key
+            return collisionXor(
                 key,
                 bytes[bytes.size - 1].toInt() and BYTE_MASK,
                 bytes[bytes.size shr 1].toInt() and BYTE_MASK
             )
+        }
 
         @JvmStatic
-        internal fun collisionXor(key: Int, str: String): Int =
-            collisionXor(
+        internal fun collisionXor(key: Int, str: String): Int {
+            if (str.length < UNICODE_HEX_LENGTH) return key
+            return collisionXor(
                 key,
                 str[str.length - 1].code and BYTE_MASK,
                 str[str.length shr 1].code and BYTE_MASK
             )
+        }
 
         fun of(vararg names: String): JsonReaderOptions = of(0, 31, 1024, *names)
 
