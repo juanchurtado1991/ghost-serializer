@@ -7,6 +7,7 @@ package com.ghost.serialization.parser
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
+import com.ghost.serialization.parser.GhostJsonConstants
 import com.ghost.serialization.parser.GhostJsonConstants as C
 
 /**
@@ -400,7 +401,10 @@ fun GhostJsonReader.selectString(options: JsonReaderOptions): Int =
  *
  * @return The matched options index, `-1` on object closing, or [GhostJsonConstants.MATCH_NONE] if not found.
  */
-private fun GhostJsonReader.internalSelect(options: JsonReaderOptions, consumeSeparator: Boolean): Int {
+private fun GhostJsonReader.internalSelect(
+    options: JsonReaderOptions,
+    consumeSeparator: Boolean
+): Int {
     var token = peekNextToken()
     if (token == C.CLOSE_OBJ_INT) {
         return -1
@@ -427,7 +431,8 @@ private fun GhostJsonReader.internalSelect(options: JsonReaderOptions, consumeSe
 
     val length = end - start
     val key = computeKeyHash(start, length, options.hasCollisions)
-    val hasIndex = ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)
+    val hasIndex =
+        ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)
     val index = options.dispatch[hasIndex]
 
     if (index != C.MATCH_END) {
@@ -478,7 +483,12 @@ private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: B
     return currentToken
 }
 
-private fun GhostJsonReader.handleSelectNoMatch(start: Int, end: Int, length: Int, consumeSeparator: Boolean): Int {
+private fun GhostJsonReader.handleSelectNoMatch(
+    start: Int,
+    end: Int,
+    length: Int,
+    consumeSeparator: Boolean
+): Int {
     val newPos = end + 1
     position = newPos
     nextTokenByte = C.MATCH_END
@@ -526,7 +536,11 @@ private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollision
                 (byte2 shl C.SHIFT_16) or
                 (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
-            key = JsonReaderOptions.collisionXor(key, getByte(start + length - 1), getByte(start + (length shr C.SINGLE_CHAR_SIZE)))
+            key = JsonReaderOptions.collisionXor(
+                key,
+                getByte(start + length - 1),
+                getByte(start + (length shr C.SINGLE_CHAR_SIZE))
+            )
         }
     } else {
         if (length >= 1) key = key or getByte(start)

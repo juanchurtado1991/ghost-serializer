@@ -148,9 +148,11 @@ class JsonReaderOptions(
          *   - `findPerfectHash` in PerfectHashFinder (compiler-side)
          * Changing any one of them without updating the rest will silently break field dispatch.
          */
+        @JvmStatic
         internal fun collisionXor(key: Int, lastByte: Int, middleByte: Int): Int =
             key xor lastByte xor middleByte
 
+        @JvmStatic
         internal fun collisionXor(key: Int, bytes: ByteArray): Int =
             collisionXor(
                 key,
@@ -158,6 +160,7 @@ class JsonReaderOptions(
                 bytes[bytes.size shr 1].toInt() and BYTE_MASK
             )
 
+        @JvmStatic
         internal fun collisionXor(key: Int, str: String): Int =
             collisionXor(
                 key,
