@@ -1,6 +1,8 @@
 # Changelog
 
-## [1.2.4] - PENDING
+## [1.2.5] - PENDING
+
+## [1.2.4] - 2026-06-30
 
 ### Fixed
 - **Perfect Hash Collision Resolution in KSP and Runtime (issue #10)**: Refactored `PerfectHashFinder.kt` and `JsonReaderOptions.kt` to use a zero-allocation `while` loop that hashes all remaining bytes of the field name when a collision is detected. This completely resolves KSP processing failures and runtime perfect hash collisions for classes containing fields with identical sizes and overlapping prefixes/suffixes (e.g., `modelCode` vs `modelName`, `dateCreated` vs `dateUpdated`, `inviterUsername` vs `inviteeUsername`).
