@@ -2,6 +2,10 @@
 
 ## [1.2.3] - PENDING
 
+### Performance
+- **Android ThreadLocal UI Thread Bypass**: Optimized `getLocalPool()` in `GhostPools.android.kt` by caching the main thread reference and performing a fast identity comparison (`===`) to completely bypass the `ThreadLocal.get()` map lookup on the UI thread.
+- **String Pool Cache Locality**: Added a contiguous `IntArray` (`stringPoolHashes`) to `GhostJsonFlatReader` and `GhostJsonStringReader` to store string hashes. This avoids dereferencing `String` object references on pool misses, keeping the lookup in the L1 data cache and speeding up JSON parsing across all platforms.
+
 ### Fixed
 - **`classDeclaration` inaccessible in `GhostCodeGenerator`**: The `classDeclaration` constructor parameter was not declared as a `val`, making it invisible to annotation-reading helpers inside `buildSerializerObject()`. Changed to `private val`.
 - **`@GhostFallback` support for enum deserialization**: Enums annotated with `@GhostFallback` no longer throw `GhostJsonException` on an unrecognized ordinal. The compiler reads the annotation and emits an `else ->` branch pointing to the marked constant.

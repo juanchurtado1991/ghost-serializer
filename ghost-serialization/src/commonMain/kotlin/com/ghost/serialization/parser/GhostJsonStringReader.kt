@@ -34,6 +34,7 @@ class GhostJsonStringReader(
 
     /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
     val stringPool: Array<String?> = arrayOfNulls(C.STR_POOL_SIZE)
+    val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
 
     // Reusable CharArray for decoding escapes in readQuotedString slow-path
     var slowPathChars: CharArray = CharArray(256)
@@ -194,13 +195,17 @@ class GhostJsonStringReader(
                 val hash = computeStringPoolHash(start, length)
                 // XOR length into bucket selection to disambiguate strings that share
                 // the same first-4-chars prefix but have different lengths.
-                val bucketIndex = (hash xor (length * 31)) and (C.STR_POOL_SIZE - 1)
-                val cached = stringPool[bucketIndex]
-                if (cached != null && poolContentEquals(start, length, cached)) {
-                    return cached  // zero allocation — reuse existing String object
+                val poolKey = hash xor (length * C.STR_POOL_HASH_MULTIPLIER)
+                val bucketIndex = poolKey and (C.STR_POOL_SIZE - 1)
+                if (stringPoolHashes[bucketIndex] == poolKey) {
+                    val cached = stringPool[bucketIndex]
+                    if (cached != null && poolContentEquals(start, length, cached)) {
+                        return cached  // zero allocation — reuse existing String object
+                    }
                 }
                 val newString = rawData.substring(start, start + length)
                 stringPool[bucketIndex] = newString
+                stringPoolHashes[bucketIndex] = poolKey
                 return newString
             }
             return rawData.substring(start, start + length)

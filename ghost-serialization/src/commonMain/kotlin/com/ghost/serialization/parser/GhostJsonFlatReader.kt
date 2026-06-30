@@ -58,6 +58,7 @@ class GhostJsonFlatReader(
     }
 
     internal val stringPool = arrayOfNulls<String>(C.STR_POOL_SIZE)
+    internal val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
 
     internal var lastScanContentWas7BitOnly: Boolean = false
 

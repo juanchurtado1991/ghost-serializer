@@ -44,22 +44,24 @@ fun GhostJsonFlatReader.readQuotedString(): String {
         }
 
         val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
-        val cachedString = stringPool[poolBucketIndex]
-
-        if (only7Bit && cachedString != null && contentEqualsStringImpl(
-                start,
-                length,
-                cachedString
-            ) { localData[it].toInt() and C.BYTE_MASK }
-        ) {
-            position = end + 1
-            nextTokenByte = C.RESET_TOKEN_BYTE
-            return cachedString
+        if (stringPoolHashes[poolBucketIndex] == rollingHash) {
+            val cachedString = stringPool[poolBucketIndex]
+            if (only7Bit && cachedString != null && contentEqualsStringImpl(
+                    start,
+                    length,
+                    cachedString
+                ) { localData[it].toInt() and C.BYTE_MASK }
+            ) {
+                position = end + 1
+                nextTokenByte = C.RESET_TOKEN_BYTE
+                return cachedString
+            }
         }
 
         val decodedString = source.decodeJsonStringRange(start, end, only7Bit)
         if (only7Bit) {
             stringPool[poolBucketIndex] = decodedString
+            stringPoolHashes[poolBucketIndex] = rollingHash
         }
         position = end + 1
         nextTokenByte = C.RESET_TOKEN_BYTE
