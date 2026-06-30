@@ -27,10 +27,10 @@ dokka                           = "2.2.0"
 nexus-publish                   = "2.0.0"
 
 # UI & Sample App
-coil                            = "3.4.0"
+coil                            = "3.0.0-alpha06"
 androidx-activity               = "1.10.0"
 androidx-metrics                = "1.0.0-alpha04"
-androidx-lifecycle              = "2.8.7"
+androidx-lifecycle              = "2.8.2"
 
 # Testing
 kotlin-compile-testing          = "0.7.0"
