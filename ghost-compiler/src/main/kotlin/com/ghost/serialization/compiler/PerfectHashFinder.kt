@@ -36,9 +36,9 @@ internal object PerfectHashFinder {
      * @param names The list of unique field names to index.
      * @return A [Pair] containing the optimal shift and multiplier.
      */
-    fun findPerfectHash(names: List<String>): Pair<Int, Int> {
+    fun findPerfectHash(names: List<String>): Triple<Int, Int, Int> {
         if (names.isEmpty()) {
-            return 0 to C.HASH_MULTIPLIER_START
+            return Triple(0, C.HASH_MULTIPLIER_START, 128)
         }
         val rawBytes = names.map {
             it.encodeToByteArray()
@@ -62,46 +62,53 @@ internal object PerfectHashFinder {
             }
         }
 
-        // Brute force search for a collision-free multiplier and shift for 4-byte hashing
-        for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
-            for (shift in 0..C.HASH_SHIFT_LIMIT) {
-                val dispatch = IntArray(C.HASH_TABLE_SIZE) { -1 }
-                var collision = false
-                for (index in rawBytes.indices) {
-                    val bytes = rawBytes[index]
-                    if (bytes.isNotEmpty()) {
-                        var key = 0
-                        if (bytes.size >= C.VAL_ONE) {
-                            key = key or (bytes[C.VAL_ZERO].toInt() and C.BYTE_MASK)
-                        }
-                        if (bytes.size >= C.VAL_TWO) {
-                            key = key or ((bytes[C.VAL_ONE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
-                        }
-                        if (bytes.size >= C.VAL_THREE) {
-                            key = key or ((bytes[C.VAL_TWO].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
-                        }
-                        if (bytes.size >= C.VAL_FOUR) {
-                            key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
-                        }
-                        if (hasCollisions && bytes.size >= C.VAL_FOUR) {
-                            key = key xor (bytes[bytes.size - C.VAL_ONE].toInt() and C.BYTE_MASK)
-                            key = key xor (bytes[bytes.size shr C.VAL_ONE].toInt() and C.BYTE_MASK)
-                        }
+        // Try table sizes: 128, 256, 512, 1024, 2048, 4096, 8192
+        val tableSizes = listOf(128, 256, 512, 1024, 2048, 4096, 8192)
+        for (tableSize in tableSizes) {
+            val tableMask = tableSize - 1
+            // Brute force search for a collision-free multiplier and shift for 4-byte hashing
+            for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
+                for (shift in 0..C.HASH_SHIFT_LIMIT) {
+                    val dispatch = IntArray(tableSize) { -1 }
+                    var collision = false
+                    for (index in rawBytes.indices) {
+                        val bytes = rawBytes[index]
+                        if (bytes.isNotEmpty()) {
+                            var key = 0
+                            if (bytes.size >= C.VAL_ONE) {
+                                key = key or (bytes[C.VAL_ZERO].toInt() and C.BYTE_MASK)
+                            }
+                            if (bytes.size >= C.VAL_TWO) {
+                                key = key or ((bytes[C.VAL_ONE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
+                            }
+                            if (bytes.size >= C.VAL_THREE) {
+                                key = key or ((bytes[C.VAL_TWO].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
+                            }
+                            if (bytes.size >= C.VAL_FOUR) {
+                                key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
+                            }
+                            if (hasCollisions && bytes.size >= C.VAL_FOUR) {
+                                key = key xor (bytes[bytes.size - C.VAL_ONE].toInt() and C.BYTE_MASK)
+                                key = key xor (bytes[bytes.size shr C.VAL_ONE].toInt() and C.BYTE_MASK)
+                            }
 
-                        val hash = ((key * multiplier + bytes.size) shr shift) and C.HASH_MASK
-                        if (dispatch[hash] == -1) {
-                            dispatch[hash] = index
-                        } else {
-                            collision = true
-                            break
+                            val hash = ((key * multiplier + bytes.size) shr shift) and tableMask
+                            if (dispatch[hash] == -1) {
+                                dispatch[hash] = index
+                            } else {
+                                collision = true
+                                break
+                            }
                         }
                     }
-                }
-                if (!collision) {
-                    return shift to multiplier
+                    if (!collision) {
+                        return Triple(shift, multiplier, tableSize)
+                    }
                 }
             }
         }
-        return 0 to C.HASH_MULTIPLIER_START // Fallback
+        throw IllegalStateException(
+            C.STR_ERR_PERFECT_HASH_COLLISION_1 + names.joinToString() + C.STR_ERR_PERFECT_HASH_COLLISION_2
+        )
     }
 }

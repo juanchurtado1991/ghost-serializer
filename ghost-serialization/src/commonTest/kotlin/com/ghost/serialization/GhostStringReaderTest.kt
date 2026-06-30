@@ -1551,6 +1551,7 @@ class GhostStringReaderTest {
             rawBytes = arrayOf("id".encodeToByteArray()),
             shift = 0,
             multiplier = 31,
+            tableSize = 1024,
             rawStrings = arrayOf("id"),
             enableStringDispatch = false
         )

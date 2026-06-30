@@ -369,7 +369,7 @@ internal object GhostEmitterConstants {
     const val LINT_UNCHECKED_CAST = "UNCHECKED_CAST"
     const val LINT_UNUSED = "unused"
     const val HASH_MULTIPLIER_START = 31
-    const val HASH_MULTIPLIER_LIMIT = 2000
+    const val HASH_MULTIPLIER_LIMIT = 15000
     const val HASH_MULTIPLIER_STEP = 2
     const val HASH_SHIFT_LIMIT = 16
     const val HASH_TABLE_SIZE = 1024
@@ -461,7 +461,7 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW = "else if ((mask0 and %L) == 0L)"
     const val TEMPLATE_VAR_VALUE_DECL = "var %LValue: %T = %L"
     const val STR_MASK_INDEX_FMT = "mask%d"
-    const val TEMPLATE_OPTIONS_OF_SEEDS_START = "%T.of(%L, %L, %L"
+    const val TEMPLATE_OPTIONS_OF_SEEDS_START = "%T.of(%L, %L, %L, %L"
     const val STR_ERR_TEXT_CHANNEL_DISABLED = "String deserialization is disabled. Please configure arg(\"ghost.textChannel\", \"true\") in your KSP options to use the String parser."
     const val STR_HS_PREFIX = "HS_"
     const val TEMPLATE_OPTIONS_OF = "%T.of("
@@ -473,4 +473,6 @@ internal object GhostEmitterConstants {
     const val STR_MASK_DEFAULTS_PREFIX = "MASK_DEFAULTS_"
     const val STR_SUB_INDEX_PREFIX = "subIndex"
     const val TEMPLATE_L = "%L"
+    const val STR_ERR_PERFECT_HASH_COLLISION_1 = "Could not find a collision-free perfect hash configuration for fields: "
+    const val STR_ERR_PERFECT_HASH_COLLISION_2 = ". Please ensure there are no duplicate JSON names or conflicting field names."
 }

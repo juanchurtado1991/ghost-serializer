@@ -5,8 +5,11 @@
 ### Performance
 - **Android ThreadLocal UI Thread Bypass**: Optimized `getLocalPool()` in `GhostPools.android.kt` by caching the main thread reference and performing a fast identity comparison (`===`) to completely bypass the `ThreadLocal.get()` map lookup on the UI thread.
 - **String Pool Cache Locality**: Added a contiguous `IntArray` (`stringPoolHashes`) to `GhostJsonFlatReader` and `GhostJsonStringReader` to store string hashes. This avoids dereferencing `String` object references on pool misses, keeping the lookup in the L1 data cache and speeding up JSON parsing across all platforms.
+- **Dynamic Perfect Hash Table Sizing**: Configured the compiler to search for a collision-free perfect hash starting at size `128` and scaling up (`256`, `512`, `1024`, etc.) on demand. This reduces dispatch table memory footprint by 50% to 87.5% at runtime for small and medium-sized models.
 
 ### Fixed
+- **Perfect Hash Table Scaling for Large Models**: Refactored `PerfectHashFinder.kt` and `JsonReaderOptions.kt` to support dynamic table sizes up to `8192`. This resolves KSP processing failures for large models (like the 100-field `CollisionModel`) that could not find a perfect hash at the default size.
+- **Android JVM Unit Test Looper Mocking**: Wrapped `Looper.getMainLooper()` in `GhostPools.android.kt` in a `try-catch` block to prevent `Method getMainLooper in android.os.Looper not mocked` crashes when executing Android unit tests in a pure JVM environment.
 - **`classDeclaration` inaccessible in `GhostCodeGenerator`**: The `classDeclaration` constructor parameter was not declared as a `val`, making it invisible to annotation-reading helpers inside `buildSerializerObject()`. Changed to `private val`.
 - **`@GhostFallback` support for enum deserialization**: Enums annotated with `@GhostFallback` no longer throw `GhostJsonException` on an unrecognized ordinal. The compiler reads the annotation and emits an `else ->` branch pointing to the marked constant.
 - **Auto-UNKNOWN fallback for enums**: If an enum class has a constant named `UNKNOWN` (any case variation), the compiler automatically generates a fallback to it without requiring `@GhostFallback`.

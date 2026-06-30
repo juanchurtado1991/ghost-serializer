@@ -27,22 +27,23 @@ class JsonReaderOptions(
     @PublishedApi internal val rawBytes: Array<ByteArray>,
     @PublishedApi internal val shift: Int,
     @PublishedApi internal val multiplier: Int,
+    @PublishedApi internal val tableSize: Int,
     @PublishedApi internal val rawStrings: Array<String>,
     @PublishedApi internal val enableStringDispatch: Boolean = false
 ) {
     @PublishedApi
-    internal val dispatch = IntArray(DISPATCH_TABLE_SIZE) { -1 }
+    internal val dispatch = IntArray(tableSize) { -1 }
 
     @PublishedApi
     internal var stringDispatch = if (enableStringDispatch) {
-        IntArray(DISPATCH_TABLE_SIZE) { -1 }
+        IntArray(tableSize) { -1 }
     } else {
         EMPTY_DISPATCH_TABLE
     }
         get() {
             val table = field
             if (table === EMPTY_DISPATCH_TABLE) {
-                val newTable = IntArray(DISPATCH_TABLE_SIZE) { -1 }
+                val newTable = IntArray(tableSize) { -1 }
                 buildStringDispatchTable(newTable)
                 field = newTable
                 return newTable
@@ -80,7 +81,7 @@ class JsonReaderOptions(
         }
         hasCollisions = detectedCollision
 
-        val tableMask = DISPATCH_TABLE_SIZE - 1
+        val tableMask = tableSize - 1
         for (index in rawBytes.indices) {
             val bytes = rawBytes[index]
             if (bytes.isNotEmpty()) {
@@ -114,10 +115,8 @@ class JsonReaderOptions(
         }
     }
 
-
-
     private fun buildStringDispatchTable(table: IntArray) {
-        val tableMask = DISPATCH_TABLE_SIZE - 1
+        val tableMask = tableSize - 1
         for (index in rawStrings.indices) {
             val keyString = rawStrings[index]
             if (keyString.isNotEmpty()) {
@@ -147,41 +146,29 @@ class JsonReaderOptions(
         }
     }
 
-
     companion object {
+        fun of(vararg names: String): JsonReaderOptions = of(0, 31, 1024, *names)
 
-        /**
-         * Creates an optimized options configuration for a predefined set of field names.
-         *
-         * @param names The list of JSON property names to be matched.
-         * @return A [JsonReaderOptions] instance configured with default perfect hashing parameters.
-         */
-        fun of(vararg names: String): JsonReaderOptions = of(0, 31, *names)
-
-        /**
-         * Creates an optimized options configuration for a predefined set of field names,
-         * specifying custom hashing shift and multiplier values.
-         *
-         * @param shift The bit-shift amount used to normalize key distributions.
-         * @param multiplier The prime multiplier used to spread keys.
-         * @param names The list of JSON property names to be matched.
-         * @return A [JsonReaderOptions] instance configured with the specified hashing parameters.
-         */
         fun of(shift: Int, multiplier: Int, vararg names: String): JsonReaderOptions {
+            return of(shift, multiplier, 1024, *names)
+        }
+
+        fun of(shift: Int, multiplier: Int, tableSize: Int, vararg names: String): JsonReaderOptions {
             val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
             val rawStrings = Array(names.size) { names[it] }
-
-            return JsonReaderOptions(rawBytes, shift, multiplier, rawStrings, enableStringDispatch = true)
+            return JsonReaderOptions(rawBytes, shift, multiplier, tableSize, rawStrings, enableStringDispatch = true)
         }
 
         fun of(shift: Int, multiplier: Int, enableStringDispatch: Boolean, vararg names: String): JsonReaderOptions {
-            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
-            val rawStrings = Array(names.size) { names[it] }
-
-            return JsonReaderOptions(rawBytes, shift, multiplier, rawStrings, enableStringDispatch)
+            return of(shift, multiplier, 1024, enableStringDispatch, *names)
         }
 
-        private const val DISPATCH_TABLE_SIZE = 1024
+        fun of(shift: Int, multiplier: Int, tableSize: Int, enableStringDispatch: Boolean, vararg names: String): JsonReaderOptions {
+            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
+            val rawStrings = Array(names.size) { names[it] }
+            return JsonReaderOptions(rawBytes, shift, multiplier, tableSize, rawStrings, enableStringDispatch)
+        }
+
         private val EMPTY_DISPATCH_TABLE = IntArray(0)
     }
 }

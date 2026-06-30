@@ -198,4 +198,44 @@ class GhostReaderSelectNameTest {
         assertEquals(-1, reader.selectString(options))
         reader.endObject()
     }
+
+    // ── M. DYNAMIC TABLE SIZES ───────────────────────────────────────
+
+    @Test
+    fun jsonReaderOptionsRespectsDynamicTableSizes() {
+        val names = arrayOf("id", "name", "email")
+        val options128 = JsonReaderOptions.of(0, 31, 128, *names)
+        assertEquals(128, options128.dispatch.size)
+
+        val options256 = JsonReaderOptions.of(0, 31, 256, *names)
+        assertEquals(256, options256.dispatch.size)
+
+        val json = "{\"email\":\"test@test.com\",\"id\":42,\"name\":\"ghost\"}"
+
+        val reader1 = readerOf(json)
+        reader1.beginObject()
+        assertEquals(2, reader1.selectString(options128)) // email
+        reader1.consumeKeySeparator()
+        assertEquals("test@test.com", reader1.nextString())
+        assertEquals(0, reader1.selectString(options128)) // id
+        reader1.consumeKeySeparator()
+        assertEquals(42, reader1.nextInt())
+        assertEquals(1, reader1.selectString(options128)) // name
+        reader1.consumeKeySeparator()
+        assertEquals("ghost", reader1.nextString())
+        reader1.endObject()
+
+        val reader2 = readerOf(json)
+        reader2.beginObject()
+        assertEquals(2, reader2.selectString(options256)) // email
+        reader2.consumeKeySeparator()
+        assertEquals("test@test.com", reader2.nextString())
+        assertEquals(0, reader2.selectString(options256)) // id
+        reader2.consumeKeySeparator()
+        assertEquals(42, reader2.nextInt())
+        assertEquals(1, reader2.selectString(options256)) // name
+        reader2.consumeKeySeparator()
+        assertEquals("ghost", reader2.nextString())
+        reader2.endObject()
+    }
 }

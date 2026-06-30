@@ -102,11 +102,11 @@ internal object FlattenOptionsGenerator {
             }
         }.distinct()
 
-        val (shift, multiplier) = PerfectHashFinder.findPerfectHash(names)
+        val (shift, multiplier, tableSize) = PerfectHashFinder.findPerfectHash(names)
 
         val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
         val optionsBuilder = CodeBlock.builder()
-            .add(C.TEMPLATE_OPTIONS_OF_SEEDS_START, optionsClass, shift, multiplier, textChannel)
+            .add(C.TEMPLATE_OPTIONS_OF_SEEDS_START, optionsClass, shift, multiplier, tableSize, textChannel)
 
         names.forEach { name ->
             optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
