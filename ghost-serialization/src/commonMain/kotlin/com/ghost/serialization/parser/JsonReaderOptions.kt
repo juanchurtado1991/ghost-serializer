@@ -2,14 +2,14 @@
 
 package com.ghost.serialization.parser
 
-import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_16
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_24
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_HEX_LENGTH
 import com.ghost.serialization.parser.GhostJsonConstants.SINGLE_CHAR_SIZE
+import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_HEX_LENGTH
 import kotlin.jvm.JvmStatic
+import com.ghost.serialization.parser.GhostJsonConstants as C
 
 /**
  * Dispatch options for optimized JSON field identification.
@@ -173,26 +173,61 @@ class JsonReaderOptions(
             )
         }
 
-        fun of(vararg names: String): JsonReaderOptions = of(0, 31, 1024, *names)
+        fun of(vararg names: String): JsonReaderOptions = of(
+            C.DEFAULT_DISPATCH_SHIFT,
+            C.DEFAULT_DISPATCH_MULTIPLIER,
+            C.DEFAULT_DISPATCH_TABLE_SIZE,
+            *names
+        )
 
         fun of(shift: Int, multiplier: Int, vararg names: String): JsonReaderOptions {
-            return of(shift, multiplier, 1024, *names)
+            return of(shift, multiplier, C.DEFAULT_DISPATCH_TABLE_SIZE, *names)
         }
 
-        fun of(shift: Int, multiplier: Int, tableSize: Int, vararg names: String): JsonReaderOptions {
+        fun of(
+            shift: Int,
+            multiplier: Int,
+            tableSize: Int,
+            vararg names: String
+        ): JsonReaderOptions {
             val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
             val rawStrings = Array(names.size) { names[it] }
-            return JsonReaderOptions(rawBytes, shift, multiplier, tableSize, rawStrings, enableStringDispatch = true)
+            return JsonReaderOptions(
+                rawBytes,
+                shift,
+                multiplier,
+                tableSize,
+                rawStrings,
+                enableStringDispatch = true
+            )
         }
 
-        fun of(shift: Int, multiplier: Int, enableStringDispatch: Boolean, vararg names: String): JsonReaderOptions {
+        fun of(
+            shift: Int,
+            multiplier: Int,
+            enableStringDispatch: Boolean,
+            vararg names: String
+        ): JsonReaderOptions {
             return of(shift, multiplier, 1024, enableStringDispatch, *names)
         }
 
-        fun of(shift: Int, multiplier: Int, tableSize: Int, enableStringDispatch: Boolean, vararg names: String): JsonReaderOptions {
+        fun of(
+            shift: Int,
+            multiplier: Int,
+            tableSize: Int,
+            enableStringDispatch: Boolean,
+            vararg names: String
+        ): JsonReaderOptions {
             val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
             val rawStrings = Array(names.size) { names[it] }
-            return JsonReaderOptions(rawBytes, shift, multiplier, tableSize, rawStrings, enableStringDispatch)
+            return JsonReaderOptions(
+                rawBytes,
+                shift,
+                multiplier,
+                tableSize,
+                rawStrings,
+                enableStringDispatch
+            )
         }
 
         private val EMPTY_DISPATCH_TABLE = IntArray(0)

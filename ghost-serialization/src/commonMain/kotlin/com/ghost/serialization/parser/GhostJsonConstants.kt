@@ -211,6 +211,14 @@ internal object GhostJsonConstants {
     const val BACKSLASH = '\\'.code.toByte()
     const val UNICODE_PREFIX_U = 'u'.code.toByte()
 
+    // --- Dispatch Table Defaults ---
+    /** Default shift for JsonReaderOptions when no perfect-hash search has been run. */
+    const val DEFAULT_DISPATCH_SHIFT = 0
+    /** Default multiplier for JsonReaderOptions factory methods. */
+    const val DEFAULT_DISPATCH_MULTIPLIER = 31
+    /** Default dispatch table size. Must be a power of two. */
+    const val DEFAULT_DISPATCH_TABLE_SIZE = 1024
+
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
     const val STR_POOL_SIZE = 2048
