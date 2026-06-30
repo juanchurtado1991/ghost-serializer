@@ -148,13 +148,22 @@ class JsonReaderOptions(
          *   - `findPerfectHash` in PerfectHashFinder (compiler-side)
          * Changing any one of them without updating the rest will silently break field dispatch.
          */
+        internal fun collisionXor(key: Int, lastByte: Int, middleByte: Int): Int =
+            key xor lastByte xor middleByte
+
         internal fun collisionXor(key: Int, bytes: ByteArray): Int =
-            key xor (bytes[bytes.size - 1].toInt() and BYTE_MASK) xor
-                    (bytes[bytes.size shr 1].toInt() and BYTE_MASK)
+            collisionXor(
+                key,
+                bytes[bytes.size - 1].toInt() and BYTE_MASK,
+                bytes[bytes.size shr 1].toInt() and BYTE_MASK
+            )
 
         internal fun collisionXor(key: Int, str: String): Int =
-            key xor (str[str.length - 1].code and BYTE_MASK) xor
-                    (str[str.length shr 1].code and BYTE_MASK)
+            collisionXor(
+                key,
+                str[str.length - 1].code and BYTE_MASK,
+                str[str.length shr 1].code and BYTE_MASK
+            )
 
         fun of(vararg names: String): JsonReaderOptions = of(0, 31, 1024, *names)
 
