@@ -87,12 +87,11 @@ internal object PerfectHashFinder {
                             if (bytes.size >= C.VAL_FOUR) {
                                 key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
                             }
-                            if (hasCollisions) {
-                                var i = C.VAL_FOUR
-                                while (i < bytes.size) {
-                                    key = key * 31 + (bytes[i].toInt() and C.BYTE_MASK)
-                                    i++
-                                }
+                            if (hasCollisions && bytes.size >= C.VAL_FOUR) {
+                                // Canonical collision XOR — must match collisionXor in JsonReaderOptions
+                                // and the hasCollisions block in computeKeyHash (all reader subsystems).
+                                key = key xor (bytes[bytes.size - C.VAL_ONE].toInt() and C.BYTE_MASK)
+                                key = key xor (bytes[bytes.size shr C.VAL_ONE].toInt() and C.BYTE_MASK)
                             }
 
                             val hash = ((key * multiplier + bytes.size) shr shift) and tableMask

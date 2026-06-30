@@ -98,10 +98,7 @@ class JsonReaderOptions(
                 if (bytes.size >= UNICODE_HEX_LENGTH) {
                     key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
                 }
-                if (hasCollisions) {
-                    key = key xor (bytes[bytes.size - 1].toInt() and BYTE_MASK)
-                    key = key xor (bytes[bytes.size shr 1].toInt() and BYTE_MASK)
-                }
+                if (hasCollisions) key = collisionXor(key, bytes)
 
                 val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
                 if (dispatch[perfectHashKey] == -1) {
@@ -133,10 +130,7 @@ class JsonReaderOptions(
                 if (keyString.length >= UNICODE_HEX_LENGTH) {
                     key = key or ((keyString[3].code and BYTE_MASK) shl SHIFT_24)
                 }
-                if (hasCollisions) {
-                    key = key xor (keyString[keyString.length - 1].code and BYTE_MASK)
-                    key = key xor (keyString[keyString.length shr 1].code and BYTE_MASK)
-                }
+                if (hasCollisions) key = collisionXor(key, keyString)
 
                 val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask
                 if (table[perfectHashKey] == -1) {
@@ -147,6 +141,21 @@ class JsonReaderOptions(
     }
 
     companion object {
+        /**
+         * Canonical collision disambiguation XOR formula.
+         * MUST stay byte-for-byte identical to the `hasCollisions` block inside:
+         *   - `computeKeyHash` in GhostJsonReaderSubsystem, GhostJsonFlatReader, GhostJsonStringReaderSubsystem
+         *   - `findPerfectHash` in PerfectHashFinder (compiler-side)
+         * Changing any one of them without updating the rest will silently break field dispatch.
+         */
+        internal fun collisionXor(key: Int, bytes: ByteArray): Int =
+            key xor (bytes[bytes.size - 1].toInt() and BYTE_MASK) xor
+                    (bytes[bytes.size shr 1].toInt() and BYTE_MASK)
+
+        internal fun collisionXor(key: Int, str: String): Int =
+            key xor (str[str.length - 1].code and BYTE_MASK) xor
+                    (str[str.length shr 1].code and BYTE_MASK)
+
         fun of(vararg names: String): JsonReaderOptions = of(0, 31, 1024, *names)
 
         fun of(shift: Int, multiplier: Int, vararg names: String): JsonReaderOptions {

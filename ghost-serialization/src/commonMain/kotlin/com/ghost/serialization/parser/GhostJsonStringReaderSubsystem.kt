@@ -419,6 +419,7 @@ private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int,
         val byte3 = chars[start + 3].code
         key = byte0 or (byte1 shl C.SHIFT_8) or (byte2 shl C.SHIFT_16) or (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
+            // Canonical collision XOR — must match JsonReaderOptions.collisionXor and PerfectHashFinder.
             key = key xor chars[start + length - 1].code
             key = key xor chars[start + (length shr C.SINGLE_CHAR_SIZE)].code
         }

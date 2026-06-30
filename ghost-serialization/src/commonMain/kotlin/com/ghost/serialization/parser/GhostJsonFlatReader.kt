@@ -613,6 +613,7 @@ class GhostJsonFlatReader(
             val b3 = rawData[start + 3].toInt() and C.BYTE_MASK
             key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)
             if (hasCollisions) {
+                // Canonical collision XOR — must match JsonReaderOptions.collisionXor and PerfectHashFinder.
                 key = key xor (rawData[start + length - 1].toInt() and C.BYTE_MASK)
                 key = key xor (rawData[start + (length shr C.SINGLE_CHAR_SIZE)].toInt() and C.BYTE_MASK)
             }
