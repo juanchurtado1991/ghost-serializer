@@ -1,6 +1,8 @@
 # Changelog
 
-## [1.2.3] - PENDING
+## [1.2.4] - PENDING
+
+## [1.2.3] - 2026-06-29
 
 ### Performance
 - **Android ThreadLocal UI Thread Bypass**: Optimized `getLocalPool()` in `GhostPools.android.kt` by caching the main thread reference and performing a fast identity comparison (`===`) to completely bypass the `ThreadLocal.get()` map lookup on the UI thread.

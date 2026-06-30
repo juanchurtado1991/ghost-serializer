@@ -141,7 +141,7 @@ class GhostPlugin : Plugin<Project> {
 
     companion object {
         private const val EXTENSION_NAME = "ghost"
-        private const val DEFAULT_VERSION = "1.2.2"
+        private const val DEFAULT_VERSION = "1.2.3"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
         private const val PLUGIN_KMP = "org.jetbrains.kotlin.multiplatform"

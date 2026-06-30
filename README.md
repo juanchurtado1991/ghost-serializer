@@ -7,7 +7,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
 [![Tests](https://img.shields.io/badge/tests-825%20%2F%20825%20passed-brightgreen.png?style=flat)](#)
-[![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Version](https://img.shields.io/badge/version-1.2.3-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
@@ -15,7 +15,7 @@
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
-📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.2`
+📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.3`
 
 ---
 
@@ -64,7 +64,7 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.2.2"
+ghost = "1.2.3"
 ksp   = "2.1.10-1.0.31"
 
 [libraries]
@@ -77,7 +77,7 @@ ghost-compiler      = { module = "com.ghostserializer:ghost-compiler", version.r
 // build.gradle.kts
 plugins {
     id("com.google.devtools.ksp") version "2.1.10-1.0.31"
-    id("com.ghostserializer.ghost") version "1.2.2"
+    id("com.ghostserializer.ghost") version "1.2.3"
 }
 ```
 
