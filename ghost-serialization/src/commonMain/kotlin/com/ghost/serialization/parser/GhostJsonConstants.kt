@@ -218,6 +218,8 @@ internal object GhostJsonConstants {
     const val DEFAULT_DISPATCH_MULTIPLIER = 31
     /** Default dispatch table size. Must be a power of two. */
     const val DEFAULT_DISPATCH_TABLE_SIZE = 1024
+    /** Polynomial multiplier for collision disambiguation (must match all reader computeKeyHash and PerfectHashFinder). */
+    const val COLLISION_HASH_MULTIPLIER = 31
 
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */

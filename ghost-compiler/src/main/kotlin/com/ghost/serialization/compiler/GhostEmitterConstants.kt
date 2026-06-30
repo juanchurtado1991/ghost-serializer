@@ -371,6 +371,8 @@ internal object GhostEmitterConstants {
     const val HASH_MULTIPLIER_START = 31
     const val HASH_MULTIPLIER_LIMIT = 15000
     const val HASH_MULTIPLIER_STEP = 2
+    /** Polynomial multiplier for collision disambiguation. Must match COLLISION_HASH_MULTIPLIER in GhostJsonConstants. */
+    const val COLLISION_HASH_MULTIPLIER = 31
     const val HASH_SHIFT_LIMIT = 16
     const val HASH_TABLE_SIZE = 1024
     const val HASH_MASK = 1023

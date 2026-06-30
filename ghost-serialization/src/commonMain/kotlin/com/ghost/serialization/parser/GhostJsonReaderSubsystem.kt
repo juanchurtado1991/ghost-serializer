@@ -536,11 +536,8 @@ private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollision
                 (byte2 shl C.SHIFT_16) or
                 (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
-            key = JsonReaderOptions.collisionXor(
-                key,
-                getByte(start + length - 1),
-                getByte(start + (length shr C.SINGLE_CHAR_SIZE))
-            )
+            var ci = C.UNICODE_HEX_LENGTH
+            while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++ }
         }
     } else {
         if (length >= 1) key = key or getByte(start)

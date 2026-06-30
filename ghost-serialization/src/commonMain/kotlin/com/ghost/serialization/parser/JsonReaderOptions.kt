@@ -3,6 +3,7 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
+import com.ghost.serialization.parser.GhostJsonConstants.COLLISION_HASH_MULTIPLIER
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_16
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_24
 import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_8
@@ -99,7 +100,10 @@ class JsonReaderOptions(
                 if (bytes.size >= UNICODE_HEX_LENGTH) {
                     key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
                 }
-                if (hasCollisions) key = collisionXor(key, bytes)
+                if (hasCollisions) {
+                    var ci = UNICODE_HEX_LENGTH
+                    while (ci < bytes.size) { key = key * COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and BYTE_MASK); ci++ }
+                }
 
                 val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
                 if (dispatch[perfectHashKey] == -1) {
@@ -131,7 +135,10 @@ class JsonReaderOptions(
                 if (keyString.length >= UNICODE_HEX_LENGTH) {
                     key = key or ((keyString[3].code and BYTE_MASK) shl SHIFT_24)
                 }
-                if (hasCollisions) key = collisionXor(key, keyString)
+                if (hasCollisions) {
+                    var ci = UNICODE_HEX_LENGTH
+                    while (ci < keyString.length) { key = key * COLLISION_HASH_MULTIPLIER + (keyString[ci].code and BYTE_MASK); ci++ }
+                }
 
                 val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask
                 if (table[perfectHashKey] == -1) {
@@ -143,34 +150,28 @@ class JsonReaderOptions(
 
     companion object {
         /**
-         * Canonical collision disambiguation XOR formula.
-         * MUST stay byte-for-byte identical to the `hasCollisions` block inside:
+         * Canonical collision disambiguation — polynomial accumulation over bytes after the 4-byte prefix.
+         * MUST stay identical to the `hasCollisions` block inside:
          *   - `computeKeyHash` in GhostJsonReaderSubsystem, GhostJsonFlatReader, GhostJsonStringReaderSubsystem
          *   - `findPerfectHash` in PerfectHashFinder (compiler-side)
-         * Changing any one of them without updating the rest will silently break field dispatch.
+         * XOR of just lastByte+middleByte is insufficient when two fields share the same length,
+         * same last byte, and same middle byte (e.g. "eventType" vs "eventTime"). Polynomial over
+         * all bytes beyond the 4-byte prefix is collision-free for all real-world field name pairs.
          */
         @JvmStatic
-        internal fun collisionXor(key: Int, lastByte: Int, middleByte: Int): Int =
-            key xor lastByte xor middleByte
-
-        @JvmStatic
-        internal fun collisionXor(key: Int, bytes: ByteArray): Int {
-            if (bytes.size < UNICODE_HEX_LENGTH) return key
-            return collisionXor(
-                key,
-                bytes[bytes.size - 1].toInt() and BYTE_MASK,
-                bytes[bytes.size shr 1].toInt() and BYTE_MASK
-            )
+        internal fun collisionHash(key: Int, bytes: ByteArray): Int {
+            var k = key
+            var i = UNICODE_HEX_LENGTH
+            while (i < bytes.size) { k = k * COLLISION_HASH_MULTIPLIER + (bytes[i].toInt() and BYTE_MASK); i++ }
+            return k
         }
 
         @JvmStatic
-        internal fun collisionXor(key: Int, str: String): Int {
-            if (str.length < UNICODE_HEX_LENGTH) return key
-            return collisionXor(
-                key,
-                str[str.length - 1].code and BYTE_MASK,
-                str[str.length shr 1].code and BYTE_MASK
-            )
+        internal fun collisionHash(key: Int, str: String): Int {
+            var k = key
+            var i = UNICODE_HEX_LENGTH
+            while (i < str.length) { k = k * COLLISION_HASH_MULTIPLIER + (str[i].code and BYTE_MASK); i++ }
+            return k
         }
 
         fun of(vararg names: String): JsonReaderOptions = of(
