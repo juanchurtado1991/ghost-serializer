@@ -98,9 +98,12 @@ class JsonReaderOptions(
                 if (bytes.size >= UNICODE_HEX_LENGTH) {
                     key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
                 }
-                if (hasCollisions && bytes.size >= UNICODE_HEX_LENGTH) {
-                    key = key xor (bytes[bytes.size - SINGLE_CHAR_SIZE].toInt() and BYTE_MASK)
-                    key = key xor (bytes[bytes.size shr SINGLE_CHAR_SIZE].toInt() and BYTE_MASK)
+                if (hasCollisions) {
+                    var i = UNICODE_HEX_LENGTH
+                    while (i < bytes.size) {
+                        key = key * 31 + (bytes[i].toInt() and BYTE_MASK)
+                        i++
+                    }
                 }
 
                 val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
@@ -133,9 +136,12 @@ class JsonReaderOptions(
                 if (keyString.length >= UNICODE_HEX_LENGTH) {
                     key = key or ((keyString[3].code and BYTE_MASK) shl SHIFT_24)
                 }
-                if (hasCollisions && keyString.length >= UNICODE_HEX_LENGTH) {
-                    key = key xor (keyString[keyString.length - SINGLE_CHAR_SIZE].code and BYTE_MASK)
-                    key = key xor (keyString[keyString.length shr SINGLE_CHAR_SIZE].code and BYTE_MASK)
+                if (hasCollisions) {
+                    var i = UNICODE_HEX_LENGTH
+                    while (i < keyString.length) {
+                        key = key * 31 + (keyString[i].code and BYTE_MASK)
+                        i++
+                    }
                 }
 
                 val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask
