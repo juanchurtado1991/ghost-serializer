@@ -1259,6 +1259,12 @@ Ghost.getSerializer(MyClass::class)
 
 ## 31. Version 1.2.4 — relevant changes {#cap-31--version-1.2.4-cambios-relevantes}
 
+- **Collision Resolution for Overlapping Field Names (Issue #10)**: Fixed perfect hash table collisions for classes containing fields with identical sizes and overlapping prefixes/suffixes (e.g., `modelCode` vs `modelName`, `dateCreated` vs `dateUpdated`). Refactored compiler (`PerfectHashFinder.kt`) and runtime (`JsonReaderOptions.kt`) to utilize a zero-allocation `while` loop with polynomial accumulation (multiplier 31) over all remaining bytes of the field name when a collision is detected. This guarantees correct field dispatch and prevents compile-time KSP failures or runtime parsing/deserialization exceptions.
+
+---
+
+## 31.1. Version 1.2.3 — changes {#cap-31-1--version-1.2.3-cambios}
+
 - **KSP2 AST Scan & Compiler Optimizations**: Integrated full KSP2 compatibility (aligned with Kotlin 2.1.10-1.0.31) for faster incremental builds and improved compile-time AST inspection.
 - **Perfect Hashing & O(1) Field Lookup**: Optimized key dispatch tables utilizing precomputations of 4-byte hash slots inside `JsonReaderOptions` to minimize collisions during field lookup.
 - **Streaming Key-Match Optimization**: Specialized `verifyKeyMatch` loop inside `GhostJsonReader` to branch on `isStreaming` once at loop start, enabling direct `ByteArray` or `BufferedSource` reads, yielding a 2x throughput boost on binary payloads.
