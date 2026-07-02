@@ -9,11 +9,16 @@ import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.serializers.BooleanSerializer
+import com.ghost.serialization.serializers.ByteSerializer
+import com.ghost.serialization.serializers.CharSerializer
 import com.ghost.serialization.serializers.DoubleSerializer
+import com.ghost.serialization.serializers.FloatSerializer
 import com.ghost.serialization.serializers.IntSerializer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.SetSerializer
+import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
@@ -276,6 +281,18 @@ object Ghost {
             Double::class -> {
                 DoubleSerializer as GhostSerializer<T>
             }
+            Float::class -> {
+                FloatSerializer as GhostSerializer<T>
+            }
+            Byte::class -> {
+                ByteSerializer as GhostSerializer<T>
+            }
+            Short::class -> {
+                ShortSerializer as GhostSerializer<T>
+            }
+            Char::class -> {
+                CharSerializer as GhostSerializer<T>
+            }
             RawJson::class -> {
                 RawJsonSerializer as GhostSerializer<T>
             }
@@ -296,7 +313,7 @@ object Ghost {
         val classifier = type.classifier
 
         // Special handling for parameterized collections
-        if (classifier == List::class || classifier == Map::class) {
+        if (classifier == List::class || classifier == Map::class || classifier == Set::class) {
             val cached = typeCache[type]
             if (cached != null) {
                 return cached as GhostSerializer<Any>
@@ -317,6 +334,16 @@ object Ghost {
                             ?: return@runSynchronized null
 
                         ListSerializer(itemSerializer)
+                    }
+
+                    Set::class -> {
+                        val itemType = type.arguments.getOrNull(0)?.type
+                            ?: return@runSynchronized null
+
+                        val itemSerializer = getSerializer(itemType)
+                            ?: return@runSynchronized null
+
+                        SetSerializer(itemSerializer)
                     }
 
                     Map::class -> {

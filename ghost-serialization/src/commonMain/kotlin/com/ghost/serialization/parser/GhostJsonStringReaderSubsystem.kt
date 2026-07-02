@@ -214,6 +214,35 @@ fun GhostJsonStringReader.nextBoolean(): Boolean {
 
 fun GhostJsonStringReader.nextString(): String = readQuotedString()
 
+/**
+ * Reads a JSON string value that must contain exactly one [Char].
+ */
+fun GhostJsonStringReader.nextChar(): Char {
+    if (nextNonWhitespace() != C.QUOTE_INT) {
+        throwError(C.ERR_EXPECTED_QUOTE)
+    }
+
+    val start = position
+    val end = findClosingQuote(start, limit)
+    if (end != C.MATCH_END) {
+        val length = end - start
+        position = end + C.SINGLE_CHAR_SIZE
+        nextTokenByte = C.RESET_TOKEN_BYTE
+        when {
+            length == 0 -> throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)
+            length == C.SINGLE_CHAR_JSON_LENGTH -> return rawData[start]
+            else -> throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + length)
+        }
+    }
+
+    position = start - 1
+    val decoded = readQuotedString()
+    if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {
+        throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)
+    }
+    return decoded[0]
+}
+
 fun GhostJsonStringReader.isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
 fun GhostJsonStringReader.consumeNull() {
@@ -654,6 +683,34 @@ inline fun <T> GhostJsonStringReader.readList(crossinline itemParser: () -> T): 
         }
     }
     return list
+}
+
+inline fun <T> GhostJsonStringReader.readSet(crossinline itemParser: () -> T): Set<T> {
+    beginArray()
+    if (peekNextToken() == C.CLOSE_ARR_INT) {
+        endArray()
+        return emptySet()
+    }
+    val set = HashSet<T>(initialCollectionCapacity)
+    val maxSize = maxCollectionSize
+
+    while (true) {
+        set.add(itemParser())
+        val next = nextNonWhitespace()
+        if (next == C.CLOSE_ARR_INT) {
+            if (depth > 0) {
+                depth--
+            }
+            break
+        }
+        if (next != C.COMMA_INT) {
+            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
+        }
+        if (set.size > maxSize) {
+            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+        }
+    }
+    return set
 }
 
 inline fun <K, V> GhostJsonStringReader.readMap(

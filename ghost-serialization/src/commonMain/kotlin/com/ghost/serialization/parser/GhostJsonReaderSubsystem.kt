@@ -319,6 +319,42 @@ fun GhostJsonReader.nextBoolean(): Boolean {
 fun GhostJsonReader.nextString(): String = readQuotedString()
 
 /**
+ * Reads a JSON string value that must contain exactly one [Char].
+ * Fast path avoids [String] allocation for a single unescaped ASCII/Latin-1 code unit.
+ */
+fun GhostJsonReader.nextChar(): Char {
+    if (nextNonWhitespace() != C.QUOTE_INT) {
+        throwError(C.ERR_EXPECTED_QUOTE)
+    }
+
+    val start = position
+    val scanResult = scanStringImpl(start, limit) { getByte(it) }
+
+    if (scanResult != -1L) {
+        val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()
+        val only7Bit = (scanResult and C.SCAN_7BIT_BIT) != 0L
+        val end = start + length
+        if (length == C.SINGLE_CHAR_JSON_LENGTH && only7Bit) {
+            position = end + 1
+            nextTokenByte = -1
+            return getByte(start).toChar()
+        }
+        if (length == 0) {
+            position = end + 1
+            nextTokenByte = -1
+            throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)
+        }
+    }
+
+    position = start - 1
+    val decoded = readQuotedString()
+    if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {
+        throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)
+    }
+    return decoded[0]
+}
+
+/**
  * Peeks the stream to determine if the next value is a JSON `null`.
  *
  * Does not advance the reading position, useful for parsing optional/nullable fields.
@@ -719,6 +755,35 @@ inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T
         }
     }
     return list
+}
+
+/**
+ * Reads a JSON array into a [Set] without an intermediate [List] allocation.
+ */
+inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> {
+    beginArray()
+    if (peekNextToken() == C.CLOSE_ARR_INT) {
+        endArray()
+        return emptySet()
+    }
+    val set = HashSet<T>(initialCollectionCapacity)
+    val maxSize = maxCollectionSize
+
+    while (true) {
+        set.add(itemParser())
+        val next = nextNonWhitespace()
+        if (next == C.CLOSE_ARR_INT) {
+            depth--
+            break
+        }
+        if (next != C.COMMA_INT) {
+            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
+        }
+        if (set.size > maxSize) {
+            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+        }
+    }
+    return set
 }
 
 /**

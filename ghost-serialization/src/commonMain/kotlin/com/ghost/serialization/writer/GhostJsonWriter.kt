@@ -346,6 +346,16 @@ class GhostJsonWriter(
     }
 
     /**
+     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
+     */
+    fun value(char: Char): GhostJsonWriter {
+        appendSeparator()
+        buffer.writeQuotedBmpCodeUnit(char.code)
+        needsComma = true
+        return this
+    }
+
+    /**
      * Writes a null value into the JSON stream.
      */
     fun nullValue(): GhostJsonWriter {

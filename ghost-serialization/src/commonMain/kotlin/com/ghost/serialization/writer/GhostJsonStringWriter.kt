@@ -338,6 +338,18 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         return this
     }
 
+    /**
+     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
+     */
+    fun value(char: Char): GhostJsonStringWriter {
+        appendSeparator()
+        buffer.writeChar(QUOTE_INT)
+        buffer.writeChar(char.code)
+        buffer.writeChar(QUOTE_INT)
+        needsComma = true
+        return this
+    }
+
     fun nullValue(): GhostJsonStringWriter {
         appendSeparator()
         buffer.writeNull()

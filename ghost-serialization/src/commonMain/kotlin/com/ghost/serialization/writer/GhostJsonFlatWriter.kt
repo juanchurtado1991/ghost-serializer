@@ -342,6 +342,16 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     }
 
     /**
+     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
+     */
+    fun value(char: Char): GhostJsonFlatWriter {
+        appendSeparator()
+        buffer.writeQuotedBmpCodeUnit(char.code)
+        needsComma = true
+        return this
+    }
+
+    /**
      * Writes a null value into the JSON stream.
      */
     fun nullValue(): GhostJsonFlatWriter {

@@ -278,6 +278,31 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         size = writeIndex
     }
 
+    /**
+     * Writes a JSON string containing a single BMP code point, without allocating a [String].
+     */
+    fun writeQuotedBmpCodeUnit(codePoint: Int) {
+        ensureCapacity(C.STRING_QUOTE_PAIR_BYTES + C.UTF8_3BYTE_SIZE)
+        writeByte(C.QUOTE_INT)
+        writeBmpUtf8CodeUnit(codePoint)
+        writeByte(C.QUOTE_INT)
+    }
+
+    private fun writeBmpUtf8CodeUnit(codePoint: Int) {
+        when {
+            codePoint < UTF8_1BYTE_LIMIT -> writeByte(codePoint)
+            codePoint < UTF8_2BYTE_LIMIT -> {
+                writeByte(UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6))
+                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))
+            }
+            else -> {
+                writeByte(UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12))
+                writeByte(UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK))
+                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))
+            }
+        }
+    }
+
     /** Writes the literal "true" directly. */
     fun writeTrue() {
         ensureCapacity(4)

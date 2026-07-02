@@ -762,6 +762,38 @@ class GhostJsonFlatReader(
     }
 
     /**
+     * Reads a set of items using the provided [itemParser].
+     * Builds a [HashSet] directly — no intermediate [List] allocation.
+     */
+    inline fun <T> readSet(crossinline itemParser: () -> T): Set<T> {
+        beginArray()
+        if (peekNextToken() == C.CLOSE_ARR_INT) {
+            endArray()
+            return emptySet()
+        }
+        val set = HashSet<T>(initialCollectionCapacity)
+        val maxSize = maxCollectionSize
+
+        while (true) {
+            set.add(itemParser())
+            val next = nextNonWhitespace()
+            if (next == C.CLOSE_ARR_INT) {
+                if (depth > 0) {
+                    depth--
+                }
+                break
+            }
+            if (next != C.COMMA_INT) {
+                throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
+            }
+            if (set.size > maxSize) {
+                throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+            }
+        }
+        return set
+    }
+
+    /**
      * Reads a map of keys and values using the provided [keyParser] and [valueParser].
      */
     inline fun <K, V> readMap(

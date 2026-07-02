@@ -8,7 +8,9 @@ import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.parser.nextBoolean
+import com.ghost.serialization.parser.nextChar
 import com.ghost.serialization.parser.nextDouble
+import com.ghost.serialization.parser.nextFloat
 import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.parser.nextLong
 import com.ghost.serialization.parser.readQuotedString
@@ -138,6 +140,106 @@ object DoubleSerializer : GhostSerializer<Double> {
     override fun deserialize(reader: GhostJsonStringReader): Double {
         return reader.nextDouble()
     }
+}
+
+/**
+ * Built-in serializer for Kotlin [Float] type.
+ */
+object FloatSerializer : GhostSerializer<Float> {
+    override val typeName: String get() = "Float"
+
+    override fun serialize(writer: GhostJsonWriter, value: Float) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: Float) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: Float) {
+        writer.value(value)
+    }
+
+    override fun deserialize(reader: GhostJsonReader): Float = reader.nextFloat()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Float = reader.nextFloat()
+
+    override fun deserialize(reader: GhostJsonStringReader): Float = reader.nextFloat()
+}
+
+/**
+ * Built-in serializer for Kotlin [Byte] type (JSON number).
+ */
+object ByteSerializer : GhostSerializer<Byte> {
+    override val typeName: String get() = "Byte"
+
+    override fun serialize(writer: GhostJsonWriter, value: Byte) {
+        writer.value(value.toInt())
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: Byte) {
+        writer.value(value.toInt())
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: Byte) {
+        writer.value(value.toInt())
+    }
+
+    override fun deserialize(reader: GhostJsonReader): Byte = reader.nextInt().toByte()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Byte = reader.nextInt().toByte()
+
+    override fun deserialize(reader: GhostJsonStringReader): Byte = reader.nextInt().toByte()
+}
+
+/**
+ * Built-in serializer for Kotlin [Short] type (JSON number).
+ */
+object ShortSerializer : GhostSerializer<Short> {
+    override val typeName: String get() = "Short"
+
+    override fun serialize(writer: GhostJsonWriter, value: Short) {
+        writer.value(value.toInt())
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: Short) {
+        writer.value(value.toInt())
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: Short) {
+        writer.value(value.toInt())
+    }
+
+    override fun deserialize(reader: GhostJsonReader): Short = reader.nextInt().toShort()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Short = reader.nextInt().toShort()
+
+    override fun deserialize(reader: GhostJsonStringReader): Short = reader.nextInt().toShort()
+}
+
+/**
+ * Built-in serializer for Kotlin [Char] type (JSON string of length 1).
+ */
+object CharSerializer : GhostSerializer<Char> {
+    override val typeName: String get() = "Char"
+
+    override fun serialize(writer: GhostJsonWriter, value: Char) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: Char) {
+        writer.value(value)
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: Char) {
+        writer.value(value)
+    }
+
+    override fun deserialize(reader: GhostJsonReader): Char = reader.nextChar()
+
+    override fun deserialize(reader: GhostJsonFlatReader): Char = reader.nextChar()
+
+    override fun deserialize(reader: GhostJsonStringReader): Char = reader.nextChar()
 }
 
 /**

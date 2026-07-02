@@ -32,6 +32,8 @@ internal object GhostJsonConstants {
     const val ERR_EXPECTED_COMMA_OR_CLOSE_OBJ = "Expected ',' or '}'"
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
     const val ERR_EXPECTED_QUOTE = "Expected '\"'"
+    const val ERR_EXPECTED_SINGLE_CHAR_STRING = "Expected single-character JSON string"
+    const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH = "Expected single-character JSON string, found length "
     const val ERR_DEPTH_EXCEEDED = "Reached maximum recursion depth"
     const val ERR_NON_FINITE = "JSON does not support non-finite numbers like NaN or Infinity"
     const val ERR_INT_OVERFLOW = "Integer overflow: "
@@ -249,6 +251,9 @@ internal object GhostJsonConstants {
 
     /** Byte sizes for common UTF/JSON sequences. */
     const val SINGLE_CHAR_SIZE = 1
+
+    /** Expected UTF-16 code-unit count when decoding a JSON [Char] field. */
+    const val SINGLE_CHAR_JSON_LENGTH = SINGLE_CHAR_SIZE
     const val UNICODE_ESCAPE_PREFIX_SIZE = 2
     const val INT_SAFE_DIGITS = 9
     const val LONG_SAFE_DIGITS = 18
