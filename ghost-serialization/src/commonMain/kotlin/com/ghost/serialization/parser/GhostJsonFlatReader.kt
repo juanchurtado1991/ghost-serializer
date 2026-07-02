@@ -199,10 +199,17 @@ class GhostJsonFlatReader(
      * Resets the reader's state to process a new byte payload.
      */
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
-        this.rawData = newData
-        source.data = newData
-        this.position = 0
-        this.limit = newLimit
+        resetSlice(newData, offset = 0, length = newLimit)
+    }
+
+    /**
+     * Resets the reader to parse a sub-range of [buffer] without copying (zero-copy slice decode).
+     */
+    fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
+        this.rawData = buffer
+        source.data = buffer
+        this.position = offset
+        this.limit = offset + length
         this.nextTokenByte = C.RESET_TOKEN_BYTE
         this.depth = 0
         this.needsCommaMask = 0L
