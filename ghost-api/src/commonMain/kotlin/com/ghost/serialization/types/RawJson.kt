@@ -31,9 +31,44 @@ class RawJson internal constructor(
             storage.copyOfRange(storageOffset, storageOffset + storageLength)
         }
 
-    /** Decodes the captured UTF-8 JSON bytes as a [String]. */
+    /** Decodes the captured UTF-8 JSON bytes as a [String] (wire form, including quotes for strings). */
     fun decodeToString(): String =
         storage.decodeToString(storageOffset, storageOffset + storageLength)
+
+    /** Exclusive end index of this slice in [storage] (`storageOffset + storageLength`). */
+    val endExclusive: Int
+        get() = storageOffset + storageLength
+
+    /** Classifies the JSON value without parsing or copying the payload. */
+    fun kind(): RawJsonKind = RawJsonValueScanner.kind(this)
+
+    /** `true` when the payload is the JSON literal `null`. */
+    val isJsonNull: Boolean
+        get() = RawJsonValueScanner.isJsonNull(this)
+
+    /** `true`/`false` for JSON booleans; `null` for `null`, non-boolean, or invalid payloads. */
+    fun asBooleanOrNull(): Boolean? = RawJsonValueScanner.asBooleanOrNull(this)
+
+    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
+    fun asIntOrNull(): Int? = RawJsonValueScanner.asIntOrNull(this)
+
+    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
+    fun asLongOrNull(): Long? = RawJsonValueScanner.asLongOrNull(this)
+
+    /** JSON number as [Double]; integer path is zero-allocation, fraction/exponent uses UTF-8 decode once. */
+    fun asDoubleOrNull(): Double? = RawJsonValueScanner.asDoubleOrNull(this)
+
+    /**
+     * Decoded string contents when the payload is a JSON string (`"..."`); otherwise `null`.
+     * ASCII fast path avoids escape scanning allocations when no `\` is present.
+     */
+    fun asStringOrNull(): String? = RawJsonValueScanner.asStringOrNull(this)
+
+    /**
+     * Human-readable scalar for UI (capability status, labels). Strings are unquoted;
+     * numbers/booleans/null use wire text; objects/arrays return full JSON text.
+     */
+    fun asDisplayString(): String = RawJsonValueScanner.asDisplayString(this)
 
     /** Value-based equality for the underlying JSON bytes. */
     fun contentEquals(other: RawJson?): Boolean {
