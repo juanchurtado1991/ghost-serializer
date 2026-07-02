@@ -160,6 +160,40 @@ class GhostBugFixKspTest {
         assertTrue(kspOutput.any { "RawPayloadSerializer.kt" in it }, "Expected RawPayloadSerializer.kt: $kspOutput")
     }
 
+    // RawJson field compiles and generates captureRawJsonBytes path
+    @Test
+    fun compilesModelWithRawJsonField() {
+        val (compilation, result) = compile(
+            SourceFile.kotlin(
+                "RawJsonPayload.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.types.RawJson
+
+                @GhostSerialization
+                data class RawJsonPayload(val id: String, val body: RawJson)
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val generated = compilation.kspSourcesDir.walk()
+            .filter { it.name == "RawJsonPayloadSerializer.kt" }
+            .map { it.readText() }
+            .firstOrNull()
+        assertTrue(generated != null, "RawJsonPayloadSerializer.kt not generated")
+        assertTrue(
+            "captureRawJson()" in (generated ?: ""),
+            "Expected captureRawJson in generated serializer:\n$generated"
+        )
+        assertTrue(
+            "writer.rawValue(value.body.storage, value.body.storageOffset, value.body.storageLength)" in (generated ?: ""),
+            "Expected slice rawValue in generated serializer:\n$generated"
+        )
+    }
+
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
