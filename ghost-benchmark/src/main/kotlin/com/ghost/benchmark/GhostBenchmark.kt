@@ -132,6 +132,7 @@ fun main(args: Array<String>) {
     // 6. Ghost Special Features (exclusive capabilities, no competition)
     performGc()
     GhostSpecialFeaturesBenchmark.run(config.runs, config.warmupIters)
+    RawJsonCaptureBenchmark.run(config.runs, config.warmupIters)
 
     // 7. Verification Tests
     if (!config.noTests) {
