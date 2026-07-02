@@ -525,6 +525,7 @@ internal object GhostEmitterConstants {
     const val STR_KDOC_ROUTE_TYPED = "Routes [%T] and decodes annotated payload targets.\n"
     const val STR_KDOC_PARSE_TYPED = "Deserializes [%T] from bytes and returns typed payload when configured.\n"
     const val TEMPLATE_ENVELOPE_TYPED_RAWJSON = "envelope.%L?.let { %T.decode(it, %T::class) }"
+    const val TEMPLATE_ENVELOPE_TYPED_SERIALIZER = "envelope.%L?.let { %T.decode(it, %L) }"
     const val STR_ERR_ENVELOPE_DISC_1 = "GhostJsonEnvelope: discriminator field '"
     const val STR_ERR_ENVELOPE_DISC_2 = "' not found on '"
     const val STR_ERR_ENVELOPE_DISC_3 = "'."

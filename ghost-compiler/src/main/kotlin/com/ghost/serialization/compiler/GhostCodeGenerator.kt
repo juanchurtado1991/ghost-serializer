@@ -214,6 +214,8 @@ internal class GhostCodeGenerator(
             .apply {
                 if (envelopeModel?.payloadMappings?.any { it.targetType != null } == true) {
                     addImport(C.PKG_TYPES, C.STR_RAW_JSON_DECODE)
+                    addImport(C.PKG_GHOST, C.STR_GHOST)
+                    addImport(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
                 }
             }
             .addType(buildSerializerObject(serializerName))

@@ -26,7 +26,7 @@ object RawJsonDecode {
         if (raw.storageOffset == 0 && raw.storageLength == raw.storage.size) {
             return Ghost.deserialize(serializer, raw.storage)
         }
-        return ghostInternalUseFlatReader(raw.storage, raw.endExclusive) { reader ->
+        return ghostInternalUseFlatReader(raw.storage) { reader ->
             reader.resetSlice(raw.storage, raw.storageOffset, raw.storageLength)
             serializer.deserialize(reader)
         }
