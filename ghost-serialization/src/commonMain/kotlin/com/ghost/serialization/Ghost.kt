@@ -1,4 +1,4 @@
-@file:Suppress("UNCHECKED_CAST")
+@file:Suppress("UNCHECKED_CAST", "OPT_IN_USAGE")
 
 package com.ghost.serialization
 

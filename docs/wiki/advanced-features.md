@@ -201,7 +201,37 @@ val user: User = Ghost.deserialize(response.body().string())
 
 ---
 
-## 7. Platform Limits & Memory
+## 7. Opaque JSON fields (`RawJson`)
+
+Use [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt) when a model field must hold **arbitrary JSON** (object, array, string, number, boolean, or null) without parsing into a typed structure — the common Gson `JsonElement` migration case.
+
+```kotlin
+import com.ghost.serialization.types.RawJson
+
+@GhostSerialization
+data class DeviceOnboardingRecord(
+    val id: String,
+    val metadata: RawJson? = null,
+)
+
+@GhostSerialization
+data class AttributeState(
+    @GhostName("value") val value: RawJson? = null,
+    @GhostName("data") val data: Map<String, RawJson>? = null,
+)
+```
+
+| Type | Wire behavior | Public API |
+|:---|:---|:---|
+| `RawJson` | Inline JSON passthrough via `captureRawJson()` slice (flat bytes) or owned bytes (string reader) | `decodeToString()`, `contentEquals()`, slice fields `storage`/`storageOffset`/`storageLength` |
+| `ByteArray` | Inline passthrough via `captureRawJsonBytes()` (always copies) | Ambiguous name; reference `equals` in `data class` |
+| `String` / nested wrapper | Parsed or quoted — **not** opaque passthrough | Avoid for arbitrary JSON |
+
+`RawJson` bytes include JSON delimiters (quotes for strings, brackets for objects/arrays). Two `RawJson` values compare with `==` (content-based `equals`/`hashCode`). When asserting against `ByteArray` or expected JSON text in tests, use `contentEquals()` or `decodeToString()`.
+
+---
+
+## 8. Platform Limits & Memory
 
 | Limit | Purpose | Defaults |
 |:---|:---|:---|
@@ -214,7 +244,7 @@ val user: User = Ghost.deserialize(response.body().string())
 
 ---
 
-## 8. Pre-warming
+## 9. Pre-warming
 
 Reduce cold-start latency by pre-loading the serializer registry before the first request:
 

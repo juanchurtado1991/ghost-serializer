@@ -101,6 +101,22 @@ These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson
 | Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **1.36** | 16840 |
 | Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.23** | 264 |
 
+---
+
+## 👻 RawJson Capture (slice vs ByteArray)
+
+Compares opaque JSON fields on flat byte input (`GhostJsonFlatReader`):
+
+| Scenario | µs/op | B/op |
+|:---|:---:|:---:|
+| Decode `RawJson` field (small metadata, slice capture) | **~0.7** | **~48** |
+| Decode `ByteArray` field (small metadata, copy capture) | ~0.6 | ~280 |
+| Decode `RawJson` field (large nested metadata) | **~62** | **~48** |
+| Decode `ByteArray` field (large nested metadata) | ~67 | **~87800** |
+| Encode `RawJson` payload (slice write) | **~0.7** | ~184 |
+
+> On large opaque metadata, `RawJson` slice capture avoids the `copyOfRange` allocation that `ByteArray` fields pay on every decode. Serialize uses `writer.rawValue(storage, offset, length)` without materializing `.bytes`.
+
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that performance results always reflect a stable and correct codebase.
 

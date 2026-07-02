@@ -2,6 +2,9 @@
 
 ## [1.2.5] - PENDING
 
+### Added
+- **`RawJson` opaque JSON type**: New type in `com.ghost.serialization.types.RawJson` for public API fields that hold arbitrary JSON (objects, arrays, primitives). Uses zero-copy `captureRawJson()` slice capture on flat byte readers (`storage` + `storageOffset` + `storageLength`), slice-aware `writer.rawValue(bytes, offset, length)` on serialize, and value-based `equals`/`hashCode`. `captureRawJsonBytes()` still returns an owned copy. Supports nullable fields, `List<RawJson>`, and `Map<String, RawJson>`. Added `RawJsonCaptureBenchmark` comparing slice vs `ByteArray` capture.
+
 ### Fixed
 - **Enum wire-value hash collisions (issue #11)**: Enum serializers now use `PerfectHashFinder` for `ENUM_OPTIONS` (same as object field dispatch), instead of `JsonReaderOptions.of(*names)` with default shift/multiplier/table size. When the standard hash search fails (e.g. enums with shared 4-byte prefixes and different lengths like `w:locations:geo`), the compiler retries with extended key hashing and emits the matching runtime flag. Generated enum code no longer uses the bare `JsonReaderOptions.of(vararg)` factory described in issue #12.
 
