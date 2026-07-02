@@ -554,16 +554,7 @@ internal class StandardEmitter(
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != C.VAL_ZERO_L) {
-                    val defMaskStr = formatMaskString(defMask)
-                    val constName = "${C.STR_MASK_DEFAULTS_PREFIX}$i"
-                    if (typeSpecBuilder.propertySpecs.none { it.name == constName }) {
-                        typeSpecBuilder.addProperty(
-                            PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
-                                .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                                .initializer(C.TEMPLATE_L, defMaskStr)
-                                .build()
-                        )
-                    }
+                    val constName = emitDefaultMaskConstant(typeSpecBuilder, i)
                     conditions.add(C.TEMPLATE_MASK_CHECK_MATCH.format(i, constName))
                 }
             }

@@ -363,22 +363,28 @@ internal abstract class BaseDeserializeEmitter(
                 }
             }
         }
+    }
 
-        for (i in defaultMasks.indices) {
-            val defMask = defaultMasks[i]
-            if (defMask != C.VAL_ZERO_L) {
-                val defMaskStr = formatMaskString(defMask)
-                val name = "MASK_DEFAULTS_$i"
-                if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
-                    typeSpecBuilder.addProperty(
-                        PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)
-                            .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                            .initializer("%L", defMaskStr)
-                            .build()
-                    )
-                }
-            }
+    /**
+     * Registers a [MASK_DEFAULTS_N] constant when the copy-based default-value return path needs it.
+     */
+    protected fun emitDefaultMaskConstant(
+        typeSpecBuilder: TypeSpec.Builder,
+        maskIndex: Int,
+    ): String {
+        val defMask = defaultMasks[maskIndex]
+        val constName = "${C.STR_MASK_DEFAULTS_PREFIX}$maskIndex"
+        if (defMask != C.VAL_ZERO_L &&
+            typeSpecBuilder.propertySpecs.none { it.name == constName }
+        ) {
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
+                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)
+                    .initializer("%L", formatMaskString(defMask))
+                    .build()
+            )
         }
+        return constName
     }
 
     /**

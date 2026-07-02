@@ -334,8 +334,7 @@ internal class FragmentedEmitter(
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
                 if (defMask != C.VAL_ZERO_L) {
-                    val constName = "MASK_DEFAULTS_$i"
-
+                    val constName = emitDefaultMaskConstant(typeSpecBuilder, i)
                     conditions.add(
                         C.TEMPLATE_IF_MASK_MATCH_BIT_F
                             .format(i, constName)
