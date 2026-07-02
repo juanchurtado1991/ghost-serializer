@@ -347,7 +347,7 @@ internal object GhostEmitterConstants {
     const val STR_CUSTOM_DECODER_RETURN_RES = "    res\n"
     const val STR_RUN_CLOSE = "}"
     const val STR_TRY = "try"
-    const val STR_CATCH_EXCEPTION = "catch (e: Exception)"
+    const val STR_CATCH_EXCEPTION = "catch (_: Exception)"
     const val TEMPLATE_WARM_UP_READER_INIT = "val %L = %T(%S.encodeToByteArray())"
     const val TEMPLATE_WARM_UP_DESERIALIZE = "deserialize(%L)"
     const val STR_READER1 = "reader1"
