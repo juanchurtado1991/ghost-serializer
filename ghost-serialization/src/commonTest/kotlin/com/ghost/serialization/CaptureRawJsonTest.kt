@@ -3,9 +3,12 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.parser.captureRawJson
 import com.ghost.serialization.parser.captureRawJsonBytes
 import com.ghost.serialization.types.RawJson
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -61,5 +64,36 @@ class CaptureRawJsonTest {
         val value = Ghost.deserialize<RawJson>(json.encodeToByteArray())
         val restored = Ghost.deserialize<RawJson>(Ghost.serialize(value))
         assertTrue(value.contentEquals(restored))
+    }
+
+    @Test
+    fun captureRawJsonStreamingReaderAliasesInputBuffer() {
+        val json = """{"k":"v"}""".encodeToByteArray()
+        val reader = GhostJsonReader(json)
+        val captured = reader.captureRawJson()
+
+        assertSame(json, captured.storage)
+        assertEquals(0, captured.storageOffset)
+        assertEquals(json.size, captured.storageLength)
+    }
+
+    @Test
+    fun captureRawJsonStringReaderMaterializesOwnedBytes() {
+        val json = """{"k":"v"}"""
+        val reader = GhostJsonStringReader(json)
+        val captured = reader.captureRawJson()
+
+        assertNotSame(json.encodeToByteArray(), captured.storage)
+        assertEquals(json, captured.decodeToString())
+    }
+
+    @Test
+    fun captureRawJsonStreamingReaderMaterializesOwnedBytes() {
+        val json = """{"k":"v"}"""
+        val reader = GhostJsonReader(Buffer().writeUtf8(json))
+        val captured = reader.captureRawJson()
+
+        assertEquals(0, captured.storageOffset)
+        assertEquals(json, captured.decodeToString())
     }
 }
