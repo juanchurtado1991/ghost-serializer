@@ -30,9 +30,9 @@ internal object RawJsonValueScanner {
             OPEN_OBJ -> RawJsonKind.OBJECT
             OPEN_ARR -> RawJsonKind.ARRAY
             QUOTE -> RawJsonKind.STRING
-            NULL_CHAR -> if (raw.matchesAsciiLiteral(NULL_LITERAL)) RawJsonKind.NULL else RawJsonKind.INVALID
-            TRUE_CHAR -> if (raw.matchesAsciiLiteral(TRUE_LITERAL)) RawJsonKind.BOOLEAN else RawJsonKind.INVALID
-            FALSE_CHAR -> if (raw.matchesAsciiLiteral(FALSE_LITERAL)) RawJsonKind.BOOLEAN else RawJsonKind.INVALID
+            NULL_CHAR -> if (raw.matchesNullLiteral()) RawJsonKind.NULL else RawJsonKind.INVALID
+            TRUE_CHAR -> if (raw.matchesTrueLiteral()) RawJsonKind.BOOLEAN else RawJsonKind.INVALID
+            FALSE_CHAR -> if (raw.matchesFalseLiteral()) RawJsonKind.BOOLEAN else RawJsonKind.INVALID
             MINUS, ZERO -> if (raw.isJsonNumberToken()) RawJsonKind.NUMBER else RawJsonKind.INVALID
             in ONE..NINE -> if (raw.isJsonNumberToken()) RawJsonKind.NUMBER else RawJsonKind.INVALID
             else -> RawJsonKind.INVALID
@@ -40,33 +40,30 @@ internal object RawJsonValueScanner {
     }
 
     fun isJsonNull(raw: RawJson): Boolean =
-        raw.storageLength == NULL_LEN && raw.matchesAsciiLiteral(NULL_LITERAL)
+        raw.storageLength == NULL_LEN && raw.matchesNullLiteral()
 
     fun asBooleanOrNull(raw: RawJson): Boolean? = when {
-        raw.storageLength == TRUE_LEN && raw.matchesAsciiLiteral(TRUE_LITERAL) -> true
-        raw.storageLength == FALSE_LEN && raw.matchesAsciiLiteral(FALSE_LITERAL) -> false
+        raw.storageLength == TRUE_LEN && raw.matchesTrueLiteral() -> true
+        raw.storageLength == FALSE_LEN && raw.matchesFalseLiteral() -> false
         else -> null
     }
 
     fun asIntOrNull(raw: RawJson): Int? {
-        if (raw.kindCached() != RawJsonKind.NUMBER) return null
-        return raw.parseIntOrNull()
+        val longValue = raw.parseIntegerOrNull() ?: return null
+        if (longValue < Int.MIN_VALUE || longValue > Int.MAX_VALUE) return null
+        return longValue.toInt()
     }
 
-    fun asLongOrNull(raw: RawJson): Long? {
-        if (raw.kindCached() != RawJsonKind.NUMBER) return null
-        return raw.parseLongOrNull()
-    }
+    fun asLongOrNull(raw: RawJson): Long? = raw.parseIntegerOrNull()
 
     fun asDoubleOrNull(raw: RawJson): Double? {
-        if (raw.kindCached() != RawJsonKind.NUMBER) return null
-        raw.parseLongOrNull()?.let { return it.toDouble() }
+        raw.parseIntegerOrNull()?.let { return it.toDouble() }
+        if (!raw.isJsonNumberToken()) return null
         return raw.decodeToString().toDoubleOrNull()
     }
 
     fun asStringOrNull(raw: RawJson): String? {
-        if (raw.kindCached() != RawJsonKind.STRING) return null
-        if (raw.storageLength < 2) return ""
+        if (raw.storageLength < 2 || raw.byteAt(0) != QUOTE) return null
         val contentStart = raw.storageOffset + 1
         val contentEnd = raw.storageOffset + raw.storageLength - 1
         if (contentEnd < contentStart) return ""
@@ -78,30 +75,43 @@ internal object RawJsonValueScanner {
         return raw.storage.decodeToString(contentStart, contentEnd)
     }
 
-    fun asDisplayString(raw: RawJson): String = when (kind(raw)) {
-        RawJsonKind.STRING -> asStringOrNull(raw) ?: raw.decodeToString()
-        RawJsonKind.NUMBER,
-        RawJsonKind.BOOLEAN,
-        RawJsonKind.NULL -> raw.decodeToString()
-        RawJsonKind.OBJECT,
-        RawJsonKind.ARRAY,
-        RawJsonKind.INVALID -> raw.decodeToString()
+    fun asDisplayString(raw: RawJson): String {
+        val classified = kind(raw)
+        return when (classified) {
+            RawJsonKind.STRING -> asStringOrNull(raw) ?: raw.decodeToString()
+            RawJsonKind.NUMBER,
+            RawJsonKind.BOOLEAN,
+            RawJsonKind.NULL -> raw.decodeToString()
+            RawJsonKind.OBJECT,
+            RawJsonKind.ARRAY,
+            RawJsonKind.INVALID -> raw.decodeToString()
+        }
     }
-
-    private fun RawJson.kindCached(): RawJsonKind = kind(this)
 
     private fun RawJson.byteAt(relativeIndex: Int): Int =
         storage[storageOffset + relativeIndex].toInt() and 0xFF
 
-    private fun RawJson.matchesAsciiLiteral(literal: ByteArray): Boolean {
-        if (storageLength != literal.size) return false
-        var index = 0
-        while (index < literal.size) {
-            if (storage[storageOffset + index] != literal[index]) return false
-            index++
-        }
-        return true
-    }
+    private fun RawJson.matchesTrueLiteral(): Boolean =
+        storageLength == TRUE_LEN &&
+            storage[storageOffset].toInt() == TRUE_CHAR &&
+            storage[storageOffset + 1].toInt() == 'r'.code &&
+            storage[storageOffset + 2].toInt() == 'u'.code &&
+            storage[storageOffset + 3].toInt() == 'e'.code
+
+    private fun RawJson.matchesFalseLiteral(): Boolean =
+        storageLength == FALSE_LEN &&
+            storage[storageOffset].toInt() == FALSE_CHAR &&
+            storage[storageOffset + 1].toInt() == 'a'.code &&
+            storage[storageOffset + 2].toInt() == 'l'.code &&
+            storage[storageOffset + 3].toInt() == 's'.code &&
+            storage[storageOffset + 4].toInt() == 'e'.code
+
+    private fun RawJson.matchesNullLiteral(): Boolean =
+        storageLength == NULL_LEN &&
+            storage[storageOffset].toInt() == NULL_CHAR &&
+            storage[storageOffset + 1].toInt() == 'u'.code &&
+            storage[storageOffset + 2].toInt() == 'l'.code &&
+            storage[storageOffset + 3].toInt() == 'l'.code
 
     private fun RawJson.isJsonNumberToken(): Boolean {
         var index = 0
@@ -138,64 +148,53 @@ internal object RawJsonValueScanner {
         return index == storageLength
     }
 
-    private fun RawJson.parseIntOrNull(): Int? {
-        if (hasFractionOrExponent()) return null
+    /**
+     * Single-pass integer parse: rejects fraction/exponent without rescanning the token.
+     */
+    private fun RawJson.parseIntegerOrNull(): Long? {
+        if (storageLength <= 0) return null
         var index = 0
         var negative = false
-        if (byteAt(index) == MINUS) {
-            negative = true
-            index++
+        when (byteAt(index)) {
+            MINUS -> {
+                negative = true
+                index++
+            }
+            ZERO, in ONE..NINE -> Unit
+            else -> return null
         }
         if (index >= storageLength) return null
-        var value = 0
-        val limit = if (negative) Int.MIN_VALUE else -Int.MAX_VALUE
-        while (index < storageLength) {
-            val digit = byteAt(index) - ZERO
-            if (digit !in 0..9) return null
-            if (value < limit / 10) return null
-            value *= 10
-            val next = value - digit
-            if (next > value) return null
-            value = next
-            index++
-        }
-        return if (negative) value else -value
-    }
 
-    private fun RawJson.parseLongOrNull(): Long? {
-        if (hasFractionOrExponent()) return null
-        var index = 0
-        var negative = false
-        if (byteAt(index) == MINUS) {
-            negative = true
-            index++
-        }
-        if (index >= storageLength) return null
         var value = 0L
         val limit = if (negative) Long.MIN_VALUE else -Long.MAX_VALUE
-        while (index < storageLength) {
-            val digit = byteAt(index) - ZERO
-            if (digit !in 0..9) return null
-            if (value < limit / 10) return null
-            value *= 10
-            val next = value - digit
-            if (next > value) return null
-            value = next
+
+        if (byteAt(index) == ZERO) {
             index++
+            if (index < storageLength) {
+                when (byteAt(index)) {
+                    DOT, EXP_LOWER, EXP_UPPER -> return null
+                    in ZERO..NINE -> return null
+                }
+            }
+            return if (negative) 0L else 0L
+        }
+
+        while (index < storageLength) {
+            when (val byte = byteAt(index)) {
+                in ZERO..NINE -> {
+                    val digit = byte - ZERO
+                    if (value < limit / 10) return null
+                    value *= 10
+                    val next = value - digit
+                    if (next > value) return null
+                    value = next
+                    index++
+                }
+                DOT, EXP_LOWER, EXP_UPPER -> return null
+                else -> return null
+            }
         }
         return if (negative) value else -value
-    }
-
-    private fun RawJson.hasFractionOrExponent(): Boolean {
-        var index = 0
-        if (byteAt(index) == MINUS) index++
-        while (index < storageLength) {
-            when (byteAt(index)) {
-                DOT, EXP_LOWER, EXP_UPPER -> return true
-            }
-            index++
-        }
-        return false
     }
 
     private fun RawJson.decodeJsonStringWithEscapes(contentStart: Int, contentEnd: Int): String {
@@ -270,8 +269,4 @@ internal object RawJsonValueScanner {
     private const val TRUE_CHAR = 't'.code
     private const val FALSE_CHAR = 'f'.code
     private const val ONE = '1'.code
-
-    private val TRUE_LITERAL = "true".encodeToByteArray()
-    private val FALSE_LITERAL = "false".encodeToByteArray()
-    private val NULL_LITERAL = "null".encodeToByteArray()
 }
