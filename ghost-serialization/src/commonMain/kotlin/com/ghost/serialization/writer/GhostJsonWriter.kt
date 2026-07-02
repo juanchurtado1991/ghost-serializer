@@ -368,6 +368,20 @@ class GhostJsonWriter(
     }
 
     /**
+     * Writes a slice of raw JSON bytes directly into the stream without quoting or escaping.
+     */
+    fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonWriter {
+        appendSeparator()
+        buffer.write(bytes, offset, length)
+        needsComma = true
+        return this
+    }
+
+    /** Writes [raw] without copying slice data when possible. */
+    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonWriter =
+        rawValue(raw.storage, raw.storageOffset, raw.storageLength)
+
+    /**
      * Writes a boolean value without a field name or separator.
      */
     @InternalGhostApi

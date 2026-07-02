@@ -15,6 +15,8 @@ import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.StringSerializer
+import com.ghost.serialization.types.RawJson
+import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonStringWriter
 import okio.BufferedSink
@@ -273,6 +275,9 @@ object Ghost {
             }
             Double::class -> {
                 DoubleSerializer as GhostSerializer<T>
+            }
+            RawJson::class -> {
+                RawJsonSerializer as GhostSerializer<T>
             }
             else -> {
                 null

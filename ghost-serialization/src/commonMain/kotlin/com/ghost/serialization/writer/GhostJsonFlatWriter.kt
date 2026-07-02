@@ -364,6 +364,22 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     }
 
     /**
+     * Writes a slice of raw JSON bytes without quoting or escaping.
+     */
+    fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonFlatWriter {
+        appendSeparator()
+        buffer.write(bytes, offset, length)
+        needsComma = true
+        return this
+    }
+
+    /**
+     * Writes [raw] without copying when it aliases the parse input buffer.
+     */
+    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonFlatWriter =
+        rawValue(raw.storage, raw.storageOffset, raw.storageLength)
+
+    /**
      * Writes a boolean value without a field name or separator.
      */
     @InternalGhostApi

@@ -356,6 +356,18 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         return this
     }
 
+    /** Writes a slice of raw JSON bytes after decoding the UTF-8 range. */
+    fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonStringWriter {
+        appendSeparator()
+        buffer.writeString(bytes.decodeToString(offset, offset + length))
+        needsComma = true
+        return this
+    }
+
+    /** Writes [raw] using its storage slice. */
+    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonStringWriter =
+        rawValue(raw.storage, raw.storageOffset, raw.storageLength)
+
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
         if (value) {

@@ -4,6 +4,18 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.GhostJsonConstants as C
+import com.ghost.serialization.types.RawJson
+
+/**
+ * Captures the next complete JSON value as a [RawJson] view into this reader's buffer.
+ */
+fun GhostJsonReader.captureRawJson(): RawJson {
+    skipWhitespace()
+    val start = position
+    captureReaderValueBytes()
+    nextTokenByte = -1
+    return RawJson.fromBufferSlice(rawData, start, position - start)
+}
 
 /**
  * Captures the next complete JSON value as a raw [ByteArray] without decoding.
@@ -12,13 +24,7 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
  * [GhostJsonReader] (non-flat) byte-array source. The reader must be positioned at
  * (or before) the first non-whitespace byte of the value.
  */
-fun GhostJsonReader.captureRawJsonBytes(): ByteArray {
-    skipWhitespace()
-    val start = position
-    captureReaderValueBytes()
-    nextTokenByte = -1
-    return rawData.copyOfRange(start, position)
-}
+fun GhostJsonReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes
 
 private fun GhostJsonReader.captureReaderValueBytes() {
     val data = rawData

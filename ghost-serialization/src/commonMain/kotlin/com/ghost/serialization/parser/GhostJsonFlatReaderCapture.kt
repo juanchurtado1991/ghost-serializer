@@ -4,6 +4,19 @@ package com.ghost.serialization.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.GhostJsonConstants as C
+import com.ghost.serialization.types.RawJson
+
+/**
+ * Captures the next complete JSON value (object, array, string, number, boolean, null)
+ * as a [RawJson] view into this reader's buffer without copying UTF-8 bytes.
+ */
+fun GhostJsonFlatReader.captureRawJson(): RawJson {
+    skipWhitespace()
+    val start = position
+    captureJsonValueBytes()
+    nextTokenByte = C.RESET_TOKEN_BYTE
+    return RawJson.fromBufferSlice(rawData, start, position - start)
+}
 
 /**
  * Captures the next complete JSON value (object, array, string, number, boolean, null)
@@ -19,13 +32,7 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
  * uses the stateful depth/comma machine. This function is a pure byte-level scan that
  * does not touch depth, needsCommaMask, or commaConsumedMask.
  */
-fun GhostJsonFlatReader.captureRawJsonBytes(): ByteArray {
-    skipWhitespace()
-    val start = position
-    captureJsonValueBytes()
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    return rawData.copyOfRange(start, position)
-}
+fun GhostJsonFlatReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes
 
 private fun GhostJsonFlatReader.captureJsonValueBytes() {
     val data = rawData

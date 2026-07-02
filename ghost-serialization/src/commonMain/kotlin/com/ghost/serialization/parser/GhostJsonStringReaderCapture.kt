@@ -1,6 +1,13 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.parser.GhostJsonConstants as C
+import com.ghost.serialization.types.RawJson
+
+/**
+ * Captures the next complete JSON value as owned [RawJson] (UTF-16 source requires encoding).
+ */
+fun GhostJsonStringReader.captureRawJson(): RawJson =
+    RawJson.fromUtf8Bytes(captureRawJsonBytes())
 
 /**
  * Captures the next complete JSON value as a raw [ByteArray] without decoding.
