@@ -31,7 +31,8 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
 internal class GhostCodeGenerator(
     private val properties: List<GhostPropertyModel>,
     private val classDeclaration: KSClassDeclaration,
-    private val textChannel: Boolean = false
+    private val textChannel: Boolean = false,
+    private val envelopeModel: GhostEnvelopeModel? = null
 ) {
 
     private val fullPaths = properties.map {
@@ -210,6 +211,11 @@ internal class GhostCodeGenerator(
 
         return fileBuilder
             .addImport(C.OKIO_PACKAGE, C.STR_BYTESTRING_IMPORT)
+            .apply {
+                if (envelopeModel?.payloadMappings?.any { it.targetType != null } == true) {
+                    addImport(C.PKG_TYPES, C.STR_RAW_JSON_DECODE)
+                }
+            }
             .addType(buildSerializerObject(serializerName))
             .build()
     }
@@ -504,6 +510,14 @@ internal class GhostCodeGenerator(
         }
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
+
+        envelopeModel?.let { envelope ->
+            EnvelopeRouterEmitter(
+                envelope = envelope,
+                originalClassName = originalClassName,
+                flatReaderClass = flatReaderClass
+            ).emit(typeSpecBuilder)
+        }
 
         return typeSpecBuilder
             .addFunction(serializeEmitter.build(streamingWriterClass, typeSpecBuilder))

@@ -63,6 +63,7 @@ class GhostSerializationProcessor(
      * Analyzer that reads declarations and constructs property metadata models.
      */
     private val analyzer = GhostAnalyzer(logger)
+    private val envelopeAnalyzer = EnvelopeAnalyzer(logger)
 
     /**
      * Lazily resolves the output name of the module-level registry class (e.g. `GhostRegistry_module_name`).
@@ -159,7 +160,8 @@ class GhostSerializationProcessor(
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
             properties = propertiesModel,
-            textChannel = textChannel
+            textChannel = textChannel,
+            envelopeModel = envelopeAnalyzer.analyze(classDeclaration, propertiesModel)
         )
 
         val fileSpec = fileGenerator.createSpec()
