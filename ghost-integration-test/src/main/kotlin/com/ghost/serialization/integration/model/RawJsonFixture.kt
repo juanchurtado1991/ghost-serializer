@@ -20,3 +20,9 @@ data class RawJsonAttributeState(
 data class RawJsonListModel(
     val items: List<RawJson>
 )
+
+@GhostSerialization
+data class TagsProbe(
+    val tags: List<String>,
+    val count: Int,
+)
