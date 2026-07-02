@@ -12,12 +12,15 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Benchmarks opaque JSON capture: [RawJson] slice path vs [ByteArray] copy path.
+ * Benchmarks opaque JSON capture: [RawJson] slice path vs [ByteArray] copy path,
+ * across flat bytes and native string channels.
  */
 object RawJsonCaptureBenchmark {
 
     private val smallObjectJson = buildEnvelopeJson(depth = 2, width = 3)
     private val largeObjectJson = buildEnvelopeJson(depth = 4, width = 8)
+    private val encodePayloadJson = """{"id":"bench-1","body":{"nested":true}}"""
+    private val topLevelRawJson = largeObjectJson.substringAfter("\"metadata\":").removeSuffix("}")
 
     fun run(runs: Int, warmupIters: Int) {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
@@ -28,74 +31,150 @@ object RawJsonCaptureBenchmark {
         threadBean.isThreadAllocatedMemoryEnabled = true
 
         println("\n════════════════════════════════════════════════════════════════")
-        println("  👻 RAW JSON CAPTURE — SLICE vs BYTEARRAY BENCHMARK")
+        println("  👻 RAW JSON CAPTURE — BYTES vs STRING CHANNELS")
         println("════════════════════════════════════════════════════════════════")
-        println("  Flat [ByteArray] reader only. $runs runs × ${warmupIters}-iteration warmup.\n")
+        println("  $runs runs × ${warmupIters}-iteration warmup.\n")
 
-        measure(
+        println("  ── Decode (model field with opaque metadata) ──")
+
+        measureBytes(
             threadBean, runs, warmupIters,
-            label = "Decode RawJson field (small metadata, slice capture)",
+            label = "Decode RawJson field (bytes, small, slice capture)",
             json = smallObjectJson
         ) { bytes ->
             Ghost.deserialize<OpaqueMetadataEnvelope>(bytes)
         }
 
-        measure(
+        measureString(
             threadBean, runs, warmupIters,
-            label = "Decode ByteArray field (small metadata, copy capture)",
+            label = "Decode RawJson field (string, small, owned capture)",
+            json = smallObjectJson
+        ) { json ->
+            Ghost.deserialize<OpaqueMetadataEnvelope>(json)
+        }
+
+        measureBytes(
+            threadBean, runs, warmupIters,
+            label = "Decode ByteArray field (bytes, small, copy capture)",
             json = smallObjectJson
         ) { bytes ->
             Ghost.deserialize<OpaqueMetadataByteEnvelope>(bytes)
         }
 
-        measure(
+        measureBytes(
             threadBean, runs, warmupIters,
-            label = "Decode RawJson field (large nested metadata)",
+            label = "Decode RawJson field (bytes, large nested metadata)",
             json = largeObjectJson
         ) { bytes ->
             Ghost.deserialize<OpaqueMetadataEnvelope>(bytes)
         }
 
-        measure(
+        measureString(
             threadBean, runs, warmupIters,
-            label = "Decode ByteArray field (large nested metadata)",
+            label = "Decode RawJson field (string, large nested metadata)",
+            json = largeObjectJson
+        ) { json ->
+            Ghost.deserialize<OpaqueMetadataEnvelope>(json)
+        }
+
+        measureBytes(
+            threadBean, runs, warmupIters,
+            label = "Decode ByteArray field (bytes, large nested metadata)",
             json = largeObjectJson
         ) { bytes ->
             Ghost.deserialize<OpaqueMetadataByteEnvelope>(bytes)
         }
 
-        measure(
+        println("\n  ── Encode (RawJson payload model) ──")
+
+        val encodeModel = Ghost.deserialize<RawJsonPayloadModel>(encodePayloadJson.encodeToByteArray())
+
+        measureBytes(
             threadBean, runs, warmupIters,
-            label = "Encode RawJson payload (slice write)",
-            json = """{"id":"bench-1","body":{"nested":true}}"""
-        ) { bytes ->
-            val model = Ghost.deserialize<RawJsonPayloadModel>(bytes)
-            Ghost.serialize(model)
+            label = "Encode RawJson payload (encodeToBytes, slice write)",
+            json = encodePayloadJson
+        ) {
+            Ghost.encodeToBytes(encodeModel)
         }
 
-        measure(
+        measureString(
             threadBean, runs, warmupIters,
-            label = "Round-trip RawJson top-level",
-            json = largeObjectJson.substringAfter("\"metadata\":").removeSuffix("}")
+            label = "Encode RawJson payload (encodeToString, UTF-8 decode path)",
+            json = encodePayloadJson
+        ) {
+            Ghost.encodeToString(encodeModel)
+        }
+
+        println("\n  ── Top-level RawJson round-trip ──")
+
+        measureBytes(
+            threadBean, runs, warmupIters,
+            label = "Top-level RawJson decode (bytes)",
+            json = topLevelRawJson
+        ) { bytes ->
+            Ghost.deserialize<RawJson>(bytes)
+        }
+
+        measureString(
+            threadBean, runs, warmupIters,
+            label = "Top-level RawJson decode (string)",
+            json = topLevelRawJson
+        ) { json ->
+            Ghost.deserialize<RawJson>(json)
+        }
+
+        measureBytes(
+            threadBean, runs, warmupIters,
+            label = "Top-level RawJson round-trip (bytes in/out)",
+            json = topLevelRawJson
         ) { bytes ->
             val value = Ghost.deserialize<RawJson>(bytes)
-            Ghost.serialize(value)
+            Ghost.encodeToBytes(value)
+        }
+
+        measureString(
+            threadBean, runs, warmupIters,
+            label = "Top-level RawJson round-trip (string in/out)",
+            json = topLevelRawJson
+        ) { json ->
+            val value = Ghost.deserialize<RawJson>(json)
+            Ghost.encodeToString(value)
         }
 
         println("════════════════════════════════════════════════════════════════\n")
     }
 
-    private inline fun <T> measure(
+    private inline fun measureBytes(
         threadBean: ThreadMXBean,
         runs: Int,
         warmupIters: Int,
         label: String,
         json: String,
-        crossinline block: (ByteArray) -> T
+        crossinline block: (ByteArray) -> Any?
     ) {
         val payload = json.encodeToByteArray()
         repeat(warmupIters) { block(payload) }
+        report(threadBean, runs, label, block = { block(payload) })
+    }
 
+    private inline fun measureString(
+        threadBean: ThreadMXBean,
+        runs: Int,
+        warmupIters: Int,
+        label: String,
+        json: String,
+        crossinline block: (String) -> Any?
+    ) {
+        repeat(warmupIters) { block(json) }
+        report(threadBean, runs, label, block = { block(json) })
+    }
+
+    private inline fun report(
+        threadBean: ThreadMXBean,
+        runs: Int,
+        label: String,
+        crossinline block: () -> Any?
+    ) {
         val threadId = Thread.currentThread().id
         var totalNanos = 0L
         var totalAlloc = 0L
@@ -103,7 +182,7 @@ object RawJsonCaptureBenchmark {
         repeat(runs) {
             val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
             val timeBefore = System.nanoTime()
-            block(payload)
+            block()
             totalNanos += System.nanoTime() - timeBefore
             totalAlloc += threadBean.getThreadAllocatedBytes(threadId) - allocBefore
         }
@@ -111,7 +190,7 @@ object RawJsonCaptureBenchmark {
         val avgMicros = totalNanos / runs / 1_000.0
         val avgBytes = totalAlloc / runs
         println(
-            "  %-52s  %8.2f µs/op   %8d B/op".format(
+            "  %-58s  %8.2f µs/op   %8d B/op".format(
                 label,
                 avgMicros,
                 avgBytes
