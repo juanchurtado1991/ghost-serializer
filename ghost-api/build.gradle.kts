@@ -18,8 +18,8 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies { 
-            // Core annotations only. Keep it zero-dependency.
+        commonMain.dependencies {
+            // Core annotations and types only. Keep runtime deps zero.
         }
     }
 }
