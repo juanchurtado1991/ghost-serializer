@@ -31,7 +31,8 @@ class JsonReaderOptions(
     @PublishedApi internal val multiplier: Int,
     @PublishedApi internal val tableSize: Int,
     @PublishedApi internal val rawStrings: Array<String>,
-    @PublishedApi internal val enableStringDispatch: Boolean = false
+    @PublishedApi internal val enableStringDispatch: Boolean = false,
+    @PublishedApi internal val extendedKeyHash: Boolean? = null
 ) {
     @PublishedApi
     internal val dispatch = IntArray(tableSize) { -1 }
@@ -81,7 +82,11 @@ class JsonReaderOptions(
                 }
             }
         }
-        hasCollisions = detectedCollision
+        hasCollisions = if (extendedKeyHash == true) {
+            true
+        } else {
+            detectedCollision
+        }
 
         val tableMask = tableSize - 1
         for (index in rawBytes.indices) {
@@ -206,7 +211,28 @@ class JsonReaderOptions(
                 multiplier,
                 tableSize,
                 rawStrings,
-                enableStringDispatch
+                enableStringDispatch = enableStringDispatch
+            )
+        }
+
+        fun of(
+            shift: Int,
+            multiplier: Int,
+            tableSize: Int,
+            enableStringDispatch: Boolean,
+            extendedKeyHash: Boolean,
+            vararg names: String
+        ): JsonReaderOptions {
+            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }
+            val rawStrings = Array(names.size) { names[it] }
+            return JsonReaderOptions(
+                rawBytes,
+                shift,
+                multiplier,
+                tableSize,
+                rawStrings,
+                enableStringDispatch = enableStringDispatch,
+                extendedKeyHash = extendedKeyHash
             )
         }
 

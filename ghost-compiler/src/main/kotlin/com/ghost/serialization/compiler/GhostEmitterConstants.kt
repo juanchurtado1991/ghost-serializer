@@ -464,6 +464,7 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_VAR_VALUE_DECL = "var %LValue: %T = %L"
     const val STR_MASK_INDEX_FMT = "mask%d"
     const val TEMPLATE_OPTIONS_OF_SEEDS_START = "%T.of(%L, %L, %L, %L"
+    const val TEMPLATE_OPTIONS_OF_SEEDS_EXTENDED_START = "%T.of(%L, %L, %L, %L, %L"
     const val STR_ERR_TEXT_CHANNEL_DISABLED = "String deserialization is disabled. Please configure arg(\"ghost.textChannel\", \"true\") in your KSP options to use the String parser."
     const val STR_HS_PREFIX = "HS_"
     const val TEMPLATE_OPTIONS_OF = "%T.of("

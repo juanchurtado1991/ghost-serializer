@@ -512,16 +512,15 @@ internal class GhostCodeGenerator(
                     ?: it.jsonName
             }.distinct()
         }
-        val (shift, multiplier, tableSize) = PerfectHashFinder.findPerfectHash(names)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names)
 
         val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
-        val optionsBuilder = CodeBlock.builder()
-            .add(C.TEMPLATE_OPTIONS_OF_SEEDS_START, optionsClass, shift, multiplier, tableSize, textChannel)
-
-        names.forEach { name ->
-            optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
-        }
-        optionsBuilder.add(")")
+        val optionsBuilder = buildReaderOptionsInitializer(
+            optionsClass = optionsClass,
+            hashConfig = hashConfig,
+            textChannel = textChannel,
+            names = names
+        )
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(
@@ -529,9 +528,43 @@ internal class GhostCodeGenerator(
                 optionsClass
             )
                 .addModifiers(KModifier.PRIVATE)
-                .initializer(optionsBuilder.build())
+                .initializer(optionsBuilder)
                 .build()
         )
+    }
+
+    private fun buildReaderOptionsInitializer(
+        optionsClass: ClassName,
+        hashConfig: PerfectHashConfig,
+        textChannel: Boolean,
+        names: List<String>
+    ): CodeBlock {
+        val optionsBuilder = CodeBlock.builder()
+        if (hashConfig.extendedKeyHash) {
+            optionsBuilder.add(
+                C.TEMPLATE_OPTIONS_OF_SEEDS_EXTENDED_START,
+                optionsClass,
+                hashConfig.shift,
+                hashConfig.multiplier,
+                hashConfig.tableSize,
+                textChannel,
+                true
+            )
+        } else {
+            optionsBuilder.add(
+                C.TEMPLATE_OPTIONS_OF_SEEDS_START,
+                optionsClass,
+                hashConfig.shift,
+                hashConfig.multiplier,
+                hashConfig.tableSize,
+                textChannel
+            )
+        }
+        names.forEach { name ->
+            optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
+        }
+        optionsBuilder.add(")")
+        return optionsBuilder.build()
     }
 
     /**
@@ -583,26 +616,24 @@ internal class GhostCodeGenerator(
      * @param readerClass The JSON reader class reference.
      */
     private fun addEnumOptions(typeSpecBuilder: TypeSpec.Builder, readerClass: ClassName) {
-        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
-        val enumOptionsBuilder = CodeBlock.builder()
-            .add(C.TEMPLATE_OPTIONS_OF, optionsClass)
-
         val values = enumValues!!.values.toList()
-        values.forEachIndexed { index, serialName ->
-            if (index > 0) {
-                enumOptionsBuilder.add(C.STR_COMMA_SPACE)
-            }
-            enumOptionsBuilder.add(C.STR_FORMAT_S, serialName)
-        }
-        enumOptionsBuilder.add(C.STR_PAREN)
+        val hashConfig = PerfectHashFinder.findPerfectHash(values)
 
+        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
         typeSpecBuilder.addProperty(
             PropertySpec.builder(
                 C.STR_ENUM_OPTIONS,
                 optionsClass
             )
                 .addModifiers(KModifier.PRIVATE)
-                .initializer(enumOptionsBuilder.build())
+                .initializer(
+                    buildReaderOptionsInitializer(
+                        optionsClass = optionsClass,
+                        hashConfig = hashConfig,
+                        textChannel = textChannel,
+                        names = values
+                    )
+                )
                 .build()
         )
     }

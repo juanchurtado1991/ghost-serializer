@@ -103,6 +103,41 @@ class GhostBugFixKspTest {
         )
     }
 
+    // Fix 5: enum wire values with overlapping prefixes use PerfectHashFinder for ENUM_OPTIONS
+    @Test
+    fun enumOptionsUsePerfectHashFinderForOverlappingWireValues() {
+        val (compilation, result) = compile(
+            SourceFile.kotlin(
+                "LocationPermission.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostFallback
+                import com.ghost.serialization.annotations.GhostName
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                @GhostFallback
+                enum class LocationPermission {
+                    @GhostName("w:locations") WRITE_LOCATIONS,
+                    @GhostName("w:locations:currentmode") WRITE_LOCATIONS_CURRENT_MODE,
+                    @GhostName("w:locations:geo") WRITE_LOCATIONS_GEO_COORDINATES,
+                    @GhostName("unknown") UNKNOWN
+                }
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val generated = compilation.kspSourcesDir.walk().filter { it.name == "LocationPermissionSerializer.kt" }
+            .map { it.readText() }.firstOrNull()
+        assertTrue(generated != null, "LocationPermissionSerializer.kt not generated")
+        assertTrue(
+            Regex("JsonReaderOptions\\.of\\(\\d+,").containsMatchIn(generated!!),
+            "Expected ENUM_OPTIONS to use computed perfect-hash seeds, got:\n$generated"
+        )
+    }
+
     // Fix 4: ByteArray field compiles and generates isByteArray path
     @Test
     fun compilesModelWithByteArrayField() {

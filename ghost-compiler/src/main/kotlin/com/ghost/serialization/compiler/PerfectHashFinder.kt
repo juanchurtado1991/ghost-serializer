@@ -4,6 +4,13 @@ package com.ghost.serialization.compiler
 
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
+internal data class PerfectHashConfig(
+    val shift: Int,
+    val multiplier: Int,
+    val tableSize: Int,
+    val extendedKeyHash: Boolean
+)
+
 internal object PerfectHashFinder {
 
     /**
@@ -34,39 +41,37 @@ internal object PerfectHashFinder {
      * *Each shift (<< 8, << 16, etc.) just pushes the byte into its assigned slot.*
      *
      * @param names The list of unique field names to index.
-     * @return A [Pair] containing the optimal shift and multiplier.
+     * @return Optimal hash parameters and whether extended key hashing is required at runtime.
      */
-    fun findPerfectHash(names: List<String>): Triple<Int, Int, Int> {
+    fun findPerfectHash(names: List<String>): PerfectHashConfig {
         if (names.isEmpty()) {
-            return Triple(0, C.HASH_MULTIPLIER_START, 128)
+            return PerfectHashConfig(0, C.HASH_MULTIPLIER_START, 128, extendedKeyHash = false)
         }
-        val rawBytes = names.map {
-            it.encodeToByteArray()
+        findPerfectHashInternal(names, useExtendedKeyHash = false)?.let { (shift, multiplier, tableSize) ->
+            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = false)
+        }
+        findPerfectHashInternal(names, useExtendedKeyHash = true)?.let { (shift, multiplier, tableSize) ->
+            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = true)
+        }
+        throw IllegalStateException(
+            C.STR_ERR_PERFECT_HASH_COLLISION_1 + names.joinToString() + C.STR_ERR_PERFECT_HASH_COLLISION_2
+        )
+    }
+
+    private fun findPerfectHashInternal(
+        names: List<String>,
+        useExtendedKeyHash: Boolean
+    ): Triple<Int, Int, Int>? {
+        val rawBytes = names.map { it.encodeToByteArray() }
+        val hasCollisions = if (useExtendedKeyHash) {
+            true
+        } else {
+            detectPrefixLengthCollisions(rawBytes)
         }
 
-        // Mirror the runtime JsonReaderOptions collision detection logic
-        var hasCollisions = false
-        val seen = HashSet<Long>()
-        for (bytes in rawBytes) {
-            if (bytes.isNotEmpty()) {
-                var mask = 0L
-                if (bytes.size >= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
-                if (bytes.size >= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
-                if (bytes.size >= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
-                if (bytes.size >= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
-                val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)
-                if (!seen.add(packed)) {
-                    hasCollisions = true
-                    break
-                }
-            }
-        }
-
-        // Try table sizes: 128, 256, 512, 1024, 2048, 4096, 8192
         val tableSizes = listOf(128, 256, 512, 1024, 2048, 4096, 8192)
         for (tableSize in tableSizes) {
             val tableMask = tableSize - 1
-            // Brute force search for a collision-free multiplier and shift for 4-byte hashing
             for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
                 for (shift in 0..C.HASH_SHIFT_LIMIT) {
                     val dispatch = IntArray(tableSize) { -1 }
@@ -74,26 +79,7 @@ internal object PerfectHashFinder {
                     for (index in rawBytes.indices) {
                         val bytes = rawBytes[index]
                         if (bytes.isNotEmpty()) {
-                            var key = 0
-                            if (bytes.size >= C.VAL_ONE) {
-                                key = key or (bytes[C.VAL_ZERO].toInt() and C.BYTE_MASK)
-                            }
-                            if (bytes.size >= C.VAL_TWO) {
-                                key = key or ((bytes[C.VAL_ONE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
-                            }
-                            if (bytes.size >= C.VAL_THREE) {
-                                key = key or ((bytes[C.VAL_TWO].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
-                            }
-                            if (bytes.size >= C.VAL_FOUR) {
-                                key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
-                            }
-                            if (hasCollisions) {
-                                // Canonical collision polynomial — must match the hasCollisions block in
-                                // computeKeyHash (all reader subsystems) and JsonReaderOptions.init.
-                                var ci = C.VAL_FOUR
-                                while (ci < bytes.size) { key = key * C.COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and C.BYTE_MASK); ci++ }
-                            }
-
+                            val key = computeDispatchKey(bytes, hasCollisions)
                             val hash = ((key * multiplier + bytes.size) shr shift) and tableMask
                             if (dispatch[hash] == -1) {
                                 dispatch[hash] = index
@@ -109,8 +95,48 @@ internal object PerfectHashFinder {
                 }
             }
         }
-        throw IllegalStateException(
-            C.STR_ERR_PERFECT_HASH_COLLISION_1 + names.joinToString() + C.STR_ERR_PERFECT_HASH_COLLISION_2
-        )
+        return null
+    }
+
+    private fun detectPrefixLengthCollisions(rawBytes: List<ByteArray>): Boolean {
+        val seen = HashSet<Long>()
+        for (bytes in rawBytes) {
+            if (bytes.isNotEmpty()) {
+                var mask = 0L
+                if (bytes.size >= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
+                if (bytes.size >= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
+                if (bytes.size >= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
+                if (bytes.size >= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
+                val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)
+                if (!seen.add(packed)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private fun computeDispatchKey(bytes: ByteArray, hasCollisions: Boolean): Int {
+        var key = 0
+        if (bytes.size >= C.VAL_ONE) {
+            key = key or (bytes[C.VAL_ZERO].toInt() and C.BYTE_MASK)
+        }
+        if (bytes.size >= C.VAL_TWO) {
+            key = key or ((bytes[C.VAL_ONE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
+        }
+        if (bytes.size >= C.VAL_THREE) {
+            key = key or ((bytes[C.VAL_TWO].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
+        }
+        if (bytes.size >= C.VAL_FOUR) {
+            key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
+        }
+        if (hasCollisions) {
+            var ci = C.VAL_FOUR
+            while (ci < bytes.size) {
+                key = key * C.COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and C.BYTE_MASK)
+                ci++
+            }
+        }
+        return key
     }
 }
