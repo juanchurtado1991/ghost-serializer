@@ -20,7 +20,9 @@ class GhostEmitterConstantsTest {
     }
 
     @Test
-    fun serializerSuffix_isConsistent() {
-        assertEquals("Serializer", GhostEmitterConstants.STR_SERIALIZER_SUFFIX)
+    fun envelopeEmitterTemplates_areCentralized() {
+        assertEquals("TargetSerializer", GhostEmitterConstants.STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX)
+        assertTrue(GhostEmitterConstants.STR_ENVELOPE_PARSE_BYTES_ROUTE.contains("deserialize"))
+        assertTrue(GhostEmitterConstants.TEMPLATE_ENVELOPE_FIELD_ACCESS.contains("envelope"))
     }
 }
