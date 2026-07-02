@@ -547,4 +547,10 @@ internal object GhostEmitterConstants {
     const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_1 = "GhostJsonEnvelope: payload property '"
     const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_2 = "' must be nullable RawJson."
     const val STR_ERR_ENVELOPE_PAYLOAD_VALUE = "GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value."
+
+    // GeneratedSourceTrimmer
+    const val STR_NEWLINE = "\n"
+    const val STR_EXT_KT = "kt"
+    const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
+        """^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$"""
 }

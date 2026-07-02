@@ -61,7 +61,7 @@ internal class SerializerSetupEmitter(
             if (ctx.textChannel) {
                 typeSpecBuilder.addProperty(
                     PropertySpec.builder(C.STR_HS_PREFIX + cleanName, String::class, KModifier.PRIVATE)
-                        .initializer("%S", C.FMT_JSON_FIELD.format(name))
+                        .initializer(C.STR_FORMAT_S, C.FMT_JSON_FIELD.format(name))
                         .build()
                 )
             }
@@ -147,7 +147,7 @@ internal class SerializerSetupEmitter(
         names.forEach { name ->
             optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
         }
-        optionsBuilder.add(")")
+        optionsBuilder.add(C.STR_PAREN_CLOSE)
         return optionsBuilder.build()
     }
 

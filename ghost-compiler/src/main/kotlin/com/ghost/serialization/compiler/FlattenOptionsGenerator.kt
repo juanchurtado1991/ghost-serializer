@@ -130,7 +130,7 @@ internal object FlattenOptionsGenerator {
         names.forEach { name ->
             optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
         }
-        optionsBuilder.add(")")
+        optionsBuilder.add(C.STR_PAREN_CLOSE)
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(optionsName, optionsClass)

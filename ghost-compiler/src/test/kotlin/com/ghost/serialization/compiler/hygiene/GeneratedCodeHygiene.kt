@@ -1,5 +1,7 @@
 package com.ghost.serialization.compiler.hygiene
 
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
+
 /**
  * Static analysis helpers for generated Ghost serializer sources.
  *
@@ -7,6 +9,8 @@ package com.ghost.serialization.compiler.hygiene
  * when specific features are enabled (text channel, RawJson vs ByteArray, etc.).
  */
 internal object GeneratedCodeHygiene {
+
+    private val redundantKotlinImport = Regex(C.REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT)
 
     data class Violation(
         val kind: Kind,
@@ -138,7 +142,7 @@ internal object GeneratedCodeHygiene {
             )
         }
         parseImports(source).forEach { import ->
-            if (REDUNDANT_KOTLIN_IMPORT.matches(import.rawLine.trim())) {
+            if (redundantKotlinImport.matches(import.rawLine.trim())) {
                 violations += Violation(
                     Violation.Kind.FORBIDDEN_IMPORT,
                     "$fileLabel: redundant stdlib import `${import.rawLine.trim()}`",
@@ -159,10 +163,6 @@ internal object GeneratedCodeHygiene {
             }
         return violations
     }
-
-    private val REDUNDANT_KOTLIN_IMPORT = Regex(
-        """^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$""",
-    )
 
     fun parseImports(source: String): List<Import> {
         return source.lineSequence()

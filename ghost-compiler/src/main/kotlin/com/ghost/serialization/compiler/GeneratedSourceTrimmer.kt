@@ -3,6 +3,7 @@ package com.ghost.serialization.compiler
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.FileSpec
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Post-processes KotlinPoet output to drop redundant stdlib imports that Kotlin
@@ -10,14 +11,12 @@ import com.squareup.kotlinpoet.FileSpec
  */
 internal object GeneratedSourceTrimmer {
 
-    private val REDUNDANT_KOTLIN_IMPORT = Regex(
-        """^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$""",
-    )
+    private val redundantKotlinImport = Regex(C.REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT)
 
     fun trim(source: String): String {
         return source.lineSequence()
-            .filterNot { line -> REDUNDANT_KOTLIN_IMPORT.matches(line.trim()) }
-            .joinToString("\n")
+            .filterNot { line -> redundantKotlinImport.matches(line.trim()) }
+            .joinToString(C.STR_NEWLINE)
     }
 }
 
@@ -30,7 +29,7 @@ internal fun FileSpec.writeTrimmedTo(
         dependencies = dependencies,
         packageName = packageName,
         fileName = name,
-        extensionName = "kt",
+        extensionName = C.STR_EXT_KT,
     ).use { stream ->
         stream.write(content.toByteArray(Charsets.UTF_8))
     }
