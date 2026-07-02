@@ -257,7 +257,7 @@ internal class GhostCodeGenerator(
         allTypes: List<String>,
         hasNullable: Boolean
     ) {
-        val hasList = properties.any { it.isList } ||
+        val hasList = properties.any { it.isList || it.isSet } ||
                 allTypes.any { it.contains(C.STR_LIST) || it.contains(C.STR_SET) }
 
         val hasMap = properties.any { it.isMap } || allTypes.any { it.contains(C.STR_MAP) }
@@ -266,6 +266,7 @@ internal class GhostCodeGenerator(
             fileBuilder.addImport(
                 C.PKG_PARSER,
                 C.STR_READ_LIST,
+                C.STR_READ_SET,
                 C.STR_BEGIN_ARRAY,
                 C.STR_END_ARRAY
             )
@@ -332,6 +333,22 @@ internal class GhostCodeGenerator(
             fileBuilder.addImport(
                 C.PKG_PARSER,
                 C.STR_NEXT_FLOAT_NAME
+            )
+        }
+        if (allTypeStrings.contains(C.K_BYTE) || allTypeStrings.contains(C.K_SHORT) ||
+            properties.any { it.type.isPrimitiveByte() || it.type.isPrimitiveShort() }
+        ) {
+            fileBuilder.addImport(
+                C.PKG_PARSER,
+                C.STR_NEXT_INT_NAME
+            )
+        }
+        if (allTypeStrings.contains(C.K_CHAR) ||
+            properties.any { it.type.isPrimitiveChar() }
+        ) {
+            fileBuilder.addImport(
+                C.PKG_PARSER,
+                C.STR_NEXT_CHAR_NAME
             )
         }
         if (allTypeStrings.contains(C.STR_BOOLEAN)) {
@@ -698,11 +715,13 @@ internal class GhostCodeGenerator(
             if (!prop.isNullable && !prop.hasDefaultValue) {
                 val key = C.STR_DOUBLE_QUOTE + prop.jsonName + C.STR_DOUBLE_QUOTE
                 val value = when {
-                    prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() -> C.STR_ZERO
+                    prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() ||
+                        prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -> C.STR_ZERO
                     prop.type.isPrimitiveDouble() || prop.type.isPrimitiveFloat() -> C.STR_ZERO_D
                     prop.type.isPrimitiveBoolean() -> C.STR_FALSE
+                    prop.type.isPrimitiveChar() -> C.STR_JSON_CHAR_NULL
                     prop.type.isString() -> C.STR_EMPTY_STRING
-                    prop.type.isList() -> C.STR_EMPTY_ARRAY
+                    prop.type.isList() || prop.type.isSet() -> C.STR_EMPTY_ARRAY
                     prop.type.isMap() -> C.STR_EMPTY_JSON
                     prop.type.isGhost() -> C.STR_EMPTY_JSON
                     else -> C.STR_NULL

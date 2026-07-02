@@ -39,6 +39,7 @@ internal data class InferredSubclassModel(
  * @property isNullable True if the property's type is marked nullable.
  * @property isGhost True if the property's type is itself annotated with @GhostSerialization.
  * @property isList True if the property type is a [List].
+ * @property isSet True if the property type is a [Set].
  * @property isEnum True if the property type is an [Enum].
  * @property listInnerType The resolved [KSType] of the generic element inside the list, if applicable.
  * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
@@ -71,6 +72,7 @@ internal data class GhostPropertyModel(
     val isNullable: Boolean,
     val isGhost: Boolean,
     val isList: Boolean,
+    val isSet: Boolean = false,
     val isEnum: Boolean,
     val listInnerType: KSType? = null,
     val listInnerIsGhost: Boolean = false,

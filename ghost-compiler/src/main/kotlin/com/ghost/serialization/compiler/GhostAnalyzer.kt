@@ -134,6 +134,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                     isNullable = false,
                     isGhost = false,
                     isList = false,
+                    isSet = false,
                     isEnum = true,
                     enumValues = enumValues
                 )
@@ -168,7 +169,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                             kotlinName = C.STR_EMPTY, jsonName = C.STR_EMPTY,
                             type = classDeclaration.asType(emptyList()),
                             typeName = classDeclaration.toClassName(),
-                            isNullable = false, isGhost = false, isList = false, isEnum = false,
+                            isNullable = false, isGhost = false, isList = false, isSet = false, isEnum = false,
                             inferredSubclasses = inferredSubclasses
                         )
                     )
@@ -218,9 +219,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val qualifiedName = type.declaration.qualifiedName?.asString()
 
         val isList = qualifiedName == C.LIST_QUALIFIED
+        val isSet = qualifiedName == C.SET_QUALIFIED
         val isMap = qualifiedName == C.MAP_QUALIFIED
 
-        val innerType = if (isList) {
+        val innerType = if (isList || isSet) {
             resolveFirstTypeArg(type)
         } else {
             null
@@ -268,6 +270,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             isNullable = type.isMarkedNullable,
             isGhost = isGhostType(type),
             isList = isList,
+            isSet = isSet,
             listInnerType = innerType,
             isEnum = isEnumType(type),
             listInnerIsGhost = innerType?.let { isGhostType(it) } ?: false,
@@ -288,7 +291,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             isSealedClass = isSealedClass(type),
             sealedSubclasses = resolveSealedSubclassesForType(type),
             isResilient = isResilientProperty(prop),
-            isContextual = isContextualType(type, isList, isMap, isPrimitiveArray),
+            isContextual = isContextualType(type, isList, isSet, isMap, isPrimitiveArray),
             customDecoder = customDecoder,
             customEncoder = customEncoder,
             flattenPath = flattenPath,
@@ -390,10 +393,11 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     private fun isContextualType(
         type: KSType,
         isList: Boolean,
+        isSet: Boolean,
         isMap: Boolean,
         isPrimitiveArray: Boolean
     ): Boolean {
-        if (isList || isMap || isPrimitiveArray) {
+        if (isList || isSet || isMap || isPrimitiveArray) {
             return false
         }
         if (isGhostType(type)) {

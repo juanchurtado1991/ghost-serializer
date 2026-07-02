@@ -280,11 +280,23 @@ internal abstract class BaseSerializeEmitter(
             typeName == C.K_FLOAT -> {
                 code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)
             }
+            typeName == C.K_BYTE -> {
+                code.addStatement("writer.value(%L.toInt())", accessor)
+            }
+            typeName == C.K_SHORT -> {
+                code.addStatement("writer.value(%L.toInt())", accessor)
+            }
+            typeName == C.K_CHAR -> {
+                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+            }
             typeName == C.K_BYTE_ARRAY -> {
                 code.addStatement(C.STR_WRITER_RAW_VALUE_L, accessor)
             }
             type.isList() -> {
                 emitList(code, type, accessor)
+            }
+            type.isSet() -> {
+                emitSet(code, type, accessor)
             }
             type.isMap() -> {
                 emitMap(code, type, accessor)
@@ -317,6 +329,25 @@ internal abstract class BaseSerializeEmitter(
         code.addStatement("val %L = %L.size", sizeVar, accessor)
         code.beginControlFlow("for (%L in 0 until %L)", indexVar, sizeVar)
         code.addStatement("val %L = %L[%L]", itemVar, accessor, indexVar)
+        val innerType = type.arguments.firstOrNull()?.type?.resolve()
+
+        if (innerType != null) {
+            emitTypeValue(code, innerType, itemVar, skipNullCheck = false)
+        } else {
+            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)
+        }
+        code.endControlFlow()
+        code.addStatement(C.STR_WRITER_END_ARR)
+    }
+
+    /**
+     * Emits set collection serialization — iterates elements without materializing a [List].
+     */
+    private fun emitSet(code: CodeBlock.Builder, type: KSType, accessor: Any) {
+        val slot = loopCounter++
+        val itemVar = C.STR_ITEM_PREFIX + slot
+        code.addStatement(C.STR_WRITER_BEGIN_ARR)
+        code.beginControlFlow("for (%L in %L)", itemVar, accessor)
         val innerType = type.arguments.firstOrNull()?.type?.resolve()
 
         if (innerType != null) {

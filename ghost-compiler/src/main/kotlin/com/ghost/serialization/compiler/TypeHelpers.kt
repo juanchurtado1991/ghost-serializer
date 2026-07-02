@@ -73,6 +73,18 @@ internal fun KSType.isPrimitiveFloat(): Boolean {
     return nonNullTypeName() == FLOAT
 }
 
+internal fun KSType.isPrimitiveByte(): Boolean {
+    return declaration.qualifiedName?.asString() == C.K_BYTE
+}
+
+internal fun KSType.isPrimitiveShort(): Boolean {
+    return declaration.qualifiedName?.asString() == C.K_SHORT
+}
+
+internal fun KSType.isPrimitiveChar(): Boolean {
+    return declaration.qualifiedName?.asString() == C.K_CHAR
+}
+
 /**
  * Checks whether this type is a supported standard JVM/Kotlin primitive.
  */
@@ -81,7 +93,10 @@ internal fun KSType.isPrimitive(): Boolean {
         isPrimitiveBoolean() ||
         isPrimitiveLong() ||
         isPrimitiveDouble() ||
-        isPrimitiveFloat()
+        isPrimitiveFloat() ||
+        isPrimitiveByte() ||
+        isPrimitiveShort() ||
+        isPrimitiveChar()
 }
 
 /**
@@ -89,6 +104,13 @@ internal fun KSType.isPrimitive(): Boolean {
  */
 internal fun KSType.isList(): Boolean {
     return declaration.qualifiedName?.asString() == C.LIST_QUALIFIED
+}
+
+/**
+ * Checks whether this type matches the standard [Set] type.
+ */
+internal fun KSType.isSet(): Boolean {
+    return declaration.qualifiedName?.asString() == C.SET_QUALIFIED
 }
 
 /**

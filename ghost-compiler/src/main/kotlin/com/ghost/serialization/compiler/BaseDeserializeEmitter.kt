@@ -255,6 +255,19 @@ internal abstract class BaseDeserializeEmitter(
             type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG)
             type.isPrimitiveDouble() -> CodeBlock.of(C.STR_NEXT_DOUBLE)
             type.isPrimitiveFloat() -> CodeBlock.of(C.STR_NEXT_FLOAT)
+            type.isPrimitiveByte() -> CodeBlock.of(C.STR_NEXT_BYTE)
+            type.isPrimitiveShort() -> CodeBlock.of(C.STR_NEXT_SHORT)
+            type.isPrimitiveChar() -> CodeBlock.of(C.STR_NEXT_CHAR)
+
+            type.isSet() -> {
+                val inner = type.arguments.firstOrNull()?.type?.resolve()
+                    ?: return CodeBlock.of(C.STR_NEXT_STRING)
+
+                CodeBlock.of(
+                    C.STR_READ_SET_TEMPLATE,
+                    buildTypeReaderCall(inner)
+                )
+            }
 
             type.isList() -> {
                 val inner = type.arguments.firstOrNull()?.type?.resolve()
