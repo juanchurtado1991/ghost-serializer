@@ -225,11 +225,38 @@ data class AttributeState(
 
 | Type | Wire behavior | Public API |
 |:---|:---|:---|
-| `RawJson` | Inline JSON passthrough via `captureRawJson()` slice (flat bytes) or owned bytes (string reader) | `decodeToString()`, `contentEquals()`, slice fields `storage`/`storageOffset`/`storageLength` |
+| `RawJson` | Inline JSON passthrough via `captureRawJson()` slice (flat bytes) or owned bytes (string reader) | `kind()`, scalar accessors (`asBooleanOrNull`, `asStringOrNull`, `asDisplayString`, …), `decodeAs<T>()` (ghost-serialization), `decodeToString()`, `contentEquals()` |
 | `ByteArray` | Inline passthrough via `captureRawJsonBytes()` (always copies) | Ambiguous name; reference `equals` in `data class` |
 | `String` / nested wrapper | Parsed or quoted — **not** opaque passthrough | Avoid for arbitrary JSON |
 
 `RawJson` bytes include JSON delimiters (quotes for strings, brackets for objects/arrays). Two `RawJson` values compare with `==` (content-based `equals`/`hashCode`). When asserting against `ByteArray` or expected JSON text in tests, use `contentEquals()` or `decodeToString()`.
+
+### Scalar access (Gson `JsonElement` migration)
+
+Classify and coerce captured JSON **without building a parse tree**. `kind()` and `isJsonNull` read only the first token (zero allocation). Integer parsing avoids UTF-8 string materialization when the wire form is a plain JSON integer.
+
+```kotlin
+when (state.value?.kind()) {
+    RawJsonKind.BOOLEAN -> toggle(state.value!!.asBooleanOrNull() == true)
+    RawJsonKind.STRING -> label(state.value!!.asStringOrNull().orEmpty())
+    RawJsonKind.NUMBER -> label(state.value!!.asDisplayString())
+    RawJsonKind.NULL -> clear()
+    else -> { /* object/array — parse on demand */ }
+}
+
+// Second-stage typed parse without copying the slice (bytes channel):
+val product = record.metadata?.decodeAs<Product>()
+```
+
+| API | Allocations | Notes |
+|:---|:---|:---|
+| `kind()` / `isJsonNull` | **0** | First-byte / literal match on slice |
+| `asBooleanOrNull()` | **0** | `true` / `false` / `null` literals only |
+| `asIntOrNull()` / `asLongOrNull()` | **0** | Integer wire form only (no `.` / `e`) |
+| `asDoubleOrNull()` | **0** or 1 | Integer fast path; fraction/exponent decodes UTF-8 once |
+| `asStringOrNull()` | **0–1** | ASCII without `\` decodes slice directly |
+| `asDisplayString()` | **0–1** | UI/scalar display; objects return full JSON text |
+| `decodeAs<T>()` | **0** copy on slice | Uses `GhostJsonFlatReader.resetSlice` (ghost-serialization) |
 
 See also: **[Type System — Opaque JSON & alternatives](type-system.md#1-supported-out-of-the-box)** and **[Not supported](type-system.md#3-not-supported)**.
 

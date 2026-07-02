@@ -18,7 +18,7 @@ These work on `@GhostSerialization` fields and as nested generic arguments (`Lis
 | **Collections** | `List<T>`, `Set<T>`, `Map<String, V>` | `Set` wire format is a JSON array; decode builds `HashSet` directly (no intermediate `List`). Map keys **must** be `String`. |
 | **Your models** | `data class`, `enum class`, `sealed class` / `sealed interface` | Class must be annotated with `@GhostSerialization`. Sealed subclasses must also be annotated. |
 | **Inline types** | `@JvmInline value class` | Serialized as the underlying property type (e.g. `UserId(Int)` → JSON number). |
-| **Opaque JSON** | [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt), `ByteArray` | Inline JSON passthrough — object, array, string, number, boolean, or null. Prefer **`RawJson`** on public API fields. Also works in `List<RawJson>` and `Map<String, RawJson>`. |
+| **Opaque JSON** | [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt), `ByteArray` | Inline JSON passthrough — object, array, string, number, boolean, or null. Prefer **`RawJson`**. Scalar accessors: `kind()`, `asBooleanOrNull()`, `asStringOrNull()`, `asDisplayString()`, … (`ghost-api`); typed re-parse: `decodeAs<T>()` (`ghost-serialization`). |
 
 ### Top-level `Ghost.deserialize<T>()` / `encodeToBytes<T>()`
 
