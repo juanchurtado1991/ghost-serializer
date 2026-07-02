@@ -160,6 +160,28 @@ object RawJsonCaptureBenchmark {
             accessRaw.asDisplayString()
         }
 
+        println("\n  ── JsonEnvelope routing (SSE-style fat envelope) ──")
+
+        val sseJson = """
+            {"eventType":"DEVICE_EVENT","eventTime":42,"deviceEvent":{"deviceId":"abc"}}
+        """.trimIndent()
+
+        measureBytes(
+            threadBean, runs, warmupIters,
+            label = "SseEventEnvelope.parsePayload (bytes)",
+            json = sseJson
+        ) { bytes ->
+            com.ghost.serialization.integration.model.SseEventEnvelopeSerializer.parsePayload(bytes)
+        }
+
+        measureBytes(
+            threadBean, runs, warmupIters,
+            label = "SseEventEnvelope.parseTyped (bytes)",
+            json = sseJson
+        ) { bytes ->
+            com.ghost.serialization.integration.model.SseEventEnvelopeSerializer.parseTyped(bytes)
+        }
+
         println("════════════════════════════════════════════════════════════════\n")
     }
 

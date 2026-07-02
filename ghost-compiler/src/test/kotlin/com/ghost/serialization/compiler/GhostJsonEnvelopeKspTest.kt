@@ -72,7 +72,10 @@ class GhostJsonEnvelopeKspTest {
         )
 
         assertTrue("fun routePayload(envelope: WebhookEnvelope)" in generated, generated)
-        assertTrue("else -> envelope.data" in generated, generated)
+        assertTrue(
+            "= envelope.`data`" in generated || "= envelope.data" in generated,
+            generated
+        )
         assertFalse("fun routeTyped" in generated, "Generic envelope without targets must not emit routeTyped")
     }
 
@@ -102,8 +105,9 @@ class GhostJsonEnvelopeKspTest {
 
         assertTrue("fun routeTyped(envelope: StripeEnvelope)" in generated, generated)
         assertTrue("fun parseTyped(bytes: ByteArray)" in generated, generated)
+        assertTrue("dataTargetSerializer" in generated, generated)
         assertTrue(
-            "\"invoice.paid\" -> envelope.data?.let { RawJsonDecode.decode(it, InvoicePaid::class) }" in generated,
+            "\"invoice.paid\" -> envelope.data?.let { RawJsonDecode.decode(it, dataTargetSerializer) }" in generated,
             generated
         )
     }
