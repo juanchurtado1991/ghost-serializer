@@ -141,7 +141,37 @@ object RawJsonCaptureBenchmark {
             Ghost.encodeToString(value)
         }
 
+        println("\n  ── RawJson scalar access (captured metadata slice) ──")
+
+        val accessEnvelopeBytes = smallObjectJson.encodeToByteArray()
+        val accessRaw = Ghost.deserialize<OpaqueMetadataEnvelope>(accessEnvelopeBytes).metadata
+
+        measureAllocOnly(
+            threadBean, runs, warmupIters,
+            label = "RawJson.kind() on captured slice",
+        ) {
+            accessRaw.kind()
+        }
+
+        measureAllocOnly(
+            threadBean, runs, warmupIters,
+            label = "RawJson.asDisplayString() on captured slice",
+        ) {
+            accessRaw.asDisplayString()
+        }
+
         println("════════════════════════════════════════════════════════════════\n")
+    }
+
+    private inline fun measureAllocOnly(
+        threadBean: ThreadMXBean,
+        runs: Int,
+        warmupIters: Int,
+        label: String,
+        crossinline block: () -> Unit,
+    ) {
+        repeat(warmupIters) { block() }
+        report(threadBean, runs, label, block = block)
     }
 
     private inline fun measureBytes(
