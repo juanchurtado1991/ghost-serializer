@@ -2,11 +2,11 @@
 
 **JSON at the speed of bits — Byte-first serialization for Kotlin Multiplatform.**
 
-> ⚡ Bitwise O(1) field matching · Native reader per input format · Up to 6–32× less heap · Zero reflection · 1146/1146 tests passed
+> ⚡ Bitwise O(1) field matching · Native reader per input format · Up to 6–32× less heap · Zero reflection · 1158/1158 tests passed
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
-[![Tests](https://img.shields.io/badge/tests-1146%20%2F%201146%20passed-brightgreen.png?style=flat)](#)
+[![Tests](https://img.shields.io/badge/tests-1158%20%2F%201158%20passed-brightgreen.png?style=flat)](#)
 [![Version](https://img.shields.io/badge/version-1.2.4-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)

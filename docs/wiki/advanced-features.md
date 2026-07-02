@@ -262,7 +262,66 @@ See also: **[Type System — Opaque JSON & alternatives](type-system.md#1-suppor
 
 ---
 
-## 8. Platform Limits & Memory
+## 8. External discriminator envelopes (`@GhostJsonEnvelope`)
+
+Webhook, SSE, and EventBridge-style APIs share one wire shape: a **type field** plus **opaque payload JSON**. Ghost generates zero-copy routing on the serializer companion so you never maintain a manual `when` over dozens of fields.
+
+### Fat envelope (SmartThings SSE)
+
+One nullable [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt) field per event type:
+
+```kotlin
+@GhostJsonEnvelope(discriminator = "eventType", timeField = "eventTime")
+@GhostSerialization
+data class RawSseEventEnvelope(
+    @GhostName("eventType") val eventType: String = "",
+    @GhostName("eventTime") val timeMillis: Long = 0L,
+    @GhostEnvelopePayload("DEVICE_EVENT", target = DeviceEvent::class)
+    @GhostName("deviceEvent") val deviceEvent: RawJson? = null,
+    @GhostEnvelopeFallback
+    val unknownEvent: RawJson? = null,
+)
+```
+
+Generated on `RawSseEventEnvelopeSerializer`:
+
+| Method | Returns | Notes |
+|:---|:---|:---|
+| `routePayload(envelope)` | `RawJson?` | O(1) field select; no re-parse |
+| `parsePayload(bytes)` | `RawJson?` | Flat deserialize + route; slice zero-copy |
+| `routeTyped(envelope)` | `Any?` | `RawJsonDecode.decode` per `@GhostEnvelopePayload(target=…)` |
+| `parseTyped(bytes)` | `Any?` | One-shot bytes → typed payload |
+
+### Generic envelope (`type` + `data`)
+
+Stripe / GitHub / CloudEvents-like single payload field:
+
+```kotlin
+@GhostJsonEnvelope(discriminator = "type", dataField = "data")
+@GhostSerialization
+data class WebhookEnvelope(
+    val type: String = "",
+    @GhostEnvelopePayload("invoice.paid", target = InvoicePaid::class)
+    val data: RawJson? = null,
+)
+```
+
+When no `@GhostEnvelopePayload` targets are declared, `routePayload` always returns `data` regardless of `type`.
+
+### Annotations
+
+| Annotation | Target | Purpose |
+|:---|:---|:---|
+| `@GhostJsonEnvelope` | class | Enables routing codegen (`discriminator`, optional `timeField`, optional `dataField`) |
+| `@GhostEnvelopePayload("wire.type")` | property | Maps discriminator → nullable `RawJson` field |
+| `@GhostEnvelopePayload(..., target = Model::class)` | property | Enables typed `routeTyped` / `parseTyped` |
+| `@GhostEnvelopeFallback` | property | `else` branch for unknown discriminators |
+
+Payload properties must be **`RawJson?`**. Requires `@GhostSerialization` on the envelope class.
+
+---
+
+## 9. Platform Limits & Memory
 
 | Limit | Purpose | Defaults |
 |:---|:---|:---|
@@ -275,7 +334,7 @@ See also: **[Type System — Opaque JSON & alternatives](type-system.md#1-suppor
 
 ---
 
-## 9. Pre-warming
+## 10. Pre-warming
 
 Reduce cold-start latency by pre-loading the serializer registry before the first request:
 

@@ -4,7 +4,7 @@
 
 Reference for field and top-level types that Ghost serializes **without extra setup**, types that need **custom coders or registries**, and types that are **not supported**.
 
-For opaque JSON (`RawJson`, `ByteArray`, Gson `JsonElement` migration), see **[Advanced Features §7 — Opaque JSON fields](advanced-features.md#7-opaque-json-fields-rawjson)**.
+For opaque JSON (`RawJson`, `ByteArray`, Gson `JsonElement` migration), see **[Advanced Features §7 — Opaque JSON fields](advanced-features.md#7-opaque-json-fields-rawjson)**. For webhook/SSE routing, see **[§8 — `@GhostJsonEnvelope`](advanced-features.md#8-external-discriminator-envelopes-ghostjsonenvelope)**.
 
 ---
 
@@ -16,7 +16,7 @@ These work on `@GhostSerialization` fields and as nested generic arguments (`Lis
 |:---|:---|:---|
 | **JSON scalars** | `String`, `Int`, `Long`, `Boolean`, `Double`, `Float`, `Byte`, `Short`, `Char` | `Byte`/`Short` wire as JSON numbers; `Char` as a one-character JSON string. Top-level `Ghost.deserialize<Float>()`, `Byte`, `Short`, `Char` supported via built-in serializers. |
 | **Collections** | `List<T>`, `Set<T>`, `Map<String, V>` | `Set` wire format is a JSON array; decode builds `HashSet` directly (no intermediate `List`). Map keys **must** be `String`. |
-| **Your models** | `data class`, `enum class`, `sealed class` / `sealed interface` | Class must be annotated with `@GhostSerialization`. Sealed subclasses must also be annotated. |
+| **Your models** | `data class`, `enum class`, `sealed class` / `sealed interface` | Class must be annotated with `@GhostSerialization`. Sealed subclasses must also be annotated. Optional [`@GhostJsonEnvelope`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/annotations/GhostJsonEnvelope.kt) generates payload routing (`routePayload`, `parsePayload`, …). |
 | **Inline types** | `@JvmInline value class` | Serialized as the underlying property type (e.g. `UserId(Int)` → JSON number). |
 | **Opaque JSON** | [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt), `ByteArray` | Inline JSON passthrough — object, array, string, number, boolean, or null. Prefer **`RawJson`**. Scalar accessors: `kind()`, `asBooleanOrNull()`, `asStringOrNull()`, `asDisplayString()`, … (`ghost-api`); typed re-parse: `decodeAs<T>()` (`ghost-serialization`). |
 
