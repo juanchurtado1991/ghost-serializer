@@ -129,7 +129,7 @@ fun main(args: Array<String>) {
     // 5. Print Final Results
     printFinalResults(finalResults, config.runs)
 
-    // 6. Ghost Special Features (exclusive capabilities, no competition)
+    // 6. Ghost exclusive capabilities (special features + RawJson channel comparison)
     performGc()
     GhostSpecialFeaturesBenchmark.run(config.runs, config.warmupIters)
     RawJsonCaptureBenchmark.run(config.runs, config.warmupIters)

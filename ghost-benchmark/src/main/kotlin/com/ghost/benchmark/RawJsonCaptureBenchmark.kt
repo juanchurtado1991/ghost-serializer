@@ -14,6 +14,9 @@ import java.lang.management.ManagementFactory
 /**
  * Benchmarks opaque JSON capture: [RawJson] slice path vs [ByteArray] copy path,
  * across flat bytes and native string channels.
+ *
+ * Scalar access, decodeAs, and JsonEnvelope routing are measured in
+ * [GhostSpecialFeaturesBenchmark] (exclusive-capabilities table).
  */
 object RawJsonCaptureBenchmark {
 
@@ -141,59 +144,7 @@ object RawJsonCaptureBenchmark {
             Ghost.encodeToString(value)
         }
 
-        println("\n  ── RawJson scalar access (captured metadata slice) ──")
-
-        val accessEnvelopeBytes = smallObjectJson.encodeToByteArray()
-        val accessRaw = Ghost.deserialize<OpaqueMetadataEnvelope>(accessEnvelopeBytes).metadata
-
-        measureAllocOnly(
-            threadBean, runs, warmupIters,
-            label = "RawJson.kind() on captured slice",
-        ) {
-            accessRaw.kind()
-        }
-
-        measureAllocOnly(
-            threadBean, runs, warmupIters,
-            label = "RawJson.asDisplayString() on captured slice",
-        ) {
-            accessRaw.asDisplayString()
-        }
-
-        println("\n  ── JsonEnvelope routing (SSE-style fat envelope) ──")
-
-        val sseJson = """
-            {"eventType":"DEVICE_EVENT","eventTime":42,"deviceEvent":{"deviceId":"abc"}}
-        """.trimIndent()
-
-        measureBytes(
-            threadBean, runs, warmupIters,
-            label = "SseEventEnvelope.parsePayload (bytes)",
-            json = sseJson
-        ) { bytes ->
-            com.ghost.serialization.integration.model.SseEventEnvelopeSerializer.parsePayload(bytes)
-        }
-
-        measureBytes(
-            threadBean, runs, warmupIters,
-            label = "SseEventEnvelope.parseTyped (bytes)",
-            json = sseJson
-        ) { bytes ->
-            com.ghost.serialization.integration.model.SseEventEnvelopeSerializer.parseTyped(bytes)
-        }
-
         println("════════════════════════════════════════════════════════════════\n")
-    }
-
-    private inline fun measureAllocOnly(
-        threadBean: ThreadMXBean,
-        runs: Int,
-        warmupIters: Int,
-        label: String,
-        crossinline block: () -> Unit,
-    ) {
-        repeat(warmupIters) { block() }
-        report(threadBean, runs, label, block = block)
     }
 
     private inline fun measureBytes(
