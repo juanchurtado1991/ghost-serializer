@@ -241,6 +241,10 @@ internal abstract class BaseDeserializeEmitter(
      */
     protected fun buildTypeReaderCall(type: KSType): CodeBlock {
         val readerCall = when {
+            type.isRawJson() -> CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)
+
+            type.isByteArray() -> CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
+
             type.isGhost() || type.isEnum() -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
                 type.serializerClassName()
@@ -275,8 +279,6 @@ internal abstract class BaseDeserializeEmitter(
                     buildTypeReaderCall(valueType)
                 )
             }
-
-            type.isByteArray() -> CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
 
             else -> {
                 if (type.isString()) {

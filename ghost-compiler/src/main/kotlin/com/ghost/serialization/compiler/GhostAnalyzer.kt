@@ -417,6 +417,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             }
         }
 
+        if (qualifiedName == C.K_RAW_JSON) {
+            return false
+        }
+
         return true // Third party types
     }
 

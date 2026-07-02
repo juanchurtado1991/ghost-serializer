@@ -237,6 +237,15 @@ internal abstract class BaseSerializeEmitter(
 
         val typeName = type.declaration.qualifiedName?.asString()
         when {
+            type.isRawJson() -> {
+                code.addStatement(
+                    C.STR_WRITER_RAW_VALUE_SLICE,
+                    accessor,
+                    accessor,
+                    accessor
+                )
+            }
+
             type.isGhost() -> {
                 code.addStatement(
                     C.STR_T_SERIALIZE_WRITER_ACC,
@@ -374,7 +383,11 @@ internal abstract class BaseSerializeEmitter(
                         .parameterizedBy(nonNullableType.toTypeName()),
                     KModifier.PRIVATE
                 )
-                    .initializer(C.TEMPLATE_RESOLVE_SERIALIZER, ghostClass, nonNullableType.toTypeName())
+                    .initializer(
+                        C.TEMPLATE_RESOLVE_SERIALIZER,
+                        ghostClass,
+                        nonNullableType.toTypeName()
+                    )
                     .build()
             )
         }

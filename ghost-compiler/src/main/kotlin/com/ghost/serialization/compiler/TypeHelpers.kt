@@ -128,3 +128,16 @@ internal fun KSType.isEnum(): Boolean {
 internal fun KSType.isByteArray(): Boolean {
     return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY
 }
+
+/**
+ * Checks whether this type is [com.ghost.serialization.types.RawJson].
+ * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+ */
+internal fun KSType.isRawJson(): Boolean {
+    return declaration.qualifiedName?.asString() == C.K_RAW_JSON
+}
+
+/**
+ * Checks whether this type captures opaque JSON inline (ByteArray or RawJson).
+ */
+internal fun KSType.isOpaqueJson(): Boolean = isByteArray() || isRawJson()
