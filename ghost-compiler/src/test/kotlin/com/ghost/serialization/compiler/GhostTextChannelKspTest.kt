@@ -58,6 +58,16 @@ class GhostTextChannelKspTest {
     }
 
     @Test
+    fun textChannelFalseOmitsNativeStringSerializeOverload() {
+        val generated = compileAndReadSerializer(textChannel = false)
+
+        assertFalse(
+            "override fun serialize(writer: GhostJsonStringWriter," in generated,
+            "String serialize must not be generated when textChannel=false:\n$generated"
+        )
+    }
+
+    @Test
     fun textChannelFalseOmitsNativeStringDeserializeOverload() {
         val generated = compileAndReadSerializer(textChannel = false)
 
