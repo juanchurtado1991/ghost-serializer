@@ -174,4 +174,63 @@ class GhostPluginFunctionalTest {
         val result = runner.build()
         assertTrue(result.output.contains("SUCCESS"), "Build with plugin applied before KSP should succeed")
     }
+
+    @Test
+    fun `ksp textChannel option generates native string deserialize overload`() {
+        settingsFile.writeText("rootProject.name = \"text-channel-test\"")
+
+        val srcDir = testProjectDir.resolve("src/main/kotlin/com/example")
+        srcDir.mkdirs()
+        srcDir.resolve("Model.kt").writeText(
+            """
+            package com.example
+            import com.ghost.serialization.annotations.GhostSerialization
+            @GhostSerialization
+            data class Model(val name: String)
+        """.trimIndent()
+        )
+
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "$kotlinVersion"
+                id("com.google.devtools.ksp") version "$kspVersion"
+                id("com.ghostserializer.ghost")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            ksp {
+                arg("ghost.textChannel", "true")
+            }
+
+            ghost {
+                version.set("$ghostVersion")
+                autoInjectKtor.set(false)
+                autoInjectRetrofit.set(false)
+            }
+        """.trimIndent()
+        )
+
+        GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withArguments("kspKotlin")
+            .withPluginClasspath()
+            .forwardOutput()
+            .build()
+
+        val generated = testProjectDir.walk()
+            .filter { it.name == "ModelSerializer.kt" }
+            .map { it.readText() }
+            .firstOrNull()
+
+        assertTrue(generated != null, "Expected generated ModelSerializer.kt")
+        assertTrue(
+            "override fun deserialize(reader: GhostJsonStringReader)" in generated!!,
+            "Expected native string deserialize when ghost.textChannel=true:\n$generated"
+        )
+    }
 }
