@@ -23,7 +23,6 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.writeTo
 import kotlin.reflect.KClass
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
@@ -173,7 +172,7 @@ class GhostSerializationProcessor(
         }
         processedFiles.add(fullFileName)
 
-        fileSpec.writeTo(
+        fileSpec.writeTrimmedTo(
             codeGenerator = codeGenerator,
             dependencies = Dependencies(
                 aggregating = false,
@@ -434,7 +433,7 @@ class GhostSerializationProcessor(
         FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
             .addType(registrySpec)
             .build()
-            .writeTo(
+            .writeTrimmedTo(
                 codeGenerator,
                 Dependencies(aggregating = true, *originatingFiles.toTypedArray())
             )
