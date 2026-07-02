@@ -9,6 +9,7 @@
 - **`RawJson.decodeAs<T>()`** (`ghost-serialization`): Typed second-stage parse via `GhostJsonFlatReader.resetSlice()` without copying parent response buffers.
 
 ### Fixed
+- **Leaner generated serializers**: KSP now imports parser helpers conditionally (`captureRawJson` vs `captureRawJsonBytes`, `readList` vs `readSet`), gates native `GhostJsonStringWriter` serialize overloads behind `ghost.textChannel=true` (interface bridge remains), skips `HS_*` string header constants when the string channel is disabled, drops `@file:Suppress` from generated serializers, and trims redundant `kotlin.*` stdlib imports.
 - **Enum wire-value hash collisions (issue #11)**: Enum serializers now use `PerfectHashFinder` for `ENUM_OPTIONS` (same as object field dispatch), instead of `JsonReaderOptions.of(*names)` with default shift/multiplier/table size. When the standard hash search fails (e.g. enums with shared 4-byte prefixes and different lengths like `w:locations:geo`), the compiler retries with extended key hashing and emits the matching runtime flag. Generated enum code no longer uses the bare `JsonReaderOptions.of(vararg)` factory described in issue #12.
 
 ## [1.2.4] - 2026-06-30

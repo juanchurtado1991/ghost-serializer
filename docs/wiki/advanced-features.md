@@ -170,6 +170,7 @@ val user: User = Ghost.deserialize(jsonString)  // Uses GhostJsonStringReader
 | | `ghost.textChannel = false` (default) | `ghost.textChannel = true` |
 |:---|:---:|:---:|
 | `deserialize(String)` path | String → ByteArray → parse | Native String parse |
+| `encodeToString()` serialize path | FlatWriter bridge (default) | Native `GhostJsonStringWriter` |
 | Binary per DTO | Baseline | +4 KB dispatch table |
 | String decode speed | Slower | **+31% vs KSer** |
 | Heap per call | Higher | **-69.6% vs KSer** |
