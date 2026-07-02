@@ -203,6 +203,8 @@ val user: User = Ghost.deserialize(response.body().string())
 
 ## 7. Opaque JSON fields (`RawJson`)
 
+> **Full type matrix:** supported vs unsupported field types → **[Type System](type-system.md)**.
+
 Use [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt) when a model field must hold **arbitrary JSON** (object, array, string, number, boolean, or null) without parsing into a typed structure — the common Gson `JsonElement` migration case.
 
 ```kotlin
@@ -228,6 +230,8 @@ data class AttributeState(
 | `String` / nested wrapper | Parsed or quoted — **not** opaque passthrough | Avoid for arbitrary JSON |
 
 `RawJson` bytes include JSON delimiters (quotes for strings, brackets for objects/arrays). Two `RawJson` values compare with `==` (content-based `equals`/`hashCode`). When asserting against `ByteArray` or expected JSON text in tests, use `contentEquals()` or `decodeToString()`.
+
+See also: **[Type System — Opaque JSON & alternatives](type-system.md#1-supported-out-of-the-box)** and **[Not supported](type-system.md#3-not-supported)**.
 
 ---
 

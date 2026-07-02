@@ -103,19 +103,24 @@ These features have **no equivalent** in Gson, Moshi, KSerialization, or Jackson
 
 ---
 
-## 👻 RawJson Capture (slice vs ByteArray)
+## 👻 RawJson Capture (bytes vs string channels)
 
-Compares opaque JSON fields on flat byte input (`GhostJsonFlatReader`):
+Compares opaque JSON on flat **bytes** (`encodeToBytes` / `deserialize(bytes)`) vs native **string** (`encodeToString` / `deserialize(String)` with `ghost.textChannel=true`):
 
 | Scenario | µs/op | B/op |
 |:---|:---:|:---:|
-| Decode `RawJson` field (small metadata, slice capture) | **~0.7** | **~48** |
-| Decode `ByteArray` field (small metadata, copy capture) | ~0.6 | ~280 |
-| Decode `RawJson` field (large nested metadata) | **~62** | **~48** |
-| Decode `ByteArray` field (large nested metadata) | ~67 | **~87800** |
-| Encode `RawJson` payload (slice write) | **~0.7** | ~184 |
+| Decode `RawJson` field (bytes, small, slice capture) | **~0.7** | **~48** |
+| Decode `RawJson` field (string, small, owned capture) | ~1–2 | higher |
+| Decode `ByteArray` field (bytes, small, copy capture) | ~0.6 | ~280 |
+| Decode `RawJson` field (bytes, large nested metadata) | **~62** | **~48** |
+| Decode `RawJson` field (string, large nested metadata) | ~65+ | higher |
+| Decode `ByteArray` field (bytes, large nested metadata) | ~67 | **~87800** |
+| Encode `RawJson` payload (`encodeToBytes`, slice write) | **~0.7** | ~184 |
+| Encode `RawJson` payload (`encodeToString`, UTF-8 decode) | ~1+ | higher |
+| Top-level `RawJson` round-trip (bytes in/out) | baseline | baseline |
+| Top-level `RawJson` round-trip (string in/out) | slower | higher |
 
-> On large opaque metadata, `RawJson` slice capture avoids the `copyOfRange` allocation that `ByteArray` fields pay on every decode. Serialize uses `writer.rawValue(storage, offset, length)` without materializing `.bytes`.
+> On large opaque metadata, `RawJson` slice capture on the **bytes** path avoids the `copyOfRange` allocation that `ByteArray` fields pay on every decode. The **string** path always materializes owned UTF-8 bytes on capture. Encode via `encodeToString` decodes UTF-8 slices to chars in `GhostJsonStringWriter.rawValue`.
 
 > [!TIP]
 > **Unified Validation**: The benchmark suite is designed to fail if any integration test doesn't pass. This ensures that performance results always reflect a stable and correct codebase.
