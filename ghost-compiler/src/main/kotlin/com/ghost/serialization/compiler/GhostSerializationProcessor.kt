@@ -105,7 +105,35 @@ class GhostSerializationProcessor(
         println("=== Found annotated symbols: ${symbols.toList().size}, valid classes: ${validClasses.size} ===")
         val unableToProcess = symbols.filterNot { it is KSClassDeclaration }
 
-        validClasses.forEach { classDeclaration -> processClass(classDeclaration) }
+        val analyzed = validClasses.mapNotNull { classDeclaration ->
+            try {
+                TextChannelPlanner.AnalyzedClass(
+                    declaration = classDeclaration,
+                    properties = analyzer.analyze(classDeclaration),
+                )
+            } catch (e: Exception) {
+                logger.error(
+                    "${C.STR_LOG_PREFIX}${C.STR_LOG_CRITICAL}${
+                        classDeclaration.simpleName.asString()
+                    }${C.STR_COLON_SPACE}${e.message ?: e.toString()}",
+                    classDeclaration,
+                )
+                null
+            }
+        }
+
+        val textChannelByClass = TextChannelPlanner.plan(
+            analyzed = analyzed,
+            moduleTextChannelEnabled = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE,
+        )
+
+        analyzed.forEach { entry ->
+            processClass(
+                classDeclaration = entry.declaration,
+                propertiesModel = entry.properties,
+                textChannel = textChannelByClass[entry.declaration] == true,
+            )
+        }
 
         if (validClasses.isNotEmpty()) {
             generateModuleRegistry()
@@ -121,11 +149,18 @@ class GhostSerializationProcessor(
      *
      * @param classDeclaration KSP class declaration of the target serializable model.
      */
-    private fun processClass(classDeclaration: KSClassDeclaration) {
+    private fun processClass(
+        classDeclaration: KSClassDeclaration,
+        propertiesModel: List<GhostPropertyModel>,
+        textChannel: Boolean,
+    ) {
         val className = classDeclaration.simpleName.asString()
         try {
-            val propertiesModel = analyzer.analyze(classDeclaration)
-            val serializerClassName = generateSerializer(classDeclaration, propertiesModel) ?: return
+            val serializerClassName = generateSerializer(
+                classDeclaration = classDeclaration,
+                propertiesModel = propertiesModel,
+                textChannel = textChannel,
+            ) ?: return
 
             registerSerializer(classDeclaration, serializerClassName)
 
@@ -153,9 +188,9 @@ class GhostSerializationProcessor(
      */
     private fun generateSerializer(
         classDeclaration: KSClassDeclaration,
-        propertiesModel: List<GhostPropertyModel>
+        propertiesModel: List<GhostPropertyModel>,
+        textChannel: Boolean,
     ): ClassName? {
-        val textChannel = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
             properties = propertiesModel,

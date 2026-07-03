@@ -5,15 +5,33 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.TypeName
 
 /**
+ * Reader parameter type resolved from a custom coder function signature.
+ */
+internal enum class CustomCoderReaderKind {
+    /** `fun(GhostJsonReader): T` — bytes / streaming channel. */
+    BYTES,
+
+    /** `fun(GhostJsonFlatReader): T` — flat byte buffer channel. */
+    FLAT,
+
+    /** `fun(GhostJsonStringReader): T` — native string channel (textChannel). */
+    STRING,
+}
+
+/**
  * Metadata configuration for custom encoding/decoding providers.
  *
  * @property provider The KotlinPoet [TypeName] of the object/class containing the custom coder function.
  * @property functionName The name of the custom encoding/decoding function to delegate to.
+ * @property readerKinds Reader parameter types available across function overloads.
  */
 internal data class CustomCoderModel(
     val provider: TypeName,
-    val functionName: String
-)
+    val functionName: String,
+    val readerKinds: Set<CustomCoderReaderKind> = setOf(CustomCoderReaderKind.BYTES),
+) {
+    fun supports(kind: CustomCoderReaderKind): Boolean = kind in readerKinds
+}
 
 /**
  * Metadata representation of a subclass target during inferred sealed class deserialization.

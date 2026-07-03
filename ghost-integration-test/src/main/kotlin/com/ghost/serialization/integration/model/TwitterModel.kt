@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 
 @Serializable
-@GhostSerialization
+@GhostSerialization(textChannel = true)
 data class TwitterResponse(
     val statuses: List<Tweet>
 )
@@ -210,13 +210,13 @@ data class TwitterSpecialTweet(
 )
 
 @Serializable
-@GhostSerialization
+@GhostSerialization(textChannel = true)
 data class TwitterSpecialResponse(
     val statuses: List<TwitterSpecialTweet>
 )
 
 @Serializable
-@GhostSerialization
+@GhostSerialization(textChannel = true)
 data class TwitterWrappedTweet(
     val id: Long,
     @GhostWrap("details")

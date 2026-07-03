@@ -3,6 +3,8 @@
 package com.ghost.serialization.integration.model
 
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 
@@ -15,6 +17,10 @@ object EncoderDateUtils {
         // Reads date in format "YYYY-MM-DD" (simplified for test)
         val s = reader.readQuotedString()
         return s.replace("-", "").toLong()
+    }
+
+    fun decodeLegacyDate(reader: GhostJsonStringReader): Long {
+        return reader.nextString().replace("-", "").toLong()
     }
 
     // Support for GhostJsonFlatWriter (Flat path)

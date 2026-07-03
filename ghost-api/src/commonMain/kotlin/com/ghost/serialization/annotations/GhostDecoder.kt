@@ -8,7 +8,10 @@ import kotlin.reflect.KClass
  * writing a full serializer.
  *
  * @param provider The class/object containing the decoding function.
- * @param functionName The name of the static function: `fun(GhostJsonReader): T`
+ * @param functionName The name of the static function. Supported first-parameter types:
+ *   - `GhostJsonReader` — bytes / streaming channel (default)
+ *   - `GhostJsonFlatReader` — flat byte buffer channel
+ *   - `GhostJsonStringReader` — native string channel when `textChannel=true` on `@GhostSerialization` (or module `ghost.textChannel=true`)
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)

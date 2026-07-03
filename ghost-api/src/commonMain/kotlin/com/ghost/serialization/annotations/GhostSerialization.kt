@@ -13,11 +13,16 @@ package com.ghost.serialization.annotations
  *   convention (e.g. `"kind"`, `"object"`, `"@type"`).
  *   Has no effect on non-sealed classes.
  * @param inferred Whether the type should be inferred automatically.
+ * @param textChannel When `true`, generates native [com.ghost.serialization.parser.GhostJsonStringReader]
+ *   deserialize/serialize overloads for this model and any nested `@GhostSerialization` types
+ *   reachable from its property graph. Defaults to `false`. Module-wide `ghost.textChannel=true`
+ *   still enables the string channel for every model in the module (legacy).
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
 annotation class GhostSerialization(
     val name: String = "",
     val discriminator: String = "type",
-    val inferred: Boolean = false
+    val inferred: Boolean = false,
+    val textChannel: Boolean = false,
 )

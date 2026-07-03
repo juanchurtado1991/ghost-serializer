@@ -204,28 +204,46 @@ internal abstract class BaseDeserializeEmitter(
      */
     protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
         val coder = prop.customDecoder!!
-        if (readerClass.simpleName == C.STR_GHOST_JSON_FLAT_READER) {
-            return CodeBlock.builder()
-                .add(C.STR_RUN_OPEN)
-                .add(C.STR_CUSTOM_DECODER_TEMP_READER)
-                .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)
-                .add(C.STR_CUSTOM_DECODER_UPDATE_POS)
-                .add(C.STR_RESET_TOKEN_BYTE_CALL)
-                .add(C.STR_CUSTOM_DECODER_RETURN_RES)
-                .add(C.STR_RUN_CLOSE)
-                .build()
+        if (usesDirectCustomDecoderCall(coder)) {
+            return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
         }
-        if (readerClass.simpleName == C.STR_GHOST_JSON_STRING_READER) {
-            return CodeBlock.builder()
-                .add(C.STR_RUN_OPEN)
-                .add(C.STR_CUSTOM_DECODER_TEMP_READER_STRING)
-                .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)
-                .add(C.STR_CUSTOM_DECODER_UPDATE_POS_STRING)
-                .add(C.STR_CUSTOM_DECODER_RETURN_RES)
-                .add(C.STR_RUN_CLOSE)
-                .build()
+        return when (readerClass.simpleName) {
+            C.STR_GHOST_JSON_FLAT_READER -> buildFlatReaderCustomDecoderBridge(coder)
+            C.STR_GHOST_JSON_STRING_READER -> buildStringReaderCustomDecoderBridge(coder)
+            else -> buildFlatReaderCustomDecoderBridge(coder)
         }
-        return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
+    }
+
+    private fun usesDirectCustomDecoderCall(coder: CustomCoderModel): Boolean {
+        val channelKind = when (readerClass.simpleName) {
+            C.STR_GHOST_JSON_STRING_READER -> CustomCoderReaderKind.STRING
+            C.STR_GHOST_JSON_FLAT_READER -> CustomCoderReaderKind.FLAT
+            else -> CustomCoderReaderKind.BYTES
+        }
+        return coder.supports(channelKind)
+    }
+
+    private fun buildFlatReaderCustomDecoderBridge(coder: CustomCoderModel): CodeBlock {
+        return CodeBlock.builder()
+            .add(C.STR_RUN_OPEN)
+            .add(C.STR_CUSTOM_DECODER_TEMP_READER)
+            .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)
+            .add(C.STR_CUSTOM_DECODER_UPDATE_POS)
+            .add(C.STR_RESET_TOKEN_BYTE_CALL)
+            .add(C.STR_CUSTOM_DECODER_RETURN_RES)
+            .add(C.STR_RUN_CLOSE)
+            .build()
+    }
+
+    private fun buildStringReaderCustomDecoderBridge(coder: CustomCoderModel): CodeBlock {
+        return CodeBlock.builder()
+            .add(C.STR_RUN_OPEN)
+            .add(C.STR_CUSTOM_DECODER_TEMP_READER_STRING)
+            .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)
+            .add(C.STR_CUSTOM_DECODER_UPDATE_POS_STRING)
+            .add(C.STR_CUSTOM_DECODER_RETURN_RES)
+            .add(C.STR_RUN_CLOSE)
+            .build()
     }
 
     /**

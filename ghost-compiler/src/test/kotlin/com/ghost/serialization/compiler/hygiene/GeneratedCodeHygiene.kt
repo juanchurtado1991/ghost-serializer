@@ -79,7 +79,7 @@ internal object GeneratedCodeHygiene {
                     "$fileLabel: `GhostJsonStringWriter` must not be imported when textChannel=false",
                 )
             }
-            if ("override fun deserialize(reader: GhostJsonStringReader)" in body) {
+            if (C.STR_OVERRIDE_DESERIALIZE_STRING_READER in body) {
                 violations += Violation(
                     Violation.Kind.FORBIDDEN_IMPORT,
                     "$fileLabel: string-channel deserialize overload must not be generated when textChannel=false",

@@ -353,9 +353,32 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             val function =
                 ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
             if (provider != null && function != null) {
-                CustomCoderModel(provider.toTypeName(), function)
+                CustomCoderModel(
+                    provider = provider.toTypeName(),
+                    functionName = function,
+                    readerKinds = resolveCustomCoderReaderKinds(provider, function),
+                )
             } else null
         }
+    }
+
+    private fun resolveCustomCoderReaderKinds(
+        provider: KSType,
+        functionName: String,
+    ): Set<CustomCoderReaderKind> {
+        val declaration = provider.declaration as? KSClassDeclaration ?: return setOf(CustomCoderReaderKind.BYTES)
+        val kinds = declaration.getAllFunctions()
+            .filter { it.simpleName.asString() == functionName }
+            .mapNotNull { fn ->
+                when (fn.parameters.firstOrNull()?.type?.resolve()?.declaration?.qualifiedName?.asString()) {
+                    C.STR_GHOST_JSON_STRING_READER_QUALIFIED -> CustomCoderReaderKind.STRING
+                    C.STR_GHOST_JSON_FLAT_READER_QUALIFIED -> CustomCoderReaderKind.FLAT
+                    C.STR_GHOST_JSON_READER_QUALIFIED -> CustomCoderReaderKind.BYTES
+                    else -> null
+                }
+            }
+            .toSet()
+        return kinds.ifEmpty { setOf(CustomCoderReaderKind.BYTES) }
     }
 
     /**

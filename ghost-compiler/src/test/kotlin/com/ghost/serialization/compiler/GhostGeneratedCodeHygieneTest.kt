@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.hygiene.GeneratedCodeHygiene
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
@@ -53,7 +54,7 @@ class GhostGeneratedCodeHygieneTest {
         val generated = readSerializer(compilation.first, "MinimalUser")
         assertTrue("GhostJsonStringReader" !in generated, generated)
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" !in generated,
+            C.STR_OVERRIDE_DESERIALIZE_STRING_READER !in generated,
             generated,
         )
         assertTrue(

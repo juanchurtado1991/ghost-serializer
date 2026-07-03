@@ -89,32 +89,43 @@ internal class SerializerSetupEmitter(
 
     fun buildWarmUpMethod(): FunSpec {
         val warmupJson = generateMinimalJson()
+        val warmUpBlock = CodeBlock.builder()
+            .beginControlFlow(C.STR_TRY)
+            .addStatement(
+                C.TEMPLATE_WARM_UP_READER_INIT,
+                C.STR_READER1,
+                ctx.streamingReaderClass,
+                warmupJson
+            )
+            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER1)
+            .nextControlFlow(C.STR_CATCH_EXCEPTION)
+            .endControlFlow()
+            .beginControlFlow(C.STR_TRY)
+            .addStatement(
+                C.TEMPLATE_WARM_UP_READER_INIT,
+                C.STR_READER2,
+                ctx.flatReaderClass,
+                warmupJson
+            )
+            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER2)
+            .nextControlFlow(C.STR_CATCH_EXCEPTION)
+            .endControlFlow()
+        if (ctx.textChannel) {
+            warmUpBlock
+                .beginControlFlow(C.STR_TRY)
+                .addStatement(
+                    C.TEMPLATE_WARM_UP_STRING_READER_INIT,
+                    C.STR_READER3,
+                    ctx.stringReaderClass,
+                    warmupJson
+                )
+                .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER3)
+                .nextControlFlow(C.STR_CATCH_EXCEPTION)
+                .endControlFlow()
+        }
         return FunSpec.builder(C.STR_WARM_UP)
             .addModifiers(KModifier.OVERRIDE)
-            .addCode(
-                CodeBlock.builder()
-                    .beginControlFlow(C.STR_TRY)
-                    .addStatement(
-                        C.TEMPLATE_WARM_UP_READER_INIT,
-                        C.STR_READER1,
-                        ctx.streamingReaderClass,
-                        warmupJson
-                    )
-                    .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER1)
-                    .nextControlFlow(C.STR_CATCH_EXCEPTION)
-                    .endControlFlow()
-                    .beginControlFlow(C.STR_TRY)
-                    .addStatement(
-                        C.TEMPLATE_WARM_UP_READER_INIT,
-                        C.STR_READER2,
-                        ctx.flatReaderClass,
-                        warmupJson
-                    )
-                    .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER2)
-                    .nextControlFlow(C.STR_CATCH_EXCEPTION)
-                    .endControlFlow()
-                    .build()
-            )
+            .addCode(warmUpBlock.build())
             .build()
     }
 
