@@ -138,4 +138,21 @@ tasks.register("ciTest") {
     )
 }
 
+/** Alias for [ciTest] — run every test module before benchmarks or releases. */
+tasks.register("allTests") {
+    group = "verification"
+    description = "All tests (JVM + Android + iOS on macOS) — same as ciTest"
+    dependsOn("ciTest")
+}
 
+tasks.register("verifyAndBenchmark") {
+    group = "verification"
+    description = "allTests then :ghost-benchmark:benchmarkRegression (full, ~9 min bench)"
+    dependsOn("ciTest", ":ghost-benchmark:benchmarkRegression")
+}
+
+tasks.register("verifyAndBenchmarkFast") {
+    group = "verification"
+    description = "allTests then :ghost-benchmark:benchmarkRegressionFast (~2 min bench)"
+    dependsOn("ciTest", ":ghost-benchmark:benchmarkRegressionFast")
+}
