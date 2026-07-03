@@ -25,7 +25,7 @@ object RawJsonCaptureBenchmark {
     private val encodePayloadJson = """{"id":"bench-1","body":{"nested":true}}"""
     private val topLevelRawJson = largeObjectJson.substringAfter("\"metadata\":").removeSuffix("}")
 
-    fun run(runs: Int, warmupIters: Int) {
+    fun run() {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {
             println("  ⚠️  ThreadMXBean not available — skipping RawJson capture benchmark.")
@@ -36,12 +36,11 @@ object RawJsonCaptureBenchmark {
         println("\n════════════════════════════════════════════════════════════════")
         println("  👻 RAW JSON CAPTURE — BYTES vs STRING CHANNELS")
         println("════════════════════════════════════════════════════════════════")
-        println("  $runs runs × ${warmupIters}-iteration warmup.\n")
 
         println("  ── Decode (model field with opaque metadata) ──")
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Decode RawJson field (bytes, small, slice capture)",
             json = smallObjectJson
         ) { bytes ->
@@ -49,7 +48,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureString(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Decode RawJson field (string, small, owned capture)",
             json = smallObjectJson
         ) { json ->
@@ -57,7 +56,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Decode ByteArray field (bytes, small, copy capture)",
             json = smallObjectJson
         ) { bytes ->
@@ -65,7 +64,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Decode RawJson field (bytes, large nested metadata)",
             json = largeObjectJson
         ) { bytes ->
@@ -73,7 +72,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureString(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Decode RawJson field (string, large nested metadata)",
             json = largeObjectJson
         ) { json ->
@@ -81,7 +80,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Decode ByteArray field (bytes, large nested metadata)",
             json = largeObjectJson
         ) { bytes ->
@@ -93,7 +92,7 @@ object RawJsonCaptureBenchmark {
         val encodeModel = Ghost.deserialize<RawJsonPayloadModel>(encodePayloadJson.encodeToByteArray())
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Encode RawJson payload (encodeToBytes, slice write)",
             json = encodePayloadJson
         ) {
@@ -101,7 +100,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureString(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Encode RawJson payload (encodeToString, UTF-8 decode path)",
             json = encodePayloadJson
         ) {
@@ -111,7 +110,7 @@ object RawJsonCaptureBenchmark {
         println("\n  ── Top-level RawJson round-trip ──")
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Top-level RawJson decode (bytes)",
             json = topLevelRawJson
         ) { bytes ->
@@ -119,7 +118,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureString(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Top-level RawJson decode (string)",
             json = topLevelRawJson
         ) { json ->
@@ -127,7 +126,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureBytes(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Top-level RawJson round-trip (bytes in/out)",
             json = topLevelRawJson
         ) { bytes ->
@@ -136,7 +135,7 @@ object RawJsonCaptureBenchmark {
         }
 
         measureString(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = "Top-level RawJson round-trip (string in/out)",
             json = topLevelRawJson
         ) { json ->
@@ -149,32 +148,29 @@ object RawJsonCaptureBenchmark {
 
     private inline fun measureBytes(
         threadBean: ThreadMXBean,
-        runs: Int,
-        warmupIters: Int,
         label: String,
         json: String,
         crossinline block: (ByteArray) -> Any?
     ) {
         val payload = json.encodeToByteArray()
-        repeat(warmupIters) { block(payload) }
-        report(threadBean, runs, label, block = { block(payload) })
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(payload) }
+        BenchmarkProgress.logStep("Measure: $label")
+        report(threadBean, label, block = { block(payload) })
     }
 
     private inline fun measureString(
         threadBean: ThreadMXBean,
-        runs: Int,
-        warmupIters: Int,
         label: String,
         json: String,
         crossinline block: (String) -> Any?
     ) {
-        repeat(warmupIters) { block(json) }
-        report(threadBean, runs, label, block = { block(json) })
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(json) }
+        BenchmarkProgress.logStep("Measure: $label")
+        report(threadBean, label, block = { block(json) })
     }
 
     private inline fun report(
         threadBean: ThreadMXBean,
-        runs: Int,
         label: String,
         crossinline block: () -> Any?
     ) {
@@ -182,7 +178,7 @@ object RawJsonCaptureBenchmark {
         var totalNanos = 0L
         var totalAlloc = 0L
 
-        repeat(runs) {
+        repeat(BenchmarkStandard.MEASUREMENT_RUNS) {
             val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
             val timeBefore = System.nanoTime()
             block()
@@ -190,8 +186,8 @@ object RawJsonCaptureBenchmark {
             totalAlloc += threadBean.getThreadAllocatedBytes(threadId) - allocBefore
         }
 
-        val avgMicros = totalNanos / runs / 1_000.0
-        val avgBytes = totalAlloc / runs
+        val avgMicros = totalNanos / BenchmarkStandard.MEASUREMENT_RUNS / 1_000.0
+        val avgBytes = totalAlloc / BenchmarkStandard.MEASUREMENT_RUNS
         println(
             "  %-58s  %8.2f µs/op   %8d B/op".format(
                 label,

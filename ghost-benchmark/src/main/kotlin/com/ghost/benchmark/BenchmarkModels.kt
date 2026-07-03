@@ -8,37 +8,57 @@ import com.ghost.serialization.integration.model.BenchmarkMetrics
 import com.ghost.serialization.integration.model.ComplexResponse
 import com.ghost.serialization.integration.model.StressMetrics
 import com.google.gson.Gson
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.serialization.json.Json
 
 // ============================================================================
 // Data & Configuration Classes
 // ============================================================================
 
-internal data class BenchmarkConfig(val runs: Int, val noTests: Boolean, val warmupIters: Int, val twitterOnly: Boolean) {
-    companion object {
-        fun fromArgs(args: Array<String>): BenchmarkConfig {
-            val runs = args.indexOf("--runs")
-                .let { if (it != -1 && it + 1 < args.size) args[it + 1].toIntOrNull() ?: 100 else 100 }
-            val noTests = args.contains("--no-tests")
-            val warmupIters = args.indexOf("--warmup")
-                .let {
-                    if (it != -1 && it + 1 < args.size) args[it + 1].toIntOrNull()
-                        ?: 5000 else 5000
-                }
-            val twitterOnly = args.contains("--twitter-only")
-            return BenchmarkConfig(runs, noTests, warmupIters, twitterOnly)
-        }
-    }
+/**
+ * Active benchmark constants for the current JVM profile ([BenchmarkProfile]).
+ *
+ * **Full** (`ghost.benchmark.profile=full`, default): baselines in [RegressionCalculator], ±10%.
+ *
+ * **Fast** (`ghost.benchmark.profile=fast`): same baselines, ±10% tolerance, ~5× less work.
+ */
+internal object BenchmarkStandard {
+
+    private val profile: BenchmarkProfile = BenchmarkProfile.active()
+
+    val profileName: String
+        get() = profile.name.lowercase()
+
+    val WARMUP_ITERATIONS: Int
+        get() = profile.warmupIterations
+
+    val LOCAL_WARMUP_ITERATIONS: Int
+        get() = profile.localWarmupIterations
+
+    val SYNTHETIC_SESSIONS: Int
+        get() = profile.syntheticSessions
+
+    val SYNTHETIC_SAMPLES_PER_SESSION: Int
+        get() = profile.syntheticSamplesPerSession
+
+    val MEASUREMENT_RUNS: Int
+        get() = profile.measurementRuns
+
+    val PROGRESS_INTERVAL: Int
+        get() = profile.progressInterval
+
+    val REGRESSION_TOLERANCE: Double
+        get() = profile.regressionTolerance
 }
+
+internal data class SyntheticRunResults(
+    val aggregated: BenchmarkSessionResults,
+    val listSessions: List<ModeMetrics>,
+    val syncSessions: List<ModeMetrics>,
+    val writingSessions: List<ModeMetrics>,
+)
 
 internal class BenchmarkEngines {
     val gson = Gson()
-    val moshi: Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-    val moshiAdapter: JsonAdapter<ComplexResponse> = moshi.adapter()
     val kJson = Json { ignoreUnknownKeys = true }
     val jackson: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
 }

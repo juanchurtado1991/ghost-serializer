@@ -19,7 +19,7 @@ import java.lang.management.ManagementFactory
  * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
  *
  * These are measured independently because they cannot be compared fairly against
- * Gson, Moshi, KSer, or Jackson — they simply don't support these capabilities.
+ * Gson, KSer, or Jackson — they simply don't support these capabilities.
  *
  * Runs with the same ThreadMXBean methodology as the main benchmark.
  */
@@ -59,7 +59,7 @@ object GhostSpecialFeaturesBenchmark {
     private const val JSON_SSE_DEVICE_EVENT =
         """{"eventType":"DEVICE_EVENT","eventTime":42,"deviceEvent":{"deviceId":"abc"}}"""
 
-    fun run(runs: Int, warmupIters: Int) {
+    fun run() {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {
             println("  ⚠️  ThreadMXBean not available — skipping special features benchmark.")
@@ -70,41 +70,40 @@ object GhostSpecialFeaturesBenchmark {
         println("\n════════════════════════════════════════════════════════════════")
         println("  👻 GHOST SPECIAL FEATURES — EXCLUSIVE CAPABILITIES BENCHMARK")
         println("════════════════════════════════════════════════════════════════")
-        println("  These features have NO equivalent in Gson, Moshi, KSer, or Jackson.")
-        println("  Measured with $runs runs × ${warmupIters}-iteration JIT warmup.\n")
+        println("  These features have NO equivalent in Gson, KSer, or Jackson.")
 
         benchmarkFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_SEALED,
             jsonSamples = listOf(JSON_SEALED_1, JSON_SEALED_2)
         ) { json -> Ghost.deserialize<SmartHome>(json) }
 
         benchmarkFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_FLATTEN,
             jsonSamples = listOf(JSON_FLATTEN_1, JSON_FLATTEN_2)
         ) { json -> Ghost.deserialize<FlattenedModel>(json) }
 
         benchmarkFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_RESILIENT,
             jsonSamples = listOf(JSON_RESILIENT_1, JSON_RESILIENT_2)
         ) { json -> Ghost.deserialize<List<ResilientItem>>(json) }
 
         benchmarkFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_DECODER,
             jsonSamples = listOf(JSON_DECODER_1, JSON_DECODER_2)
         ) { json -> Ghost.deserialize<CustomCoderStressModel>(json) }
 
         benchmarkFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_FALLBACK,
             jsonSamples = listOf(JSON_POLY_FALLBACK_1, JSON_POLY_FALLBACK_2)
         ) { json -> Ghost.deserialize<SmartHome>(json) }
 
         benchmarkBytesFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_RAWJSON_CAPTURE,
             jsonSamples = listOf(JSON_OPAQUE_METADATA)
         ) { bytes -> Ghost.deserialize<OpaqueMetadataEnvelope>(bytes) }
@@ -114,27 +113,27 @@ object GhostSpecialFeaturesBenchmark {
         ).metadata
 
         benchmarkAllocOnlyFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_RAWJSON_KIND,
         ) {
             capturedMetadata.kind()
         }
 
         benchmarkAllocOnlyFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_RAWJSON_DECODE_AS,
         ) {
             capturedMetadata.decodeAs<TagsProbe>()
         }
 
         benchmarkBytesFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_ENVELOPE_PAYLOAD,
             jsonSamples = listOf(JSON_SSE_DEVICE_EVENT)
         ) { bytes -> SseEventEnvelopeSerializer.parsePayload(bytes) }
 
         benchmarkBytesFeature(
-            threadBean, runs, warmupIters,
+            threadBean,
             label = LABEL_ENVELOPE_TYPED,
             jsonSamples = listOf(JSON_SSE_DEVICE_EVENT)
         ) { bytes -> SseEventEnvelopeSerializer.parseTyped(bytes) }
@@ -144,24 +143,24 @@ object GhostSpecialFeaturesBenchmark {
 
     private inline fun <reified T> benchmarkFeature(
         threadBean: ThreadMXBean,
-        runs: Int,
-        warmupIters: Int,
         label: String,
         jsonSamples: List<String>,
         crossinline deserialize: (String) -> T
     ) {
-        repeat(warmupIters) {
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) {
             for (sample in jsonSamples) {
                 deserialize(sample)
             }
         }
+
+        BenchmarkProgress.logStep("Measure: $label")
 
         val threadId = Thread.currentThread().id
         var totalTimeNanos = 0L
         var totalAllocBytes = 0L
         val samplesPerRun = jsonSamples.size
 
-        repeat(runs) {
+        repeat(BenchmarkStandard.MEASUREMENT_RUNS) {
             for (sample in jsonSamples) {
                 val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
                 val timeBefore = System.nanoTime()
@@ -171,30 +170,30 @@ object GhostSpecialFeaturesBenchmark {
             }
         }
 
-        printResult(label, totalTimeNanos, totalAllocBytes, runs.toLong() * samplesPerRun)
+        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong() * samplesPerRun)
     }
 
     private inline fun benchmarkBytesFeature(
         threadBean: ThreadMXBean,
-        runs: Int,
-        warmupIters: Int,
         label: String,
         jsonSamples: List<String>,
         crossinline block: (ByteArray) -> Any?
     ) {
         val payloads = jsonSamples.map { it.encodeToByteArray() }
-        repeat(warmupIters) {
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) {
             for (payload in payloads) {
                 block(payload)
             }
         }
+
+        BenchmarkProgress.logStep("Measure: $label")
 
         val threadId = Thread.currentThread().id
         var totalTimeNanos = 0L
         var totalAllocBytes = 0L
         val samplesPerRun = payloads.size
 
-        repeat(runs) {
+        repeat(BenchmarkStandard.MEASUREMENT_RUNS) {
             for (payload in payloads) {
                 val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
                 val timeBefore = System.nanoTime()
@@ -204,28 +203,27 @@ object GhostSpecialFeaturesBenchmark {
             }
         }
 
-        printResult(label, totalTimeNanos, totalAllocBytes, runs.toLong() * samplesPerRun)
+        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong() * samplesPerRun)
     }
 
     private inline fun benchmarkAllocOnlyFeature(
         threadBean: ThreadMXBean,
-        runs: Int,
-        warmupIters: Int,
         label: String,
         crossinline block: () -> Unit
     ) {
-        repeat(warmupIters) { block() }
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block() }
+        BenchmarkProgress.logStep("Measure: $label")
         val threadId = Thread.currentThread().id
         var totalTimeNanos = 0L
         var totalAllocBytes = 0L
-        repeat(runs) {
+        repeat(BenchmarkStandard.MEASUREMENT_RUNS) {
             val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
             val timeBefore = System.nanoTime()
             block()
             totalTimeNanos += System.nanoTime() - timeBefore
             totalAllocBytes += threadBean.getThreadAllocatedBytes(threadId) - allocBefore
         }
-        printResult(label, totalTimeNanos, totalAllocBytes, runs.toLong())
+        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong())
     }
 
     private fun printResult(label: String, totalTimeNanos: Long, totalAllocBytes: Long, totalOps: Long) {
