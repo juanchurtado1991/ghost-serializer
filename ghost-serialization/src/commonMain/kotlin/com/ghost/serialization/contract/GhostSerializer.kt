@@ -70,7 +70,7 @@ interface GhostSerializer<T> {
         val bytes = ghostInternalEncodeWithWriter { flatWriter ->
             serialize(flatWriter, value)
         }
-        writer.buffer.writeString(bytes.decodeToString())
+        writer.rawValue(bytes)
     }
 
     /** Deserializes a new instance of [T] from the [source]. */
@@ -101,18 +101,19 @@ interface GhostSerializer<T> {
 
     /** Deserializes a new instance of [T] using a specialized string [reader]. */
     fun deserialize(reader: GhostJsonStringReader): T {
-        val bytes = reader.rawData.encodeToByteArray()
+        val bytes = reader.ensureUtf8Bytes()
         val flatReader = GhostJsonFlatReader(bytes).also {
-            it.position = com.ghost.serialization.parser.charToBytePosition(reader.rawData, reader.position)
+            it.position = reader.charPositionToBytePosition(reader.position)
             it.limit = bytes.size
             it.strictMode = reader.strictMode
             it.coerceStringsToNumbers = reader.coerceStringsToNumbers
             it.coerceBooleans = reader.coerceBooleans
             it.maxDepth = reader.maxDepth
             it.maxCollectionSize = reader.maxCollectionSize
+            it.materializeRawJsonCaptures = true
         }
         val result = deserialize(flatReader)
-        reader.position = com.ghost.serialization.parser.byteToCharPosition(reader.rawData, flatReader.position)
+        reader.position = reader.bytePositionToCharPosition(flatReader.position)
         reader.nextTokenByte = -1
         return result
     }

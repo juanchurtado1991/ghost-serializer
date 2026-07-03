@@ -15,7 +15,12 @@ fun GhostJsonFlatReader.captureRawJson(): RawJson {
     val start = position
     captureJsonValueBytes()
     nextTokenByte = C.RESET_TOKEN_BYTE
-    return RawJson.fromBufferSlice(rawData, start, position - start)
+    val length = position - start
+    return if (materializeRawJsonCaptures) {
+        RawJson.fromUtf8Bytes(rawData.copyOfRange(start, position))
+    } else {
+        RawJson.fromBufferSlice(rawData, start, length)
+    }
 }
 
 /**

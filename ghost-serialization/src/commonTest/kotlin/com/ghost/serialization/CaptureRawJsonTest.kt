@@ -5,8 +5,12 @@ package com.ghost.serialization
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.beginObject
 import com.ghost.serialization.parser.captureRawJson
 import com.ghost.serialization.parser.captureRawJsonBytes
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.nextKey
+import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.types.RawJson
 import okio.Buffer
 import kotlin.test.Test
@@ -78,6 +82,23 @@ class CaptureRawJsonTest {
     }
 
     @Test
+    fun captureRawJsonFlatReaderMaterializesOwnedBytesWhenBridgedFromString() {
+        val json = """{"body":{"k":"v"}}""".encodeToByteArray()
+        val reader = GhostJsonFlatReader(json).also {
+            it.materializeRawJsonCaptures = true
+        }
+        reader.beginObject()
+        reader.selectNameAndConsume(
+            com.ghost.serialization.parser.JsonReaderOptions.of(0, 31, 128, true, "body")
+        )
+
+        val captured = reader.captureRawJson()
+        assertNotSame(json, captured.storage)
+        assertEquals(0, captured.storageOffset)
+        assertEquals("""{"k":"v"}""", captured.decodeToString())
+    }
+
+    @Test
     fun captureRawJsonStringReaderMaterializesOwnedBytes() {
         val json = """{"k":"v"}"""
         val reader = GhostJsonStringReader(json)
@@ -85,6 +106,37 @@ class CaptureRawJsonTest {
 
         assertNotSame(json.encodeToByteArray(), captured.storage)
         assertEquals(json, captured.decodeToString())
+    }
+
+    @Test
+    fun captureRawJsonStringReaderEncodesCapturedFieldOnly() {
+        fun nested(level: Int): String {
+            if (level == 0) return "\"leaf\":true"
+            return buildString {
+                append('{')
+                repeat(4) { index ->
+                    if (index > 0) append(',')
+                    append("\"k$level$index\":{")
+                    append(nested(level - 1))
+                    append('}')
+                }
+                append('}')
+            }
+        }
+
+        val envelope = """{"id":"bench-1","metadata":${nested(3)}}"""
+        val reader = GhostJsonStringReader(envelope)
+        reader.beginObject()
+        reader.nextKey()
+        reader.consumeKeySeparator()
+        reader.nextString()
+        reader.nextKey()
+        reader.consumeKeySeparator()
+
+        val bytes = reader.captureRawJsonBytes()
+        val metadataStart = envelope.indexOf("\"metadata\":") + "\"metadata\":".length
+        val expected = envelope.substring(metadataStart, envelope.lastIndex).encodeToByteArray()
+        assertContentEquals(expected, bytes)
     }
 
     @Test

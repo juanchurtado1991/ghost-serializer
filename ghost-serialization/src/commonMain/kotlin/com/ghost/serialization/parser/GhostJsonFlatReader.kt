@@ -26,7 +26,12 @@ class GhostJsonFlatReader(
     var strictMode: Boolean = false,
     var coerceStringsToNumbers: Boolean = false,
     var coerceBooleans: Boolean = false,
-    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
+    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize,
+    /**
+     * When true, [captureRawJson] copies captured UTF-8 into an owned array (offset 0)
+     * instead of slicing [rawData]. Set by the [GhostJsonStringReader] deserialize bridge.
+     */
+    var materializeRawJsonCaptures: Boolean = false,
 ) {
 
     @PublishedApi
