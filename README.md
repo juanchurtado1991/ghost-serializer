@@ -31,16 +31,26 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 | **Thread-local reader/writer pools** | Zero GC pressure in steady state |
 | **KSP2 + Kotlin 2.1.10** | Fastest incremental builds, strict compile-time safety |
 
-**Result on a real Twitter-like payload vs KotlinX Serialization** (`benchmarkTwitter`, 500 sessions × 50 samples). **🏆** = fastest · **💾** = leanest.
+---
 
-| Operation | Throughput | Memory |
-|:---|:---:|:---:|
-| Decode (String) | **+14.7%** 🏆 | **−69.6%** 💾 |
-| Decode (Bytes) | **+74.3%** 🏆 | **−84.4%** 💾 |
-| Decode (Streaming) | **+66.7%** 🏆 | **−30.7%** 💾 |
-| Encode (String) | **+35.3%** 🏆 | +10.5% heap *(KSER 💾)* |
-| Encode (Bytes) | **+58.6%** 🏆 | **−81.0%** 💾 |
-| Encode (Streaming) | **+75.0%** 🏆 | **−6.2%** 💾 |
+**Result on [HTTP Arena](https://www.http-arena.com/#sort=rps:-1&q=kotlin) Kotlin frameworks** (3-framework comparison, composite score). Ghost replaces Ktor's default JSON codec with compile-time serializers and zero-copy parsing — higher throughput on real API workloads with lower memory pressure.
+
+| Framework | Composite | vs plain Ktor | Highlights |
+|:---|:---:|:---:|:---|
+| **ktor-ghost** | **831** | **+14%** composite | JSON TLS **+67%** RPS · Static **+55%** · API-16 **+9%** · Pipelined **+3%** |
+| ktor | 728 | baseline | Default `ContentNegotiation` + kotlinx.serialization |
+| fishcake | 1134 | +56% composite | Different stack (not Ktor); shown for arena context |
+
+| Workload | ktor-ghost RPS | ktor RPS | Δ |
+|:---|:---:|:---:|:---:|
+| JSON TLS | 658k | 395k | **+67%** |
+| Static | 608k | 392k | **+55%** |
+| Short-lived | 622k | 602k | **+3%** |
+| API-16 | 188k | 173k | **+9%** |
+| API-4 | 114k | 104k | **+10%** |
+| Pipelined | 3.48M | 3.15M | **+10%** |
+
+*Source: [http-arena.com](https://www.http-arena.com/#sort=rps:-1&q=kotlin) — Kotlin filter, `ktor-ghost` vs `ktor` vs `fishcake`. Wire Ghost via `install(ContentNegotiation) { ghost() }` and `bodyGhost<T>()` / `respondGhost()` to bypass generic negotiation on hot paths.*
 
 ---
 
@@ -54,7 +64,7 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 ## Full Benchmark Results
 
-* 📊 **[HTTP Arena Benchmarks →](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** — Official community benchmarks showing `ktor-ghost` achieving **+66% throughput** and **50% RAM reduction** vs standard Ktor.
+* 📊 **[HTTP Arena Benchmarks →](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** — `ktor-ghost` composite **831** vs plain **ktor** **728** (+14%); see table above for per-workload RPS.
 * 📈 **[benchmarks.md](docs/wiki/benchmarks.md)** — Full multi-engine tables (Ghost, KSER, Gson, Jackson), stress tests, special-feature benchmarks, run instructions.
 
 ---
