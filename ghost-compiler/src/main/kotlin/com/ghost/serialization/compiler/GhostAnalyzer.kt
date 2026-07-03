@@ -6,9 +6,11 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -455,39 +457,102 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     )
 
     private fun resolveWrappedKeysAnnotation(prop: KSPropertyDeclaration): WrappedKeysConfig? {
-        fun fromAnnotation(annotation: GhostWrappedKeys): WrappedKeysConfig {
-            val keyStrings = annotation.keys.toList()
-            if (keyStrings.isEmpty()) {
-                logger.error(
-                    C.STR_ERR_WRAPPED_EMPTY_KEYS_1 + prop.simpleName.asString() + C.STR_ERR_WRAPPED_EMPTY_KEYS_2,
-                    prop,
-                )
-                return WrappedKeysConfig(emptyList(), false, emptyList())
-            }
-            return WrappedKeysConfig(
-                keys = keyStrings,
-                omitIfEmpty = annotation.omitIfEmpty,
-                omitIfAbsent = annotation.omitIfAbsent.toList(),
-            )
-        }
-
-        prop.getAnnotationsByType(GhostWrappedKeys::class).firstOrNull()?.let(::fromAnnotation)?.let { config ->
-            if (config.keys.isNotEmpty()) {
-                return config
-            }
-        }
+        resolveWrappedKeysFromAnnotated(prop)?.let { return it }
 
         val classDecl = prop.parentDeclaration as? KSClassDeclaration
         val parameter = classDecl?.primaryConstructor?.parameters?.firstOrNull {
             it.name?.asString() == prop.simpleName.asString()
         }
-        parameter?.getAnnotationsByType(GhostWrappedKeys::class)?.firstOrNull()?.let(::fromAnnotation)?.let { config ->
-            if (config.keys.isNotEmpty()) {
-                return config
-            }
-        }
+        parameter?.let { resolveWrappedKeysFromAnnotated(it) }?.let { return it }
 
         return null
+    }
+
+    private fun resolveWrappedKeysFromAnnotated(annotated: KSAnnotated): WrappedKeysConfig? {
+        try {
+            when (annotated) {
+                is KSPropertyDeclaration -> {
+                    annotated.getAnnotationsByType(GhostWrappedKeys::class)
+                        .firstOrNull()
+                        ?.let { wrappedKeysConfigFromAnnotation(it, annotated) }
+                        ?.let { return it }
+                }
+                is KSValueParameter -> {
+                    annotated.getAnnotationsByType(GhostWrappedKeys::class)
+                        .firstOrNull()
+                        ?.let { wrappedKeysConfigFromAnnotation(it, annotated) }
+                        ?.let { return it }
+                }
+            }
+        } catch (_: Exception) {
+            // kspCommonMainKotlinMetadata may throw on getAnnotationsByType for array args.
+        }
+
+        return annotated.annotations
+            .find { it.shortName.asString() == C.GHOST_WRAPPED_KEYS }
+            ?.let { wrappedKeysConfigFromKsAnnotation(it, annotated) }
+    }
+
+    private fun wrappedKeysConfigFromAnnotation(
+        annotation: GhostWrappedKeys,
+        source: KSAnnotated,
+    ): WrappedKeysConfig {
+        return wrappedKeysConfigFromValues(
+            keys = annotation.keys.toList(),
+            omitIfEmpty = annotation.omitIfEmpty,
+            omitIfAbsent = annotation.omitIfAbsent.toList(),
+            source = source,
+        )
+    }
+
+    private fun wrappedKeysConfigFromKsAnnotation(
+        annotation: KSAnnotation,
+        source: KSAnnotated,
+    ): WrappedKeysConfig {
+        return wrappedKeysConfigFromValues(
+            keys = annotation.readStringArrayArgument(C.KEYS_ARG),
+            omitIfEmpty = annotation.readBooleanArgument(C.OMIT_IF_EMPTY_ARG),
+            omitIfAbsent = annotation.readStringArrayArgument(C.OMIT_IF_ABSENT_ARG),
+            source = source,
+        )
+    }
+
+    private fun wrappedKeysConfigFromValues(
+        keys: List<String>,
+        omitIfEmpty: Boolean,
+        omitIfAbsent: List<String>,
+        source: KSAnnotated,
+    ): WrappedKeysConfig {
+        if (keys.isEmpty()) {
+            val name = when (source) {
+                is KSPropertyDeclaration -> source.simpleName.asString()
+                is KSValueParameter -> source.name?.asString() ?: C.STR_EMPTY
+                else -> C.STR_EMPTY
+            }
+            logger.error(
+                C.STR_ERR_WRAPPED_EMPTY_KEYS_1 + name + C.STR_ERR_WRAPPED_EMPTY_KEYS_2,
+                source,
+            )
+            return WrappedKeysConfig(emptyList(), false, emptyList())
+        }
+        return WrappedKeysConfig(
+            keys = keys,
+            omitIfEmpty = omitIfEmpty,
+            omitIfAbsent = omitIfAbsent,
+        )
+    }
+
+    private fun KSAnnotation.readStringArrayArgument(argName: String): List<String> {
+        val value = arguments.find { it.name?.asString() == argName }?.value ?: return emptyList()
+        return when (value) {
+            is Array<*> -> value.filterIsInstance<String>()
+            is List<*> -> value.filterIsInstance<String>()
+            else -> emptyList()
+        }
+    }
+
+    private fun KSAnnotation.readBooleanArgument(argName: String): Boolean {
+        return arguments.find { it.name?.asString() == argName }?.value as? Boolean ?: false
     }
 
     private fun resolveWrappedUnwrapFields(
