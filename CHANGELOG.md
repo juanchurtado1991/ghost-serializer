@@ -7,10 +7,20 @@
 - **`RawJson` opaque JSON type**: New type in `com.ghost.serialization.types.RawJson` for public API fields that hold arbitrary JSON (objects, arrays, primitives). Uses zero-copy `captureRawJson()` slice capture on flat byte readers (`storage` + `storageOffset` + `storageLength`), slice-aware `writer.rawValue(bytes, offset, length)` on serialize, and value-based `equals`/`hashCode`. `captureRawJsonBytes()` still returns an owned copy. Supports nullable fields, `List<RawJson>`, and `Map<String, RawJson>`. Added `RawJsonCaptureBenchmark` comparing slice vs `ByteArray` capture.
 - **`RawJson` scalar access API** (`ghost-api`): `RawJsonKind`, `kind()`, `isJsonNull`, `asBooleanOrNull()`, `asIntOrNull()`, `asLongOrNull()`, `asDoubleOrNull()`, `asStringOrNull()`, `asDisplayString()` — zero-allocation classification and integer/boolean coercion on captured slices; ASCII string fast path without escape scanning when possible.
 - **`RawJson.decodeAs<T>()`** (`ghost-serialization`): Typed second-stage parse via `GhostJsonFlatReader.resetSlice()` without copying parent response buffers.
+- **String-native `@GhostDecoder`**: KSP detects `fun(GhostJsonStringReader): T` signatures and emits direct calls on the string deserialize path, avoiding per-field `encodeToByteArray()` bridging when `ghost.textChannel=true`. Legacy `fun(GhostJsonReader): T` decoders keep the compatibility bridge.
+- **Per-model `textChannel` on `@GhostSerialization`**: Opt in native `GhostJsonStringReader` / `GhostJsonStringWriter` overloads per model (default `false`) with transitive propagation to nested `@GhostSerialization` types in the property graph. Module-wide `ghost.textChannel=true` remains supported as a legacy all-models switch.
+- **UTF-8 cache on `GhostJsonStringReader`**: `ensureUtf8Bytes()`, char→byte offset table, and `sliceUtf8Bytes()` encode at most once per `reset` and avoid a full-document UTF-8 pass for `captureRawJsonBytes` on large envelopes.
+- **Benchmark fast profile and regression gate**: `BenchmarkLauncher`, `benchmarkRegressionFast`, `benchmarkTwitterFast`, and `benchmarkSyntheticFast` with ±10% tolerance; benchmark tasks depend on `:allTests` unless `-PskipTests`.
+- **Root verification tasks**: `allTests` (alias of `ciTest`), `verifyAndBenchmark`, and `verifyAndBenchmarkFast` for one-shot test-then-regression workflows.
 
 ### Fixed
 - **Leaner generated serializers**: KSP now imports parser helpers conditionally (`captureRawJson` vs `captureRawJsonBytes`, `readList` vs `readSet`), gates native `GhostJsonStringWriter` serialize overloads behind `ghost.textChannel=true` (interface bridge remains), skips `HS_*` string header constants when the string channel is disabled, drops `@file:Suppress` from generated serializers, and trims redundant `kotlin.*` stdlib imports.
+- **String-bridge array serialization**: Default `serialize(GhostJsonStringWriter)` writes via `rawValue(bytes)` so comma separators are emitted between array elements when `textChannel=false`.
+- **String-bridge `RawJson` capture**: `deserialize(GhostJsonStringReader)` sets `materializeRawJsonCaptures` on the delegated flat reader so `RawJson` fields get owned bytes (`storageOffset == 0`) without enabling per-model `textChannel`.
 - **Enum wire-value hash collisions (issue #11)**: Enum serializers now use `PerfectHashFinder` for `ENUM_OPTIONS` (same as object field dispatch), instead of `JsonReaderOptions.of(*names)` with default shift/multiplier/table size. When the standard hash search fails (e.g. enums with shared 4-byte prefixes and different lengths like `w:locations:geo`), the compiler retries with extended key hashing and emits the matching runtime flag. Generated enum code no longer uses the bare `JsonReaderOptions.of(vararg)` factory described in issue #12.
+
+### Changed
+- **Benchmark harness refactor**: Replaced monolithic CLI flags with `BenchmarkProfile` constants and per-suite Gradle tasks; removed dead `ParsingTestBenchmark` / `TestResult` code.
 
 ## [1.2.4] - 2026-06-30
 
