@@ -654,10 +654,9 @@ object Ghost {
     @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         json: String,
-        crossinline options: (GhostJsonReader) -> Unit
+        crossinline options: (GhostJsonStringReader) -> Unit
     ): T {
-        val bytes = json.encodeToByteArray()
-        return ghostInternalUseReader(bytes) { reader ->
+        return ghostInternalUseStringReader(json) { reader ->
             options(reader)
             deserialize(reader)
         }

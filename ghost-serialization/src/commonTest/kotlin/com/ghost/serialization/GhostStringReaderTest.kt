@@ -1560,4 +1560,36 @@ class GhostStringReaderTest {
         // Accessing stringDispatch should trigger lazy build and find the field successfully
         assertEquals(0, reader.selectString(options))
     }
+
+    @Test
+    fun ensureUtf8BytesCachesSingleEncodingPerReset() {
+        val reader = GhostJsonStringReader("""{"a":1,"b":2}""")
+        val first = reader.ensureUtf8Bytes()
+        val second = reader.ensureUtf8Bytes()
+        assertTrue(first === second, "UTF-8 bytes should be cached across calls")
+        reader.reset("""{"c":3}""")
+        val afterReset = reader.ensureUtf8Bytes()
+        assertTrue(afterReset !== first, "Reset should invalidate UTF-8 cache")
+    }
+
+    @Test
+    fun readerCharBytePositionMatchesParserUtils() {
+        val json = """{"emoji":"a🚀b"}"""
+        val reader = GhostJsonStringReader(json)
+        for (charPos in 0..json.length) {
+            assertEquals(
+                charToBytePosition(json, charPos),
+                reader.charPositionToBytePosition(charPos),
+                "char→byte mismatch at $charPos",
+            )
+        }
+        val bytes = reader.ensureUtf8Bytes()
+        for (bytePos in 0..bytes.size) {
+            assertEquals(
+                byteToCharPosition(json, bytePos),
+                reader.bytePositionToCharPosition(bytePos),
+                "byte→char mismatch at $bytePos",
+            )
+        }
+    }
 }

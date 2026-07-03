@@ -18,6 +18,7 @@ import com.ghost.serialization.parser.GhostJsonConstants.CHAR_N
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_DOT
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_ZERO
 import com.ghost.serialization.parser.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
+import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.parser.GhostHeuristics.maxWarmCharWriteBufferCapacity
 import okio.ByteString
 
@@ -131,6 +132,60 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         ensureCapacity(length)
         text.copyRangeToCharArray(array, size, beginIndex, endIndex)
         size += length
+    }
+
+    /** Decodes a UTF-8 byte range directly into the char buffer without an intermediate [String]. */
+    fun appendUtf8(bytes: ByteArray, offset: Int, length: Int) {
+        if (length <= 0) {
+            return
+        }
+        ensureCapacity(length)
+        val backingArray = array
+        var writeIndex = size
+        var readIndex = offset
+        val end = offset + length
+        while (readIndex < end) {
+            val byte = bytes[readIndex].toInt() and 0xFF
+            when {
+                byte <= C.UTF8_1BYTE_MAX -> {
+                    backingArray[writeIndex++] = byte.toChar()
+                    readIndex++
+                }
+                (byte shr 5) == 0x6 -> {
+                    val b2 = bytes[readIndex + 1].toInt() and 0xFF
+                    val codePoint = ((byte and 0x1F) shl 6) or (b2 and 0x3F)
+                    backingArray[writeIndex++] = codePoint.toChar()
+                    readIndex += 2
+                }
+                (byte shr 4) == 0xE -> {
+                    val b2 = bytes[readIndex + 1].toInt() and 0xFF
+                    val b3 = bytes[readIndex + 2].toInt() and 0xFF
+                    val codePoint = ((byte and 0x0F) shl 12) or ((b2 and 0x3F) shl 6) or (b3 and 0x3F)
+                    backingArray[writeIndex++] = codePoint.toChar()
+                    readIndex += 3
+                }
+                else -> {
+                    val b2 = bytes[readIndex + 1].toInt() and 0xFF
+                    val b3 = bytes[readIndex + 2].toInt() and 0xFF
+                    val b4 = bytes[readIndex + 3].toInt() and 0xFF
+                    val codePoint = ((byte and 0x07) shl 18) or
+                        ((b2 and 0x3F) shl 12) or
+                        ((b3 and 0x3F) shl 6) or
+                        (b4 and 0x3F)
+                    if (writeIndex + 1 >= backingArray.size) {
+                        size = writeIndex
+                        ensureCapacity(2)
+                    }
+                    val updatedArray = array
+                    val high = ((codePoint - 0x10000) shr 10) + 0xD800
+                    val low = ((codePoint - 0x10000) and 0x3FF) + 0xDC00
+                    updatedArray[writeIndex++] = high.toChar()
+                    updatedArray[writeIndex++] = low.toChar()
+                    readIndex += 4
+                }
+            }
+        }
+        size = writeIndex
     }
 
     /** Writes a ByteString interpreting its bytes directly as ASCII chars. */

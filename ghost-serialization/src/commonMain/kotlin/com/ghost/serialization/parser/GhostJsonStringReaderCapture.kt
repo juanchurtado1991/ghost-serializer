@@ -12,17 +12,17 @@ fun GhostJsonStringReader.captureRawJson(): RawJson =
 /**
  * Captures the next complete JSON value as a raw [ByteArray] without decoding.
  *
- * Since [GhostJsonStringReader] operates on a UTF-16 [String] (and its [CharArray] cache),
- * the captured range is re-encoded to UTF-8 via [String.encodeToByteArray]. This is the
- * slower path compared to [GhostJsonFlatReader.captureRawJsonBytes] — prefer the flat
- * reader when starting from a [ByteArray] source.
+ * Since [GhostJsonStringReader] operates on a UTF-16 [String], the captured char range is
+ * encoded to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes] (slice-only when no UTF-8
+ * cache exists; otherwise a zero-copy slice from [GhostJsonStringReader.ensureUtf8Bytes]).
+ * Prefer [GhostJsonFlatReader.captureRawJsonBytes] when starting from a [ByteArray] source.
  */
 fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
     skipWhitespace()
     val start = position
     captureStringReaderValueBytes()
     nextTokenByte = C.RESET_TOKEN_BYTE
-    return rawData.substring(start, position).encodeToByteArray()
+    return sliceUtf8Bytes(start, position)
 }
 
 private fun GhostJsonStringReader.captureStringReaderValueBytes() {

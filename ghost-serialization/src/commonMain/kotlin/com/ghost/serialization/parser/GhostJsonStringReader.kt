@@ -32,6 +32,12 @@ class GhostJsonStringReader(
     /** Reused CharArray cache to bypass String.charAt overhead. */
     var rawChars: CharArray
 
+    /** Lazily encoded UTF-8 bytes for bridge paths (one encode per [reset] cycle). */
+    private var utf8CacheBytes: ByteArray? = null
+
+    /** Char-index → UTF-8 byte offset, built once per [reset] cycle. */
+    private var charToByteOffsets: IntArray? = null
+
     /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
     val stringPool: Array<String?> = arrayOfNulls(C.STR_POOL_SIZE)
     val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
@@ -165,6 +171,7 @@ class GhostJsonStringReader(
         this.maxDepth = C.MAX_DEPTH
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
+        invalidateUtf8Cache()
 
         if (newData !== oldData) {
             val len = newData.length
@@ -480,6 +487,100 @@ class GhostJsonStringReader(
             if (cached[i] != chars[start + i]) return false
         }
         return true
+    }
+
+    private fun invalidateUtf8Cache() {
+        utf8CacheBytes = null
+        charToByteOffsets = null
+    }
+
+    /**
+     * Returns UTF-8 bytes for [rawData], encoding at most once until the next [reset].
+     */
+    @InternalGhostApi
+    fun ensureUtf8Bytes(): ByteArray {
+        var bytes = utf8CacheBytes
+        if (bytes == null) {
+            bytes = rawData.encodeToByteArray()
+            utf8CacheBytes = bytes
+        }
+        return bytes
+    }
+
+    /**
+     * Maps a char index to its UTF-8 byte offset using a cached offset table.
+     */
+    @InternalGhostApi
+    fun charPositionToBytePosition(charPos: Int): Int {
+        val safePos = charPos.coerceIn(0, limit)
+        return ensureCharToByteOffsets()[safePos]
+    }
+
+    /**
+     * Inverse of [charPositionToBytePosition] for syncing reader position after byte decoders.
+     */
+    @InternalGhostApi
+    fun bytePositionToCharPosition(targetBytePos: Int): Int {
+        return byteToCharPosition(rawData, targetBytePos)
+    }
+
+    /**
+     * Returns UTF-8 bytes for the char range [[charStart], [charEnd]).
+     *
+     * When [ensureUtf8Bytes] already materialized the payload, slices the cached array
+     * (used by custom-decoder bridges). Otherwise encodes only the range — avoids a full
+     * document UTF-8 pass for [captureRawJsonBytes] on large envelopes.
+     */
+    @InternalGhostApi
+    fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {
+        val cached = utf8CacheBytes
+        if (cached != null) {
+            return cached.copyOfRange(
+                charPositionToBytePosition(charStart),
+                charPositionToBytePosition(charEnd),
+            )
+        }
+        return rawData.substring(charStart, charEnd).encodeToByteArray()
+    }
+
+    private fun ensureCharToByteOffsets(): IntArray {
+        val cached = charToByteOffsets
+        if (cached != null && cached.size == limit + 1) {
+            return cached
+        }
+        val currentLimit = limit
+        val table = IntArray(currentLimit + 1)
+        var bytePos = 0
+        var charIndex = 0
+        table[0] = 0
+        while (charIndex < currentLimit) {
+            val code = rawData[charIndex].code
+            table[charIndex] = bytePos
+            when {
+                code <= C.UTF8_1BYTE_MAX -> {
+                    bytePos += C.UTF8_1BYTE_SIZE
+                    charIndex++
+                }
+                code <= C.UTF8_2BYTE_MAX -> {
+                    bytePos += C.UTF8_2BYTE_SIZE
+                    charIndex++
+                }
+                code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
+                    charIndex + 1 < currentLimit &&
+                    rawData[charIndex + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
+                    bytePos += C.UTF8_4BYTE_SIZE
+                    table[charIndex + 1] = bytePos
+                    charIndex += 2
+                }
+                else -> {
+                    bytePos += C.UTF8_3BYTE_SIZE
+                    charIndex++
+                }
+            }
+        }
+        table[currentLimit] = bytePos
+        charToByteOffsets = table
+        return table
     }
 
 }

@@ -363,7 +363,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
      */
     fun rawValue(bytes: ByteArray): GhostJsonStringWriter {
         appendSeparator()
-        buffer.writeString(bytes.decodeToString())
+        buffer.appendUtf8(bytes, 0, bytes.size)
         needsComma = true
         return this
     }
@@ -371,7 +371,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     /** Writes a slice of raw JSON bytes after decoding the UTF-8 range. */
     fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonStringWriter {
         appendSeparator()
-        buffer.writeString(bytes.decodeToString(offset, offset + length))
+        buffer.appendUtf8(bytes, offset, length)
         needsComma = true
         return this
     }
