@@ -158,6 +158,29 @@ data class User(
 // Serializes to: { "id": 1, "metadata": { "info": { "name": "John" } } }
 ```
 
+### Wrapped keys (`@GhostWrappedKeys`)
+The inverse of `@GhostWrap` at the **object** level — collapse sibling wire keys into one Kotlin property (SmartThings `@WrappedKeys` parity). Zero-copy capture via `RawJson` slices; synthetic wrapper assembly uses a pooled scratch buffer (no `JsonObject` tree).
+
+```kotlin
+@GhostSerialization
+data class Device(
+    val deviceId: String,
+    @GhostWrappedKeys(keys = ["type", "dth", "app", "ble"])
+    @GhostName("integration")
+    val integration: Integration,
+)
+// Wire:  { "deviceId": "x", "type": "DTH", "dth": { ... } }
+// Model: Device(deviceId = "x", integration = Integration.Dth(...))
+```
+
+| Parameter | Behavior |
+|-----------|----------|
+| `keys` | Wire field names at the current JSON depth that belong to the wrapper property |
+| `omitIfEmpty` | When every key is absent or JSON `null`, set the wrapper property to `null` (property must be nullable) |
+| `omitIfAbsent` | When any listed key is absent or JSON `null`, set the wrapper property to `null` |
+
+Repeat `@GhostWrappedKeys` on **different properties** to split keys (e.g. `extras12` / `extras34`). Nested hierarchies compose: an outer wrapper can include keys that an inner `@GhostWrappedKeys` model expands again.
+
 ---
 
 ## 5. Native String Reader (`textChannel`)
