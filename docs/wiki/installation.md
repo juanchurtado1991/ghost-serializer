@@ -66,7 +66,7 @@ ksp {
 ```
 
 > [!NOTE]
-> `ghost.textChannel=true` is **opt-in**. Without it, `Ghost.deserialize(json: String)` converts the string to bytes first (slightly slower). When disabled, the compiler saves **4 KB of binary size per DTO** by not pre-generating the String dispatch table. Enable it only in modules that frequently receive pre-decoded String inputs (Room, SharedPreferences, in-memory caches).
+> `ghost.textChannel=true` is **opt-in**. With the default `false`, `Ghost.deserialize(json: String)` UTF-8-encodes once and parses via `GhostJsonFlatReader` — **faster than native `GhostJsonStringReader` on typical DTOs** in `benchmarkSynthetic`. The compiler saves **≈4 KB of binary size per DTO** by not pre-generating the String dispatch table. Enable `textChannel` only on models with **very large** in-memory `String` inputs where you have measured a benefit (e.g. Twitter macro-scale JSON). See [advanced-features §5](advanced-features.md#5-native-string-reader-textchannel).
 
 ---
 

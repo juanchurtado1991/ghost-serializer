@@ -18,6 +18,7 @@ Thank you for helping improve Ghost!
 ```bash
 git clone https://github.com/juanchurtado1991/GhostSerialization.git
 cd GhostSerialization
+./gradlew allTests          # full suite before a PR
 ./gradlew :ghost-serialization:compileKotlinJvm
 ```
 
@@ -27,10 +28,15 @@ cd GhostSerialization
 
 | Command | What it runs |
 |:---|:---|
-| `./gradlew ciTestJvm` | All JVM test modules (CI job **Tests (JVM)** on Ubuntu) |
-| `./gradlew ciTest` | `ciTestJvm` + Android unit tests + iOS simulator tests *(macOS only)* |
+| `./gradlew allTests` | **All tests** — alias of `ciTest` (JVM + Android + iOS on macOS) |
+| `./gradlew ciTestJvm` | JVM test modules only (CI job **Tests (JVM)** on Ubuntu) |
+| `./gradlew ciTest` | Same as `allTests` |
+| `./gradlew verifyAndBenchmarkFast` | `allTests` then fast regression gate |
+| `./gradlew verifyAndBenchmark` | `allTests` then full regression gate |
 | `./gradlew :ghost-compiler:test` | KSP processor / emitter tests only |
-| `./gradlew :ghost-benchmark:run` | Runs `ciTest` first, then the JVM benchmark harness |
+| `./gradlew :ghost-benchmark:benchmarkRegressionFast` | `allTests` first, then fast regression |
+| `./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests` | Benchmark only — no test gate |
+| `./gradlew :ghost-benchmark:run` | `allTests` first, then full JVM benchmark harness |
 | `./gradlew :ghost-benchmark:run -PskipTests` | Benchmark only — no test gate |
 
 On **Linux/Windows**, `ciTest` logs that iOS tests are skipped and runs **642** tests.

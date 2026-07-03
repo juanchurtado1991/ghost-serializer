@@ -64,7 +64,7 @@ Ghost generates target-specific readers for different input channels, avoiding i
 ```
 
 1. **`GhostJsonFlatReader` (Byte-first)**: Processes raw `ByteArray` inputs. Reads bytes directly via bitwise operations. This is the fastest path.
-2. **`GhostJsonStringReader` (Text-first)**: Parses string inputs natively using `CharArray` scans, bypassing `encodeToByteArray` conversions (requires `ghost.textChannel=true`).
+2. **`GhostJsonStringReader` (Text-first)**: Parses string inputs natively using `CharArray` scans. Opt-in via `@GhostSerialization(textChannel = true)` — only for very large in-memory `String` payloads; default `deserialize(String)` bridges to `GhostJsonFlatReader` instead.
 3. **`GhostJsonReader` (Streaming)**: Operates directly over Okio `BufferedSource` stream inputs, using $O(1)$ memory regardless of total payload size.
 
 ---

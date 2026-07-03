@@ -31,16 +31,16 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 | **Thread-local reader/writer pools** | Zero GC pressure in steady state |
 | **KSP2 + Kotlin 2.1.10** | Fastest incremental builds, strict compile-time safety |
 
-**Result on a real Twitter-like payload vs KotlinX Serialization:**
+**Result on a real Twitter-like payload vs KotlinX Serialization** (`benchmarkTwitter`, 500 sessions × 50 samples). **🏆** = fastest · **💾** = leanest.
 
-| | Throughput | Memory |
+| Operation | Throughput | Memory |
 |:---|:---:|:---:|
-| Decode (String) | **+26.7% faster** | **−69.6% heap** |
-| Decode (Bytes) | **+71.9% faster** | **−84.4% heap** |
-| Decode (Streaming) | **+78.8% faster** | **−30.7% heap** |
-| Encode (String) | **+39.5% faster** | +10.5% heap |
-| Encode (Bytes) | **+80.5% faster** | **−81.0% heap** |
-| Encode (Streaming) | **+49.0% faster** | **−6.2% heap** |
+| Decode (String) | **+14.7%** 🏆 | **−69.6%** 💾 |
+| Decode (Bytes) | **+74.3%** 🏆 | **−84.4%** 💾 |
+| Decode (Streaming) | **+66.7%** 🏆 | **−30.7%** 💾 |
+| Encode (String) | **+35.3%** 🏆 | +10.5% heap *(KSER 💾)* |
+| Encode (Bytes) | **+58.6%** 🏆 | **−81.0%** 💾 |
+| Encode (Streaming) | **+75.0%** 🏆 | **−6.2%** 💾 |
 
 ---
 
@@ -55,7 +55,7 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 ## Full Benchmark Results
 
 * 📊 **[HTTP Arena Benchmarks →](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** — Official community benchmarks showing `ktor-ghost` achieving **+66% throughput** and **50% RAM reduction** vs standard Ktor.
-* 📈 **[benchmarks.md](docs/wiki/benchmarks.md)** — Twitter macro dataset, multi-engine comparison tables, stress tests, special feature benchmarks, and instructions to run locally.
+* 📈 **[benchmarks.md](docs/wiki/benchmarks.md)** — Full multi-engine tables (Ghost, KSER, Gson, Jackson), stress tests, special-feature benchmarks, run instructions.
 
 ---
 

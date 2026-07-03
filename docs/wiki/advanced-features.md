@@ -62,6 +62,10 @@ val user = Ghost.deserialize<User>(json) {
 Use `@GhostDecoder` / `@GhostEncoder` for property-specific parsing logic — the generated code calls your function **directly** (no virtual dispatch, no boxing):
 
 ```kotlin
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.writer.GhostJsonFlatWriter
+
 @GhostSerialization
 data class LegacyUser(
     val id: Int,
@@ -71,9 +75,14 @@ data class LegacyUser(
 )
 
 object LegacyUtils {
-    // Signature: (GhostJsonReader) -> T
+    // Signature: (GhostJsonReader) -> T  — or (GhostJsonStringReader) -> T when ghost.textChannel=true
     fun parseDate(reader: GhostJsonReader): Long {
         val raw = reader.nextString() // e.g. "15-05-2026"
+        return someDateParser(raw)
+    }
+
+    fun parseDate(reader: GhostJsonStringReader): Long {
+        val raw = reader.nextString()
         return someDateParser(raw)
     }
 
@@ -85,7 +94,7 @@ object LegacyUtils {
 ```
 
 > [!IMPORTANT]
-> **Zero-overhead design**: Unlike adapter interfaces (Gson / Moshi), Ghost uses static method discovery — no vtable lookup, no boxing of primitive types, fully JIT-inlinable.
+> **Zero-overhead design**: Unlike adapter interfaces (Gson / Moshi), Ghost uses static method discovery — no vtable lookup, no boxing of primitive types, fully JIT-inlinable. With `ghost.textChannel=true`, prefer `fun(GhostJsonStringReader): T` on decoders that run on string inputs to skip UTF-8 conversion.
 
 ---
 
@@ -151,32 +160,56 @@ data class User(
 
 ---
 
-## 5. Native String Reader (`ghost.textChannel`)
+## 5. Native String Reader (`textChannel`)
 
-Enable a dedicated parser path for `String` inputs — bypasses `encodeToByteArray` entirely:
+Opt in per model (default **false**) or module-wide via `ghost.textChannel=true` (legacy):
 
 ```kotlin
-// build.gradle.kts
-ksp {
-    arg("ghost.textChannel", "true")
-}
+// Per model — propagates to nested @GhostSerialization types (Tweet, User, …)
+@GhostSerialization(textChannel = true)
+data class TwitterResponse(val statuses: List<Tweet>)
 ```
 
 ```kotlin
-// When enabled, this path has zero ByteArray conversion overhead
-val user: User = Ghost.deserialize(jsonString)  // Uses GhostJsonStringReader
+// Module-wide (every DTO in the module)
+ksp { arg("ghost.textChannel", "true") }
 ```
 
-| | `ghost.textChannel = false` (default) | `ghost.textChannel = true` |
+```kotlin
+// Native String parse — no UTF-8 bridge when textChannel is enabled for this type
+val user: User = Ghost.deserialize(jsonString)
+```
+
+| | `textChannel = false` (default) | `textChannel = true` |
 |:---|:---:|:---:|
-| `deserialize(String)` path | String → ByteArray → parse | Native String parse |
-| `encodeToString()` serialize path | FlatWriter bridge (default) | Native `GhostJsonStringWriter` |
+| `deserialize(String)` path | String → UTF-8 once → `GhostJsonFlatReader` | Native `GhostJsonStringReader` |
+| `encodeToString()` path | Bytes bridge (default interface) | Native `GhostJsonStringWriter` |
 | Binary per DTO | Baseline | +4 KB dispatch table |
-| String decode speed | Slower | **+31% vs KSer** |
-| Heap per call | Higher | **-69.6% vs KSer** |
+| Typical REST / synthetic DTOs | **Faster deserialize** (benchmark) | Slower deserialize vs bridge |
+| Very large String payloads (Twitter macro) | Bridge still works | **+14–75% throughput vs KSER** (see [benchmarks](benchmarks.md)) |
+
+### When to enable `textChannel`
+
+Benchmark evidence (`benchmarkSynthetic` + `benchmarkTwitter`, JVM, 500 sessions):
+
+| Payload scale | `textChannel = false` (default) | `textChannel = true` |
+|:---|:---|:---|
+| Small / medium DTOs (≈200 objects, LIST_MEDIUM) | Ghost **0.080 ms** deserialize String | **0.094 ms** — ~17% slower |
+| Large nested DTOs (≈2000 objects, SYNC_FULL_LARGE) | Ghost **0.654 ms** (bridge) | **0.805 ms** — bridge wins |
+| Twitter macro JSON (multi‑MB `String` in memory) | Not measured as primary path | Ghost **1271 ops/s** decode String 🏆 |
+| Network `ByteArray` / Okio | Always use default — no `textChannel` needed | N/A |
+
+**Rule of thumb:** leave **`textChannel = false`** (default) for almost all models. The interface bridge reuses the byte-first `GhostJsonFlatReader`, which is the most JIT-friendly path for deserialize on typical and large synthetic payloads.
+
+Enable **`textChannel = true`** only when:
+
+1. The model **often** receives a **very large** pre-decoded `String` (in-memory cache, Room text column, multi‑MB JSON blobs) **and** you have measured a win on your payload, **or**
+2. You rely heavily on **`encodeToString`** on large graphs (native string writer avoids the bytes round-trip on serialize).
+
+For HTTP clients, prefer `Ghost.deserialize(bytes)` — never enable `textChannel` just to parse response bodies.
 
 > [!NOTE]
-> Enable only in modules that **frequently** receive pre-decoded String inputs (Room, SharedPreferences, in-memory caches). For network responses, always feed `ByteArray` directly.
+> `Ghost.deserialize(json: String)` **always works** with the default `false`; it does not require `textChannel`. Enabling `textChannel` generates extra reader/writer overloads (+≈4 KB binary per DTO).
 
 ---
 
@@ -196,9 +229,10 @@ val user: User = Ghost.deserialize(response.body().string())
 |:---|:---|:---|
 | `ByteArray` (raw network bytes) | `GhostJsonFlatReader` | Nothing — zero-overhead direct path |
 | `BufferedSource` (Okio stream) | `GhostJsonReader` | Full buffer load; O(1) memory for any payload |
-| `String` (Room / cache) | `GhostJsonStringReader`¹ | UTF-16→UTF-8 re-encoding cost |
+| `String` (Room / cache) | Bridge → `GhostJsonFlatReader` (default) | One UTF-8 encode, then byte-first parse |
+| `String` + `textChannel = true` | `GhostJsonStringReader` | Native char scan — only for **very large** in-memory JSON |
 
-¹ Requires `ghost.textChannel=true`.
+¹ `textChannel` is **not** required for `Ghost.deserialize(String)` — the default bridge always works. Enable per model only for multi‑MB String payloads where benchmarks show a win (see [§5 — When to enable `textChannel`](advanced-features.md#when-to-enable-textchannel)).
 
 ---
 

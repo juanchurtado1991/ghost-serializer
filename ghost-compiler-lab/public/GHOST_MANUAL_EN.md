@@ -1091,8 +1091,8 @@ GitHub jobs: JVM, Android testDebugUnitTest, iOS macos-14.
 | Full CI (+ Android) | `./gradlew ciTest` |
 | iOS (Mac only) | `./gradlew :ghost-serialization:iosSimulatorArm64Test` |
 | View generated KSP code | `./gradlew :ghost-integration-test:compileKotlin` |
-| Benchmark | `./gradlew :ghost-benchmark:run --args="--runs 10000 --warmup 20000"` |
-| Benchmark without tests | `./gradlew :ghost-benchmark:run -PskipTests --args="--runs 10000 --warmup 20000"` |
+| Benchmark | `./gradlew :ghost-benchmark:run` |
+| Benchmark without tests | `./gradlew :ghost-benchmark:run -PskipTests` |
 | Sample Android | `./gradlew :ghost-sample:assembleDebug` |
 | Publish local | `./gradlew publishToMavenLocal -PskipTests` |
 | Maven Central | `./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository` |
