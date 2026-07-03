@@ -39,9 +39,17 @@ internal class StandardEmitter(
      */
     fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         emitPropertyMaskConstants(typeSpecBuilder)
+        WrappedKeysEmitter.addWrappedKeyConstants(typeSpecBuilder, properties)
         emitLocalVariables(body)
+        WrappedKeysEmitter.emitCaptureVariables(body, properties)
         emitMaskVariables(body)
         emitParseLoop(body)
+        WrappedKeysEmitter.emitPostLoopDeserialization(
+            body,
+            properties,
+            propertyIndices,
+            readerClass,
+        )
         emitFieldValidationCall(body)
         emitReturnStatement(body, typeSpecBuilder)
 
@@ -92,7 +100,9 @@ internal class StandardEmitter(
         body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
         body.beginControlFlow(C.STR_WHEN_INDEX)
 
-        val topLevelNames = fullPaths.map { it.first() }.distinct()
+        val wrappedDispatch = WrappedKeysEmitter.wrappedKeyDispatch(properties)
+        val topLevelNames = DispatchNamesResolver.topLevelNames(properties)
+        val normalProperties = properties.filter { it.wrappedSourceKeys == null }
 
         topLevelNames.forEachIndexed { topIndex, topName ->
             body.beginControlFlow(
@@ -100,26 +110,32 @@ internal class StandardEmitter(
                 topIndex
             )
 
-            val propsForThisName = properties
-                .filterIndexed { index, _ -> fullPaths[index].first() == topName }
-
-            if (
-                propsForThisName.size == C.VAL_ONE &&
-                fullPaths[propertyIndices[propsForThisName[C.VAL_ZERO]]!!].size == C.VAL_ONE
-            ) {
-                emitPropertyAssignment(
-                    body,
-                    propsForThisName[C.VAL_ZERO],
-                    propertyIndices[propsForThisName[C.VAL_ZERO]]!!
-                )
+            val wrappedEntry = wrappedDispatch[topName]
+            if (wrappedEntry != null) {
+                val (prop, keyIndex) = wrappedEntry
+                WrappedKeysEmitter.emitWrappedKeyCapture(body, prop, keyIndex)
             } else {
-                emitFlattenedGroup(
-                    body,
-                    topName,
-                    propsForThisName,
-                    C.VAL_ONE,
-                    C.STR_EMPTY
-                )
+                val propsForThisName = normalProperties
+                    .filter { fullPaths[propertyIndices[it]!!].first() == topName }
+
+                if (
+                    propsForThisName.size == C.VAL_ONE &&
+                    fullPaths[propertyIndices[propsForThisName[C.VAL_ZERO]]!!].size == C.VAL_ONE
+                ) {
+                    emitPropertyAssignment(
+                        body,
+                        propsForThisName[C.VAL_ZERO],
+                        propertyIndices[propsForThisName[C.VAL_ZERO]]!!
+                    )
+                } else {
+                    emitFlattenedGroup(
+                        body,
+                        topName,
+                        propsForThisName,
+                        C.VAL_ONE,
+                        C.STR_EMPTY
+                    )
+                }
             }
             body.endControlFlow()
         }

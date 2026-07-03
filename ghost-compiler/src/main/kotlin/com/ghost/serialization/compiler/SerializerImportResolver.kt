@@ -110,6 +110,13 @@ internal class SerializerImportResolver(
         if (ctx.properties.any { it.isResilient }) {
             fileBuilder.addImport(C.PKG_PARSER, C.DECODE_RESILIENT)
         }
+        if (ctx.properties.any { it.wrappedSourceKeys != null }) {
+            fileBuilder.addImport(
+                C.PKG_PARSER,
+                C.STR_GHOST_WRAPPED_KEYS_CAPTURE,
+                C.STR_CAPTURE_WRAPPED_KEY_NAME,
+            )
+        }
 
         val allTypeStrings = allTypes.joinToString()
         if (allTypeStrings.contains(C.STR_INT)) {

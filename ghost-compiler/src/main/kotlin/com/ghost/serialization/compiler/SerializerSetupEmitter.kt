@@ -24,12 +24,7 @@ internal class SerializerSetupEmitter(
                 ?.map { it.jsonName }?.distinct()
                 ?: emptyList()
         } else {
-            ctx.properties.map {
-                it.flattenPath
-                    ?.firstOrNull()
-                    ?: it.wrapPath?.firstOrNull()
-                    ?: it.jsonName
-            }.distinct()
+            DispatchNamesResolver.topLevelNames(ctx.properties)
         }
         val hashConfig = PerfectHashFinder.findPerfectHash(names)
         val optionsClass = ctx.readerClass.peerClass(C.STR_OPTIONS_CLASS)

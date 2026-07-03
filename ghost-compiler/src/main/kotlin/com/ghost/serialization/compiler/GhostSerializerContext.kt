@@ -63,12 +63,16 @@ internal class GhostSerializerContext private constructor(
             properties
         }
         allProps.forEach { prop ->
-            if (prop.flattenPath != null) {
+            if (prop.wrappedSourceKeys != null) {
+                names.addAll(prop.wrappedSourceKeys)
+            } else if (prop.flattenPath != null) {
                 names.addAll(prop.flattenPath)
             } else if (prop.wrapPath != null) {
                 names.addAll(prop.wrapPath)
             }
-            names.add(prop.jsonName)
+            if (prop.wrappedSourceKeys == null) {
+                names.add(prop.jsonName)
+            }
         }
         return names.toList().sorted()
     }

@@ -79,6 +79,10 @@ internal data class InferredSubclassModel(
  * @property customEncoder Provider configuration for a custom encoder annotated on this property.
  * @property flattenPath Nested JSON path list if this property is flattened using @GhostFlatten.
  * @property wrapPath Nested JSON path list if this property is wrapped using @GhostWrap.
+ * @property wrappedSourceKeys Wire keys collapsed into this property via @GhostWrappedKeys.
+ * @property wrappedOmitIfEmpty When true, absent/null-only captures yield a null wrapper property.
+ * @property wrappedOmitIfAbsent Keys that force a null wrapper when absent or JSON null.
+ * @property wrappedUnwrapFields Ordered wire fields used to unwrap this property during serialization.
  * @property isInferredSignature True if this property serves as an inferred signature candidate.
  * @property inferredSubclasses Inferred sealed subclasses associated with this property model.
  */
@@ -113,6 +117,27 @@ internal data class GhostPropertyModel(
     val customEncoder: CustomCoderModel? = null,
     val flattenPath: List<String>? = null,
     val wrapPath: List<String>? = null,
+    val wrappedSourceKeys: List<String>? = null,
+    val wrappedOmitIfEmpty: Boolean = false,
+    val wrappedOmitIfAbsent: List<String> = emptyList(),
+    val wrappedUnwrapFields: List<WrappedUnwrapFieldModel> = emptyList(),
     val isInferredSignature: Boolean = false,
     val inferredSubclasses: List<InferredSubclassModel> = emptyList()
+)
+
+/**
+ * One wire field emitted when unwrapping a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+ * property during serialization.
+ *
+ * @property jsonName JSON key written at the parent object level.
+ * @property kotlinPath Property accessor segments from the wrapper value (e.g. `["extras", "extra1"]`).
+ * @property isNullable Whether the leaf property accepts JSON null / omission.
+ * @property typeName Kotlin type of the leaf property for serialization dispatch.
+ */
+internal data class WrappedUnwrapFieldModel(
+    val jsonName: String,
+    val kotlinPath: List<String>,
+    val isNullable: Boolean,
+    val typeName: com.squareup.kotlinpoet.TypeName,
+    val type: KSType,
 )

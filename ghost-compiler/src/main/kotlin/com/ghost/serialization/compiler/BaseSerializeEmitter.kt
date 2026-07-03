@@ -74,12 +74,21 @@ internal abstract class BaseSerializeEmitter(
      * @param prop The property metadata model.
      */
     fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
+        if (prop.wrappedSourceKeys != null) {
+            emitWrappedKeysProperty(code, prop)
+            return
+        }
+
         val cleanName = prop.jsonName
             .replace(C.STR_DOT, C.STR_UNDERSCORE)
             .uppercase()
 
-        val isStringWriter = writerClass.simpleName == "GhostJsonStringWriter"
-        val headerName = if (isStringWriter) "HS_" + cleanName else C.STR_H_VAL_PREFIX + cleanName
+        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
+        val headerName = if (isStringWriter) {
+            C.STR_HS_PREFIX + cleanName
+        } else {
+            C.STR_H_VAL_PREFIX + cleanName
+        }
         val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
 
         if (prop.isNullable) {
@@ -88,6 +97,50 @@ internal abstract class BaseSerializeEmitter(
         }
 
         emitNonNullProperty(code, prop, headerName, accessor)
+    }
+
+    /**
+     * Unwraps a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+     * property by writing each wire field at the current JSON object level.
+     */
+    private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
+        val accessorRoot = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
+        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
+        val prefix = if (isStringWriter) {
+            C.STR_HS_PREFIX
+        } else {
+            C.STR_H_VAL_PREFIX
+        }
+
+        if (prop.isNullable || prop.wrappedOmitIfEmpty) {
+            code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessorRoot)
+        }
+
+        prop.wrappedUnwrapFields.forEach { field ->
+            val headerName = prefix + field.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
+            val accessor = buildWrappedPathAccessor(prop.kotlinName, field.kotlinPath)
+            if (field.isNullable) {
+                code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
+                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)
+                emitTypeValue(code, field.type, accessor, skipNullCheck = true)
+                code.endControlFlow()
+            } else {
+                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)
+                emitTypeValue(code, field.type, accessor, skipNullCheck = true)
+            }
+        }
+
+        if (prop.isNullable || prop.wrappedOmitIfEmpty) {
+            code.endControlFlow()
+        }
+    }
+
+    private fun buildWrappedPathAccessor(wrapperName: String, path: List<String>): CodeBlock {
+        var expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, C.STR_PARAM_VALUE, wrapperName)
+        for (segment in path) {
+            expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, expr, segment)
+        }
+        return expr
     }
 
     /**
@@ -155,7 +208,7 @@ internal abstract class BaseSerializeEmitter(
      */
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
-            if (writerClass.simpleName == "GhostJsonStringWriter") {
+            if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {
                 code.addStatement("val tempFlatWriter = com.ghost.serialization.writer.GhostJsonFlatWriter(com.ghost.serialization.writer.FlatByteArrayWriter())")
                 code.addStatement(
                     "%T.%L(tempFlatWriter, %L)",

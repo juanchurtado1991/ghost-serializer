@@ -1,7 +1,10 @@
+@file:OptIn(com.google.devtools.ksp.KspExperimental::class)
+
 package com.ghost.serialization.compiler
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
@@ -11,6 +14,7 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.ghost.serialization.compiler.GhostEmitterConstants as C
+import com.ghost.serialization.annotations.GhostWrappedKeys
 
 /**
  * Analyzes Kotlin classes during KSP processing to generate serialization metadata.
@@ -65,6 +69,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val finalModels = resolveSealedSubclasses(classDeclaration, propertyModels, isSealed)
 
         validateNames(finalModels, classDeclaration)
+        validateWrappedKeys(finalModels, classDeclaration)
         return finalModels
     }
 
@@ -191,6 +196,54 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else null
     }
 
+    private fun validateWrappedKeys(
+        properties: List<GhostPropertyModel>,
+        clazz: KSClassDeclaration,
+    ) {
+        val wireKeys = mutableMapOf<String, String>()
+        properties.forEach { prop ->
+            prop.wrappedSourceKeys?.forEach { key ->
+                val owner = wireKeys.put(key, prop.kotlinName)
+                if (owner != null && owner != prop.kotlinName) {
+                    logger.error(
+                        C.STR_ERR_WRAPPED_DUP_KEY_1 + key + C.STR_ERR_WRAPPED_DUP_KEY_2 +
+                            clazz.simpleName.asString() + C.STR_ERR_WRAPPED_DUP_KEY_3 + owner +
+                            C.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + C.STR_ERR_WRAPPED_DUP_KEY_5,
+                        clazz,
+                    )
+                }
+            }
+            if (prop.wrappedOmitIfEmpty && !prop.isNullable) {
+                logger.error(
+                    C.STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 + prop.kotlinName + C.STR_ERR_WRAPPED_OMIT_IF_EMPTY_2,
+                    clazz,
+                )
+            }
+            if (prop.flattenPath != null || prop.wrapPath != null) {
+                if (prop.wrappedSourceKeys != null) {
+                    logger.error(
+                        C.STR_ERR_WRAPPED_COMBINE_1 + prop.kotlinName + C.STR_ERR_WRAPPED_COMBINE_2,
+                        clazz,
+                    )
+                }
+            }
+        }
+        properties.forEach { prop ->
+            if (prop.wrappedSourceKeys == null) {
+                return@forEach
+            }
+            prop.wrappedSourceKeys.forEach { key ->
+                if (properties.any { it.wrappedSourceKeys == null && it.jsonName == key }) {
+                    logger.error(
+                        C.STR_ERR_WRAPPED_KEY_CONFLICT_1 + key + C.STR_ERR_WRAPPED_KEY_CONFLICT_2 +
+                            clazz.simpleName.asString() + C.STR_ERR_WRAPPED_KEY_CONFLICT_3,
+                        clazz,
+                    )
+                }
+            }
+        }
+    }
+
     private fun validateNames(
         properties: List<GhostPropertyModel>,
         clazz: KSClassDeclaration
@@ -257,10 +310,20 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val flattenPath = resolvePathAnnotation(prop, C.GHOST_FLATTEN)
         val wrapPath = resolvePathAnnotation(prop, C.GHOST_WRAP)
+        val wrappedKeysConfig = resolveWrappedKeysAnnotation(prop)
 
         warnIfCustomCoder(prop.simpleName.asString(), customDecoder, customEncoder)
 
         val jsonName = flattenPath?.last() ?: getJsonName(prop)
+        val wrappedUnwrapFields = if (wrappedKeysConfig != null) {
+            resolveWrappedUnwrapFields(
+                type = type.makeNotNullable(),
+                wrapperPath = emptyList(),
+                sourceKeys = wrappedKeysConfig.keys,
+            )
+        } else {
+            emptyList()
+        }
 
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
@@ -296,6 +359,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             customEncoder = customEncoder,
             flattenPath = flattenPath,
             wrapPath = wrapPath,
+            wrappedSourceKeys = wrappedKeysConfig?.keys,
+            wrappedOmitIfEmpty = wrappedKeysConfig?.omitIfEmpty ?: false,
+            wrappedOmitIfAbsent = wrappedKeysConfig?.omitIfAbsent ?: emptyList(),
+            wrappedUnwrapFields = wrappedUnwrapFields,
             isInferredSignature = prop.hasAnnotation(C.GHOST_SIGNATURE)
         )
     }
@@ -379,6 +446,109 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             }
             .toSet()
         return kinds.ifEmpty { setOf(CustomCoderReaderKind.BYTES) }
+    }
+
+    private data class WrappedKeysConfig(
+        val keys: List<String>,
+        val omitIfEmpty: Boolean,
+        val omitIfAbsent: List<String>,
+    )
+
+    private fun resolveWrappedKeysAnnotation(prop: KSPropertyDeclaration): WrappedKeysConfig? {
+        fun fromAnnotation(annotation: GhostWrappedKeys): WrappedKeysConfig {
+            val keyStrings = annotation.keys.toList()
+            if (keyStrings.isEmpty()) {
+                logger.error(
+                    C.STR_ERR_WRAPPED_EMPTY_KEYS_1 + prop.simpleName.asString() + C.STR_ERR_WRAPPED_EMPTY_KEYS_2,
+                    prop,
+                )
+                return WrappedKeysConfig(emptyList(), false, emptyList())
+            }
+            return WrappedKeysConfig(
+                keys = keyStrings,
+                omitIfEmpty = annotation.omitIfEmpty,
+                omitIfAbsent = annotation.omitIfAbsent.toList(),
+            )
+        }
+
+        prop.getAnnotationsByType(GhostWrappedKeys::class).firstOrNull()?.let(::fromAnnotation)?.let { config ->
+            if (config.keys.isNotEmpty()) {
+                return config
+            }
+        }
+
+        val classDecl = prop.parentDeclaration as? KSClassDeclaration
+        val parameter = classDecl?.primaryConstructor?.parameters?.firstOrNull {
+            it.name?.asString() == prop.simpleName.asString()
+        }
+        parameter?.getAnnotationsByType(GhostWrappedKeys::class)?.firstOrNull()?.let(::fromAnnotation)?.let { config ->
+            if (config.keys.isNotEmpty()) {
+                return config
+            }
+        }
+
+        return null
+    }
+
+    private fun resolveWrappedUnwrapFields(
+        type: KSType,
+        wrapperPath: List<String>,
+        sourceKeys: List<String>,
+    ): List<WrappedUnwrapFieldModel> {
+        val declaration = type.declaration as? KSClassDeclaration ?: return emptyList()
+        if (!isGhostType(type)) {
+            return emptyList()
+        }
+
+        val properties = declaration.getAllProperties()
+            .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
+            .toList()
+
+        return sourceKeys.mapNotNull { wireKey ->
+            resolveUnwrapFieldForWireKey(properties, wrapperPath, wireKey, type)
+        }
+    }
+
+    private fun resolveUnwrapFieldForWireKey(
+        properties: List<KSPropertyDeclaration>,
+        wrapperPath: List<String>,
+        wireKey: String,
+        ownerType: KSType,
+    ): WrappedUnwrapFieldModel? {
+        val direct = properties.find { getJsonName(it) == wireKey }
+        if (direct != null) {
+            val directType = direct.type.resolve()
+            return WrappedUnwrapFieldModel(
+                jsonName = wireKey,
+                kotlinPath = wrapperPath + direct.simpleName.asString(),
+                isNullable = directType.isMarkedNullable,
+                typeName = directType.toTypeName(),
+                type = directType,
+            )
+        }
+
+        for (property in properties) {
+            val nestedConfig = resolveWrappedKeysAnnotation(property) ?: continue
+            if (wireKey !in nestedConfig.keys) {
+                continue
+            }
+            val nestedType = property.type.resolve().makeNotNullable()
+            val nestedPath = wrapperPath + property.simpleName.asString()
+            val nestedDecl = nestedType.declaration as? KSClassDeclaration ?: continue
+            val nestedProps = nestedDecl.getAllProperties()
+                .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
+                .toList()
+            val leaf = resolveUnwrapFieldForWireKey(nestedProps, nestedPath, wireKey, nestedType)
+            if (leaf != null) {
+                return leaf
+            }
+        }
+
+        logger.warn(
+            C.STR_WARN_WRAPPED_UNMAPPED_1 + wireKey + C.STR_WARN_WRAPPED_UNMAPPED_2 +
+                ownerType.declaration.simpleName.asString(),
+        )
+        return null
     }
 
     /**
