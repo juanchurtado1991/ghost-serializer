@@ -15,5 +15,22 @@ data class OpaqueMetadataEnvelope(
 @GhostSerialization
 data class OpaqueMetadataByteEnvelope(
     val id: String,
-    @GhostName("metadata") val metadata: ByteArray
-)
+    @GhostName("metadata") val metadata: ByteArray,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
+            return true
+        }
+        if (other == null || this::class != other::class) {
+            return false
+        }
+        other as OpaqueMetadataByteEnvelope
+        return id == other.id && metadata.contentEquals(other.metadata)
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + metadata.contentHashCode()
+        return result
+    }
+}
