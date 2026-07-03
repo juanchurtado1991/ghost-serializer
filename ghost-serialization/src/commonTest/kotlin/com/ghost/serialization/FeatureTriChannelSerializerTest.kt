@@ -69,6 +69,25 @@ class FeatureTriChannelSerializerTest {
     }
 
     @Test
+    fun rawJsonStringWriterReuseDoesNotLeakComma() {
+        val value = RawJsonSerializer.deserialize(
+            GhostJsonFlatReader("""{"warm":true}""".encodeToByteArray())
+        )
+        ghostInternalEncodeToString { writer: GhostJsonStringWriter ->
+            RawJsonSerializer.serialize(writer, value)
+        }
+        val second = ghostInternalEncodeToString { writer: GhostJsonStringWriter ->
+            RawJsonSerializer.serialize(
+                writer,
+                RawJsonSerializer.deserialize(
+                    GhostJsonFlatReader("""{"x":1}""".encodeToByteArray())
+                ),
+            )
+        }
+        assertEquals("""{"x":1}""", second)
+    }
+
+    @Test
     fun setSerializerRoundTripsOnAllReaders() {
         val json = """["a","b","c"]"""
         val bytes = json.encodeToByteArray()

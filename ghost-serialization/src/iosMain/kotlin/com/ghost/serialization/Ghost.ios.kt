@@ -152,12 +152,21 @@ internal fun acquireFlatWriterPair(): WriterSinkPair {
     return pair
 }
 
+@PublishedApi
+internal fun acquireStringWriterPair(): WriterStringPair {
+    val pair = cachedStringWriterPair
+        ?: WriterStringPair().also { cachedStringWriterPair = it }
+
+    pair.writer.reset()
+    pair.charWriter.reset()
+    return pair
+}
+
 @InternalGhostApi
 actual inline fun ghostInternalEncodeToString(
     crossinline block: (GhostJsonStringWriter) -> Unit
 ): String {
-    val pair = cachedStringWriterPair
-        ?: WriterStringPair().also { cachedStringWriterPair = it }
+    val pair = acquireStringWriterPair()
     block(pair.writer)
     val result = pair.charWriter.array.concatToString(0, pair.charWriter.size)
     pair.charWriter.reset()
