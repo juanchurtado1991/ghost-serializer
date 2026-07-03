@@ -72,7 +72,7 @@ class GhostWrappedKeysCaptureTest {
     }
 
     @Test
-    fun missingSlotsMaterializeAsNullLiterals() {
+    fun absentSlotsAreOmittedFromMaterializedObject() {
         val capture = GhostWrappedKeysCapture(2)
         capture.put(0, RawJson.fromString("\"a\""))
         val wrapped = capture.materializeWrappedObject(
@@ -84,7 +84,7 @@ class GhostWrappedKeysCaptureTest {
             omitIfAbsentIndices = intArrayOf(),
         )
         assertContentEquals(
-            """{"extra1":"a","extra2":null}""".encodeToByteArray(),
+            """{"extra1":"a"}""".encodeToByteArray(),
             wrapped,
         )
     }

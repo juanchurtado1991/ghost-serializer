@@ -16,6 +16,7 @@
 
 ### Fixed
 - **Leaner generated serializers**: KSP now imports parser helpers conditionally (`captureRawJson` vs `captureRawJsonBytes`, `readList` vs `readSet`), gates native `GhostJsonStringWriter` serialize overloads behind `ghost.textChannel=true` (interface bridge remains), skips `HS_*` string header constants when the string channel is disabled, drops `@file:Suppress` from generated serializers, and trims redundant `kotlin.*` stdlib imports.
+- **`@GhostWrappedKeys` materialize omits absent slots**: `GhostWrappedKeysCapture.materializeWrappedObject` no longer emits `"key":null` for uncaptured wire keys — fixes sealed-class discriminator parsing when nested objects precede `type` in the synthetic wrapper.
 - **`@GhostWrappedKeys` KSP metadata fallback**: `GhostAnalyzer` reads `keys` / `omitIfEmpty` / `omitIfAbsent` from `KSAnnotation.arguments` when `getAnnotationsByType` fails during `kspCommonMainKotlinMetadata` (KMP common metadata compilations).
 - **String-bridge array serialization**: Default `serialize(GhostJsonStringWriter)` writes via `rawValue(bytes)` so comma separators are emitted between array elements when `textChannel=false`.
 - **String-bridge `RawJson` capture**: `deserialize(GhostJsonStringReader)` sets `materializeRawJsonCaptures` on the delegated flat reader so `RawJson` fields get owned bytes (`storageOffset == 0`) without enabling per-model `textChannel`.

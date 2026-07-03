@@ -52,42 +52,49 @@ class GhostWrappedKeysCapture(
         }
 
         var estimatedSize = OPEN_CLOSE_BRACE_SIZE
+        var presentCount = 0
         for (index in 0 until slotCount) {
+            if ((presentMask and (1 shl index)) == 0) {
+                continue
+            }
+            presentCount++
             estimatedSize += keyUtf8Literals[index].size
-            val captured = values[index]
-            estimatedSize += if (captured != null) {
-                captured.storageLength
+            estimatedSize += values[index]!!.storageLength
+        }
+        if (presentCount == 0) {
+            return if (omitIfEmpty) {
+                null
             } else {
-                JSON_NULL_LENGTH
+                byteArrayOf(OPEN_BRACE, CLOSE_BRACE)
             }
-            if (index < slotCount - 1) {
-                estimatedSize++
-            }
+        }
+        if (presentCount > 1) {
+            estimatedSize += presentCount - 1
         }
 
         val scratch = acquireScratchBuffer(estimatedSize)
         var writePos = 0
         scratch[writePos++] = OPEN_BRACE
+        var wroteAny = false
         for (index in 0 until slotCount) {
-            if (index > 0) {
+            if ((presentMask and (1 shl index)) == 0) {
+                continue
+            }
+            if (wroteAny) {
                 scratch[writePos++] = COMMA
             }
+            wroteAny = true
             val keyPrefix = keyUtf8Literals[index]
             keyPrefix.copyInto(scratch, writePos)
             writePos += keyPrefix.size
-            val captured = values[index]
-            if (captured != null) {
-                captured.storage.copyInto(
-                    scratch,
-                    writePos,
-                    captured.storageOffset,
-                    captured.endExclusive,
-                )
-                writePos += captured.storageLength
-            } else {
-                JSON_NULL_BYTES.copyInto(scratch, writePos)
-                writePos += JSON_NULL_LENGTH
-            }
+            val captured = values[index]!!
+            captured.storage.copyInto(
+                scratch,
+                writePos,
+                captured.storageOffset,
+                captured.endExclusive,
+            )
+            writePos += captured.storageLength
         }
         scratch[writePos++] = CLOSE_BRACE
         return scratch.copyOf(writePos)
@@ -108,13 +115,6 @@ class GhostWrappedKeysCapture(
         private const val CLOSE_BRACE: Byte = '}'.code.toByte()
         private const val COMMA: Byte = ','.code.toByte()
         private const val OPEN_CLOSE_BRACE_SIZE = 2
-        private const val JSON_NULL_LENGTH = 4
-        private val JSON_NULL_BYTES = byteArrayOf(
-            'n'.code.toByte(),
-            'u'.code.toByte(),
-            'l'.code.toByte(),
-            'l'.code.toByte(),
-        )
     }
 }
 
