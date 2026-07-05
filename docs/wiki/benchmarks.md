@@ -60,20 +60,20 @@ Exit code `1` = regression beyond ±10% tolerance vs baseline (twitter / synthet
 
 Results on [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter_macro.json). **🏆** = highest throughput · **💾** = leanest.
 
-| Operation | Engine |      Throughput (ops/s)       | Mem (KB/op) |
-| :--- | :---: |:-----------------------------:| :---: |
-| **Decode (String)** | **👻 Ghost** | **1271.2** 🏆 *(+14.7% vs KSER)* | **406.8** 💾 *(-69.6% vs KSER)* |
-| | KSER | 1108.0 | 1337.4 |
+| Operation | Engine |        Throughput (ops/s)        | Mem (KB/op) |
+| :--- | :---: |:--------------------------------:| :---: |
+| **Decode (String)** | **👻 Ghost** | **1271.2** 🏆 *(+24.7% vs KSER)* | **406.8** 💾 *(-69.6% vs KSER)* |
+| | KSER |              1108.0              | 1337.4 |
 | **Decode (Bytes)** | **👻 Ghost** | **1105.8** 🏆 *(+74.3% vs KSER)* | **671.7** 💾 *(-84.4% vs KSER)* |
-| | KSER | 634.3 | 4296.9 |
-| **Decode (Streaming)** | **👻 Ghost** | **481.9** 🏆 *(+66.7% vs KSER)* | **1320.1** 💾 *(-30.7% vs KSER)* |
-| | KSER | 289.0 | 1904.7 |
+| | KSER |              634.3               | 4296.9 |
+| **Decode (Streaming)** | **👻 Ghost** | **481.9** 🏆 *(+66.7% vs KSER)*  | **1320.1** 💾 *(-30.7% vs KSER)* |
+| | KSER |              289.0               | 1904.7 |
 | **Encode (String)** | **👻 Ghost** | **4220.4** 🏆 *(+35.3% vs KSER)* | 1074.3 |
-| | KSER | 3119.0 | **972.1** 💾 |
+| | KSER |              3119.0              | **972.1** 💾 |
 | **Encode (Bytes)** | **👻 Ghost** | **2609.6** 🏆 *(+58.6% vs KSER)* | **420.2** 💾 *(-81.0% vs KSER)* |
-| | KSER | 1645.2 | 2206.8 |
+| | KSER |              1645.2              | 2206.8 |
 | **Encode (Streaming)** | **👻 Ghost** | **2614.9** 🏆 *(+75.0% vs KSER)* | **426.9** 💾 *(-6.2% vs KSER)* |
-| | KSER | 1494.2 | 455.0 |
+| | KSER |              1494.2              | 455.0 |
 
 ---
 
