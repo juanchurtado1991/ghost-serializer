@@ -1299,6 +1299,20 @@ class GhostStringReaderTest {
         assertNull(result)
     }
 
+    @Test
+    fun peekStringFieldFindsDiscriminatorAfterNestedObject() {
+        val json = """{"meta":{"version":1},"type":"USER"}"""
+        val reader = readerOf(json)
+        assertEquals("USER", reader.peekStringField("type"))
+    }
+
+    @Test
+    fun peekStringFieldFindsDiscriminatorAfterNestedArray() {
+        val json = """{"devices":[{"id":"hub-1"}],"pageType":"loggedIn"}"""
+        val reader = readerOf(json)
+        assertEquals("loggedIn", reader.peekStringField("pageType"))
+    }
+
     // ══════════════════════════════════════════════════════════════════
     // 20. charToBytePosition / byteToCharPosition
     // ══════════════════════════════════════════════════════════════════

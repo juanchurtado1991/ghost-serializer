@@ -45,10 +45,16 @@ class GhostPolymorphicTest {
     }
 
     @Test
-    fun testPeekDiscriminatorTooComplex() {
-        // Nested object before discriminator - should fallback (return null)
+    fun testPeekDiscriminatorAfterNestedObject() {
         val json = """{"meta":{"version":1}, "type":"complex"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        assertNull(reader.peekDiscriminator())
+        assertEquals("complex", reader.peekDiscriminator())
+    }
+
+    @Test
+    fun testPeekDiscriminatorAfterNestedArray() {
+        val json = """{"devices":[{"id":"d1"}], "pageType":"loggedIn"}"""
+        val reader = GhostJsonReader(json.encodeToByteArray())
+        assertEquals("loggedIn", reader.peekDiscriminator("pageType"))
     }
 }
