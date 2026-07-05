@@ -508,111 +508,13 @@ private inline fun GhostJsonStringReader.verifyKeyMatch(
 }
 
 fun GhostJsonStringReader.peekStringField(name: String): String? {
-    val chars = rawChars
-    val localLimit = limit
-    val start = position
-
-    val whitespaceMask = C.WHITESPACE_MASK
-    var pos = start
-    var isValidStart = false
-    while (pos < localLimit) {
-        val code = chars[pos].code
-        if (code > C.SPACE_INT || (whitespaceMask shr code) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
-            if (code == C.OPEN_OBJ_INT) {
-                isValidStart = true
-                pos++
-            } else if (code == C.QUOTE_INT) {
-                isValidStart = true
-            }
-            break
-        }
-        pos++
-    }
-    if (!isValidStart) return null
-
-    val scanLimit = (pos + GhostHeuristics.maxDiscriminatorPeekDistance)
-        .coerceAtMost(localLimit)
-
-    val keySize = name.length
-
-    while (pos < scanLimit) {
-        val code = chars[pos].code
-        if (code == C.QUOTE_INT) {
-            val keyStart = pos + 1
-            if (keyStart + keySize < scanLimit && chars[keyStart + keySize].code == C.QUOTE_INT) {
-                var match = true
-                for (i in 0 until keySize) {
-                    if (chars[keyStart + i] != name[i]) {
-                        match = false
-                        break
-                    }
-                }
-                if (match) {
-                    val afterKey = keyStart + keySize + 1
-                    var colonPos = afterKey
-                    var foundColon = false
-                    while (colonPos < scanLimit) {
-                        val c = chars[colonPos].code
-                        if (c > C.SPACE_INT || (whitespaceMask shr c) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
-                            if (c == C.COLON_INT) {
-                                foundColon = true
-                                colonPos++
-                            }
-                            break
-                        }
-                        colonPos++
-                    }
-                    if (!foundColon) return null
-
-                    var quotePos = colonPos
-                    var foundQuote = false
-                    while (quotePos < scanLimit) {
-                        val c = chars[quotePos].code
-                        if (c > C.SPACE_INT || (whitespaceMask shr c) and C.BYTE_SHIFT_UNIT == C.RESULT_NONE) {
-                            if (c == C.QUOTE_INT) {
-                                foundQuote = true
-                                quotePos++
-                            }
-                            break
-                        }
-                        quotePos++
-                    }
-                    if (!foundQuote) return null
-
-                    val valueStart = quotePos
-                    var valPos = valueStart
-                    while (valPos < scanLimit) {
-                        val valChar = chars[valPos].code
-                        if (valChar == C.QUOTE_INT) {
-                            return rawData.substring(valueStart, valPos)
-                        }
-                        if (valChar == C.BACKSLASH_INT) {
-                            return null
-                        }
-                        valPos++
-                    }
-                    return null
-                }
-            }
-            pos = keyStart
-            while (pos < scanLimit) {
-                val skipChar = chars[pos].code
-                if (skipChar == C.QUOTE_INT) {
-                    pos++
-                    break
-                }
-                if (skipChar == C.BACKSLASH_INT) {
-                    pos++
-                }
-                pos++
-            }
-        } else if (code == C.OPEN_OBJ_INT || code == C.OPEN_ARR_INT) {
-            return null
-        } else {
-            pos++
-        }
-    }
-    return null
+    return GhostDiscriminatorPeeker.peekChars(
+        chars = rawChars,
+        rawData = rawData,
+        start = position,
+        limit = limit,
+        key = name,
+    )
 }
 
 fun GhostJsonStringReader.skipValue() {
