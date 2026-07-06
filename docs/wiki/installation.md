@@ -6,7 +6,7 @@ Ghost is published under the `com.ghostserializer` group.
 
 | Version | Repository |
 |:---|:---|
-| **`1.2.5+`** | **[GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages)** (recommended while Maven Central monthly limits apply) |
+| **`1.2.5+`** | **[GitHub Packages](github-packages.md)** (recommended while Maven Central monthly limits apply) |
 | **`1.2.4` and older** | **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** |
 
 ---
@@ -27,57 +27,7 @@ Ghost is published under the `com.ghostserializer` group.
 
 ## GitHub Packages (`1.2.5+`)
 
-Sonatype Maven Central enforces monthly publishing limits for high-volume open-source accounts. **`1.2.5` and newer releases are published to GitHub Packages** and remain available there permanently — add the repository once and use Ghost like any other Maven dependency.
-
-### Credentials
-
-Create a [GitHub PAT](https://github.com/settings/tokens) with **`read:packages`**. Store credentials in `~/.gradle/gradle.properties` or project `local.properties` (do not commit):
-
-```properties
-gpr.user=YOUR_GITHUB_USERNAME
-gpr.key=ghp_xxxxxxxxxxxx
-```
-
-### `settings.gradle.kts`
-
-```kotlin
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        google()
-        mavenCentral()
-        maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
-            credentials {
-                username = providers.gradleProperty("gpr.user")
-                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
-                    .get()
-                password = providers.gradleProperty("gpr.key")
-                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
-                    .get()
-            }
-        }
-    }
-}
-
-dependencyResolutionManagement {
-    repositories {
-        maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
-            credentials {
-                username = providers.gradleProperty("gpr.user")
-                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
-                    .get()
-                password = providers.gradleProperty("gpr.key")
-                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
-                    .get()
-            }
-        }
-        mavenCentral()
-        google()
-    }
-}
-```
+Repository setup, credentials, version catalog, and transitive dependency notes: **[GitHub Packages guide →](github-packages.md)**
 
 ---
 

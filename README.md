@@ -15,11 +15,11 @@
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
-📦 **[GitHub Packages →](https://github.com/juanchurtado1991/ghost-serializer/packages)** · `1.2.5`
+📦 **[GitHub Packages →](docs/wiki/github-packages.md)** · `1.2.5`
 &nbsp;&nbsp;|&nbsp;&nbsp;
 📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.4`
 
-> **Maven Central publishing limits (2026):** Sonatype currently caps monthly uploads. We have applied Vanniktech optimization (empty Javadocs) to mitigate this. Version **`1.2.5` is temporarily on [GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages)** — add the repository below (one-time setup) and use `1.2.5` as usual. Future releases will return to Maven Central.
+> **`1.2.5` on GitHub Packages** — Sonatype monthly limits keep Maven Central at `1.2.4`. One-time setup: **[GitHub Packages guide →](docs/wiki/github-packages.md)** (Vanniktech empty Javadocs reduce file count for future Central releases).
 
 ---
 
@@ -75,57 +75,7 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 ## 📦 Quick Start
 
-### Repository (required for `1.2.5+`)
-
-Add GitHub Packages to **`settings.gradle.kts`** (plugin + library resolution). Use a [GitHub PAT](https://github.com/settings/tokens) with `read:packages` (and `write:packages` only if you publish).
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        google()
-        mavenCentral()
-        maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
-            credentials {
-                username = providers.gradleProperty("gpr.user")
-                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
-                    .get()
-                password = providers.gradleProperty("gpr.key")
-                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
-                    .get()
-            }
-        }
-    }
-}
-
-dependencyResolutionManagement {
-    repositories {
-        maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
-            credentials {
-                username = providers.gradleProperty("gpr.user")
-                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
-                    .get()
-                password = providers.gradleProperty("gpr.key")
-                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
-                    .get()
-            }
-        }
-        mavenCentral()
-        google()
-    }
-}
-```
-
-```properties
-# ~/.gradle/gradle.properties or local.properties (not committed)
-gpr.user=YOUR_GITHUB_USERNAME
-gpr.key=ghp_xxxxxxxxxxxx
-```
-
-> **Maven Central only (`1.2.4` and older):** skip the GitHub Packages block and use `ghost = "1.2.4"` in the catalog below.
+Requires the [GitHub Packages repository](docs/wiki/github-packages.md) for `1.2.5+`.
 
 ```toml
 # gradle/libs.versions.toml
@@ -161,7 +111,8 @@ val json: String = Ghost.encodeToString(user)
 
 | Guide                                                 | Platform / Category | Description |
 |:------------------------------------------------------|:---:|:---|
-| [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, repositories, KSP setup, `ghost.textChannel` opt-in |
+| [GitHub Packages](docs/wiki/github-packages.md)       | ![Packages](https://img.shields.io/badge/Packages-blue.png?style=flat-square&logo=github&logoColor=white) | `1.2.5` repository setup, credentials, publish |
+| [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, KSP setup, `ghost.textChannel` opt-in |
 | [Usage — Android](docs/wiki/usage-android.md)         | ![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat-square&logo=android&logoColor=white) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
 | [Usage — KMP](docs/wiki/usage-kmp.md)                 | ![Kotlin](https://img.shields.io/badge/KMP-7F52FF.png?style=flat-square&logo=kotlin&logoColor=white) | Shared module, Ktor, Sealed classes, Structural Transformations |
 | [Usage — iOS / Swift](docs/wiki/usage-ios.md)         | ![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat-square&logo=apple&logoColor=white) | XCFramework export, Bridge setup, Alamofire integration |
