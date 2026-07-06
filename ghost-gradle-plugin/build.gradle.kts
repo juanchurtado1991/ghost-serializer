@@ -14,7 +14,6 @@ java {
     }
 }
 
-apply(from = "../publish.gradle.kts")
 
 gradlePlugin {
     website.set("https://github.com/juanchurtado1991/ghost-serializer")

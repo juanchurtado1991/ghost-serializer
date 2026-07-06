@@ -1,0 +1,76 @@
+// Check if this project should be published
+def isPublishable = name.startsWith("ghost") && 
+                   !name.contains("sample") && 
+                   !name.contains("benchmark") && 
+                   !name.contains("integration-test")
+
+if (isPublishable) {
+    apply plugin: 'com.vanniktech.maven.publish'
+    apply plugin: 'signing'
+
+    mavenPublishing {
+        coordinates(
+            project.rootProject.group.toString(),
+            project.name,
+            project.rootProject.version.toString()
+        )
+
+        publishToMavenCentral()
+        signAllPublications()
+
+        pom {
+            def rawName = project.name.startsWith("ghost-") ? project.name.substring(6) : project.name
+            def displayName = rawName == "serialization" ? "Ghost Serialization" : "Ghost Serialization " + rawName.split("-").collect { it.capitalize() }.join(" ")
+            
+            name = displayName
+            description = "Production-ready, zero-allocation serialization engine for Kotlin Multiplatform."
+            url = "https://github.com/juanchurtado1991/GhostSerialization"
+            
+            licenses {
+                license {
+                    name = "The Apache License, Version 2.0"
+                    url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                }
+            }
+            developers {
+                developer {
+                    id = "ghost"
+                    name = "Juan Hurtado"
+                    email = "juan1402.91@gmail.com"
+                }
+            }
+            scm {
+                connection = "scm:git:git://github.com/juanchurtado1991/GhostSerialization.git"
+                developerConnection = "scm:git:ssh://github.com/juanchurtado1991/GhostSerialization.git"
+                url = "https://github.com/juanchurtado1991/GhostSerialization"
+            }
+        }
+
+        // Configure Kotlin Multiplatform specific publishing features
+        // Resolves the classes using reflection from the buildscript classloader to bypass Gradle's script compilation ClassLoader isolation
+        plugins.withId("org.jetbrains.kotlin.multiplatform") {
+            def loader = project.buildscript.classLoader
+            def kmClass = loader.loadClass("com.vanniktech.maven.publish.KotlinMultiplatform")
+            def javadocJarClass = loader.loadClass("com.vanniktech.maven.publish.JavadocJar")
+            def emptyJavadocJarClass = loader.loadClass('com.vanniktech.maven.publish.JavadocJar$Empty')
+            
+            def emptyJavadocJar = emptyJavadocJarClass.getDeclaredConstructor().newInstance()
+            def kmInstance = kmClass.getDeclaredConstructor(javadocJarClass).newInstance(emptyJavadocJar)
+            
+            configure(kmInstance)
+        }
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
+                credentials {
+                    username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR") ?: ""
+                    password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN") ?: ""
+                }
+            }
+        }
+    }
+}

@@ -19,7 +19,7 @@
 &nbsp;&nbsp;|&nbsp;&nbsp;
 📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.4`
 
-> **Maven Central publishing limits (2026):** Sonatype currently caps monthly uploads for open-source publishers. **`1.2.5` is on [GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages)** — add the repository below (one-time setup) and use `1.2.5` as usual. Maven Central stays at **`1.2.4`** until limits reset; GitHub Packages is a **stable, permanent** install path for new versions.
+> **Maven Central publishing limits (2026):** Sonatype currently caps monthly uploads. We have applied Vanniktech optimization (empty Javadocs) to mitigate this. Version **`1.2.5` is temporarily on [GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages)** — add the repository below (one-time setup) and use `1.2.5` as usual. Future releases will return to Maven Central.
 
 ---
 

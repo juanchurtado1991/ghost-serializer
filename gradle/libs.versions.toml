@@ -108,3 +108,4 @@ jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = 
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 dokka                           = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 nexus-publish                   = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
+vanniktech-publish              = { id = "com.vanniktech.maven.publish", version = "0.30.0" }

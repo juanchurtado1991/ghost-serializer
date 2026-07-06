@@ -1,8 +1,24 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.vanniktech:gradle-maven-publish-plugin:0.30.0")
+    }
+}
+
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-apply(from = "publish.gradle.kts")
+val localProperties = java.util.Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+    localProperties.forEach { (key, value) ->
+        extra.set(key as String, value)
+    }
+}
 
 val ghostGroup = libs.versions.publish.group.get()
 val ghostVersion = libs.versions.publish.version.get()
@@ -20,6 +36,7 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.nexus.publish)
     alias(libs.plugins.dokka)
+    alias(libs.plugins.vanniktech.publish) apply false
 }
 
 allprojects {
@@ -68,6 +85,7 @@ subprojects {
             }
         })
     }
+    apply(from = "$rootDir/publish.gradle")
 }
 
 nexusPublishing {
@@ -88,6 +106,16 @@ tasks.register("publishToGitHubPackages") {
     group = "publishing"
     description =
         "Publish all Ghost modules to GitHub Packages (requires gpr.user and gpr.key in local.properties)"
+
+    subprojects.forEach { subproject ->
+        val isPublishable = subproject.name.startsWith("ghost") && 
+                           !subproject.name.contains("sample") && 
+                           !subproject.name.contains("benchmark") && 
+                           !subproject.name.contains("integration-test")
+        if (isPublishable) {
+            dependsOn(subproject.tasks.matching { it.name == "publishAllPublicationsToGitHubPackagesRepository" })
+        }
+    }
 }
 
 val ciTestIosSkipped = tasks.register("ciTestIosSkipped") {
