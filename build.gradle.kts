@@ -84,6 +84,12 @@ nexusPublishing {
 
 val isMacOsHost = OperatingSystem.current().isMacOsX
 
+tasks.register("publishToGitHubPackages") {
+    group = "publishing"
+    description =
+        "Publish all Ghost modules to GitHub Packages (requires gpr.user and gpr.key in local.properties)"
+}
+
 val ciTestIosSkipped = tasks.register("ciTestIosSkipped") {
     group = "verification"
     description = "Logs when iOS CI tests are skipped on non-macOS hosts"

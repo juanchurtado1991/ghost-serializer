@@ -73,7 +73,7 @@ subprojects {
                         
                         name.set(displayName)
                         description.set("Production-ready, zero-allocation serialization engine for Kotlin Multiplatform.")
-                        url.set("https://github.com/juanchurtado1991/GhostSerialization")
+                        url.set(PublishConstants.GITHUB_REPO_URL)
                         
                         licenses {
                             license {
@@ -91,7 +91,22 @@ subprojects {
                         scm {
                             connection.set("scm:git:git://github.com/juanchurtado1991/GhostSerialization.git")
                             developerConnection.set("scm:git:ssh://github.com/juanchurtado1991/GhostSerialization.git")
-                            url.set("https://github.com/juanchurtado1991/GhostSerialization")
+                            url.set(PublishConstants.GITHUB_REPO_URL)
+                        }
+                    }
+                }
+
+                repositories {
+                    maven {
+                        name = PublishConstants.GITHUB_PACKAGES_REPO_NAME
+                        url = uri(PublishConstants.GITHUB_PACKAGES_URL)
+                        credentials {
+                            username = project.findProperty(PublishConstants.GPR_USER_PROPERTY) as String?
+                                ?: System.getenv(PublishConstants.GITHUB_ACTOR_ENV)
+                                ?: ""
+                            password = project.findProperty(PublishConstants.GPR_TOKEN_PROPERTY) as String?
+                                ?: System.getenv(PublishConstants.GITHUB_TOKEN_ENV)
+                                ?: ""
                         }
                     }
                 }
@@ -115,6 +130,21 @@ subprojects {
             tasks.withType<AbstractPublishToMaven>().configureEach {
                 mustRunAfter(signingTasks)
             }
+
+            rootProject.tasks.named(PublishConstants.PUBLISH_TO_GITHUB_PACKAGES_TASK).configure {
+                dependsOn(tasks.named("publishAllPublicationsToGitHubPackagesRepository"))
+            }
         }
     }
+}
+
+private object PublishConstants {
+    const val GITHUB_REPO_URL = "https://github.com/juanchurtado1991/GhostSerialization"
+    const val GITHUB_PACKAGES_URL = "https://maven.pkg.github.com/juanchurtado1991/GhostSerialization"
+    const val GITHUB_PACKAGES_REPO_NAME = "GitHubPackages"
+    const val GPR_USER_PROPERTY = "gpr.user"
+    const val GPR_TOKEN_PROPERTY = "gpr.key"
+    const val GITHUB_ACTOR_ENV = "GITHUB_ACTOR"
+    const val GITHUB_TOKEN_ENV = "GITHUB_TOKEN"
+    const val PUBLISH_TO_GITHUB_PACKAGES_TASK = "publishToGitHubPackages"
 }

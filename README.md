@@ -7,7 +7,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
 [![Tests](https://img.shields.io/badge/tests-1158%20%2F%201158%20passed-brightgreen.png?style=flat)](#)
-[![Version](https://img.shields.io/badge/version-1.2.4-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Version](https://img.shields.io/badge/version-1.2.5-brightgreen.png?style=flat)](https://github.com/juanchurtado1991/GhostSerialization/packages)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
@@ -15,7 +15,11 @@
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
+📦 **[GitHub Packages →](https://github.com/juanchurtado1991/GhostSerialization/packages)** · `1.2.5`
+&nbsp;&nbsp;|&nbsp;&nbsp;
 📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.4`
+
+> **Maven Central publishing limits (2026):** Sonatype currently caps monthly uploads for open-source publishers. **`1.2.5` is on [GitHub Packages](https://github.com/juanchurtado1991/GhostSerialization/packages)** — add the repository below (one-time setup) and use `1.2.5` as usual. Maven Central stays at **`1.2.4`** until limits reset; GitHub Packages is a **stable, permanent** install path for new versions.
 
 ---
 
@@ -71,10 +75,62 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 ## 📦 Quick Start
 
+### Repository (required for `1.2.5+`)
+
+Add GitHub Packages to **`settings.gradle.kts`** (plugin + library resolution). Use a [GitHub PAT](https://github.com/settings/tokens) with `read:packages` (and `write:packages` only if you publish).
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://maven.pkg.github.com/juanchurtado1991/GhostSerialization")
+            credentials {
+                username = providers.gradleProperty("gpr.user")
+                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
+                    .get()
+                password = providers.gradleProperty("gpr.key")
+                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
+                    .get()
+            }
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/juanchurtado1991/GhostSerialization")
+            credentials {
+                username = providers.gradleProperty("gpr.user")
+                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
+                    .get()
+                password = providers.gradleProperty("gpr.key")
+                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
+                    .get()
+            }
+        }
+        mavenCentral()
+        google()
+    }
+}
+```
+
+```properties
+# ~/.gradle/gradle.properties or local.properties (not committed)
+gpr.user=YOUR_GITHUB_USERNAME
+gpr.key=ghp_xxxxxxxxxxxx
+```
+
+> **Maven Central only (`1.2.4` and older):** skip the GitHub Packages block and use `ghost = "1.2.4"` in the catalog below.
+
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.2.4"
+ghost = "1.2.5"
 ksp   = "2.1.10-1.0.31"
 
 [libraries]
@@ -87,7 +143,7 @@ ghost-compiler      = { module = "com.ghostserializer:ghost-compiler", version.r
 // build.gradle.kts
 plugins {
     id("com.google.devtools.ksp") version "2.1.10-1.0.31"
-    id("com.ghostserializer.ghost") version "1.2.4"
+    id("com.ghostserializer.ghost") version "1.2.5"
 }
 ```
 
