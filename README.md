@@ -7,7 +7,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
 [![Tests](https://img.shields.io/badge/tests-1158%20%2F%201158%20passed-brightgreen.png?style=flat)](#)
-[![Version](https://img.shields.io/badge/version-1.2.5-brightgreen.png?style=flat)](https://github.com/juanchurtado1991/GhostSerialization/packages)
+[![Version](https://img.shields.io/badge/version-1.2.5-brightgreen.png?style=flat)](https://github.com/juanchurtado1991/ghost-serializer/packages)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
@@ -15,11 +15,11 @@
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
-📦 **[GitHub Packages →](https://github.com/juanchurtado1991/GhostSerialization/packages)** · `1.2.5`
+📦 **[GitHub Packages →](https://github.com/juanchurtado1991/ghost-serializer/packages)** · `1.2.5`
 &nbsp;&nbsp;|&nbsp;&nbsp;
 📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.4`
 
-> **Maven Central publishing limits (2026):** Sonatype currently caps monthly uploads for open-source publishers. **`1.2.5` is on [GitHub Packages](https://github.com/juanchurtado1991/GhostSerialization/packages)** — add the repository below (one-time setup) and use `1.2.5` as usual. Maven Central stays at **`1.2.4`** until limits reset; GitHub Packages is a **stable, permanent** install path for new versions.
+> **Maven Central publishing limits (2026):** Sonatype currently caps monthly uploads for open-source publishers. **`1.2.5` is on [GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages)** — add the repository below (one-time setup) and use `1.2.5` as usual. Maven Central stays at **`1.2.4`** until limits reset; GitHub Packages is a **stable, permanent** install path for new versions.
 
 ---
 
@@ -87,7 +87,7 @@ pluginManagement {
         google()
         mavenCentral()
         maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/GhostSerialization")
+            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
             credentials {
                 username = providers.gradleProperty("gpr.user")
                     .orElse(providers.environmentVariable("GITHUB_ACTOR"))
@@ -103,7 +103,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/GhostSerialization")
+            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
             credentials {
                 username = providers.gradleProperty("gpr.user")
                     .orElse(providers.environmentVariable("GITHUB_ACTOR"))
@@ -210,7 +210,7 @@ For a deep dive into the compiler plugin, thread-local buffer pool mechanics, an
 ## 🤝 Contributing
 
 ```bash
-git clone https://github.com/juanchurtado1991/GhostSerialization.git
+git clone https://github.com/juanchurtado1991/ghost-serializer.git
 ./gradlew ciTestJvm          # JVM modules (Linux / macOS / Windows)
 ./gradlew ciTest             # + Android unit tests; + iOS on macOS
 ```

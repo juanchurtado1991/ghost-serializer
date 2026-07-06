@@ -6,7 +6,7 @@ Ghost is published under the `com.ghostserializer` group.
 
 | Version | Repository |
 |:---|:---|
-| **`1.2.5+`** | **[GitHub Packages](https://github.com/juanchurtado1991/GhostSerialization/packages)** (recommended while Maven Central monthly limits apply) |
+| **`1.2.5+`** | **[GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages)** (recommended while Maven Central monthly limits apply) |
 | **`1.2.4` and older** | **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** |
 
 ---
@@ -47,7 +47,7 @@ pluginManagement {
         google()
         mavenCentral()
         maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/GhostSerialization")
+            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
             credentials {
                 username = providers.gradleProperty("gpr.user")
                     .orElse(providers.environmentVariable("GITHUB_ACTOR"))
@@ -63,7 +63,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         maven {
-            url = uri("https://maven.pkg.github.com/juanchurtado1991/GhostSerialization")
+            url = uri("https://maven.pkg.github.com/juanchurtado1991/ghost-serializer")
             credentials {
                 username = providers.gradleProperty("gpr.user")
                     .orElse(providers.environmentVariable("GITHUB_ACTOR"))

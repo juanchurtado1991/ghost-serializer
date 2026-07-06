@@ -16,8 +16,8 @@ Thank you for helping improve Ghost!
 | **Xcode** *(macOS only)* | Needed for `iosSimulatorArm64Test` |
 
 ```bash
-git clone https://github.com/juanchurtado1991/GhostSerialization.git
-cd GhostSerialization
+git clone https://github.com/juanchurtado1991/ghost-serializer.git
+cd ghost-serializer
 ./gradlew allTests          # full suite before a PR
 ./gradlew :ghost-serialization:compileKotlinJvm
 ```
@@ -133,7 +133,7 @@ We do not require a CLA for Apache 2.0 contributions. You retain copyright and l
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/juanchurtado1991/GhostSerialization/issues) — bugs, features, questions
+- [GitHub Issues](https://github.com/juanchurtado1991/ghost-serializer/issues) — bugs, features, questions
 - [README](../../README.md) — landing page, Quick Start, all wiki links
 
 ---

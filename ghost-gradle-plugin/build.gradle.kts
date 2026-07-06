@@ -17,8 +17,8 @@ java {
 apply(from = "../publish.gradle.kts")
 
 gradlePlugin {
-    website.set("https://github.com/juanchurtado1991/GhostSerialization")
-    vcsUrl.set("https://github.com/juanchurtado1991/GhostSerialization.git")
+    website.set("https://github.com/juanchurtado1991/ghost-serializer")
+    vcsUrl.set("https://github.com/juanchurtado1991/ghost-serializer.git")
     
     plugins {
         create("ghostPlugin") {

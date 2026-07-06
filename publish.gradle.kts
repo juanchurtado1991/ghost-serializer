@@ -89,8 +89,8 @@ subprojects {
                             }
                         }
                         scm {
-                            connection.set("scm:git:git://github.com/juanchurtado1991/GhostSerialization.git")
-                            developerConnection.set("scm:git:ssh://github.com/juanchurtado1991/GhostSerialization.git")
+                            connection.set("scm:git:git://github.com/juanchurtado1991/ghost-serializer.git")
+                            developerConnection.set("scm:git:ssh://github.com/juanchurtado1991/ghost-serializer.git")
                             url.set(PublishConstants.GITHUB_REPO_URL)
                         }
                     }
@@ -139,8 +139,8 @@ subprojects {
 }
 
 private object PublishConstants {
-    const val GITHUB_REPO_URL = "https://github.com/juanchurtado1991/GhostSerialization"
-    const val GITHUB_PACKAGES_URL = "https://maven.pkg.github.com/juanchurtado1991/GhostSerialization"
+    const val GITHUB_REPO_URL = "https://github.com/juanchurtado1991/ghost-serializer"
+    const val GITHUB_PACKAGES_URL = "https://maven.pkg.github.com/juanchurtado1991/ghost-serializer"
     const val GITHUB_PACKAGES_REPO_NAME = "GitHubPackages"
     const val GPR_USER_PROPERTY = "gpr.user"
     const val GPR_TOKEN_PROPERTY = "gpr.key"
