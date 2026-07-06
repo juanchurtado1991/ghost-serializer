@@ -1,8 +1,8 @@
-# Ghost Serialization 1.2.5 {#titulo}
+# Ghost Serialization 1.2.6 {#titulo}
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
-> Monorepo ghost-serializer · version 1.2.5 · Maven `com.ghostserializer` · compile-time KSP + reflection-free runtime.
+> Monorepo ghost-serializer · version 1.2.6 · Maven `com.ghostserializer` · compile-time KSP + reflection-free runtime.
 
 ### How to read this manual
 
@@ -359,7 +359,7 @@ KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost reg
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.2.5"
+    id("com.ghostserializer.ghost") version "1.2.6"
 }
 
 // Optional but recommended with several modules containing models:
@@ -891,13 +891,13 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 ```kotlin
 ghost {
-    version.set("1.2.5")
+    version.set("1.2.6")
     autoInjectKtor.set(true)
     autoInjectRetrofit.set(true)
 }
 ```
 
-Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.2.5.
+Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.2.6.
 
 ---
 
@@ -907,7 +907,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.2.5.
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-retrofit:1.2.5")
+    implementation("com.ghostserializer:ghost-retrofit:1.2.6")
 }
 
 interface ApiService {
@@ -963,10 +963,10 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.2.5"
+    id("com.ghostserializer.ghost") version "1.2.6"
 }
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.5")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.6")
 }
 ```
 
@@ -1047,7 +1047,7 @@ Publishable (publish.gradle.kts): ghost-* except sample, benchmark, integration-
 ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
 ```
 
-Coordinates: `com.ghostserializer:*:1.2.5`
+Coordinates: `com.ghostserializer:*:1.2.6`
 
 From Linux: iOS variants may be missing on Central.
 
@@ -1109,7 +1109,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 | ghost-spring-boot-test-app | Jackson vs Ghost WebFlux, benchmark.py |
 | ghost-ios-test-app | XCFramework + GhostBridge + Codable |
 
-All use **1.2.5 Maven Central** (no mavenLocal in final config).
+All use **1.2.6 Maven Central** (no mavenLocal in final config).
 
 ---
 
@@ -1118,7 +1118,7 @@ All use **1.2.5 Maven Central** (no mavenLocal in final config).
 ### Step by step (from scratch)
 
 1. **settings.gradle.kts** — `pluginManagement { gradlePluginPortal() }`
-2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.2.5"`
+2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.2.6"`
 3. Create `data class` with `@GhostSerialization` in the network package
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
@@ -1215,7 +1215,7 @@ List or map in JSON exceeded platform limit (50k on Android). May be legitimate 
 
 ### Plugin com.ghostserializer.ghost not found
 
-Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.2.5 on Maven Central, and sync again.
+Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.2.6 on Maven Central, and sync again.
 
 ### iOS: works in debug, fails in release
 
@@ -1615,7 +1615,7 @@ All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
 
 ```kotlin
 ghost {
-    version.set("1.2.5") // or omit if plugin brings DEFAULT_VERSION
+    version.set("1.2.6") // or omit if plugin brings DEFAULT_VERSION
 }
 ```
 
@@ -2109,7 +2109,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.2.5) {#verificacion-factual}
+## Factual verification (aligned with code 1.2.6) {#verificacion-factual}
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2140,7 +2140,7 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 # Appendix: API Reference {#appendix-api}
 
 This section documents the public API of Ghost Serialization, derived from the
-KDoc comments in the source code (version 1.2.5).
+KDoc comments in the source code (version 1.2.6).
 
 ---
 
