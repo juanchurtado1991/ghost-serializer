@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.5] - PENDING
+## [1.2.5] - 2026-07-06
 
 ### Added
 - **`@GhostWrappedKeys` structural transformation**: Collapses sibling JSON keys into a single Kotlin property (inverse of `@GhostWrap`, SmartThings `@WrappedKeys` parity). Deserialize captures each wire key as a zero-copy `RawJson` slice, assembles a synthetic wrapper object in a pooled scratch buffer, and parses the target type; serialize unwraps inner fields back to sibling keys. Supports `omitIfEmpty`, `omitIfAbsent`, repeated annotations on different properties, and nested hierarchy composition. Integration tests port `WrappedKeysTypeAdapterFactoryTest` scenarios.
