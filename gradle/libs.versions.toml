@@ -38,6 +38,7 @@ junit-jupiter                   = "5.10.2"
 kotlinx-coroutines-test         = "1.8.1"
 spring-boot                     = "3.4.5"
 protobuf-java                   = "3.25.3"
+jazzer                          = "0.30.0"
 
 [libraries]
 
@@ -97,6 +98,9 @@ spring-boot-starter-test        = { module = "org.springframework.boot:spring-bo
 # NOT used by any shipped Ghost module, test-only dependency.
 protobuf-java                   = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf-java" }
 protobuf-java-util              = { group = "com.google.protobuf", name = "protobuf-java-util", version.ref = "protobuf-java" }
+# Coverage-guided fuzzing for JUnit5 (@FuzzTest) — test-only, robustness-focused (crash-safety
+# on adversarial byte input), separate concern from the correctness-oracle tests above.
+jazzer-junit                    = { group = "com.code-intelligence", name = "jazzer-junit", version.ref = "jazzer" }
 
 [bundles]
 serialization-engines           = ["gson", "moshi", "moshi-kotlin", "kotlinx-serialization-json", "jackson-databind", "jackson-module-kotlin"]

@@ -29,8 +29,17 @@ kotlin {
             // conformance tests (ProtoJsonConformanceTest) — JVM-only, test-only.
             implementation(libs.protobuf.java)
             implementation(libs.protobuf.java.util)
+            // Coverage-guided fuzzing (ProtoWktFuzzTest) — requires the JUnit5 platform,
+            // see useJUnitPlatform() below.
+            implementation(libs.kotlin.test.junit5)
+            implementation(libs.jazzer.junit)
+            runtimeOnly(libs.junit.engine)
         }
     }
+}
+
+tasks.named<Test>("jvmTest") {
+    useJUnitPlatform()
 }
 
 android {
