@@ -90,6 +90,45 @@ class GhostWrappedKeysKspTest {
         assertTrue("captureWrappedKey" in source, source)
     }
 
+    @Test
+    fun generatesSealedSubclassSmartCastForOneofStyleWrappedKeys() {
+        val (compilation, result) = compile(
+            SourceFile.kotlin(
+                "OneofFixture.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostWrappedKeys
+
+                @GhostSerialization(inferred = true)
+                sealed class Payload {
+                    @GhostSerialization
+                    data class Text(val text: String) : Payload()
+                    @GhostSerialization
+                    data class Code(val code: Int) : Payload()
+                }
+
+                @GhostSerialization
+                data class OneofFixture(
+                    val id: String,
+                    @GhostWrappedKeys(keys = ["text", "code"])
+                    val payload: Payload,
+                )
+                """.trimIndent(),
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        lastCompilation = compilation
+        val source = compilationOutput("OneofFixtureSerializer.kt")
+        // No fallback warning/silent drop: each wire key resolves to its owning sealed subclass.
+        assertTrue("value.payload is Payload.Text" in source, source)
+        assertTrue("value.payload is Payload.Code" in source, source)
+        assertTrue("(value.payload as Payload.Text).text" in source, source)
+        assertTrue("(value.payload as Payload.Code).code" in source, source)
+    }
+
     private lateinit var lastCompilation: KotlinCompilation
 
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {

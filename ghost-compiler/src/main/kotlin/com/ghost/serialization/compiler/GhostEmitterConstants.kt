@@ -493,6 +493,8 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_IF_NULL = "if (%L == null)"
     const val TEMPLATE_IF_NOT_NULL = "if (%L != null)"
     const val TEMPLATE_IF_L = "if (%L)"
+    const val TEMPLATE_IS_INSTANCE = "%L is %T"
+    const val TEMPLATE_CAST = "(%L as %T)"
     const val TEMPLATE_FOR_IN = "for (%L in %L)"
     const val TEMPLATE_FOR_MAP = "for ((%L, %L) in %L)"
 

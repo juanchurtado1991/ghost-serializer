@@ -166,6 +166,22 @@ internal abstract class BaseSerializeEmitter(
 
         prop.wrappedUnwrapFields.forEach { field ->
             val headerName = prefix + field.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
+
+            // proto3 oneof: this wire key lives on one sealed subclass of the wrapped type, not
+            // on the wrapped (sealed parent) type itself — guard with an `is` smart-cast instead
+            // of a plain path accessor.
+            if (field.sealedSubclassName != null) {
+                val accessor = buildSealedSubclassFieldAccessor(prop.kotlinName, field.sealedSubclassName, field.kotlinPath)
+                code.beginControlFlow(
+                    C.TEMPLATE_IF_L,
+                    CodeBlock.of(C.TEMPLATE_IS_INSTANCE, accessorRoot, field.sealedSubclassName)
+                )
+                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)
+                emitTypeValue(code, field.type, accessor, skipNullCheck = true)
+                code.endControlFlow()
+                return@forEach
+            }
+
             val accessor = buildWrappedPathAccessor(prop.kotlinName, field.kotlinPath)
             if (field.isNullable) {
                 code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
@@ -185,6 +201,19 @@ internal abstract class BaseSerializeEmitter(
 
     private fun buildWrappedPathAccessor(wrapperName: String, path: List<String>): CodeBlock {
         var expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, C.STR_PARAM_VALUE, wrapperName)
+        for (segment in path) {
+            expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, expr, segment)
+        }
+        return expr
+    }
+
+    private fun buildSealedSubclassFieldAccessor(
+        wrapperName: String,
+        subclassName: ClassName,
+        path: List<String>
+    ): CodeBlock {
+        val wrapperAccessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, wrapperName)
+        var expr = CodeBlock.of(C.TEMPLATE_CAST, wrapperAccessor, subclassName)
         for (segment in path) {
             expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, expr, segment)
         }

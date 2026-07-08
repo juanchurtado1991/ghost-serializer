@@ -651,10 +651,47 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             }
         }
 
+        resolveUnwrapFieldFromSealedSubclass(wrapperPath, wireKey, ownerType)?.let { return it }
+
         logger.warn(
             C.STR_WARN_WRAPPED_UNMAPPED_1 + wireKey + C.STR_WARN_WRAPPED_UNMAPPED_2 +
                 ownerType.declaration.simpleName.asString(),
         )
+        return null
+    }
+
+    /**
+     * proto3 `oneof` mapping support: when the wrapped type is a sealed class (e.g. an
+     * `inferred = true` hierarchy used to decode whichever wire key is present), the wire keys
+     * live on its *subclasses*, not on the sealed parent itself (which typically declares no
+     * properties of its own). Resolves [wireKey] against each subclass' direct properties and
+     * tags the result with that subclass so the emitter can smart-cast before accessing it.
+     */
+    private fun resolveUnwrapFieldFromSealedSubclass(
+        wrapperPath: List<String>,
+        wireKey: String,
+        ownerType: KSType,
+    ): WrappedUnwrapFieldModel? {
+        val ownerDecl = ownerType.declaration as? KSClassDeclaration ?: return null
+        if (!ownerDecl.modifiers.contains(Modifier.SEALED)) {
+            return null
+        }
+
+        for (subclass in ownerDecl.getSealedSubclasses()) {
+            val subclassProps = subclass.getAllProperties()
+                .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
+                .toList()
+            val direct = subclassProps.find { getJsonName(it) == wireKey } ?: continue
+            val directType = direct.type.resolve()
+            return WrappedUnwrapFieldModel(
+                jsonName = wireKey,
+                kotlinPath = wrapperPath + direct.simpleName.asString(),
+                isNullable = directType.isMarkedNullable,
+                typeName = directType.toTypeName(),
+                type = directType,
+                sealedSubclassName = subclass.toClassName(),
+            )
+        }
         return null
     }
 
