@@ -24,6 +24,12 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        jvmTest.dependencies {
+            // Reference implementation used as a correctness oracle for proto3 JSON
+            // conformance tests (ProtoJsonConformanceTest) — JVM-only, test-only.
+            implementation(libs.protobuf.java)
+            implementation(libs.protobuf.java.util)
+        }
     }
 }
 

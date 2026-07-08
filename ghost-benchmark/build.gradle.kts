@@ -92,15 +92,15 @@ registerBenchmarkTask(
 
 tasks.register("benchmarkRegression") {
     group = "benchmark"
-    description = "Twitter + synthetic regression gates, full profile (~9 min); runs allTests first unless -PskipTests"
-    dependsOn("benchmarkTwitter", "benchmarkSynthetic")
+    description = "Twitter + synthetic + special regression gates, full profile (~9 min); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkTwitter", "benchmarkSynthetic", "benchmarkSpecial")
     configureBenchmarkTestGate()
 }
 
 tasks.register("benchmarkRegressionFast") {
     group = "benchmark"
-    description = "Twitter + synthetic regression gates, fast profile (~1–2 min); runs allTests first unless -PskipTests"
-    dependsOn("benchmarkTwitterFast", "benchmarkSyntheticFast")
+    description = "Twitter + synthetic + special regression gates, fast profile (~1–2 min); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkTwitterFast", "benchmarkSyntheticFast", "benchmarkSpecial")
     configureBenchmarkTestGate()
 }
 

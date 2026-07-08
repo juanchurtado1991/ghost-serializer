@@ -25,7 +25,8 @@ class ProtoWktTest {
         val dNeg = parseDuration("-120.500s")
         assertEquals(-120L, dNeg.seconds)
         assertEquals(-500000000, dNeg.nanos)
-        assertEquals("-120.5s", formatDuration(dNeg))
+        // Proto3 JSON always emits 3/6/9 fractional digits, never an arbitrary trim.
+        assertEquals("-120.500s", formatDuration(dNeg))
     }
 
     @Test

@@ -94,28 +94,22 @@ private fun writePaddedInt(buf: ByteArray, startOffset: Int, value: Int, width: 
     return pos
 }
 
-// Appends nanos as fractional digits (up to 9), trimming trailing zeros.
+// Appends nanos as fractional digits. Proto3 JSON mandates exactly 0, 3, 6, or 9 fractional
+// digits (never an arbitrary trim) — e.g. 450_000_000 ns must render as ".450", not ".45".
 private fun writeNanosFraction(buf: ByteArray, startOffset: Int, nanos: Int): Int {
-    var divisor = C.NANOS_DIVISOR_LIMIT
-    var lastNonZero = 0
-    var digitIdx = 0
-    val digits = IntArray(C.NANOS_DIGITS)
-    var remaining = nanos
-    while (digitIdx < C.NANOS_DIGITS) {
-        val digit = remaining / divisor
-        digits[digitIdx] = digit
-        remaining %= divisor
-        if (digit != 0) lastNonZero = digitIdx
-        divisor /= C.BASE_TEN
-        digitIdx++
+    val width: Int
+    val scale: Int
+    if (nanos % C.NANOS_PER_MILLI == 0) {
+        width = 3
+        scale = C.NANOS_PER_MILLI
+    } else if (nanos % C.NANOS_PER_MICRO == 0) {
+        width = 6
+        scale = C.NANOS_PER_MICRO
+    } else {
+        width = 9
+        scale = 1
     }
-    var writeIdx = 0
-    var pos = startOffset
-    while (writeIdx <= lastNonZero) {
-        buf[pos++] = (digits[writeIdx] + C.ZERO_INT).toByte()
-        writeIdx++
-    }
-    return pos
+    return writePaddedInt(buf, startOffset, nanos / scale, width)
 }
 
 // Zero-allocation calendar converter using Hatcher/Richards algorithm

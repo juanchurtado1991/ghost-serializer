@@ -482,7 +482,8 @@ public object GhostJsonConstants {
 
     const val EQUALS_INT = '='.code
     const val EQUALS_BYTE = '='.code.toByte()
-    const val NANOS_DIVISOR_LIMIT = 100_000_000
+    const val NANOS_PER_MILLI = 1_000_000
+    const val NANOS_PER_MICRO = 1_000
     const val TS_BUFFER_SIZE = 35
     const val DUR_BUFFER_SIZE = 32
     const val LONG_BUFFER_SIZE = 22

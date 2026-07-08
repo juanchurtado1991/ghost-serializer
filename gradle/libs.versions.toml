@@ -37,6 +37,7 @@ kotlin-compile-testing          = "0.7.0"
 junit-jupiter                   = "5.10.2"
 kotlinx-coroutines-test         = "1.8.1"
 spring-boot                     = "3.4.5"
+protobuf-java                   = "3.25.3"
 
 [libraries]
 
@@ -92,6 +93,10 @@ kotlinx-coroutines-android      = { group = "org.jetbrains.kotlinx", name = "kot
 spring-boot-starter-web         = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
 spring-boot-starter-webflux     = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
 spring-boot-starter-test        = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+# Reference implementation used as a correctness oracle for proto3 JSON conformance tests —
+# NOT used by any shipped Ghost module, test-only dependency.
+protobuf-java                   = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf-java" }
+protobuf-java-util              = { group = "com.google.protobuf", name = "protobuf-java-util", version.ref = "protobuf-java" }
 
 [bundles]
 serialization-engines           = ["gson", "moshi", "moshi-kotlin", "kotlinx-serialization-json", "jackson-databind", "jackson-module-kotlin"]
