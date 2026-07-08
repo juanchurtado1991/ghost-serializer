@@ -118,6 +118,7 @@ dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-serialization"))
     implementation(project(":ghost-integration-test"))
+    implementation(project(":ghost-protobuf"))
     implementation(libs.gson)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)
