@@ -148,7 +148,17 @@ internal class SerializerImportResolver(
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_BOOLEAN_NAME)
         }
 
-        val needsCaptureRawJsonBytes = allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE)
+        if (ctx.properties.any { it.isProto && it.type.isByteArray() }) {
+            fileBuilder.addImport(
+                C.PKG_PARSER,
+                C.STR_DECODE_BASE64_STRING_NAME,
+                C.STR_ENCODE_BASE64_STRING_NAME,
+                C.STR_NEXT_STRING_NAME
+            )
+        }
+
+        val needsCaptureRawJsonBytes = allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE) &&
+            hasNonProtoByteArrayUsage()
         val needsCaptureRawJson = allTypeStrings.contains(C.K_RAW_JSON) ||
             allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
         if (needsCaptureRawJsonBytes) {
@@ -165,6 +175,36 @@ internal class SerializerImportResolver(
         if (ctx.isEnum) {
             fileBuilder.addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
         }
+    }
+
+    /**
+     * True if any `ByteArray` usage in this class is NOT covered by the proto3 Base64 codegen
+     * path — i.e. still needs the raw-JSON-passthrough `captureRawJsonBytes` import. A direct
+     * top-level property annotated `@GhostProtoSerialization` is covered; nested occurrences
+     * (inside `List`/`Map`/value classes/inferred sealed subclasses) are not handled by that
+     * path today and still require the import.
+     */
+    private fun hasNonProtoByteArrayUsage(): Boolean {
+        fun typeHasByteArray(type: KSType): Boolean {
+            if (type.isByteArray()) return true
+            return type.arguments.any { arg -> arg.type?.resolve()?.let(::typeHasByteArray) == true }
+        }
+
+        if (ctx.properties.any { prop ->
+                !(prop.isProto && prop.type.isByteArray()) && typeHasByteArray(prop.type)
+            }
+        ) {
+            return true
+        }
+        if (ctx.properties.any { it.valueClassProperty?.type?.let(::typeHasByteArray) == true }) {
+            return true
+        }
+        if (ctx.properties.flatMap { it.inferredSubclasses }.flatMap { it.properties }
+                .any { typeHasByteArray(it.type) }
+        ) {
+            return true
+        }
+        return false
     }
 
     private fun needsNextStringImport(): Boolean {

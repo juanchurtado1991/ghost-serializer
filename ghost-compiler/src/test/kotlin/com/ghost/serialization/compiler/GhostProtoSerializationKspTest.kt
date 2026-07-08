@@ -59,6 +59,65 @@ class GhostProtoSerializationKspTest {
     }
 
     @Test
+    fun byteArrayFieldsAreBase64EncodedUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoBlob.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoBlob(val payload: ByteArray)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoBlobSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.value(encodeBase64String(value.payload))" in generated,
+            "Expected Base64-encoded write for a proto ByteArray field:\n$generated"
+        )
+        assertTrue(
+            "decodeBase64String(reader.nextString())" in generated,
+            "Expected Base64-decoded read for a proto ByteArray field:\n$generated"
+        )
+        assertFalse(
+            "writer.rawValue(value.payload)" in generated,
+            "Proto ByteArray fields must not use the raw-JSON-passthrough path:\n$generated"
+        )
+        assertFalse(
+            "captureRawJsonBytes" in generated,
+            "Proto ByteArray fields must not use the raw-JSON-passthrough capture:\n$generated"
+        )
+    }
+
+    @Test
+    fun plainByteArrayFieldsStayAsRawJsonPassthrough() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "PlainBlob.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class PlainBlob(val payload: ByteArray)
+                """.trimIndent()
+            ),
+            serializerFileName = "PlainBlobSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.rawValue(value.payload)" in generated,
+            "Non-proto ByteArray fields must keep the raw-JSON-passthrough path:\n$generated"
+        )
+        assertFalse("encodeBase64String" in generated, generated)
+    }
+
+    @Test
     fun plainGhostSerializationLeavesLongUnquoted() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(

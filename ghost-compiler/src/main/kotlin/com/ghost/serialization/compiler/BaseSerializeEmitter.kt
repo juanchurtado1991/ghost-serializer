@@ -271,6 +271,10 @@ internal abstract class BaseSerializeEmitter(
                 code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
             }
 
+            prop.isProto && prop.type.declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY -> {
+                code.addStatement(C.STR_WRITER_VAL_BYTES_AS_BASE64, accessor)
+            }
+
             else -> {
                 emitTypeValue(code, prop.type, accessor, skipNullCheck = true)
             }

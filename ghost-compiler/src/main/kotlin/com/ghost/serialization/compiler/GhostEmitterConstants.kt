@@ -269,6 +269,10 @@ internal object GhostEmitterConstants {
 
     /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
     const val STR_WRITER_VAL_LONG_AS_STRING = "writer.value(%L.toString())"
+
+    /** proto3 JSON mapping: `bytes` fields are Base64 strings on the wire, not inline raw JSON. */
+    const val STR_WRITER_VAL_BYTES_AS_BASE64 = "writer.value(encodeBase64String(%L))"
+    const val STR_DECODE_BASE64_STRING_CALL = "decodeBase64String(reader.nextString())"
     const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"
     const val STR_WRITE_NAME_RAW = "writer.writeNameRaw(%L)"
     const val STR_WRITE_NAME_RAW_NULL = "writer.writeNameRaw(%L).nullValue()"
@@ -407,6 +411,8 @@ internal object GhostEmitterConstants {
     const val STR_NEXT_BOOLEAN_NAME = "nextBoolean"
     const val STR_CAPTURE_RAW_JSON_BYTES_NAME = "captureRawJsonBytes"
     const val STR_CAPTURE_RAW_JSON_NAME = "captureRawJson"
+    const val STR_DECODE_BASE64_STRING_NAME = "decodeBase64String"
+    const val STR_ENCODE_BASE64_STRING_NAME = "encodeBase64String"
     const val STR_BYTE_ARRAY_TYPE = "ByteArray"
     const val STR_CONSUME_NULL_NAME = "consumeNull"
     const val STR_IS_NEXT_NULL_VALUE_NAME = "isNextNullValue"

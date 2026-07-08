@@ -172,6 +172,8 @@ internal abstract class BaseDeserializeEmitter(
 
             prop.isProto && prop.type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
 
+            prop.isProto && prop.type.isByteArray() -> CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
+
             else -> buildTypeReaderCall(prop.type)
         }
     }
@@ -199,6 +201,10 @@ internal abstract class BaseDeserializeEmitter(
 
         if (prop.isProto && prop.type.isPrimitiveLong()) {
             return CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+        }
+
+        if (prop.isProto && prop.type.isByteArray()) {
+            return CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
         }
 
         return buildTypeReaderCall(prop.type)
