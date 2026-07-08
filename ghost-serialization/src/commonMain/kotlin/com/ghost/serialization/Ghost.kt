@@ -235,7 +235,7 @@ object Ghost {
      * @param clazz The [KClass] of the type to resolve the serializer for.
      * @return The matching [GhostSerializer], or `null` if no serializer is found.
      */
-    fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
+    public fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
         // Fast path for primitives
         getPrimitiveSerializer(clazz)?.let { return it }
 
@@ -399,8 +399,7 @@ object Ghost {
     /**
      * Resolves the serializer for the reified type parameter [T].
      */
-    @PublishedApi
-    internal inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
+    public inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
         val cached = serializerCache[T::class]
         if (cached != null) {
             return cached as GhostSerializer<T>

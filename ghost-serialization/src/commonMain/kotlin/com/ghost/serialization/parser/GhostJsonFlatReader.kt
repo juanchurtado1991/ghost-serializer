@@ -15,8 +15,8 @@ import com.ghost.serialization.parser.GhostHeuristics.initialCollectionCapacity
  * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
  * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
  */
-class GhostJsonFlatReader(
-    @PublishedApi internal var rawData: ByteArray,
+open class GhostJsonFlatReader(
+    public var rawData: ByteArray,
     var maxDepth: Int = C.MAX_DEPTH,
     /**
      * When true, enables strict JSON validation: rejects unknown/unmapped fields
@@ -37,14 +37,11 @@ class GhostJsonFlatReader(
     @PublishedApi
     internal val source = ByteArrayGhostSource(rawData)
 
-    @PublishedApi
-    internal var limit: Int = rawData.size
+    public var limit: Int = rawData.size
 
-    @PublishedApi
-    internal var position: Int = 0
+    public var position: Int = 0
 
-    @PublishedApi
-    internal var nextTokenByte: Int = C.RESET_TOKEN_BYTE
+    public var nextTokenByte: Int = C.RESET_TOKEN_BYTE
 
     @InternalGhostApi
     fun _getPosition(): Int = position
@@ -74,9 +71,8 @@ class GhostJsonFlatReader(
     /**
      * Gets the byte at the specified index, masking it to a positive integer.
      */
-    @PublishedApi
     @Suppress("NOTHING_TO_INLINE")
-    internal inline fun getByte(index: Int): Int {
+    public inline fun getByte(index: Int): Int {
         return rawData[index].toInt() and C.BYTE_MASK
     }
 
@@ -199,6 +195,11 @@ class GhostJsonFlatReader(
         position += size
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
+
+    open fun nextFloat(): Float = nextFloatExtension()
+    open fun nextDouble(): Double = nextDoubleExtension()
+    open fun nextInt(): Int = nextIntExtension()
+    open fun nextLong(): Long = nextLongExtension()
 
     /**
      * Resets the reader's state to process a new byte payload.

@@ -14,7 +14,7 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
  * @throws com.ghost.serialization.exception.GhostJsonException
  * if float format is invalid or overflows.
  */
-fun GhostJsonFlatReader.nextFloat(): Float {
+fun GhostJsonFlatReader.nextFloatExtension(): Float {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -103,7 +103,7 @@ fun GhostJsonFlatReader.nextFloat(): Float {
  * @throws com.ghost.serialization.exception.GhostJsonException
  * if double format is invalid or overflows.
  */
-fun GhostJsonFlatReader.nextDouble(): Double {
+fun GhostJsonFlatReader.nextDoubleExtension(): Double {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -227,7 +227,7 @@ private inline fun GhostJsonFlatReader.parseExponentValue(): Int {
  *
  * @throws com.ghost.serialization.exception.GhostJsonException if integer is invalid or overflows.
  */
-fun GhostJsonFlatReader.nextInt(): Int {
+fun GhostJsonFlatReader.nextIntExtension(): Int {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -260,7 +260,7 @@ fun GhostJsonFlatReader.nextInt(): Int {
  *
  * @throws com.ghost.serialization.exception.GhostJsonException if long value is invalid or overflows.
  */
-fun GhostJsonFlatReader.nextLong(): Long {
+fun GhostJsonFlatReader.nextLongExtension(): Long {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
