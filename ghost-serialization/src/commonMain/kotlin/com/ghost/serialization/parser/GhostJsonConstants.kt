@@ -478,7 +478,6 @@ public object GhostJsonConstants {
     const val ERR_TIMESTAMP_MINUTE_COLON = "Malformed timestamp: missing minute colon"
     const val ERR_TIMESTAMP_TZ = "Malformed timestamp: missing timezone"
     const val ERR_TIMESTAMP_TZ_SUPPORT = "Unsupported offset timezone"
-    const val ERR_REQUIRES_PROTO_READER = "Requires GhostProtoJsonFlatReader"
     const val ERR_MALFORMED_DIGIT = "Malformed digit"
 
     const val EQUALS_INT = '='.code

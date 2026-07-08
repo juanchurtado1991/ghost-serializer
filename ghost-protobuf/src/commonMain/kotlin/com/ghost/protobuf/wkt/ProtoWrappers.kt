@@ -8,6 +8,8 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.decodeBase64String
+import com.ghost.serialization.parser.encodeBase64String
 import com.ghost.serialization.parser.nextBoolean
 import com.ghost.serialization.parser.nextDouble
 import com.ghost.serialization.parser.nextFloat
@@ -28,43 +30,6 @@ import com.ghost.serialization.writer.GhostJsonStringWriter
 @JvmInline value class ProtoInt64Value(val value: Long)
 @JvmInline value class ProtoUInt32Value(val value: Long)
 @JvmInline value class ProtoUInt64Value(val value: Long)
-
-// --- Helper Base64 encoder ---
-private fun encodeBase64(src: ByteArray): String {
-    if (src.isEmpty()) return ""
-    val chars = C.BASE64_ALPHABET_BYTES
-    val outLen = ((src.size + C.B64_OFFSET_2) / C.B64_PAD_DIVISOR) * C.B64_PAD_MULTIPLIER
-    val out = ByteArray(outLen)
-    var i = 0
-    var o = 0
-    val len = src.size
-    val limit = len - C.B64_OFFSET_2
-    while (i < limit) {
-        val b0 = src[i].toInt() and C.B64_BYTE_MASK
-        val b1 = src[i + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK
-        val b2 = src[i + C.B64_OFFSET_2].toInt() and C.B64_BYTE_MASK
-        out[o++] = chars[b0 shr C.B64_SHIFT_2]
-        out[o++] = chars[((b0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (b1 shr C.B64_SHIFT_4)]
-        out[o++] = chars[((b1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2) or (b2 shr C.B64_SHIFT_6)]
-        out[o++] = chars[b2 and C.B64_MASK_6BITS]
-        i += C.B64_PAD_DIVISOR
-    }
-    if (i < len) {
-        val b0 = src[i].toInt() and C.B64_BYTE_MASK
-        out[o++] = chars[b0 shr C.B64_SHIFT_2]
-        if (i == len - C.B64_OFFSET_1) {
-            out[o++] = chars[(b0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4]
-            out[o++] = C.EQUALS_BYTE
-            out[o++] = C.EQUALS_BYTE
-        } else {
-            val b1 = src[i + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK
-            out[o++] = chars[((b0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (b1 shr C.B64_SHIFT_4)]
-            out[o++] = chars[(b1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2]
-            out[o++] = C.EQUALS_BYTE
-        }
-    }
-    return out.decodeToString()
-}
 
 // Helper to format a Long to String zero-allocation.
 // Operates in negative space throughout (never negates the full magnitude) so that
@@ -126,20 +91,26 @@ object ProtoStringValueSerializer : GhostSerializer<ProtoStringValue> {
 object ProtoBytesValueSerializer : GhostSerializer<ProtoBytesValue> {
     override val typeName: String get() = C.WKT_BYTES_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
-        writer.value(encodeBase64(value.value))
+        writer.value(encodeBase64String(value.value))
     }
     override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBytesValue) {
-        writer.value(encodeBase64(value.value))
+        writer.value(encodeBase64String(value.value))
     }
     override fun serialize(writer: GhostJsonStringWriter, value: ProtoBytesValue) {
-        writer.value(encodeBase64(value.value))
+        writer.value(encodeBase64String(value.value))
     }
-    override fun deserialize(reader: GhostJsonReader): ProtoBytesValue = throw UnsupportedOperationException(C.ERR_REQUIRES_PROTO_READER)
+    // Reader-agnostic: works on any reader flavor via nextString() + shared decoder, rather
+    // than requiring the pooled-scratch-buffer fast path on GhostProtoJsonFlatReader
+    // specifically. Previously this threw UnsupportedOperationException on GhostJsonReader
+    // (streaming) and on plain GhostJsonFlatReader, which was reachable simply by calling
+    // Ghost.deserialize/deserializeStreaming instead of GhostProtobuf.deserialize.
+    override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
+        ProtoBytesValue(decodeBase64String(reader.nextString()))
     override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
         if (reader is GhostProtoJsonFlatReader) {
             return ProtoBytesValue(reader.nextProtoBytes())
         }
-        throw UnsupportedOperationException(C.ERR_REQUIRES_PROTO_READER)
+        return ProtoBytesValue(decodeBase64String(reader.nextString()))
     }
 }
 

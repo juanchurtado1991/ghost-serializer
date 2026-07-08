@@ -63,6 +63,25 @@ class ProtoWrappersTest {
     }
 
     @Test
+    fun testBytesValueDecodesOnStreamingAndPlainFlatReader() {
+        // Regression: ProtoBytesValueSerializer used to throw UnsupportedOperationException
+        // unless fed a GhostProtoJsonFlatReader specifically — reachable simply by calling
+        // Ghost.deserialize/deserializeStreaming instead of GhostProtobuf.deserialize, even
+        // though the same type was registered in the same global registry.
+        val streamingReader = com.ghost.serialization.parser.GhostJsonReader(
+            "\"YWJj\"".encodeToByteArray()
+        )
+        val viaStreaming = ProtoBytesValueSerializer.deserialize(streamingReader)
+        assertEquals("abc", viaStreaming.value.decodeToString())
+
+        val plainFlatReader = com.ghost.serialization.parser.GhostJsonFlatReader(
+            "\"YWJj\"".encodeToByteArray()
+        )
+        val viaPlainFlat = ProtoBytesValueSerializer.deserialize(plainFlatReader)
+        assertEquals("abc", viaPlainFlat.value.decodeToString())
+    }
+
+    @Test
     fun testDoubleValueRoundtrip() {
         val parsed = GhostProtobuf.deserialize<ProtoDoubleValue>("42.5")
         assertEquals(42.5, parsed.value)
