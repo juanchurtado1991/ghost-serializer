@@ -7,8 +7,7 @@ import kotlin.math.pow
  * Central repository for all constants used by the Ghost JSON parser and writer.
  * Constants are organized by their role in the serialization lifecycle.
  */
-@PublishedApi
-internal object GhostJsonConstants {
+public object GhostJsonConstants {
 
     // --- Error Messages ---
     const val UNTERMINATED_STRING_ERROR = "Unterminated string"
@@ -89,6 +88,13 @@ internal object GhostJsonConstants {
     const val CHAR_ZERO = '0'
     const val CHAR_BACKSLASH = '\\'
     const val CHAR_B = 'b'
+    const val CHAR_HYPHEN = '-'
+    const val CHAR_COLON = ':'
+    const val CHAR_T_UPPER = 'T'
+    const val CHAR_Z_UPPER = 'Z'
+    const val CHAR_Z_LOWER = 'z'
+    const val CHAR_COMMA = ','
+    const val CHAR_UNDERSCORE = '_'
 
     const val ESC_B_INT = 98
     const val ESC_F_INT = 102
@@ -395,6 +401,122 @@ internal object GhostJsonConstants {
     const val L_BYTE_INT = 108
     const val S_BYTE_INT = 115
     const val E_BYTE_INT = 101
+
+    // --- ProtoJSON Constants ---
+    const val I_BYTE_INT = 73 // 'I'.code
+    const val PROTO_AT_BYTE = 64 // '@'.code
+    const val PROTO_S_BYTE = 115 // 's'.code
+    const val ERR_PROTO_UINT32_OVERFLOW = "uint32 value exceeds 4294967295"
+    const val ERR_PROTO_FRACTIONAL_INT = "Fractional value not allowed for integer type"
+
+    const val N_LOWER_BYTE_INT = 110 // 'n'.code
+    const val F_LOWER_BYTE_INT = 102 // 'f'.code
+    const val I_LOWER_BYTE_INT = 105 // 'i'.code
+    const val T_LOWER_BYTE_INT = 116 // 't'.code
+    const val Y_LOWER_BYTE_INT = 121 // 'y'.code
+    const val A_LOWER_BYTE_INT = 97  // 'a'.code
+    const val N_UPPER_BYTE_INT = 78  // 'N'.code
+    const val PROTO_UINT32_MAX = 4294967295L
+    const val NAN_QUOTED_LEN = 5
+    const val INFINITY_QUOTED_LEN = 10
+    const val NEG_INFINITY_QUOTED_LEN = 11
+
+    const val TS_YEAR_START = 0
+    const val TS_YEAR_END = 4
+    const val TS_MONTH_START = 5
+    const val TS_MONTH_END = 7
+    const val TS_DAY_START = 8
+    const val TS_DAY_END = 10
+    const val TS_HOUR_START = 11
+    const val TS_HOUR_END = 13
+    const val TS_MIN_START = 14
+    const val TS_MIN_END = 16
+    const val TS_SEC_START = 17
+    const val TS_SEC_END = 19
+    const val TS_FRAC_START = 20
+    const val TS_MIN_LENGTH = 20
+    const val TS_TZ_OFFSET_LEN = 6
+    const val NANOS_DIGITS = 9
+
+    const val HINNANT_ERA_YEARS = 400L
+    const val HINNANT_DAYS_PER_ERA = 146097L
+    const val HINNANT_EPOCH_OFFSET = 719468L
+    const val HINNANT_DAYS_CYCLE_4 = 1460
+    const val HINNANT_DAYS_CYCLE_100 = 36524
+    const val HINNANT_DAYS_CYCLE_ERA = 146096
+    const val SECONDS_PER_DAY = 86400L
+    const val SECONDS_PER_HOUR = 3600L
+    const val SECONDS_PER_MINUTE = 60L
+
+    const val WKT_ANY_TYPE = "google.protobuf.Any"
+    const val WKT_STRUCT_TYPE = "google.protobuf.Struct"
+    const val WKT_VALUE_TYPE = "google.protobuf.Value"
+    const val WKT_EMPTY_TYPE = "google.protobuf.Empty"
+    const val WKT_FIELDMASK_TYPE = "google.protobuf.FieldMask"
+    const val WKT_TIMESTAMP_TYPE = "google.protobuf.Timestamp"
+    const val WKT_DURATION_TYPE = "google.protobuf.Duration"
+    const val WKT_BOOL_VALUE_TYPE = "google.protobuf.BoolValue"
+    const val WKT_STRING_VALUE_TYPE = "google.protobuf.StringValue"
+    const val WKT_BYTES_VALUE_TYPE = "google.protobuf.BytesValue"
+    const val WKT_DOUBLE_VALUE_TYPE = "google.protobuf.DoubleValue"
+    const val WKT_FLOAT_VALUE_TYPE = "google.protobuf.FloatValue"
+    const val WKT_INT32_VALUE_TYPE = "google.protobuf.Int32Value"
+    const val WKT_INT64_VALUE_TYPE = "google.protobuf.Int64Value"
+    const val WKT_UINT32_VALUE_TYPE = "google.protobuf.UInt32Value"
+    const val WKT_UINT64_VALUE_TYPE = "google.protobuf.UInt64Value"
+
+    const val PROTO_TYPE_URL_KEY = "@type"
+
+    const val ERR_DURATION_SIGN = "Coherence error: seconds and nanos signs must match"
+    const val ERR_DURATION_SUFFIX = "Missing 's' suffix in Duration"
+    const val ERR_TIMESTAMP_SHORT = "Malformed timestamp: too short"
+    const val ERR_TIMESTAMP_YEAR_HYPHEN = "Malformed timestamp: missing year hyphen"
+    const val ERR_TIMESTAMP_MONTH_HYPHEN = "Malformed timestamp: missing month hyphen"
+    const val ERR_TIMESTAMP_T = "Malformed timestamp: missing T separator"
+    const val ERR_TIMESTAMP_HOUR_COLON = "Malformed timestamp: missing hour colon"
+    const val ERR_TIMESTAMP_MINUTE_COLON = "Malformed timestamp: missing minute colon"
+    const val ERR_TIMESTAMP_TZ = "Malformed timestamp: missing timezone"
+    const val ERR_TIMESTAMP_TZ_SUPPORT = "Unsupported offset timezone"
+    const val ERR_REQUIRES_PROTO_READER = "Requires GhostProtoJsonFlatReader"
+    const val ERR_MALFORMED_DIGIT = "Malformed digit"
+
+    const val EQUALS_INT = '='.code
+    const val EQUALS_BYTE = '='.code.toByte()
+    const val NANOS_DIVISOR_LIMIT = 100_000_000
+    const val TS_BUFFER_SIZE = 35
+    const val DUR_BUFFER_SIZE = 32
+    const val LONG_BUFFER_SIZE = 22
+    const val BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    val BASE64_ALPHABET_BYTES = BASE64_ALPHABET.encodeToByteArray()
+
+    const val B64_PAD_DIVISOR = 3
+    const val B64_PAD_MULTIPLIER = 4
+    const val B64_SHIFT_4 = 4
+    const val B64_SHIFT_2 = 2
+    const val B64_SHIFT_6 = 6
+    const val B64_MASK_6BITS = 63
+    const val B64_MASK_4BITS = 15
+    const val B64_MASK_2BITS = 3
+    const val B64_BYTE_MASK = 0xFF
+    const val B64_OFFSET_2 = 2
+    const val B64_OFFSET_1 = 1
+
+    val BASE64_LUT = IntArray(256) { -1 }.apply {
+        for (i in 0..25) {
+            this['A'.code + i] = i
+            this['a'.code + i] = 26 + i
+        }
+        for (i in 0..9) {
+            this['0'.code + i] = 52 + i
+        }
+        this['+'.code] = 62
+        this['/'.code] = 63
+        this['-'.code] = 62 // URL-safe
+        this['_'.code] = 63 // URL-safe
+        this['='.code] = -2 // Padding sentinel
+    }
+
+    val EMPTY_OBJECT_BS = okio.ByteString.of(123.toByte(), 125.toByte()) // "{}"
 
     /**
      * Maximum string length for the plain-ASCII writeQuotedAscii fast-path.
