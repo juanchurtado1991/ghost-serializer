@@ -48,55 +48,55 @@ object ProtoTimestampSerializer : GhostSerializer<ProtoTimestamp> {
 
 private inline fun String.parseDecimalAt(start: Int, end: Int): Int {
     var result = 0
-    var i = start
-    while (i < end) {
-        val code = this[i].code
+    var index = start
+    while (index < end) {
+        val code = this[index].code
         if ((code - C.ZERO_INT) !in 0..9) throw IllegalArgumentException(C.ERR_MALFORMED_DIGIT)
         result = result * C.BASE_TEN + (code - C.ZERO_INT)
-        i++
+        index++
     }
     return result
 }
 
 // Writes `value` zero-padded to `width` digits directly into the ByteArray.
-private fun writePaddedInt(buf: ByteArray, startOffset: Int, value: Int, width: Int): Int {
-    var pos = startOffset
+private fun writePaddedInt(buffer: ByteArray, startOffset: Int, value: Int, width: Int): Int {
+    var position = startOffset
     var digitCount = 1
     var threshold = C.BASE_TEN
     while (threshold <= value && digitCount < width) {
         digitCount++
         threshold *= C.BASE_TEN
     }
-    var v = value
+    var remainingValue = value
     var actualDigits = digitCount
-    while (threshold <= v) {
+    while (threshold <= remainingValue) {
         actualDigits++
         threshold *= C.BASE_TEN
     }
-    var pad = width - actualDigits
-    while (pad > 0) {
-        buf[pos++] = C.CHAR_ZERO.code.toByte()
-        pad--
+    var paddingCount = width - actualDigits
+    while (paddingCount > 0) {
+        buffer[position++] = C.CHAR_ZERO.code.toByte()
+        paddingCount--
     }
     var divisor = 1
-    var d = actualDigits - 1
-    while (d > 0) {
+    var digitIndex = actualDigits - 1
+    while (digitIndex > 0) {
         divisor *= C.BASE_TEN
-        d--
+        digitIndex--
     }
-    v = value
+    remainingValue = value
     while (divisor > 0) {
-        val digit = v / divisor
-        buf[pos++] = (digit + C.ZERO_INT).toByte()
-        v %= divisor
+        val digit = remainingValue / divisor
+        buffer[position++] = (digit + C.ZERO_INT).toByte()
+        remainingValue %= divisor
         divisor /= C.BASE_TEN
     }
-    return pos
+    return position
 }
 
 // Appends nanos as fractional digits. Proto3 JSON mandates exactly 0, 3, 6, or 9 fractional
 // digits (never an arbitrary trim) — e.g. 450_000_000 ns must render as ".450", not ".45".
-private fun writeNanosFraction(buf: ByteArray, startOffset: Int, nanos: Int): Int {
+private fun writeNanosFraction(buffer: ByteArray, startOffset: Int, nanos: Int): Int {
     val width: Int
     val scale: Int
     if (nanos % C.NANOS_PER_MILLI == 0) {
@@ -109,64 +109,64 @@ private fun writeNanosFraction(buf: ByteArray, startOffset: Int, nanos: Int): In
         width = 9
         scale = 1
     }
-    return writePaddedInt(buf, startOffset, nanos / scale, width)
+    return writePaddedInt(buffer, startOffset, nanos / scale, width)
 }
 
 // Zero-allocation calendar converter using Hatcher/Richards algorithm
 // Ranges validated: 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z
-internal fun parseTimestamp(str: String): ProtoTimestamp {
-    if (str.length < C.TS_MIN_LENGTH) throw IllegalArgumentException(C.ERR_TIMESTAMP_SHORT)
-    val year = str.parseDecimalAt(C.TS_YEAR_START, C.TS_YEAR_END)
-    if (str[C.TS_YEAR_END] != C.CHAR_HYPHEN) throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)
-    val month = str.parseDecimalAt(C.TS_MONTH_START, C.TS_MONTH_END)
-    if (str[C.TS_MONTH_END] != C.CHAR_HYPHEN) throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)
-    val day = str.parseDecimalAt(C.TS_DAY_START, C.TS_DAY_END)
-    if (str[C.TS_DAY_END] != C.CHAR_T_UPPER && str[C.TS_DAY_END] != C.CHAR_T) throw IllegalArgumentException(C.ERR_TIMESTAMP_T)
-    val hour = str.parseDecimalAt(C.TS_HOUR_START, C.TS_HOUR_END)
-    if (str[C.TS_HOUR_END] != C.CHAR_COLON) throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)
-    val minute = str.parseDecimalAt(C.TS_MIN_START, C.TS_MIN_END)
-    if (str[C.TS_MIN_END] != C.CHAR_COLON) throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)
-    val second = str.parseDecimalAt(C.TS_SEC_START, C.TS_SEC_END)
+internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
+    if (timestampString.length < C.TS_MIN_LENGTH) throw IllegalArgumentException(C.ERR_TIMESTAMP_SHORT)
+    val year = timestampString.parseDecimalAt(C.TS_YEAR_START, C.TS_YEAR_END)
+    if (timestampString[C.TS_YEAR_END] != C.CHAR_HYPHEN) throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)
+    val month = timestampString.parseDecimalAt(C.TS_MONTH_START, C.TS_MONTH_END)
+    if (timestampString[C.TS_MONTH_END] != C.CHAR_HYPHEN) throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)
+    val day = timestampString.parseDecimalAt(C.TS_DAY_START, C.TS_DAY_END)
+    if (timestampString[C.TS_DAY_END] != C.CHAR_T_UPPER && timestampString[C.TS_DAY_END] != C.CHAR_T) throw IllegalArgumentException(C.ERR_TIMESTAMP_T)
+    val hour = timestampString.parseDecimalAt(C.TS_HOUR_START, C.TS_HOUR_END)
+    if (timestampString[C.TS_HOUR_END] != C.CHAR_COLON) throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)
+    val minute = timestampString.parseDecimalAt(C.TS_MIN_START, C.TS_MIN_END)
+    if (timestampString[C.TS_MIN_END] != C.CHAR_COLON) throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)
+    val second = timestampString.parseDecimalAt(C.TS_SEC_START, C.TS_SEC_END)
 
     var nanos = 0
-    var nextIdx = C.TS_SEC_END
-    if (str[C.TS_SEC_END] == C.CHAR_DOT) {
-        var endIdx = C.TS_SEC_END + 1
-        val len = str.length
-        while (endIdx < len) {
-            val code = str[endIdx].code
+    var nextIndex = C.TS_SEC_END
+    if (timestampString[C.TS_SEC_END] == C.CHAR_DOT) {
+        var endIndex = C.TS_SEC_END + 1
+        val len = timestampString.length
+        while (endIndex < len) {
+            val code = timestampString[endIndex].code
             if ((code - C.ZERO_INT) !in 0..9) {
                 break
             }
-            endIdx++
+            endIndex++
         }
-        val fracDigits = endIdx - (C.TS_SEC_END + 1)
-        var fracVal = 0
-        var fi = C.TS_SEC_END + 1
-        while (fi < endIdx) {
-            fracVal = fracVal * C.BASE_TEN + (str[fi].code - C.ZERO_INT)
-            fi++
+        val fracDigits = endIndex - (C.TS_SEC_END + 1)
+        var fractionValue = 0
+        var fractionIndex = C.TS_SEC_END + 1
+        while (fractionIndex < endIndex) {
+            fractionValue = fractionValue * C.BASE_TEN + (timestampString[fractionIndex].code - C.ZERO_INT)
+            fractionIndex++
         }
         var multiplier = 1
-        var mi = 0
-        while (mi < C.NANOS_DIGITS - fracDigits) {
+        var multiplierIndex = 0
+        while (multiplierIndex < C.NANOS_DIGITS - fracDigits) {
             multiplier *= C.BASE_TEN
-            mi++
+            multiplierIndex++
         }
-        nanos = fracVal * multiplier
-        nextIdx = endIdx
+        nanos = fractionValue * multiplier
+        nextIndex = endIndex
     }
 
-    if (nextIdx >= str.length) throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)
+    if (nextIndex >= timestampString.length) throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)
 
     var offsetSec = 0
-    if (str[nextIdx] != C.CHAR_Z_UPPER && str[nextIdx] != C.CHAR_Z_LOWER) {
-        if (nextIdx + C.TS_TZ_OFFSET_LEN != str.length || (str[nextIdx] != '+' && str[nextIdx] != C.CHAR_HYPHEN)) {
+    if (timestampString[nextIndex] != C.CHAR_Z_UPPER && timestampString[nextIndex] != C.CHAR_Z_LOWER) {
+        if (nextIndex + C.TS_TZ_OFFSET_LEN != timestampString.length || (timestampString[nextIndex] != '+' && timestampString[nextIndex] != C.CHAR_HYPHEN)) {
             throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ_SUPPORT)
         }
-        val tzSign = if (str[nextIdx] == C.CHAR_HYPHEN) -1 else 1
-        val tzHour = str.parseDecimalAt(nextIdx + 1, nextIdx + 3)
-        val tzMin = str.parseDecimalAt(nextIdx + 4, nextIdx + 6)
+        val tzSign = if (timestampString[nextIndex] == C.CHAR_HYPHEN) -1 else 1
+        val tzHour = timestampString.parseDecimalAt(nextIndex + 1, nextIndex + 3)
+        val tzMin = timestampString.parseDecimalAt(nextIndex + 4, nextIndex + 6)
         offsetSec = tzSign * (tzHour * 3600 + tzMin * 60)
     }
 
@@ -176,18 +176,18 @@ internal fun parseTimestamp(str: String): ProtoTimestamp {
 
 // Convert YYYY-MM-DD HH:MM:SS to Epoch Seconds (UTC)
 private fun dateToEpochSeconds(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int): Long {
-    val y = (if (month <= 2) year - 1 else year).toLong()
-    val m = (if (month <= 2) month + 12 else month).toLong()
-    val era = (if (y >= 0) y else y - (C.HINNANT_ERA_YEARS - 1)) / C.HINNANT_ERA_YEARS
-    val yoe = y - era * C.HINNANT_ERA_YEARS
-    val doy = (153 * (m - 3) + 2) / 5 + day - 1
-    val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
-    val days = era * C.HINNANT_DAYS_PER_ERA + doe - C.HINNANT_EPOCH_OFFSET
+    val yearAdjustment = (if (month <= 2) year - 1 else year).toLong()
+    val monthAdjustment = (if (month <= 2) month + 12 else month).toLong()
+    val era = (if (yearAdjustment >= 0) yearAdjustment else yearAdjustment - (C.HINNANT_ERA_YEARS - 1)) / C.HINNANT_ERA_YEARS
+    val yearOfEra = yearAdjustment - era * C.HINNANT_ERA_YEARS
+    val dayOfYear = (153 * (monthAdjustment - 3) + 2) / 5 + day - 1
+    val dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
+    val days = era * C.HINNANT_DAYS_PER_ERA + dayOfEra - C.HINNANT_EPOCH_OFFSET
     return days * C.SECONDS_PER_DAY + hour * C.SECONDS_PER_HOUR + minute * C.SECONDS_PER_MINUTE + second
 }
 
-internal fun formatTimestamp(t: ProtoTimestamp): String {
-    val seconds = t.seconds
+internal fun formatTimestamp(timestamp: ProtoTimestamp): String {
+    val seconds = timestamp.seconds
     var days = seconds / C.SECONDS_PER_DAY
     var remSeconds = (seconds % C.SECONDS_PER_DAY).toInt()
     if (remSeconds < 0) {
@@ -200,15 +200,15 @@ internal fun formatTimestamp(t: ProtoTimestamp): String {
     val minute = remMinutes / C.SECONDS_PER_MINUTE.toInt()
     val second = remMinutes % C.SECONDS_PER_MINUTE.toInt()
 
-    val z = days + C.HINNANT_EPOCH_OFFSET
-    val era = (if (z >= 0) z else z - C.HINNANT_DAYS_CYCLE_ERA) / C.HINNANT_DAYS_PER_ERA
-    val doe = (z - era * C.HINNANT_DAYS_PER_ERA).toInt()
-    val yoe = (doe - doe / C.HINNANT_DAYS_CYCLE_4 + doe / C.HINNANT_DAYS_CYCLE_100 - doe / C.HINNANT_DAYS_CYCLE_ERA) / 365
-    val y = yoe + era * C.HINNANT_ERA_YEARS
-    val doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
-    val mp = (5 * doy + 2) / 153
-    val day = doy - (153 * mp + 2) / 5 + 1
-    val month = if (mp < 10) mp + 3 else mp - 9
+    val zeroDay = days + C.HINNANT_EPOCH_OFFSET
+    val era = (if (zeroDay >= 0) zeroDay else zeroDay - C.HINNANT_DAYS_CYCLE_ERA) / C.HINNANT_DAYS_PER_ERA
+    val dayOfEra = (zeroDay - era * C.HINNANT_DAYS_PER_ERA).toInt()
+    val yearOfEra = (dayOfEra - dayOfEra / C.HINNANT_DAYS_CYCLE_4 + dayOfEra / C.HINNANT_DAYS_CYCLE_100 - dayOfEra / C.HINNANT_DAYS_CYCLE_ERA) / 365
+    val y = yearOfEra + era * C.HINNANT_ERA_YEARS
+    val dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
+    val monthPosition = (5 * dayOfYear + 2) / 153
+    val day = dayOfYear - (153 * monthPosition + 2) / 5 + 1
+    val month = if (monthPosition < 10) monthPosition + 3 else monthPosition - 9
     val year = (if (month <= 2) y + 1 else y).toInt()
 
     val bytes = ByteArray(C.TS_BUFFER_SIZE)
@@ -225,9 +225,9 @@ internal fun formatTimestamp(t: ProtoTimestamp): String {
     bytes[pos++] = C.CHAR_COLON.code.toByte()
     pos = writePaddedInt(bytes, pos, second, 2)
 
-    if (t.nanos > 0) {
+    if (timestamp.nanos > 0) {
         bytes[pos++] = C.CHAR_DOT.code.toByte()
-        pos = writeNanosFraction(bytes, pos, t.nanos)
+        pos = writeNanosFraction(bytes, pos, timestamp.nanos)
     }
     bytes[pos++] = C.CHAR_Z_UPPER.code.toByte()
     return bytes.decodeToString(0, pos)
@@ -271,104 +271,104 @@ object ProtoDurationSerializer : GhostSerializer<ProtoDuration> {
     }
 }
 
-internal fun parseDuration(str: String): ProtoDuration {
-    if (str.length < 2 || str[str.length - 1] != C.CHAR_S) throw IllegalArgumentException(C.ERR_DURATION_SUFFIX)
-    val dotIdx = str.indexOf(C.CHAR_DOT)
-    val limitIdx = str.length - 1
-    if (dotIdx == -1) {
+internal fun parseDuration(durationString: String): ProtoDuration {
+    if (durationString.length < 2 || durationString[durationString.length - 1] != C.CHAR_S) throw IllegalArgumentException(C.ERR_DURATION_SUFFIX)
+    val dotIndex = durationString.indexOf(C.CHAR_DOT)
+    val limitIndex = durationString.length - 1
+    if (dotIndex == -1) {
         var seconds = 0L
-        var isNeg = false
+        var isNegative = false
         var start = 0
-        if (str[0] == C.CHAR_HYPHEN) {
-            isNeg = true
+        if (durationString[0] == C.CHAR_HYPHEN) {
+            isNegative = true
             start = 1
         }
-        var i = start
-        while (i < limitIdx) {
-            seconds = seconds * C.BASE_TEN + (str[i].code - C.ZERO_INT)
-            i++
+        var index = start
+        while (index < limitIndex) {
+            seconds = seconds * C.BASE_TEN + (durationString[index].code - C.ZERO_INT)
+            index++
         }
-        return ProtoDuration(if (isNeg) -seconds else seconds, 0)
+        return ProtoDuration(if (isNegative) -seconds else seconds, 0)
     } else {
         var seconds = 0L
-        var isNeg = false
+        var isNegative = false
         var start = 0
-        if (str[0] == C.CHAR_HYPHEN) {
-            isNeg = true
+        if (durationString[0] == C.CHAR_HYPHEN) {
+            isNegative = true
             start = 1
         }
-        var i = start
-        while (i < dotIdx) {
-            seconds = seconds * C.BASE_TEN + (str[i].code - C.ZERO_INT)
-            i++
+        var index = start
+        while (index < dotIndex) {
+            seconds = seconds * C.BASE_TEN + (durationString[index].code - C.ZERO_INT)
+            index++
         }
-        val fracDigits = limitIdx - (dotIdx + 1)
-        var fracVal = 0
-        var fi = dotIdx + 1
-        while (fi < limitIdx) {
-            fracVal = fracVal * C.BASE_TEN + (str[fi].code - C.ZERO_INT)
-            fi++
+        val fracDigits = limitIndex - (dotIndex + 1)
+        var fractionValue = 0
+        var fractionIndex = dotIndex + 1
+        while (fractionIndex < limitIndex) {
+            fractionValue = fractionValue * C.BASE_TEN + (durationString[fractionIndex].code - C.ZERO_INT)
+            fractionIndex++
         }
         var multiplier = 1
-        var mi = 0
-        while (mi < C.NANOS_DIGITS - fracDigits) {
+        var multiplierIndex = 0
+        while (multiplierIndex < C.NANOS_DIGITS - fracDigits) {
             multiplier *= C.BASE_TEN
-            mi++
+            multiplierIndex++
         }
-        val nanos = fracVal * multiplier
-        return ProtoDuration(if (isNeg) -seconds else seconds, if (isNeg) -nanos else nanos)
+        val nanos = fractionValue * multiplier
+        return ProtoDuration(if (isNegative) -seconds else seconds, if (isNegative) -nanos else nanos)
     }
 }
 
 // Operates in negative space throughout (never negates the full magnitude) so that
 // Long.MIN_VALUE round-trips correctly: -Long.MIN_VALUE overflows back to Long.MIN_VALUE
 // in two's complement, which previously corrupted the output to "-0" for that boundary value.
-private fun writeLongToBytes(buf: ByteArray, startOffset: Int, value: Long): Int {
-    var pos = startOffset
-    val isNeg = value < 0
-    if (isNeg) {
-        buf[pos++] = C.CHAR_HYPHEN.code.toByte()
+private fun writeLongToBytes(buffer: ByteArray, startOffset: Int, value: Long): Int {
+    var position = startOffset
+    val isNegative = value < 0
+    if (isNegative) {
+        buffer[position++] = C.CHAR_HYPHEN.code.toByte()
     }
     // Count digits
-    var temp = if (isNeg) value else -value
+    var tempValue = if (isNegative) value else -value
     var digitCount = 1
-    while (temp <= -C.BASE_TEN) {
+    while (tempValue <= -C.BASE_TEN) {
         digitCount++
-        temp /= C.BASE_TEN
+        tempValue /= C.BASE_TEN
     }
     // Write digits in reverse
     var divisor = 1L
-    var d = digitCount - 1
-    while (d > 0) {
+    var digitIndex = digitCount - 1
+    while (digitIndex > 0) {
         divisor *= C.BASE_TEN
-        d--
+        digitIndex--
     }
-    temp = if (isNeg) value else -value
+    tempValue = if (isNegative) value else -value
     while (divisor > 0) {
-        val digit = (-(temp / divisor)).toInt()
-        buf[pos++] = (digit + C.ZERO_INT).toByte()
-        temp %= divisor
+        val digit = (-(tempValue / divisor)).toInt()
+        buffer[position++] = (digit + C.ZERO_INT).toByte()
+        tempValue %= divisor
         divisor /= C.BASE_TEN
     }
-    return pos
+    return position
 }
 
-internal fun formatDuration(d: ProtoDuration): String {
-    val sec = d.seconds
-    val ns = kotlin.math.abs(d.nanos)
+internal fun formatDuration(duration: ProtoDuration): String {
+    val seconds = duration.seconds
+    val nanoseconds = kotlin.math.abs(duration.nanos)
     val bytes = ByteArray(C.DUR_BUFFER_SIZE)
     var pos = 0
     // writeLongToBytes(0) has no sign of its own to carry — for a duration under one second
     // (seconds == 0), the sign lives entirely in nanos and must be written explicitly, or it's
     // lost: ProtoDuration(0, -1) would otherwise format as "0.000000001s" instead of
     // "-0.000000001s".
-    if (sec == 0L && d.nanos < 0) {
+    if (seconds == 0L && duration.nanos < 0) {
         bytes[pos++] = C.CHAR_HYPHEN.code.toByte()
     }
-    pos = writeLongToBytes(bytes, pos, sec)
-    if (ns != 0) {
+    pos = writeLongToBytes(bytes, pos, seconds)
+    if (nanoseconds != 0) {
         bytes[pos++] = C.CHAR_DOT.code.toByte()
-        pos = writeNanosFraction(bytes, pos, ns)
+        pos = writeNanosFraction(bytes, pos, nanoseconds)
     }
     bytes[pos++] = C.CHAR_S.code.toByte()
     return bytes.decodeToString(0, pos)
