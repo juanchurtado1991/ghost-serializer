@@ -20,6 +20,7 @@ import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 import com.ghost.serialization.parser.GhostJsonConstants as C
 import com.ghost.serialization.writer.GhostJsonStringWriter
+import kotlin.jvm.JvmInline
 
 @JvmInline value class ProtoBoolValue(val value: Boolean)
 @JvmInline value class ProtoStringValue(val value: String)
