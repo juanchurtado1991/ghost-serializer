@@ -78,3 +78,7 @@ ghost-compiler-lab/node_modules/
 ghost-compiler-lab/out/
 ghost-compiler-lab/build/
 ghost-compiler-lab/.turbo/
+
+# AI agent instruction files (local dev aid only, not shipped project docs)
+AGENTS.md
+CLAUDE.md
