@@ -21,6 +21,7 @@ internal class GhostSerializerContext private constructor(
     val isEnum: Boolean,
     val isObject: Boolean,
     val isResilient: Boolean,
+    val isProto: Boolean,
     val isInferred: Boolean,
     val sealedSubclasses: List<KSClassDeclaration>,
     val packageName: String,
@@ -97,6 +98,8 @@ internal class GhostSerializerContext private constructor(
             val isObject = classDeclaration.classKind == ClassKind.OBJECT
             val isResilient =
                 classDeclaration.annotations.any { it.shortName.asString() == C.GHOST_RESILIENT }
+            val isProto =
+                classDeclaration.annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION }
 
             val sealedSubclasses = if (isSealed) {
                 classDeclaration.getSealedSubclasses().toList()
@@ -167,6 +170,7 @@ internal class GhostSerializerContext private constructor(
                 isEnum = isEnum,
                 isObject = isObject,
                 isResilient = isResilient,
+                isProto = isProto,
                 isInferred = isInferred,
                 sealedSubclasses = sealedSubclasses,
                 packageName = classDeclaration.packageName.asString(),

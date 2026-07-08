@@ -37,6 +37,18 @@ interface GhostSerializer<T> {
     val isResilient: Boolean get() = false
 
     /**
+     * Whether this serializer was generated for a `@GhostProtoSerialization` class, applying
+     * proto3 canonical JSON mapping rules (quoted int64/uint64, Base64 `bytes`, default-value
+     * omission on serialize) rather than plain `@GhostSerialization` rules.
+     *
+     * Framework integrations that share one dispatch surface for both flavors (e.g. Spring's
+     * globally-registered `HttpMessageConverter`) can check this to decide whether to route
+     * reads through a proto3-lenient reader — the annotation itself is `BINARY`-retained and
+     * not visible via runtime reflection, so this is the supported way to detect it at runtime.
+     */
+    val isProto: Boolean get() = false
+
+    /**
      * Serializes [value] into the provided [sink] using the fast in-memory
      * [GhostJsonFlatWriter] and a single bulk drain. See `Ghost.serialize`
      * for the full rationale.

@@ -130,6 +130,15 @@ internal class GhostCodeGenerator(
                     .build()
             )
 
+        if (ctx.isProto) {
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(C.STR_IS_PROTO, com.squareup.kotlinpoet.BOOLEAN)
+                    .addModifiers(KModifier.OVERRIDE)
+                    .initializer(C.STR_TRUE)
+                    .build()
+            )
+        }
+
         if (ctx.needsObjectParsingImports()) {
             setupEmitter.addPerfectHashOptions(typeSpecBuilder)
         }

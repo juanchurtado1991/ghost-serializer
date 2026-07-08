@@ -463,6 +463,7 @@ internal object GhostEmitterConstants {
     const val STR_SPACE = " "
     const val STR_L_SUFFIX = "L"
     const val STR_IS_RESILIENT = "isResilient"
+    const val STR_IS_PROTO = "isProto"
     const val STR_TRUE = "true"
     
     // Templates

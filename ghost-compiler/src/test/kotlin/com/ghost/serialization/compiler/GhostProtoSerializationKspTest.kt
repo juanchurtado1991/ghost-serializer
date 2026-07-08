@@ -287,6 +287,51 @@ class GhostProtoSerializationKspTest {
     }
 
     @Test
+    fun protoClassOverridesIsProtoRuntimeFlag() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoFlagged.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoFlagged(val id: Int)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoFlaggedSerializer.kt"
+        )
+
+        assertTrue(
+            "override val isProto: Boolean = true" in generated,
+            "Expected a runtime-checkable isProto flag on the generated serializer (the " +
+                "@GhostProtoSerialization annotation itself is BINARY-retained, not reflectively " +
+                "visible):\n$generated"
+        )
+    }
+
+    @Test
+    fun plainClassDoesNotOverrideIsProtoFlag() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "PlainFlagged.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class PlainFlagged(val id: Int)
+                """.trimIndent()
+            ),
+            serializerFileName = "PlainFlaggedSerializer.kt"
+        )
+
+        assertFalse("isProto" in generated, "Plain @GhostSerialization classes should not emit isProto:\n$generated")
+    }
+
+    @Test
     fun plainGhostSerializationLeavesLongUnquoted() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(
