@@ -66,19 +66,20 @@ private fun encodeBase64(src: ByteArray): String {
     return out.decodeToString()
 }
 
-// Helper to format a Long to String zero-allocation
+// Helper to format a Long to String zero-allocation.
+// Operates in negative space throughout (never negates the full magnitude) so that
+// Long.MIN_VALUE round-trips correctly: -Long.MIN_VALUE overflows back to Long.MIN_VALUE
+// in two's complement, which previously corrupted the output to "-0" for that boundary value.
 private fun formatLong(value: Long): String {
     val buf = ByteArray(C.LONG_BUFFER_SIZE)
     var pos = 0
-    var v = value
-    val isNeg = v < 0
+    val isNeg = value < 0
     if (isNeg) {
         buf[pos++] = C.CHAR_HYPHEN.code.toByte()
-        v = -v
     }
-    var temp = v
+    var temp = if (isNeg) value else -value
     var digitCount = 1
-    while (temp >= C.BASE_TEN) {
+    while (temp <= -C.BASE_TEN) {
         digitCount++
         temp /= C.BASE_TEN
     }
@@ -88,9 +89,9 @@ private fun formatLong(value: Long): String {
         divisor *= C.BASE_TEN
         d--
     }
-    temp = v
+    temp = if (isNeg) value else -value
     while (divisor > 0) {
-        val digit = (temp / divisor).toInt()
+        val digit = (-(temp / divisor)).toInt()
         buf[pos++] = (digit + C.ZERO_INT).toByte()
         temp %= divisor
         divisor /= C.BASE_TEN

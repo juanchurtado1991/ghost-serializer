@@ -36,6 +36,21 @@ class ProtoWktEdgeCasesTest {
     }
 
     @Test
+    fun testLongMinValueFormatting() {
+        // Regression: negating Long.MIN_VALUE overflows back to Long.MIN_VALUE in two's
+        // complement. formatLong/writeLongToBytes must not naively negate the full value —
+        // previously this silently corrupted the output to "-0"/"-0s" instead of throwing
+        // or producing the correct digits.
+        val formattedDuration = formatDuration(ProtoDuration(Long.MIN_VALUE, 0))
+        assertEquals("-9223372036854775808s", formattedDuration)
+
+        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(64)
+        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        ProtoInt64ValueSerializer.serialize(writer, ProtoInt64Value(Long.MIN_VALUE))
+        assertEquals("\"-9223372036854775808\"", flatBuffer.toStringUtf8())
+    }
+
+    @Test
     fun testBase64StringEscapes() {
         // YWJjKzEyMw== -> abc+123 (escaped 'Y' to verify unicode escape)
         val readerEscaped = GhostProtoJsonFlatReader("\"\\u0059WJjKzEyMw==\"".encodeToByteArray())
