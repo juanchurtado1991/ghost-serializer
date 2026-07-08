@@ -24,7 +24,11 @@ class GhostProtoJsonFlatReader(
 
     fun nextProtoUInt32(): Long = readProtoUInt32()
 
-    fun nextProtoUInt64(): Long = nextProtoInt64() // fits standard int64 coercion/quoted rules
+    /**
+     * Full `uint64` range (0 to [ULong.MAX_VALUE]) — accepts either the canonical quoted
+     * decimal string or a bare JSON number (only safe for values within [Long.MAX_VALUE]).
+     */
+    fun nextProtoUInt64(): ULong = readProtoUInt64()
 
     fun nextProtoBytes(): ByteArray = readProtoBytes()
 

@@ -29,7 +29,12 @@ import com.ghost.serialization.writer.GhostJsonStringWriter
 @JvmInline value class ProtoInt32Value(val value: Int)
 @JvmInline value class ProtoInt64Value(val value: Long)
 @JvmInline value class ProtoUInt32Value(val value: Long)
-@JvmInline value class ProtoUInt64Value(val value: Long)
+
+/**
+ * Full `uint64` range (0 to [ULong.MAX_VALUE], `18446744073709551615`) — [Long] cannot represent
+ * values above `Long.MAX_VALUE` (`9223372036854775807`), which is only half of uint64's range.
+ */
+@JvmInline value class ProtoUInt64Value(val value: ULong)
 
 // Helper to format a Long to String zero-allocation.
 // Operates in negative space throughout (never negates the full magnitude) so that
@@ -173,9 +178,14 @@ object ProtoUInt32ValueSerializer : GhostSerializer<ProtoUInt32Value> {
 
 object ProtoUInt64ValueSerializer : GhostSerializer<ProtoUInt64Value> {
     override val typeName: String get() = C.WKT_UINT64_VALUE_TYPE
-    override fun serialize(writer: GhostJsonWriter, value: ProtoUInt64Value) { writer.value(formatLong(value.value)) }
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoUInt64Value) { writer.value(formatLong(value.value)) }
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoUInt64Value) { writer.value(formatLong(value.value)) }
-    override fun deserialize(reader: GhostJsonReader): ProtoUInt64Value = ProtoUInt64Value(reader.nextLong())
-    override fun deserialize(reader: GhostJsonFlatReader): ProtoUInt64Value = ProtoUInt64Value(reader.nextLong())
+    override fun serialize(writer: GhostJsonWriter, value: ProtoUInt64Value) { writer.value(value.value.toString()) }
+    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoUInt64Value) { writer.value(value.value.toString()) }
+    override fun serialize(writer: GhostJsonStringWriter, value: ProtoUInt64Value) { writer.value(value.value.toString()) }
+
+    // Reader-agnostic: the canonical proto3 JSON form for uint64 is always a quoted decimal
+    // string (unlike int64, which many producers also emit unquoted within the safe Long
+    // range), so nextString().toULong() is correct on every reader flavor without needing
+    // GhostProtoJsonFlatReader-specific numeric coercion.
+    override fun deserialize(reader: GhostJsonReader): ProtoUInt64Value = ProtoUInt64Value(reader.nextString().toULong())
+    override fun deserialize(reader: GhostJsonFlatReader): ProtoUInt64Value = ProtoUInt64Value(reader.nextString().toULong())
 }

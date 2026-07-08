@@ -127,6 +127,20 @@ internal fun GhostProtoJsonFlatReader.readProtoUInt32(): Long {
     return value
 }
 
+/**
+ * Full `uint64` range read. The canonical proto3 JSON form is always a quoted decimal string
+ * (parsed directly as [ULong], no range limit); a bare JSON number falls back to the existing
+ * int64 path, which is only safe for values within [Long.MAX_VALUE].
+ */
+internal fun GhostProtoJsonFlatReader.readProtoUInt64(): ULong {
+    val token = peekNextToken()
+    return if (token == C.QUOTE_INT) {
+        nextString().toULong()
+    } else {
+        nextProtoInt64().toULong()
+    }
+}
+
 internal fun GhostProtoJsonFlatReader.readProtoEnum(options: JsonReaderOptions): Int {
     val token = peekNextToken()
     if (token == C.QUOTE_INT) {

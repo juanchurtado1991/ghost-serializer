@@ -118,6 +118,20 @@ class ProtoWrappersTest {
     @Test
     fun testUInt64ValueRoundtrip() {
         val parsed = GhostProtobuf.deserialize<ProtoUInt64Value>("\"9223372036854775807\"")
-        assertEquals(9223372036854775807L, parsed.value)
+        assertEquals(9223372036854775807UL, parsed.value)
+    }
+
+    @Test
+    fun testUInt64ValueFullRangeAboveLongMaxValue() {
+        // Regression: uint64's max value exceeds Long.MAX_VALUE by more than 2x — the previous
+        // Long-backed ProtoUInt64Value could not represent this at all.
+        val maxUInt64Json = "\"18446744073709551615\""
+        val parsed = GhostProtobuf.deserialize<ProtoUInt64Value>(maxUInt64Json)
+        assertEquals(ULong.MAX_VALUE, parsed.value)
+
+        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(64)
+        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        ProtoUInt64ValueSerializer.serialize(writer, parsed)
+        assertEquals(maxUInt64Json, flatBuffer.toStringUtf8())
     }
 }
