@@ -143,6 +143,30 @@ class GhostProtoSerializationKspTest {
     }
 
     @Test
+    fun zeroValueLongFieldCombinesOmissionAndQuoting() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoDeviceStatus.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoDeviceStatus(val device_id: Long, val retry_count: Int, val label: String)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoDeviceStatusSerializer.kt"
+        )
+
+        assertTrue(
+            "if (value.device_id != 0L) {" in generated,
+            "Expected zero-value guard combined with quoting for a proto Long field:\n$generated"
+        )
+        assertTrue("writer.value(value.device_id.toString())" in generated, generated)
+    }
+
+    @Test
     fun plainGhostSerializationDoesNotOmitZeroValues() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(
