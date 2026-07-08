@@ -82,3 +82,6 @@ ghost-compiler-lab/.turbo/
 # AI agent instruction files (local dev aid only, not shipped project docs)
 AGENTS.md
 CLAUDE.md
+
+# Fuzzing (Jazzer local crash reports)
+crash-*
