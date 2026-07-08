@@ -23,11 +23,15 @@ internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
             if (b <= C.SPACE_INT) continue
             chunk[chunkIdx++] = b
             if (chunkIdx == 4) {
-                val val0 = lut[chunk[0]]
-                val val1 = lut[chunk[1]]
-                val val2 = lut[chunk[2]]
-                val val3 = lut[chunk[3]]
-                
+                // Chars outside the LUT's range (any non-Latin-1 code unit) are never valid
+                // base64 alphabet members — bounds-check rather than indexing lut[] directly,
+                // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
+                // documented parse error.
+                val val0 = if (chunk[0] < lut.size) lut[chunk[0]] else -1
+                val val1 = if (chunk[1] < lut.size) lut[chunk[1]] else -1
+                val val2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1
+                val val3 = if (chunk[3] < lut.size) lut[chunk[3]] else -1
+
                 if (val0 < 0 || val1 < 0 || val2 == -1 || val3 == -1) {
                     throwError("Invalid base64 character")
                 }
@@ -46,11 +50,11 @@ internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
             while (chunkIdx < 4) {
                 chunk[chunkIdx++] = '='.code
             }
-            val val0 = lut[chunk[0]]
-            val val1 = lut[chunk[1]]
-            val val2 = lut[chunk[2]]
-            val val3 = lut[chunk[3]]
-            
+            val val0 = if (chunk[0] < lut.size) lut[chunk[0]] else -1
+            val val1 = if (chunk[1] < lut.size) lut[chunk[1]] else -1
+            val val2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1
+            val val3 = if (chunk[3] < lut.size) lut[chunk[3]] else -1
+
             if (val0 >= 0 && val1 >= 0) {
                 outBuf[outPos++] = ((val0 shl 2) or (val1 ushr 4)).toByte()
                 if (val2 != -2 && val2 >= 0) {

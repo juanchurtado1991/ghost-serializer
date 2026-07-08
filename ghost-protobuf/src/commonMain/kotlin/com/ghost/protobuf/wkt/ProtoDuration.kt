@@ -358,6 +358,13 @@ internal fun formatDuration(d: ProtoDuration): String {
     val ns = kotlin.math.abs(d.nanos)
     val bytes = ByteArray(C.DUR_BUFFER_SIZE)
     var pos = 0
+    // writeLongToBytes(0) has no sign of its own to carry — for a duration under one second
+    // (seconds == 0), the sign lives entirely in nanos and must be written explicitly, or it's
+    // lost: ProtoDuration(0, -1) would otherwise format as "0.000000001s" instead of
+    // "-0.000000001s".
+    if (sec == 0L && d.nanos < 0) {
+        bytes[pos++] = C.CHAR_HYPHEN.code.toByte()
+    }
     pos = writeLongToBytes(bytes, pos, sec)
     if (ns != 0) {
         bytes[pos++] = C.CHAR_DOT.code.toByte()

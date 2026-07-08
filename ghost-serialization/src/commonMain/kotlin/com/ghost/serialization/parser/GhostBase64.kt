@@ -25,10 +25,14 @@ fun decodeBase64String(value: String): ByteArray {
         if (c <= C.SPACE_INT) continue
         chunk[chunkIdx++] = c
         if (chunkIdx == 4) {
-            val v0 = lut[chunk[0]]
-            val v1 = lut[chunk[1]]
-            val v2 = lut[chunk[2]]
-            val v3 = lut[chunk[3]]
+            // Chars outside the LUT's range (any non-Latin-1 code unit) are never valid
+            // base64 alphabet members — bounds-check rather than indexing lut[] directly,
+            // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
+            // documented IllegalArgumentException.
+            val v0 = if (chunk[0] < lut.size) lut[chunk[0]] else -1
+            val v1 = if (chunk[1] < lut.size) lut[chunk[1]] else -1
+            val v2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1
+            val v3 = if (chunk[3] < lut.size) lut[chunk[3]] else -1
             if (v0 < 0 || v1 < 0 || v2 == -1 || v3 == -1) {
                 throw IllegalArgumentException("Invalid base64 character")
             }
@@ -47,10 +51,10 @@ fun decodeBase64String(value: String): ByteArray {
         while (chunkIdx < 4) {
             chunk[chunkIdx++] = '='.code
         }
-        val v0 = lut[chunk[0]]
-        val v1 = lut[chunk[1]]
-        val v2 = lut[chunk[2]]
-        val v3 = lut[chunk[3]]
+        val v0 = if (chunk[0] < lut.size) lut[chunk[0]] else -1
+        val v1 = if (chunk[1] < lut.size) lut[chunk[1]] else -1
+        val v2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1
+        val v3 = if (chunk[3] < lut.size) lut[chunk[3]] else -1
         if (v0 >= 0 && v1 >= 0) {
             out[outPos++] = ((v0 shl C.B64_SHIFT_2) or (v1 ushr C.B64_SHIFT_4)).toByte()
             if (v2 != -2 && v2 >= 0) {
