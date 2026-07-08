@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     api(project(":ghost-serialization"))
+    implementation(project(":ghost-protobuf"))
 
     compileOnly(libs.spring.boot.starter.web)
     compileOnly(libs.spring.boot.starter.webflux)

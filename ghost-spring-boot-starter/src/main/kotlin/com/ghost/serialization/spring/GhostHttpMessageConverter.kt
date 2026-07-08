@@ -2,6 +2,7 @@ package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.GhostProtoJsonFlatReader
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
@@ -60,19 +61,35 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         val bytes = inputMessage.body.readBytes()
         val isStrict = GhostSpringConfig.strict.get()
         val isCoerce = GhostSpringConfig.coerce.get()
-        return com.ghost.serialization.ghostInternalUseFlatReader(bytes) { reader ->
+
+        @Suppress("UNCHECKED_CAST")
+        val targetClass = clazz as Class<Any>
+        var serializer = serializerCache[targetClass]
+        if (serializer == null) {
+            serializer = Ghost.getSerializer(targetClass.kotlin as KClass<Any>) as GhostSerializer<Any>?
+                ?: Ghost.throwError("${Ghost.NOT_FOUND} ${targetClass.simpleName}")
+            serializerCache[targetClass] = serializer
+        }
+
+        // @GhostProtoSerialization classes need GhostProtoJsonFlatReader's proto3 leniency
+        // (quoted-or-bare int64/uint64, lenient int32, quoted NaN/Infinity). The annotation
+        // itself is BINARY-retained (invisible to reflection), so `serializer.isProto` is how
+        // this shared, globally-registered converter tells the two cases apart.
+        if (serializer.isProto) {
+            val reader = GhostProtoJsonFlatReader(bytes)
             reader.strictMode = isStrict
             if (isCoerce) {
                 reader.coerceStringsToNumbers = true
                 reader.coerceBooleans = true
             }
-            @Suppress("UNCHECKED_CAST")
-            val targetClass = clazz as Class<Any>
-            var serializer = serializerCache[targetClass]
-            if (serializer == null) {
-                serializer = Ghost.getSerializer(targetClass.kotlin as KClass<Any>) as GhostSerializer<Any>?
-                    ?: Ghost.throwError("${Ghost.NOT_FOUND} ${targetClass.simpleName}")
-                serializerCache[targetClass] = serializer
+            return serializer.deserialize(reader)
+        }
+
+        return com.ghost.serialization.ghostInternalUseFlatReader(bytes) { reader ->
+            reader.strictMode = isStrict
+            if (isCoerce) {
+                reader.coerceStringsToNumbers = true
+                reader.coerceBooleans = true
             }
             serializer.deserialize(reader)
         }
