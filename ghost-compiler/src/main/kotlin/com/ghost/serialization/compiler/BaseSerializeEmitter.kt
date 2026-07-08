@@ -383,7 +383,7 @@ internal abstract class BaseSerializeEmitter(
                 val valueClassProperty = (type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration)
                     ?.primaryConstructor?.parameters?.firstOrNull()?.name?.asString()
                 if (valueClassProperty != null) {
-                    val innerAccessor = CodeBlock.of("%L.%L", accessor, valueClassProperty)
+                    val innerAccessor = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, accessor, valueClassProperty)
                     emitTypeValue(code, innerType, innerAccessor, skipNullCheck = true, isProto = isProto)
                     if (isNullable && !skipNullCheck) {
                         code.endControlFlow()

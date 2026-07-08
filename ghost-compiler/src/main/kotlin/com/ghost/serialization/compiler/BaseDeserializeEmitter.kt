@@ -287,7 +287,7 @@ internal abstract class BaseDeserializeEmitter(
                 if (innerType != null) {
                     val constructorCall = buildTypeReaderCall(innerType, isProto)
                     val className = type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) } ?: type.toTypeName()
-                    CodeBlock.of("%T(%L)", className, constructorCall)
+                    CodeBlock.of(C.TEMPLATE_CONSTRUCTOR, className, constructorCall)
                 } else {
                     val name = getContextualSerializerName(type)
                     CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
