@@ -148,7 +148,8 @@ internal class SerializerImportResolver(
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_BOOLEAN_NAME)
         }
 
-        if (ctx.properties.any { it.isProto && it.type.isByteArray() }) {
+        val byteArrayClassifications = classifyAllByteArrayUsages()
+        if (byteArrayClassifications.contains(ByteArrayCoverage.COVERED)) {
             fileBuilder.addImport(
                 C.PKG_PARSER,
                 C.STR_DECODE_BASE64_STRING_NAME,
@@ -158,7 +159,7 @@ internal class SerializerImportResolver(
         }
 
         val needsCaptureRawJsonBytes = allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE) &&
-            hasNonProtoByteArrayUsage()
+            byteArrayClassifications.contains(ByteArrayCoverage.UNCOVERED)
         val needsCaptureRawJson = allTypeStrings.contains(C.K_RAW_JSON) ||
             allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
         if (needsCaptureRawJsonBytes) {
@@ -177,34 +178,40 @@ internal class SerializerImportResolver(
         }
     }
 
+    private enum class ByteArrayCoverage { COVERED, UNCOVERED }
+
     /**
-     * True if any `ByteArray` usage in this class is NOT covered by the proto3 Base64 codegen
-     * path — i.e. still needs the raw-JSON-passthrough `captureRawJsonBytes` import. A direct
-     * top-level property annotated `@GhostProtoSerialization` is covered; nested occurrences
-     * (inside `List`/`Map`/value classes/inferred sealed subclasses) are not handled by that
-     * path today and still require the import.
+     * Classifies every `ByteArray` occurrence reachable from this class's properties (directly,
+     * through `List`/`Set`/`Map` elements, through a value-class wrapper, or through an inferred
+     * sealed subclass) as [ByteArrayCoverage.COVERED] by the proto3 Base64 codegen path (needs
+     * `decodeBase64String`/`encodeBase64String`), or [ByteArrayCoverage.UNCOVERED] (still needs
+     * the raw-JSON-passthrough `captureRawJsonBytes` import). Coverage mirrors exactly what
+     * `BaseSerializeEmitter`/`BaseDeserializeEmitter` do: `isProto` propagates unchanged through
+     * `List`/`Set`/`Map` recursion, but inferred sealed subclass properties are never proto-aware.
      */
-    private fun hasNonProtoByteArrayUsage(): Boolean {
-        fun typeHasByteArray(type: KSType): Boolean {
-            if (type.isByteArray()) return true
-            return type.arguments.any { arg -> arg.type?.resolve()?.let(::typeHasByteArray) == true }
+    private fun classifyAllByteArrayUsages(): List<ByteArrayCoverage> {
+        fun classify(type: KSType, isProto: Boolean): ByteArrayCoverage? {
+            if (type.isByteArray()) {
+                return if (isProto) ByteArrayCoverage.COVERED else ByteArrayCoverage.UNCOVERED
+            }
+            if (type.isList() || type.isSet()) {
+                val inner = type.arguments.firstOrNull()?.type?.resolve() ?: return null
+                return classify(inner, isProto)
+            }
+            if (type.isMap()) {
+                val value = type.arguments.getOrNull(1)?.type?.resolve() ?: return null
+                return classify(value, isProto)
+            }
+            return null
         }
 
-        if (ctx.properties.any { prop ->
-                !(prop.isProto && prop.type.isByteArray()) && typeHasByteArray(prop.type)
-            }
-        ) {
-            return true
+        val direct = ctx.properties.mapNotNull { classify(it.type, it.isProto) }
+        val valueClass = ctx.properties.mapNotNull {
+            it.valueClassProperty?.let { vcp -> classify(vcp.type, vcp.isProto) }
         }
-        if (ctx.properties.any { it.valueClassProperty?.type?.let(::typeHasByteArray) == true }) {
-            return true
-        }
-        if (ctx.properties.flatMap { it.inferredSubclasses }.flatMap { it.properties }
-                .any { typeHasByteArray(it.type) }
-        ) {
-            return true
-        }
-        return false
+        val inferred = ctx.properties.flatMap { it.inferredSubclasses }.flatMap { it.properties }
+            .mapNotNull { classify(it.type, it.isProto) }
+        return direct + valueClass + inferred
     }
 
     private fun needsNextStringImport(): Boolean {

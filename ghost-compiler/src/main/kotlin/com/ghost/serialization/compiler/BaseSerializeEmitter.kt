@@ -318,7 +318,7 @@ internal abstract class BaseSerializeEmitter(
             }
 
             else -> {
-                emitTypeValue(code, prop.type, accessor, skipNullCheck = true)
+                emitTypeValue(code, prop.type, accessor, skipNullCheck = true, isProto = prop.isProto)
             }
         }
     }
@@ -330,12 +330,16 @@ internal abstract class BaseSerializeEmitter(
      * @param type The [KSType] of the target value.
      * @param accessor Accessor key expression.
      * @param skipNullCheck True if the outer check has already guaranteed non-null value.
+     * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
+     *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
+     *   proto3 quoting/Base64 treatment.
      */
     protected fun emitTypeValue(
         code: CodeBlock.Builder,
         type: KSType,
         accessor: Any,
-        skipNullCheck: Boolean = false
+        skipNullCheck: Boolean = false,
+        isProto: Boolean = false
     ) {
         val isNullable = type.isMarkedNullable
         if (isNullable && !skipNullCheck) {
@@ -375,7 +379,11 @@ internal abstract class BaseSerializeEmitter(
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
             typeName == C.K_LONG -> {
-                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                if (isProto) {
+                    code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
+                } else {
+                    code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                }
             }
             typeName == C.K_STRING -> {
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
@@ -399,16 +407,20 @@ internal abstract class BaseSerializeEmitter(
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
             typeName == C.K_BYTE_ARRAY -> {
-                code.addStatement(C.STR_WRITER_RAW_VALUE_L, accessor)
+                if (isProto) {
+                    code.addStatement(C.STR_WRITER_VAL_BYTES_AS_BASE64, accessor)
+                } else {
+                    code.addStatement(C.STR_WRITER_RAW_VALUE_L, accessor)
+                }
             }
             type.isList() -> {
-                emitList(code, type, accessor)
+                emitList(code, type, accessor, isProto)
             }
             type.isSet() -> {
-                emitSet(code, type, accessor)
+                emitSet(code, type, accessor, isProto)
             }
             type.isMap() -> {
-                emitMap(code, type, accessor)
+                emitMap(code, type, accessor, isProto)
             }
 
             else -> {
@@ -429,7 +441,7 @@ internal abstract class BaseSerializeEmitter(
      * name collisions when a DTO contains multiple list fields or nested list structures
      * within the same generated function scope.
      */
-    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any) {
+    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any, isProto: Boolean = false) {
         val slot = loopCounter++
         val sizeVar = "size$slot"
         val indexVar = "i$slot"
@@ -441,7 +453,7 @@ internal abstract class BaseSerializeEmitter(
         val innerType = type.arguments.firstOrNull()?.type?.resolve()
 
         if (innerType != null) {
-            emitTypeValue(code, innerType, itemVar, skipNullCheck = false)
+            emitTypeValue(code, innerType, itemVar, skipNullCheck = false, isProto = isProto)
         } else {
             code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)
         }
@@ -452,7 +464,7 @@ internal abstract class BaseSerializeEmitter(
     /**
      * Emits set collection serialization — iterates elements without materializing a [List].
      */
-    private fun emitSet(code: CodeBlock.Builder, type: KSType, accessor: Any) {
+    private fun emitSet(code: CodeBlock.Builder, type: KSType, accessor: Any, isProto: Boolean = false) {
         val slot = loopCounter++
         val itemVar = C.STR_ITEM_PREFIX + slot
         code.addStatement(C.STR_WRITER_BEGIN_ARR)
@@ -460,7 +472,7 @@ internal abstract class BaseSerializeEmitter(
         val innerType = type.arguments.firstOrNull()?.type?.resolve()
 
         if (innerType != null) {
-            emitTypeValue(code, innerType, itemVar, skipNullCheck = false)
+            emitTypeValue(code, innerType, itemVar, skipNullCheck = false, isProto = isProto)
         } else {
             code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)
         }
@@ -475,7 +487,7 @@ internal abstract class BaseSerializeEmitter(
      * name collisions when a DTO contains multiple map fields or nested map structures
      * within the same generated function scope.
      */
-    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any) {
+    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any, isProto: Boolean = false) {
         val slot = loopCounter++
         val keyVar = C.STR_MAP_KEY_PREFIX + slot
         val valVar = C.STR_MAP_VAL_PREFIX + slot
@@ -484,7 +496,7 @@ internal abstract class BaseSerializeEmitter(
         code.addStatement(C.TEMPLATE_WRITER_NAME, keyVar)
         val valueType = type.arguments.getOrNull(1)?.type?.resolve()
         if (valueType != null) {
-            emitTypeValue(code, valueType, valVar, skipNullCheck = false)
+            emitTypeValue(code, valueType, valVar, skipNullCheck = false, isProto = isProto)
         } else {
             code.addStatement(C.TEMPLATE_WRITER_VALUE, valVar)
         }

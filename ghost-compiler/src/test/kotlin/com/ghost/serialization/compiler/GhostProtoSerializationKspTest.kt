@@ -167,6 +167,105 @@ class GhostProtoSerializationKspTest {
     }
 
     @Test
+    fun listOfLongIsQuotedElementwiseUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoIdList.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoIdList(val ids: List<Long>)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoIdListSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.value(item0.toString())" in generated,
+            "Expected List<Long> elements to be quoted under proto:\n$generated"
+        )
+        assertTrue("reader.coerceStringsToNumbers" in generated, generated)
+    }
+
+    @Test
+    fun mapOfLongValuesIsQuotedUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoCounters.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoCounters(val counts: Map<String, Long>)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoCountersSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.value(mapVal0.toString())" in generated,
+            "Expected Map<String, Long> values to be quoted under proto:\n$generated"
+        )
+    }
+
+    @Test
+    fun listOfByteArrayIsBase64EncodedUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoChunks.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoChunks(val chunks: List<ByteArray>)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoChunksSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.value(encodeBase64String(item0))" in generated,
+            "Expected List<ByteArray> elements to be Base64-encoded under proto:\n$generated"
+        )
+        assertTrue("decodeBase64String(reader.nextString())" in generated, generated)
+        assertFalse("captureRawJsonBytes" in generated, generated)
+    }
+
+    @Test
+    fun valueClassWrappedLongIsQuotedUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoAccount.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @JvmInline
+                value class AccountId(val value: Long)
+
+                @GhostProtoSerialization
+                data class ProtoAccount(val account_id: AccountId)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoAccountSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.value(value.account_id.`value`.toString())" in generated,
+            "Expected value-class-wrapped Long to be quoted under proto:\n$generated"
+        )
+        assertTrue("reader.coerceStringsToNumbers" in generated, generated)
+    }
+
+    @Test
     fun plainGhostSerializationDoesNotOmitZeroValues() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(
@@ -228,6 +327,7 @@ class GhostProtoSerializationKspTest {
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
+            jvmTarget = "17"
         }
         return compilation to compilation.compile()
     }

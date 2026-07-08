@@ -363,7 +363,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             primitiveArrayType = primitiveArrayType,
             isValueClass = isValueClass(type),
             valueClassProperty = if (isValueClass(type)) {
-                resolveValueClassProperty(type)
+                resolveValueClassProperty(type, hasProto)
             } else {
                 null
             },
@@ -748,13 +748,15 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     /**
      * Resolves the underlying property model for a value class type.
      */
-    private fun resolveValueClassProperty(type: KSType): GhostPropertyModel? {
+    private fun resolveValueClassProperty(type: KSType, isProto: Boolean = false): GhostPropertyModel? {
         val declaration = type.declaration as? KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null
         val prop = declaration.getAllProperties()
             .find { it.simpleName.asString() == param.name?.asString() } ?: return null
-        return buildPropertyModel(prop, listOf(param))
+        // The value class itself (e.g. `UserId`) is never @GhostProtoSerialization-annotated;
+        // it inherits proto-ness from whichever outer property wraps it.
+        return buildPropertyModel(prop, listOf(param)).copy(isProto = isProto)
     }
 
     /**

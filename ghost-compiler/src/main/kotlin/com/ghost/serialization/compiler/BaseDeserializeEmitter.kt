@@ -174,7 +174,7 @@ internal abstract class BaseDeserializeEmitter(
 
             prop.isProto && prop.type.isByteArray() -> CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
 
-            else -> buildTypeReaderCall(prop.type)
+            else -> buildTypeReaderCall(prop.type, prop.isProto)
         }
     }
 
@@ -207,7 +207,7 @@ internal abstract class BaseDeserializeEmitter(
             return CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
         }
 
-        return buildTypeReaderCall(prop.type)
+        return buildTypeReaderCall(prop.type, prop.isProto)
     }
 
     /**
@@ -267,13 +267,20 @@ internal abstract class BaseDeserializeEmitter(
      * 4. **Fallbacks:** Uses contextual resolution for unknown or custom types.
      *
      * @param type The KSP type being resolved.
+     * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
+     *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
+     *   proto3 quoted-int64/Base64 decoding.
      * @return A [CodeBlock] containing the optimized reader instruction.
      */
-    protected fun buildTypeReaderCall(type: KSType): CodeBlock {
+    protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {
         val readerCall = when {
             type.isRawJson() -> CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)
 
-            type.isByteArray() -> CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
+            type.isByteArray() -> if (isProto) {
+                CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
+            } else {
+                CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
+            }
 
             type.isGhost() || type.isEnum() -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
@@ -282,7 +289,11 @@ internal abstract class BaseDeserializeEmitter(
 
             type.isPrimitiveInt() -> CodeBlock.of(C.STR_NEXT_INT)
             type.isPrimitiveBoolean() -> CodeBlock.of(C.STR_NEXT_BOOLEAN)
-            type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG)
+            type.isPrimitiveLong() -> if (isProto) {
+                CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+            } else {
+                CodeBlock.of(C.STR_NEXT_LONG)
+            }
             type.isPrimitiveDouble() -> CodeBlock.of(C.STR_NEXT_DOUBLE)
             type.isPrimitiveFloat() -> CodeBlock.of(C.STR_NEXT_FLOAT)
             type.isPrimitiveByte() -> CodeBlock.of(C.STR_NEXT_BYTE)
@@ -295,7 +306,7 @@ internal abstract class BaseDeserializeEmitter(
 
                 CodeBlock.of(
                     C.STR_READ_SET_TEMPLATE,
-                    buildTypeReaderCall(inner)
+                    buildTypeReaderCall(inner, isProto)
                 )
             }
 
@@ -305,7 +316,7 @@ internal abstract class BaseDeserializeEmitter(
 
                 CodeBlock.of(
                     C.STR_READ_LIST_TEMPLATE,
-                    buildTypeReaderCall(inner)
+                    buildTypeReaderCall(inner, isProto)
                 )
 
             }
@@ -319,7 +330,7 @@ internal abstract class BaseDeserializeEmitter(
 
                 CodeBlock.of(
                     C.STR_READ_MAP_TEMPLATE,
-                    buildTypeReaderCall(valueType)
+                    buildTypeReaderCall(valueType, isProto)
                 )
             }
 
