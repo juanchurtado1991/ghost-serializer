@@ -379,7 +379,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             wrappedOmitIfEmpty = wrappedKeysConfig?.omitIfEmpty ?: false,
             wrappedOmitIfAbsent = wrappedKeysConfig?.omitIfAbsent ?: emptyList(),
             wrappedUnwrapFields = wrappedUnwrapFields,
-            isInferredSignature = prop.hasAnnotation(C.GHOST_SIGNATURE)
+            isInferredSignature = prop.hasAnnotation(C.GHOST_SIGNATURE),
+            isProto = hasProto
         )
     }
 

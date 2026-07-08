@@ -170,6 +170,8 @@ internal abstract class BaseDeserializeEmitter(
                 CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
             }
 
+            prop.isProto && prop.type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+
             else -> buildTypeReaderCall(prop.type)
         }
     }
@@ -193,6 +195,10 @@ internal abstract class BaseDeserializeEmitter(
                     )
                 )
             )
+        }
+
+        if (prop.isProto && prop.type.isPrimitiveLong()) {
+            return CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
         }
 
         return buildTypeReaderCall(prop.type)

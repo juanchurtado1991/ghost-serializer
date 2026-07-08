@@ -49,6 +49,12 @@ internal abstract class BaseSerializeEmitter(
             return false
         }
         val type = prop.type.declaration.qualifiedName?.asString()
+        // Proto3 JSON mapping requires int64 fields on the wire as quoted decimal strings —
+        // route Long through emitValue()'s dedicated proto branch instead of the fused
+        // writer.writeField(header, Long) fast path, which always writes a bare number.
+        if (prop.isProto && type == C.K_LONG) {
+            return false
+        }
         return when (type) {
             C.K_INT,
             C.K_LONG,
@@ -259,6 +265,10 @@ internal abstract class BaseSerializeEmitter(
             prop.isContextual -> {
                 val name = getContextualSerializerName(prop.type)
                 code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)
+            }
+
+            prop.isProto && prop.type.declaration.qualifiedName?.asString() == C.K_LONG -> {
+                code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
             }
 
             else -> {

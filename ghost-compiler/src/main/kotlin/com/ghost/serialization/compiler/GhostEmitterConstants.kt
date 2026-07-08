@@ -63,6 +63,14 @@ internal object GhostEmitterConstants {
     const val STR_NEXT_INT = "reader.nextInt()"
     const val STR_NEXT_BOOLEAN = "reader.nextBoolean()"
     const val STR_NEXT_LONG = "reader.nextLong()"
+
+    /**
+     * proto3 JSON mapping: int64/uint64 fields accept both bare numbers and quoted decimal
+     * strings on read. Temporarily flips `coerceStringsToNumbers` around the read — this works
+     * on every reader flavor (streaming, flat, string), not just GhostProtoJsonFlatReader.
+     */
+    const val STR_NEXT_LONG_PROTO_COERCED =
+        "run { val __c = reader.coerceStringsToNumbers; reader.coerceStringsToNumbers = true; val __v = reader.nextLong(); reader.coerceStringsToNumbers = __c; __v }"
     const val STR_NEXT_DOUBLE = "reader.nextDouble()"
     const val STR_NEXT_FLOAT = "reader.nextFloat()"
     const val STR_NEXT_BYTE = "reader.nextInt().toByte()"
@@ -258,6 +266,9 @@ internal object GhostEmitterConstants {
     const val STR_SERIALIZE_CALL = "%L.serialize(writer, %L)"
     const val STR_WRITER_VAL_L = "writer.value(%L)"
     const val STR_WRITER_VAL_FLOAT = "writer.value(%L)"
+
+    /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
+    const val STR_WRITER_VAL_LONG_AS_STRING = "writer.value(%L.toString())"
     const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"
     const val STR_WRITE_NAME_RAW = "writer.writeNameRaw(%L)"
     const val STR_WRITE_NAME_RAW_NULL = "writer.writeNameRaw(%L).nullValue()"

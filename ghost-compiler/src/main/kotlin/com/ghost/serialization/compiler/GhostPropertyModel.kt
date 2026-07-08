@@ -85,6 +85,9 @@ internal data class InferredSubclassModel(
  * @property wrappedUnwrapFields Ordered wire fields used to unwrap this property during serialization.
  * @property isInferredSignature True if this property serves as an inferred signature candidate.
  * @property inferredSubclasses Inferred sealed subclasses associated with this property model.
+ * @property isProto True if the enclosing class is annotated with `@GhostProtoSerialization`.
+ *   Applies proto3 JSON mapping rules to this property: 64-bit integer (`Long`) fields are
+ *   read/written as quoted decimal strings instead of bare JSON numbers.
  */
 internal data class GhostPropertyModel(
     val kotlinName: String,
@@ -122,7 +125,8 @@ internal data class GhostPropertyModel(
     val wrappedOmitIfAbsent: List<String> = emptyList(),
     val wrappedUnwrapFields: List<WrappedUnwrapFieldModel> = emptyList(),
     val isInferredSignature: Boolean = false,
-    val inferredSubclasses: List<InferredSubclassModel> = emptyList()
+    val inferredSubclasses: List<InferredSubclassModel> = emptyList(),
+    val isProto: Boolean = false
 )
 
 /**
