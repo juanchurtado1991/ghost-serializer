@@ -27,5 +27,31 @@ class ProtoAnyTest {
         val json = "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"10.5s\"}"
         val parsed = GhostProtobuf.deserialize<ProtoAny>(json)
         assertEquals("type.googleapis.com/google.protobuf.Duration", parsed.typeUrl)
+        assertEquals("\"10.5s\"", parsed.value.decodeToString())
+    }
+
+    @Test
+    fun testAnyRoundtripPreservesPayload() {
+        // Regression: ProtoAnySerializer used to silently drop the "value" payload on both
+        // serialize and deserialize, returning ByteArray(0) unconditionally.
+        val json = "{\"@type\":\"type.googleapis.com/google.protobuf.Struct\",\"value\":{\"a\":1,\"b\":\"c\"}}"
+        val parsed = GhostProtobuf.deserialize<ProtoAny>(json)
+        assertEquals("{\"a\":1,\"b\":\"c\"}", parsed.value.decodeToString())
+
+        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(256)
+        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        ProtoAnySerializer.serialize(writer, parsed)
+        assertEquals(json, flatBuffer.toStringUtf8())
+
+        val reparsed = GhostProtobuf.deserialize<ProtoAny>(flatBuffer.toStringUtf8())
+        assertEquals(parsed, reparsed)
+    }
+
+    @Test
+    fun testAnyWithoutValueKeyRoundtrips() {
+        val json = "{\"@type\":\"type.googleapis.com/google.protobuf.Empty\"}"
+        val parsed = GhostProtobuf.deserialize<ProtoAny>(json)
+        assertEquals("type.googleapis.com/google.protobuf.Empty", parsed.typeUrl)
+        assertEquals(0, parsed.value.size)
     }
 }

@@ -466,6 +466,7 @@ public object GhostJsonConstants {
     const val WKT_UINT64_VALUE_TYPE = "google.protobuf.UInt64Value"
 
     const val PROTO_TYPE_URL_KEY = "@type"
+    const val PROTO_VALUE_KEY = "value"
 
     const val ERR_DURATION_SIGN = "Coherence error: seconds and nanos signs must match"
     const val ERR_DURATION_SUFFIX = "Missing 's' suffix in Duration"
