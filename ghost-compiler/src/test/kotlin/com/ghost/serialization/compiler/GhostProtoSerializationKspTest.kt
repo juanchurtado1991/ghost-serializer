@@ -355,6 +355,68 @@ class GhostProtoSerializationKspTest {
         assertFalse(".toString())" in generated, "Non-proto Long fields must not be quoted:\n$generated")
     }
 
+    @Test
+    fun listOfValueClassWrappedLongIsQuotedUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoAccountIdList.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @JvmInline
+                value class AccountId(val value: Long)
+
+                @GhostProtoSerialization
+                data class ProtoAccountIdList(val ids: List<AccountId>)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoAccountIdListSerializer.kt"
+        )
+
+        // Verificamos que al serializar se llame a la propiedad desenvuelta (itemX.value.toString())
+        assertTrue(
+            "writer.value(item0.value.toString())" in generated,
+            "Expected List<AccountId> value class elements to be unboxed and quoted under proto:\n$generated"
+        )
+        // Verificamos que al deserializar se instancie la value class envolviendo el long leido con coercion
+        assertTrue(
+            "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
+            "Expected List<AccountId> elements to be deserialized by instantiating value class with coerced long:\n$generated"
+        )
+    }
+
+    @Test
+    fun mapOfValueClassWrappedLongIsQuotedUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoAccountIdMap.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @JvmInline
+                value class AccountId(val value: Long)
+
+                @GhostProtoSerialization
+                data class ProtoAccountIdMap(val accounts: Map<String, AccountId>)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoAccountIdMapSerializer.kt"
+        )
+
+        assertTrue(
+            "writer.value(mapVal0.value.toString())" in generated,
+            "Expected Map values of AccountId to be unboxed and quoted under proto:\n$generated"
+        )
+        assertTrue(
+            "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
+            "Expected Map values of AccountId to be deserialized by instantiating value class with coerced long:\n$generated"
+        )
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)

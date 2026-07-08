@@ -282,6 +282,18 @@ internal abstract class BaseDeserializeEmitter(
                 CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
             }
 
+            isValueClassType(type) -> {
+                val innerType = resolveValueClassInnerType(type)
+                if (innerType != null) {
+                    val constructorCall = buildTypeReaderCall(innerType, isProto)
+                    val className = type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) } ?: type.toTypeName()
+                    CodeBlock.of("%T(%L)", className, constructorCall)
+                } else {
+                    val name = getContextualSerializerName(type)
+                    CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
+                }
+            }
+
             type.isGhost() || type.isEnum() -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
                 type.serializerClassName()
@@ -473,4 +485,17 @@ internal abstract class BaseDeserializeEmitter(
      */
     protected fun nullGuarded(inner: CodeBlock): CodeBlock =
         CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)
+
+    private fun isValueClassType(type: KSType): Boolean {
+        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
+        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
+                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
+    }
+
+    private fun resolveValueClassInnerType(type: KSType): KSType? {
+        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
+        val primaryConstructor = declaration.primaryConstructor ?: return null
+        val param = primaryConstructor.parameters.firstOrNull() ?: return null
+        return param.type.resolve()
+    }
 }

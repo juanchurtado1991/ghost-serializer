@@ -19,6 +19,12 @@ interface GhostExtension {
     val autoInjectRetrofit: Property<Boolean>
 
     /**
+     * Whether to automatically apply the ghost-protobuf dependency if protobuf is detected.
+     * Defaults to true.
+     */
+    val autoInjectProtobuf: Property<Boolean>
+
+    /**
      * Override the version of Ghost Serialization to use.
      * By default, this uses the version that matches the plugin version.
      */

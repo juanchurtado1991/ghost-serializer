@@ -75,6 +75,9 @@ class GhostPlugin : Plugin<Project> {
             if (extension.autoInjectRetrofit.get() && hasRetrofitDependency(project)) {
                 injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_RETROFIT:$version")
             }
+            if (extension.autoInjectProtobuf.get() && hasProtobufDependency(project)) {
+                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_PROTOBUF:$version")
+            }
         }
     }
 
@@ -82,6 +85,7 @@ class GhostPlugin : Plugin<Project> {
         return project.extensions.create(EXTENSION_NAME, GhostExtension::class.java).apply {
             autoInjectKtor.convention(true)
             autoInjectRetrofit.convention(true)
+            autoInjectProtobuf.convention(true)
             version.convention(DEFAULT_VERSION)
         }
     }
@@ -125,6 +129,16 @@ class GhostPlugin : Plugin<Project> {
         }
     }
 
+    private fun hasProtobufDependency(project: Project): Boolean {
+        if (project.plugins.hasPlugin(PLUGIN_PROTOBUF)) return true
+        return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
+            val config = project.configurations.findByName(name)
+            config?.dependencies?.any {
+                it.group == GROUP_PROTOBUF
+            } ?: false
+        }
+    }
+
     private fun injectNetworkDependency(project: Project, dep: String) {
         if (project.pluginManager.hasPlugin(PLUGIN_KMP)) {
             project.dependencies.add(
@@ -148,6 +162,7 @@ class GhostPlugin : Plugin<Project> {
         private const val PLUGIN_ANDROID_APP = "com.android.application"
         private const val PLUGIN_ANDROID_LIB = "com.android.library"
         private const val PLUGIN_JVM = "org.jetbrains.kotlin.jvm"
+        private const val PLUGIN_PROTOBUF = "com.google.protobuf"
 
         private const val GROUP_ID = "com.ghostserializer"
         private const val ARTIFACT_COMPILER = "ghost-compiler"
@@ -155,6 +170,7 @@ class GhostPlugin : Plugin<Project> {
         private const val ARTIFACT_API = "ghost-api"
         private const val ARTIFACT_KTOR = "ghost-ktor"
         private const val ARTIFACT_RETROFIT = "ghost-retrofit"
+        private const val ARTIFACT_PROTOBUF = "ghost-protobuf"
 
         private const val CONFIG_COMMON_MAIN_IMPL = "commonMainImplementation"
         private const val CONFIG_IMPL = "implementation"
@@ -167,5 +183,6 @@ class GhostPlugin : Plugin<Project> {
         private const val PREFIX_KTOR_CLIENT = "ktor-client"
         private const val GROUP_RETROFIT = "com.squareup.retrofit2"
         private const val NAME_RETROFIT = "retrofit"
+        private const val GROUP_PROTOBUF = "com.google.protobuf"
     }
 }

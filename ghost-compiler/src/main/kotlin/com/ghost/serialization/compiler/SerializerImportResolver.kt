@@ -39,6 +39,12 @@ internal class SerializerImportResolver(
                 if (type.isMarkedNullable) {
                     hasNullable = true
                 }
+                if (isValueClassType(type)) {
+                    val inner = resolveValueClassInnerType(type)
+                    if (inner != null) {
+                        collectTypes(inner)
+                    }
+                }
                 for (arg in type.arguments) {
                     val resolved = arg.type?.resolve()
                     if (resolved != null) {
@@ -194,6 +200,10 @@ internal class SerializerImportResolver(
             if (type.isByteArray()) {
                 return if (isProto) ByteArrayCoverage.COVERED else ByteArrayCoverage.UNCOVERED
             }
+            if (isValueClassType(type)) {
+                val inner = resolveValueClassInnerType(type) ?: return null
+                return classify(inner, isProto)
+            }
             if (type.isList() || type.isSet()) {
                 val inner = type.arguments.firstOrNull()?.type?.resolve() ?: return null
                 return classify(inner, isProto)
@@ -243,5 +253,18 @@ internal class SerializerImportResolver(
             return typeNeedsNextString(value)
         }
         return false
+    }
+
+    private fun isValueClassType(type: KSType): Boolean {
+        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
+        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
+                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
+    }
+
+    private fun resolveValueClassInnerType(type: KSType): KSType? {
+        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
+        val primaryConstructor = declaration.primaryConstructor ?: return null
+        val param = primaryConstructor.parameters.firstOrNull() ?: return null
+        return param.type.resolve()
     }
 }
