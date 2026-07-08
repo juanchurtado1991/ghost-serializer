@@ -118,6 +118,52 @@ class GhostProtoSerializationKspTest {
     }
 
     @Test
+    fun zeroValueFieldsAreOmittedOnSerializeUnderProto() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoSettings.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoSettings(val retries: Int, val label: String, val active: Boolean)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoSettingsSerializer.kt"
+        )
+
+        assertTrue("if (value.retries != 0) {" in generated, "Expected int32 zero-value guard:\n$generated")
+        assertTrue(
+            "if (value.label.isNotEmpty()) {" in generated,
+            "Expected empty-string guard:\n$generated"
+        )
+        assertTrue("if (value.active) {" in generated, "Expected boolean-false guard:\n$generated")
+    }
+
+    @Test
+    fun plainGhostSerializationDoesNotOmitZeroValues() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "PlainSettings.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class PlainSettings(val retries: Int)
+                """.trimIndent()
+            ),
+            serializerFileName = "PlainSettingsSerializer.kt"
+        )
+
+        assertFalse("if (value.retries != 0)" in generated, "Non-proto classes must not omit zero values:\n$generated")
+        assertTrue("writer.writeField(H_RETRIES, value.retries)" in generated, generated)
+    }
+
+    @Test
     fun plainGhostSerializationLeavesLongUnquoted() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(

@@ -491,8 +491,19 @@ internal object GhostEmitterConstants {
     // Control Flow Templates
     const val TEMPLATE_IF_NULL = "if (%L == null)"
     const val TEMPLATE_IF_NOT_NULL = "if (%L != null)"
+    const val TEMPLATE_IF_L = "if (%L)"
     const val TEMPLATE_FOR_IN = "for (%L in %L)"
     const val TEMPLATE_FOR_MAP = "for ((%L, %L) in %L)"
+
+    // proto3 default-value-omission conditions (guards a field write with "is not the zero value")
+    const val TEMPLATE_NEQ_ZERO_INT = "%L != 0"
+    const val TEMPLATE_NEQ_ZERO_LONG = "%L != 0L"
+    const val TEMPLATE_NEQ_ZERO_DOUBLE = "%L != 0.0"
+    const val TEMPLATE_NEQ_ZERO_FLOAT = "%L != 0.0f"
+    const val TEMPLATE_NEQ_ZERO_SHORT = "%L != 0.toShort()"
+    const val TEMPLATE_NEQ_ZERO_BYTE = "%L != 0.toByte()"
+    const val TEMPLATE_IS_NOT_EMPTY = "%L.isNotEmpty()"
+    const val TEMPLATE_ACCESSOR_L = "%L"
     
     // Writer Templates
     const val TEMPLATE_WRITER_VALUE = "writer.value(%L)"

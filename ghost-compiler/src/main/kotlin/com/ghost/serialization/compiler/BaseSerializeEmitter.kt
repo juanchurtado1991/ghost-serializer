@@ -71,6 +71,38 @@ internal abstract class BaseSerializeEmitter(
     }
 
     /**
+     * proto3 canonical JSON mapping omits scalar fields that hold their type's zero value
+     * (`0`, `""`, `false`, an empty collection) — only applies to non-nullable properties of a
+     * `@GhostProtoSerialization` class, and only for types with an unambiguous zero value.
+     * Nested Ghost message types, enums, RawJson, and contextual types are left unconditional
+     * (always written), since a reliable "is this the default instance" check isn't available.
+     *
+     * @return The `!= zeroValue` (or `isNotEmpty()` / bare truthy) condition to guard the write
+     *   with, or `null` if this property is not subject to proto3 default omission.
+     */
+    private fun buildProtoNonDefaultCondition(prop: GhostPropertyModel, accessor: CodeBlock): CodeBlock? {
+        if (!prop.isProto || prop.customEncoder != null) {
+            return null
+        }
+        if (prop.isList || prop.isSet || prop.isMap) {
+            return CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, accessor)
+        }
+        val typeName = prop.type.declaration.qualifiedName?.asString()
+        return when (typeName) {
+            C.K_INT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_INT, accessor)
+            C.K_LONG -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_LONG, accessor)
+            C.K_DOUBLE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_DOUBLE, accessor)
+            C.K_FLOAT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, accessor)
+            C.K_SHORT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, accessor)
+            C.K_BYTE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, accessor)
+            C.K_BOOLEAN -> CodeBlock.of(C.TEMPLATE_ACCESSOR_L, accessor)
+            C.K_STRING -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, accessor)
+            C.K_BYTE_ARRAY -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, accessor)
+            else -> null
+        }
+    }
+
+    /**
      * Generates a single property serialization step.
      *
      * It writes the key name, resolves nullable checks, wraps conditional default arguments,
@@ -96,6 +128,16 @@ internal abstract class BaseSerializeEmitter(
             C.STR_H_VAL_PREFIX + cleanName
         }
         val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
+
+        if (!prop.isNullable) {
+            val nonDefaultCondition = buildProtoNonDefaultCondition(prop, accessor)
+            if (nonDefaultCondition != null) {
+                code.beginControlFlow(C.TEMPLATE_IF_L, nonDefaultCondition)
+                emitNonNullProperty(code, prop, headerName, accessor)
+                code.endControlFlow()
+                return
+            }
+        }
 
         if (prop.isNullable) {
             emitNullableProperty(code, prop, headerName, accessor)
