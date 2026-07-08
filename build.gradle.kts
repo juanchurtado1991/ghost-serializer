@@ -153,6 +153,7 @@ val ciTestJvmModules = listOf(
     ":ghost-retrofit:test",
     ":ghost-spring-boot-starter:test",
     ":ghost-gradle-plugin:test",
+    ":ghost-protobuf:jvmTest",
 )
 
 val ciTestJvm = tasks.register("ciTestJvm") {
