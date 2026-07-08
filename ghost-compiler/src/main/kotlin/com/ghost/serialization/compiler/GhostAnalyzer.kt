@@ -309,14 +309,28 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val customDecoder = resolveCustomCoder(prop, C.GHOST_DECODER)
         val customEncoder = resolveCustomCoder(prop, C.GHOST_ENCODER)
-
+ 
         val flattenPath = resolvePathAnnotation(prop, C.GHOST_FLATTEN)
         val wrapPath = resolvePathAnnotation(prop, C.GHOST_WRAP)
         val wrappedKeysConfig = resolveWrappedKeysAnnotation(prop)
-
+ 
         warnIfCustomCoder(prop.simpleName.asString(), customDecoder, customEncoder)
+ 
+        val parentClass = prop.parentDeclaration as? KSClassDeclaration
+        val hasProto = parentClass?.annotations?.any { 
+            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION 
+        } == true
 
-        val jsonName = flattenPath?.last() ?: getJsonName(prop)
+        val serialNameAnnotation = prop.annotations.any {
+            val name = it.shortName.asString()
+            name == C.GHOST_NAME || name == C.SERIAL_NAME || name.endsWith(C.STR_SERIAL_NAME_SUFFIX)
+        }
+
+        var jsonName = flattenPath?.last() ?: getJsonName(prop)
+        if (hasProto && !serialNameAnnotation) {
+            jsonName = toLowerCamelCase(jsonName)
+        }
+
         val wrappedUnwrapFields = if (wrappedKeysConfig != null) {
             resolveWrappedUnwrapFields(
                 type = type.makeNotNullable(),
@@ -326,7 +340,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else {
             emptyList()
         }
-
+ 
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
             jsonName = jsonName,
@@ -367,6 +381,33 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             wrappedUnwrapFields = wrappedUnwrapFields,
             isInferredSignature = prop.hasAnnotation(C.GHOST_SIGNATURE)
         )
+    }
+
+    private fun toLowerCamelCase(str: String): String {
+        if (str.isEmpty()) return str
+        val sb = StringBuilder()
+        var uppercaseNext = false
+        var i = 0
+        val len = str.length
+        while (i < len) {
+            val c = str[i]
+            if (c == '_') {
+                uppercaseNext = true
+            } else {
+                if (uppercaseNext) {
+                    sb.append(c.uppercaseChar())
+                    uppercaseNext = false
+                } else {
+                    if (i == 0) {
+                        sb.append(c.lowercaseChar())
+                    } else {
+                        sb.append(c)
+                    }
+                }
+            }
+            i++
+        }
+        return sb.toString()
     }
 
     /**
@@ -785,7 +826,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      * Checks if the type is annotated with @GhostSerialization.
      */
     private fun isGhostType(type: KSType): Boolean =
-        type.declaration.annotations.any { it.shortName.asString() == C.GHOST_SERIALIZATION }
+        type.declaration.annotations.any {
+            val name = it.shortName.asString()
+            name == C.GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
+        }
 
     companion object {
         /**

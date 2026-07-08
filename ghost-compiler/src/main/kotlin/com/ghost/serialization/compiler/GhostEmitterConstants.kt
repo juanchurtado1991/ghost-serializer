@@ -151,6 +151,7 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_IF_MASK_RETURN = "if ((%s and %s) != 0L) %s else %s"
     const val TEMPLATE_WRAP_TYPE = "%s(%s)"
     const val STR_ANNOTATION_SERIALIZATION = "com.ghost.serialization.annotations.GhostSerialization"
+    const val STR_ANNOTATION_PROTO_SERIALIZATION = "com.ghost.serialization.annotations.GhostProtoSerialization"
     const val STR_GENERATED_PKG = "com.ghost.serialization.generated"
     const val STR_REGISTRY_PREFIX = "GhostModuleRegistry"
     const val STR_LOG_PREFIX = ">>> [GhostSerialization]"
@@ -402,6 +403,7 @@ internal object GhostEmitterConstants {
     const val STR_WARM_UP = "warmUp"
     const val MARKER = "%S"
     const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
+    const val ANNOTATION_GHOST_PROTO_SERIALIZATION = "GhostProtoSerialization"
 
     /** `@GhostSerialization(textChannel = …)` argument name. */
     const val ARG_TEXT_CHANNEL = "textChannel"

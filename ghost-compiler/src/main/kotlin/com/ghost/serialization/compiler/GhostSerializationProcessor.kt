@@ -100,9 +100,10 @@ class GhostSerializationProcessor(
      */
     override fun process(resolver: Resolver): List<KSAnnotated> {
         println("=== KSP GhostSerializationProcessor.process called ===")
-        val symbols = resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION)
+        val symbols = (resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION) +
+                resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_PROTO_SERIALIZATION)).toSet()
         val validClasses = symbols.filterIsInstance<KSClassDeclaration>().toList()
-        println("=== Found annotated symbols: ${symbols.toList().size}, valid classes: ${validClasses.size} ===")
+        println("=== Found annotated symbols: ${symbols.size}, valid classes: ${validClasses.size} ===")
         val unableToProcess = symbols.filterNot { it is KSClassDeclaration }
 
         val analyzed = validClasses.mapNotNull { classDeclaration ->
