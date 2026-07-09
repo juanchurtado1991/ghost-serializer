@@ -42,6 +42,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.compose)
 
             implementation(project(":ghost-serialization"))
+            implementation(project(":ghost-protobuf"))
             implementation(project(":ghost-ktor"))
             
             implementation(libs.ktor.client.core)

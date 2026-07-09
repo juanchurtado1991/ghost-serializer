@@ -1,5 +1,7 @@
 package com.ghost.serialization.sample.ui
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,10 +15,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -29,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,19 +45,101 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ghost.serialization.sample.ui.composable.CharacterCard
 import com.ghost.serialization.sample.ui.composable.PerformanceResultsCard
+import com.ghost.serialization.sample.ui.composable.ProtoLabScreen
 import com.ghost.serialization.sample.ui.composable.SampleText
 import com.ghost.serialization.sample.ui.model.UiState
 import com.ghost.serialization.sample.ui.viewmodel.MainViewModel
+import com.ghost.serialization.sample.ui.viewmodel.ProtoLabViewModel
 import com.ghost.serialization.sample.util.copyToClipboard
+import kotlinx.coroutines.launch
+
+private val TAB_LABELS = listOf("⚡  BENCHMARK", "🔬  PROTO LAB")
 
 @Composable
-fun GhostSampleApp(viewModel: MainViewModel = viewModel { MainViewModel() }) {
+fun GhostSampleApp(
+    mainViewModel: MainViewModel = viewModel { MainViewModel() },
+    protoLabViewModel: ProtoLabViewModel = viewModel { ProtoLabViewModel() }
+) {
+    val pagerState = rememberPagerState(pageCount = { TAB_LABELS.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppDesign.BackgroundGradient)
+    ) {
+        // ── Tab Row ──────────────────────────────────────────────────────────────
+        GhostTabRow(
+            selectedIndex = pagerState.currentPage,
+            onTabSelected = { index ->
+                coroutineScope.launch { pagerState.animateScrollToPage(index) }
+            }
+        )
+
+        // ── Pager ────────────────────────────────────────────────────────────────
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { pageIndex ->
+            when (pageIndex) {
+                0 -> BenchmarkScreen(viewModel = mainViewModel)
+                1 -> ProtoLabScreen(viewModel = protoLabViewModel)
+                else -> Box(modifier = Modifier.fillMaxSize())
+            }
+        }
+    }
+}
+
+// ── Custom Tab Row ────────────────────────────────────────────────────────────────
+
+@Composable
+private fun GhostTabRow(selectedIndex: Int, onTabSelected: (Int) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = AppDesign.SurfaceColor.copy(alpha = 0.95f),
+        border = BorderStroke(1.dp, AppDesign.GlassBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TAB_LABELS.forEachIndexed { index, label ->
+                val isSelected = index == selectedIndex
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onTabSelected(index) },
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isSelected) AppDesign.AccentGlow.copy(alpha = 0.15f)
+                    else Color.Transparent,
+                    border = if (isSelected) BorderStroke(1.dp, AppDesign.AccentGlow.copy(alpha = 0.5f))
+                    else BorderStroke(1.dp, Color.Transparent)
+                ) {
+                    SampleText(
+                        text = label,
+                        isBold = isSelected,
+                        fontSize = 12,
+                        overrideColor = if (isSelected) AppDesign.AccentGlow else AppDesign.TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── Benchmark Screen (original screen extracted as composable) ────────────────────
+
+@Composable
+private fun BenchmarkScreen(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppDesign.BackgroundGradient)
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(top = 24.dp, bottom = 24.dp)
@@ -195,7 +285,6 @@ private fun BenchmarkConfigCard(
                     inactiveTrackColor = AppDesign.GlassBorder
                 )
             )
-
         }
     }
 }
@@ -205,12 +294,12 @@ private fun ErrorItem(uiState: UiState) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFEF4444).copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, Color(0xFFEF4444))
+        color = AppDesign.StatusDead.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, AppDesign.StatusDead)
     ) {
         SampleText(
             text = "ERROR: ${uiState.errorMessage}",
-            overrideColor = Color(0xFFEF4444),
+            overrideColor = AppDesign.StatusDead,
             fontSize = 12,
             modifier = Modifier.padding(16.dp),
             textAlign = TextAlign.Center

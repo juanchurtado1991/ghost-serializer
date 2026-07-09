@@ -8,6 +8,9 @@ object AppDesign {
     val SurfaceColor = Color(0xFF1E293B)
     val AccentGlow = Color(0xFFA855F7)
 
+    // Color used for competitor engines (KotlinX-Ser, Ghost JSON baseline) in charts
+    val AccentCompetitor = Color(0xFF818CF8)
+
     val GlassColor = Color(0xFFFFFFFF).copy(alpha = 0.05f)
     val GlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.1f)
     val TextPrimary = Color(0xFFF8FAFC)

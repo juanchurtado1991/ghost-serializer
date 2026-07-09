@@ -20,8 +20,6 @@ import com.ghost.serialization.sample.ui.AppDesign
 import com.ghost.serialization.sample.ui.model.UiState
 import com.ghost.serialization.sample.util.format
 
-private val ACCENT_COMPETITOR = Color(0xFF818CF8)
-
 @Composable
 fun PerformanceResultsCard(
     uiState: UiState,
@@ -96,7 +94,7 @@ fun PerformanceResultsCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     results.forEach { res ->
-                        val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else ACCENT_COMPETITOR
+                        val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else AppDesign.AccentCompetitor
                         val engineName = res.name.substringAfter("] ").trim()
                         MetricItem(
                             title = engineName,
@@ -112,7 +110,7 @@ fun PerformanceResultsCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     results.forEach { res ->
-                        val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else ACCENT_COMPETITOR
+                        val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else AppDesign.AccentCompetitor
                         val engineName = res.name.substringAfter("] ").trim()
                         MetricItem(
                             title = "$engineName MEM",

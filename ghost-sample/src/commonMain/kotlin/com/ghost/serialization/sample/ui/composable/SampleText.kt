@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.ghost.serialization.sample.ui.AppDesign
 
@@ -18,7 +19,9 @@ fun SampleText(
     isBold: Boolean = false,
     fontSize: Int = 14,
     overrideColor: Color? = null,
-    textAlign: TextAlign = TextAlign.Start
+    textAlign: TextAlign = TextAlign.Start,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip
 ) {
     Text(
         text = text,
@@ -28,6 +31,8 @@ fun SampleText(
         fontWeight = if (isBold) FontWeight.ExtraBold else FontWeight.Medium,
         fontSize = fontSize.sp,
         fontFamily = FontFamily.SansSerif,
-        textAlign = textAlign
+        textAlign = textAlign,
+        maxLines = maxLines,
+        overflow = overflow
     )
 }
