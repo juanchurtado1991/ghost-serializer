@@ -46,7 +46,7 @@ val decoded: DeviceStatus = GhostProtobuf.deserialize(json)
 | Full `uint64` range | ✅ | `ProtoUInt64Value` is `ULong`-backed (see [§4](#4-well-known-types)); hand-roll a `ULong` property with a `@GhostEncoder`/`@GhostDecoder` for your own messages — core Ghost doesn't have first-class `ULong` field support outside `ghost-protobuf`'s WKTs |
 | `google.protobuf.Any` pack/unpack by type registry | ✅ | `ProtoAnyRegistry.pack()`/`.unpack<T>()`/`.unpackDynamic()` — see [§4](#4-well-known-types) |
 
-**Scope note:** `Long`/`ByteArray` conversion covers direct properties, properties wrapped in exactly one `@JvmInline value class`, and elements of `List<T>`/`Set<T>`/`Map<String, V>` (including combinations, e.g. `List<Long>`). It does **not** yet cover a value class wrapping a collection, or a collection of value classes (e.g. `List<AccountId>` where `AccountId` wraps a `Long`) — those fall back to plain (non-quoted / non-Base64) handling.
+**Scope note:** `Long`/`ByteArray` conversion covers direct properties, properties wrapped in exactly one `@JvmInline value class`, elements of `List<T>`/`Set<T>`/`Map<String, V>` (including combinations, e.g. `List<Long>`), and collections of value-class-wrapped `Long`/`ByteArray` elements (e.g. `List<AccountId>` where `AccountId` wraps a `Long`). It does **not** yet cover a value class wrapping a collection (e.g., `value class AccountIds(val value: List<Long>)` — those fall back to plain handling).
 
 ## 3. `oneof` mapping
 
@@ -146,9 +146,8 @@ All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, 
 ## 7. Known gaps (not yet implemented)
 
 - `List<T>`/`Map<K,V>` request/response body unwrapping in the Retrofit/Ktor proto converters (direct types only today).
-- `Long`/`ByteArray` through a value class that wraps a *collection*, or a collection of value-class-wrapped `Long`/`ByteArray` (see the scope note in [§2](#2-what-ghostprotoserialization-actually-does-today)).
+- A value class that wraps a *collection* (e.g., `value class AccountIds(val value: List<Long>)` — see the scope note in [§2](#2-what-ghostprotoserialization-actually-does-today)).
 - No first-class `ULong` field type for your *own* `@GhostProtoSerialization` messages — only `ghost-protobuf`'s own `ProtoUInt64Value` WKT wrapper has full-range `uint64` support. Model your own `uint64` fields as `ProtoUInt64Value` or a custom `@GhostEncoder`/`@GhostDecoder`.
-- `ghost-gradle-plugin` does not auto-inject `ghost-protobuf` the way it does for `ghost-ktor`/`ghost-retrofit` — add the dependency manually.
 
 ---
 
