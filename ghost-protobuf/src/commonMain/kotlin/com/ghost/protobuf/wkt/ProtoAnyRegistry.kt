@@ -2,6 +2,10 @@
 
 package com.ghost.protobuf.wkt
 
+import com.ghost.protobuf.wkt.ProtoAnyRegistry.pack
+import com.ghost.protobuf.wkt.ProtoAnyRegistry.register
+import com.ghost.protobuf.wkt.ProtoAnyRegistry.unpack
+import com.ghost.protobuf.wkt.ProtoAnyRegistry.unpackDynamic
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
@@ -60,7 +64,7 @@ object ProtoAnyRegistry {
         val typeUrl = typeUrlByClass[kClass]
             ?: Ghost.throwError(
                 "No typeUrl registered for ${kClass.simpleName}. " +
-                    "Call ProtoAnyRegistry.register<${kClass.simpleName}>(typeUrl) first."
+                        "Call ProtoAnyRegistry.register<${kClass.simpleName}>(typeUrl) first."
             )
         val serializer = Ghost.getSerializer(kClass) as? GhostSerializer<T>
             ?: Ghost.throwError("${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}")

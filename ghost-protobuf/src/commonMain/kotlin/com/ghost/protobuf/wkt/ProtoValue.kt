@@ -2,12 +2,10 @@
 
 package com.ghost.protobuf.wkt
 
-import com.ghost.serialization.parser.GhostProtoJsonFlatReader
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.parser.consumeNull
 import com.ghost.serialization.parser.isNextNullValue
 import com.ghost.serialization.parser.nextBoolean
@@ -16,7 +14,6 @@ import com.ghost.serialization.parser.nextString
 import com.ghost.serialization.parser.readList
 import com.ghost.serialization.parser.readMap
 import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
 import com.ghost.serialization.parser.GhostJsonConstants as C
 
@@ -46,6 +43,7 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
                 }
                 writer.endObject()
             }
+
             is ProtoValue.List -> {
                 writer.beginArray()
                 for (v in value.v) {
@@ -70,6 +68,7 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
                 }
                 writer.endObject()
             }
+
             is ProtoValue.List -> {
                 writer.beginArray()
                 for (v in value.v) {
@@ -90,7 +89,12 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
             C.QUOTE_INT -> ProtoValue.Str(reader.nextString())
             C.TRUE_CHAR_INT, C.FALSE_CHAR_INT -> ProtoValue.Bool(reader.nextBoolean())
             C.OPEN_ARR_INT -> ProtoValue.List(reader.readList { deserialize(reader) })
-            C.OPEN_OBJ_INT -> ProtoValue.Struct(reader.readMap({ reader.nextString() }, { deserialize(reader) }))
+            C.OPEN_OBJ_INT -> ProtoValue.Struct(
+                reader.readMap(
+                    { reader.nextString() },
+                    { deserialize(reader) })
+            )
+
             else -> ProtoValue.Number(reader.nextDouble())
         }
     }
@@ -105,7 +109,12 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
             C.QUOTE_INT -> ProtoValue.Str(reader.nextString())
             C.TRUE_CHAR_INT, C.FALSE_CHAR_INT -> ProtoValue.Bool(reader.nextBoolean())
             C.OPEN_ARR_INT -> ProtoValue.List(reader.readList { deserialize(reader) })
-            C.OPEN_OBJ_INT -> ProtoValue.Struct(reader.readMap({ reader.nextString() }, { deserialize(reader) }))
+            C.OPEN_OBJ_INT -> ProtoValue.Struct(
+                reader.readMap(
+                    { reader.nextString() },
+                    { deserialize(reader) })
+            )
+
             else -> ProtoValue.Number(reader.nextDouble())
         }
     }

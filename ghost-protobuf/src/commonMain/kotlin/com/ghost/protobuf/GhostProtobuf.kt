@@ -15,7 +15,7 @@ object GhostProtobuf {
 
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
         val reader = GhostProtoJsonFlatReader(bytes)
-        val serializer = com.ghost.serialization.Ghost.resolveSerializer<T>()
+        val serializer = Ghost.resolveSerializer<T>()
         return serializer.deserialize(reader)
     }
 
@@ -52,7 +52,7 @@ object GhostProtobuf {
     }
 
     inline fun <reified T : Any> deserialize(reader: GhostProtoJsonFlatReader): T {
-        val serializer = com.ghost.serialization.Ghost.resolveSerializer<T>()
+        val serializer = Ghost.resolveSerializer<T>()
         return serializer.deserialize(reader)
     }
 
@@ -71,7 +71,7 @@ object GhostProtobuf {
             val reader = GhostProtoJsonFlatReader(bytes)
             reader.limit = offset
             reader.position = 0
-            val serializer = com.ghost.serialization.Ghost.resolveSerializer<T>()
+            val serializer = Ghost.resolveSerializer<T>()
             return serializer.deserialize(reader)
         } finally {
             releaseScratchBuffer(bytes)
