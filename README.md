@@ -107,7 +107,7 @@ val json: String = Ghost.encodeToString(user)
 
 You don't need to rewrite your entire project. Ghost can coexist seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson). 
 
-If Ghost doesn't find its `@GhostSerialization` annotation on a class, it will return `null` and let the framework fallback to your standard serializer. This means you can adopt Ghost incrementally, using it only on your highest-traffic endpoints!
+If a class does not have the `@GhostSerialization` annotation, request/response negotiation automatically falls back to your standard serializer. This means you can adopt Ghost incrementally, using it only on your highest-traffic endpoints!
 
 ### Ktor Setup:
 ```kotlin
@@ -119,10 +119,10 @@ import kotlinx.serialization.json.Json
 
 fun Application.module() {
     install(ContentNegotiation) {
-        // 1. Ghost handles high-performance @GhostSerialization endpoints
-        ghost() 
-        // 2. Kotlinx.serialization (or Jackson/Gson) handles the rest as fallback
+        // 1. Kotlinx.serialization (or Jackson/Gson) handles the standard endpoints
         json(Json { ignoreUnknownKeys = true })
+        // 2. Ghost handles high-performance @GhostSerialization endpoints as fallback
+        ghost() 
     }
 }
 ```
