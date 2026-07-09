@@ -191,3 +191,20 @@ tasks.register("verifyAndBenchmarkFast") {
     description = "allTests then :ghost-benchmark:benchmarkRegressionFast (~2 min bench)"
     dependsOn("ciTest", ":ghost-benchmark:benchmarkRegressionFast")
 }
+
+tasks.register("printPublishDetails") {
+    doLast {
+        subprojects.forEach { subproject ->
+            val pubExt = subproject.extensions.findByName("publishing") as? PublishingExtension
+            if (pubExt != null) {
+                println("=== Project: ${subproject.name} ===")
+                pubExt.repositories.forEach { repo ->
+                    println("  Repository: ${repo.name} -> ${(repo as? MavenArtifactRepository)?.url}")
+                }
+                pubExt.publications.forEach { pub ->
+                    println("  Publication: ${pub.name}")
+                }
+            }
+        }
+    }
+}

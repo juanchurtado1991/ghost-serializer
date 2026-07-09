@@ -20,7 +20,13 @@ if (isPublishable) {
         )
 
         publishToMavenCentral()
-        signAllPublications()
+        
+        def hasSigningKey = project.hasProperty("signing.keyId") || 
+                           project.hasProperty("signing.signingKey") ||
+                           project.hasProperty("signing.secretKeyRingFile")
+        if (hasSigningKey) {
+            signAllPublications()
+        }
 
         pom {
             def rawName = project.name.startsWith("ghost-") ? project.name.substring(6) : project.name
