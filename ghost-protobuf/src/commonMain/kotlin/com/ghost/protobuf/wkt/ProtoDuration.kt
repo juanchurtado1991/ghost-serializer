@@ -1,8 +1,8 @@
 @file:OptIn(InternalGhostApi::class)
+@file:Suppress("NOTHING_TO_INLINE")
 
 package com.ghost.protobuf.wkt
 
-import com.ghost.serialization.parser.GhostProtoJsonFlatReader
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.GhostJsonFlatReader
@@ -115,17 +115,29 @@ private fun writeNanosFraction(buffer: ByteArray, startOffset: Int, nanos: Int):
 // Zero-allocation calendar converter using Hatcher/Richards algorithm
 // Ranges validated: 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z
 internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
-    if (timestampString.length < C.TS_MIN_LENGTH) throw IllegalArgumentException(C.ERR_TIMESTAMP_SHORT)
+    if (timestampString.length < C.TS_MIN_LENGTH) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_SHORT)
+    }
     val year = timestampString.parseDecimalAt(C.TS_YEAR_START, C.TS_YEAR_END)
-    if (timestampString[C.TS_YEAR_END] != C.CHAR_HYPHEN) throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)
+    if (timestampString[C.TS_YEAR_END] != C.CHAR_HYPHEN) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)
+    }
     val month = timestampString.parseDecimalAt(C.TS_MONTH_START, C.TS_MONTH_END)
-    if (timestampString[C.TS_MONTH_END] != C.CHAR_HYPHEN) throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)
+    if (timestampString[C.TS_MONTH_END] != C.CHAR_HYPHEN) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)
+    }
     val day = timestampString.parseDecimalAt(C.TS_DAY_START, C.TS_DAY_END)
-    if (timestampString[C.TS_DAY_END] != C.CHAR_T_UPPER && timestampString[C.TS_DAY_END] != C.CHAR_T) throw IllegalArgumentException(C.ERR_TIMESTAMP_T)
+    if (timestampString[C.TS_DAY_END] != C.CHAR_T_UPPER && timestampString[C.TS_DAY_END] != C.CHAR_T) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_T)
+    }
     val hour = timestampString.parseDecimalAt(C.TS_HOUR_START, C.TS_HOUR_END)
-    if (timestampString[C.TS_HOUR_END] != C.CHAR_COLON) throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)
+    if (timestampString[C.TS_HOUR_END] != C.CHAR_COLON) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)
+    }
     val minute = timestampString.parseDecimalAt(C.TS_MIN_START, C.TS_MIN_END)
-    if (timestampString[C.TS_MIN_END] != C.CHAR_COLON) throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)
+    if (timestampString[C.TS_MIN_END] != C.CHAR_COLON) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)
+    }
     val second = timestampString.parseDecimalAt(C.TS_SEC_START, C.TS_SEC_END)
 
     var nanos = 0
@@ -144,7 +156,8 @@ internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
         var fractionValue = 0
         var fractionIndex = C.TS_SEC_END + 1
         while (fractionIndex < endIndex) {
-            fractionValue = fractionValue * C.BASE_TEN + (timestampString[fractionIndex].code - C.ZERO_INT)
+            fractionValue =
+                fractionValue * C.BASE_TEN + (timestampString[fractionIndex].code - C.ZERO_INT)
             fractionIndex++
         }
         var multiplier = 1
@@ -157,11 +170,16 @@ internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
         nextIndex = endIndex
     }
 
-    if (nextIndex >= timestampString.length) throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)
+    if (nextIndex >= timestampString.length) {
+        throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)
+    }
 
     var offsetSec = 0
     if (timestampString[nextIndex] != C.CHAR_Z_UPPER && timestampString[nextIndex] != C.CHAR_Z_LOWER) {
-        if (nextIndex + C.TS_TZ_OFFSET_LEN != timestampString.length || (timestampString[nextIndex] != '+' && timestampString[nextIndex] != C.CHAR_HYPHEN)) {
+        if (
+            nextIndex + C.TS_TZ_OFFSET_LEN != timestampString.length ||
+            (timestampString[nextIndex] != C.CHAR_PLUS && timestampString[nextIndex] != C.CHAR_HYPHEN)
+        ) {
             throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ_SUPPORT)
         }
         val tzSign = if (timestampString[nextIndex] == C.CHAR_HYPHEN) -1 else 1
@@ -175,10 +193,18 @@ internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
 }
 
 // Convert YYYY-MM-DD HH:MM:SS to Epoch Seconds (UTC)
-private fun dateToEpochSeconds(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int): Long {
+private fun dateToEpochSeconds(
+    year: Int,
+    month: Int,
+    day: Int,
+    hour: Int,
+    minute: Int,
+    second: Int
+): Long {
     val yearAdjustment = (if (month <= 2) year - 1 else year).toLong()
     val monthAdjustment = (if (month <= 2) month + 12 else month).toLong()
-    val era = (if (yearAdjustment >= 0) yearAdjustment else yearAdjustment - (C.HINNANT_ERA_YEARS - 1)) / C.HINNANT_ERA_YEARS
+    val era =
+        (if (yearAdjustment >= 0) yearAdjustment else yearAdjustment - (C.HINNANT_ERA_YEARS - 1)) / C.HINNANT_ERA_YEARS
     val yearOfEra = yearAdjustment - era * C.HINNANT_ERA_YEARS
     val dayOfYear = (153 * (monthAdjustment - 3) + 2) / 5 + day - 1
     val dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
@@ -201,9 +227,11 @@ internal fun formatTimestamp(timestamp: ProtoTimestamp): String {
     val second = remMinutes % C.SECONDS_PER_MINUTE.toInt()
 
     val zeroDay = days + C.HINNANT_EPOCH_OFFSET
-    val era = (if (zeroDay >= 0) zeroDay else zeroDay - C.HINNANT_DAYS_CYCLE_ERA) / C.HINNANT_DAYS_PER_ERA
+    val era =
+        (if (zeroDay >= 0) zeroDay else zeroDay - C.HINNANT_DAYS_CYCLE_ERA) / C.HINNANT_DAYS_PER_ERA
     val dayOfEra = (zeroDay - era * C.HINNANT_DAYS_PER_ERA).toInt()
-    val yearOfEra = (dayOfEra - dayOfEra / C.HINNANT_DAYS_CYCLE_4 + dayOfEra / C.HINNANT_DAYS_CYCLE_100 - dayOfEra / C.HINNANT_DAYS_CYCLE_ERA) / 365
+    val yearOfEra =
+        (dayOfEra - dayOfEra / C.HINNANT_DAYS_CYCLE_4 + dayOfEra / C.HINNANT_DAYS_CYCLE_100 - dayOfEra / C.HINNANT_DAYS_CYCLE_ERA) / 365
     val y = yearOfEra + era * C.HINNANT_ERA_YEARS
     val dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
     val monthPosition = (5 * dayOfYear + 2) / 153
@@ -272,7 +300,9 @@ object ProtoDurationSerializer : GhostSerializer<ProtoDuration> {
 }
 
 internal fun parseDuration(durationString: String): ProtoDuration {
-    if (durationString.length < 2 || durationString[durationString.length - 1] != C.CHAR_S) throw IllegalArgumentException(C.ERR_DURATION_SUFFIX)
+    if (durationString.length < 2 || durationString[durationString.length - 1] != C.CHAR_S) throw IllegalArgumentException(
+        C.ERR_DURATION_SUFFIX
+    )
     val dotIndex = durationString.indexOf(C.CHAR_DOT)
     val limitIndex = durationString.length - 1
     if (dotIndex == -1) {
@@ -306,7 +336,8 @@ internal fun parseDuration(durationString: String): ProtoDuration {
         var fractionValue = 0
         var fractionIndex = dotIndex + 1
         while (fractionIndex < limitIndex) {
-            fractionValue = fractionValue * C.BASE_TEN + (durationString[fractionIndex].code - C.ZERO_INT)
+            fractionValue =
+                fractionValue * C.BASE_TEN + (durationString[fractionIndex].code - C.ZERO_INT)
             fractionIndex++
         }
         var multiplier = 1
@@ -316,7 +347,10 @@ internal fun parseDuration(durationString: String): ProtoDuration {
             multiplierIndex++
         }
         val nanos = fractionValue * multiplier
-        return ProtoDuration(if (isNegative) -seconds else seconds, if (isNegative) -nanos else nanos)
+        return ProtoDuration(
+            if (isNegative) -seconds else seconds,
+            if (isNegative) -nanos else nanos
+        )
     }
 }
 

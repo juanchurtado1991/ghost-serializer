@@ -89,6 +89,7 @@ public object GhostJsonConstants {
     const val CHAR_BACKSLASH = '\\'
     const val CHAR_B = 'b'
     const val CHAR_HYPHEN = '-'
+    const val CHAR_PLUS = '+'
     const val CHAR_COLON = ':'
     const val CHAR_T_UPPER = 'T'
     const val CHAR_Z_UPPER = 'Z'
