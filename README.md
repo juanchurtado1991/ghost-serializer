@@ -4,8 +4,6 @@
 
 Ghost is a byte-first, compile-time JSON serializer designed for Kotlin Multiplatform (Android, iOS, and JVM) that acts as a **drop-in optimization**. It coexists seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson), allowing you to adopt it incrementally in native mobile apps and high-traffic backends (Ktor, Retrofit, Spring Boot).
 
-> ⚡ Bitwise O(1) field matching · Native reader per input format · Up to 6–32× less heap · Zero reflection · 1158/1158 tests passed
-
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
 [![Tests](https://img.shields.io/badge/tests-1158%20%2F%201158%20passed-brightgreen.png?style=flat)](#)
