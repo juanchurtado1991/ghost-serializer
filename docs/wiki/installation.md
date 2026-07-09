@@ -2,12 +2,8 @@
 
 [![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat&logo=gradle&logoColor=white)](installation.md)
 
-Ghost is published under the `com.ghostserializer` group.
 
-| Version | Repository |
-|:---|:---|
-| **`1.2.7` and newer** | **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** |
-| Snapshot / Mirrors | **[GitHub Packages](github-packages.md)** |
+Ghost is published to **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** under the `com.ghostserializer` group.
 
 ---
 

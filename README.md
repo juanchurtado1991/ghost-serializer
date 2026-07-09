@@ -105,7 +105,6 @@ val json: String = Ghost.encodeToString(user)
 
 | Guide                                                 | Platform / Category | Description |
 |:------------------------------------------------------|:---:|:---|
-| [GitHub Packages](docs/wiki/github-packages.md)       | ![Packages](https://img.shields.io/badge/Packages-blue.png?style=flat-square&logo=github&logoColor=white) | Snapshot/Mirror repository setup |
 | [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, KSP setup, `ghost.textChannel` opt-in |
 | [Usage — Android](docs/wiki/usage-android.md)         | ![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat-square&logo=android&logoColor=white) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
 | [Usage — KMP](docs/wiki/usage-kmp.md)                 | ![Kotlin](https://img.shields.io/badge/KMP-7F52FF.png?style=flat-square&logo=kotlin&logoColor=white) | Shared module, Ktor, Sealed classes, Structural Transformations |
