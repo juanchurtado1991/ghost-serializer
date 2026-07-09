@@ -13,6 +13,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ghost.serialization.sample.model.GhostCharacter
+import com.ghost.serialization.sample.ui.AppDesign
+import com.ghost.serialization.sample.ui.composable.shared.Card
+import com.ghost.serialization.sample.ui.composable.shared.SampleText
+import com.ghost.serialization.sample.ui.composable.shared.StatusIndicator
 
 @Composable
 fun CharacterCard(character: GhostCharacter) {

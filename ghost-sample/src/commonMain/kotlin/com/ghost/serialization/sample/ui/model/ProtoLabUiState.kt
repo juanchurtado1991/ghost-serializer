@@ -1,6 +1,6 @@
 package com.ghost.serialization.sample.ui.model
 
-import com.ghost.serialization.sample.api.EngineResult
+import com.ghost.serialization.sample.model.EngineResult
 import com.ghost.serialization.sample.model.OpenLibraryBook
 
 data class ProtoLabUiState(

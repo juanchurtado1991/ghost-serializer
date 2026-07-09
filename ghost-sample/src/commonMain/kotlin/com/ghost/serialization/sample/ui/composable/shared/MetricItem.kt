@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.ui.composable
+package com.ghost.serialization.sample.ui.composable.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -28,6 +28,7 @@ fun MetricItem(
             isSecondary = true,
             fontSize = 10,
             isBold = true,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.padding(bottom = 6.dp)
         )
         Box(

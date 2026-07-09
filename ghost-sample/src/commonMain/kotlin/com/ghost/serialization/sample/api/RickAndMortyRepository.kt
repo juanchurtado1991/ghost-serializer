@@ -8,6 +8,7 @@ import com.ghost.serialization.generated.GhostModuleRegistry_serialization_sampl
 import com.ghost.serialization.ktor.bodyGhost
 import com.ghost.serialization.ktor.ghost
 import com.ghost.serialization.sample.model.CharacterResponse
+import com.ghost.serialization.sample.model.EngineResult
 import com.ghost.serialization.sample.model.PageInfo
 import com.ghost.serialization.sample.util.forceGC
 import com.ghost.serialization.sample.util.getCurrentThreadAllocatedBytes
@@ -54,7 +55,7 @@ class RickAndMortyRepository {
     suspend fun runBenchmark(
         pageCount: Int,
         onStatusChange: (String) -> Unit
-    ): Result<List<EngineResult>> = withContext(Dispatchers.Default) {
+    ): Result<Pair<String, List<EngineResult>>> = withContext(Dispatchers.Default) {
         try {
             val stressData = downloadStressData(pageCount, onStatusChange)
             warmUpEngines(stressData, onStatusChange)
@@ -74,13 +75,15 @@ class RickAndMortyRepository {
 
             onStatusChange("Done!")
             Result.success(
-                networkResults +
+                stressData.jsonString to (
+                    networkResults +
                     parseStringResults +
                     parseBytesResults +
                     parseStreamResults +
                     writeStringResults +
                     writeBytesResults +
                     writeBufferResults
+                )
             )
         } catch (e: Exception) {
             Result.failure(e)

@@ -39,9 +39,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ghost.serialization.sample.ui.composable.CharacterCard
-import com.ghost.serialization.sample.ui.composable.PerformanceResultsCard
 import com.ghost.serialization.sample.ui.composable.ProtoLabScreen
-import com.ghost.serialization.sample.ui.composable.SampleText
+import com.ghost.serialization.sample.ui.composable.shared.ErrorCard
+import com.ghost.serialization.sample.ui.composable.shared.PerformanceResultsCard
+import com.ghost.serialization.sample.ui.composable.shared.RawPayloadViewer
+import com.ghost.serialization.sample.ui.composable.shared.RunButton
+import com.ghost.serialization.sample.ui.composable.shared.SampleText
 import com.ghost.serialization.sample.ui.model.BenchmarkUiState
 import com.ghost.serialization.sample.ui.viewmodel.MainViewModel
 import com.ghost.serialization.sample.ui.viewmodel.ProtoLabViewModel
@@ -154,16 +157,32 @@ private fun BenchmarkScreen(viewModel: MainViewModel) {
         }
 
         item {
-            RunBenchmarkButton(
-                viewModel = viewModel,
-                uiState = uiState
+            RunButton(
+                isLoading = uiState.isLoading,
+                loadingStatus = uiState.loadingStatus,
+                text = "RUN STRESS COMPARISON",
+                onClick = { viewModel.runBenchmark() }
             )
             Spacer(modifier = Modifier.height(24.dp))
         }
 
+        if (uiState.rawJson.isNotEmpty()) {
+            item {
+                RawPayloadViewer(
+                    showRawJson = uiState.showRawJson,
+                    standardJson = uiState.rawJson,
+                    proto3Json = null,
+                    showProto3Json = false,
+                    onToggleViewer = { viewModel.toggleRawJsonViewer() },
+                    onToggleProto3 = {}
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+
         if (uiState.errorMessage != null) {
             item {
-                ErrorItem(uiState)
+                ErrorCard(uiState.errorMessage!!)
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
@@ -285,63 +304,4 @@ private fun BenchmarkConfigCard(
     }
 }
 
-@Composable
-private fun ErrorItem(uiState: BenchmarkUiState) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = AppDesign.StatusDead.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, AppDesign.StatusDead)
-    ) {
-        SampleText(
-            text = "ERROR: ${uiState.errorMessage}",
-            overrideColor = AppDesign.StatusDead,
-            fontSize = 12,
-            modifier = Modifier.padding(16.dp),
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun RunBenchmarkButton(
-    viewModel: MainViewModel,
-    uiState: BenchmarkUiState
-) {
-    Button(
-        onClick = { viewModel.runBenchmark() },
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults
-            .buttonColors(containerColor = AppDesign.SurfaceColor),
-        border = BorderStroke(
-            width = 1.dp,
-            color = AppDesign.AccentGlow
-        )
-    ) {
-        if (uiState.isLoading) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = AppDesign.AccentGlow,
-                    strokeWidth = 2.dp
-                )
-                SampleText(
-                    text = uiState.loadingStatus,
-                    fontSize = 10,
-                    overrideColor = AppDesign.AccentGlow
-                )
-            }
-        } else {
-            SampleText(
-                text = "RUN STRESS COMPARISON",
-                isBold = true,
-                fontSize = 14,
-                overrideColor = AppDesign.AccentGlow
-            )
-        }
-    }
-}
+// (Replaced by SharedComponents)

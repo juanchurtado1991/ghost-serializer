@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ghost.serialization.sample.api.RickAndMortyRepository
 import com.ghost.serialization.sample.ui.model.BenchmarkUiState
-import com.ghost.serialization.sample.util.format
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,8 +15,12 @@ class MainViewModel : ViewModel() {
     private val _Benchmark_uiState = MutableStateFlow(BenchmarkUiState())
     val uiState = _Benchmark_uiState.asStateFlow()
 
-    fun updatePageCount(count: Float) {
-        _Benchmark_uiState.update { it.copy(pageCount = count) }
+    fun updatePageCount(value: Float) {
+        _Benchmark_uiState.update { it.copy(pageCount = value) }
+    }
+
+    fun toggleRawJsonViewer() {
+        _Benchmark_uiState.update { it.copy(showRawJson = !it.showRawJson) }
     }
 
     fun runBenchmark() {
@@ -38,46 +41,26 @@ class MainViewModel : ViewModel() {
                 // Non-fatal: continue benchmark even if UI fetch fails
             }
 
-            repository.runBenchmark(
+            val result = repository.runBenchmark(
                 pageCount = _Benchmark_uiState.value.pageCount.toInt(),
-                onStatusChange = { status ->
-                    _Benchmark_uiState.update { it.copy(loadingStatus = status) }
-                }
-            ).onSuccess { results ->
-                val logEntry = buildString {
-                    appendLine(
-                        "--- RUN (${
-                            _Benchmark_uiState.value.pageCount.toInt()
-                        } pages x${
-                            BENCHMARK_ITERATIONS
-                        }) ---"
-                    )
-                    results.forEach { r ->
-                        appendLine(
-                            "${
-                                r.name
-                            }: ${
-                                "%.3f".format(r.timeMs)
-                            }ms | ${
-                                r.memoryBytes / 1024
-                            }KB"
+                onStatusChange = { msg ->
+                    _Benchmark_uiState.update { state ->
+                        state.copy(
+                            loadingStatus = msg,
+                            sessionHistory = state.sessionHistory + msg
                         )
                     }
                 }
-                _Benchmark_uiState.update { state ->
-                    state.copy(
-                        isLoading = false,
-                        results = results,
-                        sessionHistory = state.sessionHistory + logEntry
-                    )
-                }
-            }.onFailure { error ->
-                _Benchmark_uiState.update {
-                    it.copy(
-                        errorMessage = error.message,
-                        isLoading = false
-                    )
-                }
+            )
+
+            _Benchmark_uiState.update { state ->
+                val pair = result.getOrNull()
+                state.copy(
+                    isLoading = false,
+                    results = pair?.second ?: emptyList(),
+                    rawJson = pair?.first ?: "",
+                    errorMessage = result.exceptionOrNull()?.message
+                )
             }
         }
     }

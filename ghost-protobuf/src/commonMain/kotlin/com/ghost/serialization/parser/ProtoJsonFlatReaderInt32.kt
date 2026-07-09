@@ -18,14 +18,22 @@ internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
     var scanPos = position
     if (isQuoted) scanPos++
     // Skip optional minus
-    if (scanPos < limit && getByte(scanPos) == C.MINUS_INT) scanPos++
+    if (scanPos < limit && getByte(scanPos) == C.MINUS_INT) {
+        scanPos++
+    }
     while (scanPos < limit) {
         val b = getByte(scanPos)
         if (b == C.DOT_INT) {
             hasDot = true
             break
         }
-        if (b == C.QUOTE_INT || b == C.COMMA_INT || b == C.CLOSE_OBJ_INT || b == C.CLOSE_ARR_INT || b <= C.SPACE_INT) {
+        if (
+            b == C.QUOTE_INT ||
+            b == C.COMMA_INT ||
+            b == C.CLOSE_OBJ_INT ||
+            b == C.CLOSE_ARR_INT ||
+            b <= C.SPACE_INT
+        ) {
             break
         }
         scanPos++

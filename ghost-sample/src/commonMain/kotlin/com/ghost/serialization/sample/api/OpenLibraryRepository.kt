@@ -2,6 +2,8 @@ package com.ghost.serialization.sample.api
 
 import com.ghost.protobuf.GhostProtobuf
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.sample.model.BooksLabResult
+import com.ghost.serialization.sample.model.EngineResult
 import com.ghost.serialization.sample.model.OpenLibraryResponse
 import com.ghost.serialization.sample.util.forceGC
 import io.ktor.client.HttpClient
@@ -110,13 +112,13 @@ class OpenLibraryRepository {
         standardJson: String,
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
-        val ghost = BenchmarkEngine.measure("[Standard] Ghost (byte[])", onStatusChange) {
+        val ghost = BenchmarkEngine.measure("[Standard] Ghost", onStatusChange) {
             Ghost.deserialize<OpenLibraryResponse>(standardBytes)
         }
-        val ghostProto = BenchmarkEngine.measure("[Standard] GhostProto (byte[])", onStatusChange) {
+        val ghostProto = BenchmarkEngine.measure("[Standard] GhostProto", onStatusChange) {
             GhostProtobuf.deserialize<OpenLibraryResponse>(standardBytes)
         }
-        val kSer = BenchmarkEngine.measure("[Standard] KotlinX-Ser (String)", onStatusChange) {
+        val kSer = BenchmarkEngine.measure("[Standard] KotlinX", onStatusChange) {
             kSerJson.decodeFromString<OpenLibraryResponse>(standardJson)
         }
         return listOf(ghost, ghostProto, kSer)
@@ -127,24 +129,24 @@ class OpenLibraryRepository {
         proto3Json: String,
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
-        val ghostProto = BenchmarkEngine.measure("[Proto3] GhostProto (byte[])", onStatusChange) {
+        val ghostProto = BenchmarkEngine.measure("[Proto3] GhostProto", onStatusChange) {
             GhostProtobuf.deserialize<OpenLibraryResponse>(proto3Bytes)
         }
 
         val ghost = try {
-            BenchmarkEngine.measure("[Proto3] Ghost (byte[])", onStatusChange) {
+            BenchmarkEngine.measure("[Proto3] Ghost", onStatusChange) {
                 Ghost.deserialize<OpenLibraryResponse>(proto3Bytes)
             }
         } catch (e: Exception) {
-            EngineResult("[Proto3] Ghost (byte[])", -1.0, -1L)
+            EngineResult("[Proto3] Ghost", -1.0, -1L)
         }
 
         val kSer = try {
-            BenchmarkEngine.measure("[Proto3] KotlinX-Ser (String)", onStatusChange) {
+            BenchmarkEngine.measure("[Proto3] KotlinX", onStatusChange) {
                 kSerJson.decodeFromString<OpenLibraryResponse>(proto3Json)
             }
         } catch (e: Exception) {
-            EngineResult("[Proto3] KotlinX-Ser (String)", -1.0, -1L)
+            EngineResult("[Proto3] KotlinX", -1.0, -1L)
         }
 
         return listOf(ghostProto, ghost, kSer)
@@ -167,10 +169,3 @@ class OpenLibraryRepository {
         forceGC()
     }
 }
-
-data class BooksLabResult(
-    val books: List<com.ghost.serialization.sample.model.OpenLibraryBook>,
-    val standardJson: String,
-    val proto3Json: String,
-    val benchmarkResults: List<EngineResult>
-)

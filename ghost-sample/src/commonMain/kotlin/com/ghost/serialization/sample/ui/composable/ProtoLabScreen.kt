@@ -41,11 +41,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.ghost.serialization.sample.api.EngineResult
+import com.ghost.serialization.sample.model.EngineResult
 import com.ghost.serialization.sample.model.OpenLibraryBook
 import com.ghost.serialization.sample.ui.AppDesign
-import com.ghost.serialization.sample.ui.model.ProtoLabUiState
+import com.ghost.serialization.sample.ui.composable.shared.Card
+import com.ghost.serialization.sample.ui.composable.shared.ErrorCard
+import com.ghost.serialization.sample.ui.composable.shared.PerformanceResultsCard
+import com.ghost.serialization.sample.ui.composable.shared.RawPayloadViewer
+import com.ghost.serialization.sample.ui.composable.shared.RunButton
+import com.ghost.serialization.sample.ui.composable.shared.SampleText
 import com.ghost.serialization.sample.ui.model.BenchmarkUiState
+import com.ghost.serialization.sample.ui.model.ProtoLabUiState
 import com.ghost.serialization.sample.ui.viewmodel.ProtoLabViewModel
 import com.ghost.serialization.sample.util.copyToClipboard
 
@@ -89,14 +95,34 @@ fun ProtoLabScreen(viewModel: ProtoLabViewModel = viewModel { ProtoLabViewModel(
 
         // ── Run Button ───────────────────────────────────────────────────────────
         item {
-            RunProtoLabButton(uiState = uiState, onRun = { viewModel.runBenchmark() })
-            Spacer(modifier = Modifier.height(20.dp))
+            RunButton(
+                isLoading = uiState.isLoading,
+                loadingStatus = uiState.loadingStatus,
+                text = "RUN PROTO COMPARISON",
+                onClick = { viewModel.runBenchmark() }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // ── Raw Payload Viewer ───────────────────────────────────────────────────
+        if (uiState.standardJson.isNotEmpty()) {
+            item {
+                RawPayloadViewer(
+                    showRawJson = uiState.showRawJson,
+                    standardJson = uiState.standardJson,
+                    proto3Json = uiState.proto3Json,
+                    showProto3Json = uiState.showProto3Json,
+                    onToggleViewer = { viewModel.toggleRawJson() },
+                    onToggleProto3 = { viewModel.toggleProto3View() }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
         }
 
         // ── Error ────────────────────────────────────────────────────────────────
         if (uiState.errorMessage != null) {
             item {
-                ProtoLabErrorCard(uiState.errorMessage!!)
+                ErrorCard(uiState.errorMessage!!)
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
@@ -113,16 +139,6 @@ fun ProtoLabScreen(viewModel: ProtoLabViewModel = viewModel { ProtoLabViewModel(
                         val logs = uiState.sessionHistory.joinToString("\n")
                         if (logs.isNotEmpty()) copyToClipboard(logs)
                     }
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-            }
-
-            // ── Dual payload viewer ──────────────────────────────────────────────
-            item {
-                DualJsonViewer(
-                    uiState = uiState,
-                    onToggleViewer = { viewModel.toggleRawJson() },
-                    onToggleProto3 = { viewModel.toggleProto3View() }
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }
@@ -179,8 +195,6 @@ private fun ProtoLabHeader() {
 }
 
 // ── Proto3 Explanation Banner ─────────────────────────────────────────────────────
-//
-// Explains why the proto3 JSON variant is synthesized and what it proves.
 
 @Composable
 private fun Proto3ExplanationBanner() {
@@ -306,129 +320,7 @@ private fun RunProtoLabButton(uiState: ProtoLabUiState, onRun: () -> Unit) {
     }
 }
 
-// ── Error Card ────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun ProtoLabErrorCard(message: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = AppDesign.StatusDead.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, AppDesign.StatusDead)
-    ) {
-        SampleText(
-            text = "ERROR: $message",
-            overrideColor = AppDesign.StatusDead,
-            fontSize = 12,
-            modifier = Modifier.padding(16.dp),
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-// ── Dual JSON Viewer ──────────────────────────────────────────────────────────────
-//
-// Toggle between the standard REST JSON (as downloaded) and the proto3 JSON variant
-// (numbers quoted as strings) to show what a real gRPC-Gateway endpoint would emit.
-
-@Composable
-private fun DualJsonViewer(
-    uiState: ProtoLabUiState,
-    onToggleViewer: () -> Unit,
-    onToggleProto3: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = AppDesign.SurfaceColor,
-        border = BorderStroke(1.dp, AppDesign.GlassBorder)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SampleText(
-                    text = "RAW PAYLOAD VIEWER",
-                    isBold = true,
-                    fontSize = 11,
-                    isSecondary = true
-                )
-                TextButton(onClick = onToggleViewer) {
-                    SampleText(
-                        text = if (uiState.showRawJson) "HIDE" else "SHOW",
-                        fontSize = 11,
-                        isBold = true,
-                        overrideColor = AppDesign.AccentGlow
-                    )
-                }
-            }
-
-            if (uiState.showRawJson) {
-                HorizontalDivider(
-                    color = AppDesign.GlassBorder,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-
-                // Tab bar: Standard JSON | Proto3 JSON
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(false, true).forEach { isProto3 ->
-                        val selected = uiState.showProto3Json == isProto3
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (selected) AppDesign.AccentGlow.copy(alpha = 0.15f)
-                            else Color.Transparent,
-                            border = BorderStroke(
-                                1.dp,
-                                if (selected) AppDesign.AccentGlow.copy(alpha = 0.5f)
-                                else AppDesign.GlassBorder
-                            )
-                        ) {
-                            TextButton(onClick = { if (!selected) onToggleProto3() }) {
-                                SampleText(
-                                    text = if (isProto3) "PROTO3 JSON" else "STANDARD JSON",
-                                    fontSize = 10,
-                                    isBold = selected,
-                                    overrideColor = if (selected) AppDesign.AccentGlow
-                                    else AppDesign.TextSecondary
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Descriptor
-                val (label, rawJson) = if (uiState.showProto3Json)
-                    "PROTO3 JSON (numbers quoted as strings — gRPC-Gateway format)" to uiState.proto3Json
-                else
-                    "STANDARD REST JSON (as downloaded from Google Books API)" to uiState.standardJson
-
-                SampleText(
-                    text = label,
-                    fontSize = 10,
-                    overrideColor = if (uiState.showProto3Json) AppDesign.AccentGlow else AppDesign.AccentCompetitor,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
-
-                val previewLength = minOf(rawJson.length, 2000)
-                SampleText(
-                    text = rawJson.take(previewLength) +
-                        if (rawJson.length > previewLength) "\n... (${rawJson.length} total chars)" else "",
-                    fontSize = 10,
-                    isSecondary = true
-                )
-            }
-        }
-    }
-}
+// (Replaced by SharedComponents)
 
 // ── Book Volume Card ──────────────────────────────────────────────────────────────
 

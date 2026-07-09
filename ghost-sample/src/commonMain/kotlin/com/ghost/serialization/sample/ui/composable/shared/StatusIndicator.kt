@@ -1,4 +1,4 @@
-package com.ghost.serialization.sample.ui.composable
+package com.ghost.serialization.sample.ui.composable.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

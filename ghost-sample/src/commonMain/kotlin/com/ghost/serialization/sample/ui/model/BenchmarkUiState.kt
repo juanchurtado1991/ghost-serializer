@@ -1,6 +1,6 @@
 package com.ghost.serialization.sample.ui.model
 
-import com.ghost.serialization.sample.api.EngineResult
+import com.ghost.serialization.sample.model.EngineResult
 import com.ghost.serialization.sample.model.GhostCharacter
 
 data class BenchmarkUiState(
@@ -10,5 +10,7 @@ data class BenchmarkUiState(
     val errorMessage: String? = null,
     val results: List<EngineResult> = emptyList(),
     val sessionHistory: List<String> = emptyList(),
-    val pageCount: Float = 20f
+    val pageCount: Float = 20f,
+    val rawJson: String = "",
+    val showRawJson: Boolean = false
 )

@@ -1,5 +1,6 @@
 package com.ghost.serialization.sample.api
 
+import com.ghost.serialization.sample.model.EngineResult
 import com.ghost.serialization.sample.util.forceGC
 import com.ghost.serialization.sample.util.getCurrentThreadAllocatedBytes
 import kotlin.time.TimeSource
