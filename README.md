@@ -103,22 +103,6 @@ val json: String = Ghost.encodeToString(user)
 
 ---
 
-## 📦 Modules at a Glance
-
-| Module | Artifact | For |
-|:---|:---|:---|
-| **Core** | `ghost-api` + `ghost-serialization` | Every project — annotations + runtime engine |
-| **Compiler** | `ghost-compiler` | KSP code generator (auto-wired by the Gradle plugin) |
-| **Gradle plugin** | `com.ghostserializer.ghost` | Auto-configures KSP across all targets |
-| **Ktor** | `ghost-ktor` | Ktor 2.3.x client + server |
-| **Retrofit** | `ghost-retrofit` | Retrofit 2.11+ Android/JVM |
-| **Spring Boot** | `ghost-spring-boot-starter` | Spring Boot 3.4+ auto-config |
-| **Proto3** | `ghost-protobuf` | Proto3 JSON mapping + Well-Known Types |
-
-→ **[Full modules guide →](docs/wiki/modules.md)**
-
----
-
 ## 🤝 Zero-Risk: Full Coexistence with your current Serializer
 
 You don't need to rewrite your entire project. Ghost can coexist seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson). 
@@ -165,6 +149,22 @@ With the `ghost-spring-boot-starter` dependency added, coexistence is **fully au
 - Any other types automatically fall through and are processed by your standard serializer (like **Jackson**).
 
 No manual configuration is required!
+
+---
+
+## 📦 Modules at a Glance
+
+| Module | Artifact | For |
+|:---|:---|:---|
+| **Core** | `ghost-api` + `ghost-serialization` | Every project — annotations + runtime engine |
+| **Compiler** | `ghost-compiler` | KSP code generator (auto-wired by the Gradle plugin) |
+| **Gradle plugin** | `com.ghostserializer.ghost` | Auto-configures KSP across all targets |
+| **Ktor** | `ghost-ktor` | Ktor 2.3.x client + server |
+| **Retrofit** | `ghost-retrofit` | Retrofit 2.11+ Android/JVM |
+| **Spring Boot** | `ghost-spring-boot-starter` | Spring Boot 3.4+ auto-config |
+| **Proto3** | `ghost-protobuf` | Proto3 JSON mapping + Well-Known Types |
+
+→ **[Full modules guide →](docs/wiki/modules.md)**
 
 ---
 
