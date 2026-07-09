@@ -6,8 +6,8 @@ Ghost is published under the `com.ghostserializer` group.
 
 | Version | Repository |
 |:---|:---|
-| **`1.2.5+`** | **[GitHub Packages](github-packages.md)** (recommended while Maven Central monthly limits apply) |
-| **`1.2.4` and older** | **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** |
+| **`1.2.7` and newer** | **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** |
+| Snapshot / Mirrors | **[GitHub Packages](github-packages.md)** |
 
 ---
 
@@ -25,17 +25,25 @@ Ghost is published under the `com.ghostserializer` group.
 
 ---
 
-## GitHub Packages (`1.2.5+`)
+## Maven Central (`1.2.7+`)
 
-Repository setup, credentials, version catalog, and transitive dependency notes: **[GitHub Packages guide →](github-packages.md)**
+Ghost is published to `mavenCentral()`. Ensure it is declared in your repositories:
 
----
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
+```
 
 ## Version Catalog (`libs.versions.toml`)
 
 ```toml
 [versions]
-ghost = "1.2.5"
+ghost = "1.2.7"
 ksp = "2.1.10-1.0.31"
 
 [libraries]
@@ -51,23 +59,7 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 ksp   = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ```
 
-## Maven Central only (`1.2.4`)
 
-If you do not need `1.2.5` features, use Maven Central without GitHub Packages:
-
-```kotlin
-// settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        google()
-    }
-}
-```
-
-Set `ghost = "1.2.4"` in the version catalog.
-
----
 
 ## Native String Reader (optional)
 

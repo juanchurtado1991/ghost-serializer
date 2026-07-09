@@ -86,11 +86,21 @@ class OpenLibraryRepository {
 
     // ── Proto3 JSON synthesis ─────────────────────────────────────────────────────
 
+    /**
+     * Synthesizes a Proto3 JSON payload from standard JSON.
+     * 
+     * Why is this done manually?
+     * 1. Official libraries like Google's `protobuf-java-util` are Java-only and don't work in KMP `commonMain`.
+     * 2. This function merely *simulates* what a real gRPC-Gateway or Envoy proxy backend does automatically
+     *    before sending the payload over the network. In a real-world scenario, the client never does this
+     *    conversion; it just receives the Proto3 JSON directly from the server.
+     */
     private fun toProto3JsonString(standardJson: String): String {
         val root = kSerJson.parseToJsonElement(standardJson)
         return kSerJson.encodeToString(JsonElement.serializer(), quoteNumbers(root))
     }
 
+    @Suppress("REDUNDANT_ELSE_IN_WHEN")
     private fun quoteNumbers(element: JsonElement): JsonElement = when (element) {
         is JsonObject -> JsonObject(element.mapValues { (_, v) -> quoteNumbers(v) })
         is JsonArray -> JsonArray(element.map { quoteNumbers(it) })
@@ -115,13 +125,10 @@ class OpenLibraryRepository {
         val ghost = BenchmarkEngine.measure("[Standard] Ghost", onStatusChange) {
             Ghost.deserialize<OpenLibraryResponse>(standardBytes)
         }
-        val ghostProto = BenchmarkEngine.measure("[Standard] GhostProto", onStatusChange) {
-            GhostProtobuf.deserialize<OpenLibraryResponse>(standardBytes)
-        }
         val kSer = BenchmarkEngine.measure("[Standard] KotlinX", onStatusChange) {
             kSerJson.decodeFromString<OpenLibraryResponse>(standardJson)
         }
-        return listOf(ghost, ghostProto, kSer)
+        return listOf(ghost, kSer)
     }
 
     private suspend fun benchmarkProto3Json(
@@ -132,24 +139,7 @@ class OpenLibraryRepository {
         val ghostProto = BenchmarkEngine.measure("[Proto3] GhostProto", onStatusChange) {
             GhostProtobuf.deserialize<OpenLibraryResponse>(proto3Bytes)
         }
-
-        val ghost = try {
-            BenchmarkEngine.measure("[Proto3] Ghost", onStatusChange) {
-                Ghost.deserialize<OpenLibraryResponse>(proto3Bytes)
-            }
-        } catch (e: Exception) {
-            EngineResult("[Proto3] Ghost", -1.0, -1L)
-        }
-
-        val kSer = try {
-            BenchmarkEngine.measure("[Proto3] KotlinX", onStatusChange) {
-                kSerJson.decodeFromString<OpenLibraryResponse>(proto3Json)
-            }
-        } catch (e: Exception) {
-            EngineResult("[Proto3] KotlinX", -1.0, -1L)
-        }
-
-        return listOf(ghostProto, ghost, kSer)
+        return listOf(ghostProto)
     }
 
     // ── Warm-Up ───────────────────────────────────────────────────────────────────

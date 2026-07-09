@@ -480,6 +480,8 @@ public object GhostJsonConstants {
     const val ERR_TIMESTAMP_TZ = "Malformed timestamp: missing timezone"
     const val ERR_TIMESTAMP_TZ_SUPPORT = "Unsupported offset timezone"
     const val ERR_MALFORMED_DIGIT = "Malformed digit"
+    const val ERR_UNKNOWN_ENUM = "Unknown enum value: "
+    const val ERR_INVALID_BASE64 = "Invalid base64 character"
 
     const val EQUALS_INT = '='.code
     const val EQUALS_BYTE = '='.code.toByte()

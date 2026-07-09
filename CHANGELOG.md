@@ -1,8 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.7] - 2026-07-08
 
 ### Added
+- **ProtoLab Benchmark (Sample App)**: New interactive UI in the sample app to compare Ghost, GhostProto, and KotlinX Serialization on Standard JSON vs Proto3 JSON payloads, using real OpenLibrary API data.
 - **`ghost-protobuf` module**: New Kotlin Multiplatform module (`com.ghostserializer:ghost-protobuf`, package `com.ghost.protobuf`, targets Android / iOS arm64+simulator / JVM) that layers proto3 JSON mapping rules on top of the existing byte-first JSON engine. Entry point `GhostProtobuf.deserialize<T>()` accepts `ByteArray`, `String`, `BufferedSource`, or a pre-built `GhostProtoJsonFlatReader`. See the new [Usage — Protobuf](docs/wiki/usage-protobuf.md) wiki page.
 - **Jazzer fuzzing suite**: Added `ProtoWktFuzzTest` leveraging coverage-guided fuzzing (Jazzer) on WKT parsers (`parseDuration`, `parseTimestamp`, `decodeBase64String`) and round-trip assertions.
 - **`@GhostProtoSerialization` annotation** (`ghost-api`): Proto3-JSON-mapping variant of `@GhostSerialization` — lowerCamelCase field names, default/empty values omitted on serialize, 64-bit integers (`Long`) as quoted strings, enums as strings (already Ghost's default), `ByteArray` as Base64. Covers direct properties, `@JvmInline value class`-wrapped properties, and `List`/`Set`/`Map` elements. `GhostSerializationProcessor` scans for both annotations; `GhostAnalyzer` auto-converts `snake_case` field names to `lowerCamelCase` for `@GhostProtoSerialization` classes (unless an explicit `@GhostName`/`@SerialName` overrides it) and recognizes `@GhostProtoSerialization` types as valid nested Ghost types alongside `@GhostSerialization`.

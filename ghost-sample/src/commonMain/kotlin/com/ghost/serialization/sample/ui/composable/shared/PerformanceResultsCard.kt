@@ -31,8 +31,8 @@ fun PerformanceResultsCard(
     }
 
     // Summary insight: compare Ghost vs best competitor per category
-    val ghostResults = uiState.results.filter { it.name.contains("GHOST") }
-    val competitorResults = uiState.results.filter { !it.name.contains("GHOST") }
+    val ghostResults = uiState.results.filter { it.name.contains("GHOST") && it.timeMs >= 0 }
+    val competitorResults = uiState.results.filter { !it.name.contains("GHOST") && it.timeMs >= 0 }
     val avgGhostMs = ghostResults.map { it.timeMs }.average().takeIf { !it.isNaN() } ?: 0.0
     val avgCompetitorMs = competitorResults.map { it.timeMs }.average().takeIf { !it.isNaN() } ?: 0.0
     val speedFactor = if (avgGhostMs > 0) avgCompetitorMs / avgGhostMs else 1.0
@@ -89,32 +89,34 @@ fun PerformanceResultsCard(
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     results.forEach { res ->
                         val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else AppDesign.AccentCompetitor
-                        val engineName = res.name.substringAfter("] ").trim()
+                        val engineName = res.name.substringAfter("] ").trim().replace("KotlinX-Ser", "KSer").replace("GHOST PROTO", "PROTO").replace("GHOST JSON", "JSON")
                         MetricItem(
                             title = engineName,
-                            value = "${"%.2f".format(res.timeMs)}ms",
-                            overrideColor = color
+                            value = if (res.timeMs < 0) "N/A" else "${"%.2f".format(res.timeMs)}ms",
+                            overrideColor = color,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     results.forEach { res ->
                         val color = if (res.name.contains("GHOST")) AppDesign.AccentGlow else AppDesign.AccentCompetitor
-                        val engineName = res.name.substringAfter("] ").trim()
+                        val engineName = res.name.substringAfter("] ").trim().replace("KotlinX-Ser", "KSer").replace("GHOST PROTO", "PROTO").replace("GHOST JSON", "JSON")
                         MetricItem(
                             title = "$engineName MEM",
-                            value = "${res.memoryBytes / 1024} KB",
-                            overrideColor = color
+                            value = if (res.timeMs < 0) "N/A" else "${res.memoryBytes / 1024} KB",
+                            overrideColor = color,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }

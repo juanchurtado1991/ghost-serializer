@@ -19,11 +19,11 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
 
 sealed class ProtoValue {
     object Null : ProtoValue()
-    data class Number(val v: Double) : ProtoValue()
-    data class Str(val v: String) : ProtoValue()
-    data class Bool(val v: Boolean) : ProtoValue()
-    data class Struct(val v: Map<String, ProtoValue>) : ProtoValue()
-    data class List(val v: kotlin.collections.List<ProtoValue>) : ProtoValue()
+    data class Number(val value: Double) : ProtoValue()
+    data class Str(val value: String) : ProtoValue()
+    data class Bool(val value: Boolean) : ProtoValue()
+    data class Struct(val value: Map<String, ProtoValue>) : ProtoValue()
+    data class List(val value: kotlin.collections.List<ProtoValue>) : ProtoValue()
 }
 
 object ProtoValueSerializer : GhostSerializer<ProtoValue> {
@@ -32,22 +32,22 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
     override fun serialize(writer: GhostJsonWriter, value: ProtoValue) {
         when (value) {
             is ProtoValue.Null -> writer.nullValue()
-            is ProtoValue.Number -> writer.value(value.v)
-            is ProtoValue.Str -> writer.value(value.v)
-            is ProtoValue.Bool -> writer.value(value.v)
+            is ProtoValue.Number -> writer.value(value.value)
+            is ProtoValue.Str -> writer.value(value.value)
+            is ProtoValue.Bool -> writer.value(value.value)
             is ProtoValue.Struct -> {
                 writer.beginObject()
-                for ((k, v) in value.v) {
-                    writer.name(k)
-                    serialize(writer, v)
+                for ((mapKey, mapValue) in value.value) {
+                    writer.name(mapKey)
+                    serialize(writer, mapValue)
                 }
                 writer.endObject()
             }
 
             is ProtoValue.List -> {
                 writer.beginArray()
-                for (v in value.v) {
-                    serialize(writer, v)
+                for (listItem in value.value) {
+                    serialize(writer, listItem)
                 }
                 writer.endArray()
             }
@@ -57,22 +57,22 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
     override fun serialize(writer: GhostJsonFlatWriter, value: ProtoValue) {
         when (value) {
             is ProtoValue.Null -> writer.nullValue()
-            is ProtoValue.Number -> writer.value(value.v)
-            is ProtoValue.Str -> writer.value(value.v)
-            is ProtoValue.Bool -> writer.value(value.v)
+            is ProtoValue.Number -> writer.value(value.value)
+            is ProtoValue.Str -> writer.value(value.value)
+            is ProtoValue.Bool -> writer.value(value.value)
             is ProtoValue.Struct -> {
                 writer.beginObject()
-                for ((k, v) in value.v) {
-                    writer.name(k)
-                    serialize(writer, v)
+                for ((mapKey, mapValue) in value.value) {
+                    writer.name(mapKey)
+                    serialize(writer, mapValue)
                 }
                 writer.endObject()
             }
 
             is ProtoValue.List -> {
                 writer.beginArray()
-                for (v in value.v) {
-                    serialize(writer, v)
+                for (listItem in value.value) {
+                    serialize(writer, listItem)
                 }
                 writer.endArray()
             }

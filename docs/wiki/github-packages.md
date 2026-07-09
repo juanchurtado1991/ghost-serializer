@@ -1,13 +1,13 @@
 # GitHub Packages
 
-[![Packages](https://img.shields.io/badge/GitHub_Packages-1.2.5+-blue.png?style=flat&logo=github&logoColor=white)](https://github.com/juanchurtado1991/ghost-serializer/packages)
+[![Packages](https://img.shields.io/badge/GitHub_Packages-1.2.7+-blue.png?style=flat&logo=github&logoColor=white)](https://github.com/juanchurtado1991/ghost-serializer/packages)
 
-Sonatype Maven Central enforces **monthly publishing limits** for high-volume open-source accounts. **`1.2.5`** is published to [GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages) and stays available there permanently.
+Ghost is published to Maven Central, but we also maintain a mirror on [GitHub Packages](https://github.com/juanchurtado1991/ghost-serializer/packages) for CI/CD redundancy.
 
 | Version | Where to resolve |
 |:---|:---|
-| **`1.2.5+`** | GitHub Packages (this guide) |
-| **`1.2.4` and older** | [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) only |
+| **`1.2.7+`** | GitHub Packages (this guide) |
+| **`1.2.7+`** | [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) (primary) |
 
 ---
 
@@ -74,7 +74,7 @@ dependencyResolutionManagement {
 
 ```toml
 [versions]
-ghost = "1.2.5"
+ghost = "1.2.7"
 ksp   = "2.1.10-1.0.31"
 
 [libraries]
@@ -93,15 +93,15 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 ```kotlin
 plugins {
     id("com.google.devtools.ksp") version "2.1.10-1.0.31"
-    id("com.ghostserializer.ghost") version "1.2.5"
+    id("com.ghostserializer.ghost") version "1.2.7"
 }
 ```
 
-Coordinates are unchanged: `com.ghostserializer:*:1.2.5`.
+Coordinates are unchanged: `com.ghostserializer:*:1.2.7`.
 
 ### Transitive dependencies
 
-Libraries such as **core-kmp** that depend on Ghost `1.2.5` still require the GitHub Packages repository in **`settings.gradle.kts`**, even if your app does not declare Ghost directly.
+Libraries such as **core-kmp** that depend on Ghost `1.2.7` still require the GitHub Packages repository in **`settings.gradle.kts`**, even if your app does not declare Ghost directly.
 
 ---
 
@@ -128,12 +128,6 @@ Verify: [github.com/juanchurtado1991/ghost-serializer/packages](https://github.c
 
 Maven Central publish (`publishToSonatype`) remains configured for when Sonatype monthly limits reset.
 
----
 
-## Maven Central only (`1.2.4`)
-
-Skip GitHub Packages and use `ghost = "1.2.4"` with `mavenCentral()` only. See [Installation](installation.md).
-
----
 
 ← [Installation](installation.md) · [Back to README](../../README.md)

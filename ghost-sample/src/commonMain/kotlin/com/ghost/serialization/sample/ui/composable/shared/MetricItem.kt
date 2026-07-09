@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ghost.serialization.sample.ui.AppDesign
 
@@ -28,7 +30,9 @@ fun MetricItem(
             isSecondary = true,
             fontSize = 10,
             isBold = true,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 6.dp)
         )
         Box(
@@ -37,12 +41,14 @@ fun MetricItem(
                     AppDesign.GlassColor,
                     RoundedCornerShape(8.dp)
                 )
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .padding(horizontal = 6.dp, vertical = 4.dp)
         ) {
             SampleText(
                 text = value,
-                fontSize = 17,
+                fontSize = 14,
                 isBold = true,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 overrideColor = overrideColor ?: AppDesign.TextPrimary
             )
         }

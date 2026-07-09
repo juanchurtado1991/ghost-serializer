@@ -144,20 +144,11 @@ internal fun GhostProtoJsonFlatReader.readProtoUInt64(): ULong {
 internal fun GhostProtoJsonFlatReader.readProtoEnum(options: JsonReaderOptions): Int {
     val token = peekNextToken()
     if (token == C.QUOTE_INT) {
-        // Read as string option index
-        // selectString requires beginning key/value boundary or standard selector,
-        // we can read string and select or match manually.
-        val valueStr = nextString()
-        // Simple manual comparison using perfect-hash dispatch key if possible,
-        // or just let options matching work.
-        // For simplicity and correctness without regressions, we delegate to a mini loop
-        // over the strings inside options since enum options lists are short:
-        for (i in options.rawStrings.indices) {
-            if (options.rawStrings[i] == valueStr) {
-                return i
-            }
+        val index = selectString(options)
+        if (index != C.MATCH_NONE) {
+            return index
         }
-        throwError("Unknown enum value: $valueStr")
+        throwError(C.ERR_UNKNOWN_ENUM)
     } else {
         // Read as integer value index
         return nextInt()

@@ -7,7 +7,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
 [![Tests](https://img.shields.io/badge/tests-1158%20%2F%201158%20passed-brightgreen.png?style=flat)](#)
-[![Version](https://img.shields.io/badge/version-1.2.5-brightgreen.png?style=flat)](https://github.com/juanchurtado1991/ghost-serializer/packages)
+[![Version](https://img.shields.io/badge/version-1.2.7-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
@@ -15,11 +15,7 @@
 
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
-📦 **[GitHub Packages →](docs/wiki/github-packages.md)** · `1.2.5`
-&nbsp;&nbsp;|&nbsp;&nbsp;
-📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.4`
-
-> **`1.2.5` on GitHub Packages** — Sonatype monthly limits keep Maven Central at `1.2.4`. One-time setup: **[GitHub Packages guide →](docs/wiki/github-packages.md)** (Vanniktech empty Javadocs reduce file count for future Central releases).
+📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.7`
 
 ---
 
@@ -75,12 +71,10 @@ Ghost generates all serialization code at **compile time** via KSP — and then 
 
 ## 📦 Quick Start
 
-Requires the [GitHub Packages repository](docs/wiki/github-packages.md) for `1.2.5+`.
-
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.2.5"
+ghost = "1.2.7"
 ksp   = "2.1.10-1.0.31"
 
 [libraries]
@@ -93,7 +87,7 @@ ghost-compiler      = { module = "com.ghostserializer:ghost-compiler", version.r
 // build.gradle.kts
 plugins {
     id("com.google.devtools.ksp") version "2.1.10-1.0.31"
-    id("com.ghostserializer.ghost") version "1.2.5"
+    id("com.ghostserializer.ghost") version "1.2.7"
 }
 ```
 
@@ -111,7 +105,7 @@ val json: String = Ghost.encodeToString(user)
 
 | Guide                                                 | Platform / Category | Description |
 |:------------------------------------------------------|:---:|:---|
-| [GitHub Packages](docs/wiki/github-packages.md)       | ![Packages](https://img.shields.io/badge/Packages-blue.png?style=flat-square&logo=github&logoColor=white) | `1.2.5` repository setup, credentials, publish |
+| [GitHub Packages](docs/wiki/github-packages.md)       | ![Packages](https://img.shields.io/badge/Packages-blue.png?style=flat-square&logo=github&logoColor=white) | Snapshot/Mirror repository setup |
 | [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, KSP setup, `ghost.textChannel` opt-in |
 | [Usage — Android](docs/wiki/usage-android.md)         | ![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat-square&logo=android&logoColor=white) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
 | [Usage — KMP](docs/wiki/usage-kmp.md)                 | ![Kotlin](https://img.shields.io/badge/KMP-7F52FF.png?style=flat-square&logo=kotlin&logoColor=white) | Shared module, Ktor, Sealed classes, Structural Transformations |
