@@ -1,10 +1,10 @@
 package com.ghost.serialization.sample.ui.model
 
 import com.ghost.serialization.sample.api.EngineResult
-import com.ghost.serialization.sample.model.BookVolume
+import com.ghost.serialization.sample.model.OpenLibraryBook
 
 data class ProtoLabUiState(
-    val books: List<BookVolume> = emptyList(),
+    val books: List<OpenLibraryBook> = emptyList(),
     val isLoading: Boolean = false,
     val loadingStatus: String = "",
     val errorMessage: String? = null,

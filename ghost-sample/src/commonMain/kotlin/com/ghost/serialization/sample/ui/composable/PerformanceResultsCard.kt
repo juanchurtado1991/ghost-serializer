@@ -13,16 +13,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ghost.serialization.sample.ui.AppDesign
-import com.ghost.serialization.sample.ui.model.UiState
+import com.ghost.serialization.sample.ui.model.BenchmarkUiState
 import com.ghost.serialization.sample.util.format
 
 @Composable
 fun PerformanceResultsCard(
-    uiState: UiState,
+    uiState: BenchmarkUiState,
     onCopyLogs: () -> Unit
 ) {
 

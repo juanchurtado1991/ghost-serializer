@@ -41,10 +41,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.ghost.serialization.sample.model.BookVolume
+import com.ghost.serialization.sample.api.EngineResult
+import com.ghost.serialization.sample.model.OpenLibraryBook
 import com.ghost.serialization.sample.ui.AppDesign
 import com.ghost.serialization.sample.ui.model.ProtoLabUiState
-import com.ghost.serialization.sample.ui.model.UiState
+import com.ghost.serialization.sample.ui.model.BenchmarkUiState
 import com.ghost.serialization.sample.ui.viewmodel.ProtoLabViewModel
 import com.ghost.serialization.sample.util.copyToClipboard
 
@@ -104,7 +105,7 @@ fun ProtoLabScreen(viewModel: ProtoLabViewModel = viewModel { ProtoLabViewModel(
         if (uiState.benchmarkResults.isNotEmpty()) {
             item {
                 PerformanceResultsCard(
-                    uiState = UiState(
+                    uiState = BenchmarkUiState(
                         results = uiState.benchmarkResults,
                         sessionHistory = uiState.sessionHistory
                     ),
@@ -139,7 +140,7 @@ fun ProtoLabScreen(viewModel: ProtoLabViewModel = viewModel { ProtoLabViewModel(
                 )
             }
 
-            items(uiState.books, key = { it.id }) { book ->
+            items(uiState.books, key = { it.key }) { book ->
                 BookVolumeCard(book = book)
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -432,18 +433,18 @@ private fun DualJsonViewer(
 // ── Book Volume Card ──────────────────────────────────────────────────────────────
 
 @Composable
-fun BookVolumeCard(book: BookVolume) {
+fun BookVolumeCard(book: OpenLibraryBook) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.Top
         ) {
-            val thumbnailUrl = book.volumeInfo.imageLinks?.thumbnail
-                ?.replace("http://", "https://")
+            val thumbnailUrl = if (book.cover_i > 0) "https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg" else null
+            
             if (thumbnailUrl != null) {
                 AsyncImage(
                     model = thumbnailUrl,
-                    contentDescription = "Cover of ${book.volumeInfo.title}",
+                    contentDescription = "Cover of ${book.title}",
                     modifier = Modifier
                         .size(72.dp, 96.dp)
                         .clip(RoundedCornerShape(8.dp))
@@ -463,23 +464,14 @@ fun BookVolumeCard(book: BookVolume) {
 
             Column(modifier = Modifier.weight(1f)) {
                 SampleText(
-                    text = book.volumeInfo.title,
+                    text = book.title,
                     isBold = true,
                     fontSize = 14,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (!book.volumeInfo.subtitle.isNullOrBlank()) {
-                    SampleText(
-                        text = book.volumeInfo.subtitle,
-                        fontSize = 11,
-                        isSecondary = true,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-                val authorsText = book.volumeInfo.authors.take(2).joinToString(", ")
+                
+                val authorsText = book.author_name.take(2).joinToString(", ")
                 if (authorsText.isNotBlank()) {
                     SampleText(
                         text = authorsText,
@@ -492,33 +484,29 @@ fun BookVolumeCard(book: BookVolume) {
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (book.volumeInfo.pageCount > 0) {
+                    if (book.first_publish_year > 0) {
                         MetaBadge(
-                            text = "${book.volumeInfo.pageCount}p",
+                            text = "${book.first_publish_year}",
                             color = AppDesign.AccentGlow.copy(alpha = 0.7f)
                         )
                     }
-                    if (book.volumeInfo.language.isNotBlank()) {
+                    if (book.language.isNotEmpty()) {
                         MetaBadge(
-                            text = book.volumeInfo.language.uppercase(),
+                            text = book.language.first().uppercase(),
                             color = AppDesign.AccentCompetitor
                         )
                     }
-                    if (book.saleInfo.isEbook) {
-                        MetaBadge(text = "eBook", color = AppDesign.StatusAlive)
-                    }
-                    val price = book.saleInfo.retailPrice
-                    if (price != null && price.amount > 0) {
+                    if (book.edition_count > 0) {
                         MetaBadge(
-                            text = "${"%.2f".format(price.amount)} ${price.currencyCode}",
+                            text = "${book.edition_count} ed",
                             color = AppDesign.StatusAlive
                         )
                     }
                 }
-
-                if (book.volumeInfo.categories.isNotEmpty()) {
+                
+                if (book.subject.isNotEmpty()) {
                     SampleText(
-                        text = book.volumeInfo.categories.first(),
+                        text = book.subject.first(),
                         fontSize = 10,
                         isSecondary = true,
                         modifier = Modifier.padding(top = 4.dp)

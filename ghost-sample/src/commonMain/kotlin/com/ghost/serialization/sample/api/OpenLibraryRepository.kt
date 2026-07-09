@@ -2,7 +2,7 @@ package com.ghost.serialization.sample.api
 
 import com.ghost.protobuf.GhostProtobuf
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.sample.model.BooksVolumeListResponse
+import com.ghost.serialization.sample.model.OpenLibraryResponse
 import com.ghost.serialization.sample.util.forceGC
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -20,7 +20,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 
-class GoogleBooksRepository {
+class OpenLibraryRepository {
 
     private val downloadClient = HttpClient {
         expectSuccess = false
@@ -35,15 +35,15 @@ class GoogleBooksRepository {
         onStatusChange: (String) -> Unit
     ): Result<BooksLabResult> = withContext(Dispatchers.Default) {
         try {
-            // ── Step 1: Download real bytes from Google Books ─────────────────────
-            onStatusChange("Fetching '$query' from Google Books API...")
-            val response: HttpResponse = downloadClient.get("https://www.googleapis.com/books/v1/volumes") {
+            // ── Step 1: Download real bytes from OpenLibrary ──────────────────────────
+            onStatusChange("Fetching '$query' from OpenLibrary API...")
+            val response: HttpResponse = downloadClient.get("https://openlibrary.org/search.json") {
                 parameter("q", query)
-                parameter("maxResults", 40)
+                parameter("limit", 40)
             }
 
             if (!response.status.isSuccess()) {
-                throw Exception("Google Books API Error: ${response.status}")
+                throw Exception("OpenLibrary API Error: ${response.status}")
             }
             
             val standardJson = response.bodyAsText()
@@ -56,7 +56,7 @@ class GoogleBooksRepository {
             val proto3Bytes = proto3Json.encodeToByteArray()
 
             // ── Step 3: Parse books for the UI (standard path) ────────────────────
-            val books: BooksVolumeListResponse = GhostProtobuf.deserialize(standardBytes)
+            val responseObj: OpenLibraryResponse = GhostProtobuf.deserialize(standardBytes)
 
             // ── Step 4: Warmup all engines ────────────────────────────────────────
             onStatusChange("JIT Warmup (${BenchmarkEngine.WARMUP_ITERATIONS}x)...")
@@ -71,7 +71,7 @@ class GoogleBooksRepository {
             onStatusChange("Done!")
             Result.success(
                 BooksLabResult(
-                    books = books.items,
+                    books = responseObj.docs,
                     standardJson = standardJson,
                     proto3Json = proto3Json,
                     benchmarkResults = results
@@ -111,13 +111,13 @@ class GoogleBooksRepository {
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
         val ghost = BenchmarkEngine.measure("[Standard] Ghost (byte[])", onStatusChange) {
-            Ghost.deserialize<BooksVolumeListResponse>(standardBytes)
+            Ghost.deserialize<OpenLibraryResponse>(standardBytes)
         }
         val ghostProto = BenchmarkEngine.measure("[Standard] GhostProto (byte[])", onStatusChange) {
-            GhostProtobuf.deserialize<BooksVolumeListResponse>(standardBytes)
+            GhostProtobuf.deserialize<OpenLibraryResponse>(standardBytes)
         }
         val kSer = BenchmarkEngine.measure("[Standard] KotlinX-Ser (String)", onStatusChange) {
-            kSerJson.decodeFromString<BooksVolumeListResponse>(standardJson)
+            kSerJson.decodeFromString<OpenLibraryResponse>(standardJson)
         }
         return listOf(ghost, ghostProto, kSer)
     }
@@ -128,12 +128,12 @@ class GoogleBooksRepository {
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
         val ghostProto = BenchmarkEngine.measure("[Proto3] GhostProto (byte[])", onStatusChange) {
-            GhostProtobuf.deserialize<BooksVolumeListResponse>(proto3Bytes)
+            GhostProtobuf.deserialize<OpenLibraryResponse>(proto3Bytes)
         }
 
         val ghost = try {
             BenchmarkEngine.measure("[Proto3] Ghost (byte[])", onStatusChange) {
-                Ghost.deserialize<BooksVolumeListResponse>(proto3Bytes)
+                Ghost.deserialize<OpenLibraryResponse>(proto3Bytes)
             }
         } catch (e: Exception) {
             EngineResult("[Proto3] Ghost (byte[])", -1.0, -1L)
@@ -141,7 +141,7 @@ class GoogleBooksRepository {
 
         val kSer = try {
             BenchmarkEngine.measure("[Proto3] KotlinX-Ser (String)", onStatusChange) {
-                kSerJson.decodeFromString<BooksVolumeListResponse>(proto3Json)
+                kSerJson.decodeFromString<OpenLibraryResponse>(proto3Json)
             }
         } catch (e: Exception) {
             EngineResult("[Proto3] KotlinX-Ser (String)", -1.0, -1L)
@@ -158,18 +158,18 @@ class GoogleBooksRepository {
         proto3Bytes: ByteArray
     ) {
         repeat(BenchmarkEngine.WARMUP_ITERATIONS) {
-            Ghost.deserialize<BooksVolumeListResponse>(standardBytes)
-            GhostProtobuf.deserialize<BooksVolumeListResponse>(standardBytes)
-            kSerJson.decodeFromString<BooksVolumeListResponse>(standardJson)
+            Ghost.deserialize<OpenLibraryResponse>(standardBytes)
+            GhostProtobuf.deserialize<OpenLibraryResponse>(standardBytes)
+            kSerJson.decodeFromString<OpenLibraryResponse>(standardJson)
 
-            GhostProtobuf.deserialize<BooksVolumeListResponse>(proto3Bytes)
+            GhostProtobuf.deserialize<OpenLibraryResponse>(proto3Bytes)
         }
         forceGC()
     }
 }
 
 data class BooksLabResult(
-    val books: List<com.ghost.serialization.sample.model.BookVolume>,
+    val books: List<com.ghost.serialization.sample.model.OpenLibraryBook>,
     val standardJson: String,
     val proto3Json: String,
     val benchmarkResults: List<EngineResult>

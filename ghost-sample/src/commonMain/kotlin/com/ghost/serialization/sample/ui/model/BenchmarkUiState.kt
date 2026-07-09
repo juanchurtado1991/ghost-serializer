@@ -3,7 +3,7 @@ package com.ghost.serialization.sample.ui.model
 import com.ghost.serialization.sample.api.EngineResult
 import com.ghost.serialization.sample.model.GhostCharacter
 
-data class UiState(
+data class BenchmarkUiState(
     val characters: List<GhostCharacter> = emptyList(),
     val isLoading: Boolean = false,
     val loadingStatus: String = "",

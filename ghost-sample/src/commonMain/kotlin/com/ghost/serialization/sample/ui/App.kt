@@ -1,7 +1,5 @@
 package com.ghost.serialization.sample.ui
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,11 +13,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -29,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -47,7 +42,7 @@ import com.ghost.serialization.sample.ui.composable.CharacterCard
 import com.ghost.serialization.sample.ui.composable.PerformanceResultsCard
 import com.ghost.serialization.sample.ui.composable.ProtoLabScreen
 import com.ghost.serialization.sample.ui.composable.SampleText
-import com.ghost.serialization.sample.ui.model.UiState
+import com.ghost.serialization.sample.ui.model.BenchmarkUiState
 import com.ghost.serialization.sample.ui.viewmodel.MainViewModel
 import com.ghost.serialization.sample.ui.viewmodel.ProtoLabViewModel
 import com.ghost.serialization.sample.util.copyToClipboard
@@ -67,6 +62,7 @@ fun GhostSampleApp(
         modifier = Modifier
             .fillMaxSize()
             .background(AppDesign.BackgroundGradient)
+            .statusBarsPadding()
     ) {
         // ── Tab Row ──────────────────────────────────────────────────────────────
         GhostTabRow(
@@ -250,7 +246,7 @@ private fun BenchMarkTitle() {
 
 @Composable
 private fun BenchmarkConfigCard(
-    uiState: UiState,
+    uiState: BenchmarkUiState,
     viewModel: MainViewModel
 ) {
     Surface(
@@ -290,7 +286,7 @@ private fun BenchmarkConfigCard(
 }
 
 @Composable
-private fun ErrorItem(uiState: UiState) {
+private fun ErrorItem(uiState: BenchmarkUiState) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -310,7 +306,7 @@ private fun ErrorItem(uiState: UiState) {
 @Composable
 private fun RunBenchmarkButton(
     viewModel: MainViewModel,
-    uiState: UiState
+    uiState: BenchmarkUiState
 ) {
     Button(
         onClick = { viewModel.runBenchmark() },
