@@ -39,9 +39,15 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import io.ktor.serialization.ContentConverter
+import io.ktor.http.content.OutgoingContent
+import io.ktor.util.reflect.TypeInfo
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.charsets.Charset
 
 // --- Mock Models ---
 data class KtorUser(val id: Int, val name: String, val isActive: Boolean)
+data class UnregisteredUser(val id: Int, val name: String)
 
 // --- Manual Serializer for Testing ---
 object KtorUserSerializer : GhostSerializer<KtorUser> {
@@ -278,5 +284,45 @@ class GhostKtorTest {
         assertEquals(42, user.id)
         assertEquals("John", user.name)
         assertEquals(true, user.isActive)
+    }
+
+    @Test
+    fun testCoexistenceFallback() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = """{"id":999,"name":"Fallback"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val fallbackConverter = object : ContentConverter {
+            override suspend fun serializeNullable(
+                contentType: ContentType,
+                charset: Charset,
+                typeInfo: TypeInfo,
+                value: Any?
+            ): OutgoingContent? = null
+
+            override suspend fun deserialize(
+                charset: Charset,
+                typeInfo: TypeInfo,
+                content: ByteReadChannel
+            ): Any? {
+                if (typeInfo.type != UnregisteredUser::class) return null
+                return UnregisteredUser(999, "Fallback")
+            }
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                register(ContentType.Application.Json, GhostContentConverter())
+                register(ContentType.Application.Json, fallbackConverter)
+            }
+        }
+
+        val user: UnregisteredUser = client.get("/user").body()
+        assertEquals(999, user.id)
+        assertEquals("Fallback", user.name)
     }
 }

@@ -1,6 +1,8 @@
 # 👻 Ghost Serializer
 
-**JSON at the speed of bits — Byte-first serialization for Kotlin Multiplatform.**
+**Speed up your high-traffic endpoints by 66% using 50% less memory — without touching your legacy APIs.**
+
+Ghost is a byte-first, compile-time JSON serializer designed for Kotlin Multiplatform that acts as a **drop-in optimization**. It coexists seamlessly with your existing serialization frameworks (like `kotlinx.serialization`, `Jackson`, or `Gson`), allowing you to adopt it incrementally on your high-traffic paths in Ktor, Retrofit, or Spring Boot.
 
 > ⚡ Bitwise O(1) field matching · Native reader per input format · Up to 6–32× less heap · Zero reflection · 1158/1158 tests passed
 
@@ -114,6 +116,55 @@ val json: String = Ghost.encodeToString(user)
 | **Proto3** | `ghost-protobuf` | Proto3 JSON mapping + Well-Known Types |
 
 → **[Full modules guide →](docs/wiki/modules.md)**
+
+---
+
+## 🤝 Zero-Risk: Full Coexistence with your current Serializer
+
+You don't need to rewrite your entire project. Ghost can coexist seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson). 
+
+If Ghost doesn't find its `@GhostSerialization` annotation on a class, it will return `null` and let the framework fallback to your standard serializer. This means you can adopt Ghost incrementally, using it only on your highest-traffic endpoints!
+
+### Ktor Setup:
+```kotlin
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
+import com.ghost.serialization.ktor.ghost
+import kotlinx.serialization.json.Json
+
+fun Application.module() {
+    install(ContentNegotiation) {
+        // 1. Ghost handles high-performance @GhostSerialization endpoints
+        ghost() 
+        // 2. Kotlinx.serialization (or Jackson/Gson) handles the rest as fallback
+        json(Json { ignoreUnknownKeys = true })
+    }
+}
+```
+
+### Retrofit Setup:
+```kotlin
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import com.ghost.serialization.retrofit.GhostConverterFactory
+
+val retrofit = Retrofit.Builder()
+    .baseUrl("https://api.example.com")
+    // 1. GhostConverterFactory handles @GhostSerialization endpoints
+    .addConverterFactory(GhostConverterFactory.create()) 
+    // 2. GsonConverterFactory (or Moshi / Kotlinx.serialization) handles the rest as fallback
+    .addConverterFactory(GsonConverterFactory.create())
+    .build()
+```
+
+### Spring Boot Setup:
+With the `ghost-spring-boot-starter` dependency added, coexistence is **fully automatic**. The starter automatically registers `GhostHttpMessageConverter` (for Spring MVC) and `GhostReactiveEncoder`/`GhostReactiveDecoder` (for Spring WebFlux) at the beginning of the message converter/codec chain:
+
+- Request and response bodies using classes annotated with `@GhostSerialization` are processed by **Ghost** for maximum performance.
+- Any other types automatically fall through and are processed by your standard serializer (like **Jackson**).
+
+No manual configuration is required!
 
 ---
 

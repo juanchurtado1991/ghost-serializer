@@ -57,7 +57,11 @@ class GhostProtoContentConverter(
         charset: Charset,
         typeInfo: TypeInfo,
         content: ByteReadChannel
-    ): Any {
+    ): Any? {
+        val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }
+            ?: Ghost.getSerializer(typeInfo.type as KClass<Any>)
+            ?: return null
+
         var scratch = acquireScratchBuffer(BUFFER_SIZE)
 
         try {
@@ -78,10 +82,6 @@ class GhostProtoContentConverter(
             val reader = GhostProtoJsonFlatReader(scratch)
             reader.limit = offset
             configurer?.invoke(reader)
-
-            val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }
-                ?: Ghost.getSerializer(typeInfo.type as KClass<Any>)
-                ?: Ghost.throwError("${Ghost.NOT_FOUND} ${typeInfo.type.simpleName}. ${Ghost.MISSING_ANN}")
 
             return serializer.deserialize(reader)
         } finally {
