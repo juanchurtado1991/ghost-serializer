@@ -101,10 +101,27 @@ val json: String = Ghost.encodeToString(user)
 
 ---
 
+## 📦 Modules at a Glance
+
+| Module | Artifact | For |
+|:---|:---|:---|
+| **Core** | `ghost-api` + `ghost-serialization` | Every project — annotations + runtime engine |
+| **Compiler** | `ghost-compiler` | KSP code generator (auto-wired by the Gradle plugin) |
+| **Gradle plugin** | `com.ghostserializer.ghost` | Auto-configures KSP across all targets |
+| **Ktor** | `ghost-ktor` | Ktor 2.3.x client + server |
+| **Retrofit** | `ghost-retrofit` | Retrofit 2.11+ Android/JVM |
+| **Spring Boot** | `ghost-spring-boot-starter` | Spring Boot 3.4+ auto-config |
+| **Proto3** | `ghost-protobuf` | Proto3 JSON mapping + Well-Known Types |
+
+→ **[Full modules guide →](docs/wiki/modules.md)**
+
+---
+
 ## 📚 Documentation
 
 | Guide                                                 | Platform / Category | Description |
 |:------------------------------------------------------|:---:|:---|
+| [Modules & Integrations](docs/wiki/modules.md)        | ![Modules](https://img.shields.io/badge/Modules-blueviolet.png?style=flat-square&logo=kotlin&logoColor=white) | All artifacts, framework integrations, and platform targets |
 | [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, KSP setup, `ghost.textChannel` opt-in |
 | [Usage — Android](docs/wiki/usage-android.md)         | ![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat-square&logo=android&logoColor=white) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
 | [Usage — KMP](docs/wiki/usage-kmp.md)                 | ![Kotlin](https://img.shields.io/badge/KMP-7F52FF.png?style=flat-square&logo=kotlin&logoColor=white) | Shared module, Ktor, Sealed classes, Structural Transformations |
