@@ -1,8 +1,8 @@
 # 👻 Ghost Serializer
 
-**Speed up your high-traffic endpoints by 66% using 50% less memory — without touching your legacy APIs.**
+**Speed up your high-traffic paths by 66% using 50% less memory — without touching your legacy APIs.**
 
-Ghost is a byte-first, compile-time JSON serializer designed for Kotlin Multiplatform that acts as a **drop-in optimization**. It coexists seamlessly with your existing serialization frameworks (like `kotlinx.serialization`, `Jackson`, or `Gson`), allowing you to adopt it incrementally on your high-traffic paths in Ktor, Retrofit, or Spring Boot.
+Ghost is a byte-first, compile-time JSON serializer designed for Kotlin Multiplatform (Android, iOS, and JVM) that acts as a **drop-in optimization**. It coexists seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson), allowing you to adopt it incrementally in native mobile apps and high-traffic backends (Ktor, Retrofit, Spring Boot).
 
 > ⚡ Bitwise O(1) field matching · Native reader per input format · Up to 6–32× less heap · Zero reflection · 1158/1158 tests passed
 
