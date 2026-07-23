@@ -48,7 +48,22 @@ class StreamingGhostSource(
         }
 
         buffer.copyTo(tempBuffer, alignedStart.toLong(), toCopy)
-        tempBuffer.read(bufferBytes, 0, toCopy.toInt())
+        // Buffer.read(sink, offset, byteCount) reads only UP TO byteCount bytes per call (same
+        // "may return fewer than requested" contract as InputStream.read) -- when [toCopy] spans
+        // two of Okio's own internal segments (also 8192 bytes), a single call silently stops at
+        // the first segment boundary, leaving the rest of [bufferBytes] as stale/zeroed data with
+        // no error. Loop until the exact byte count copied above is fully drained.
+        val bytesToDrain = toCopy.toInt()
+        var bytesDrained = 0
+        while (bytesDrained < bytesToDrain) {
+            val bytesReadThisCall = tempBuffer.read(
+                sink = bufferBytes,
+                offset = bytesDrained,
+                byteCount = bytesToDrain - bytesDrained
+            )
+            if (bytesReadThisCall == -1) break
+            bytesDrained += bytesReadThisCall
+        }
         bufferStart = alignedStart
         bufferEnd = (alignedStart + toCopy).toInt()
 
