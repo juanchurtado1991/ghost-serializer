@@ -1,0 +1,291 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > WrappedKeysEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: WrappedKeysEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">WrappedKeysEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (8/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.2%
+  </span>
+  <span class="absValue">
+    (15/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.4%
+  </span>
+  <span class="absValue">
+    (85/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.1%
+  </span>
+  <span class="absValue">
+    (478/562)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.squareup.kotlinpoet.asClassName
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Code generation helpers for [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys].
+&nbsp; */
+&nbsp;internal object WrappedKeysEmitter {
+&nbsp;
+&nbsp;    fun captureVariableName(prop: GhostPropertyModel): String =
+<b class="fc">&nbsp;        C.STR_WRAPPED_CAPTURE_PREFIX + prop.kotlinName</b>
+&nbsp;
+&nbsp;    fun hasWrappedProperties(properties: List&lt;GhostPropertyModel&gt;): Boolean =
+<b class="nc">&nbsp;        properties.any { it.wrappedSourceKeys != null }</b>
+&nbsp;
+&nbsp;    fun wrappedKeyDispatch(properties: List&lt;GhostPropertyModel&gt;): Map&lt;String, Pair&lt;GhostPropertyModel, Int&gt;&gt; {
+<b class="fc">&nbsp;        val map = linkedMapOf&lt;String, Pair&lt;GhostPropertyModel, Int&gt;&gt;()</b>
+<b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            val keys = prop.wrappedSourceKeys ?: return@forEach</b>
+<b class="fc">&nbsp;            keys.forEachIndexed { index, key -&gt;</b>
+<b class="fc">&nbsp;                map[key] = prop to index</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return map</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun emitCaptureVariables(body: CodeBlock.Builder, properties: List&lt;GhostPropertyModel&gt;) {
+<b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            val keys = prop.wrappedSourceKeys ?: return@forEach</b>
+<b class="fc">&nbsp;            body.addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WRAPPED_CAPTURE_VAR,</b>
+<b class="fc">&nbsp;                captureVariableName(prop),</b>
+<b class="fc">&nbsp;                ClassName(C.PKG_PARSER, C.STR_GHOST_WRAPPED_KEYS_CAPTURE),</b>
+<b class="fc">&nbsp;                keys.size,</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun emitWrappedKeyCapture(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        keyIndex: Int,
+&nbsp;    ) {
+<b class="fc">&nbsp;        body.addStatement(</b>
+<b class="fc">&nbsp;            C.TEMPLATE_CAPTURE_WRAPPED_KEY,</b>
+<b class="fc">&nbsp;            captureVariableName(prop),</b>
+<b class="fc">&nbsp;            keyIndex,</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun emitPostLoopDeserialization(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;        propertyIndices: Map&lt;GhostPropertyModel, Int&gt;,
+&nbsp;        readerClass: ClassName,
+&nbsp;    ) {
+<b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            val keys = prop.wrappedSourceKeys ?: return@forEach</b>
+<b class="pc">&nbsp;            val index = propertyIndices[prop] ?: return@forEach</b>
+<b class="fc">&nbsp;            val captureName = captureVariableName(prop)</b>
+<b class="fc">&nbsp;            val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
+<b class="fc">&nbsp;            val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)</b>
+<b class="fc">&nbsp;            val keyLiteralsName = wrappedKeyLiteralsConstantName(prop)</b>
+<b class="fc">&nbsp;            val omitAbsentName = wrappedOmitAbsentConstantName(prop)</b>
+&nbsp;
+<b class="fc">&nbsp;            body.addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WRAPPED_JSON_MATERIALIZE,</b>
+<b class="fc">&nbsp;                prop.kotlinName,</b>
+<b class="fc">&nbsp;                captureName,</b>
+<b class="fc">&nbsp;                keyLiteralsName,</b>
+<b class="fc">&nbsp;                prop.wrappedOmitIfEmpty,</b>
+<b class="fc">&nbsp;                omitAbsentName,</b>
+&nbsp;            )
+<b class="fc">&nbsp;            body.beginControlFlow(C.TEMPLATE_WRAPPED_JSON_IF_NOT_NULL, prop.kotlinName)</b>
+<b class="fc">&nbsp;            body.addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WRAPPED_READER_VAR,</b>
+<b class="fc">&nbsp;                readerClass,</b>
+<b class="fc">&nbsp;                prop.kotlinName,</b>
+&nbsp;            )
+<b class="fc">&nbsp;            val call = CodeBlock.of(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_DESERIALIZE_WRAPPED_READER,</b>
+<b class="fc">&nbsp;                prop.type.serializerClassName(),</b>
+&nbsp;            )
+<b class="pc">&nbsp;            if (prop.isResilient) {</b>
+<b class="nc">&nbsp;                body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)</b>
+<b class="nc">&nbsp;                body.addStatement(varName + C.TEMPLATE_ASSIGN_L, C.STR_IT)</b>
+<b class="nc">&nbsp;                body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, constName)</b>
+<b class="nc">&nbsp;                body.endControlFlow()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                body.addStatement(varName + C.TEMPLATE_ASSIGN_L, call)</b>
+<b class="fc">&nbsp;                body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, constName)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            body.nextControlFlow(C.STR_ELSE)</b>
+<b class="pc">&nbsp;            if (prop.isNullable) {</b>
+<b class="nc">&nbsp;                body.addStatement(C.TEMPLATE_NULL_ASSIGN, varName)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            body.endControlFlow()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addWrappedKeyConstants(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;    ) {
+<b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            val keys = prop.wrappedSourceKeys ?: return@forEach</b>
+<b class="fc">&nbsp;            val literalsName = wrappedKeyLiteralsConstantName(prop)</b>
+<b class="fc">&nbsp;            if (typeSpecBuilder.propertySpecs.any { it.name == literalsName }) {</b>
+&nbsp;                return@forEach
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val initializer = CodeBlock.builder()</b>
+<b class="fc">&nbsp;                .add(C.TEMPLATE_ARRAY_OF_OPEN)</b>
+<b class="fc">&nbsp;            keys.forEachIndexed { index, key -&gt;</b>
+<b class="fc">&nbsp;                if (index &gt; 0) {</b>
+<b class="fc">&nbsp;                    initializer.add(C.STR_COMMA_NEWLINE)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val quotedKey = C.STR_JSON_KEY_QUOTE + key + C.STR_JSON_KEY_COLON_SUFFIX</b>
+<b class="fc">&nbsp;                initializer.add(C.TEMPLATE_WRAPPED_KEY_LITERAL_BYTE, quotedKey)</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            initializer.add(C.STR_NEWLINE_CLOSE_PAREN)</b>
+&nbsp;
+<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(</b>
+<b class="fc">&nbsp;                    literalsName,</b>
+<b class="fc">&nbsp;                    Array::class.asClassName().parameterizedBy(ByteArray::class.asClassName()),</b>
+&nbsp;                )
+<b class="fc">&nbsp;                    .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                    .initializer(initializer.build())</b>
+<b class="fc">&nbsp;                    .build(),</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;            val omitAbsentName = wrappedOmitAbsentConstantName(prop)</b>
+<b class="fc">&nbsp;            val absentIndices = prop.wrappedOmitIfAbsent.map { absentKey -&gt;</b>
+<b class="nc">&nbsp;                keys.indexOf(absentKey)</b>
+<b class="pc">&nbsp;            }.filter { it &gt;= 0 }</b>
+&nbsp;
+<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(omitAbsentName, IntArray::class)</b>
+<b class="fc">&nbsp;                    .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                    .initializer(</b>
+<b class="fc">&nbsp;                        C.TEMPLATE_INT_ARRAY_OF,</b>
+<b class="fc">&nbsp;                        absentIndices.joinToString(C.STR_COMMA),</b>
+&nbsp;                    )
+<b class="fc">&nbsp;                    .build(),</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun wrappedKeyLiteralsConstantName(prop: GhostPropertyModel): String =
+<b class="fc">&nbsp;        C.STR_WRAPPED_KEY_LITERALS_PREFIX + prop.kotlinName.uppercase()</b>
+&nbsp;
+&nbsp;    private fun wrappedOmitAbsentConstantName(prop: GhostPropertyModel): String =
+<b class="fc">&nbsp;        C.STR_WRAPPED_OMIT_ABSENT_PREFIX + prop.kotlinName.uppercase()</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,331 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > WriterStringPair</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization</a>
+</div>
+
+<h1>Coverage Summary for Class: WriterStringPair (com.ghost.serialization)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">WriterStringPair</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/21)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization
+&nbsp;
+&nbsp;import com.ghost.serialization.contract.GhostRegistry
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.writer.WriterSinkPair
+&nbsp;import com.ghost.serialization.writer.FlatCharArrayWriter
+&nbsp;import okio.BufferedSource
+&nbsp;import java.util.ServiceLoader
+&nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;
+&nbsp;private val readerPool = ThreadLocal&lt;GhostJsonReader&gt;()
+&nbsp;private val flatReaderPool = ThreadLocal&lt;GhostJsonFlatReader&gt;()
+&nbsp;private val stringReaderPool = ThreadLocal&lt;GhostJsonStringReader&gt;()
+&nbsp;private val sourceReaderPool = ThreadLocal&lt;GhostJsonReader&gt;()
+&nbsp;@PublishedApi
+&nbsp;internal val writerPool = ThreadLocal&lt;WriterSinkPair&gt;()
+&nbsp;
+&nbsp;actual fun &lt;T&gt; runSynchronized(lock: Any, block: () -&gt; T): T = synchronized(lock, block)
+&nbsp;
+&nbsp;actual fun &lt;K, V&gt; createAtomicMap(): MutableMap&lt;K, V&gt; = ConcurrentHashMap()
+&nbsp;
+&nbsp;/**
+&nbsp; * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
+&nbsp; * and returns it. The pair survives across calls so the underlying
+&nbsp; * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
+&nbsp; */
+&nbsp;@PublishedApi
+&nbsp;internal fun acquireFlatWriterPair(): WriterSinkPair {
+&nbsp;    val pair = writerPool.get()
+&nbsp;        ?: WriterSinkPair()
+&nbsp;            .also { writerPool.set(it) }
+&nbsp;    
+&nbsp;    pair.writer.reset()
+&nbsp;    pair.byteWriter.reset()
+&nbsp;    return pair
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;@PublishedApi</b>
+&nbsp;internal class WriterStringPair {
+<b class="fc">&nbsp;    val charWriter = FlatCharArrayWriter()</b>
+<b class="fc">&nbsp;    val writer = GhostJsonStringWriter(charWriter)</b>
+&nbsp;}
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal val stringWriterPool = ThreadLocal&lt;WriterStringPair&gt;()
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal fun acquireStringWriterPair(): WriterStringPair {
+&nbsp;    val pair = stringWriterPool.get()
+&nbsp;        ?: WriterStringPair().also { stringWriterPool.set(it) }
+&nbsp;    pair.writer.reset()
+&nbsp;    pair.charWriter.reset()
+&nbsp;    return pair
+&nbsp;}
+&nbsp;
+&nbsp;@InternalGhostApi
+&nbsp;actual inline fun ghostInternalEncodeToString(
+&nbsp;    crossinline block: (GhostJsonStringWriter) -&gt; Unit
+&nbsp;): String {
+&nbsp;    val pair = acquireStringWriterPair()
+&nbsp;    block(pair.writer)
+&nbsp;    val result = String(
+&nbsp;        pair.charWriter.array,
+&nbsp;        0,
+&nbsp;        pair.charWriter.size
+&nbsp;    )
+&nbsp;    pair.charWriter.reset()
+&nbsp;    return result
+&nbsp;}
+&nbsp;
+&nbsp;@InternalGhostApi
+&nbsp;actual inline fun ghostInternalEncodeWithWriter(
+&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit
+&nbsp;): ByteArray {
+&nbsp;    val pair = acquireFlatWriterPair()
+&nbsp;    block(pair.writer)
+&nbsp;    val result = pair.byteWriter.toByteArray()
+&nbsp;    pair.byteWriter.reset()
+&nbsp;    return result
+&nbsp;}
+&nbsp;
+&nbsp;@InternalGhostApi
+&nbsp;actual inline fun ghostInternalEncodeAndDiscard(
+&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit
+&nbsp;) {
+&nbsp;    val pair = acquireFlatWriterPair()
+&nbsp;    block(pair.writer)
+&nbsp;    pair.byteWriter.reset()
+&nbsp;}
+&nbsp;
+&nbsp;@InternalGhostApi
+&nbsp;actual inline fun ghostInternalEncodeAndDrainTo(
+&nbsp;    sink: okio.BufferedSink,
+&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit
+&nbsp;) {
+&nbsp;    val pair = acquireFlatWriterPair()
+&nbsp;    block(pair.writer)
+&nbsp;    sink.write(
+&nbsp;        pair.byteWriter.array,
+&nbsp;        0,
+&nbsp;        pair.byteWriter.size
+&nbsp;    )
+&nbsp;    pair.byteWriter.reset()
+&nbsp;}
+&nbsp;
+&nbsp;actual fun discoverRegistries(): Iterable&lt;GhostRegistry&gt; = Iterable {
+&nbsp;    object : Iterator&lt;GhostRegistry&gt; {
+&nbsp;        private var fastRegistries: MutableList&lt;GhostRegistry&gt;? = null
+&nbsp;        private var fastIterator: Iterator&lt;GhostRegistry&gt;? = null
+&nbsp;        private var fastChecked = false
+&nbsp;        private var slow: Iterator&lt;GhostRegistry&gt;? = null
+&nbsp;
+&nbsp;        override fun hasNext(): Boolean {
+&nbsp;            if (!fastChecked) {
+&nbsp;                fastChecked = true
+&nbsp;                val names = listOf(
+&nbsp;                    Ghost.DEFAULT_REGISTRY_NAME,
+&nbsp;                    Ghost.TEST_REGISTRY_NAME
+&nbsp;                )
+&nbsp;                fastRegistries = names.mapNotNull { name -&gt;
+&nbsp;                    runCatching {
+&nbsp;                        Class.forName(name)
+&nbsp;                            .getField(Ghost.INSTANCE_FIELD)
+&nbsp;                            .get(null) as GhostRegistry
+&nbsp;                    }.getOrNull()
+&nbsp;                }.toMutableList()
+&nbsp;                fastIterator = fastRegistries?.iterator()
+&nbsp;            }
+&nbsp;            
+&nbsp;            if (fastIterator?.hasNext() == true) return true
+&nbsp;
+&nbsp;            if (slow == null) {
+&nbsp;                slow = runCatching {
+&nbsp;                    ServiceLoader
+&nbsp;                        .load(GhostRegistry::class.java)
+&nbsp;                        .iterator()
+&nbsp;                }
+&nbsp;                    .getOrDefault(
+&nbsp;                        emptyList&lt;GhostRegistry&gt;()
+&nbsp;                            .iterator()
+&nbsp;                    )
+&nbsp;            }
+&nbsp;            return slow!!.hasNext()
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        override fun next(): GhostRegistry {</b>
+<b class="fc">&nbsp;            if (!hasNext()) throw NoSuchElementException()</b>
+&nbsp;            if (fastIterator?.hasNext() == true) return fastIterator!!.next()
+&nbsp;            return slow!!.next()
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;actual fun &lt;T&gt; ghostInternalUseReader(
+&nbsp;    bytes: ByteArray,
+&nbsp;    block: (GhostJsonReader) -&gt; T
+&nbsp;): T {
+&nbsp;    val reader = readerPool.get()
+&nbsp;        ?: GhostJsonReader(bytes)
+&nbsp;            .also { readerPool.set(it) }
+&nbsp;
+&nbsp;    reader.reset(bytes)
+&nbsp;    return block(reader)
+&nbsp;}
+&nbsp;
+&nbsp;actual fun &lt;T&gt; ghostInternalUseFlatReader(
+&nbsp;    bytes: ByteArray,
+&nbsp;    limit: Int,
+&nbsp;    block: (GhostJsonFlatReader) -&gt; T
+&nbsp;): T {
+&nbsp;    val reader = flatReaderPool.get()
+&nbsp;        ?: GhostJsonFlatReader(bytes)
+&nbsp;            .also { flatReaderPool.set(it) }
+&nbsp;
+&nbsp;    reader.reset(bytes, limit)
+&nbsp;    return block(reader)
+&nbsp;}
+&nbsp;
+&nbsp;actual fun &lt;T&gt; ghostInternalUseSource(
+&nbsp;    source: BufferedSource,
+&nbsp;    block: (GhostJsonReader) -&gt; T
+&nbsp;): T {
+&nbsp;    // Separate pool from readerPool to prevent re-entrance corruption if the
+&nbsp;    // same thread nests a ByteArray read inside a streaming read.
+&nbsp;    val reader = sourceReaderPool.get()
+&nbsp;        ?: GhostJsonReader(source)
+&nbsp;            .also { sourceReaderPool.set(it) }
+&nbsp;
+&nbsp;    // data in 8 KB segments on demand instead of loading the entire payload.
+&nbsp;    reader.reset(source)
+&nbsp;    return block(reader)
+&nbsp;}
+&nbsp;
+&nbsp;actual fun &lt;T&gt; ghostInternalUseStringReader(
+&nbsp;    json: String,
+&nbsp;    block: (GhostJsonStringReader) -&gt; T
+&nbsp;): T {
+&nbsp;    val reader = stringReaderPool.get()
+&nbsp;        ?: GhostJsonStringReader(json)
+&nbsp;            .also { stringReaderPool.set(it) }
+&nbsp;
+&nbsp;    reader.reset(json)
+&nbsp;    return block(reader)
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

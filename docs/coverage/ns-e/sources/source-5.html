@@ -1,0 +1,195 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostRequestBodyAdvice</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.spring</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostRequestBodyAdvice (com.ghost.serialization.spring)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostRequestBodyAdvice</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (4/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (7/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.4%
+  </span>
+  <span class="absValue">
+    (14/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.7%
+  </span>
+  <span class="absValue">
+    (55/62)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
+&nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostCoerce
+&nbsp;import com.ghost.serialization.annotations.GhostStrict
+&nbsp;import org.springframework.core.MethodParameter
+&nbsp;import org.springframework.http.HttpInputMessage
+&nbsp;import org.springframework.http.converter.HttpMessageConverter
+&nbsp;import org.springframework.web.bind.annotation.ControllerAdvice
+&nbsp;import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice
+&nbsp;import java.io.IOException
+&nbsp;import java.lang.reflect.Type
+&nbsp;
+<b class="fc">&nbsp;@ControllerAdvice</b>
+&nbsp;class GhostRequestBodyAdvice : RequestBodyAdvice {
+&nbsp;
+&nbsp;    override fun supports(
+&nbsp;        methodParameter: MethodParameter,
+&nbsp;        targetType: Type,
+&nbsp;        converterType: Class&lt;out HttpMessageConverter&lt;*&gt;&gt;
+&nbsp;    ): Boolean {
+<b class="fc">&nbsp;        return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun beforeBodyRead(
+&nbsp;        inputMessage: HttpInputMessage,
+&nbsp;        parameter: MethodParameter,
+&nbsp;        targetType: Type,
+&nbsp;        converterType: Class&lt;out HttpMessageConverter&lt;*&gt;&gt;
+&nbsp;    ): HttpInputMessage {
+<b class="fc">&nbsp;        val hasStrict = parameter.hasParameterAnnotation(GhostStrict::class.java) ||</b>
+<b class="fc">&nbsp;                parameter.hasMethodAnnotation(GhostStrict::class.java) ||</b>
+<b class="fc">&nbsp;                parameter.containingClass.isAnnotationPresent(GhostStrict::class.java)</b>
+&nbsp;
+<b class="pc">&nbsp;        val hasCoerce = parameter.hasParameterAnnotation(GhostCoerce::class.java) ||</b>
+<b class="fc">&nbsp;                parameter.hasMethodAnnotation(GhostCoerce::class.java) ||</b>
+<b class="fc">&nbsp;                parameter.containingClass.isAnnotationPresent(GhostCoerce::class.java)</b>
+&nbsp;
+<b class="fc">&nbsp;        GhostSpringConfig.strict.set(hasStrict)</b>
+<b class="fc">&nbsp;        GhostSpringConfig.coerce.set(hasCoerce)</b>
+&nbsp;
+<b class="fc">&nbsp;        return inputMessage</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun afterBodyRead(
+&nbsp;        body: Any,
+&nbsp;        inputMessage: HttpInputMessage,
+&nbsp;        parameter: MethodParameter,
+&nbsp;        targetType: Type,
+&nbsp;        converterType: Class&lt;out HttpMessageConverter&lt;*&gt;&gt;
+&nbsp;    ): Any {
+<b class="fc">&nbsp;        GhostSpringConfig.strict.remove()</b>
+<b class="fc">&nbsp;        GhostSpringConfig.coerce.remove()</b>
+<b class="fc">&nbsp;        return body</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun handleEmptyBody(
+&nbsp;        body: Any?,
+&nbsp;        inputMessage: HttpInputMessage,
+&nbsp;        parameter: MethodParameter,
+&nbsp;        targetType: Type,
+&nbsp;        converterType: Class&lt;out HttpMessageConverter&lt;*&gt;&gt;
+&nbsp;    ): Any? {
+<b class="nc">&nbsp;        GhostSpringConfig.strict.remove()</b>
+<b class="nc">&nbsp;        GhostSpringConfig.coerce.remove()</b>
+<b class="nc">&nbsp;        return body</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

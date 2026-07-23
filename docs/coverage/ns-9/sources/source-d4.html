@@ -1,0 +1,405 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > SymbolItem</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.integration.model</a>
+</div>
+
+<h1>Coverage Summary for Class: SymbolItem (com.ghost.serialization.integration.model)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SymbolItem</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    55.6%
+  </span>
+  <span class="absValue">
+    (60/108)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SymbolItem$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.5%
+  </span>
+  <span class="absValue">
+    (60/110)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+&nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.annotations.GhostName
+&nbsp;import com.ghost.serialization.annotations.GhostFlatten
+&nbsp;import com.ghost.serialization.annotations.GhostWrap
+&nbsp;import com.ghost.serialization.annotations.GhostIgnore
+&nbsp;import com.ghost.serialization.annotations.GhostResilient
+&nbsp;import kotlinx.serialization.Serializable
+&nbsp;import kotlinx.serialization.SerialName
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization(textChannel = true)
+&nbsp;data class TwitterResponse(
+&nbsp;    val statuses: List&lt;Tweet&gt;
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class Tweet(
+&nbsp;    val metadata: TweetMetadata,
+&nbsp;    @SerialName(&quot;created_at&quot;) @GhostName(&quot;created_at&quot;)
+&nbsp;    val createdAt: String,
+&nbsp;    val id: Long,
+&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
+&nbsp;    val text: String,
+&nbsp;    val source: String,
+&nbsp;    val truncated: Boolean,
+&nbsp;    @SerialName(&quot;in_reply_to_status_id&quot;) @GhostName(&quot;in_reply_to_status_id&quot;) val inReplyToStatusId: Long? = null,
+&nbsp;    @SerialName(&quot;in_reply_to_status_id_str&quot;) @GhostName(&quot;in_reply_to_status_id_str&quot;) val inReplyToStatusIdStr: String? = null,
+&nbsp;    @SerialName(&quot;in_reply_to_user_id&quot;) @GhostName(&quot;in_reply_to_user_id&quot;) val inReplyToUserId: Long? = null,
+&nbsp;    @SerialName(&quot;in_reply_to_user_id_str&quot;) @GhostName(&quot;in_reply_to_user_id_str&quot;) val inReplyToUserIdStr: String? = null,
+&nbsp;    @SerialName(&quot;in_reply_to_screen_name&quot;) @GhostName(&quot;in_reply_to_screen_name&quot;) val inReplyToScreenName: String? = null,
+&nbsp;    val user: User,
+&nbsp;    val geo: String? = null,
+&nbsp;    val coordinates: String? = null,
+&nbsp;    val place: String? = null,
+&nbsp;    val contributors: String? = null,
+&nbsp;    @SerialName(&quot;retweet_count&quot;) @GhostName(&quot;retweet_count&quot;) val retweetCount: Int,
+&nbsp;    @SerialName(&quot;favorite_count&quot;) @GhostName(&quot;favorite_count&quot;) val favoriteCount: Int,
+&nbsp;    val entities: TweetEntities,
+&nbsp;    val favorited: Boolean,
+&nbsp;    val retweeted: Boolean,
+&nbsp;    @SerialName(&quot;possibly_sensitive&quot;) @GhostName(&quot;possibly_sensitive&quot;) val possiblySensitive: Boolean = false,
+&nbsp;    val lang: String? = null,
+&nbsp;    @SerialName(&quot;retweeted_status&quot;) @GhostName(&quot;retweeted_status&quot;) val retweetedStatus: Tweet? = null
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class TweetMetadata(
+&nbsp;    @SerialName(&quot;result_type&quot;) @GhostName(&quot;result_type&quot;) val resultType: String,
+&nbsp;    @SerialName(&quot;iso_language_code&quot;) @GhostName(&quot;iso_language_code&quot;) val isoLanguageCode: String
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class User(
+&nbsp;    val id: Long,
+&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
+&nbsp;    val name: String? = null,
+&nbsp;    @SerialName(&quot;screen_name&quot;) @GhostName(&quot;screen_name&quot;) val screenName: String,
+&nbsp;    val location: String? = null,
+&nbsp;    val description: String? = null,
+&nbsp;    val url: String? = null,
+&nbsp;    val entities: UserEntities,
+&nbsp;    val protected: Boolean = false,
+&nbsp;    @SerialName(&quot;followers_count&quot;) @GhostName(&quot;followers_count&quot;) val followersCount: Int = 0,
+&nbsp;    @SerialName(&quot;friends_count&quot;) @GhostName(&quot;friends_count&quot;) val friendsCount: Int = 0,
+&nbsp;    @SerialName(&quot;listed_count&quot;) @GhostName(&quot;listed_count&quot;) val listedCount: Int = 0,
+&nbsp;    @SerialName(&quot;created_at&quot;) @GhostName(&quot;created_at&quot;) val createdAt: String,
+&nbsp;    @SerialName(&quot;favourites_count&quot;) @GhostName(&quot;favourites_count&quot;) val favouritesCount: Int = 0,
+&nbsp;    @SerialName(&quot;utc_offset&quot;) @GhostName(&quot;utc_offset&quot;) val utcOffset: Int? = null,
+&nbsp;    @SerialName(&quot;time_zone&quot;) @GhostName(&quot;time_zone&quot;) val timeZone: String? = null,
+&nbsp;    @SerialName(&quot;geo_enabled&quot;) @GhostName(&quot;geo_enabled&quot;) val geoEnabled: Boolean = false,
+&nbsp;    val verified: Boolean = false,
+&nbsp;    @SerialName(&quot;statuses_count&quot;) @GhostName(&quot;statuses_count&quot;) val statusesCount: Int = 0,
+&nbsp;    val lang: String? = null,
+&nbsp;    @SerialName(&quot;contributors_enabled&quot;) @GhostName(&quot;contributors_enabled&quot;) val contributorsEnabled: Boolean = false,
+&nbsp;    @SerialName(&quot;is_translator&quot;) @GhostName(&quot;is_translator&quot;) val isTranslator: Boolean = false,
+&nbsp;    @SerialName(&quot;is_translation_enabled&quot;) @GhostName(&quot;is_translation_enabled&quot;) val isTranslationEnabled: Boolean = false,
+&nbsp;    @SerialName(&quot;profile_background_color&quot;) @GhostName(&quot;profile_background_color&quot;) val profileBackgroundColor: String,
+&nbsp;    @SerialName(&quot;profile_background_image_url&quot;) @GhostName(&quot;profile_background_image_url&quot;) val profileBackgroundImageUrl: String,
+&nbsp;    @SerialName(&quot;profile_background_image_url_https&quot;) @GhostName(&quot;profile_background_image_url_https&quot;) val profileBackgroundImageUrlHttps: String,
+&nbsp;    @SerialName(&quot;profile_background_tile&quot;) @GhostName(&quot;profile_background_tile&quot;) val profileBackgroundTile: Boolean = false,
+&nbsp;    @SerialName(&quot;profile_image_url&quot;) @GhostName(&quot;profile_image_url&quot;) val profileImageUrl: String,
+&nbsp;    @SerialName(&quot;profile_image_url_https&quot;) @GhostName(&quot;profile_image_url_https&quot;) val profileImageUrlHttps: String,
+&nbsp;    @SerialName(&quot;profile_banner_url&quot;) @GhostName(&quot;profile_banner_url&quot;) val profileBannerUrl: String? = null,
+&nbsp;    @SerialName(&quot;profile_link_color&quot;) @GhostName(&quot;profile_link_color&quot;) val profileLinkColor: String,
+&nbsp;    @SerialName(&quot;profile_sidebar_border_color&quot;) @GhostName(&quot;profile_sidebar_border_color&quot;) val profileSidebarBorderColor: String,
+&nbsp;    @SerialName(&quot;profile_sidebar_fill_color&quot;) @GhostName(&quot;profile_sidebar_fill_color&quot;) val profileSidebarFillColor: String,
+&nbsp;    @SerialName(&quot;profile_text_color&quot;) @GhostName(&quot;profile_text_color&quot;) val profileTextColor: String? = null,
+&nbsp;    @SerialName(&quot;profile_use_background_image&quot;) @GhostName(&quot;profile_use_background_image&quot;) val profileUseBackgroundImage: Boolean = false,
+&nbsp;    @SerialName(&quot;default_profile&quot;) @GhostName(&quot;default_profile&quot;) val defaultProfile: Boolean = false,
+&nbsp;    @SerialName(&quot;default_profile_image&quot;) @GhostName(&quot;default_profile_image&quot;) val defaultProfileImage: Boolean = false,
+&nbsp;    val following: Boolean = false,
+&nbsp;    @SerialName(&quot;follow_request_sent&quot;) @GhostName(&quot;follow_request_sent&quot;) val followRequestSent: Boolean = false,
+&nbsp;    val notifications: Boolean = false
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class UserEntities(
+&nbsp;    val url: UrlContainer? = null,
+&nbsp;    val description: UrlContainer
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class UrlContainer(
+&nbsp;    val urls: List&lt;UrlItem&gt; = emptyList()
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class UrlItem(
+&nbsp;    val url: String,
+&nbsp;    @SerialName(&quot;expanded_url&quot;) @GhostName(&quot;expanded_url&quot;) val expandedUrl: String? = null,
+&nbsp;    @SerialName(&quot;display_url&quot;) @GhostName(&quot;display_url&quot;) val displayUrl: String? = null,
+&nbsp;    val indices: List&lt;Int&gt;
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class TweetEntities(
+&nbsp;    val hashtags: List&lt;HashtagItem&gt; = emptyList(),
+&nbsp;    val symbols: List&lt;SymbolItem&gt; = emptyList(),
+&nbsp;    val urls: List&lt;UrlItem&gt; = emptyList(),
+&nbsp;    @SerialName(&quot;user_mentions&quot;) @GhostName(&quot;user_mentions&quot;) val userMentions: List&lt;UserMention&gt; = emptyList(),
+&nbsp;    val media: List&lt;MediaItem&gt; = emptyList()
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class HashtagItem(
+&nbsp;    val text: String,
+&nbsp;    val indices: List&lt;Int&gt;
+&nbsp;)
+&nbsp;
+<b class="pc">&nbsp;@Serializable</b>
+&nbsp;@GhostSerialization
+&nbsp;data class SymbolItem(
+<b class="fc">&nbsp;    val text: String = &quot;&quot;,</b>
+<b class="fc">&nbsp;    val indices: List&lt;Int&gt; = emptyList()</b>
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class UserMention(
+&nbsp;    @SerialName(&quot;screen_name&quot;) @GhostName(&quot;screen_name&quot;) val screenName: String,
+&nbsp;    val name: String,
+&nbsp;    val id: Long,
+&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
+&nbsp;    val indices: List&lt;Int&gt;
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class MediaItem(
+&nbsp;    val id: Long,
+&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
+&nbsp;    val indices: List&lt;Int&gt;,
+&nbsp;    @SerialName(&quot;media_url&quot;) @GhostName(&quot;media_url&quot;) val mediaUrl: String,
+&nbsp;    @SerialName(&quot;media_url_https&quot;) @GhostName(&quot;media_url_https&quot;) val mediaUrlHttps: String,
+&nbsp;    val url: String,
+&nbsp;    @SerialName(&quot;display_url&quot;) @GhostName(&quot;display_url&quot;) val displayUrl: String,
+&nbsp;    @SerialName(&quot;expanded_url&quot;) @GhostName(&quot;expanded_url&quot;) val expandedUrl: String,
+&nbsp;    val type: String,
+&nbsp;    val sizes: MediaSizes,
+&nbsp;    @SerialName(&quot;source_status_id&quot;) @GhostName(&quot;source_status_id&quot;) val sourceStatusId: Long? = null,
+&nbsp;    @SerialName(&quot;source_status_id_str&quot;) @GhostName(&quot;source_status_id_str&quot;) val sourceStatusIdStr: String? = null
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class MediaSizes(
+&nbsp;    val medium: MediaSize,
+&nbsp;    val small: MediaSize,
+&nbsp;    val thumb: MediaSize,
+&nbsp;    val large: MediaSize
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class MediaSize(
+&nbsp;    val w: Int,
+&nbsp;    val h: Int,
+&nbsp;    val resize: String
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class TwitterSpecialTweet(
+&nbsp;    val id: Long,
+&nbsp;    
+&nbsp;    // 1. Flattening: extracts user screen_name directly from nested user object
+&nbsp;    @GhostFlatten(&quot;user.screen_name&quot;)
+&nbsp;    val screenName: String,
+&nbsp;    
+&nbsp;    // 2. Flattening 2 levels: extracts metadata result_type
+&nbsp;    @GhostFlatten(&quot;metadata.result_type&quot;)
+&nbsp;    val resultType: String,
+&nbsp;    
+&nbsp;    // 3. Regular text field (no GhostWrap so we can parse from original JSON)
+&nbsp;    val text: String,
+&nbsp;    
+&nbsp;    // 4. Ignored field: ignored during serialization
+&nbsp;    @GhostIgnore
+&nbsp;    val source: String = &quot;&quot;
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization(textChannel = true)
+&nbsp;data class TwitterSpecialResponse(
+&nbsp;    val statuses: List&lt;TwitterSpecialTweet&gt;
+&nbsp;)
+&nbsp;
+&nbsp;@Serializable
+&nbsp;@GhostSerialization(textChannel = true)
+&nbsp;data class TwitterWrappedTweet(
+&nbsp;    val id: Long,
+&nbsp;    @GhostWrap(&quot;details&quot;)
+&nbsp;    val text: String
+&nbsp;)
+&nbsp;
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

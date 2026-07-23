@@ -1,0 +1,342 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > FlattenOptionsGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: FlattenOptionsGenerator (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FlattenOptionsGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (16/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.5%
+  </span>
+  <span class="absValue">
+    (68/76)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.5%
+  </span>
+  <span class="absValue">
+    (262/303)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">FlattenOptionsGenerator$FlattenNode</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (23/23)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (16/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.9%
+  </span>
+  <span class="absValue">
+    (71/79)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.4%
+  </span>
+  <span class="absValue">
+    (285/326)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Generator that handles recursive emission of nested perfect hash lookup options
+&nbsp; * for flattened properties structures in a serializer type builder.
+&nbsp; */
+&nbsp;internal object FlattenOptionsGenerator {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Collects and triggers recursive generation of nested perfect hash lookup options
+&nbsp;     * for flattened properties structures.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The target class builder to inject the options properties into.
+&nbsp;     * @param properties The list of target properties.
+&nbsp;     * @param fullPaths The pre-extracted paths for each property.
+&nbsp;     * @param readerClass The JSON reader class reference.
+&nbsp;     */
+&nbsp;    fun generateNestedOptions(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;        fullPaths: List&lt;List&lt;String&gt;&gt;,
+&nbsp;        readerClass: ClassName,
+&nbsp;        textChannel: Boolean
+&nbsp;    ) {
+<b class="fc">&nbsp;        val rootNodes = mutableMapOf&lt;String, FlattenNode&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="pc">&nbsp;            val path = prop.flattenPath ?: prop.wrapPath ?: return@forEach</b>
+<b class="fc">&nbsp;            var currentMap = rootNodes</b>
+<b class="fc">&nbsp;            path.forEachIndexed { index, segment -&gt;</b>
+<b class="fc">&nbsp;                val isLast = index == path.size - 1</b>
+<b class="fc">&nbsp;                val node = currentMap.getOrPut(segment) { FlattenNode(segment) }</b>
+<b class="fc">&nbsp;                if (isLast) {</b>
+<b class="fc">&nbsp;                    node.properties.add(prop)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    currentMap = node.children</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        rootNodes.values.forEach { node -&gt;</b>
+<b class="fc">&nbsp;            emitNestedOptionsRecursive(</b>
+<b class="fc">&nbsp;                typeSpecBuilder = typeSpecBuilder,</b>
+<b class="fc">&nbsp;                properties = properties,</b>
+<b class="fc">&nbsp;                fullPaths = fullPaths,</b>
+<b class="fc">&nbsp;                node = node,</b>
+<b class="fc">&nbsp;                readerClass = readerClass,</b>
+<b class="fc">&nbsp;                parentPrefix = C.STR_EMPTY,</b>
+<b class="fc">&nbsp;                currentPath = listOf(node.segment),</b>
+<b class="fc">&nbsp;                textChannel = textChannel</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Recursively traverses nodes and emits private nested perfect hash options properties.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The target class builder to inject the options property into.
+&nbsp;     * @param properties The list of target properties.
+&nbsp;     * @param fullPaths The pre-extracted paths for each property.
+&nbsp;     * @param node The current flattened node.
+&nbsp;     * @param readerClass The JSON reader class reference.
+&nbsp;     * @param parentPrefix Prefix derived from parent segments.
+&nbsp;     * @param currentPath Path segments list up to this node.
+&nbsp;     */
+&nbsp;    private fun emitNestedOptionsRecursive(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;        fullPaths: List&lt;List&lt;String&gt;&gt;,
+&nbsp;        node: FlattenNode,
+&nbsp;        readerClass: ClassName,
+&nbsp;        parentPrefix: String,
+&nbsp;        currentPath: List&lt;String&gt;,
+&nbsp;        textChannel: Boolean
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (node.children.isEmpty() &amp;&amp; node.properties.isEmpty()) {</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val currentPrefix =</b>
+<b class="fc">&nbsp;            if (parentPrefix.isEmpty()) {</b>
+<b class="fc">&nbsp;                node.segment</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                parentPrefix + C.STR_UNDERSCORE + node.segment</b>
+&nbsp;            }
+<b class="fc">&nbsp;        val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()</b>
+&nbsp;
+<b class="fc">&nbsp;        val depth = currentPath.size</b>
+<b class="fc">&nbsp;        val names = properties.mapIndexedNotNull { index, _ -&gt;</b>
+<b class="fc">&nbsp;            val path = fullPaths[index]</b>
+<b class="pc">&nbsp;            if (path.size &gt; depth &amp;&amp; path.subList(0, depth) == currentPath) {</b>
+<b class="fc">&nbsp;                path[depth]</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                null</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }.distinct()</b>
+&nbsp;
+<b class="fc">&nbsp;        val hashConfig = PerfectHashFinder.findPerfectHash(names)</b>
+&nbsp;
+<b class="fc">&nbsp;        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)</b>
+<b class="fc">&nbsp;        val optionsBuilder = CodeBlock.builder()</b>
+<b class="pc">&nbsp;        if (hashConfig.extendedKeyHash) {</b>
+<b class="nc">&nbsp;            optionsBuilder.add(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_OPTIONS_OF_SEEDS_EXTENDED_START,</b>
+<b class="nc">&nbsp;                optionsClass,</b>
+<b class="nc">&nbsp;                hashConfig.shift,</b>
+<b class="nc">&nbsp;                hashConfig.multiplier,</b>
+<b class="nc">&nbsp;                hashConfig.tableSize,</b>
+<b class="nc">&nbsp;                textChannel,</b>
+<b class="nc">&nbsp;                true</b>
+&nbsp;            )
+&nbsp;        } else {
+<b class="fc">&nbsp;            optionsBuilder.add(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_OPTIONS_OF_SEEDS_START,</b>
+<b class="fc">&nbsp;                optionsClass,</b>
+<b class="fc">&nbsp;                hashConfig.shift,</b>
+<b class="fc">&nbsp;                hashConfig.multiplier,</b>
+<b class="fc">&nbsp;                hashConfig.tableSize,</b>
+<b class="fc">&nbsp;                textChannel</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        names.forEach { name -&gt;</b>
+<b class="fc">&nbsp;            optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        optionsBuilder.add(C.STR_PAREN_CLOSE)</b>
+&nbsp;
+<b class="fc">&nbsp;        typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;            PropertySpec.builder(optionsName, optionsClass)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                .initializer(optionsBuilder.build())</b>
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        node.children.values.forEach { child -&gt;</b>
+<b class="fc">&nbsp;            emitNestedOptionsRecursive(</b>
+<b class="fc">&nbsp;                typeSpecBuilder = typeSpecBuilder,</b>
+<b class="fc">&nbsp;                properties = properties,</b>
+<b class="fc">&nbsp;                fullPaths = fullPaths,</b>
+<b class="fc">&nbsp;                node = child,</b>
+<b class="fc">&nbsp;                readerClass = readerClass,</b>
+<b class="fc">&nbsp;                parentPrefix = currentPrefix,</b>
+<b class="fc">&nbsp;                currentPath = currentPath + child.segment,</b>
+<b class="fc">&nbsp;                textChannel = textChannel</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Node descriptor representing a segment in a flattened path hierarchy tree.
+&nbsp;     */
+<b class="fc">&nbsp;    private class FlattenNode(val segment: String) {</b>
+<b class="fc">&nbsp;        val children = mutableMapOf&lt;String, FlattenNode&gt;()</b>
+<b class="fc">&nbsp;        val properties = mutableListOf&lt;GhostPropertyModel&gt;()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

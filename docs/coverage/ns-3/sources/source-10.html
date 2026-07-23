@@ -1,0 +1,226 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoFieldMaskKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoFieldMaskKt (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoFieldMaskKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (20/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (39/39)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.1%
+  </span>
+  <span class="absValue">
+    (149/155)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * `FieldMask` represents a set of symbolic field paths, for example:
+&nbsp; * paths: &quot;f.a,b&quot;
+&nbsp; */
+&nbsp;data class ProtoFieldMask(val paths: List&lt;String&gt;)
+&nbsp;
+&nbsp;internal fun parseFieldMask(str: String): ProtoFieldMask {
+<b class="pc">&nbsp;    if (str.isEmpty()) return ProtoFieldMask(emptyList())</b>
+<b class="fc">&nbsp;    val paths = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;    val stringBuilder = StringBuilder()</b>
+<b class="fc">&nbsp;    var charIndex = 0</b>
+<b class="fc">&nbsp;    val stringLength = str.length</b>
+<b class="fc">&nbsp;    while (charIndex &lt; stringLength) {</b>
+<b class="fc">&nbsp;        val character = str[charIndex]</b>
+<b class="fc">&nbsp;        if (character == C.CHAR_COMMA) {</b>
+<b class="fc">&nbsp;            paths.add(stringBuilder.toString())</b>
+<b class="fc">&nbsp;            stringBuilder.clear()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            if (character.isUpperCase()) {</b>
+<b class="fc">&nbsp;                stringBuilder.append(C.CHAR_UNDERSCORE)</b>
+<b class="fc">&nbsp;                stringBuilder.append(character.lowercaseChar())</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                stringBuilder.append(character)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        charIndex++</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (stringBuilder.isNotEmpty()) {</b>
+<b class="fc">&nbsp;        paths.add(stringBuilder.toString())</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return ProtoFieldMask(paths)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun formatFieldMask(mask: ProtoFieldMask): String {
+<b class="pc">&nbsp;    if (mask.paths.isEmpty()) return &quot;&quot;</b>
+<b class="fc">&nbsp;    val stringBuilder = StringBuilder()</b>
+<b class="fc">&nbsp;    var pathIndex = 0</b>
+<b class="fc">&nbsp;    val pathsSize = mask.paths.size</b>
+<b class="fc">&nbsp;    while (pathIndex &lt; pathsSize) {</b>
+<b class="fc">&nbsp;        if (pathIndex &gt; 0) stringBuilder.append(C.CHAR_COMMA)</b>
+<b class="fc">&nbsp;        val path = mask.paths[pathIndex]</b>
+<b class="fc">&nbsp;        var uppercaseNext = false</b>
+<b class="fc">&nbsp;        var charIndex = 0</b>
+<b class="fc">&nbsp;        val pathLength = path.length</b>
+<b class="fc">&nbsp;        while (charIndex &lt; pathLength) {</b>
+<b class="fc">&nbsp;            val character = path[charIndex]</b>
+<b class="fc">&nbsp;            if (character == C.CHAR_UNDERSCORE) {</b>
+<b class="fc">&nbsp;                uppercaseNext = true</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                if (uppercaseNext) {</b>
+<b class="fc">&nbsp;                    stringBuilder.append(character.uppercaseChar())</b>
+<b class="fc">&nbsp;                    uppercaseNext = false</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    stringBuilder.append(character)</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            charIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        pathIndex++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return stringBuilder.toString()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer for [ProtoFieldMask].
+&nbsp; */
+&nbsp;object ProtoFieldMaskSerializer : GhostSerializer&lt;ProtoFieldMask&gt; {
+&nbsp;    override val typeName: String get() = C.WKT_FIELDMASK_TYPE
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoFieldMask) {
+&nbsp;        writer.value(formatFieldMask(value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFieldMask) {
+&nbsp;        writer.value(formatFieldMask(value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoFieldMask {
+&nbsp;        return parseFieldMask(reader.nextString())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoFieldMask {
+&nbsp;        return parseFieldMask(reader.nextString())
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

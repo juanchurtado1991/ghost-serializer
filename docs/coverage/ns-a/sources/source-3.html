@@ -1,0 +1,148 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostKtorExtensionsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.ktor</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostKtorExtensionsKt (com.ghost.serialization.ktor)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostKtorExtensionsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/32)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.ktor
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostProtoJsonFlatReader
+&nbsp;import io.ktor.http.ContentType
+&nbsp;import io.ktor.serialization.Configuration
+&nbsp;
+&nbsp;/**
+&nbsp; * Extension to register Ghost as the content negotiator in Ktor.
+&nbsp; */
+&nbsp;fun Configuration.ghost(
+<b class="nc">&nbsp;    contentType: ContentType = ContentType.Application.Json,</b>
+<b class="nc">&nbsp;    configurer: ((GhostJsonFlatReader) -&gt; Unit)? = null</b>
+&nbsp;) {
+<b class="nc">&nbsp;    register(contentType, GhostContentConverter(configurer))</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Extension to register Ghost&#39;s proto3-JSON mapping ([GhostProtoContentConverter]) as the
+&nbsp; * content negotiator in Ktor — use for APIs backed by `@GhostProtoSerialization` types.
+&nbsp; */
+&nbsp;fun Configuration.ghostProto(
+<b class="nc">&nbsp;    contentType: ContentType = ContentType.Application.Json,</b>
+<b class="nc">&nbsp;    configurer: ((GhostProtoJsonFlatReader) -&gt; Unit)? = null</b>
+&nbsp;) {
+<b class="nc">&nbsp;    register(contentType, GhostProtoContentConverter(configurer))</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

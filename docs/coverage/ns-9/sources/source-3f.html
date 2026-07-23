@@ -1,0 +1,184 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > EncoderHexUtils</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.integration.model</a>
+</div>
+
+<h1>Coverage Summary for Class: EncoderHexUtils (com.ghost.serialization.integration.model)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">EncoderHexUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42.9%
+  </span>
+  <span class="absValue">
+    (6/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    43.2%
+  </span>
+  <span class="absValue">
+    (19/44)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;unused&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.integration.model
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.consumeNull
+&nbsp;import com.ghost.serialization.parser.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.nextInt
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;
+&nbsp;object EncoderHexUtils {
+&nbsp;
+&nbsp;    private const val HEX_VALUE_PREFIX = &quot;HEX:&quot;
+&nbsp;    private const val NULLABLE_INT_SENTINEL = -1
+&nbsp;
+&nbsp;    const val DECODE_NULLABLE_INT_FUNCTION = &quot;decodeNullableInt&quot;
+&nbsp;    const val DECODE_HEX_FUNCTION = &quot;decodeHex&quot;
+&nbsp;    const val ENCODE_HEX_FUNCTION = &quot;encodeHex&quot;
+&nbsp;
+&nbsp;    fun decodeHex(reader: GhostJsonReader): String {
+<b class="fc">&nbsp;        val hex = reader.nextString()</b>
+<b class="fc">&nbsp;        return &quot;$HEX_VALUE_PREFIX$hex&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun decodeHex(reader: GhostJsonStringReader): String {
+<b class="nc">&nbsp;        val hex = reader.nextString()</b>
+<b class="nc">&nbsp;        return &quot;$HEX_VALUE_PREFIX$hex&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun encodeHex(writer: GhostJsonWriter, value: String) {
+<b class="nc">&nbsp;        writer.value(value.removePrefix(HEX_VALUE_PREFIX))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun encodeHex(writer: GhostJsonFlatWriter, value: String) {
+<b class="fc">&nbsp;        writer.value(value.removePrefix(HEX_VALUE_PREFIX))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun decodeNullableInt(reader: GhostJsonReader): Int? {
+<b class="pc">&nbsp;        if (reader.isNextNullValue()) {</b>
+<b class="fc">&nbsp;            reader.consumeNull()</b>
+<b class="fc">&nbsp;            return NULLABLE_INT_SENTINEL</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return reader.nextInt()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun decodeNullableInt(reader: GhostJsonStringReader): Int? {
+<b class="nc">&nbsp;        if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;            reader.consumeNull()</b>
+<b class="nc">&nbsp;            return NULLABLE_INT_SENTINEL</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return reader.nextInt()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

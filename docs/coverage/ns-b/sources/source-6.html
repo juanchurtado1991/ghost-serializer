@@ -1,0 +1,828 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonConstants</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonConstants (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonConstants</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (27/27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (32/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (75/75)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (536/536)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostJsonConstants$FormatUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (38/38)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (30/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (34/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (81/81)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (574/574)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import okio.ByteString.Companion.encodeUtf8
+&nbsp;import kotlin.math.pow
+&nbsp;
+&nbsp;/**
+&nbsp; * Central repository for all constants used by the Ghost JSON parser and writer.
+&nbsp; * Constants are organized by their role in the serialization lifecycle.
+&nbsp; */
+&nbsp;public object GhostJsonConstants {
+&nbsp;
+&nbsp;    // --- Error Messages ---
+&nbsp;    const val UNTERMINATED_STRING_ERROR = &quot;Unterminated string&quot;
+&nbsp;    const val UNTERMINATED_ESCAPE_ERROR = &quot;Unterminated escape sequence&quot;
+&nbsp;    const val UNTERMINATED_UNICODE_ERROR = &quot;Unterminated unicode escape&quot;
+&nbsp;    const val UNESCAPED_CONTROL_CHAR_ERROR = &quot;Unescaped control character in string&quot;
+&nbsp;    const val STRICT_MODE_UNKNOWN_FIELD = &quot;Unknown field in strict mode: &quot;
+&nbsp;    const val ERR_EXPECTED_BEGIN_OBJ = &quot;Expected &#39;{&#39;&quot;
+&nbsp;    const val ERR_EXPECTED_END_OBJ = &quot;Expected &#39;}&#39;&quot;
+&nbsp;    const val ERR_EXPECTED_BEGIN_ARR = &quot;Expected &#39;[&#39;&quot;
+&nbsp;    const val ERR_EXPECTED_END_ARR = &quot;Expected &#39;]&#39;&quot;
+&nbsp;    const val ERR_TRAILING_COMMA = &quot;Trailing comma&quot;
+&nbsp;    const val ERR_UNEXPECTED_COMMA = &quot;Unexpected comma&quot;
+&nbsp;    const val ERR_EXPECTED_COMMA = &quot;Expected comma&quot;
+&nbsp;    const val ERR_EXPECTED_COLON = &quot;Expected &#39;:&#39;&quot;
+&nbsp;    const val ERR_EXPECTED_BOOLEAN = &quot;Expected boolean but found &quot;
+&nbsp;    const val ERR_EXPECTED_KEY = &quot;Expected key but found &quot;
+&nbsp;    const val ERR_EXPECTED_STRING = &quot;Expected string&quot;
+&nbsp;    const val ERR_MAX_COLLECTION_SIZE = &quot;Collection size exceeds maximum allowed&quot;
+&nbsp;    const val ERR_EXPECTED_COMMA_OR_CLOSE_ARR = &quot;Expected &#39;,&#39; or &#39;]&#39;&quot;
+&nbsp;    const val ERR_EXPECTED_COMMA_OR_CLOSE_OBJ = &quot;Expected &#39;,&#39; or &#39;}&#39;&quot;
+&nbsp;    const val ERR_UNEXPECTED_EOF = &quot;Unexpected end of input&quot;
+&nbsp;    const val ERR_EXPECTED_QUOTE = &quot;Expected &#39;\&quot;&#39;&quot;
+&nbsp;    const val ERR_EXPECTED_SINGLE_CHAR_STRING = &quot;Expected single-character JSON string&quot;
+&nbsp;    const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH = &quot;Expected single-character JSON string, found length &quot;
+&nbsp;    const val ERR_DEPTH_EXCEEDED = &quot;Reached maximum recursion depth&quot;
+&nbsp;    const val ERR_NON_FINITE = &quot;JSON does not support non-finite numbers like NaN or Infinity&quot;
+&nbsp;    const val ERR_INT_OVERFLOW = &quot;Integer overflow: &quot;
+&nbsp;    const val ERR_LONG_OVERFLOW = &quot;Long overflow&quot;
+&nbsp;    const val ERR_EXPECTED_NUMBER = &quot;Expected number but reached EOF&quot;
+&nbsp;    const val ERR_COERCION_DISABLED = &quot;Unexpected string for numeric type (coercion disabled)&quot;
+&nbsp;    const val ERR_ISOLATED_MINUS = &quot;Isolated minus sign&quot;
+&nbsp;    const val ERR_LEADING_ZEROS = &quot;Leading zeros are not allowed&quot;
+&nbsp;    const val ERR_EXPECTED_COERCION_QUOTE = &quot;Expected closing quote for coerced number&quot;
+&nbsp;    const val ERR_EXPECTED_INT_PART = &quot;Expected integer part of number&quot;
+&nbsp;    const val ERR_EXPECTED_DECIMAL_DIGITS = &quot;Expected digits after decimal point&quot;
+&nbsp;    const val ERR_EXPECTED_EXPONENT_DIGITS = &quot;Expected digits in exponent&quot;
+&nbsp;    const val ERR_NUMERIC_OVERFLOW = &quot;Numeric overflow or NaN is not allowed in JSON&quot;
+&nbsp;    const val ERR_HIGH_SURROGATE = &quot;Lone high surrogate&quot;
+&nbsp;    const val EXPONENT_CLAMP_THRESHOLD = 1000
+&nbsp;    const val ERR_EXPECTED_LITERAL = &quot;Expected literal &quot;
+&nbsp;    const val ERR_CAPACITY_OVERFLOW_PREFIX = &quot;FlatByteArrayWriter capacity overflow: &quot;
+&nbsp;    const val ERR_TEXT_CHANNEL_DISABLED = &quot;String deserialization is disabled. Please configure arg(\&quot;ghost.textChannel\&quot;, \&quot;true\&quot;) in your KSP options to use the String parser.&quot;
+&nbsp;
+&nbsp;    // --- Digit &amp; Limit Constants ---
+&nbsp;    const val MIN_SINGLE_DIGIT = 0
+&nbsp;    const val MAX_SINGLE_DIGIT = 9
+&nbsp;    const val MIN_SINGLE_DIGIT_NEG = -9
+&nbsp;    const val MAX_SINGLE_DIGIT_NEG = -1
+&nbsp;    const val MIN_SINGLE_DIGIT_L = 0L
+&nbsp;    const val MAX_SINGLE_DIGIT_L = 9L
+&nbsp;    const val MIN_SINGLE_DIGIT_NEG_L = -9L
+&nbsp;    const val MAX_SINGLE_DIGIT_NEG_L = -1L
+&nbsp;    const val MIN_INT_STR = &quot;-2147483648&quot;
+&nbsp;    const val MIN_LONG_STR = &quot;-9223372036854775808&quot;
+&nbsp;
+&nbsp;    // --- Escape String Constants ---
+&nbsp;    const val ESCAPE_QUOTE = &quot;\\\&quot;&quot;
+&nbsp;    const val ESCAPE_BACKSLASH = &quot;\\\\&quot;
+&nbsp;    const val ESCAPE_BACKSPACE = &quot;\\b&quot;
+&nbsp;    const val ESCAPE_FORM_FEED = &quot;\\f&quot;
+&nbsp;    const val ESCAPE_NEWLINE = &quot;\\n&quot;
+&nbsp;    const val ESCAPE_CARRIAGE_RETURN = &quot;\\r&quot;
+&nbsp;    const val ESCAPE_TAB = &quot;\\t&quot;
+&nbsp;
+&nbsp;    // --- Character Constants ---
+&nbsp;    const val CHAR_QUOTE = &#39;&quot;&#39;
+&nbsp;    const val CHAR_T = &#39;t&#39;
+&nbsp;    const val CHAR_R = &#39;r&#39;
+&nbsp;    const val CHAR_U = &#39;u&#39;
+&nbsp;    const val CHAR_E = &#39;e&#39;
+&nbsp;    const val CHAR_F = &#39;f&#39;
+&nbsp;    const val CHAR_A = &#39;a&#39;
+&nbsp;    const val CHAR_L = &#39;l&#39;
+&nbsp;    const val CHAR_S = &#39;s&#39;
+&nbsp;    const val CHAR_N = &#39;n&#39;
+&nbsp;    const val CHAR_DOT = &#39;.&#39;
+&nbsp;    const val CHAR_ZERO = &#39;0&#39;
+&nbsp;    const val CHAR_BACKSLASH = &#39;\\&#39;
+&nbsp;    const val CHAR_B = &#39;b&#39;
+&nbsp;    const val CHAR_HYPHEN = &#39;-&#39;
+&nbsp;    const val CHAR_PLUS = &#39;+&#39;
+&nbsp;    const val CHAR_COLON = &#39;:&#39;
+&nbsp;    const val CHAR_T_UPPER = &#39;T&#39;
+&nbsp;    const val CHAR_Z_UPPER = &#39;Z&#39;
+&nbsp;    const val CHAR_Z_LOWER = &#39;z&#39;
+&nbsp;    const val CHAR_COMMA = &#39;,&#39;
+&nbsp;    const val CHAR_UNDERSCORE = &#39;_&#39;
+&nbsp;
+&nbsp;    const val ESC_B_INT = 98
+&nbsp;    const val ESC_F_INT = 102
+&nbsp;    const val ESC_N_INT = 110
+&nbsp;    const val ESC_R_INT = 114
+&nbsp;    const val ESC_T_INT = 116
+&nbsp;
+&nbsp;    // --- Case-Folded ASCII Byte Constants ---
+&nbsp;    // Each constant is `&#39;X&#39;.code or 32` where 32 = CASE_INSENSITIVE_MASK.
+&nbsp;    // Folding sets bit 5 of the byte, which turns any ASCII uppercase letter into
+&nbsp;    // its lowercase equivalent. Allows zero-allocation case-insensitive comparisons:
+&nbsp;    //   `(rawByte or CASE_INSENSITIVE_MASK) == FOLD_X`
+&nbsp;
+&nbsp;    /** Case-folded byte for &#39;T&#39; / &#39;t&#39;. Used in &quot;true&quot;. */
+&nbsp;    const val FOLD_T = &#39;t&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;R&#39; / &#39;r&#39;. Used in &quot;true&quot;. */
+&nbsp;    const val FOLD_R = &#39;r&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;U&#39; / &#39;u&#39;. Used in &quot;true&quot;. */
+&nbsp;    const val FOLD_U = &#39;u&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;E&#39; / &#39;e&#39;. Used in &quot;true&quot;, &quot;false&quot;, &quot;yes&quot;. */
+&nbsp;    const val FOLD_E = &#39;e&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;F&#39; / &#39;f&#39;. Used in &quot;false&quot;, &quot;off&quot;. */
+&nbsp;    const val FOLD_F = &#39;f&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;A&#39; / &#39;a&#39;. Used in &quot;false&quot;. */
+&nbsp;    const val FOLD_A = &#39;a&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;L&#39; / &#39;l&#39;. Used in &quot;false&quot;. */
+&nbsp;    const val FOLD_L = &#39;l&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;S&#39; / &#39;s&#39;. Used in &quot;false&quot;, &quot;yes&quot;. */
+&nbsp;    const val FOLD_S = &#39;s&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;Y&#39; / &#39;y&#39;. Used in &quot;yes&quot;, &quot;y&quot;. */
+&nbsp;    const val FOLD_Y = &#39;y&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;N&#39; / &#39;n&#39;. Used in &quot;no&quot;, &quot;n&quot;. */
+&nbsp;    const val FOLD_N = &#39;n&#39;.code or 32
+&nbsp;    /** Case-folded byte for &#39;O&#39; / &#39;o&#39;. Used in &quot;on&quot;, &quot;no&quot;, &quot;off&quot;. */
+&nbsp;    const val FOLD_O = &#39;o&#39;.code or 32
+&nbsp;
+&nbsp;    /** String lengths used as a fast gate before byte-level coercion matching. */
+&nbsp;    const val BOOL_STR_LEN_1 = 1   // &quot;y&quot;, &quot;n&quot;, &quot;1&quot;, &quot;0&quot;
+&nbsp;    const val BOOL_STR_LEN_2 = 2   // &quot;on&quot;, &quot;no&quot;
+&nbsp;    const val BOOL_STR_LEN_3 = 3   // &quot;yes&quot;, &quot;off&quot;
+&nbsp;    const val BOOL_STR_LEN_4 = 4   // &quot;true&quot;
+&nbsp;    const val BOOL_STR_LEN_5 = 5   // &quot;false&quot;
+&nbsp;
+&nbsp;    // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val TRUE_BS = &quot;true&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val FALSE_BS = &quot;false&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val NULL_BS = &quot;null&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    internal val EMPTY_STRING_BS = &quot;\&quot;\&quot;&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val MIN_INT_BS = &quot;-2147483648&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val MIN_LONG_BS = &quot;-9223372036854775808&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val DOT_ZERO = &quot;.0&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val COLON_QUOTE_BS = &quot;\&quot;:&quot;.encodeUtf8()</b>
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val TYPE_BS = &quot;type&quot;.encodeUtf8()</b>
+&nbsp;
+&nbsp;    // --- Numeric Limits &amp; Formatting ---
+&nbsp;    const val MAX_SAFE_INTEGER_DOUBLE = 1e15
+&nbsp;    const val MIN_SAFE_INTEGER_DOUBLE = -1e15
+&nbsp;    const val WHOLE_NUMBER_CHECK = 1.0
+&nbsp;    const val ZERO_DOUBLE = 0.0
+&nbsp;    const val HUNDRED_LONG = 100L
+&nbsp;    const val TEN_LONG = 10L
+<b class="fc">&nbsp;    val EMPTY_BYTES = ByteArray(0)</b>
+&nbsp;
+&nbsp;    // --- Bitwise Optimization Constants ---
+&nbsp;    /** The unit bit (1L) used for flag shifting. */
+&nbsp;    const val BYTE_SHIFT_UNIT = 1L
+&nbsp;
+&nbsp;    /** Result of a bitwise check when no flags match. */
+&nbsp;    const val RESULT_NONE = 0L
+&nbsp;
+&nbsp;    /** Bitmask for JSON whitespace: Space (32), LF (10), CR (13), HT (9). */
+&nbsp;    const val WHITESPACE_MASK = (1L shl 32) or (1L shl 10) or (1L shl 13) or (1L shl 9)
+&nbsp;
+&nbsp;    /** Standard mask for unsigned byte access. */
+&nbsp;    const val BYTE_MASK = 0xFF
+&nbsp;    /** Standard mask for unsigned Long byte access. */
+&nbsp;    const val LONG_BYTE_MASK = 0xFFL
+&nbsp;
+&nbsp;    // --- ASCII Token Codes (Integers) ---
+&nbsp;    const val NEWLINE_INT = &#39;\n&#39;.code
+&nbsp;    const val COMMA_INT = &#39;,&#39;.code
+&nbsp;    const val COLON_INT = &#39;:&#39;.code
+&nbsp;    const val QUOTE_INT = &#39;&quot;&#39;.code
+&nbsp;    const val OPEN_OBJ_INT = &#39;{&#39;.code
+&nbsp;    const val CLOSE_OBJ_INT = &#39;}&#39;.code
+&nbsp;    const val OPEN_ARR_INT = &#39;[&#39;.code
+&nbsp;    const val CLOSE_ARR_INT = &#39;]&#39;.code
+&nbsp;    const val NULL_CHAR_INT = &#39;n&#39;.code
+&nbsp;    const val TRUE_CHAR_INT = &#39;t&#39;.code
+&nbsp;    const val FALSE_CHAR_INT = &#39;f&#39;.code
+&nbsp;    const val MINUS_INT = &#39;-&#39;.code
+&nbsp;    const val PLUS_INT = &#39;+&#39;.code
+&nbsp;    const val DOT_INT = &#39;.&#39;.code
+&nbsp;    const val ZERO_INT = &#39;0&#39;.code
+&nbsp;    const val ONE_INT = &#39;1&#39;.code
+&nbsp;    const val NINE_INT = &#39;9&#39;.code
+&nbsp;    const val DEFAULT_PRIMITIVE_COLLECTION_CAPACITY = 16
+&nbsp;    const val BACKSLASH_INT = &#39;\\&#39;.code
+&nbsp;    const val UNICODE_PREFIX_U_INT = &#39;u&#39;.code
+&nbsp;    const val EXP_LOWER_INT = &#39;e&#39;.code
+&nbsp;    const val EXP_UPPER_INT = &#39;E&#39;.code
+&nbsp;
+&nbsp;    // --- ASCII Token Codes (Bytes) ---
+&nbsp;    const val QUOTE = &#39;&quot;&#39;.code.toByte()
+&nbsp;    const val OPEN_OBJ = &#39;{&#39;.code.toByte()
+&nbsp;    const val CLOSE_OBJ = &#39;}&#39;.code.toByte()
+&nbsp;    const val OPEN_ARR = &#39;[&#39;.code.toByte()
+&nbsp;    const val CLOSE_ARR = &#39;]&#39;.code.toByte()
+&nbsp;    const val NULL_CHAR = &#39;n&#39;.code.toByte()
+&nbsp;    const val TRUE_CHAR = &#39;t&#39;.code.toByte()
+&nbsp;    const val MINUS = &#39;-&#39;.code.toByte()
+&nbsp;    const val DOT = &#39;.&#39;.code.toByte()
+&nbsp;    const val ZERO = &#39;0&#39;.code.toByte()
+&nbsp;    const val BACKSLASH = &#39;\\&#39;.code.toByte()
+&nbsp;    const val UNICODE_PREFIX_U = &#39;u&#39;.code.toByte()
+&nbsp;
+&nbsp;    // --- Dispatch Table Defaults ---
+&nbsp;    /** Default shift for JsonReaderOptions when no perfect-hash search has been run. */
+&nbsp;    const val DEFAULT_DISPATCH_SHIFT = 0
+&nbsp;    /** Default multiplier for JsonReaderOptions factory methods. */
+&nbsp;    const val DEFAULT_DISPATCH_MULTIPLIER = 31
+&nbsp;    /** Default dispatch table size. Must be a power of two. */
+&nbsp;    const val DEFAULT_DISPATCH_TABLE_SIZE = 1024
+&nbsp;    /** Polynomial multiplier for collision disambiguation (must match all reader computeKeyHash and PerfectHashFinder). */
+&nbsp;    const val COLLISION_HASH_MULTIPLIER = 31
+&nbsp;
+&nbsp;    // --- Pooling &amp; Cache Metrics ---
+&nbsp;    /** Number of buckets in the string reuse pool. Must be power of two. */
+&nbsp;    const val STR_POOL_SIZE = 2048
+&nbsp;    /** Multiplier for string pool hashing. */
+&nbsp;    const val STR_POOL_HASH_MULTIPLIER = 31
+&nbsp;
+&nbsp;    /** Bit shift used for rolling hash calculation. */
+&nbsp;    const val HASH_SHIFT = 5
+&nbsp;
+&nbsp;    /** Bitmask to normalize ASCII uppercase to lowercase (e.g. &#39;E&#39; or 32 == &#39;e&#39;). */
+&nbsp;    const val CASE_INSENSITIVE_MASK = 32
+&nbsp;
+&nbsp;    /** Max digits of precision for numeric formatting. */
+&nbsp;    const val DOUBLE_PRECISION_LIMIT = 17
+&nbsp;    const val FLOAT_PRECISION_LIMIT = 9
+&nbsp;
+&nbsp;    // --- Buffer Sizes &amp; Scaling ---
+&nbsp;    /** Minimum scratch buffer size for small objects. */
+&nbsp;    const val TIER_SMALL_INT = 1024
+&nbsp;
+&nbsp;    /** Scaling factor when growing internal buffers. */
+&nbsp;    const val BUFFER_SCALE_FACTOR = 2
+&nbsp;
+&nbsp;    /** Shift factor when growing buffer capacity by 1.5. */
+&nbsp;    const val CAPACITY_GROWTH_SHIFT = 1
+&nbsp;
+&nbsp;    /** Byte sizes for common UTF/JSON sequences. */
+&nbsp;    const val SINGLE_CHAR_SIZE = 1
+&nbsp;
+&nbsp;    /** Expected UTF-16 code-unit count when decoding a JSON [Char] field. */
+&nbsp;    const val SINGLE_CHAR_JSON_LENGTH = SINGLE_CHAR_SIZE
+&nbsp;    const val UNICODE_ESCAPE_PREFIX_SIZE = 2
+&nbsp;    const val INT_SAFE_DIGITS = 9
+&nbsp;    const val LONG_SAFE_DIGITS = 18
+&nbsp;
+&nbsp;    const val NUMERIC_HEADER_QUOTED = 1
+&nbsp;    const val NUMERIC_HEADER_NEGATIVE = 2
+&nbsp;
+&nbsp;    /** Max depth for nested objects and arrays. */
+&nbsp;    const val MAX_DEPTH = 255
+&nbsp;
+&nbsp;    /** Size of the scratch buffer for numeric itoa/dtoa. */
+&nbsp;    const val LONG_SCRATCH_SIZE = 24
+&nbsp;
+&nbsp;    /** Size of the hot-path writer scratch buffer. */
+&nbsp;    const val WRITER_SCRATCH_SIZE = 512
+&nbsp;
+&nbsp;    const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
+&nbsp;    const val STREAMING_BUFFER_SIZE = 8192
+&nbsp;
+&nbsp;    const val DEFAULT_DISCRIMINATOR_KEY = &quot;type&quot;
+&nbsp;
+&nbsp;    // --- Mathematical Tables ---
+&nbsp;    /** Pre-calculated powers of ten to avoid expensive Math.pow calls. */
+<b class="fc">&nbsp;    val POWERS_OF_TEN = DoubleArray(309).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 10.0.pow(i.toDouble())</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val INVERSE_POWERS_OF_TEN = DoubleArray(309).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 1.0 / 10.0.pow(i.toDouble())</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val POWERS_OF_TEN_FLOAT = FloatArray(39).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 10.0f.pow(i.toDouble().toFloat())</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val INVERSE_POWERS_OF_TEN_FLOAT = FloatArray(39).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 1.0f / 10.0f.pow(i.toDouble().toFloat())</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    // --- Lookup Tables (LUTs) ---
+&nbsp;    /** Hexadecimal character bytes. */
+<b class="fc">&nbsp;    val HEX_CHARS = &quot;0123456789abcdef&quot;.encodeToByteArray()</b>
+&nbsp;
+&nbsp;    /** Hexadecimal characters. */
+<b class="fc">&nbsp;    val HEX_CHARS_CHARS = CharArray(16) { i -&gt; &quot;0123456789abcdef&quot;[i] }</b>
+&nbsp;
+&nbsp;    /** Maps ASCII bytes (0-255) to their hex numeric value (-1 if invalid). */
+<b class="fc">&nbsp;    val HEX_LUT = IntArray(256) { -1 }.apply {</b>
+<b class="fc">&nbsp;        for (i in 0..9) this[&#39;0&#39;.code + i] = i</b>
+<b class="fc">&nbsp;        for (i in 0..5) {</b>
+<b class="fc">&nbsp;            this[&#39;A&#39;.code + i] = 10 + i</b>
+<b class="fc">&nbsp;            this[&#39;a&#39;.code + i] = 10 + i</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    /** Stores two ASCII bytes per number (00-99) for fast numeric formatting. */
+<b class="fc">&nbsp;    val DOUBLE_DIGIT_LUT = ByteArray(200) { i -&gt;</b>
+<b class="fc">&nbsp;        val num = i / 2</b>
+<b class="fc">&nbsp;        if (i % 2 == 0) (num / 10 + &#39;0&#39;.code).toByte() else (num % 10 + &#39;0&#39;.code).toByte()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Stores two ASCII characters per number (00-99) for fast numeric formatting. */
+<b class="fc">&nbsp;    val DOUBLE_DIGIT_LUT_CHARS = CharArray(200) { i -&gt;</b>
+<b class="fc">&nbsp;        val num = i / 2</b>
+<b class="fc">&nbsp;        if (i % 2 == 0) (num / 10 + &#39;0&#39;.code).toChar() else (num % 10 + &#39;0&#39;.code).toChar()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Mask to extract the bit index within a 64-bit Long. */
+&nbsp;    const val BITMASK_INDEX_MASK = 63
+&nbsp;
+&nbsp;    /** Maximum depth supported by 64-bit Long bitmask. */
+&nbsp;    const val MAX_BITMASK_DEPTH = 64
+&nbsp;
+&nbsp;    /** Shift to get the index in the LongArray bitmask (index = charCode shr 6). */
+&nbsp;    const val BITMASK_SHIFT = 6
+&nbsp;
+&nbsp;    /** Unit long for bitwise comparisons. */
+&nbsp;    const val BITMASK_UNIT = 1L
+&nbsp;
+&nbsp;    /** Maximum ASCII value (0-127). */
+&nbsp;    const val ASCII_LIMIT = 128
+&nbsp;
+&nbsp;    /** Bitmask for ASCII characters 0-63 that require escaping (Controls + Quote). */
+&nbsp;    const val NEEDS_ESCAPE_MASK_LOW = 0x4FFFFFFFFL
+&nbsp;
+&nbsp;    /** Bitmask for ASCII characters 64-127 that require escaping (Backslash). */
+&nbsp;    const val NEEDS_ESCAPE_MASK_HIGH = 0x10000000L
+&nbsp;
+&nbsp;    /** Combined masks for branch-free lookup. */
+<b class="fc">&nbsp;    val ESCAPE_MASKS = longArrayOf(NEEDS_ESCAPE_MASK_LOW, NEEDS_ESCAPE_MASK_HIGH)</b>
+&nbsp;
+&nbsp;    /** Pre-encoded replacement bytes for common escape sequences (e.g., \n -&gt; [&#39;\\&#39;, &#39;n&#39;]). */
+<b class="fc">&nbsp;    val ESCAPE_REPLACEMENTS = arrayOfNulls&lt;ByteArray&gt;(128).apply {</b>
+<b class="fc">&nbsp;        this[&#39;&quot;&#39;.code] = &quot;\\\&quot;&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;        this[&#39;\\&#39;.code] = &quot;\\\\&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;        this[&#39;\n&#39;.code] = &quot;\\n&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;        this[&#39;\r&#39;.code] = &quot;\\r&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;        this[&#39;\t&#39;.code] = &quot;\\t&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;        this[&#39;\b&#39;.code] = &quot;\\b&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;        this[&#39;\u000C&#39;.code] = &quot;\\f&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    // --- Parser Internals &amp; Overflow Checks ---
+&nbsp;    const val LONG_OVERFLOW_LIMIT = 922337203685477580L
+&nbsp;    const val LONG_MIN_LAST_DIGIT = 8
+&nbsp;    const val LONG_MAX_LAST_DIGIT = 7
+&nbsp;    const val INT_OVERFLOW_LIMIT = 214748364
+&nbsp;    const val INT_MIN_LAST_DIGIT = 8
+&nbsp;    const val INT_MAX_LAST_DIGIT = 7
+&nbsp;    const val HASH_MASK = 1023
+&nbsp;    const val MATCH_END = -1
+&nbsp;    const val RESET_TOKEN_BYTE = -1
+&nbsp;    const val MATCH_NONE = -2
+&nbsp;    const val SHIFT_24 = 24
+&nbsp;    const val SHIFT_16 = 16
+&nbsp;    const val SHIFT_12 = 12
+&nbsp;    const val SHIFT_8 = 8
+&nbsp;    const val SHIFT_4 = 4
+&nbsp;    const val HEX_MASK = 0xF
+&nbsp;    const val UNICODE_HEX_LENGTH = 4
+&nbsp;    const val SURROGATE_OFFSET = 6
+&nbsp;    const val HIGH_SURROGATE_START = 0xD800
+&nbsp;    const val HIGH_SURROGATE_END = 0xDBFF
+&nbsp;    const val LOW_SURROGATE_START = 0xDC00
+&nbsp;    const val LOW_SURROGATE_END = 0xDFFF
+&nbsp;    const val UNICODE_BASE = 0x10000
+&nbsp;    const val SHIFT_10 = 10
+&nbsp;    const val BMP_LIMIT = 0xFFFF
+&nbsp;
+&nbsp;    // --- Scanning &amp; Escape Identifiers ---
+&nbsp;    const val SPACE_INT = 32
+&nbsp;    const val QUOTE_BYTE: Byte = 34
+&nbsp;    const val CONTROL_CHAR_START_INT = 0
+&nbsp;    const val CONTROL_CHAR_LIMIT_INT = 31
+&nbsp;    const val N_BYTE_INT = 110
+&nbsp;    const val R_BYTE_INT = 114
+&nbsp;    const val T_BYTE_INT = 116
+&nbsp;    const val B_BYTE_INT = 98
+&nbsp;    const val F_BYTE_INT = 102
+&nbsp;    const val U_BYTE_INT = 117
+&nbsp;    const val A_BYTE_INT = 97
+&nbsp;    const val L_BYTE_INT = 108
+&nbsp;    const val S_BYTE_INT = 115
+&nbsp;    const val E_BYTE_INT = 101
+&nbsp;
+&nbsp;    // --- ProtoJSON Constants ---
+&nbsp;    const val I_BYTE_INT = 73 // &#39;I&#39;.code
+&nbsp;    const val PROTO_AT_BYTE = 64 // &#39;@&#39;.code
+&nbsp;    const val PROTO_S_BYTE = 115 // &#39;s&#39;.code
+&nbsp;    const val ERR_PROTO_UINT32_OVERFLOW = &quot;uint32 value exceeds 4294967295&quot;
+&nbsp;    const val ERR_PROTO_FRACTIONAL_INT = &quot;Fractional value not allowed for integer type&quot;
+&nbsp;
+&nbsp;    const val N_LOWER_BYTE_INT = 110 // &#39;n&#39;.code
+&nbsp;    const val F_LOWER_BYTE_INT = 102 // &#39;f&#39;.code
+&nbsp;    const val I_LOWER_BYTE_INT = 105 // &#39;i&#39;.code
+&nbsp;    const val T_LOWER_BYTE_INT = 116 // &#39;t&#39;.code
+&nbsp;    const val Y_LOWER_BYTE_INT = 121 // &#39;y&#39;.code
+&nbsp;    const val A_LOWER_BYTE_INT = 97  // &#39;a&#39;.code
+&nbsp;    const val N_UPPER_BYTE_INT = 78  // &#39;N&#39;.code
+&nbsp;    const val PROTO_UINT32_MAX = 4294967295L
+&nbsp;    const val NAN_QUOTED_LEN = 5
+&nbsp;    const val INFINITY_QUOTED_LEN = 10
+&nbsp;    const val NEG_INFINITY_QUOTED_LEN = 11
+&nbsp;
+&nbsp;    const val TS_YEAR_START = 0
+&nbsp;    const val TS_YEAR_END = 4
+&nbsp;    const val TS_MONTH_START = 5
+&nbsp;    const val TS_MONTH_END = 7
+&nbsp;    const val TS_DAY_START = 8
+&nbsp;    const val TS_DAY_END = 10
+&nbsp;    const val TS_HOUR_START = 11
+&nbsp;    const val TS_HOUR_END = 13
+&nbsp;    const val TS_MIN_START = 14
+&nbsp;    const val TS_MIN_END = 16
+&nbsp;    const val TS_SEC_START = 17
+&nbsp;    const val TS_SEC_END = 19
+&nbsp;    const val TS_FRAC_START = 20
+&nbsp;    const val TS_MIN_LENGTH = 20
+&nbsp;    const val TS_TZ_OFFSET_LEN = 6
+&nbsp;    const val NANOS_DIGITS = 9
+&nbsp;
+&nbsp;    const val HINNANT_ERA_YEARS = 400L
+&nbsp;    const val HINNANT_DAYS_PER_ERA = 146097L
+&nbsp;    const val HINNANT_EPOCH_OFFSET = 719468L
+&nbsp;    const val HINNANT_DAYS_CYCLE_4 = 1460
+&nbsp;    const val HINNANT_DAYS_CYCLE_100 = 36524
+&nbsp;    const val HINNANT_DAYS_CYCLE_ERA = 146096
+&nbsp;    const val SECONDS_PER_DAY = 86400L
+&nbsp;    const val SECONDS_PER_HOUR = 3600L
+&nbsp;    const val SECONDS_PER_MINUTE = 60L
+&nbsp;
+&nbsp;    const val WKT_ANY_TYPE = &quot;google.protobuf.Any&quot;
+&nbsp;    const val WKT_STRUCT_TYPE = &quot;google.protobuf.Struct&quot;
+&nbsp;    const val WKT_VALUE_TYPE = &quot;google.protobuf.Value&quot;
+&nbsp;    const val WKT_EMPTY_TYPE = &quot;google.protobuf.Empty&quot;
+&nbsp;    const val WKT_FIELDMASK_TYPE = &quot;google.protobuf.FieldMask&quot;
+&nbsp;    const val WKT_TIMESTAMP_TYPE = &quot;google.protobuf.Timestamp&quot;
+&nbsp;    const val WKT_DURATION_TYPE = &quot;google.protobuf.Duration&quot;
+&nbsp;    const val WKT_BOOL_VALUE_TYPE = &quot;google.protobuf.BoolValue&quot;
+&nbsp;    const val WKT_STRING_VALUE_TYPE = &quot;google.protobuf.StringValue&quot;
+&nbsp;    const val WKT_BYTES_VALUE_TYPE = &quot;google.protobuf.BytesValue&quot;
+&nbsp;    const val WKT_DOUBLE_VALUE_TYPE = &quot;google.protobuf.DoubleValue&quot;
+&nbsp;    const val WKT_FLOAT_VALUE_TYPE = &quot;google.protobuf.FloatValue&quot;
+&nbsp;    const val WKT_INT32_VALUE_TYPE = &quot;google.protobuf.Int32Value&quot;
+&nbsp;    const val WKT_INT64_VALUE_TYPE = &quot;google.protobuf.Int64Value&quot;
+&nbsp;    const val WKT_UINT32_VALUE_TYPE = &quot;google.protobuf.UInt32Value&quot;
+&nbsp;    const val WKT_UINT64_VALUE_TYPE = &quot;google.protobuf.UInt64Value&quot;
+&nbsp;
+&nbsp;    const val PROTO_TYPE_URL_KEY = &quot;@type&quot;
+&nbsp;    const val PROTO_VALUE_KEY = &quot;value&quot;
+&nbsp;
+&nbsp;    const val ERR_DURATION_SIGN = &quot;Coherence error: seconds and nanos signs must match&quot;
+&nbsp;    const val ERR_DURATION_SUFFIX = &quot;Missing &#39;s&#39; suffix in Duration&quot;
+&nbsp;    const val ERR_TIMESTAMP_SHORT = &quot;Malformed timestamp: too short&quot;
+&nbsp;    const val ERR_TIMESTAMP_YEAR_HYPHEN = &quot;Malformed timestamp: missing year hyphen&quot;
+&nbsp;    const val ERR_TIMESTAMP_MONTH_HYPHEN = &quot;Malformed timestamp: missing month hyphen&quot;
+&nbsp;    const val ERR_TIMESTAMP_T = &quot;Malformed timestamp: missing T separator&quot;
+&nbsp;    const val ERR_TIMESTAMP_HOUR_COLON = &quot;Malformed timestamp: missing hour colon&quot;
+&nbsp;    const val ERR_TIMESTAMP_MINUTE_COLON = &quot;Malformed timestamp: missing minute colon&quot;
+&nbsp;    const val ERR_TIMESTAMP_TZ = &quot;Malformed timestamp: missing timezone&quot;
+&nbsp;    const val ERR_TIMESTAMP_TZ_SUPPORT = &quot;Unsupported offset timezone&quot;
+&nbsp;    const val ERR_MALFORMED_DIGIT = &quot;Malformed digit&quot;
+&nbsp;    const val ERR_UNKNOWN_ENUM = &quot;Unknown enum value: &quot;
+&nbsp;    const val ERR_INVALID_BASE64 = &quot;Invalid base64 character&quot;
+&nbsp;
+&nbsp;    const val EQUALS_INT = &#39;=&#39;.code
+&nbsp;    const val EQUALS_BYTE = &#39;=&#39;.code.toByte()
+&nbsp;    const val NANOS_PER_MILLI = 1_000_000
+&nbsp;    const val NANOS_PER_MICRO = 1_000
+&nbsp;    const val TS_BUFFER_SIZE = 35
+&nbsp;    const val DUR_BUFFER_SIZE = 32
+&nbsp;    const val LONG_BUFFER_SIZE = 22
+&nbsp;    const val BASE64_ALPHABET = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;
+<b class="fc">&nbsp;    val BASE64_ALPHABET_BYTES = BASE64_ALPHABET.encodeToByteArray()</b>
+&nbsp;
+&nbsp;    const val B64_PAD_DIVISOR = 3
+&nbsp;    const val B64_PAD_MULTIPLIER = 4
+&nbsp;    const val B64_SHIFT_4 = 4
+&nbsp;    const val B64_SHIFT_2 = 2
+&nbsp;    const val B64_SHIFT_6 = 6
+&nbsp;    const val B64_MASK_6BITS = 63
+&nbsp;    const val B64_MASK_4BITS = 15
+&nbsp;    const val B64_MASK_2BITS = 3
+&nbsp;    const val B64_BYTE_MASK = 0xFF
+&nbsp;    const val B64_OFFSET_2 = 2
+&nbsp;    const val B64_OFFSET_1 = 1
+&nbsp;
+<b class="fc">&nbsp;    val BASE64_LUT = IntArray(256) { -1 }.apply {</b>
+<b class="fc">&nbsp;        for (i in 0..25) {</b>
+<b class="fc">&nbsp;            this[&#39;A&#39;.code + i] = i</b>
+<b class="fc">&nbsp;            this[&#39;a&#39;.code + i] = 26 + i</b>
+&nbsp;        }
+<b class="fc">&nbsp;        for (i in 0..9) {</b>
+<b class="fc">&nbsp;            this[&#39;0&#39;.code + i] = 52 + i</b>
+&nbsp;        }
+<b class="fc">&nbsp;        this[&#39;+&#39;.code] = 62</b>
+<b class="fc">&nbsp;        this[&#39;/&#39;.code] = 63</b>
+<b class="fc">&nbsp;        this[&#39;-&#39;.code] = 62 // URL-safe</b>
+<b class="fc">&nbsp;        this[&#39;_&#39;.code] = 63 // URL-safe</b>
+<b class="fc">&nbsp;        this[&#39;=&#39;.code] = -2 // Padding sentinel</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    val EMPTY_OBJECT_BS = okio.ByteString.of(123.toByte(), 125.toByte()) // &quot;{}&quot;</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Maximum string length for the plain-ASCII writeQuotedAscii fast-path.
+&nbsp;     * Strings longer than this still fall through to the scratch-buffer escape path.
+&nbsp;     * Chosen to be larger than the scratch buffer so every short JSON string benefits.
+&nbsp;     */
+&nbsp;    const val PLAIN_ASCII_FAST_PATH_LIMIT = 512
+&nbsp;
+&nbsp;    // --- Control Characters (Int values for parsing) ---
+&nbsp;    const val LF_INT = 0x0A
+&nbsp;    const val CR_INT = 0x0D
+&nbsp;    const val TAB_INT = 0x09
+&nbsp;    const val BS_INT = 0x08
+&nbsp;    const val FF_INT = 0x0C
+&nbsp;    const val LF_CHAR = &#39;\n&#39;
+&nbsp;    const val CR_CHAR = &#39;\r&#39;
+&nbsp;    const val TAB_CHAR = &#39;\t&#39;
+&nbsp;    const val BS_CHAR = &#39;\b&#39;
+&nbsp;    const val FF_CHAR = &#39;\u000C&#39;
+&nbsp;
+&nbsp;    // --- Writer Formatting Constants ---
+&nbsp;    const val SCRATCH_BUFFER_SIZE = 48
+&nbsp;    const val BASE_TEN = 10
+&nbsp;    const val BASE_HUNDRED = 100
+&nbsp;    const val ASCII_OFFSET = 48
+&nbsp;
+&nbsp;    // --- Quote / Escape Layout ---
+&nbsp;    /** Bytes consumed by the opening + closing quotes around a JSON string value. */
+&nbsp;    const val STRING_QUOTE_PAIR_BYTES = 2
+&nbsp;
+&nbsp;    // --- UTF-8 Encoding (used by FlatByteArrayWriter) ---
+&nbsp;    /** Code point upper bound (exclusive) for the 1-byte UTF-8 form (i.e. ASCII). */
+&nbsp;    const val UTF8_1BYTE_LIMIT = 0x80
+&nbsp;    const val UTF8_1BYTE_MAX = 0x7F
+&nbsp;
+&nbsp;    /** Code point upper bound (exclusive) for the 2-byte UTF-8 form. */
+&nbsp;    const val UTF8_2BYTE_LIMIT = 0x800
+&nbsp;    const val UTF8_2BYTE_MAX = 0x7FF
+&nbsp;
+&nbsp;    /** Leading-byte prefix for a 2-byte UTF-8 sequence (110xxxxx). */
+&nbsp;    const val UTF8_2BYTE_PREFIX = 0xC0
+&nbsp;
+&nbsp;    /** Leading-byte prefix for a 3-byte UTF-8 sequence (1110xxxx). */
+&nbsp;    const val UTF8_3BYTE_PREFIX = 0xE0
+&nbsp;
+&nbsp;    /** Leading-byte prefix for a 4-byte UTF-8 sequence (11110xxx). */
+&nbsp;    const val UTF8_4BYTE_PREFIX = 0xF0
+&nbsp;
+&nbsp;    /** Continuation-byte prefix for trailing UTF-8 bytes (10xxxxxx). */
+&nbsp;    const val UTF8_CONT_PREFIX = 0x80
+&nbsp;
+&nbsp;    /** Six-bit mask used to extract the payload of a UTF-8 continuation byte. */
+&nbsp;    const val UTF8_CONT_MASK = 0x3F
+&nbsp;
+&nbsp;    /** Right-shift by 6 bits when packing UTF-8 continuation bytes. */
+&nbsp;    const val UTF8_SHIFT_6 = 6
+&nbsp;
+&nbsp;    /** Right-shift by 12 bits when packing the middle byte of a 3-byte UTF-8 sequence. */
+&nbsp;    const val UTF8_SHIFT_12 = 12
+&nbsp;
+&nbsp;    /** Right-shift by 18 bits when packing the leading byte of a 4-byte UTF-8 sequence. */
+&nbsp;    const val UTF8_SHIFT_18 = 18
+&nbsp;
+&nbsp;    /** Worst-case number of UTF-8 bytes for any BMP code point (3 + 1 trailing surrogate). */
+&nbsp;    const val UTF8_MAX_BMP_BYTES = 4
+&nbsp;
+&nbsp;    // --- UTF-8 sequence sizes (char → byte width) ---
+&nbsp;    // Used by charToBytePosition / byteToCharPosition in GhostParserUtils.
+&nbsp;
+&nbsp;    /** Width in bytes of a 1-byte (ASCII) UTF-8 code point. */
+&nbsp;    const val UTF8_1BYTE_SIZE = 1
+&nbsp;
+&nbsp;    /** Width in bytes of a 2-byte UTF-8 code point (U+0080..U+07FF). */
+&nbsp;    const val UTF8_2BYTE_SIZE = 2
+&nbsp;
+&nbsp;    /** Width in bytes of a 3-byte UTF-8 code point (U+0800..U+FFFF, excluding surrogates). */
+&nbsp;    const val UTF8_3BYTE_SIZE = 3
+&nbsp;
+&nbsp;    /** Width in bytes of a 4-byte UTF-8 code point (U+10000..U+10FFFF, surrogate pair in Kotlin String). */
+&nbsp;    const val UTF8_4BYTE_SIZE = 4
+&nbsp;
+&nbsp;    /** UTF-8 encoding of the Unicode replacement character `U+FFFD`. */
+<b class="fc">&nbsp;    val UTF8_REPLACEMENT_CHAR: ByteArray = byteArrayOf(</b>
+<b class="fc">&nbsp;        0xEF.toByte(),</b>
+<b class="fc">&nbsp;        0xBF.toByte(),</b>
+<b class="fc">&nbsp;        0xBD.toByte()</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    internal object FormatUtils {
+<b class="fc">&nbsp;        val DIGIT_TENS = ByteArray(100)</b>
+<b class="fc">&nbsp;        val DIGIT_ONES = ByteArray(100)</b>
+<b class="fc">&nbsp;        init {</b>
+<b class="fc">&nbsp;            for (i in 0 until 100) {</b>
+<b class="fc">&nbsp;                DIGIT_TENS[i] = ((i / BASE_TEN) + ASCII_OFFSET).toByte()</b>
+<b class="fc">&nbsp;                DIGIT_ONES[i] = ((i % BASE_TEN) + ASCII_OFFSET).toByte()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // --- Scan results packing (Long) ---
+&nbsp;    /** Mask to extract the 32-bit hash from the scan result Long. */
+&nbsp;    const val SCAN_HASH_MASK = 0xFFFFFFFFL
+&nbsp;
+&nbsp;    /** Shift to extract the 31-bit length from the scan result Long. */
+&nbsp;    const val SCAN_LENGTH_SHIFT = 32
+&nbsp;
+&nbsp;    /** Bit indicating that the scanned string contains only 7-bit ASCII characters. */
+&nbsp;    const val SCAN_7BIT_BIT = 1L shl 63
+&nbsp;
+&nbsp;    /** Mask to extract the 31-bit length from the scan result Long (bits 32-62). */
+&nbsp;    const val SCAN_LENGTH_MASK = 0x7FFFFFFF00000000L
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun packScanResult(length: Int, hash: Int, is7Bit: Boolean): Long {
+<b class="fc">&nbsp;        var res = (length.toLong() shl SCAN_LENGTH_SHIFT) or (hash.toLong() and SCAN_HASH_MASK)</b>
+<b class="fc">&nbsp;        if (is7Bit) res = res or SCAN_7BIT_BIT</b>
+<b class="fc">&nbsp;        return res</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

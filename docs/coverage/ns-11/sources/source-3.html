@@ -1,0 +1,497 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > FlatByteArrayWriter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.writer</a>
+</div>
+
+<h1>Coverage Summary for Class: FlatByteArrayWriter (com.ghost.serialization.writer)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FlatByteArrayWriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (39/52)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.8%
+  </span>
+  <span class="absValue">
+    (158/176)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.3%
+  </span>
+  <span class="absValue">
+    (724/839)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.BUFFER_SCALE_FACTOR
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.HIGH_SURROGATE_END
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.HIGH_SURROGATE_START
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
+&nbsp;import com.ghost.serialization.parser.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.LOW_SURROGATE_END
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.LOW_SURROGATE_START
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_10
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.SHIFT_12
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UNICODE_BASE
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_1BYTE_LIMIT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_2BYTE_LIMIT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_2BYTE_PREFIX
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_3BYTE_PREFIX
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_4BYTE_PREFIX
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_CONT_MASK
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_CONT_PREFIX
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_MAX_BMP_BYTES
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_REPLACEMENT_CHAR
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_18
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.UTF8_SHIFT_6
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/**
+&nbsp; * A growing flat-array byte buffer used as the in-memory output target for
+&nbsp; * [GhostJsonFlatWriter]. It is intentionally a `final` concrete class with no
+&nbsp; * interface or superclass so every byte-write made by [GhostJsonFlatWriter]
+&nbsp; * resolves as a monomorphic call the JIT (HotSpot/ART) and Kotlin/Native AOT
+&nbsp; * compiler can fully inline — no v-table lookup, no segment management, just
+&nbsp; * direct array stores.
+&nbsp; *
+&nbsp; * Compared to the streaming path that writes through [okio.Buffer]/segments,
+&nbsp; * this class trades the ability to incrementally drain bytes for ~2-3x
+&nbsp; * faster small-encode throughput. The full encoded payload is exposed at
+&nbsp; * the end of the encode via [toByteArray] / [toStringUtf8] (or accessed
+&nbsp; * directly via [array] + [size] for zero-copy fast paths).
+&nbsp; */
+&nbsp;@InternalGhostApi
+<b class="fc">&nbsp;class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Backing store. The slice `array[0 until size]` is the live encoded
+&nbsp;     * payload; everything past `size` is uninitialized / stale capacity.
+&nbsp;     */
+<b class="fc">&nbsp;    var array: ByteArray = ByteArray(initialCapacity)</b>
+&nbsp;        private set
+&nbsp;
+&nbsp;    /** Number of bytes currently written into [array]. */
+<b class="fc">&nbsp;    var size: Int = 0</b>
+&nbsp;        private set
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Grows [array] until at least `extraBytes` more bytes can fit past
+&nbsp;     * the current [size]. Capacity grows geometrically by [BUFFER_SCALE_FACTOR]
+&nbsp;     * to amortize copy cost over many writes.
+&nbsp;     */
+&nbsp;    private fun ensureCapacity(extraBytes: Int) {
+<b class="fc">&nbsp;        val requiredCapacity = size + extraBytes</b>
+<b class="pc">&nbsp;        if (requiredCapacity &lt; 0) {</b>
+<b class="nc">&nbsp;            throw IllegalStateException(C.ERR_CAPACITY_OVERFLOW_PREFIX + &quot;size=$size, extraBytes=$extraBytes&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (requiredCapacity &gt; array.size) {</b>
+<b class="fc">&nbsp;            var newCapacity = array.size</b>
+<b class="fc">&nbsp;            if (newCapacity == 0) {</b>
+<b class="fc">&nbsp;                newCapacity = INITIAL_WRITE_BUFFER_SIZE</b>
+&nbsp;            }
+<b class="fc">&nbsp;            while (newCapacity &lt; requiredCapacity) {</b>
+<b class="fc">&nbsp;                val nextCapacity = newCapacity + (newCapacity shr CAPACITY_GROWTH_SHIFT)</b>
+<b class="fc">&nbsp;                if (nextCapacity &lt; newCapacity) {</b>
+<b class="fc">&nbsp;                    newCapacity = Int.MAX_VALUE</b>
+&nbsp;                    break
+&nbsp;                }
+<b class="fc">&nbsp;                newCapacity = nextCapacity</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (newCapacity &lt; requiredCapacity) {</b>
+<b class="nc">&nbsp;                newCapacity = requiredCapacity</b>
+&nbsp;            }
+<b class="fc">&nbsp;            array = array.copyOf(newCapacity)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends a single byte (low 8 bits of [byteAsInt]). Optimized for inlining. */
+&nbsp;    fun writeByte(byteAsInt: Int) {
+<b class="fc">&nbsp;        val currentSize = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        if (currentSize &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;            backingArray[currentSize] = byteAsInt.toByte()</b>
+<b class="fc">&nbsp;            size = currentSize + 1</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            growAndWrite(byteAsInt)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun growAndWrite(byteAsInt: Int) {
+<b class="fc">&nbsp;        ensureCapacity(1)</b>
+<b class="fc">&nbsp;        array[size++] = byteAsInt.toByte()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Appends exactly two bytes in a single bounds-check.
+&nbsp;     * Use instead of two consecutive [writeByte] calls whenever both bytes
+&nbsp;     * are known at the call site (e.g. opening + closing quotes, escape pairs).
+&nbsp;     */
+&nbsp;    fun write2Bytes(firstByte: Int, secondByte: Int) {
+<b class="fc">&nbsp;        val currentSize = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="pc">&nbsp;        if (currentSize + 1 &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;            backingArray[currentSize] = firstByte.toByte()</b>
+<b class="fc">&nbsp;            backingArray[currentSize + 1] = secondByte.toByte()</b>
+<b class="fc">&nbsp;            size = currentSize + 2</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            ensureCapacity(2)</b>
+<b class="nc">&nbsp;            val updatedArray = array</b>
+<b class="nc">&nbsp;            updatedArray[currentSize] = firstByte.toByte()</b>
+<b class="nc">&nbsp;            updatedArray[currentSize + 1] = secondByte.toByte()</b>
+<b class="nc">&nbsp;            size = currentSize + 2</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Writes `&quot;text&quot;` directly into [array] for a caller-verified plain-ASCII
+&nbsp;     * string (all chars in [0x20, 0x7E] with no `&quot;` or `\`).
+&nbsp;     *
+&nbsp;     * Avoids the scratch-buffer accumulation used by the generic escape path,
+&nbsp;     * saving one intermediate copy + thread-local acquire for the common case.
+&nbsp;     */
+&nbsp;    fun writeQuotedAscii(text: String, length: Int) {
+<b class="fc">&nbsp;        ensureCapacity(length + C.STRING_QUOTE_PAIR_BYTES)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.QUOTE_INT.toByte()</b>
+<b class="fc">&nbsp;        var charIndex = 0</b>
+&nbsp;        // Unrolled x4 for instruction-level parallelism
+<b class="fc">&nbsp;        while (charIndex + 3 &lt; length) {</b>
+<b class="fc">&nbsp;            backingArray[writeIndex] = text[charIndex].code.toByte()</b>
+<b class="fc">&nbsp;            backingArray[writeIndex + 1] = text[charIndex + 1].code.toByte()</b>
+<b class="fc">&nbsp;            backingArray[writeIndex + 2] = text[charIndex + 2].code.toByte()</b>
+<b class="fc">&nbsp;            backingArray[writeIndex + 3] = text[charIndex + 3].code.toByte()</b>
+<b class="fc">&nbsp;            writeIndex += 4</b>
+<b class="fc">&nbsp;            charIndex += 4</b>
+&nbsp;        }
+<b class="fc">&nbsp;        while (charIndex &lt; length) {</b>
+<b class="fc">&nbsp;            backingArray[writeIndex++] = text[charIndex].code.toByte()</b>
+<b class="fc">&nbsp;            charIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.QUOTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends every byte from [bytes] to the live payload. */
+&nbsp;    fun write(bytes: ByteArray) {
+<b class="fc">&nbsp;        ensureCapacity(bytes.size)</b>
+<b class="fc">&nbsp;        bytes.copyInto(array, size)</b>
+<b class="fc">&nbsp;        size += bytes.size</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends `bytes[offset until offset + length]` to the live payload. */
+&nbsp;    fun write(bytes: ByteArray, offset: Int, length: Int) {
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        bytes.copyInto(</b>
+<b class="fc">&nbsp;            array,</b>
+<b class="fc">&nbsp;            size,</b>
+<b class="fc">&nbsp;            offset,</b>
+<b class="fc">&nbsp;            offset + length</b>
+&nbsp;        )
+<b class="fc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends every byte of the immutable [byteString] to the live payload. */
+&nbsp;    fun write(byteString: ByteString) {
+<b class="fc">&nbsp;        val length = byteString.size</b>
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        byteString.copyInto(</b>
+<b class="fc">&nbsp;            0,</b>
+<b class="fc">&nbsp;            array,</b>
+<b class="fc">&nbsp;            size,</b>
+<b class="fc">&nbsp;            length</b>
+&nbsp;        )
+<b class="fc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** UTF-8 encodes the entire string [text] directly into the payload. */
+&nbsp;    fun writeUtf8(text: String) {
+<b class="fc">&nbsp;        writeUtf8(text, 0, text.length)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * UTF-8 encodes `text[beginIndex until endIndex)` directly into [array].
+&nbsp;     *
+&nbsp;     * Hand-rolled to avoid the intermediate `String.toByteArray()` copy that
+&nbsp;     * `okio.Buffer.writeUtf8` would otherwise allocate. The ASCII fast-path
+&nbsp;     * (BMP code points below [UTF8_1BYTE_LIMIT]) collapses to a single
+&nbsp;     * array store per character. Surrogate pairs are decoded into a 4-byte
+&nbsp;     * sequence; lone surrogates emit [UTF8_REPLACEMENT_CHAR].
+&nbsp;     */
+&nbsp;    fun writeUtf8(text: String, beginIndex: Int, endIndex: Int) {
+<b class="fc">&nbsp;        val count = endIndex - beginIndex</b>
+<b class="fc">&nbsp;        ensureCapacity(count * UTF8_MAX_BMP_BYTES)</b>
+<b class="fc">&nbsp;        var sourceIndex = beginIndex</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+&nbsp;
+&nbsp;        // ASCII Fast-Path with unrolling
+<b class="fc">&nbsp;        while (sourceIndex + 3 &lt; endIndex) {</b>
+<b class="fc">&nbsp;            val charCode0 = text[sourceIndex].code</b>
+<b class="fc">&nbsp;            val charCode1 = text[sourceIndex + 1].code</b>
+<b class="fc">&nbsp;            val charCode2 = text[sourceIndex + 2].code</b>
+<b class="fc">&nbsp;            val charCode3 = text[sourceIndex + 3].code</b>
+&nbsp;
+<b class="pc">&nbsp;            if ((charCode0 or charCode1 or charCode2 or charCode3) &lt; UTF8_1BYTE_LIMIT) {</b>
+<b class="fc">&nbsp;                backingArray[writeIndex] = charCode0.toByte()</b>
+<b class="fc">&nbsp;                backingArray[writeIndex + 1] = charCode1.toByte()</b>
+<b class="fc">&nbsp;                backingArray[writeIndex + 2] = charCode2.toByte()</b>
+<b class="fc">&nbsp;                backingArray[writeIndex + 3] = charCode3.toByte()</b>
+<b class="fc">&nbsp;                sourceIndex += 4</b>
+<b class="fc">&nbsp;                writeIndex += 4</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        while (sourceIndex &lt; endIndex) {</b>
+<b class="fc">&nbsp;            val codePoint = text[sourceIndex].code</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                codePoint &lt; UTF8_1BYTE_LIMIT -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] = codePoint.toByte()</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                codePoint &lt; UTF8_2BYTE_LIMIT -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6)).toByte()</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                codePoint !in HIGH_SURROGATE_START..LOW_SURROGATE_END -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12)).toByte()</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                codePoint &lt;= HIGH_SURROGATE_END &amp;&amp; sourceIndex + 1 &lt; endIndex -&gt; {</b>
+<b class="fc">&nbsp;                    val lowSurrogate = text[sourceIndex + 1].code</b>
+<b class="pc">&nbsp;                    if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {</b>
+<b class="fc">&nbsp;                        val fullCodePoint = UNICODE_BASE +</b>
+<b class="fc">&nbsp;                            (((codePoint - HIGH_SURROGATE_START) shl SHIFT_10) or</b>
+<b class="fc">&nbsp;                                (lowSurrogate - LOW_SURROGATE_START))</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_4BYTE_PREFIX or (fullCodePoint shr UTF8_SHIFT_18)).toByte()</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_CONT_PREFIX or ((fullCodePoint shr SHIFT_12) and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_CONT_PREFIX or ((fullCodePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_CONT_PREFIX or (fullCodePoint and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        sourceIndex++</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        UTF8_REPLACEMENT_CHAR.copyInto(backingArray, writeIndex)</b>
+<b class="nc">&nbsp;                        writeIndex += UTF8_REPLACEMENT_CHAR.size</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+&nbsp;                else -&gt; {
+<b class="nc">&nbsp;                    UTF8_REPLACEMENT_CHAR.copyInto(backingArray, writeIndex)</b>
+<b class="nc">&nbsp;                    writeIndex += UTF8_REPLACEMENT_CHAR.size</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            sourceIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Writes a JSON string containing a single BMP code point, without allocating a [String].
+&nbsp;     */
+&nbsp;    fun writeQuotedBmpCodeUnit(codePoint: Int) {
+<b class="fc">&nbsp;        ensureCapacity(C.STRING_QUOTE_PAIR_BYTES + C.UTF8_3BYTE_SIZE)</b>
+<b class="fc">&nbsp;        writeByte(C.QUOTE_INT)</b>
+<b class="fc">&nbsp;        writeBmpUtf8CodeUnit(codePoint)</b>
+<b class="fc">&nbsp;        writeByte(C.QUOTE_INT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeBmpUtf8CodeUnit(codePoint: Int) {
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            codePoint &lt; UTF8_1BYTE_LIMIT -&gt; writeByte(codePoint)</b>
+<b class="nc">&nbsp;            codePoint &lt; UTF8_2BYTE_LIMIT -&gt; {</b>
+<b class="nc">&nbsp;                writeByte(UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6))</b>
+<b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))</b>
+&nbsp;            }
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                writeByte(UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12))</b>
+<b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK))</b>
+<b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;true&quot; directly. */
+&nbsp;    fun writeTrue() {
+<b class="fc">&nbsp;        ensureCapacity(4)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.T_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.R_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;false&quot; directly. */
+&nbsp;    fun writeFalse() {
+<b class="fc">&nbsp;        ensureCapacity(5)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.F_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.A_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.S_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;null&quot; directly. */
+&nbsp;    fun writeNull() {
+<b class="fc">&nbsp;        ensureCapacity(4)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.N_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;.0&quot; directly. */
+&nbsp;    fun writeDotZero() {
+<b class="fc">&nbsp;        ensureCapacity(2)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.DOT_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.ZERO_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Marks the buffer as empty without releasing capacity, so the next
+&nbsp;     * encode reuses the already-grown [array].
+&nbsp;     */
+&nbsp;    fun reset() {
+<b class="fc">&nbsp;        size = 0</b>
+<b class="pc">&nbsp;        if (array.size &gt; GhostHeuristics.maxWarmWriteBufferCapacity) {</b>
+<b class="nc">&nbsp;            array = ByteArray(initialCapacity)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns a fresh [ByteArray] containing exactly the encoded payload. */
+<b class="fc">&nbsp;    fun toByteArray(): ByteArray = array.copyOf(size)</b>
+&nbsp;
+&nbsp;    /** Decodes the encoded payload back into a [String] (UTF-8). */
+<b class="fc">&nbsp;    fun toStringUtf8(): String = array.decodeToString(0, size)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

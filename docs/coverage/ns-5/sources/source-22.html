@@ -1,0 +1,293 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > TypeHelpersKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: TypeHelpersKt (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TypeHelpersKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.2%
+  </span>
+  <span class="absValue">
+    (20/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.5%
+  </span>
+  <span class="absValue">
+    (23/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.9%
+  </span>
+  <span class="absValue">
+    (31/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.6%
+  </span>
+  <span class="absValue">
+    (200/231)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.symbol.ClassKind
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.squareup.kotlinpoet.BOOLEAN
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.DOUBLE
+&nbsp;import com.squareup.kotlinpoet.FLOAT
+&nbsp;import com.squareup.kotlinpoet.INT
+&nbsp;import com.squareup.kotlinpoet.LONG
+&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves the generated serializer companion object&#39;s [ClassName] for this [KSType].
+&nbsp; * For example: maps type `User` to `com.example.User_Serializer`.
+&nbsp; */
+&nbsp;internal fun KSType.serializerClassName(): ClassName {
+<b class="fc">&nbsp;    val classDeclaration = declaration as KSClassDeclaration</b>
+<b class="fc">&nbsp;    return classDeclaration.toClassName().serializerClassName()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves the generated serializer companion object&#39;s [ClassName] for this [ClassName].
+&nbsp; * For example: maps `User` to `User_Serializer`.
+&nbsp; */
+&nbsp;internal fun ClassName.serializerClassName(): ClassName {
+<b class="fc">&nbsp;    return ClassName(</b>
+<b class="fc">&nbsp;        packageName,</b>
+<b class="fc">&nbsp;        &quot;${simpleNames.joinToString(C.STR_UNDERSCORE)}${C.STR_SERIALIZER_SUFFIX}&quot;</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves a non-nullable representation of this [KSType]&#39;s KotlinPoet TypeName.
+&nbsp; */
+<b class="fc">&nbsp;private fun KSType.nonNullTypeName() = toTypeName().copy(nullable = false)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard primitive [Int] type.
+&nbsp; */
+&nbsp;internal fun KSType.isPrimitiveInt(): Boolean {
+<b class="fc">&nbsp;    return nonNullTypeName() == INT</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard primitive [Boolean] type.
+&nbsp; */
+&nbsp;internal fun KSType.isPrimitiveBoolean(): Boolean {
+<b class="fc">&nbsp;    return nonNullTypeName() == BOOLEAN</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard primitive [Long] type.
+&nbsp; */
+&nbsp;internal fun KSType.isPrimitiveLong(): Boolean {
+<b class="fc">&nbsp;    return nonNullTypeName() == LONG</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard primitive [Double] type.
+&nbsp; */
+&nbsp;internal fun KSType.isPrimitiveDouble(): Boolean {
+<b class="fc">&nbsp;    return nonNullTypeName() == DOUBLE</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard primitive [Float] type.
+&nbsp; */
+&nbsp;internal fun KSType.isPrimitiveFloat(): Boolean {
+<b class="fc">&nbsp;    return nonNullTypeName() == FLOAT</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun KSType.isPrimitiveByte(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_BYTE</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun KSType.isPrimitiveShort(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_SHORT</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun KSType.isPrimitiveChar(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_CHAR</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type is a supported standard JVM/Kotlin primitive.
+&nbsp; */
+&nbsp;internal fun KSType.isPrimitive(): Boolean {
+<b class="fc">&nbsp;    return isPrimitiveInt() ||</b>
+<b class="fc">&nbsp;        isPrimitiveBoolean() ||</b>
+<b class="fc">&nbsp;        isPrimitiveLong() ||</b>
+<b class="fc">&nbsp;        isPrimitiveDouble() ||</b>
+<b class="pc">&nbsp;        isPrimitiveFloat() ||</b>
+<b class="pc">&nbsp;        isPrimitiveByte() ||</b>
+<b class="pc">&nbsp;        isPrimitiveShort() ||</b>
+<b class="fc">&nbsp;        isPrimitiveChar()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard [List] type.
+&nbsp; */
+&nbsp;internal fun KSType.isList(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.LIST_QUALIFIED</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard [Set] type.
+&nbsp; */
+&nbsp;internal fun KSType.isSet(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.SET_QUALIFIED</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard [Map] type.
+&nbsp; */
+&nbsp;internal fun KSType.isMap(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.MAP_QUALIFIED</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type matches the standard [String] type.
+&nbsp; */
+&nbsp;internal fun KSType.isString(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.STRING_QUALIFIED</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type is annotated with `@GhostSerialization` indicating it is a serializable model.
+&nbsp; */
+&nbsp;internal fun KSType.isGhost(): Boolean {
+<b class="fc">&nbsp;    return declaration.annotations.any {</b>
+<b class="fc">&nbsp;        it.shortName.asString() == C.GHOST_SERIALIZATION</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type declaration is a Kotlin enum class.
+&nbsp; */
+&nbsp;internal fun KSType.isEnum(): Boolean {
+<b class="pc">&nbsp;    return (declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type is [kotlin.ByteArray].
+&nbsp; * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+&nbsp; */
+&nbsp;internal fun KSType.isByteArray(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type is [com.ghost.serialization.types.RawJson].
+&nbsp; * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+&nbsp; */
+&nbsp;internal fun KSType.isRawJson(): Boolean {
+<b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_RAW_JSON</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type captures opaque JSON inline (ByteArray or RawJson).
+&nbsp; */
+<b class="nc">&nbsp;internal fun KSType.isOpaqueJson(): Boolean = isByteArray() || isRawJson()</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

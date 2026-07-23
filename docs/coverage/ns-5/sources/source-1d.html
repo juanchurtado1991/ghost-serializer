@@ -1,0 +1,449 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > SerializerImportResolver</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: SerializerImportResolver (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SerializerImportResolver</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.5%
+  </span>
+  <span class="absValue">
+    (132/164)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.7%
+  </span>
+  <span class="absValue">
+    (155/157)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.6%
+  </span>
+  <span class="absValue">
+    (1084/1134)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SerializerImportResolver$ByteArrayCoverage</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.5%
+  </span>
+  <span class="absValue">
+    (132/164)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.7%
+  </span>
+  <span class="absValue">
+    (156/158)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.7%
+  </span>
+  <span class="absValue">
+    (1102/1152)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.squareup.kotlinpoet.FileSpec
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Plans and applies conditional parser/type imports for a generated serializer file.
+&nbsp; */
+<b class="fc">&nbsp;internal class SerializerImportResolver(</b>
+<b class="fc">&nbsp;    private val ctx: GhostSerializerContext,</b>
+&nbsp;) {
+&nbsp;
+&nbsp;    fun applyTo(fileBuilder: FileSpec.Builder) {
+<b class="fc">&nbsp;        if (ctx.needsObjectParsingImports()) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                C.PKG_PARSER,</b>
+<b class="fc">&nbsp;                C.STR_BEGIN_OBJECT_NAME,</b>
+<b class="fc">&nbsp;                C.STR_END_OBJECT_NAME,</b>
+<b class="fc">&nbsp;                C.STR_SELECT_NAME_AND_CONSUME_NAME,</b>
+<b class="fc">&nbsp;                C.STR_SKIP_VALUE_NAME</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val (allTypes, hasNullable) = resolveAllTypes()</b>
+<b class="fc">&nbsp;        addParserImports(fileBuilder, allTypes, hasNullable)</b>
+&nbsp;
+<b class="fc">&nbsp;        if (ctx.needsCachedByteStringHeaders()) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.OKIO_PACKAGE, C.STR_BYTESTRING_IMPORT)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun resolveAllTypes(): Pair&lt;List&lt;String&gt;, Boolean&gt; {
+<b class="fc">&nbsp;        var hasNullable = ctx.properties.any { it.isNullable }</b>
+<b class="fc">&nbsp;        val allTypes = ctx.properties.flatMap { prop -&gt;</b>
+<b class="fc">&nbsp;            val types = mutableListOf&lt;String&gt;()</b>
+&nbsp;            fun collectTypes(type: KSType) {
+<b class="fc">&nbsp;                types.add(type.toString())</b>
+<b class="fc">&nbsp;                if (type.isMarkedNullable) {</b>
+<b class="fc">&nbsp;                    hasNullable = true</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (isValueClassType(type)) {</b>
+<b class="fc">&nbsp;                    val inner = resolveValueClassInnerType(type)</b>
+<b class="pc">&nbsp;                    if (inner != null) {</b>
+<b class="fc">&nbsp;                        collectTypes(inner)</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                for (arg in type.arguments) {</b>
+<b class="pc">&nbsp;                    val resolved = arg.type?.resolve()</b>
+<b class="pc">&nbsp;                    if (resolved != null) {</b>
+<b class="fc">&nbsp;                        collectTypes(resolved)</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            collectTypes(prop.type)</b>
+<b class="fc">&nbsp;            prop.valueClassProperty?.let { collectTypes(it.type) }</b>
+&nbsp;
+<b class="fc">&nbsp;            prop.inferredSubclasses.forEach { sub -&gt;</b>
+<b class="fc">&nbsp;                if (ctx.isInferred) {</b>
+<b class="fc">&nbsp;                    sub.properties.forEach { subProp -&gt;</b>
+<b class="fc">&nbsp;                        collectTypes(subProp.type)</b>
+<b class="pc">&nbsp;                        subProp.valueClassProperty?.let { collectTypes(it.type) }</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            types</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return allTypes to hasNullable</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun addParserImports(
+&nbsp;        fileBuilder: FileSpec.Builder,
+&nbsp;        allTypes: List&lt;String&gt;,
+&nbsp;        hasNullable: Boolean,
+&nbsp;    ) {
+<b class="fc">&nbsp;        val hasList = ctx.properties.any { it.isList } ||</b>
+<b class="fc">&nbsp;            allTypes.any { it.contains(C.STR_LIST) }</b>
+<b class="fc">&nbsp;        val hasSet = ctx.properties.any { it.isSet } ||</b>
+<b class="fc">&nbsp;            allTypes.any { it.contains(C.STR_SET) }</b>
+<b class="fc">&nbsp;        val hasMap = ctx.properties.any { it.isMap } ||</b>
+<b class="fc">&nbsp;            allTypes.any { it.contains(C.STR_MAP) }</b>
+&nbsp;
+<b class="fc">&nbsp;        if (hasList || hasSet) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                C.PKG_PARSER,</b>
+<b class="fc">&nbsp;                C.STR_BEGIN_ARRAY,</b>
+<b class="fc">&nbsp;                C.STR_END_ARRAY</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        if (hasList) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_READ_LIST)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (hasSet) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_READ_SET)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (hasMap) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                C.PKG_PARSER,</b>
+<b class="fc">&nbsp;                C.STR_READ_MAP,</b>
+<b class="fc">&nbsp;                C.STR_NEXT_KEY</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        if (hasNullable) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                C.PKG_PARSER,</b>
+<b class="fc">&nbsp;                C.STR_CONSUME_NULL_NAME,</b>
+<b class="fc">&nbsp;                C.STR_IS_NEXT_NULL_VALUE_NAME</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        if (ctx.isSealed &amp;&amp; !ctx.isInferred) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_PEEK_STRING_FIELD)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (ctx.isEnum) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_SELECT_STRING)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (ctx.properties.any { it.isResilient }) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.DECODE_RESILIENT)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (ctx.properties.any { it.wrappedSourceKeys != null }) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                C.PKG_PARSER,</b>
+<b class="fc">&nbsp;                C.STR_GHOST_WRAPPED_KEYS_CAPTURE,</b>
+<b class="fc">&nbsp;                C.STR_CAPTURE_WRAPPED_KEY_NAME,</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val allTypeStrings = allTypes.joinToString()</b>
+<b class="fc">&nbsp;        if (allTypeStrings.contains(C.STR_INT)) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_INT_NAME)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (allTypeStrings.contains(C.STR_LONG_TYPE)) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_LONG_NAME)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (needsNextStringImport()) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_STRING_NAME)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (allTypeStrings.contains(C.STR_DOUBLE)) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_DOUBLE_NAME)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (allTypeStrings.contains(C.STR_FLOAT)) {</b>
+<b class="nc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_FLOAT_NAME)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (allTypeStrings.contains(C.K_BYTE) || allTypeStrings.contains(C.K_SHORT) ||</b>
+<b class="pc">&nbsp;            ctx.properties.any { it.type.isPrimitiveByte() || it.type.isPrimitiveShort() }</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_INT_NAME)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (allTypeStrings.contains(C.K_CHAR) ||</b>
+<b class="fc">&nbsp;            ctx.properties.any { it.type.isPrimitiveChar() }</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_CHAR_NAME)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (allTypeStrings.contains(C.STR_BOOLEAN)) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_BOOLEAN_NAME)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val byteArrayClassifications = classifyAllByteArrayUsages()</b>
+<b class="fc">&nbsp;        if (byteArrayClassifications.contains(ByteArrayCoverage.COVERED)) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                C.PKG_PARSER,</b>
+<b class="fc">&nbsp;                C.STR_DECODE_BASE64_STRING_NAME,</b>
+<b class="fc">&nbsp;                C.STR_ENCODE_BASE64_STRING_NAME,</b>
+<b class="fc">&nbsp;                C.STR_NEXT_STRING_NAME</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val needsCaptureRawJsonBytes = allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE) &amp;&amp;</b>
+<b class="fc">&nbsp;            byteArrayClassifications.contains(ByteArrayCoverage.UNCOVERED)</b>
+<b class="pc">&nbsp;        val needsCaptureRawJson = allTypeStrings.contains(C.K_RAW_JSON) ||</b>
+<b class="fc">&nbsp;            allTypeStrings.contains(C.STR_RAW_JSON_TYPE)</b>
+<b class="fc">&nbsp;        if (needsCaptureRawJsonBytes) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (needsCaptureRawJson) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER, C.STR_CAPTURE_RAW_JSON_NAME)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (allTypeStrings.contains(C.K_RAW_JSON) ||</b>
+<b class="fc">&nbsp;            allTypeStrings.contains(C.STR_RAW_JSON_TYPE)</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_TYPES, C.STR_RAW_JSON_TYPE)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (ctx.isEnum) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private enum class ByteArrayCoverage { COVERED, UNCOVERED }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Classifies every `ByteArray` occurrence reachable from this class&#39;s properties (directly,
+&nbsp;     * through `List`/`Set`/`Map` elements, through a value-class wrapper, or through an inferred
+&nbsp;     * sealed subclass) as [ByteArrayCoverage.COVERED] by the proto3 Base64 codegen path (needs
+&nbsp;     * `decodeBase64String`/`encodeBase64String`), or [ByteArrayCoverage.UNCOVERED] (still needs
+&nbsp;     * the raw-JSON-passthrough `captureRawJsonBytes` import). Coverage mirrors exactly what
+&nbsp;     * `BaseSerializeEmitter`/`BaseDeserializeEmitter` do: `isProto` propagates unchanged through
+&nbsp;     * `List`/`Set`/`Map` recursion, but inferred sealed subclass properties are never proto-aware.
+&nbsp;     */
+&nbsp;    private fun classifyAllByteArrayUsages(): List&lt;ByteArrayCoverage&gt; {
+&nbsp;        fun classify(type: KSType, isProto: Boolean): ByteArrayCoverage? {
+<b class="fc">&nbsp;            if (type.isByteArray()) {</b>
+<b class="fc">&nbsp;                return if (isProto) ByteArrayCoverage.COVERED else ByteArrayCoverage.UNCOVERED</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (isValueClassType(type)) {</b>
+<b class="pc">&nbsp;                val inner = resolveValueClassInnerType(type) ?: return null</b>
+<b class="fc">&nbsp;                return classify(inner, isProto)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (type.isList() || type.isSet()) {</b>
+<b class="pc">&nbsp;                val inner = type.arguments.firstOrNull()?.type?.resolve() ?: return null</b>
+<b class="fc">&nbsp;                return classify(inner, isProto)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (type.isMap()) {</b>
+<b class="pc">&nbsp;                val value = type.arguments.getOrNull(1)?.type?.resolve() ?: return null</b>
+<b class="fc">&nbsp;                return classify(value, isProto)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val direct = ctx.properties.mapNotNull { classify(it.type, it.isProto) }</b>
+<b class="fc">&nbsp;        val valueClass = ctx.properties.mapNotNull {</b>
+<b class="fc">&nbsp;            it.valueClassProperty?.let { vcp -&gt; classify(vcp.type, vcp.isProto) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val inferred = ctx.properties.flatMap { it.inferredSubclasses }.flatMap { it.properties }</b>
+<b class="fc">&nbsp;            .mapNotNull { classify(it.type, it.isProto) }</b>
+<b class="fc">&nbsp;        return direct + valueClass + inferred</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun needsNextStringImport(): Boolean {
+<b class="fc">&nbsp;        if (ctx.properties.any { propertyNeedsNextString(it) }) return true</b>
+<b class="fc">&nbsp;        if (ctx.isInferred) {</b>
+<b class="fc">&nbsp;            return ctx.properties.flatMap { it.inferredSubclasses }</b>
+<b class="fc">&nbsp;                .flatMap { it.properties }</b>
+<b class="fc">&nbsp;                .any { propertyNeedsNextString(it) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun propertyNeedsNextString(property: GhostPropertyModel): Boolean {
+<b class="fc">&nbsp;        if (typeNeedsNextString(property.type)) return true</b>
+<b class="fc">&nbsp;        property.valueClassProperty?.let { underlying -&gt;</b>
+<b class="pc">&nbsp;            if (typeNeedsNextString(underlying.type)) return true</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun typeNeedsNextString(type: KSType): Boolean {
+<b class="fc">&nbsp;        if (type.isString()) return true</b>
+<b class="fc">&nbsp;        if (type.isList() || type.isSet()) {</b>
+<b class="pc">&nbsp;            val element = type.arguments.firstOrNull()?.type?.resolve() ?: return false</b>
+<b class="fc">&nbsp;            return typeNeedsNextString(element)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (type.isMap()) {</b>
+<b class="pc">&nbsp;            val value = type.arguments.getOrNull(1)?.type?.resolve() ?: return false</b>
+<b class="fc">&nbsp;            return typeNeedsNextString(value)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isValueClassType(type: KSType): Boolean {
+<b class="pc">&nbsp;        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false</b>
+<b class="fc">&nbsp;        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||</b>
+<b class="fc">&nbsp;                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun resolveValueClassInnerType(type: KSType): KSType? {
+<b class="pc">&nbsp;        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null</b>
+<b class="pc">&nbsp;        val primaryConstructor = declaration.primaryConstructor ?: return null</b>
+<b class="pc">&nbsp;        val param = primaryConstructor.parameters.firstOrNull() ?: return null</b>
+<b class="fc">&nbsp;        return param.type.resolve()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,234 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostBase64Kt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostBase64Kt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostBase64Kt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    40.7%
+  </span>
+  <span class="absValue">
+    (22/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.6%
+  </span>
+  <span class="absValue">
+    (49/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.3%
+  </span>
+  <span class="absValue">
+    (302/449)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Decodes a standard or URL-safe Base64 string (with or without `=` padding) into raw bytes.
+&nbsp; *
+&nbsp; * Operates on an already-materialized Kotlin [String] (e.g. from `reader.nextString()`), so
+&nbsp; * it works from any reader flavor (streaming [GhostJsonReader], flat [GhostJsonFlatReader],
+&nbsp; * [GhostJsonStringReader]) — unlike a scratch-buffer-pooled decoder tied to a specific byte
+&nbsp; * buffer implementation.
+&nbsp; *
+&nbsp; * @throws IllegalArgumentException if [value] contains a non-alphabet, non-whitespace character.
+&nbsp; */
+&nbsp;fun decodeBase64String(value: String): ByteArray {
+<b class="fc">&nbsp;    val lut = C.BASE64_LUT</b>
+<b class="fc">&nbsp;    val length = value.length</b>
+<b class="fc">&nbsp;    val output = ByteArray(length)</b>
+<b class="fc">&nbsp;    var outputPosition = 0</b>
+<b class="fc">&nbsp;    val chunk = IntArray(4)</b>
+<b class="fc">&nbsp;    var chunkIndex = 0</b>
+&nbsp;
+<b class="fc">&nbsp;    for (index in 0 until length) {</b>
+<b class="fc">&nbsp;        val c = value[index].code</b>
+<b class="pc">&nbsp;        if (c &lt;= C.SPACE_INT) continue</b>
+<b class="fc">&nbsp;        chunk[chunkIndex++] = c</b>
+<b class="fc">&nbsp;        if (chunkIndex == 4) {</b>
+&nbsp;            // Chars outside the LUT&#39;s range (any non-Latin-1 code unit) are never valid
+&nbsp;            // base64 alphabet members — bounds-check rather than indexing lut[] directly,
+&nbsp;            // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
+&nbsp;            // documented IllegalArgumentException.
+<b class="pc">&nbsp;            val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
+<b class="pc">&nbsp;            val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
+<b class="pc">&nbsp;            val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
+<b class="pc">&nbsp;            val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
+<b class="pc">&nbsp;            if (value0 &lt; 0 || value1 &lt; 0 || value2 == -1 || value3 == -1) {</b>
+<b class="nc">&nbsp;                throw IllegalArgumentException(&quot;Invalid base64 character&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            output[outputPosition++] = ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()</b>
+<b class="pc">&nbsp;            if (value2 != -2) {</b>
+<b class="fc">&nbsp;                output[outputPosition++] = ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()</b>
+<b class="pc">&nbsp;                if (value3 != -2) {</b>
+<b class="fc">&nbsp;                    output[outputPosition++] = ((value2 shl C.B64_SHIFT_6) or value3).toByte()</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            chunkIndex = 0</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (chunkIndex &gt; 0) {</b>
+<b class="nc">&nbsp;        while (chunkIndex &lt; 4) {</b>
+<b class="nc">&nbsp;            chunk[chunkIndex++] = &#39;=&#39;.code</b>
+&nbsp;        }
+<b class="nc">&nbsp;        val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
+<b class="nc">&nbsp;        val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
+<b class="nc">&nbsp;        val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
+<b class="nc">&nbsp;        val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
+<b class="nc">&nbsp;        if (value0 &gt;= 0 &amp;&amp; value1 &gt;= 0) {</b>
+<b class="nc">&nbsp;            output[outputPosition++] = ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()</b>
+<b class="nc">&nbsp;            if (value2 != -2 &amp;&amp; value2 &gt;= 0) {</b>
+<b class="nc">&nbsp;                output[outputPosition++] = ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return output.copyOf(outputPosition)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Encodes [source] into a standard Base64 string with `=` padding (RFC 4648 §4).
+&nbsp; */
+&nbsp;fun encodeBase64String(source: ByteArray): String {
+<b class="pc">&nbsp;    if (source.isEmpty()) return &quot;&quot;</b>
+<b class="fc">&nbsp;    val chars = C.BASE64_ALPHABET_BYTES</b>
+<b class="fc">&nbsp;    val outputLength = ((source.size + C.B64_OFFSET_2) / C.B64_PAD_DIVISOR) * C.B64_PAD_MULTIPLIER</b>
+<b class="fc">&nbsp;    val output = ByteArray(outputLength)</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="fc">&nbsp;    var outputIndex = 0</b>
+<b class="fc">&nbsp;    val length = source.size</b>
+<b class="fc">&nbsp;    val loopLimit = length - C.B64_OFFSET_2</b>
+<b class="fc">&nbsp;    while (index &lt; loopLimit) {</b>
+<b class="fc">&nbsp;        val byte0 = source[index].toInt() and C.B64_BYTE_MASK</b>
+<b class="fc">&nbsp;        val byte1 = source[index + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK</b>
+<b class="fc">&nbsp;        val byte2 = source[index + C.B64_OFFSET_2].toInt() and C.B64_BYTE_MASK</b>
+<b class="fc">&nbsp;        output[outputIndex++] = chars[byte0 shr C.B64_SHIFT_2]</b>
+<b class="fc">&nbsp;        output[outputIndex++] = chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]</b>
+<b class="fc">&nbsp;        output[outputIndex++] = chars[((byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2) or (byte2 shr C.B64_SHIFT_6)]</b>
+<b class="fc">&nbsp;        output[outputIndex++] = chars[byte2 and C.B64_MASK_6BITS]</b>
+<b class="fc">&nbsp;        index += C.B64_PAD_DIVISOR</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (index &lt; length) {</b>
+<b class="fc">&nbsp;        val byte0 = source[index].toInt() and C.B64_BYTE_MASK</b>
+<b class="fc">&nbsp;        output[outputIndex++] = chars[byte0 shr C.B64_SHIFT_2]</b>
+<b class="pc">&nbsp;        if (index == length - C.B64_OFFSET_1) {</b>
+<b class="fc">&nbsp;            output[outputIndex++] = chars[(byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4]</b>
+<b class="fc">&nbsp;            output[outputIndex++] = C.EQUALS_BYTE</b>
+<b class="fc">&nbsp;            output[outputIndex++] = C.EQUALS_BYTE</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            val byte1 = source[index + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK</b>
+<b class="nc">&nbsp;            output[outputIndex++] = chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]</b>
+<b class="nc">&nbsp;            output[outputIndex++] = chars[(byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2]</b>
+<b class="nc">&nbsp;            output[outputIndex++] = C.EQUALS_BYTE</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return output.decodeToString()</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

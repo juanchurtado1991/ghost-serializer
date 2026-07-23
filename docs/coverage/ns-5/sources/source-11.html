@@ -1,0 +1,315 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostCodeGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostCodeGenerator (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostCodeGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (27/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.4%
+  </span>
+  <span class="absValue">
+    (122/124)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.7%
+  </span>
+  <span class="absValue">
+    (528/535)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;ReplaceSizeCheckWithIsNotEmpty&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.AnnotationSpec
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.FileSpec
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Orchestrates generation of a specialized GhostSerializer companion object.
+&nbsp; *
+&nbsp; * Delegates import planning to [SerializerImportResolver], companion constants to
+&nbsp; * [SerializerSetupEmitter], and serialize/deserialize bodies to the *Emitter types.
+&nbsp; */
+&nbsp;internal class GhostCodeGenerator(
+&nbsp;    properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;    classDeclaration: KSClassDeclaration,
+<b class="nc">&nbsp;    textChannel: Boolean = false,</b>
+<b class="nc">&nbsp;    envelopeModel: GhostEnvelopeModel? = null,</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private val ctx = GhostSerializerContext.from(</b>
+<b class="fc">&nbsp;        properties = properties,</b>
+<b class="fc">&nbsp;        classDeclaration = classDeclaration,</b>
+<b class="fc">&nbsp;        textChannel = textChannel,</b>
+<b class="fc">&nbsp;        envelopeModel = envelopeModel,</b>
+&nbsp;    )
+<b class="fc">&nbsp;    private val importResolver = SerializerImportResolver(ctx)</b>
+<b class="fc">&nbsp;    private val setupEmitter = SerializerSetupEmitter(ctx)</b>
+&nbsp;
+&nbsp;    fun createSpec(): FileSpec {
+<b class="fc">&nbsp;        val fileBuilder = FileSpec.builder(ctx.packageName, ctx.serializerName)</b>
+<b class="fc">&nbsp;            .addAnnotation(</b>
+<b class="fc">&nbsp;                AnnotationSpec.builder(ClassName(C.PKG_KOTLIN, C.STR_OPT_IN))</b>
+<b class="fc">&nbsp;                    .addMember(</b>
+<b class="fc">&nbsp;                        C.MARKER_CLASS,</b>
+<b class="fc">&nbsp;                        ClassName(C.PKG_GHOST, C.STR_INTERNAL_GHOST_API)</b>
+&nbsp;                    )
+<b class="fc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;        importResolver.applyTo(fileBuilder)</b>
+&nbsp;
+<b class="fc">&nbsp;        return fileBuilder</b>
+<b class="fc">&nbsp;            .apply {</b>
+<b class="pc">&nbsp;                if (ctx.envelopeModel?.payloadMappings?.any { it.targetType != null } == true) {</b>
+<b class="fc">&nbsp;                    addImport(C.PKG_TYPES, C.STR_RAW_JSON_DECODE)</b>
+<b class="fc">&nbsp;                    addImport(C.PKG_GHOST, C.STR_GHOST)</b>
+<b class="fc">&nbsp;                    addImport(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            .addType(buildSerializerObject())</b>
+<b class="fc">&nbsp;            .build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildSerializerObject(): TypeSpec {
+<b class="fc">&nbsp;        val serializeEmitter = SerializeCodeEmitter(</b>
+<b class="fc">&nbsp;            ctx.properties,</b>
+<b class="fc">&nbsp;            ctx.originalClassName,</b>
+<b class="fc">&nbsp;            ctx.isSealed,</b>
+<b class="fc">&nbsp;            ctx.isValue,</b>
+<b class="fc">&nbsp;            ctx.isEnum,</b>
+<b class="fc">&nbsp;            ctx.sealedSubclasses,</b>
+<b class="fc">&nbsp;            ctx.discriminator,</b>
+<b class="fc">&nbsp;            ctx.sealedDiscriminatorKey</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        val deserializeEmitterStreaming = DeserializeCodeEmitter(</b>
+<b class="fc">&nbsp;            ctx.properties,</b>
+<b class="fc">&nbsp;            ctx.originalClassName,</b>
+<b class="fc">&nbsp;            ctx.streamingReaderClass,</b>
+<b class="fc">&nbsp;            ctx.isSealed,</b>
+<b class="fc">&nbsp;            ctx.isValue,</b>
+<b class="fc">&nbsp;            ctx.isEnum,</b>
+<b class="fc">&nbsp;            ctx.sealedSubclasses,</b>
+<b class="fc">&nbsp;            ctx.sealedDiscriminatorKey,</b>
+<b class="fc">&nbsp;            ctx.isResilient,</b>
+<b class="fc">&nbsp;            ctx.isInferred,</b>
+<b class="fc">&nbsp;            ctx.isObject,</b>
+<b class="fc">&nbsp;            hasFallback = ctx.hasFallbackEnum</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        val deserializeEmitterFlat = DeserializeCodeEmitter(</b>
+<b class="fc">&nbsp;            ctx.properties,</b>
+<b class="fc">&nbsp;            ctx.originalClassName,</b>
+<b class="fc">&nbsp;            ctx.flatReaderClass,</b>
+<b class="fc">&nbsp;            ctx.isSealed,</b>
+<b class="fc">&nbsp;            ctx.isValue,</b>
+<b class="fc">&nbsp;            ctx.isEnum,</b>
+<b class="fc">&nbsp;            ctx.sealedSubclasses,</b>
+<b class="fc">&nbsp;            ctx.sealedDiscriminatorKey,</b>
+<b class="fc">&nbsp;            ctx.isResilient,</b>
+<b class="fc">&nbsp;            ctx.isInferred,</b>
+<b class="fc">&nbsp;            ctx.isObject,</b>
+<b class="fc">&nbsp;            hasFallback = ctx.hasFallbackEnum</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        val deserializeEmitterString = if (ctx.textChannel) {</b>
+<b class="fc">&nbsp;            DeserializeCodeEmitter(</b>
+<b class="fc">&nbsp;                ctx.properties,</b>
+<b class="fc">&nbsp;                ctx.originalClassName,</b>
+<b class="fc">&nbsp;                ctx.stringReaderClass,</b>
+<b class="fc">&nbsp;                ctx.isSealed,</b>
+<b class="fc">&nbsp;                ctx.isValue,</b>
+<b class="fc">&nbsp;                ctx.isEnum,</b>
+<b class="fc">&nbsp;                ctx.sealedSubclasses,</b>
+<b class="fc">&nbsp;                ctx.sealedDiscriminatorKey,</b>
+<b class="fc">&nbsp;                ctx.isResilient,</b>
+<b class="fc">&nbsp;                ctx.isInferred,</b>
+<b class="fc">&nbsp;                ctx.isObject,</b>
+<b class="fc">&nbsp;                hasFallback = ctx.hasFallbackEnum</b>
+&nbsp;            )
+&nbsp;        } else {
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val typeSpecBuilder = TypeSpec.objectBuilder(ctx.serializerName)</b>
+<b class="fc">&nbsp;            .addKdoc(C.STR_KDOC_HIGH_PERF, ctx.originalClassName)</b>
+<b class="fc">&nbsp;            .addKdoc(C.STR_KDOC_GENERATED)</b>
+<b class="fc">&nbsp;            .addSuperinterface(ctx.serializerInterface.parameterizedBy(ctx.originalClassName))</b>
+<b class="fc">&nbsp;            .addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)</b>
+<b class="fc">&nbsp;                    .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;                    .initializer(C.MARKER, ctx.finalTypeName)</b>
+<b class="fc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;        if (ctx.isProto) {</b>
+<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(C.STR_IS_PROTO, com.squareup.kotlinpoet.BOOLEAN)</b>
+<b class="fc">&nbsp;                    .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;                    .initializer(C.STR_TRUE)</b>
+<b class="fc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (ctx.needsObjectParsingImports()) {</b>
+<b class="fc">&nbsp;            setupEmitter.addPerfectHashOptions(typeSpecBuilder)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (ctx.needsCachedByteStringHeaders()) {</b>
+<b class="fc">&nbsp;            setupEmitter.addCachedHeaderProperties(typeSpecBuilder)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (ctx.isEnum &amp;&amp; ctx.enumValues != null) {</b>
+<b class="fc">&nbsp;            setupEmitter.addEnumOptions(typeSpecBuilder)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        FlattenOptionsGenerator.generateNestedOptions(</b>
+<b class="fc">&nbsp;            typeSpecBuilder,</b>
+<b class="fc">&nbsp;            ctx.properties,</b>
+<b class="fc">&nbsp;            ctx.fullPaths,</b>
+<b class="fc">&nbsp;            ctx.readerClass,</b>
+<b class="fc">&nbsp;            ctx.textChannel</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        deserializeEmitterStreaming.build(typeSpecBuilder, isFlatPath = false)</b>
+<b class="fc">&nbsp;        deserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)</b>
+<b class="fc">&nbsp;        if (ctx.textChannel) {</b>
+<b class="pc">&nbsp;            deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        serializeEmitter.injectContextualSerializers(typeSpecBuilder)</b>
+&nbsp;
+<b class="fc">&nbsp;        ctx.envelopeModel?.let { envelope -&gt;</b>
+<b class="fc">&nbsp;            EnvelopeRouterEmitter(</b>
+<b class="fc">&nbsp;                envelope = envelope,</b>
+<b class="fc">&nbsp;                originalClassName = ctx.originalClassName,</b>
+<b class="fc">&nbsp;                flatReaderClass = ctx.flatReaderClass</b>
+<b class="fc">&nbsp;            ).emit(typeSpecBuilder)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        return typeSpecBuilder</b>
+<b class="fc">&nbsp;            .addFunction(serializeEmitter.build(ctx.streamingWriterClass, typeSpecBuilder))</b>
+<b class="fc">&nbsp;            .addFunction(serializeEmitter.build(ctx.flatWriterClass, typeSpecBuilder))</b>
+<b class="fc">&nbsp;            .apply {</b>
+<b class="fc">&nbsp;                if (ctx.textChannel) {</b>
+<b class="fc">&nbsp;                    addFunction(serializeEmitter.build(ctx.stringWriterClass, typeSpecBuilder))</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            .addFunction(setupEmitter.buildWarmUpMethod())</b>
+<b class="fc">&nbsp;            .build()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

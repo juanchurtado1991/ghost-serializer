@@ -1,0 +1,187 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoJsonFlatReaderInt32Kt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoJsonFlatReaderInt32Kt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoJsonFlatReaderInt32Kt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (21/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.6%
+  </span>
+  <span class="absValue">
+    (28/29)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.1%
+  </span>
+  <span class="absValue">
+    (112/113)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
+&nbsp;    // Spec: &quot;Values with nonzero fractional portions are not allowed&quot;
+&nbsp;    // E.g. &quot;1.0&quot; ok, &quot;1.5&quot; error.
+&nbsp;    // Peek to see if there is a dot.
+<b class="fc">&nbsp;    val token = peekNextToken()</b>
+<b class="fc">&nbsp;    val isQuoted = token == C.QUOTE_INT</b>
+&nbsp;
+&nbsp;    // We parse via double if there&#39;s a dot, otherwise standard nextInt()
+&nbsp;    // To check if there&#39;s a dot without allocations:
+<b class="fc">&nbsp;    var hasDot = false</b>
+<b class="fc">&nbsp;    var scanPos = position</b>
+<b class="fc">&nbsp;    if (isQuoted) scanPos++</b>
+&nbsp;    // Skip optional minus
+<b class="pc">&nbsp;    if (scanPos &lt; limit &amp;&amp; getByte(scanPos) == C.MINUS_INT) {</b>
+<b class="nc">&nbsp;        scanPos++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    while (scanPos &lt; limit) {</b>
+<b class="fc">&nbsp;        val b = getByte(scanPos)</b>
+<b class="fc">&nbsp;        if (b == C.DOT_INT) {</b>
+<b class="fc">&nbsp;            hasDot = true</b>
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        if (</b>
+<b class="pc">&nbsp;            b == C.QUOTE_INT ||</b>
+<b class="pc">&nbsp;            b == C.COMMA_INT ||</b>
+<b class="pc">&nbsp;            b == C.CLOSE_OBJ_INT ||</b>
+<b class="pc">&nbsp;            b == C.CLOSE_ARR_INT ||</b>
+<b class="pc">&nbsp;            b &lt;= C.SPACE_INT</b>
+&nbsp;        ) {
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        scanPos++</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val prev = coerceStringsToNumbers</b>
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = true</b>
+&nbsp;    }
+&nbsp;    try {
+<b class="fc">&nbsp;        if (hasDot) {</b>
+<b class="fc">&nbsp;            val d = this.nextDoubleExtension()</b>
+<b class="fc">&nbsp;            val i = d.toInt()</b>
+<b class="fc">&nbsp;            if (d != i.toDouble()) {</b>
+<b class="fc">&nbsp;                throwError(C.ERR_PROTO_FRACTIONAL_INT)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return i</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this.nextIntExtension()</b>
+&nbsp;    } finally {
+<b class="fc">&nbsp;        coerceStringsToNumbers = prev</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

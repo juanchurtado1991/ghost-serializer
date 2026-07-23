@@ -1,0 +1,214 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonFlatReaderCaptureKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonFlatReaderCaptureKt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonFlatReaderCaptureKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.8%
+  </span>
+  <span class="absValue">
+    (25/33)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.7%
+  </span>
+  <span class="absValue">
+    (29/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.3%
+  </span>
+  <span class="absValue">
+    (167/183)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;
+&nbsp;/**
+&nbsp; * Captures the next complete JSON value (object, array, string, number, boolean, null)
+&nbsp; * as a [RawJson] view into this reader&#39;s buffer without copying UTF-8 bytes.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.captureRawJson(): RawJson {
+<b class="fc">&nbsp;    skipWhitespace()</b>
+<b class="fc">&nbsp;    val start = position</b>
+<b class="fc">&nbsp;    captureJsonValueBytes()</b>
+<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;    val length = position - start</b>
+<b class="fc">&nbsp;    return if (materializeRawJsonCaptures) {</b>
+<b class="fc">&nbsp;        RawJson.fromUtf8Bytes(rawData.copyOfRange(start, position))</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        RawJson.fromBufferSlice(rawData, start, length)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Captures the next complete JSON value (object, array, string, number, boolean, null)
+&nbsp; * as a raw [ByteArray] without decoding any content. The returned bytes are a verbatim
+&nbsp; * copy of the UTF-8 payload that represents the value in the input, including surrounding
+&nbsp; * brackets or quotes.
+&nbsp; *
+&nbsp; * Designed for deferred parsing: capture bytes here, then pass them later to
+&nbsp; * [com.ghost.serialization.Ghost.deserialize] which will create a new flat reader
+&nbsp; * over the captured slice — no intermediate String allocation, no UTF-8→UTF-16 round-trip.
+&nbsp; *
+&nbsp; * Contrast with [com.ghost.serialization.parser.GhostJsonFlatReader.skipValue], which
+&nbsp; * uses the stateful depth/comma machine. This function is a pure byte-level scan that
+&nbsp; * does not touch depth, needsCommaMask, or commaConsumedMask.
+&nbsp; */
+<b class="fc">&nbsp;fun GhostJsonFlatReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes</b>
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.captureJsonValueBytes() {
+<b class="fc">&nbsp;    val data = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val first = data[position++].toInt() and C.BYTE_MASK</b>
+<b class="pc">&nbsp;    when (first) {</b>
+&nbsp;        C.OPEN_OBJ_INT, C.OPEN_ARR_INT -&gt; {
+&nbsp;            // Scan past the entire object/array. A single depth counter works for
+&nbsp;            // well-formed JSON: every { or [ increments, every } or ] decrements.
+&nbsp;            // Quoted strings are skipped in full to avoid counting brackets inside them.
+<b class="fc">&nbsp;            var depth = 1</b>
+<b class="fc">&nbsp;            while (position &lt; localLimit &amp;&amp; depth &gt; 0) {</b>
+<b class="fc">&nbsp;                when (data[position++].toInt() and C.BYTE_MASK) {</b>
+<b class="fc">&nbsp;                    C.QUOTE_INT -&gt; captureSkipStringBytes(data, localLimit)</b>
+<b class="fc">&nbsp;                    C.OPEN_OBJ_INT, C.OPEN_ARR_INT -&gt; depth++</b>
+<b class="fc">&nbsp;                    C.CLOSE_OBJ_INT, C.CLOSE_ARR_INT -&gt; depth--</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        C.QUOTE_INT -&gt; captureSkipStringBytes(data, localLimit)</b>
+<b class="fc">&nbsp;        C.TRUE_CHAR_INT -&gt; position += 3   // &quot;rue&quot; (the &#39;t&#39; was already consumed)</b>
+<b class="nc">&nbsp;        C.FALSE_CHAR_INT -&gt; position += 4  // &quot;alse&quot;</b>
+<b class="fc">&nbsp;        C.NULL_CHAR_INT -&gt; position += 3   // &quot;ull&quot;</b>
+&nbsp;        else -&gt; {
+&nbsp;            // Number: advance until a JSON structural delimiter or whitespace
+<b class="pc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                val b = data[position].toInt() and C.BYTE_MASK</b>
+<b class="pc">&nbsp;                if (b == C.COMMA_INT || b == C.CLOSE_OBJ_INT || b == C.CLOSE_ARR_INT || b &lt;= C.SPACE_INT) break</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Advances [position] past the content of a quoted JSON string whose opening &#39;&quot;&#39; has
+&nbsp; * already been consumed. Handles backslash escapes by skipping the escaped character.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.captureSkipStringBytes(data: ByteArray, localLimit: Int) {
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="pc">&nbsp;        when (data[position++].toInt() and C.BYTE_MASK) {</b>
+&nbsp;            C.QUOTE_INT -&gt; return
+<b class="pc">&nbsp;            C.BACKSLASH_INT -&gt; if (position &lt; localLimit) position++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

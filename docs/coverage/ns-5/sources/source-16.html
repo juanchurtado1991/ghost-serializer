@@ -1,0 +1,762 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostSerializationProcessor</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostSerializationProcessor (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostSerializationProcessor</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45%
+  </span>
+  <span class="absValue">
+    (18/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.8%
+  </span>
+  <span class="absValue">
+    (212/250)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.6%
+  </span>
+  <span class="absValue">
+    (1114/1382)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostSerializationProcessor$generateModuleRegistry$$inlined$sortedBy$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    94.1%
+  </span>
+  <span class="absValue">
+    (16/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45%
+  </span>
+  <span class="absValue">
+    (18/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.8%
+  </span>
+  <span class="absValue">
+    (212/250)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.6%
+  </span>
+  <span class="absValue">
+    (1114/1382)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.processing.CodeGenerator
+&nbsp;import com.google.devtools.ksp.processing.Dependencies
+&nbsp;import com.google.devtools.ksp.processing.KSPLogger
+&nbsp;import com.google.devtools.ksp.processing.Resolver
+&nbsp;import com.google.devtools.ksp.processing.SymbolProcessor
+&nbsp;import com.google.devtools.ksp.symbol.KSAnnotated
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSFile
+&nbsp;import com.google.devtools.ksp.symbol.Modifier
+&nbsp;import com.squareup.kotlinpoet.AnnotationSpec
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.FileSpec
+&nbsp;import com.squareup.kotlinpoet.FunSpec
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.STAR
+&nbsp;import com.squareup.kotlinpoet.TypeName
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.squareup.kotlinpoet.TypeVariableName
+&nbsp;import com.squareup.kotlinpoet.asClassName
+&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import kotlin.reflect.KClass
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Main KSP Processor for Ghost Serialization.
+&nbsp; *
+&nbsp; * It analyzes classes annotated with `@GhostSerialization`, generates their respective
+&nbsp; * specialized serializers, and builds a global registry mapping classes to serializers
+&nbsp; * to avoid reflection at runtime.
+&nbsp; *
+&nbsp; * @property codeGenerator The KSP [CodeGenerator] used to create new serializer and registry files.
+&nbsp; * @property logger The [KSPLogger] used to report compilation errors, warnings, and messages.
+&nbsp; * @property options Map of key-value pairs representing processor options passed from build scripts.
+&nbsp; */
+&nbsp;class GhostSerializationProcessor(
+<b class="fc">&nbsp;    private val codeGenerator: CodeGenerator,</b>
+<b class="fc">&nbsp;    private val logger: KSPLogger,</b>
+<b class="fc">&nbsp;    private val options: Map&lt;String, String&gt; = emptyMap()</b>
+&nbsp;) : SymbolProcessor {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Map tracking class names to their generated companion serializers for the module registry.
+&nbsp;     */
+<b class="fc">&nbsp;    private val classToSerializer = mutableMapOf&lt;ClassName, ClassName&gt;()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Origin files corresponding to processed declarations, used to define KSP incremental compilation dependencies.
+&nbsp;     */
+<b class="fc">&nbsp;    private val originatingFiles = mutableSetOf&lt;KSFile&gt;()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Tracks processed file names to avoid double-processing declarations.
+&nbsp;     */
+<b class="fc">&nbsp;    private val processedFiles = mutableSetOf&lt;String&gt;()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Analyzer that reads declarations and constructs property metadata models.
+&nbsp;     */
+<b class="fc">&nbsp;    private val analyzer = GhostAnalyzer(logger)</b>
+<b class="fc">&nbsp;    private val envelopeAnalyzer = EnvelopeAnalyzer(logger)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Lazily resolves the output name of the module-level registry class (e.g. `GhostRegistry_module_name`).
+&nbsp;     */
+<b class="fc">&nbsp;    private val registryClassName: String by lazy {</b>
+&nbsp;        // Use the module name provided by KSP or fallback to a stable suffix
+<b class="pc">&nbsp;        var moduleName = options[C.OPTION_MODULE_NAME]</b>
+<b class="pc">&nbsp;            ?.replace(C.STR_DASH, C.STR_UNDERSCORE)</b>
+<b class="pc">&nbsp;            ?.replace(C.STR_DOT, C.STR_UNDERSCORE)</b>
+<b class="fc">&nbsp;            ?: C.STR_DEFAULT_NAME</b>
+&nbsp;
+&nbsp;        // Append _Test if we are in a test source set to avoid collisions
+<b class="pc">&nbsp;        if (moduleName == C.STR_DEFAULT_NAME) {</b>
+<b class="fc">&nbsp;            val isTest = originatingFiles.any { </b>
+<b class="fc">&nbsp;                val path = it.filePath</b>
+<b class="pc">&nbsp;                path.contains(C.STR_SRC_TEST) ||</b>
+<b class="pc">&nbsp;                        path.contains(C.STR_SRC_ANDROID_TEST) ||</b>
+<b class="fc">&nbsp;                        path.contains(C.STR_SRC_TEST_KSP)</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (isTest) {</b>
+<b class="nc">&nbsp;                moduleName += C.STR_TEST_SUFFIX</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        C.STR_REGISTRY_PREFIX + C.STR_UNDERSCORE + moduleName</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Entry point of the processor phase.
+&nbsp;     * Searches for `@GhostSerialization` annotated classes, generates their serializers,
+&nbsp;     * and compiles the final module registry if any class was successfully processed.
+&nbsp;     *
+&nbsp;     * @param resolver KSP [Resolver] used to query symbols and types.
+&nbsp;     * @return List of symbols that couldn&#39;t be processed in this round.
+&nbsp;     */
+&nbsp;    override fun process(resolver: Resolver): List&lt;KSAnnotated&gt; {
+<b class="fc">&nbsp;        println(&quot;=== KSP GhostSerializationProcessor.process called ===&quot;)</b>
+<b class="fc">&nbsp;        val symbols = (resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION) +</b>
+<b class="fc">&nbsp;                resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_PROTO_SERIALIZATION)).toSet()</b>
+<b class="fc">&nbsp;        val validClasses = symbols.filterIsInstance&lt;KSClassDeclaration&gt;().toList()</b>
+<b class="fc">&nbsp;        println(&quot;=== Found annotated symbols: ${symbols.size}, valid classes: ${validClasses.size} ===&quot;)</b>
+<b class="fc">&nbsp;        val unableToProcess = symbols.filterNot { it is KSClassDeclaration }</b>
+&nbsp;
+<b class="fc">&nbsp;        val analyzed = validClasses.mapNotNull { classDeclaration -&gt;</b>
+&nbsp;            try {
+<b class="fc">&nbsp;                TextChannelPlanner.AnalyzedClass(</b>
+<b class="fc">&nbsp;                    declaration = classDeclaration,</b>
+<b class="fc">&nbsp;                    properties = analyzer.analyze(classDeclaration),</b>
+&nbsp;                )
+&nbsp;            } catch (e: Exception) {
+<b class="nc">&nbsp;                logger.error(</b>
+&nbsp;                    &quot;${C.STR_LOG_PREFIX}${C.STR_LOG_CRITICAL}${
+<b class="nc">&nbsp;                        classDeclaration.simpleName.asString()</b>
+<b class="nc">&nbsp;                    }${C.STR_COLON_SPACE}${e.message ?: e.toString()}&quot;,</b>
+<b class="nc">&nbsp;                    classDeclaration,</b>
+&nbsp;                )
+<b class="fc">&nbsp;                null</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val textChannelByClass = TextChannelPlanner.plan(</b>
+<b class="fc">&nbsp;            analyzed = analyzed,</b>
+<b class="fc">&nbsp;            moduleTextChannelEnabled = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE,</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        analyzed.forEach { entry -&gt;</b>
+<b class="fc">&nbsp;            processClass(</b>
+<b class="fc">&nbsp;                classDeclaration = entry.declaration,</b>
+<b class="fc">&nbsp;                propertiesModel = entry.properties,</b>
+<b class="fc">&nbsp;                textChannel = textChannelByClass[entry.declaration] == true,</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        if (validClasses.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            generateModuleRegistry()</b>
+<b class="fc">&nbsp;            generateProGuardRules()</b>
+<b class="fc">&nbsp;            generateServiceFile()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return unableToProcess.toList()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Analyzes, compiles code specs, and writes the serializer companion class file for a target class.
+&nbsp;     *
+&nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
+&nbsp;     */
+&nbsp;    private fun processClass(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        propertiesModel: List&lt;GhostPropertyModel&gt;,
+&nbsp;        textChannel: Boolean,
+&nbsp;    ) {
+<b class="fc">&nbsp;        val className = classDeclaration.simpleName.asString()</b>
+&nbsp;        try {
+<b class="pc">&nbsp;            val serializerClassName = generateSerializer(</b>
+<b class="fc">&nbsp;                classDeclaration = classDeclaration,</b>
+<b class="fc">&nbsp;                propertiesModel = propertiesModel,</b>
+<b class="fc">&nbsp;                textChannel = textChannel,</b>
+&nbsp;            ) ?: return
+&nbsp;
+<b class="fc">&nbsp;            registerSerializer(classDeclaration, serializerClassName)</b>
+&nbsp;
+<b class="fc">&nbsp;            logger.info(</b>
+&nbsp;                &quot;${
+&nbsp;                    C.STR_LOG_PREFIX
+&nbsp;                }${
+&nbsp;                    C.STR_LOG_OPTIMIZED
+<b class="fc">&nbsp;                }$className&quot;</b>
+&nbsp;            )
+&nbsp;        } catch (e: Exception) {
+<b class="fc">&nbsp;            logger.error(</b>
+<b class="pc">&nbsp;                &quot;${C.STR_LOG_PREFIX}${C.STR_LOG_CRITICAL}$className${C.STR_COLON_SPACE}${e.message ?: e.toString()}&quot;,</b>
+<b class="fc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates and writes the serializer class file for the target class declaration.
+&nbsp;     *
+&nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
+&nbsp;     * @param propertiesModel The properties metadata model parsed from the declaration.
+&nbsp;     * @return The [ClassName] of the generated serializer class, or null if it was already processed.
+&nbsp;     */
+&nbsp;    private fun generateSerializer(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        propertiesModel: List&lt;GhostPropertyModel&gt;,
+&nbsp;        textChannel: Boolean,
+&nbsp;    ): ClassName? {
+<b class="fc">&nbsp;        val fileGenerator = GhostCodeGenerator(</b>
+<b class="fc">&nbsp;            classDeclaration = classDeclaration,</b>
+<b class="fc">&nbsp;            properties = propertiesModel,</b>
+<b class="fc">&nbsp;            textChannel = textChannel,</b>
+<b class="fc">&nbsp;            envelopeModel = envelopeAnalyzer.analyze(classDeclaration, propertiesModel)</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        val fileSpec = fileGenerator.createSpec()</b>
+<b class="fc">&nbsp;        val packageName = classDeclaration.packageName.asString()</b>
+<b class="fc">&nbsp;        val fullFileName = &quot;$packageName.${fileSpec.name}&quot;</b>
+&nbsp;
+<b class="pc">&nbsp;        if (processedFiles.contains(fullFileName)) {</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        processedFiles.add(fullFileName)</b>
+&nbsp;
+<b class="fc">&nbsp;        fileSpec.writeTrimmedTo(</b>
+<b class="fc">&nbsp;            codeGenerator = codeGenerator,</b>
+<b class="fc">&nbsp;            dependencies = Dependencies(</b>
+<b class="fc">&nbsp;                aggregating = false,</b>
+<b class="fc">&nbsp;                classDeclaration.containingFile!!</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        return ClassName(</b>
+<b class="fc">&nbsp;            packageName,</b>
+<b class="fc">&nbsp;            classDeclaration</b>
+<b class="fc">&nbsp;                .toClassName()</b>
+<b class="fc">&nbsp;                .simpleNames</b>
+<b class="fc">&nbsp;                .joinToString(C.STR_UNDERSCORE)</b>
+&nbsp;                    + C.STR_SERIALIZER_SUFFIX
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers the generated serializer class name mapping for a given model, tracking sealed subclasses
+&nbsp;     * and recording originating files for incremental compilation.
+&nbsp;     *
+&nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
+&nbsp;     * @param serializerClassName The [ClassName] of the generated serializer.
+&nbsp;     */
+&nbsp;    private fun registerSerializer(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        serializerClassName: ClassName
+&nbsp;    ) {
+<b class="fc">&nbsp;        classToSerializer[classDeclaration.toClassName()] = serializerClassName</b>
+&nbsp;
+<b class="fc">&nbsp;        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {</b>
+<b class="fc">&nbsp;            classDeclaration.getSealedSubclasses().forEach { subclass -&gt;</b>
+<b class="fc">&nbsp;                classToSerializer[subclass.toClassName()] = serializerClassName</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="pc">&nbsp;        classDeclaration.containingFile?.let { originatingFiles.add(it) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a registry containing a mapping of serializable classes to their generated serializers.
+&nbsp;     * Splitting the structure into chunks if there are many models to avoid JVM method limits.
+&nbsp;     */
+&nbsp;    private fun generateModuleRegistry() {
+<b class="fc">&nbsp;        val serializerType = ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)</b>
+<b class="fc">&nbsp;        val kClassType = ClassName(C.STR_REFLECT_PKG, C.STR_KCLASS)</b>
+<b class="fc">&nbsp;        val type = TypeVariableName(C.STR_TYPE_T, Any::class)</b>
+<b class="fc">&nbsp;        val mapType = ClassName(C.STR_COLLECTIONS_PKG, C.STR_MAP)</b>
+<b class="fc">&nbsp;            .parameterizedBy(</b>
+<b class="fc">&nbsp;                kClassType.parameterizedBy(STAR),</b>
+<b class="fc">&nbsp;                serializerType.parameterizedBy(STAR)</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;        val entries = classToSerializer.entries.toList().sortedBy { it.key.canonicalName }</b>
+<b class="fc">&nbsp;        val registrySpec = TypeSpec.classBuilder(registryClassName)</b>
+<b class="fc">&nbsp;            .addKdoc(C.STR_KDOC_REGISTRY)</b>
+<b class="fc">&nbsp;            .addSuperinterface(ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_REGISTRY))</b>
+&nbsp;
+<b class="fc">&nbsp;        val chunks = entries.chunked(C.REGISTRY_CHUNK_SIZE)</b>
+&nbsp;
+&nbsp;        // 1. Generate full serializers map (Lazy + Fragmented)
+<b class="fc">&nbsp;        generateSerializersMapProperty(registrySpec, chunks, entries, mapType)</b>
+&nbsp;
+&nbsp;        // 2. Generate getSerializer method (Fragmented when)
+<b class="fc">&nbsp;        generateGetSerializerMethod(registrySpec, chunks, entries, serializerType, type)</b>
+&nbsp;
+&nbsp;        // 3. Generate Shard Methods if fragmented
+<b class="fc">&nbsp;        generateShardMethods(registrySpec, chunks, mapType, serializerType)</b>
+&nbsp;
+&nbsp;        // 4. Generate Metadata Methods &amp; Companion
+<b class="fc">&nbsp;        generateMetadataMethodsAndCompanion(registrySpec, entries.size, mapType)</b>
+&nbsp;
+&nbsp;        // Write the spec to file
+<b class="fc">&nbsp;        writeRegistryFile(registrySpec.build())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates the lazily-initialized full serializers map property for the registry.
+&nbsp;     *
+&nbsp;     * @param registrySpec The type spec builder for the module registry.
+&nbsp;     * @param chunks Chunked lists of serializable class entry mappings.
+&nbsp;     * @param entries All serializable class entry mappings.
+&nbsp;     * @param mapType The parameterized type description of the mapping.
+&nbsp;     */
+&nbsp;    private fun generateSerializersMapProperty(
+&nbsp;        registrySpec: TypeSpec.Builder,
+&nbsp;        chunks: List&lt;List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;&gt;,
+&nbsp;        entries: List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;,
+&nbsp;        mapType: TypeName
+&nbsp;    ) {
+<b class="fc">&nbsp;        val allSerializersDelegate = CodeBlock.builder()</b>
+<b class="fc">&nbsp;            .add(C.STR_LAZY_START)</b>
+<b class="fc">&nbsp;            .indent()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (chunks.size &gt; 1) {</b>
+<b class="nc">&nbsp;            chunks.forEachIndexed { index, _ -&gt;</b>
+<b class="nc">&nbsp;                allSerializersDelegate.add(C.TEMPLATE_GET_SHARD_MAP_CALL, index)</b>
+<b class="nc">&nbsp;                if (index &lt; chunks.size - 1) {</b>
+<b class="nc">&nbsp;                    allSerializersDelegate.add(C.STR_PLUS_SPACED)</b>
+&nbsp;                }
+<b class="nc">&nbsp;            }</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            allSerializersDelegate.add(buildMapBlock(entries))</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        allSerializersDelegate.unindent().add(C.STR_NEWLINE_CLOSE_CURLY)</b>
+&nbsp;
+<b class="fc">&nbsp;        registrySpec.addProperty(</b>
+<b class="fc">&nbsp;            PropertySpec.builder(C.STR_PROP_SERIALIZERS_MAP, mapType)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                .delegate(allSerializersDelegate.build())</b>
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates the polymorphic `getSerializer` method routing requests to matches or shards.
+&nbsp;     *
+&nbsp;     * @param registrySpec The type spec builder for the module registry.
+&nbsp;     * @param chunks Chunked lists of serializable class entry mappings.
+&nbsp;     * @param entries All serializable class entry mappings.
+&nbsp;     * @param serializerType The parameterized serializer type description.
+&nbsp;     * @param type The type variable representation for return type casting.
+&nbsp;     */
+&nbsp;    private fun generateGetSerializerMethod(
+&nbsp;        registrySpec: TypeSpec.Builder,
+&nbsp;        chunks: List&lt;List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;&gt;,
+&nbsp;        entries: List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;,
+&nbsp;        serializerType: ClassName,
+&nbsp;        type: TypeVariableName
+&nbsp;    ) {
+<b class="fc">&nbsp;        val getMethodBuilder = FunSpec.builder(C.STR_FUN_GET_SERIALIZER)</b>
+<b class="fc">&nbsp;            .addTypeVariable(type)</b>
+<b class="fc">&nbsp;            .addParameter(</b>
+<b class="fc">&nbsp;                C.STR_PARAM_CLAZZ,</b>
+<b class="fc">&nbsp;                KClass::class.asClassName().parameterizedBy(type)</b>
+&nbsp;            )
+<b class="fc">&nbsp;            .returns(serializerType.parameterizedBy(type).copy(nullable = true))</b>
+<b class="fc">&nbsp;            .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;            .addAnnotation(</b>
+<b class="fc">&nbsp;                AnnotationSpec.builder(Suppress::class)</b>
+<b class="fc">&nbsp;                    .addMember(C.MARKER, C.STR_UNCHECKED_CAST)</b>
+<b class="fc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;        val getCode = CodeBlock.builder()</b>
+<b class="pc">&nbsp;        if (chunks.size &gt; 1) {</b>
+<b class="nc">&nbsp;            for (index in chunks.indices) {</b>
+<b class="nc">&nbsp;                getCode.addStatement(</b>
+<b class="nc">&nbsp;                    C.TEMPLATE_GET_SHARD_CALL,</b>
+<b class="nc">&nbsp;                    index,</b>
+<b class="nc">&nbsp;                    serializerType.parameterizedBy(type).copy(nullable = true)</b>
+&nbsp;                )
+&nbsp;            }
+<b class="nc">&nbsp;            getCode.addStatement(C.STR_RETURN_NULL)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            getCode.add(buildWhenBlock(entries, serializerType, type))</b>
+&nbsp;        }
+<b class="fc">&nbsp;        getMethodBuilder.addCode(getCode.build())</b>
+<b class="fc">&nbsp;        registrySpec.addFunction(getMethodBuilder.build())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates private helper lookup/mapping shard methods if the registry size warrants fragmentation.
+&nbsp;     *
+&nbsp;     * @param registrySpec The type spec builder for the module registry.
+&nbsp;     * @param chunks Chunked lists of serializable class entry mappings.
+&nbsp;     * @param mapType The parameterized type description of the mapping.
+&nbsp;     * @param serializerType The parameterized serializer type description.
+&nbsp;     */
+&nbsp;    private fun generateShardMethods(
+&nbsp;        registrySpec: TypeSpec.Builder,
+&nbsp;        chunks: List&lt;List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;&gt;,
+&nbsp;        mapType: TypeName,
+&nbsp;        serializerType: ClassName
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (chunks.size &gt; 1) {</b>
+<b class="nc">&nbsp;            chunks.forEachIndexed { i, chunk -&gt;</b>
+<b class="nc">&nbsp;                registrySpec.addFunction(</b>
+<b class="nc">&nbsp;                    FunSpec.builder(C.TEMPLATE_SHARD_MAP_NAME.format(i))</b>
+<b class="nc">&nbsp;                        .addModifiers(KModifier.PRIVATE)</b>
+<b class="nc">&nbsp;                        .returns(mapType)</b>
+<b class="nc">&nbsp;                        .addCode(C.STR_RETURN_L, buildMapBlock(chunk))</b>
+<b class="nc">&nbsp;                        .build()</b>
+&nbsp;                )
+&nbsp;
+&nbsp;                // Shard Lookup
+<b class="nc">&nbsp;                registrySpec.addFunction(</b>
+<b class="nc">&nbsp;                    FunSpec.builder(C.TEMPLATE_SHARD_NAME.format(i))</b>
+<b class="nc">&nbsp;                        .addModifiers(KModifier.PRIVATE)</b>
+<b class="nc">&nbsp;                        .addParameter(</b>
+<b class="nc">&nbsp;                            C.STR_PARAM_CLAZZ,</b>
+<b class="nc">&nbsp;                            KClass::class.asClassName().parameterizedBy(STAR)</b>
+&nbsp;                        )
+<b class="nc">&nbsp;                        .returns(serializerType.parameterizedBy(STAR).copy(nullable = true))</b>
+<b class="nc">&nbsp;                        .addCode(buildWhenBlock(chunk, serializerType, STAR))</b>
+<b class="nc">&nbsp;                        .build()</b>
+&nbsp;                )
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates metadata info methods (prewarm, registry size count, and global companion instance).
+&nbsp;     *
+&nbsp;     * @param registrySpec The type spec builder for the module registry.
+&nbsp;     * @param entriesCount The total number of serializable class entry mappings.
+&nbsp;     * @param mapType The parameterized type description of the mapping.
+&nbsp;     */
+&nbsp;    private fun generateMetadataMethodsAndCompanion(
+&nbsp;        registrySpec: TypeSpec.Builder,
+&nbsp;        entriesCount: Int,
+&nbsp;        mapType: TypeName
+&nbsp;    ) {
+<b class="fc">&nbsp;        registrySpec.addFunction(</b>
+<b class="fc">&nbsp;            FunSpec.builder(C.STR_FUN_PREWARM)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;                .addStatement(C.STR_SERIALIZERS_SIZE)</b>
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+<b class="fc">&nbsp;        registrySpec.addFunction(</b>
+<b class="fc">&nbsp;            FunSpec.builder(C.STR_FUN_REG_COUNT)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;                .returns(Int::class)</b>
+<b class="fc">&nbsp;                .addStatement(C.STR_RETURN_L, entriesCount)</b>
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+<b class="fc">&nbsp;        registrySpec.addFunction(</b>
+<b class="fc">&nbsp;            FunSpec.builder(C.STR_FUN_GET_ALL_SERIALIZERS)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;                .returns(mapType)</b>
+<b class="fc">&nbsp;                .addStatement(C.STR_RETURN_SERIALIZERS)</b>
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+<b class="fc">&nbsp;        registrySpec.addType(</b>
+<b class="fc">&nbsp;            TypeSpec.companionObjectBuilder()</b>
+<b class="fc">&nbsp;                .addProperty(</b>
+<b class="fc">&nbsp;                    PropertySpec.builder(</b>
+<b class="fc">&nbsp;                        C.STR_INSTANCE,</b>
+<b class="fc">&nbsp;                        ClassName(C.STR_GENERATED_PKG, registryClassName)</b>
+&nbsp;                    )
+<b class="fc">&nbsp;                        .initializer(</b>
+<b class="fc">&nbsp;                            C.STR_INIT_INSTANCE,</b>
+<b class="fc">&nbsp;                            ClassName(C.STR_GENERATED_PKG, registryClassName)</b>
+&nbsp;                        )
+<b class="fc">&nbsp;                        .addAnnotation(JvmField::class)</b>
+<b class="fc">&nbsp;                        .build()</b>
+&nbsp;                )
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Writes the completed registry type specification to a file.
+&nbsp;     *
+&nbsp;     * @param registrySpec The built registry type specification.
+&nbsp;     */
+&nbsp;    private fun writeRegistryFile(registrySpec: TypeSpec) {
+<b class="fc">&nbsp;        FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)</b>
+<b class="fc">&nbsp;            .addType(registrySpec)</b>
+<b class="fc">&nbsp;            .build()</b>
+<b class="fc">&nbsp;            .writeTrimmedTo(</b>
+<b class="fc">&nbsp;                codeGenerator,</b>
+<b class="fc">&nbsp;                Dependencies(aggregating = true, *originatingFiles.toTypedArray())</b>
+&nbsp;            )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a KotlinPoet [CodeBlock] mapping class types to their serializer instances.
+&nbsp;     *
+&nbsp;     * @param entries Serializable class entry mappings.
+&nbsp;     * @return Pre-compiled registry map code block.
+&nbsp;     */
+&nbsp;    private fun buildMapBlock(
+&nbsp;        entries: List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;
+&nbsp;    ): CodeBlock {
+<b class="fc">&nbsp;        val builder = CodeBlock.builder().add(C.STR_MAP_OF)</b>
+<b class="fc">&nbsp;        entries.forEachIndexed { index, entry -&gt;</b>
+<b class="fc">&nbsp;            builder.add(</b>
+<b class="fc">&nbsp;                C.STR_MAP_ENTRY,</b>
+<b class="fc">&nbsp;                entry.key,</b>
+<b class="fc">&nbsp;                entry.value</b>
+&nbsp;            )
+<b class="fc">&nbsp;            if (index &lt; entries.size - 1) {</b>
+<b class="fc">&nbsp;                builder.add(C.STR_COMMA_NEWLINE)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        builder.add(C.STR_PAREN_CLOSE)</b>
+<b class="fc">&nbsp;        return builder.build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a high-performance Kotlin `when (clazz)` lookup expression.
+&nbsp;     *
+&nbsp;     * @param entries Registry entry mappings.
+&nbsp;     * @param serializerType Serializer class name representation.
+&nbsp;     * @param type Generic type variable for mapping return types safely.
+&nbsp;     * @return Generated routing when code block.
+&nbsp;     */
+&nbsp;    private fun buildWhenBlock(
+&nbsp;        entries: List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;,
+&nbsp;        serializerType: ClassName,
+&nbsp;        type: TypeName
+&nbsp;    ): CodeBlock {
+<b class="fc">&nbsp;        val builder = CodeBlock</b>
+<b class="fc">&nbsp;            .builder()</b>
+<b class="fc">&nbsp;            .add(C.STR_WHEN_CLAZZ_START)</b>
+&nbsp;
+<b class="fc">&nbsp;        entries.forEach { entry -&gt;</b>
+<b class="fc">&nbsp;            builder.add(</b>
+<b class="fc">&nbsp;                C.STR_WHEN_ENTRY,</b>
+<b class="fc">&nbsp;                entry.key,</b>
+<b class="fc">&nbsp;                entry.value</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        builder.add(C.STR_WHEN_ELSE_NULL)</b>
+<b class="fc">&nbsp;        builder.add(</b>
+<b class="fc">&nbsp;            C.STR_WHEN_CLOSE_CAST,</b>
+<b class="fc">&nbsp;            serializerType</b>
+<b class="fc">&nbsp;                .parameterizedBy(type)</b>
+<b class="fc">&nbsp;                .copy(nullable = true)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        return builder.build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates ProGuard/R8 keep rules to ensure the Registry and Serializers
+&nbsp;     * are not obfuscated or removed during the shrinking phase.
+&nbsp;     */
+&nbsp;    private fun generateProGuardRules() {
+<b class="fc">&nbsp;        val rules = C.TEMPLATE_PROGUARD_KEEP</b>
+<b class="fc">&nbsp;            .trimIndent()</b>
+<b class="fc">&nbsp;            .format(C.STR_GENERATED_PKG, registryClassName)</b>
+&nbsp;
+&nbsp;        try {
+<b class="fc">&nbsp;            codeGenerator.createNewFile(</b>
+<b class="fc">&nbsp;                dependencies = Dependencies(aggregating = true),</b>
+<b class="fc">&nbsp;                packageName = C.STR_META_INF_PROGUARD,</b>
+<b class="fc">&nbsp;                fileName = C.STR_GHOST_SERIALIZATION_FILE,</b>
+<b class="fc">&nbsp;                extensionName = C.STR_EXT_PRO</b>
+<b class="fc">&nbsp;            ).use { it.write(rules.toByteArray()) }</b>
+&nbsp;        } catch (e: Exception) {
+<b class="nc">&nbsp;            logger.warn(</b>
+&nbsp;                &quot;${
+&nbsp;                    C.STR_LOG_PREFIX
+&nbsp;                }${
+&nbsp;                    C.STR_LOG_PROGUARD_WARN
+&nbsp;                }${
+<b class="nc">&nbsp;                    e.message</b>
+&nbsp;                }&quot;
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a ServiceLoader entry so the Core module can automatically
+&nbsp;     * discover this registry at runtime.
+&nbsp;     */
+&nbsp;    private fun generateServiceFile() {
+<b class="fc">&nbsp;        val serviceName = C.STR_SERVICE_REGISTRY</b>
+<b class="fc">&nbsp;        val implementationName = &quot;${</b>
+&nbsp;            C.STR_GENERATED_PKG
+&nbsp;        }${
+&nbsp;            C.STR_DOT
+<b class="fc">&nbsp;        }$registryClassName&quot;</b>
+&nbsp;
+&nbsp;        try {
+<b class="fc">&nbsp;            codeGenerator.createNewFile(</b>
+<b class="fc">&nbsp;                dependencies = Dependencies(</b>
+<b class="fc">&nbsp;                    aggregating = true,</b>
+<b class="fc">&nbsp;                    *originatingFiles.toTypedArray()</b>
+&nbsp;                ),
+<b class="fc">&nbsp;                packageName = C.STR_META_INF_SERVICES,</b>
+<b class="fc">&nbsp;                fileName = serviceName,</b>
+<b class="fc">&nbsp;                extensionName = C.STR_EMPTY</b>
+<b class="fc">&nbsp;            ).use { it.write(implementationName.toByteArray()) }</b>
+&nbsp;        } catch (e: Exception) {
+<b class="nc">&nbsp;            logger.warn(</b>
+&nbsp;                &quot;${
+&nbsp;                    C.STR_LOG_PREFIX
+&nbsp;                }${
+&nbsp;                    C.STR_LOG_SERVICE_WARN
+<b class="nc">&nbsp;                }${e.message}&quot;</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

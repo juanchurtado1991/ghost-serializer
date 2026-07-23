@@ -1,0 +1,218 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > FragmentedSerializeEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: FragmentedSerializeEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FragmentedSerializeEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/190)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.FunSpec
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;
+&nbsp;/**
+&nbsp; * Emitter for fragmented serialization logic.
+&nbsp; *
+&nbsp; * Used for large classes to avoid JVM method size limits by splitting
+&nbsp; * the writing logic into multiple private &quot;chunk&quot; functions.
+&nbsp; */
+&nbsp;internal class FragmentedSerializeEmitter(
+&nbsp;    properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;    originalClassName: ClassName,
+&nbsp;    writerClass: ClassName
+<b class="nc">&nbsp;) : BaseSerializeEmitter(properties, originalClassName, writerClass) {</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the fragmented chunk-based serialization logic.
+&nbsp;     *
+&nbsp;     * @param code The target [CodeBlock.Builder].
+&nbsp;     * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
+&nbsp;     * @param discriminator Optional polymorphic sealed class discriminator value.
+&nbsp;     * @param sealedDiscriminatorKey Discriminator key name.
+&nbsp;     */
+&nbsp;    fun emit(
+&nbsp;        code: CodeBlock.Builder,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        discriminator: String?,
+&nbsp;        sealedDiscriminatorKey: String
+&nbsp;    ) {
+<b class="nc">&nbsp;        code.addStatement(C.STR_WRITER_BEGIN_OBJ)</b>
+&nbsp;
+<b class="nc">&nbsp;        val hasDiscriminatorProperty = properties.any { it.jsonName == sealedDiscriminatorKey }</b>
+<b class="nc">&nbsp;        if (discriminator != null &amp;&amp; !hasDiscriminatorProperty) {</b>
+<b class="nc">&nbsp;            code.addStatement(</b>
+<b class="nc">&nbsp;                C.STR_WRITER_NAME_TYPE_VAL,</b>
+<b class="nc">&nbsp;                sealedDiscriminatorKey,</b>
+<b class="nc">&nbsp;                discriminator</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        val chunks = properties.chunked(C.DEFAULT_CHUNK_SIZE)</b>
+<b class="nc">&nbsp;        val writerSuffix = writerClass.simpleName</b>
+&nbsp;
+<b class="nc">&nbsp;        chunks.forEachIndexed { index, chunkProps -&gt;</b>
+<b class="nc">&nbsp;            val chunkFunName = C.TEMPLATE_CHUNK_FUN_NAME</b>
+<b class="nc">&nbsp;                .format(C.STR_SERIALIZE_CHUNK_PREFIX, index, writerSuffix)</b>
+&nbsp;
+<b class="nc">&nbsp;            emitChunkFunction(index, chunkProps, typeSpecBuilder, writerSuffix)</b>
+<b class="nc">&nbsp;            code.addStatement(C.TEMPLATE_CHUNK_CALL_WRITER, chunkFunName)</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        code.addStatement(C.STR_WRITER_END_OBJ)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a private chunk serialization method.
+&nbsp;     */
+&nbsp;    private fun emitChunkFunction(
+&nbsp;        index: Int,
+&nbsp;        chunkProps: List&lt;GhostPropertyModel&gt;,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        writerSuffix: String
+&nbsp;    ) {
+<b class="nc">&nbsp;        val chunkFun = FunSpec</b>
+<b class="nc">&nbsp;            .builder(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_CHUNK_FUN_NAME.format(</b>
+<b class="nc">&nbsp;                    C.STR_SERIALIZE_CHUNK_PREFIX,</b>
+<b class="nc">&nbsp;                    index,</b>
+<b class="nc">&nbsp;                    writerSuffix</b>
+&nbsp;                )
+&nbsp;            )
+<b class="nc">&nbsp;            .addModifiers(KModifier.PRIVATE)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_PARAM_WRITER, writerClass)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_PARAM_VALUE, originalClassName)</b>
+&nbsp;
+<b class="nc">&nbsp;        val chunkCode = CodeBlock.builder()</b>
+<b class="nc">&nbsp;        chunkProps.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            emitProperty(chunkCode, prop)</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        chunkFun.addCode(chunkCode.build())</b>
+<b class="nc">&nbsp;        typeSpecBuilder.addFunction(chunkFun.build())</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

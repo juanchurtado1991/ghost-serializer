@@ -1,0 +1,462 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostDoubleFormatter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.writer</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostDoubleFormatter (com.ghost.serialization.writer)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostDoubleFormatter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.8%
+  </span>
+  <span class="absValue">
+    (54/66)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.4%
+  </span>
+  <span class="absValue">
+    (133/154)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.1%
+  </span>
+  <span class="absValue">
+    (472/530)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import kotlin.math.roundToInt
+&nbsp;
+&nbsp;/**
+&nbsp; * High-performance, Zero-Allocation formatting engine for [Double] numbers.
+&nbsp; *
+&nbsp; * This utility writes the ASCII representation of floating-point numbers directly to a pre-allocated
+&nbsp; * [ByteArray] buffer. This completely bypasses the garbage collection (GC) overhead typically associated
+&nbsp; * with calling `Double.toString()` or `String.format()`, making it ideal for high-throughput JSON serialization.
+&nbsp; *
+&nbsp; * ### Thresholds and Precision Limits
+&nbsp; * - **Fast-Path Precision:** Supports up to [MAX_DECIMALS] (9) decimal places of precision.
+&nbsp; * - **Magnitude Limits:** Works with values within the range `[1e-9, 1e15]`.
+&nbsp; * - **Fallback Mechanism:** Values outside this range, non-finite values (NaN, Infinity), or microscopic
+&nbsp; *   numbers are delegated to the provided [fallback] lambda (which usually wraps native platform formatters).
+&nbsp; *
+&nbsp; * ### Algorithm Overview
+&nbsp; * 1. **Sign Handling:** Negative values write `-` to the buffer, and the absolute value is processed.
+&nbsp; * 2. **Whole Number Fast-Path:** Numbers without decimal fractions are converted to [Long] and written
+&nbsp; *    using [writeLongDirect] with a appended `.0` suffix.
+&nbsp; * 3. **Split and Scale:** Splits the number into its integer part `intPart` and fractional part `fracPart`.
+&nbsp; *    The fractional part is multiplied by `1_000_000_000.0` (precision scale) and rounded to a 9-digit integer `fracInt`.
+&nbsp; * 4. **Carry-over Correction:** If rounding `fracInt` causes a carry-over to the integer boundary (i.e. `fracInt &gt;= 1e9`),
+&nbsp; *    the integer part is incremented by 1, and printed with `.0`.
+&nbsp; * 5. **Trailing Zeros Trimming:** If `fracInt` ends with zeros, they are trimmed by dividing by 10
+&nbsp; *    to write the shortest equivalent decimal representation (e.g., `3.5` instead of `3.500000000`).
+&nbsp; * 6. **Digit Emission:** The integer part is written. A decimal point `.` is appended. Then, digits of `fracInt`
+&nbsp; *    are emitted. Digits are processed in pairs (base 100) using [C.DOUBLE_DIGIT_LUT] for fast lookup
+&nbsp; *    and written backward to maintain correct decimal alignment.
+&nbsp; */
+&nbsp;internal object GhostDoubleFormatter {
+&nbsp;
+&nbsp;    /** Maximum value below which a whole Double is formatted directly as a Long + &quot;.0&quot; */
+&nbsp;    private const val SMALL_WHOLE_THRESHOLD = 1_000_000_000.0
+&nbsp;
+&nbsp;    /** Multiplier to scale up 9 fractional decimal digits to a Long integer space */
+&nbsp;    private const val PRECISION_MULTIPLIER = 1_000_000_000.0
+&nbsp;
+&nbsp;    /** The lowest positive Double value processed by the fast-path without fallback */
+&nbsp;    private const val MICROSCOPIC_DOUBLE_THRESHOLD = 1e-9
+&nbsp;
+&nbsp;    /** The maximum Double value processed by the fast-path without fallback */
+&nbsp;    private const val MASSIVE_DOUBLE_THRESHOLD = 1e9
+&nbsp;
+&nbsp;    /** The carry-over boundary for fractional scaling (10^9) */
+&nbsp;    private const val FRAC_LIMIT = 1_000_000_000L
+&nbsp;
+&nbsp;    /** Maximum decimal precision supported (9 decimal places) */
+&nbsp;    private const val MAX_DECIMALS = 9
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
+&nbsp;     *
+&nbsp;     * @param value The double value to write.
+&nbsp;     * @param scratch The destination byte array.
+&nbsp;     * @param offset The starting position in the destination buffer.
+&nbsp;     * @param fallback The fallback formatter used if the value cannot be processed by the fast-path.
+&nbsp;     * @return The number of bytes written to the buffer.
+&nbsp;     */
+&nbsp;    fun writeDoubleDirect(
+&nbsp;        value: Double,
+&nbsp;        scratch: ByteArray,
+&nbsp;        offset: Int,
+&nbsp;        fallback: (Double) -&gt; Int
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (!value.isFinite()) return fallback(value)</b>
+&nbsp;
+<b class="fc">&nbsp;        var pos = offset</b>
+<b class="fc">&nbsp;        var localValue = value</b>
+&nbsp;
+<b class="fc">&nbsp;        if (value.toRawBits() &lt; 0) {</b>
+<b class="fc">&nbsp;            scratch[pos++] = C.MINUS</b>
+<b class="fc">&nbsp;            localValue = -localValue</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Fast path for small whole numbers
+&nbsp;        // (very common in metrics/coordinates)
+<b class="fc">&nbsp;        if (</b>
+<b class="fc">&nbsp;            localValue &lt;= SMALL_WHOLE_THRESHOLD &amp;&amp;</b>
+<b class="fc">&nbsp;            localValue % C.WHOLE_NUMBER_CHECK == C.ZERO_DOUBLE</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            return writeLongDirect(</b>
+<b class="fc">&nbsp;                localValue.toLong(),</b>
+<b class="fc">&nbsp;                scratch,</b>
+<b class="fc">&nbsp;                pos,</b>
+<b class="fc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;                writeDecimalZero = true</b>
+<b class="fc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // If number is massive or microscopic, delegate to native system
+<b class="fc">&nbsp;        if (</b>
+<b class="fc">&nbsp;            localValue &gt; MASSIVE_DOUBLE_THRESHOLD ||</b>
+<b class="pc">&nbsp;            (localValue &gt; 0.0 &amp;&amp; localValue &lt; MICROSCOPIC_DOUBLE_THRESHOLD)</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            return fallback(value)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val intPart = localValue.toLong()</b>
+<b class="fc">&nbsp;        val fracPart = localValue - intPart</b>
+&nbsp;
+&nbsp;        // roundToInt avoids the Double intermediate that round() returns
+<b class="fc">&nbsp;        var fracInt = (fracPart * PRECISION_MULTIPLIER).roundToInt()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt &gt;= FRAC_LIMIT) {</b>
+<b class="nc">&nbsp;            return writeLongDirect(</b>
+<b class="nc">&nbsp;                intPart + 1,</b>
+<b class="nc">&nbsp;                scratch,</b>
+<b class="nc">&nbsp;                pos,</b>
+<b class="nc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="nc">&nbsp;                writeDecimalZero = true</b>
+<b class="nc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        pos = writeLongDirect(</b>
+<b class="fc">&nbsp;            intPart,</b>
+<b class="fc">&nbsp;            scratch,</b>
+<b class="fc">&nbsp;            pos,</b>
+<b class="fc">&nbsp;            scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;            writeDecimalZero = false</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        scratch[pos++] = C.DOT</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt == 0) {</b>
+<b class="nc">&nbsp;            scratch[pos++] = C.ZERO</b>
+<b class="nc">&nbsp;            return pos - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var decimalsToPrint = MAX_DECIMALS</b>
+&nbsp;        // Trim trailing zeros: % instead of multiply-subtract
+<b class="fc">&nbsp;        while (decimalsToPrint &gt; 1 &amp;&amp; fracInt % 10 == 0) {</b>
+<b class="fc">&nbsp;            fracInt /= 10</b>
+<b class="fc">&nbsp;            decimalsToPrint--</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        pos += decimalsToPrint</b>
+<b class="fc">&nbsp;        var writePos = pos - 1</b>
+&nbsp;
+<b class="fc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
+<b class="fc">&nbsp;            val q = fracInt / 100</b>
+<b class="fc">&nbsp;            val r = (fracInt - (q * 100)) * 2</b>
+<b class="fc">&nbsp;            C.DOUBLE_DIGIT_LUT.copyInto(</b>
+<b class="fc">&nbsp;                scratch,</b>
+<b class="fc">&nbsp;                writePos - 1,</b>
+<b class="fc">&nbsp;                r,</b>
+<b class="fc">&nbsp;                r + 2</b>
+&nbsp;            )
+<b class="fc">&nbsp;            writePos -= 2</b>
+<b class="fc">&nbsp;            fracInt = q</b>
+<b class="fc">&nbsp;            decimalsToPrint -= 2</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (decimalsToPrint == 1) {</b>
+<b class="fc">&nbsp;            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return pos - offset</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Formats and writes the given [Float] value directly into the [scratch] buffer starting at [offset].
+&nbsp;     * Uses 7 decimal places of precision suitable for the single-precision Float type to avoid representation noise.
+&nbsp;     */
+&nbsp;    fun writeFloatDirect(
+&nbsp;        value: Float,
+&nbsp;        scratch: ByteArray,
+&nbsp;        offset: Int,
+&nbsp;        fallback: (Float) -&gt; Int
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (!value.isFinite()) return fallback(value)</b>
+&nbsp;
+<b class="fc">&nbsp;        var pos = offset</b>
+<b class="fc">&nbsp;        var localValue = value</b>
+&nbsp;
+<b class="fc">&nbsp;        if (value.toRawBits() &lt; 0) {</b>
+<b class="fc">&nbsp;            scratch[pos++] = C.MINUS</b>
+<b class="fc">&nbsp;            localValue = -localValue</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val doubleVal = localValue.toDouble()</b>
+&nbsp;        // Fast path for small whole numbers
+<b class="fc">&nbsp;        if (</b>
+<b class="pc">&nbsp;            doubleVal &lt;= SMALL_WHOLE_THRESHOLD &amp;&amp;</b>
+<b class="fc">&nbsp;            doubleVal % C.WHOLE_NUMBER_CHECK == C.ZERO_DOUBLE</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            return writeLongDirect(</b>
+<b class="fc">&nbsp;                doubleVal.toLong(),</b>
+<b class="fc">&nbsp;                scratch,</b>
+<b class="fc">&nbsp;                pos,</b>
+<b class="fc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;                writeDecimalZero = true</b>
+<b class="fc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // If number is massive or microscopic, delegate to native system
+<b class="fc">&nbsp;        if (</b>
+<b class="pc">&nbsp;            doubleVal &gt; MASSIVE_DOUBLE_THRESHOLD ||</b>
+<b class="pc">&nbsp;            (localValue &gt; 0.0f &amp;&amp; doubleVal &lt; MICROSCOPIC_DOUBLE_THRESHOLD)</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            return fallback(value)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val intPart = doubleVal.toLong()</b>
+<b class="fc">&nbsp;        val fracPart = doubleVal - intPart</b>
+&nbsp;
+&nbsp;        // Float precision limit is 7 decimals (10^7)
+<b class="fc">&nbsp;        var fracInt = (fracPart * 10_000_000.0).roundToInt()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt &gt;= 10_000_000L) {</b>
+<b class="nc">&nbsp;            return writeLongDirect(</b>
+<b class="nc">&nbsp;                intPart + 1,</b>
+<b class="nc">&nbsp;                scratch,</b>
+<b class="nc">&nbsp;                pos,</b>
+<b class="nc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="nc">&nbsp;                writeDecimalZero = true</b>
+<b class="nc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        pos = writeLongDirect(</b>
+<b class="fc">&nbsp;            intPart,</b>
+<b class="fc">&nbsp;            scratch,</b>
+<b class="fc">&nbsp;            pos,</b>
+<b class="fc">&nbsp;            scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;            writeDecimalZero = false</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        scratch[pos++] = C.DOT</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt == 0) {</b>
+<b class="nc">&nbsp;            scratch[pos++] = C.ZERO</b>
+<b class="nc">&nbsp;            return pos - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var decimalsToPrint = 7</b>
+<b class="fc">&nbsp;        while (decimalsToPrint &gt; 1 &amp;&amp; fracInt % 10 == 0) {</b>
+<b class="fc">&nbsp;            fracInt /= 10</b>
+<b class="fc">&nbsp;            decimalsToPrint--</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        pos += decimalsToPrint</b>
+<b class="fc">&nbsp;        var writePos = pos - 1</b>
+&nbsp;
+<b class="fc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
+<b class="fc">&nbsp;            val q = fracInt / 100</b>
+<b class="fc">&nbsp;            val r = (fracInt - (q * 100)) * 2</b>
+<b class="fc">&nbsp;            C.DOUBLE_DIGIT_LUT.copyInto(</b>
+<b class="fc">&nbsp;                scratch,</b>
+<b class="fc">&nbsp;                writePos - 1,</b>
+<b class="fc">&nbsp;                r,</b>
+<b class="fc">&nbsp;                r + 2</b>
+&nbsp;            )
+<b class="fc">&nbsp;            writePos -= 2</b>
+<b class="fc">&nbsp;            fracInt = q</b>
+<b class="fc">&nbsp;            decimalsToPrint -= 2</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (decimalsToPrint == 1) {</b>
+<b class="fc">&nbsp;            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return pos - offset</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts a [Long] integer value into its ASCII bytes and writes it directly to [scratch].
+&nbsp;     *
+&nbsp;     * Digits are extracted from right to left using division and base-100 modulo arithmetic.
+&nbsp;     * Digit values are translated via pre-calculated ones and tens lookup tables to minimize computation.
+&nbsp;     * The compiled instruction utilizes an optimized `System.arraycopy` (via [ByteArray.copyInto])
+&nbsp;     * block operation to transfer the written string to its final offset.
+&nbsp;     *
+&nbsp;     * @param value The Long integer to write.
+&nbsp;     * @param scratch The destination byte array.
+&nbsp;     * @param offset The starting position in the destination buffer.
+&nbsp;     * @param scratchEnd The boundary of the scratch segment reserved for backward digit writing.
+&nbsp;     * @param writeDecimalZero If true, appends a `.0` suffix to the formatted integer.
+&nbsp;     * @return The next write index in the scratch buffer.
+&nbsp;     */
+&nbsp;    private fun writeLongDirect(
+&nbsp;        value: Long,
+&nbsp;        scratch: ByteArray,
+&nbsp;        offset: Int,
+&nbsp;        scratchEnd: Int,
+&nbsp;        writeDecimalZero: Boolean
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (value == 0L) {</b>
+<b class="fc">&nbsp;            scratch[offset] = C.ZERO</b>
+<b class="fc">&nbsp;            if (writeDecimalZero) {</b>
+<b class="fc">&nbsp;                scratch[offset + 1] = C.DOT</b>
+<b class="fc">&nbsp;                scratch[offset + 2] = C.ZERO</b>
+<b class="fc">&nbsp;                return offset + 3</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return offset + 1</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var localValue = value</b>
+&nbsp;        // Write digits backward into the scratch zone at the end of our reserved area.
+&nbsp;        // scratchEnd is always offset + 32, safely within FAST_BUF_SCRATCH_ZONE.
+<b class="fc">&nbsp;        var end = scratchEnd</b>
+&nbsp;
+<b class="fc">&nbsp;        while (localValue &gt;= C.BASE_HUNDRED) {</b>
+<b class="fc">&nbsp;            val q = localValue / C.BASE_HUNDRED</b>
+<b class="fc">&nbsp;            val r = (localValue - (q * C.BASE_HUNDRED)).toInt()</b>
+<b class="fc">&nbsp;            localValue = q</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (localValue &gt;= C.BASE_TEN) {</b>
+<b class="fc">&nbsp;            val r = localValue.toInt()</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val length = scratchEnd - end</b>
+&nbsp;        // Single System.arraycopy — JVM intrinsic, no per-byte loop
+<b class="fc">&nbsp;        scratch.copyInto(</b>
+<b class="fc">&nbsp;            scratch,</b>
+<b class="fc">&nbsp;            offset,</b>
+<b class="fc">&nbsp;            end,</b>
+<b class="fc">&nbsp;            end + length</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        var nextOffset = offset + length</b>
+<b class="pc">&nbsp;        if (writeDecimalZero) {</b>
+<b class="nc">&nbsp;            scratch[nextOffset++] = C.DOT</b>
+<b class="nc">&nbsp;            scratch[nextOffset++] = C.ZERO</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return nextOffset</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

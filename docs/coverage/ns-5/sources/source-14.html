@@ -1,0 +1,353 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostPropertyExtensionsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostPropertyExtensionsKt (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostPropertyExtensionsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.7%
+  </span>
+  <span class="absValue">
+    (42/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    35.1%
+  </span>
+  <span class="absValue">
+    (34/97)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    26.5%
+  </span>
+  <span class="absValue">
+    (205/773)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.TypeName
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Extension methods for [GhostPropertyModel] to facilitate code generation.
+&nbsp; *
+&nbsp; * These helpers encapsulate the logic for determining variable types, initial values,
+&nbsp; * and return expressions based on the property&#39;s metadata (e.g., nullability,
+&nbsp; * primitive types, value classes).
+&nbsp; */
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves the appropriate KotlinPoet [TypeName] to declare the local tracking variable
+&nbsp; * for this property. Handled cases include:
+&nbsp; * - Non-nullable primitives: mapped directly to their unboxed Kotlin/JVM types.
+&nbsp; * - Non-nullable inline/value classes: mapped to the underlying unboxed primitive type.
+&nbsp; * - Nullable/Object types: coerced to a nullable KotlinPoet type representation.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getVariableType(): TypeName {
+<b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        isPrimitive -&gt; typeName</b>
+<b class="fc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="fc">&nbsp;            val underlying = valueClassProperty!!</b>
+<b class="pc">&nbsp;            if (underlying.type.isPrimitive()) {</b>
+<b class="fc">&nbsp;                underlying.typeName</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                underlying.typeName.copy(nullable = true)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        else -&gt; typeName.copy(nullable = true)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves the initial placeholder value literal representation for the tracking variable.
+&nbsp; * For example: `null` for objects, `0` for Int, `0L` for Long, `false` for Boolean.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getInitialValue(): String {
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+<b class="fc">&nbsp;    val targetProp = if (isUnboxedValueClass) valueClassProperty!! else this</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        isNullable -&gt; C.STR_NULL</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveInt() -&gt; C.STR_ZERO</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveLong() -&gt; C.STR_ZERO_L</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveDouble() -&gt; C.STR_ZERO_D</b>
+<b class="pc">&nbsp;        targetProp.type.isPrimitiveFloat() -&gt; C.STR_ZERO_F</b>
+<b class="pc">&nbsp;        targetProp.type.isPrimitiveByte() -&gt; C.STR_ZERO</b>
+<b class="pc">&nbsp;        targetProp.type.isPrimitiveShort() -&gt; C.STR_ZERO</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveChar() -&gt; C.STR_CHAR_NULL_LITERAL</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveBoolean() -&gt; C.STR_FALSE</b>
+<b class="fc">&nbsp;        else -&gt; C.STR_NULL</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the expression string used to pass this property to the constructor
+&nbsp; * in the standard deserializer return statement. Appends a null-assertion operator `!!`
+&nbsp; * if the parameter is non-nullable but tracked as a nullable local variable.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getReturnExpression(): String {
+<b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+<b class="fc">&nbsp;    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        isPrimitive -&gt; varName</b>
+<b class="fc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="pc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="fc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="fc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$varName$bang&quot;)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            if (isNullable) {</b>
+<b class="fc">&nbsp;                varName</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                &quot;$varName${C.STR_BANG_BANG}&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the conditional fallback return expression when standard deserialization
+&nbsp; * supports default arguments. If the property mask bit is set, it resolves to the parsed variable,
+&nbsp; * otherwise it resolves to the copy-based result field value.
+&nbsp; *
+&nbsp; * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
+&nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getDefaultValueReturnExpression(
+&nbsp;    maskIdx: Int,
+&nbsp;    bitMaskStr: String
+&nbsp;): String {
+<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;
+<b class="nc">&nbsp;    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)</b>
+<b class="nc">&nbsp;    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)</b>
+<b class="nc">&nbsp;    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)</b>
+&nbsp;
+<b class="nc">&nbsp;    return when {</b>
+<b class="nc">&nbsp;        isNullable || isPrimitive -&gt;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)</b>
+&nbsp;
+<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="nc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                maskName,</b>
+<b class="nc">&nbsp;                bitMaskStr,</b>
+<b class="nc">&nbsp;                C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$varName$bang&quot;),</b>
+<b class="nc">&nbsp;                resultVar</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="nc">&nbsp;            val value = &quot;$varName${C.STR_BANG_BANG}&quot;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                maskName,</b>
+<b class="nc">&nbsp;                bitMaskStr,</b>
+<b class="nc">&nbsp;                value,</b>
+<b class="nc">&nbsp;                resultVar</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the return expression string pointing to the generated `DecodingContext`
+&nbsp; * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
+<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)</b>
+&nbsp;
+<b class="nc">&nbsp;    return when {</b>
+<b class="nc">&nbsp;        isPrimitive -&gt; ctxVar</b>
+<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="nc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$ctxVar$bang&quot;)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="nc">&nbsp;            if (isNullable) {</b>
+<b class="nc">&nbsp;                ctxVar</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                &quot;$ctxVar${C.STR_BANG_BANG}&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the conditional fallback return expression when fragmented deserialization
+&nbsp; * supports default arguments. It maps tracking mask checks directly to the fields on
+&nbsp; * the `DecodingContext` instance.
+&nbsp; *
+&nbsp; * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
+&nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
+&nbsp;    maskIdx: Int,
+&nbsp;    bitMaskStr: String
+&nbsp;): String {
+&nbsp;
+<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;
+<b class="nc">&nbsp;    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)</b>
+<b class="nc">&nbsp;    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)</b>
+<b class="nc">&nbsp;    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)</b>
+&nbsp;
+<b class="nc">&nbsp;    return when {</b>
+<b class="nc">&nbsp;        isNullable || isPrimitive -&gt;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)</b>
+&nbsp;
+<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="nc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="nc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(</b>
+<b class="nc">&nbsp;                typeName,</b>
+<b class="nc">&nbsp;                C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                    maskName,</b>
+<b class="nc">&nbsp;                    bitMaskStr,</b>
+<b class="nc">&nbsp;                    &quot;$ctxVar$bang&quot;,</b>
+<b class="nc">&nbsp;                    resultVar</b>
+&nbsp;                )
+&nbsp;
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="nc">&nbsp;            val value = &quot;$ctxVar${C.STR_BANG_BANG}&quot;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                maskName,</b>
+<b class="nc">&nbsp;                bitMaskStr,</b>
+<b class="nc">&nbsp;                value,</b>
+<b class="nc">&nbsp;                resultVar</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

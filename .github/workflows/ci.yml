@@ -10,6 +10,9 @@ jobs:
   test-jvm:
     name: Tests (JVM)
     runs-on: ubuntu-latest
+    permissions:
+      # Only this job pushes the coverage report back to main; every other job stays read-only.
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +29,31 @@ jobs:
 
       - name: JVM test suite (ciTestJvm)
         run: ./gradlew ciTestJvm
+
+      - name: Generate Kover coverage report
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./gradlew koverHtmlReport
+
+      - name: Publish coverage report to docs/coverage
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          rm -rf docs/coverage
+          mkdir -p docs/coverage
+          cp -r build/reports/kover/html/. docs/coverage/
+          touch docs/coverage/.nojekyll
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/coverage
+
+          if git diff --cached --quiet; then
+            echo "Coverage report unchanged, nothing to commit."
+          else
+            git commit -m "chore: update coverage report [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
 
   test-android:
     name: Tests (Android)

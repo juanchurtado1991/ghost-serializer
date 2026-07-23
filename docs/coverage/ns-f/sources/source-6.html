@@ -1,0 +1,437 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > RawJsonValueScanner</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.types</a>
+</div>
+
+<h1>Coverage Summary for Class: RawJsonValueScanner (com.ghost.serialization.types)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">RawJsonValueScanner</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.7%
+  </span>
+  <span class="absValue">
+    (220/283)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.4%
+  </span>
+  <span class="absValue">
+    (150/154)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.9%
+  </span>
+  <span class="absValue">
+    (973/1047)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">RawJsonValueScanner$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.7%
+  </span>
+  <span class="absValue">
+    (220/283)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.4%
+  </span>
+  <span class="absValue">
+    (150/154)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.9%
+  </span>
+  <span class="absValue">
+    (973/1047)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.types
+&nbsp;
+&nbsp;/**
+&nbsp; * Zero-allocation scanners for [RawJson] JSON value classification and scalar coercion.
+&nbsp; *
+&nbsp; * Operates directly on [RawJson.storage] / [RawJson.storageOffset] / [RawJson.storageLength]
+&nbsp; * without materializing [RawJson.bytes] unless a [String] result is required.
+&nbsp; */
+&nbsp;internal object RawJsonValueScanner {
+&nbsp;
+&nbsp;    private const val QUOTE = &#39;&quot;&#39;.code
+&nbsp;    private const val OPEN_OBJ = &#39;{&#39;.code
+&nbsp;    private const val OPEN_ARR = &#39;[&#39;.code
+&nbsp;    private const val MINUS = &#39;-&#39;.code
+&nbsp;    private const val PLUS = &#39;+&#39;.code
+&nbsp;    private const val DOT = &#39;.&#39;.code
+&nbsp;    private const val ZERO = &#39;0&#39;.code
+&nbsp;    private const val NINE = &#39;9&#39;.code
+&nbsp;    private const val EXP_LOWER = &#39;e&#39;.code
+&nbsp;    private const val EXP_UPPER = &#39;E&#39;.code
+&nbsp;    private const val BACKSLASH = &#39;\\&#39;.code
+&nbsp;
+&nbsp;    private const val TRUE_LEN = 4
+&nbsp;    private const val FALSE_LEN = 5
+&nbsp;    private const val NULL_LEN = 4
+&nbsp;
+&nbsp;    private const val NULL_CHAR = &#39;n&#39;.code
+&nbsp;    private const val TRUE_CHAR = &#39;t&#39;.code
+&nbsp;    private const val FALSE_CHAR = &#39;f&#39;.code
+&nbsp;    private const val ONE = &#39;1&#39;.code
+&nbsp;    private const val CHAR_R = &#39;r&#39;.code
+&nbsp;    private const val CHAR_U = &#39;u&#39;.code
+&nbsp;    private const val CHAR_E = &#39;e&#39;.code
+&nbsp;    private const val CHAR_A = &#39;a&#39;.code
+&nbsp;    private const val CHAR_L = &#39;l&#39;.code
+&nbsp;    private const val CHAR_S = &#39;s&#39;.code
+&nbsp;
+&nbsp;    fun kind(raw: RawJson): RawJsonKind {
+<b class="fc">&nbsp;        if (raw.storageLength &lt;= 0) return RawJsonKind.INVALID</b>
+<b class="fc">&nbsp;        return when (val first = raw.byteAt(0)) {</b>
+<b class="fc">&nbsp;            OPEN_OBJ -&gt; RawJsonKind.OBJECT</b>
+<b class="fc">&nbsp;            OPEN_ARR -&gt; RawJsonKind.ARRAY</b>
+<b class="fc">&nbsp;            QUOTE -&gt; RawJsonKind.STRING</b>
+<b class="pc">&nbsp;            NULL_CHAR -&gt; if (raw.matchesNullLiteral()) RawJsonKind.NULL else RawJsonKind.INVALID</b>
+<b class="pc">&nbsp;            TRUE_CHAR -&gt; if (raw.matchesTrueLiteral()) RawJsonKind.BOOLEAN else RawJsonKind.INVALID</b>
+<b class="pc">&nbsp;            FALSE_CHAR -&gt; if (raw.matchesFalseLiteral()) RawJsonKind.BOOLEAN else RawJsonKind.INVALID</b>
+<b class="fc">&nbsp;            MINUS, ZERO -&gt; if (raw.isJsonNumberToken()) RawJsonKind.NUMBER else RawJsonKind.INVALID</b>
+<b class="pc">&nbsp;            in ONE..NINE -&gt; if (raw.isJsonNumberToken()) RawJsonKind.NUMBER else RawJsonKind.INVALID</b>
+<b class="fc">&nbsp;            else -&gt; RawJsonKind.INVALID</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun isJsonNull(raw: RawJson): Boolean =
+<b class="fc">&nbsp;        raw.storageLength == NULL_LEN &amp;&amp; raw.matchesNullLiteral()</b>
+&nbsp;
+<b class="fc">&nbsp;    fun asBooleanOrNull(raw: RawJson): Boolean? = when {</b>
+<b class="fc">&nbsp;        raw.storageLength == TRUE_LEN &amp;&amp; raw.matchesTrueLiteral() -&gt; true</b>
+<b class="pc">&nbsp;        raw.storageLength == FALSE_LEN &amp;&amp; raw.matchesFalseLiteral() -&gt; false</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun asIntOrNull(raw: RawJson): Int? {
+<b class="fc">&nbsp;        val longValue = raw.parseIntegerOrNull() ?: return null</b>
+<b class="fc">&nbsp;        if (longValue &lt; Int.MIN_VALUE || longValue &gt; Int.MAX_VALUE) return null</b>
+<b class="fc">&nbsp;        return longValue.toInt()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun asLongOrNull(raw: RawJson): Long? = raw.parseIntegerOrNull()</b>
+&nbsp;
+&nbsp;    fun asDoubleOrNull(raw: RawJson): Double? {
+<b class="fc">&nbsp;        raw.parseIntegerOrNull()?.let { return it.toDouble() }</b>
+<b class="fc">&nbsp;        if (!raw.isJsonNumberToken()) return null</b>
+<b class="fc">&nbsp;        return raw.decodeToString().toDoubleOrNull()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun asStringOrNull(raw: RawJson): String? {
+<b class="pc">&nbsp;        if (raw.storageLength &lt; 2 || raw.byteAt(0) != QUOTE) return null</b>
+<b class="fc">&nbsp;        val contentStart = raw.storageOffset + 1</b>
+<b class="fc">&nbsp;        val contentEnd = raw.storageOffset + raw.storageLength - 1</b>
+<b class="pc">&nbsp;        if (contentEnd &lt; contentStart) return &quot;&quot;</b>
+<b class="fc">&nbsp;        for (index in contentStart until contentEnd) {</b>
+<b class="fc">&nbsp;            if (raw.storage[index] == BACKSLASH.toByte()) {</b>
+<b class="fc">&nbsp;                return raw.decodeJsonStringWithEscapes(contentStart, contentEnd)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return raw.storage.decodeToString(contentStart, contentEnd)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun asDisplayString(raw: RawJson): String {
+<b class="fc">&nbsp;        val classified = kind(raw)</b>
+<b class="pc">&nbsp;        return when (classified) {</b>
+<b class="fc">&nbsp;            RawJsonKind.STRING -&gt; asStringOrNull(raw) ?: raw.decodeToString()</b>
+&nbsp;            RawJsonKind.NUMBER,
+&nbsp;            RawJsonKind.BOOLEAN,
+<b class="fc">&nbsp;            RawJsonKind.NULL -&gt; raw.decodeToString()</b>
+&nbsp;            RawJsonKind.OBJECT,
+&nbsp;            RawJsonKind.ARRAY,
+<b class="fc">&nbsp;            RawJsonKind.INVALID -&gt; raw.decodeToString()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun RawJson.byteAt(relativeIndex: Int): Int =
+<b class="fc">&nbsp;        storage[storageOffset + relativeIndex].toInt() and 0xFF</b>
+&nbsp;
+&nbsp;    private fun RawJson.matchesTrueLiteral(): Boolean =
+<b class="pc">&nbsp;        storageLength == TRUE_LEN &amp;&amp;</b>
+<b class="fc">&nbsp;            storage[storageOffset].toInt() == TRUE_CHAR &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 1].toInt() == CHAR_R &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 2].toInt() == CHAR_U &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 3].toInt() == CHAR_E</b>
+&nbsp;
+&nbsp;    private fun RawJson.matchesFalseLiteral(): Boolean =
+<b class="pc">&nbsp;        storageLength == FALSE_LEN &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset].toInt() == FALSE_CHAR &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 1].toInt() == CHAR_A &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 2].toInt() == CHAR_L &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 3].toInt() == CHAR_S &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 4].toInt() == CHAR_E</b>
+&nbsp;
+&nbsp;    private fun RawJson.matchesNullLiteral(): Boolean =
+<b class="pc">&nbsp;        storageLength == NULL_LEN &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset].toInt() == NULL_CHAR &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 1].toInt() == CHAR_U &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 2].toInt() == CHAR_L &amp;&amp;</b>
+<b class="pc">&nbsp;            storage[storageOffset + 3].toInt() == CHAR_L</b>
+&nbsp;
+&nbsp;    private fun RawJson.isJsonNumberToken(): Boolean {
+<b class="fc">&nbsp;        var index = 0</b>
+<b class="fc">&nbsp;        if (byteAt(index) == MINUS) {</b>
+<b class="fc">&nbsp;            index++</b>
+<b class="fc">&nbsp;            if (index &gt;= storageLength) return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (byteAt(index) == ZERO) {</b>
+<b class="fc">&nbsp;            index++</b>
+&nbsp;        } else {
+<b class="pc">&nbsp;            if (byteAt(index) !in ONE..NINE) return false</b>
+<b class="fc">&nbsp;            index++</b>
+<b class="fc">&nbsp;            while (index &lt; storageLength &amp;&amp; byteAt(index) in ZERO..NINE) {</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        if (index &lt; storageLength &amp;&amp; byteAt(index) == DOT) {</b>
+<b class="fc">&nbsp;            index++</b>
+<b class="pc">&nbsp;            if (index &gt;= storageLength || byteAt(index) !in ZERO..NINE) return false</b>
+<b class="fc">&nbsp;            while (index &lt; storageLength &amp;&amp; byteAt(index) in ZERO..NINE) {</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        if (index &lt; storageLength &amp;&amp; (byteAt(index) == EXP_LOWER || byteAt(index) == EXP_UPPER)) {</b>
+<b class="fc">&nbsp;            index++</b>
+<b class="fc">&nbsp;            if (index &lt; storageLength &amp;&amp; (byteAt(index) == MINUS || byteAt(index) == PLUS)) {</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (index &gt;= storageLength || byteAt(index) !in ZERO..NINE) return false</b>
+<b class="pc">&nbsp;            while (index &lt; storageLength &amp;&amp; byteAt(index) in ZERO..NINE) {</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return index == storageLength</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Single-pass integer parse: rejects fraction/exponent without rescanning the token.
+&nbsp;     */
+&nbsp;    private fun RawJson.parseIntegerOrNull(): Long? {
+<b class="fc">&nbsp;        if (storageLength &lt;= 0) return null</b>
+<b class="fc">&nbsp;        var index = 0</b>
+<b class="fc">&nbsp;        var negative = false</b>
+<b class="fc">&nbsp;        when (byteAt(index)) {</b>
+<b class="fc">&nbsp;            MINUS -&gt; {</b>
+<b class="fc">&nbsp;                negative = true</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            ZERO, in ONE..NINE -&gt; Unit</b>
+<b class="fc">&nbsp;            else -&gt; return null</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (index &gt;= storageLength) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        var value = 0L</b>
+<b class="fc">&nbsp;        val limit = if (negative) Long.MIN_VALUE else -Long.MAX_VALUE</b>
+&nbsp;
+<b class="fc">&nbsp;        if (byteAt(index) == ZERO) {</b>
+<b class="fc">&nbsp;            index++</b>
+<b class="pc">&nbsp;            if (index &lt; storageLength) {</b>
+<b class="nc">&nbsp;                when (byteAt(index)) {</b>
+<b class="nc">&nbsp;                    DOT, EXP_LOWER, EXP_UPPER -&gt; return null</b>
+<b class="nc">&nbsp;                    in ZERO..NINE -&gt; return null</b>
+&nbsp;                }
+&nbsp;            }
+<b class="pc">&nbsp;            return if (negative) 0L else 0L</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        while (index &lt; storageLength) {</b>
+<b class="fc">&nbsp;            when (val byte = byteAt(index)) {</b>
+<b class="fc">&nbsp;                in ZERO..NINE -&gt; {</b>
+<b class="fc">&nbsp;                    val digit = byte - ZERO</b>
+<b class="fc">&nbsp;                    if (value &lt; limit / 10) return null</b>
+<b class="fc">&nbsp;                    value *= 10</b>
+<b class="fc">&nbsp;                    val next = value - digit</b>
+<b class="fc">&nbsp;                    if (next &gt; value) return null</b>
+<b class="fc">&nbsp;                    value = next</b>
+<b class="fc">&nbsp;                    index++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                DOT, EXP_LOWER, EXP_UPPER -&gt; return null</b>
+<b class="nc">&nbsp;                else -&gt; return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        // A positive token whose magnitude is exactly -Long.MIN_VALUE accumulates to
+&nbsp;        // Long.MIN_VALUE here; negating it would silently wrap back to Long.MIN_VALUE
+&nbsp;        // instead of overflowing, so treat it as out of range.
+<b class="fc">&nbsp;        if (!negative &amp;&amp; value == Long.MIN_VALUE) return null</b>
+<b class="fc">&nbsp;        return if (negative) value else -value</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun RawJson.decodeJsonStringWithEscapes(contentStart: Int, contentEnd: Int): String {
+<b class="fc">&nbsp;        val estimated = contentEnd - contentStart</b>
+<b class="fc">&nbsp;        val builder = StringBuilder(estimated)</b>
+<b class="fc">&nbsp;        var index = contentStart</b>
+<b class="fc">&nbsp;        while (index &lt; contentEnd) {</b>
+<b class="fc">&nbsp;            val byte = storage[index++].toInt() and 0xFF</b>
+<b class="pc">&nbsp;            if (byte == BACKSLASH &amp;&amp; index &lt; contentEnd) {</b>
+<b class="fc">&nbsp;                when (val escaped = storage[index++].toInt() and 0xFF) {</b>
+<b class="fc">&nbsp;                    QUOTE -&gt; builder.append(&#39;&quot;&#39;)</b>
+<b class="fc">&nbsp;                    BACKSLASH -&gt; builder.append(&#39;\\&#39;)</b>
+<b class="fc">&nbsp;                    &#39;b&#39;.code -&gt; builder.append(&#39;\b&#39;)</b>
+<b class="fc">&nbsp;                    &#39;f&#39;.code -&gt; builder.append(&#39;\u000C&#39;)</b>
+<b class="fc">&nbsp;                    &#39;n&#39;.code -&gt; builder.append(&#39;\n&#39;)</b>
+<b class="fc">&nbsp;                    &#39;r&#39;.code -&gt; builder.append(&#39;\r&#39;)</b>
+<b class="fc">&nbsp;                    &#39;t&#39;.code -&gt; builder.append(&#39;\t&#39;)</b>
+&nbsp;                    &#39;u&#39;.code -&gt; {
+<b class="fc">&nbsp;                        if (index + 3 &gt;= contentEnd) return builder.toString()</b>
+<b class="fc">&nbsp;                        val hex = readHex4(index)</b>
+<b class="fc">&nbsp;                        index += 4</b>
+<b class="pc">&nbsp;                        if (hex in 0xD800..0xDBFF &amp;&amp; index + 5 &lt; contentEnd &amp;&amp;</b>
+<b class="pc">&nbsp;                            storage[index] == BACKSLASH.toByte() &amp;&amp;</b>
+<b class="pc">&nbsp;                            storage[index + 1] == &#39;u&#39;.code.toByte()</b>
+&nbsp;                        ) {
+<b class="fc">&nbsp;                            val low = readHex4(index + 2)</b>
+<b class="fc">&nbsp;                            index += 6</b>
+<b class="fc">&nbsp;                            appendCodePoint(builder, 0x10000 + ((hex - 0xD800) shl 10) + (low - 0xDC00))</b>
+&nbsp;                        } else {
+<b class="fc">&nbsp;                            appendCodePoint(builder, hex)</b>
+&nbsp;                        }
+&nbsp;                    }
+<b class="fc">&nbsp;                    else -&gt; builder.append(escaped.toChar())</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                builder.append(byte.toChar())</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return builder.toString()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun appendCodePoint(builder: StringBuilder, codePoint: Int) {
+<b class="fc">&nbsp;        if (codePoint &lt;= 0xFFFF) {</b>
+<b class="fc">&nbsp;            builder.append(codePoint.toChar())</b>
+&nbsp;            return
+&nbsp;        }
+<b class="fc">&nbsp;        val offset = codePoint - 0x10000</b>
+<b class="fc">&nbsp;        builder.append((0xD800 + (offset shr 10)).toChar())</b>
+<b class="fc">&nbsp;        builder.append((0xDC00 + (offset and 0x3FF)).toChar())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun RawJson.readHex4(start: Int): Int {
+<b class="fc">&nbsp;        var value = 0</b>
+<b class="fc">&nbsp;        var shift = 0</b>
+<b class="fc">&nbsp;        while (shift &lt; 4) {</b>
+<b class="fc">&nbsp;            val nibble = hexValue(storage[start + shift].toInt() and 0xFF)</b>
+<b class="fc">&nbsp;            if (nibble &lt; 0) return 0xFFFD</b>
+<b class="fc">&nbsp;            value = (value shl 4) or nibble</b>
+<b class="fc">&nbsp;            shift++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return value</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun hexValue(byte: Int): Int = when (byte) {</b>
+<b class="pc">&nbsp;        in ZERO..NINE -&gt; byte - ZERO</b>
+<b class="pc">&nbsp;        in &#39;a&#39;.code..&#39;f&#39;.code -&gt; byte - &#39;a&#39;.code + 10</b>
+<b class="pc">&nbsp;        in &#39;A&#39;.code..&#39;F&#39;.code -&gt; byte - &#39;A&#39;.code + 10</b>
+<b class="fc">&nbsp;        else -&gt; -1</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

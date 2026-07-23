@@ -1,0 +1,317 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > SerializerSetupEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: SerializerSetupEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SerializerSetupEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.2%
+  </span>
+  <span class="absValue">
+    (46/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.8%
+  </span>
+  <span class="absValue">
+    (116/125)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.1%
+  </span>
+  <span class="absValue">
+    (620/666)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.FunSpec
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Emits serializer companion setup: perfect-hash OPTIONS, cached field headers, enum tables, warmUp.
+&nbsp; */
+<b class="fc">&nbsp;internal class SerializerSetupEmitter(</b>
+<b class="fc">&nbsp;    private val ctx: GhostSerializerContext,</b>
+&nbsp;) {
+&nbsp;
+&nbsp;    fun addPerfectHashOptions(typeSpecBuilder: TypeSpec.Builder) {
+<b class="pc">&nbsp;        val names = if (ctx.isSealed &amp;&amp; ctx.isInferred) {</b>
+<b class="pc">&nbsp;            ctx.properties</b>
+<b class="fc">&nbsp;                .firstOrNull()</b>
+<b class="pc">&nbsp;                ?.inferredSubclasses</b>
+<b class="pc">&nbsp;                ?.flatMap { it.properties }</b>
+<b class="fc">&nbsp;                ?.map { it.jsonName }?.distinct()</b>
+<b class="nc">&nbsp;                ?: emptyList()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            DispatchNamesResolver.topLevelNames(ctx.properties)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val hashConfig = PerfectHashFinder.findPerfectHash(names)</b>
+<b class="fc">&nbsp;        val optionsClass = ctx.readerClass.peerClass(C.STR_OPTIONS_CLASS)</b>
+&nbsp;
+<b class="fc">&nbsp;        typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;            PropertySpec.builder(C.STR_OPTIONS, optionsClass)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                .initializer(</b>
+<b class="fc">&nbsp;                    buildReaderOptionsInitializer(</b>
+<b class="fc">&nbsp;                        optionsClass = optionsClass,</b>
+<b class="fc">&nbsp;                        hashConfig = hashConfig,</b>
+<b class="fc">&nbsp;                        names = names,</b>
+&nbsp;                    )
+&nbsp;                )
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addCachedHeaderProperties(typeSpecBuilder: TypeSpec.Builder) {
+<b class="fc">&nbsp;        for (name in ctx.getAllJsonNames()) {</b>
+<b class="fc">&nbsp;            val cleanName = name.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()</b>
+&nbsp;
+<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(C.STR_H_VAL_PREFIX + cleanName, C.BYTE_STRING_CLASS, KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                    .initializer(C.TEMPLATE_ENCODE_UTF8, C.FMT_JSON_FIELD.format(name))</b>
+<b class="fc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;            if (ctx.textChannel) {</b>
+<b class="fc">&nbsp;                typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                    PropertySpec.builder(C.STR_HS_PREFIX + cleanName, String::class, KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                        .initializer(C.STR_FORMAT_S, C.FMT_JSON_FIELD.format(name))</b>
+<b class="fc">&nbsp;                        .build()</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addEnumOptions(typeSpecBuilder: TypeSpec.Builder) {
+<b class="fc">&nbsp;        val values = ctx.enumValues!!.values.toList()</b>
+<b class="fc">&nbsp;        val hashConfig = PerfectHashFinder.findPerfectHash(values)</b>
+<b class="fc">&nbsp;        val optionsClass = ctx.readerClass.peerClass(C.STR_OPTIONS_CLASS)</b>
+&nbsp;
+<b class="fc">&nbsp;        typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;            PropertySpec.builder(C.STR_ENUM_OPTIONS, optionsClass)</b>
+<b class="fc">&nbsp;                .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;                .initializer(</b>
+<b class="fc">&nbsp;                    buildReaderOptionsInitializer(</b>
+<b class="fc">&nbsp;                        optionsClass = optionsClass,</b>
+<b class="fc">&nbsp;                        hashConfig = hashConfig,</b>
+<b class="fc">&nbsp;                        names = values,</b>
+&nbsp;                    )
+&nbsp;                )
+<b class="fc">&nbsp;                .build()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun buildWarmUpMethod(): FunSpec {
+<b class="fc">&nbsp;        val warmupJson = generateMinimalJson()</b>
+<b class="fc">&nbsp;        val warmUpBlock = CodeBlock.builder()</b>
+<b class="fc">&nbsp;            .beginControlFlow(C.STR_TRY)</b>
+<b class="fc">&nbsp;            .addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WARM_UP_READER_INIT,</b>
+<b class="fc">&nbsp;                C.STR_READER1,</b>
+<b class="fc">&nbsp;                ctx.streamingReaderClass,</b>
+<b class="fc">&nbsp;                warmupJson</b>
+&nbsp;            )
+<b class="fc">&nbsp;            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER1)</b>
+<b class="fc">&nbsp;            .nextControlFlow(C.STR_CATCH_EXCEPTION)</b>
+<b class="fc">&nbsp;            .endControlFlow()</b>
+<b class="fc">&nbsp;            .beginControlFlow(C.STR_TRY)</b>
+<b class="fc">&nbsp;            .addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WARM_UP_READER_INIT,</b>
+<b class="fc">&nbsp;                C.STR_READER2,</b>
+<b class="fc">&nbsp;                ctx.flatReaderClass,</b>
+<b class="fc">&nbsp;                warmupJson</b>
+&nbsp;            )
+<b class="fc">&nbsp;            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER2)</b>
+<b class="fc">&nbsp;            .nextControlFlow(C.STR_CATCH_EXCEPTION)</b>
+<b class="fc">&nbsp;            .endControlFlow()</b>
+<b class="fc">&nbsp;        if (ctx.textChannel) {</b>
+<b class="fc">&nbsp;            warmUpBlock</b>
+<b class="fc">&nbsp;                .beginControlFlow(C.STR_TRY)</b>
+<b class="fc">&nbsp;                .addStatement(</b>
+<b class="fc">&nbsp;                    C.TEMPLATE_WARM_UP_STRING_READER_INIT,</b>
+<b class="fc">&nbsp;                    C.STR_READER3,</b>
+<b class="fc">&nbsp;                    ctx.stringReaderClass,</b>
+<b class="fc">&nbsp;                    warmupJson</b>
+&nbsp;                )
+<b class="fc">&nbsp;                .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER3)</b>
+<b class="fc">&nbsp;                .nextControlFlow(C.STR_CATCH_EXCEPTION)</b>
+<b class="fc">&nbsp;                .endControlFlow()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return FunSpec.builder(C.STR_WARM_UP)</b>
+<b class="fc">&nbsp;            .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;            .addCode(warmUpBlock.build())</b>
+<b class="fc">&nbsp;            .build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildReaderOptionsInitializer(
+&nbsp;        optionsClass: ClassName,
+&nbsp;        hashConfig: PerfectHashConfig,
+&nbsp;        names: List&lt;String&gt;,
+&nbsp;    ): CodeBlock {
+<b class="fc">&nbsp;        val optionsBuilder = CodeBlock.builder()</b>
+<b class="pc">&nbsp;        if (hashConfig.extendedKeyHash) {</b>
+<b class="nc">&nbsp;            optionsBuilder.add(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_OPTIONS_OF_SEEDS_EXTENDED_START,</b>
+<b class="nc">&nbsp;                optionsClass,</b>
+<b class="nc">&nbsp;                hashConfig.shift,</b>
+<b class="nc">&nbsp;                hashConfig.multiplier,</b>
+<b class="nc">&nbsp;                hashConfig.tableSize,</b>
+<b class="nc">&nbsp;                ctx.textChannel,</b>
+<b class="nc">&nbsp;                true</b>
+&nbsp;            )
+&nbsp;        } else {
+<b class="fc">&nbsp;            optionsBuilder.add(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_OPTIONS_OF_SEEDS_START,</b>
+<b class="fc">&nbsp;                optionsClass,</b>
+<b class="fc">&nbsp;                hashConfig.shift,</b>
+<b class="fc">&nbsp;                hashConfig.multiplier,</b>
+<b class="fc">&nbsp;                hashConfig.tableSize,</b>
+<b class="fc">&nbsp;                ctx.textChannel</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        names.forEach { name -&gt;</b>
+<b class="fc">&nbsp;            optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        optionsBuilder.add(C.STR_PAREN_CLOSE)</b>
+<b class="fc">&nbsp;        return optionsBuilder.build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun generateMinimalJson(): String {
+<b class="fc">&nbsp;        if (ctx.isSealed || ctx.isEnum || ctx.isValue) {</b>
+<b class="fc">&nbsp;            return C.STR_EMPTY_JSON</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val sb = StringBuilder()</b>
+<b class="fc">&nbsp;        sb.append(C.STR_CURLY_OPEN)</b>
+<b class="fc">&nbsp;        val entries = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;        ctx.properties.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            if (!prop.isNullable &amp;&amp; !prop.hasDefaultValue) {</b>
+<b class="fc">&nbsp;                val key = C.STR_DOUBLE_QUOTE + prop.jsonName + C.STR_DOUBLE_QUOTE</b>
+<b class="fc">&nbsp;                val value = when {</b>
+<b class="fc">&nbsp;                    prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() ||</b>
+<b class="pc">&nbsp;                        prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -&gt; C.STR_ZERO</b>
+<b class="pc">&nbsp;                    prop.type.isPrimitiveDouble() || prop.type.isPrimitiveFloat() -&gt; C.STR_ZERO_D</b>
+<b class="fc">&nbsp;                    prop.type.isPrimitiveBoolean() -&gt; C.STR_FALSE</b>
+<b class="fc">&nbsp;                    prop.type.isPrimitiveChar() -&gt; C.STR_JSON_CHAR_NULL</b>
+<b class="fc">&nbsp;                    prop.type.isString() -&gt; C.STR_EMPTY_STRING</b>
+<b class="fc">&nbsp;                    prop.type.isList() || prop.type.isSet() -&gt; C.STR_EMPTY_ARRAY</b>
+<b class="fc">&nbsp;                    prop.type.isMap() -&gt; C.STR_EMPTY_JSON</b>
+<b class="fc">&nbsp;                    prop.type.isGhost() -&gt; C.STR_EMPTY_JSON</b>
+<b class="fc">&nbsp;                    else -&gt; C.STR_NULL</b>
+&nbsp;                }
+<b class="fc">&nbsp;                entries.add(key + C.STR_COLON + value)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        sb.append(entries.joinToString(C.STR_COMMA))</b>
+<b class="fc">&nbsp;        sb.append(C.STR_CURLY_CLOSE)</b>
+<b class="fc">&nbsp;        return sb.toString()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

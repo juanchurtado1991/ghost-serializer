@@ -1,0 +1,723 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostModuleRegistry_Default</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.generated</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostModuleRegistry_Default (com.ghost.serialization.generated)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostModuleRegistry_Default</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67%
+  </span>
+  <span class="absValue">
+    (185/276)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.6%
+  </span>
+  <span class="absValue">
+    (284/285)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87%
+  </span>
+  <span class="absValue">
+    (1827/2101)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostModuleRegistry_Default$Companion</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67%
+  </span>
+  <span class="absValue">
+    (185/276)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.6%
+  </span>
+  <span class="absValue">
+    (284/285)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87%
+  </span>
+  <span class="absValue">
+    (1827/2101)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.generated
+&nbsp;
+&nbsp;import com.ghost.serialization.contract.GhostRegistry
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.integration.model.Address
+&nbsp;import com.ghost.serialization.integration.model.AddressSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiEventDefault
+&nbsp;import com.ghost.serialization.integration.model.ApiEventDefaultSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiEventDefault_LoginSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiEventDefault_LogoutSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitType
+&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitTypeSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitType_LoginSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitType_LogoutSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiProductConfig
+&nbsp;import com.ghost.serialization.integration.model.ApiProductConfigSerializer
+&nbsp;import com.ghost.serialization.integration.model.ApiUserEvent
+&nbsp;import com.ghost.serialization.integration.model.ApiUserEventSerializer
+&nbsp;import com.ghost.serialization.integration.model.BenchUser
+&nbsp;import com.ghost.serialization.integration.model.BenchUserSerializer
+&nbsp;import com.ghost.serialization.integration.model.BooleanCoercionModel
+&nbsp;import com.ghost.serialization.integration.model.BooleanCoercionModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.Category
+&nbsp;import com.ghost.serialization.integration.model.CategorySerializer
+&nbsp;import com.ghost.serialization.integration.model.CoercionStressModel
+&nbsp;import com.ghost.serialization.integration.model.CoercionStressModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.CollectionOfNulls
+&nbsp;import com.ghost.serialization.integration.model.CollectionOfNullsSerializer
+&nbsp;import com.ghost.serialization.integration.model.CollisionChild
+&nbsp;import com.ghost.serialization.integration.model.CollisionChildSerializer
+&nbsp;import com.ghost.serialization.integration.model.CollisionModel
+&nbsp;import com.ghost.serialization.integration.model.CollisionModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.ComplexObject
+&nbsp;import com.ghost.serialization.integration.model.ComplexObjectSerializer
+&nbsp;import com.ghost.serialization.integration.model.ComplexResponse
+&nbsp;import com.ghost.serialization.integration.model.ComplexResponseSerializer
+&nbsp;import com.ghost.serialization.integration.model.ContextualModel
+&nbsp;import com.ghost.serialization.integration.model.ContextualModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.CustomAction
+&nbsp;import com.ghost.serialization.integration.model.CustomActionSerializer
+&nbsp;import com.ghost.serialization.integration.model.CustomCoderStressModel
+&nbsp;import com.ghost.serialization.integration.model.CustomCoderStressModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.CustomDateUser
+&nbsp;import com.ghost.serialization.integration.model.CustomDateUserSerializer
+&nbsp;import com.ghost.serialization.integration.model.DecimalStress
+&nbsp;import com.ghost.serialization.integration.model.DecimalStressSerializer
+&nbsp;import com.ghost.serialization.integration.model.DeepFlattenedModel
+&nbsp;import com.ghost.serialization.integration.model.DeepFlattenedModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.DeepGenericModel
+&nbsp;import com.ghost.serialization.integration.model.DeepGenericModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.DeepResilientModel
+&nbsp;import com.ghost.serialization.integration.model.DeepResilientModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.DefaultValueNullModel
+&nbsp;import com.ghost.serialization.integration.model.DefaultValueNullModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.DeviceEventPayload
+&nbsp;import com.ghost.serialization.integration.model.DeviceEventPayloadSerializer
+&nbsp;import com.ghost.serialization.integration.model.DeviceState
+&nbsp;import com.ghost.serialization.integration.model.DeviceStateSerializer
+&nbsp;import com.ghost.serialization.integration.model.DeviceStateWrapper
+&nbsp;import com.ghost.serialization.integration.model.DeviceStateWrapperSerializer
+&nbsp;import com.ghost.serialization.integration.model.EmojiKeyModel
+&nbsp;import com.ghost.serialization.integration.model.EmojiKeyModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.EvolutionModel
+&nbsp;import com.ghost.serialization.integration.model.EvolutionModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.ExtendedScalarsModel
+&nbsp;import com.ghost.serialization.integration.model.ExtendedScalarsModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.ExtremeMetadata
+&nbsp;import com.ghost.serialization.integration.model.ExtremeMetadataSerializer
+&nbsp;import com.ghost.serialization.integration.model.FlattenedModel
+&nbsp;import com.ghost.serialization.integration.model.FlattenedModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostAdvancedProfile
+&nbsp;import com.ghost.serialization.integration.model.GhostAdvancedProfileSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostDiscriminatorTestPayload
+&nbsp;import com.ghost.serialization.integration.model.GhostDiscriminatorTestPayloadSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostEnumWrapper
+&nbsp;import com.ghost.serialization.integration.model.GhostEnumWrapperSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent
+&nbsp;import com.ghost.serialization.integration.model.GhostKindEventSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent_CreatedSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent_DeletedSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent_UpdatedSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostShape
+&nbsp;import com.ghost.serialization.integration.model.GhostShapeSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostShape_CircleSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostShape_SquareSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostStandardsEnum
+&nbsp;import com.ghost.serialization.integration.model.GhostStandardsEnumSerializer
+&nbsp;import com.ghost.serialization.integration.model.GhostUserToken
+&nbsp;import com.ghost.serialization.integration.model.GhostUserTokenSerializer
+&nbsp;import com.ghost.serialization.integration.model.GodObject
+&nbsp;import com.ghost.serialization.integration.model.GodObjectSerializer
+&nbsp;import com.ghost.serialization.integration.model.HashtagItem
+&nbsp;import com.ghost.serialization.integration.model.HashtagItemSerializer
+&nbsp;import com.ghost.serialization.integration.model.HierarchyWrappedKeysFixture
+&nbsp;import com.ghost.serialization.integration.model.HierarchyWrappedKeysFixtureSerializer
+&nbsp;import com.ghost.serialization.integration.model.HomeConfig
+&nbsp;import com.ghost.serialization.integration.model.HomeConfigSerializer
+&nbsp;import com.ghost.serialization.integration.model.HomeStatus
+&nbsp;import com.ghost.serialization.integration.model.HomeStatusSerializer
+&nbsp;import com.ghost.serialization.integration.model.IgnoreModel
+&nbsp;import com.ghost.serialization.integration.model.IgnoreModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.InvoicePaidPayload
+&nbsp;import com.ghost.serialization.integration.model.InvoicePaidPayloadSerializer
+&nbsp;import com.ghost.serialization.integration.model.JsonLdNode
+&nbsp;import com.ghost.serialization.integration.model.JsonLdNodeSerializer
+&nbsp;import com.ghost.serialization.integration.model.JsonLdNode_OrganizationSerializer
+&nbsp;import com.ghost.serialization.integration.model.JsonLdNode_PersonSerializer
+&nbsp;import com.ghost.serialization.integration.model.LargeStringData
+&nbsp;import com.ghost.serialization.integration.model.LargeStringDataSerializer
+&nbsp;import com.ghost.serialization.integration.model.LargeStringModel
+&nbsp;import com.ghost.serialization.integration.model.LargeStringModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.LegacyUser
+&nbsp;import com.ghost.serialization.integration.model.LegacyUserSerializer
+&nbsp;import com.ghost.serialization.integration.model.MaliceModel
+&nbsp;import com.ghost.serialization.integration.model.MaliceModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.MapEdgeCaseModel
+&nbsp;import com.ghost.serialization.integration.model.MapEdgeCaseModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.MediaItem
+&nbsp;import com.ghost.serialization.integration.model.MediaItemSerializer
+&nbsp;import com.ghost.serialization.integration.model.MediaSize
+&nbsp;import com.ghost.serialization.integration.model.MediaSizeSerializer
+&nbsp;import com.ghost.serialization.integration.model.MediaSizes
+&nbsp;import com.ghost.serialization.integration.model.MediaSizesSerializer
+&nbsp;import com.ghost.serialization.integration.model.MixedStructuralModel
+&nbsp;import com.ghost.serialization.integration.model.MixedStructuralModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.ModeEventPayload
+&nbsp;import com.ghost.serialization.integration.model.ModeEventPayloadSerializer
+&nbsp;import com.ghost.serialization.integration.model.ModelWithExternal
+&nbsp;import com.ghost.serialization.integration.model.ModelWithExternalSerializer
+&nbsp;import com.ghost.serialization.integration.model.NamingModel
+&nbsp;import com.ghost.serialization.integration.model.NamingModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.NestedContainer
+&nbsp;import com.ghost.serialization.integration.model.NestedContainerSerializer
+&nbsp;import com.ghost.serialization.integration.model.NestedDeviceStub
+&nbsp;import com.ghost.serialization.integration.model.NestedDeviceStubSerializer
+&nbsp;import com.ghost.serialization.integration.model.NestedGenericModel
+&nbsp;import com.ghost.serialization.integration.model.NestedGenericModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.NullabilityStressModel
+&nbsp;import com.ghost.serialization.integration.model.NullabilityStressModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.NullablePrimitives
+&nbsp;import com.ghost.serialization.integration.model.NullablePrimitivesSerializer
+&nbsp;import com.ghost.serialization.integration.model.Object40
+&nbsp;import com.ghost.serialization.integration.model.Object40Serializer
+&nbsp;import com.ghost.serialization.integration.model.Object41
+&nbsp;import com.ghost.serialization.integration.model.Object41Serializer
+&nbsp;import com.ghost.serialization.integration.model.OmitIfAbsentWrappedKeysFixture
+&nbsp;import com.ghost.serialization.integration.model.OmitIfAbsentWrappedKeysFixtureSerializer
+&nbsp;import com.ghost.serialization.integration.model.OmitIfEmptyWrappedKeysFixture
+&nbsp;import com.ghost.serialization.integration.model.OmitIfEmptyWrappedKeysFixtureSerializer
+&nbsp;import com.ghost.serialization.integration.model.OneofPayload
+&nbsp;import com.ghost.serialization.integration.model.OneofPayloadSerializer
+&nbsp;import com.ghost.serialization.integration.model.OneofPayload_CodeSerializer
+&nbsp;import com.ghost.serialization.integration.model.OneofPayload_TextSerializer
+&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataByteEnvelope
+&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataByteEnvelopeSerializer
+&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataEnvelope
+&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataEnvelopeSerializer
+&nbsp;import com.ghost.serialization.integration.model.OverlappingKeyModel
+&nbsp;import com.ghost.serialization.integration.model.OverlappingKeyModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevices
+&nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevicesSerializer
+&nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevices_LoggedInSerializer
+&nbsp;import com.ghost.serialization.integration.model.Priority
+&nbsp;import com.ghost.serialization.integration.model.PrioritySerializer
+&nbsp;import com.ghost.serialization.integration.model.ProtoAccountId
+&nbsp;import com.ghost.serialization.integration.model.ProtoAccountIdSerializer
+&nbsp;import com.ghost.serialization.integration.model.ProtoOneofEvent
+&nbsp;import com.ghost.serialization.integration.model.ProtoOneofEventSerializer
+&nbsp;import com.ghost.serialization.integration.model.ProtoValueClassCollectionFixture
+&nbsp;import com.ghost.serialization.integration.model.ProtoValueClassCollectionFixtureSerializer
+&nbsp;import com.ghost.serialization.integration.model.RawJsonAttributeState
+&nbsp;import com.ghost.serialization.integration.model.RawJsonAttributeStateSerializer
+&nbsp;import com.ghost.serialization.integration.model.RawJsonListModel
+&nbsp;import com.ghost.serialization.integration.model.RawJsonListModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.RawJsonPayloadModel
+&nbsp;import com.ghost.serialization.integration.model.RawJsonPayloadModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.RawPayloadModel
+&nbsp;import com.ghost.serialization.integration.model.RawPayloadModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.RecursiveGraphNode
+&nbsp;import com.ghost.serialization.integration.model.RecursiveGraphNodeSerializer
+&nbsp;import com.ghost.serialization.integration.model.RecursiveNode
+&nbsp;import com.ghost.serialization.integration.model.RecursiveNodeSerializer
+&nbsp;import com.ghost.serialization.integration.model.RepeatedWrappedKeysFixture
+&nbsp;import com.ghost.serialization.integration.model.RepeatedWrappedKeysFixtureSerializer
+&nbsp;import com.ghost.serialization.integration.model.ReservedWordModel
+&nbsp;import com.ghost.serialization.integration.model.ReservedWordModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.ResilientEnumModel
+&nbsp;import com.ghost.serialization.integration.model.ResilientEnumModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.ResilientItem
+&nbsp;import com.ghost.serialization.integration.model.ResilientItemSerializer
+&nbsp;import com.ghost.serialization.integration.model.SmartDevice
+&nbsp;import com.ghost.serialization.integration.model.SmartDeviceSerializer
+&nbsp;import com.ghost.serialization.integration.model.SmartDevice_LightSerializer
+&nbsp;import com.ghost.serialization.integration.model.SmartDevice_ThermostatSerializer
+&nbsp;import com.ghost.serialization.integration.model.SmartDevice_UnknownDeviceSerializer
+&nbsp;import com.ghost.serialization.integration.model.SmartHome
+&nbsp;import com.ghost.serialization.integration.model.SmartHomeSerializer
+&nbsp;import com.ghost.serialization.integration.model.SseEventEnvelope
+&nbsp;import com.ghost.serialization.integration.model.SseEventEnvelopeSerializer
+&nbsp;import com.ghost.serialization.integration.model.StripeObject
+&nbsp;import com.ghost.serialization.integration.model.StripeObjectSerializer
+&nbsp;import com.ghost.serialization.integration.model.StripeObject_ChargeSerializer
+&nbsp;import com.ghost.serialization.integration.model.StripeObject_RefundSerializer
+&nbsp;import com.ghost.serialization.integration.model.StructuralCollisionModel
+&nbsp;import com.ghost.serialization.integration.model.StructuralCollisionModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.SymbolItem
+&nbsp;import com.ghost.serialization.integration.model.SymbolItemSerializer
+&nbsp;import com.ghost.serialization.integration.model.SyncStatus
+&nbsp;import com.ghost.serialization.integration.model.SyncStatusSerializer
+&nbsp;import com.ghost.serialization.integration.model.Tag
+&nbsp;import com.ghost.serialization.integration.model.TagSerializer
+&nbsp;import com.ghost.serialization.integration.model.TagsProbe
+&nbsp;import com.ghost.serialization.integration.model.TagsProbeSerializer
+&nbsp;import com.ghost.serialization.integration.model.Tweet
+&nbsp;import com.ghost.serialization.integration.model.TweetEntities
+&nbsp;import com.ghost.serialization.integration.model.TweetEntitiesSerializer
+&nbsp;import com.ghost.serialization.integration.model.TweetMetadata
+&nbsp;import com.ghost.serialization.integration.model.TweetMetadataSerializer
+&nbsp;import com.ghost.serialization.integration.model.TweetSerializer
+&nbsp;import com.ghost.serialization.integration.model.TwitterResponse
+&nbsp;import com.ghost.serialization.integration.model.TwitterResponseSerializer
+&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialResponse
+&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialResponseSerializer
+&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialTweet
+&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialTweetSerializer
+&nbsp;import com.ghost.serialization.integration.model.TwitterWrappedTweet
+&nbsp;import com.ghost.serialization.integration.model.TwitterWrappedTweetSerializer
+&nbsp;import com.ghost.serialization.integration.model.UniCodeModel
+&nbsp;import com.ghost.serialization.integration.model.UniCodeModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.UrlContainer
+&nbsp;import com.ghost.serialization.integration.model.UrlContainerSerializer
+&nbsp;import com.ghost.serialization.integration.model.UrlItem
+&nbsp;import com.ghost.serialization.integration.model.UrlItemSerializer
+&nbsp;import com.ghost.serialization.integration.model.User
+&nbsp;import com.ghost.serialization.integration.model.UserEntities
+&nbsp;import com.ghost.serialization.integration.model.UserEntitiesSerializer
+&nbsp;import com.ghost.serialization.integration.model.UserId
+&nbsp;import com.ghost.serialization.integration.model.UserIdSerializer
+&nbsp;import com.ghost.serialization.integration.model.UserMention
+&nbsp;import com.ghost.serialization.integration.model.UserMentionSerializer
+&nbsp;import com.ghost.serialization.integration.model.UserRole
+&nbsp;import com.ghost.serialization.integration.model.UserRoleSerializer
+&nbsp;import com.ghost.serialization.integration.model.UserSerializer
+&nbsp;import com.ghost.serialization.integration.model.UserWithValueClass
+&nbsp;import com.ghost.serialization.integration.model.UserWithValueClassSerializer
+&nbsp;import com.ghost.serialization.integration.model.WebhookEnvelope
+&nbsp;import com.ghost.serialization.integration.model.WebhookEnvelopeSerializer
+&nbsp;import com.ghost.serialization.integration.model.WideModel
+&nbsp;import com.ghost.serialization.integration.model.WideModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.WireExtras
+&nbsp;import com.ghost.serialization.integration.model.WireExtras12
+&nbsp;import com.ghost.serialization.integration.model.WireExtras12Serializer
+&nbsp;import com.ghost.serialization.integration.model.WireExtras34
+&nbsp;import com.ghost.serialization.integration.model.WireExtras34Serializer
+&nbsp;import com.ghost.serialization.integration.model.WireExtrasSerializer
+&nbsp;import com.ghost.serialization.integration.model.WrapSharedPathModel
+&nbsp;import com.ghost.serialization.integration.model.WrapSharedPathModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.WrappedKeysFixture
+&nbsp;import com.ghost.serialization.integration.model.WrappedKeysFixtureSerializer
+&nbsp;import com.ghost.serialization.integration.model.WrappedModel
+&nbsp;import com.ghost.serialization.integration.model.WrappedModelSerializer
+&nbsp;import kotlin.collections.Map
+&nbsp;import kotlin.jvm.JvmField
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Generated Registry for GhostSerialization.
+&nbsp; * Uses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.
+&nbsp; */
+<b class="fc">&nbsp;public class GhostModuleRegistry_Default : GhostRegistry {</b>
+<b class="fc">&nbsp;  private val serializersByClass: Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; by lazy {</b>
+<b class="fc">&nbsp;        mapOf(</b>
+<b class="fc">&nbsp;            Address::class to AddressSerializer,</b>
+<b class="fc">&nbsp;            ApiEventDefault::class to ApiEventDefaultSerializer,</b>
+<b class="fc">&nbsp;            ApiEventDefault.Login::class to ApiEventDefault_LoginSerializer,</b>
+<b class="fc">&nbsp;            ApiEventDefault.Logout::class to ApiEventDefault_LogoutSerializer,</b>
+<b class="fc">&nbsp;            ApiEventExplicitType::class to ApiEventExplicitTypeSerializer,</b>
+<b class="fc">&nbsp;            ApiEventExplicitType.Login::class to ApiEventExplicitType_LoginSerializer,</b>
+<b class="fc">&nbsp;            ApiEventExplicitType.Logout::class to ApiEventExplicitType_LogoutSerializer,</b>
+<b class="fc">&nbsp;            ApiProductConfig::class to ApiProductConfigSerializer,</b>
+<b class="fc">&nbsp;            ApiUserEvent::class to ApiUserEventSerializer,</b>
+<b class="fc">&nbsp;            BenchUser::class to BenchUserSerializer,</b>
+<b class="fc">&nbsp;            BooleanCoercionModel::class to BooleanCoercionModelSerializer,</b>
+<b class="fc">&nbsp;            Category::class to CategorySerializer,</b>
+<b class="fc">&nbsp;            CoercionStressModel::class to CoercionStressModelSerializer,</b>
+<b class="fc">&nbsp;            CollectionOfNulls::class to CollectionOfNullsSerializer,</b>
+<b class="fc">&nbsp;            CollisionChild::class to CollisionChildSerializer,</b>
+<b class="fc">&nbsp;            CollisionModel::class to CollisionModelSerializer,</b>
+<b class="fc">&nbsp;            ComplexObject::class to ComplexObjectSerializer,</b>
+<b class="fc">&nbsp;            ComplexResponse::class to ComplexResponseSerializer,</b>
+<b class="fc">&nbsp;            ContextualModel::class to ContextualModelSerializer,</b>
+<b class="fc">&nbsp;            CustomAction::class to CustomActionSerializer,</b>
+<b class="fc">&nbsp;            CustomCoderStressModel::class to CustomCoderStressModelSerializer,</b>
+<b class="fc">&nbsp;            CustomDateUser::class to CustomDateUserSerializer,</b>
+<b class="fc">&nbsp;            DecimalStress::class to DecimalStressSerializer,</b>
+<b class="fc">&nbsp;            DeepFlattenedModel::class to DeepFlattenedModelSerializer,</b>
+<b class="fc">&nbsp;            DeepGenericModel::class to DeepGenericModelSerializer,</b>
+<b class="fc">&nbsp;            DeepResilientModel::class to DeepResilientModelSerializer,</b>
+<b class="fc">&nbsp;            DefaultValueNullModel::class to DefaultValueNullModelSerializer,</b>
+<b class="fc">&nbsp;            DeviceEventPayload::class to DeviceEventPayloadSerializer,</b>
+<b class="fc">&nbsp;            DeviceState::class to DeviceStateSerializer,</b>
+<b class="fc">&nbsp;            DeviceStateWrapper::class to DeviceStateWrapperSerializer,</b>
+<b class="fc">&nbsp;            EmojiKeyModel::class to EmojiKeyModelSerializer,</b>
+<b class="fc">&nbsp;            EvolutionModel::class to EvolutionModelSerializer,</b>
+<b class="fc">&nbsp;            ExtendedScalarsModel::class to ExtendedScalarsModelSerializer,</b>
+<b class="fc">&nbsp;            ExtremeMetadata::class to ExtremeMetadataSerializer,</b>
+<b class="fc">&nbsp;            FlattenedModel::class to FlattenedModelSerializer,</b>
+<b class="fc">&nbsp;            GhostAdvancedProfile::class to GhostAdvancedProfileSerializer,</b>
+<b class="fc">&nbsp;            GhostDiscriminatorTestPayload::class to GhostDiscriminatorTestPayloadSerializer,</b>
+<b class="fc">&nbsp;            GhostEnumWrapper::class to GhostEnumWrapperSerializer,</b>
+<b class="fc">&nbsp;            GhostKindEvent::class to GhostKindEventSerializer,</b>
+<b class="fc">&nbsp;            GhostKindEvent.Created::class to GhostKindEvent_CreatedSerializer,</b>
+<b class="fc">&nbsp;            GhostKindEvent.Deleted::class to GhostKindEvent_DeletedSerializer,</b>
+<b class="fc">&nbsp;            GhostKindEvent.Updated::class to GhostKindEvent_UpdatedSerializer,</b>
+<b class="fc">&nbsp;            GhostShape::class to GhostShapeSerializer,</b>
+<b class="fc">&nbsp;            GhostShape.Circle::class to GhostShape_CircleSerializer,</b>
+<b class="fc">&nbsp;            GhostShape.Square::class to GhostShape_SquareSerializer,</b>
+<b class="fc">&nbsp;            GhostStandardsEnum::class to GhostStandardsEnumSerializer,</b>
+<b class="fc">&nbsp;            GhostUserToken::class to GhostUserTokenSerializer,</b>
+<b class="fc">&nbsp;            GodObject::class to GodObjectSerializer,</b>
+<b class="fc">&nbsp;            HashtagItem::class to HashtagItemSerializer,</b>
+<b class="fc">&nbsp;            HierarchyWrappedKeysFixture::class to HierarchyWrappedKeysFixtureSerializer,</b>
+<b class="fc">&nbsp;            HomeConfig::class to HomeConfigSerializer,</b>
+<b class="fc">&nbsp;            HomeStatus::class to HomeStatusSerializer,</b>
+<b class="fc">&nbsp;            IgnoreModel::class to IgnoreModelSerializer,</b>
+<b class="fc">&nbsp;            InvoicePaidPayload::class to InvoicePaidPayloadSerializer,</b>
+<b class="fc">&nbsp;            JsonLdNode::class to JsonLdNodeSerializer,</b>
+<b class="fc">&nbsp;            JsonLdNode.Organization::class to JsonLdNode_OrganizationSerializer,</b>
+<b class="fc">&nbsp;            JsonLdNode.Person::class to JsonLdNode_PersonSerializer,</b>
+<b class="fc">&nbsp;            LargeStringData::class to LargeStringDataSerializer,</b>
+<b class="fc">&nbsp;            LargeStringModel::class to LargeStringModelSerializer,</b>
+<b class="fc">&nbsp;            LegacyUser::class to LegacyUserSerializer,</b>
+<b class="fc">&nbsp;            MaliceModel::class to MaliceModelSerializer,</b>
+<b class="fc">&nbsp;            MapEdgeCaseModel::class to MapEdgeCaseModelSerializer,</b>
+<b class="fc">&nbsp;            MediaItem::class to MediaItemSerializer,</b>
+<b class="fc">&nbsp;            MediaSize::class to MediaSizeSerializer,</b>
+<b class="fc">&nbsp;            MediaSizes::class to MediaSizesSerializer,</b>
+<b class="fc">&nbsp;            MixedStructuralModel::class to MixedStructuralModelSerializer,</b>
+<b class="fc">&nbsp;            ModeEventPayload::class to ModeEventPayloadSerializer,</b>
+<b class="fc">&nbsp;            ModelWithExternal::class to ModelWithExternalSerializer,</b>
+<b class="fc">&nbsp;            NamingModel::class to NamingModelSerializer,</b>
+<b class="fc">&nbsp;            NestedContainer::class to NestedContainerSerializer,</b>
+<b class="fc">&nbsp;            NestedDeviceStub::class to NestedDeviceStubSerializer,</b>
+<b class="fc">&nbsp;            NestedGenericModel::class to NestedGenericModelSerializer,</b>
+<b class="fc">&nbsp;            NullabilityStressModel::class to NullabilityStressModelSerializer,</b>
+<b class="fc">&nbsp;            NullablePrimitives::class to NullablePrimitivesSerializer,</b>
+<b class="fc">&nbsp;            Object40::class to Object40Serializer,</b>
+<b class="fc">&nbsp;            Object41::class to Object41Serializer,</b>
+<b class="fc">&nbsp;            OmitIfAbsentWrappedKeysFixture::class to OmitIfAbsentWrappedKeysFixtureSerializer,</b>
+<b class="fc">&nbsp;            OmitIfEmptyWrappedKeysFixture::class to OmitIfEmptyWrappedKeysFixtureSerializer,</b>
+<b class="fc">&nbsp;            OneofPayload::class to OneofPayloadSerializer,</b>
+<b class="fc">&nbsp;            OneofPayload.Code::class to OneofPayload_CodeSerializer,</b>
+<b class="fc">&nbsp;            OneofPayload.Text::class to OneofPayload_TextSerializer,</b>
+<b class="fc">&nbsp;            OpaqueMetadataByteEnvelope::class to OpaqueMetadataByteEnvelopeSerializer,</b>
+<b class="fc">&nbsp;            OpaqueMetadataEnvelope::class to OpaqueMetadataEnvelopeSerializer,</b>
+<b class="fc">&nbsp;            OverlappingKeyModel::class to OverlappingKeyModelSerializer,</b>
+<b class="fc">&nbsp;            PageWithNestedDevices::class to PageWithNestedDevicesSerializer,</b>
+<b class="fc">&nbsp;            PageWithNestedDevices.LoggedIn::class to PageWithNestedDevices_LoggedInSerializer,</b>
+<b class="fc">&nbsp;            Priority::class to PrioritySerializer,</b>
+<b class="fc">&nbsp;            ProtoAccountId::class to ProtoAccountIdSerializer,</b>
+<b class="fc">&nbsp;            ProtoOneofEvent::class to ProtoOneofEventSerializer,</b>
+<b class="fc">&nbsp;            ProtoValueClassCollectionFixture::class to ProtoValueClassCollectionFixtureSerializer,</b>
+<b class="fc">&nbsp;            RawJsonAttributeState::class to RawJsonAttributeStateSerializer,</b>
+<b class="fc">&nbsp;            RawJsonListModel::class to RawJsonListModelSerializer,</b>
+<b class="fc">&nbsp;            RawJsonPayloadModel::class to RawJsonPayloadModelSerializer,</b>
+<b class="fc">&nbsp;            RawPayloadModel::class to RawPayloadModelSerializer,</b>
+<b class="fc">&nbsp;            RecursiveGraphNode::class to RecursiveGraphNodeSerializer,</b>
+<b class="fc">&nbsp;            RecursiveNode::class to RecursiveNodeSerializer,</b>
+<b class="fc">&nbsp;            RepeatedWrappedKeysFixture::class to RepeatedWrappedKeysFixtureSerializer,</b>
+<b class="fc">&nbsp;            ReservedWordModel::class to ReservedWordModelSerializer,</b>
+<b class="fc">&nbsp;            ResilientEnumModel::class to ResilientEnumModelSerializer,</b>
+<b class="fc">&nbsp;            ResilientItem::class to ResilientItemSerializer,</b>
+<b class="fc">&nbsp;            SmartDevice::class to SmartDeviceSerializer,</b>
+<b class="fc">&nbsp;            SmartDevice.Light::class to SmartDevice_LightSerializer,</b>
+<b class="fc">&nbsp;            SmartDevice.Thermostat::class to SmartDevice_ThermostatSerializer,</b>
+<b class="fc">&nbsp;            SmartDevice.UnknownDevice::class to SmartDevice_UnknownDeviceSerializer,</b>
+<b class="fc">&nbsp;            SmartHome::class to SmartHomeSerializer,</b>
+<b class="fc">&nbsp;            SseEventEnvelope::class to SseEventEnvelopeSerializer,</b>
+<b class="fc">&nbsp;            StripeObject::class to StripeObjectSerializer,</b>
+<b class="fc">&nbsp;            StripeObject.Charge::class to StripeObject_ChargeSerializer,</b>
+<b class="fc">&nbsp;            StripeObject.Refund::class to StripeObject_RefundSerializer,</b>
+<b class="fc">&nbsp;            StructuralCollisionModel::class to StructuralCollisionModelSerializer,</b>
+<b class="fc">&nbsp;            SymbolItem::class to SymbolItemSerializer,</b>
+<b class="fc">&nbsp;            SyncStatus::class to SyncStatusSerializer,</b>
+<b class="fc">&nbsp;            Tag::class to TagSerializer,</b>
+<b class="fc">&nbsp;            TagsProbe::class to TagsProbeSerializer,</b>
+<b class="fc">&nbsp;            Tweet::class to TweetSerializer,</b>
+<b class="fc">&nbsp;            TweetEntities::class to TweetEntitiesSerializer,</b>
+<b class="fc">&nbsp;            TweetMetadata::class to TweetMetadataSerializer,</b>
+<b class="fc">&nbsp;            TwitterResponse::class to TwitterResponseSerializer,</b>
+<b class="fc">&nbsp;            TwitterSpecialResponse::class to TwitterSpecialResponseSerializer,</b>
+<b class="fc">&nbsp;            TwitterSpecialTweet::class to TwitterSpecialTweetSerializer,</b>
+<b class="fc">&nbsp;            TwitterWrappedTweet::class to TwitterWrappedTweetSerializer,</b>
+<b class="fc">&nbsp;            UniCodeModel::class to UniCodeModelSerializer,</b>
+<b class="fc">&nbsp;            UrlContainer::class to UrlContainerSerializer,</b>
+<b class="fc">&nbsp;            UrlItem::class to UrlItemSerializer,</b>
+<b class="fc">&nbsp;            User::class to UserSerializer,</b>
+<b class="fc">&nbsp;            UserEntities::class to UserEntitiesSerializer,</b>
+<b class="fc">&nbsp;            UserId::class to UserIdSerializer,</b>
+<b class="fc">&nbsp;            UserMention::class to UserMentionSerializer,</b>
+<b class="fc">&nbsp;            UserRole::class to UserRoleSerializer,</b>
+<b class="fc">&nbsp;            UserWithValueClass::class to UserWithValueClassSerializer,</b>
+<b class="fc">&nbsp;            WebhookEnvelope::class to WebhookEnvelopeSerializer,</b>
+<b class="fc">&nbsp;            WideModel::class to WideModelSerializer,</b>
+<b class="fc">&nbsp;            WireExtras::class to WireExtrasSerializer,</b>
+<b class="fc">&nbsp;            WireExtras12::class to WireExtras12Serializer,</b>
+<b class="fc">&nbsp;            WireExtras34::class to WireExtras34Serializer,</b>
+<b class="fc">&nbsp;            WrapSharedPathModel::class to WrapSharedPathModelSerializer,</b>
+<b class="fc">&nbsp;            WrappedKeysFixture::class to WrappedKeysFixtureSerializer,</b>
+<b class="fc">&nbsp;            WrappedModel::class to WrappedModelSerializer)</b>
+&nbsp;      }
+&nbsp;
+&nbsp;  @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;  override fun &lt;T : Any&gt; getSerializer(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;? = when (clazz) {</b>
+<b class="pc">&nbsp;      Address::class -&gt; AddressSerializer</b>
+<b class="fc">&nbsp;      ApiEventDefault::class -&gt; ApiEventDefaultSerializer</b>
+<b class="pc">&nbsp;      ApiEventDefault.Login::class -&gt; ApiEventDefault_LoginSerializer</b>
+<b class="pc">&nbsp;      ApiEventDefault.Logout::class -&gt; ApiEventDefault_LogoutSerializer</b>
+<b class="fc">&nbsp;      ApiEventExplicitType::class -&gt; ApiEventExplicitTypeSerializer</b>
+<b class="pc">&nbsp;      ApiEventExplicitType.Login::class -&gt; ApiEventExplicitType_LoginSerializer</b>
+<b class="pc">&nbsp;      ApiEventExplicitType.Logout::class -&gt; ApiEventExplicitType_LogoutSerializer</b>
+<b class="pc">&nbsp;      ApiProductConfig::class -&gt; ApiProductConfigSerializer</b>
+<b class="pc">&nbsp;      ApiUserEvent::class -&gt; ApiUserEventSerializer</b>
+<b class="pc">&nbsp;      BenchUser::class -&gt; BenchUserSerializer</b>
+<b class="fc">&nbsp;      BooleanCoercionModel::class -&gt; BooleanCoercionModelSerializer</b>
+<b class="pc">&nbsp;      Category::class -&gt; CategorySerializer</b>
+<b class="fc">&nbsp;      CoercionStressModel::class -&gt; CoercionStressModelSerializer</b>
+<b class="fc">&nbsp;      CollectionOfNulls::class -&gt; CollectionOfNullsSerializer</b>
+<b class="pc">&nbsp;      CollisionChild::class -&gt; CollisionChildSerializer</b>
+<b class="pc">&nbsp;      CollisionModel::class -&gt; CollisionModelSerializer</b>
+<b class="pc">&nbsp;      ComplexObject::class -&gt; ComplexObjectSerializer</b>
+<b class="pc">&nbsp;      ComplexResponse::class -&gt; ComplexResponseSerializer</b>
+<b class="fc">&nbsp;      ContextualModel::class -&gt; ContextualModelSerializer</b>
+<b class="pc">&nbsp;      CustomAction::class -&gt; CustomActionSerializer</b>
+<b class="fc">&nbsp;      CustomCoderStressModel::class -&gt; CustomCoderStressModelSerializer</b>
+<b class="fc">&nbsp;      CustomDateUser::class -&gt; CustomDateUserSerializer</b>
+<b class="fc">&nbsp;      DecimalStress::class -&gt; DecimalStressSerializer</b>
+<b class="pc">&nbsp;      DeepFlattenedModel::class -&gt; DeepFlattenedModelSerializer</b>
+<b class="pc">&nbsp;      DeepGenericModel::class -&gt; DeepGenericModelSerializer</b>
+<b class="fc">&nbsp;      DeepResilientModel::class -&gt; DeepResilientModelSerializer</b>
+<b class="pc">&nbsp;      DefaultValueNullModel::class -&gt; DefaultValueNullModelSerializer</b>
+<b class="fc">&nbsp;      DeviceEventPayload::class -&gt; DeviceEventPayloadSerializer</b>
+<b class="pc">&nbsp;      DeviceState::class -&gt; DeviceStateSerializer</b>
+<b class="fc">&nbsp;      DeviceStateWrapper::class -&gt; DeviceStateWrapperSerializer</b>
+<b class="fc">&nbsp;      EmojiKeyModel::class -&gt; EmojiKeyModelSerializer</b>
+<b class="pc">&nbsp;      EvolutionModel::class -&gt; EvolutionModelSerializer</b>
+<b class="pc">&nbsp;      ExtendedScalarsModel::class -&gt; ExtendedScalarsModelSerializer</b>
+<b class="pc">&nbsp;      ExtremeMetadata::class -&gt; ExtremeMetadataSerializer</b>
+<b class="pc">&nbsp;      FlattenedModel::class -&gt; FlattenedModelSerializer</b>
+<b class="fc">&nbsp;      GhostAdvancedProfile::class -&gt; GhostAdvancedProfileSerializer</b>
+<b class="fc">&nbsp;      GhostDiscriminatorTestPayload::class -&gt; GhostDiscriminatorTestPayloadSerializer</b>
+<b class="fc">&nbsp;      GhostEnumWrapper::class -&gt; GhostEnumWrapperSerializer</b>
+<b class="fc">&nbsp;      GhostKindEvent::class -&gt; GhostKindEventSerializer</b>
+<b class="fc">&nbsp;      GhostKindEvent.Created::class -&gt; GhostKindEvent_CreatedSerializer</b>
+<b class="pc">&nbsp;      GhostKindEvent.Deleted::class -&gt; GhostKindEvent_DeletedSerializer</b>
+<b class="pc">&nbsp;      GhostKindEvent.Updated::class -&gt; GhostKindEvent_UpdatedSerializer</b>
+<b class="fc">&nbsp;      GhostShape::class -&gt; GhostShapeSerializer</b>
+<b class="pc">&nbsp;      GhostShape.Circle::class -&gt; GhostShape_CircleSerializer</b>
+<b class="pc">&nbsp;      GhostShape.Square::class -&gt; GhostShape_SquareSerializer</b>
+<b class="pc">&nbsp;      GhostStandardsEnum::class -&gt; GhostStandardsEnumSerializer</b>
+<b class="fc">&nbsp;      GhostUserToken::class -&gt; GhostUserTokenSerializer</b>
+<b class="fc">&nbsp;      GodObject::class -&gt; GodObjectSerializer</b>
+<b class="pc">&nbsp;      HashtagItem::class -&gt; HashtagItemSerializer</b>
+<b class="pc">&nbsp;      HierarchyWrappedKeysFixture::class -&gt; HierarchyWrappedKeysFixtureSerializer</b>
+<b class="pc">&nbsp;      HomeConfig::class -&gt; HomeConfigSerializer</b>
+<b class="pc">&nbsp;      HomeStatus::class -&gt; HomeStatusSerializer</b>
+<b class="fc">&nbsp;      IgnoreModel::class -&gt; IgnoreModelSerializer</b>
+<b class="fc">&nbsp;      InvoicePaidPayload::class -&gt; InvoicePaidPayloadSerializer</b>
+<b class="fc">&nbsp;      JsonLdNode::class -&gt; JsonLdNodeSerializer</b>
+<b class="pc">&nbsp;      JsonLdNode.Organization::class -&gt; JsonLdNode_OrganizationSerializer</b>
+<b class="pc">&nbsp;      JsonLdNode.Person::class -&gt; JsonLdNode_PersonSerializer</b>
+<b class="pc">&nbsp;      LargeStringData::class -&gt; LargeStringDataSerializer</b>
+<b class="fc">&nbsp;      LargeStringModel::class -&gt; LargeStringModelSerializer</b>
+<b class="fc">&nbsp;      LegacyUser::class -&gt; LegacyUserSerializer</b>
+<b class="pc">&nbsp;      MaliceModel::class -&gt; MaliceModelSerializer</b>
+<b class="fc">&nbsp;      MapEdgeCaseModel::class -&gt; MapEdgeCaseModelSerializer</b>
+<b class="pc">&nbsp;      MediaItem::class -&gt; MediaItemSerializer</b>
+<b class="pc">&nbsp;      MediaSize::class -&gt; MediaSizeSerializer</b>
+<b class="pc">&nbsp;      MediaSizes::class -&gt; MediaSizesSerializer</b>
+<b class="pc">&nbsp;      MixedStructuralModel::class -&gt; MixedStructuralModelSerializer</b>
+<b class="fc">&nbsp;      ModeEventPayload::class -&gt; ModeEventPayloadSerializer</b>
+<b class="fc">&nbsp;      ModelWithExternal::class -&gt; ModelWithExternalSerializer</b>
+<b class="fc">&nbsp;      NamingModel::class -&gt; NamingModelSerializer</b>
+<b class="pc">&nbsp;      NestedContainer::class -&gt; NestedContainerSerializer</b>
+<b class="pc">&nbsp;      NestedDeviceStub::class -&gt; NestedDeviceStubSerializer</b>
+<b class="fc">&nbsp;      NestedGenericModel::class -&gt; NestedGenericModelSerializer</b>
+<b class="pc">&nbsp;      NullabilityStressModel::class -&gt; NullabilityStressModelSerializer</b>
+<b class="pc">&nbsp;      NullablePrimitives::class -&gt; NullablePrimitivesSerializer</b>
+<b class="fc">&nbsp;      Object40::class -&gt; Object40Serializer</b>
+<b class="fc">&nbsp;      Object41::class -&gt; Object41Serializer</b>
+<b class="pc">&nbsp;      OmitIfAbsentWrappedKeysFixture::class -&gt; OmitIfAbsentWrappedKeysFixtureSerializer</b>
+<b class="pc">&nbsp;      OmitIfEmptyWrappedKeysFixture::class -&gt; OmitIfEmptyWrappedKeysFixtureSerializer</b>
+<b class="pc">&nbsp;      OneofPayload::class -&gt; OneofPayloadSerializer</b>
+<b class="pc">&nbsp;      OneofPayload.Code::class -&gt; OneofPayload_CodeSerializer</b>
+<b class="pc">&nbsp;      OneofPayload.Text::class -&gt; OneofPayload_TextSerializer</b>
+<b class="pc">&nbsp;      OpaqueMetadataByteEnvelope::class -&gt; OpaqueMetadataByteEnvelopeSerializer</b>
+<b class="pc">&nbsp;      OpaqueMetadataEnvelope::class -&gt; OpaqueMetadataEnvelopeSerializer</b>
+<b class="fc">&nbsp;      OverlappingKeyModel::class -&gt; OverlappingKeyModelSerializer</b>
+<b class="fc">&nbsp;      PageWithNestedDevices::class -&gt; PageWithNestedDevicesSerializer</b>
+<b class="pc">&nbsp;      PageWithNestedDevices.LoggedIn::class -&gt; PageWithNestedDevices_LoggedInSerializer</b>
+<b class="pc">&nbsp;      Priority::class -&gt; PrioritySerializer</b>
+<b class="pc">&nbsp;      ProtoAccountId::class -&gt; ProtoAccountIdSerializer</b>
+<b class="pc">&nbsp;      ProtoOneofEvent::class -&gt; ProtoOneofEventSerializer</b>
+<b class="pc">&nbsp;      ProtoValueClassCollectionFixture::class -&gt; ProtoValueClassCollectionFixtureSerializer</b>
+<b class="pc">&nbsp;      RawJsonAttributeState::class -&gt; RawJsonAttributeStateSerializer</b>
+<b class="pc">&nbsp;      RawJsonListModel::class -&gt; RawJsonListModelSerializer</b>
+<b class="pc">&nbsp;      RawJsonPayloadModel::class -&gt; RawJsonPayloadModelSerializer</b>
+<b class="fc">&nbsp;      RawPayloadModel::class -&gt; RawPayloadModelSerializer</b>
+<b class="fc">&nbsp;      RecursiveGraphNode::class -&gt; RecursiveGraphNodeSerializer</b>
+<b class="pc">&nbsp;      RecursiveNode::class -&gt; RecursiveNodeSerializer</b>
+<b class="pc">&nbsp;      RepeatedWrappedKeysFixture::class -&gt; RepeatedWrappedKeysFixtureSerializer</b>
+<b class="pc">&nbsp;      ReservedWordModel::class -&gt; ReservedWordModelSerializer</b>
+<b class="fc">&nbsp;      ResilientEnumModel::class -&gt; ResilientEnumModelSerializer</b>
+<b class="fc">&nbsp;      ResilientItem::class -&gt; ResilientItemSerializer</b>
+<b class="pc">&nbsp;      SmartDevice::class -&gt; SmartDeviceSerializer</b>
+<b class="pc">&nbsp;      SmartDevice.Light::class -&gt; SmartDevice_LightSerializer</b>
+<b class="pc">&nbsp;      SmartDevice.Thermostat::class -&gt; SmartDevice_ThermostatSerializer</b>
+<b class="pc">&nbsp;      SmartDevice.UnknownDevice::class -&gt; SmartDevice_UnknownDeviceSerializer</b>
+<b class="fc">&nbsp;      SmartHome::class -&gt; SmartHomeSerializer</b>
+<b class="fc">&nbsp;      SseEventEnvelope::class -&gt; SseEventEnvelopeSerializer</b>
+<b class="fc">&nbsp;      StripeObject::class -&gt; StripeObjectSerializer</b>
+<b class="fc">&nbsp;      StripeObject.Charge::class -&gt; StripeObject_ChargeSerializer</b>
+<b class="pc">&nbsp;      StripeObject.Refund::class -&gt; StripeObject_RefundSerializer</b>
+<b class="fc">&nbsp;      StructuralCollisionModel::class -&gt; StructuralCollisionModelSerializer</b>
+<b class="pc">&nbsp;      SymbolItem::class -&gt; SymbolItemSerializer</b>
+<b class="pc">&nbsp;      SyncStatus::class -&gt; SyncStatusSerializer</b>
+<b class="pc">&nbsp;      Tag::class -&gt; TagSerializer</b>
+<b class="pc">&nbsp;      TagsProbe::class -&gt; TagsProbeSerializer</b>
+<b class="pc">&nbsp;      Tweet::class -&gt; TweetSerializer</b>
+<b class="pc">&nbsp;      TweetEntities::class -&gt; TweetEntitiesSerializer</b>
+<b class="pc">&nbsp;      TweetMetadata::class -&gt; TweetMetadataSerializer</b>
+<b class="pc">&nbsp;      TwitterResponse::class -&gt; TwitterResponseSerializer</b>
+<b class="pc">&nbsp;      TwitterSpecialResponse::class -&gt; TwitterSpecialResponseSerializer</b>
+<b class="pc">&nbsp;      TwitterSpecialTweet::class -&gt; TwitterSpecialTweetSerializer</b>
+<b class="pc">&nbsp;      TwitterWrappedTweet::class -&gt; TwitterWrappedTweetSerializer</b>
+<b class="fc">&nbsp;      UniCodeModel::class -&gt; UniCodeModelSerializer</b>
+<b class="pc">&nbsp;      UrlContainer::class -&gt; UrlContainerSerializer</b>
+<b class="pc">&nbsp;      UrlItem::class -&gt; UrlItemSerializer</b>
+<b class="pc">&nbsp;      User::class -&gt; UserSerializer</b>
+<b class="pc">&nbsp;      UserEntities::class -&gt; UserEntitiesSerializer</b>
+<b class="pc">&nbsp;      UserId::class -&gt; UserIdSerializer</b>
+<b class="pc">&nbsp;      UserMention::class -&gt; UserMentionSerializer</b>
+<b class="pc">&nbsp;      UserRole::class -&gt; UserRoleSerializer</b>
+<b class="fc">&nbsp;      UserWithValueClass::class -&gt; UserWithValueClassSerializer</b>
+<b class="pc">&nbsp;      WebhookEnvelope::class -&gt; WebhookEnvelopeSerializer</b>
+<b class="pc">&nbsp;      WideModel::class -&gt; WideModelSerializer</b>
+<b class="pc">&nbsp;      WireExtras::class -&gt; WireExtrasSerializer</b>
+<b class="pc">&nbsp;      WireExtras12::class -&gt; WireExtras12Serializer</b>
+<b class="pc">&nbsp;      WireExtras34::class -&gt; WireExtras34Serializer</b>
+<b class="fc">&nbsp;      WrapSharedPathModel::class -&gt; WrapSharedPathModelSerializer</b>
+<b class="pc">&nbsp;      WrappedKeysFixture::class -&gt; WrappedKeysFixtureSerializer</b>
+<b class="pc">&nbsp;      WrappedModel::class -&gt; WrappedModelSerializer</b>
+<b class="fc">&nbsp;      else -&gt; null</b>
+&nbsp;  } as GhostSerializer&lt;T&gt;?
+&nbsp;
+&nbsp;  override fun prewarm() {
+<b class="fc">&nbsp;    serializersByClass.size</b>
+&nbsp;  }
+&nbsp;
+<b class="nc">&nbsp;  override fun registeredCount(): Int = 138</b>
+&nbsp;
+<b class="fc">&nbsp;  override fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = serializersByClass</b>
+&nbsp;
+&nbsp;  public companion object {
+&nbsp;    @JvmField
+<b class="fc">&nbsp;    public val INSTANCE: GhostModuleRegistry_Default = GhostModuleRegistry_Default()</b>
+&nbsp;  }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,730 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonFlatReaderNumbersKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonFlatReaderNumbersKt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonFlatReaderNumbersKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.6%
+  </span>
+  <span class="absValue">
+    (146/226)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.4%
+  </span>
+  <span class="absValue">
+    (243/295)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.1%
+  </span>
+  <span class="absValue">
+    (1053/1331)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses and returns the next [Float] value from the JSON stream.
+&nbsp; *
+&nbsp; * Supports coercion from strings if enabled, exponent notations, decimal fractions, and range checks.
+&nbsp; *
+&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException
+&nbsp; * if float format is invalid or overflows.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.nextFloatExtension(): Float {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    validateLeadingZero()</b>
+&nbsp;
+<b class="fc">&nbsp;    var mantissa = 0L</b>
+<b class="fc">&nbsp;    var exponent = 0</b>
+<b class="fc">&nbsp;    var digitCount = 0</b>
+&nbsp;
+&nbsp;    // Integer part
+<b class="fc">&nbsp;    nextTokenByte = -1</b>
+<b class="fc">&nbsp;    val data = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;        if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
+<b class="pc">&nbsp;            if (digitCount &lt; C.FLOAT_PRECISION_LIMIT) {</b>
+<b class="fc">&nbsp;                mantissa = mantissa * C.BASE_TEN + digit</b>
+<b class="fc">&nbsp;                digitCount++</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                exponent++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        } else {
+&nbsp;            break
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (digitCount == 0) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Decimal part
+<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; getByte(position) == C.DOT_INT) {</b>
+<b class="fc">&nbsp;        val newPos = position + 1</b>
+<b class="fc">&nbsp;        position = newPos</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;            if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;                val digit = byte - C.ZERO_INT</b>
+<b class="pc">&nbsp;                if (digitCount &lt; C.FLOAT_PRECISION_LIMIT) {</b>
+<b class="fc">&nbsp;                    mantissa = mantissa * C.BASE_TEN + digit</b>
+<b class="fc">&nbsp;                    digitCount++</b>
+<b class="fc">&nbsp;                    exponent--</b>
+&nbsp;                }
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        if (position == newPos) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Exponent part
+<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; isExponentMarker(getByte(position))) {</b>
+<b class="nc">&nbsp;        exponent += parseExponentValue()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var result = mantissa.toFloat()</b>
+<b class="pc">&nbsp;    if (exponent != 0) {</b>
+<b class="fc">&nbsp;        result *= getFloatPowerOfTen(exponent)</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (isNegativeValue) {</b>
+<b class="nc">&nbsp;        result = -result</b>
+&nbsp;    }
+<b class="fc">&nbsp;    validateNumericRangeFloat(result)</b>
+&nbsp;
+<b class="pc">&nbsp;    if (isQuoted) {</b>
+<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses and returns the next [Double] value from the JSON stream.
+&nbsp; *
+&nbsp; * Supports coercion from strings if enabled,
+&nbsp; * exponent notations, decimal fractions, and range checks.
+&nbsp; *
+&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException
+&nbsp; * if double format is invalid or overflows.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.nextDoubleExtension(): Double {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    validateLeadingZero()</b>
+&nbsp;
+<b class="fc">&nbsp;    var mantissa = 0L</b>
+<b class="fc">&nbsp;    var exponent = 0</b>
+<b class="fc">&nbsp;    var digitCount = 0</b>
+&nbsp;
+&nbsp;    // Integer part
+<b class="fc">&nbsp;    nextTokenByte = -1</b>
+<b class="fc">&nbsp;    val data = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;        if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
+<b class="fc">&nbsp;            if (digitCount &lt; C.DOUBLE_PRECISION_LIMIT) {</b>
+<b class="fc">&nbsp;                mantissa = mantissa * C.BASE_TEN + digit</b>
+<b class="fc">&nbsp;                digitCount++</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                exponent++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        } else {
+&nbsp;            break
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (digitCount == 0) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Decimal part
+<b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; getByte(position) == C.DOT_INT) {</b>
+<b class="fc">&nbsp;        val newPos = position + 1</b>
+<b class="fc">&nbsp;        position = newPos</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;            if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;                val digitValue = byte - C.ZERO_INT</b>
+<b class="fc">&nbsp;                if (digitCount &lt; C.DOUBLE_PRECISION_LIMIT) {</b>
+<b class="fc">&nbsp;                    mantissa = mantissa * C.BASE_TEN + digitValue</b>
+<b class="fc">&nbsp;                    digitCount++</b>
+<b class="fc">&nbsp;                    exponent--</b>
+&nbsp;                }
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        if (position == newPos) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Exponent part
+<b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; isExponentMarker(getByte(position))) {</b>
+<b class="fc">&nbsp;        exponent += parseExponentValue()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var result = mantissa.toDouble()</b>
+<b class="fc">&nbsp;    if (exponent != 0) {</b>
+<b class="fc">&nbsp;        result *= getDoublePowerOfTen(exponent)</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (isNegativeValue) {</b>
+<b class="nc">&nbsp;        result = -result</b>
+&nbsp;    }
+<b class="fc">&nbsp;    validateNumericRange(result)</b>
+&nbsp;
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Helper to parse the exponent suffix value (e.g. e-5 or e+12) from a number.
+&nbsp; */
+&nbsp;private inline fun GhostJsonFlatReader.parseExponentValue(): Int {
+<b class="fc">&nbsp;    position++</b>
+<b class="fc">&nbsp;    var isExpNegative = false</b>
+<b class="pc">&nbsp;    if (position &lt; limit) {</b>
+<b class="fc">&nbsp;        val marker = getByte(position)</b>
+<b class="pc">&nbsp;        if (marker == C.MINUS_INT) {</b>
+<b class="fc">&nbsp;            isExpNegative = true</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        } else if (marker == C.PLUS_INT) {
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var expValue = 0</b>
+<b class="fc">&nbsp;    var hasExpDigits = false</b>
+<b class="fc">&nbsp;    while (position &lt; limit) {</b>
+<b class="fc">&nbsp;        val currentByteInt = getByte(position)</b>
+<b class="fc">&nbsp;        if (isDigit(currentByteInt)) {</b>
+<b class="fc">&nbsp;            if (expValue &lt; C.EXPONENT_CLAMP_THRESHOLD) {</b>
+<b class="fc">&nbsp;                expValue = expValue * C.BASE_TEN + (currentByteInt - C.ZERO_INT)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            hasExpDigits = true</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        } else {
+&nbsp;            break
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (!hasExpDigits) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return if (isExpNegative) -expValue else expValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses and returns the next [Int] value from the JSON stream.
+&nbsp; *
+&nbsp; * Supports coercion from strings if enabled, validates format, leading zeros, and range overflow.
+&nbsp; *
+&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException if integer is invalid or overflows.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.nextIntExtension(): Int {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    val startOfNumber = position</b>
+&nbsp;
+<b class="pc">&nbsp;    val absoluteValue = if (startOfNumber &lt; limit &amp;&amp; getByte(startOfNumber) == C.ZERO_INT) {</b>
+<b class="fc">&nbsp;        handleLeadingZero()</b>
+<b class="fc">&nbsp;        0</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        parseIntDigits(isNegativeValue, startOfNumber)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val finalIntResult = if (isNegativeValue) {</b>
+<b class="fc">&nbsp;        -absoluteValue</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        absoluteValue</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return finalIntResult</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses and returns the next [Long] value from the JSON stream.
+&nbsp; *
+&nbsp; * Supports coercion from strings if enabled, validates format, leading zeros, and range overflow.
+&nbsp; *
+&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException if long value is invalid or overflows.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.nextLongExtension(): Long {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    val startOfNumber = position</b>
+&nbsp;
+<b class="pc">&nbsp;    val absoluteValue = if (startOfNumber &lt; limit &amp;&amp; getByte(startOfNumber) == C.ZERO_INT) {</b>
+<b class="fc">&nbsp;        handleLeadingZero()</b>
+<b class="fc">&nbsp;        0L</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        parseLongDigits(isNegativeValue, startOfNumber)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val finalLongResult = if (absoluteValue == Long.MIN_VALUE) {</b>
+<b class="fc">&nbsp;        absoluteValue</b>
+&nbsp;    } else {
+<b class="pc">&nbsp;        (if (isNegativeValue) -absoluteValue else absoluteValue)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return finalLongResult</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Prepares the numeric header by checking negative signs and string coercion quotes.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.prepareNumericHeader(): Int {
+<b class="fc">&nbsp;    if (nextTokenByte == C.RESET_TOKEN_BYTE) {</b>
+<b class="fc">&nbsp;        skipWhitespace()</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (position &gt;= limit) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_NUMBER)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var header = 0</b>
+<b class="fc">&nbsp;    var token = nextTokenByte</b>
+&nbsp;
+<b class="fc">&nbsp;    if (token == C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;        if (!coerceStringsToNumbers) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_COERCION_DISABLED)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        position++</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        skipWhitespace()</b>
+<b class="pc">&nbsp;        if (position &gt;= limit) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_NUMBER)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        token = nextTokenByte</b>
+<b class="fc">&nbsp;        header = header or C.NUMERIC_HEADER_QUOTED</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (token == C.MINUS_INT) {</b>
+<b class="pc">&nbsp;        if (position + 1 &gt;= limit) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_ISOLATED_MINUS)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        position++</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        header = header or C.NUMERIC_HEADER_NEGATIVE</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return header</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Handles validation and skipping of a single leading zero.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.handleLeadingZero() {
+<b class="fc">&nbsp;    val nextCursor = position + 1</b>
+<b class="pc">&nbsp;    if (nextCursor &lt; limit) {</b>
+<b class="fc">&nbsp;        val nextDigitByte = getByte(nextCursor)</b>
+<b class="pc">&nbsp;        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_LEADING_ZEROS)</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    internalSkip(1)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses integer digits bitwise with overflow checks.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
+<b class="fc">&nbsp;    var accumulatedValue = 0</b>
+<b class="fc">&nbsp;    var digitCount = 0</b>
+<b class="fc">&nbsp;    var hasDigitsFound = false</b>
+<b class="fc">&nbsp;    nextTokenByte = -1</b>
+<b class="fc">&nbsp;    var earlyExitResult: Int? = null</b>
+&nbsp;
+<b class="fc">&nbsp;    val data = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;        if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
+<b class="fc">&nbsp;            accumulatedValue = if (digitCount &lt; C.INT_SAFE_DIGITS) {</b>
+<b class="fc">&nbsp;                accumulatedValue * C.BASE_TEN + digit</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                calculateIntWithOverflowCheck(accumulatedValue, digit, isNegative)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            digitCount++</b>
+<b class="fc">&nbsp;            hasDigitsFound = true</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        } else {
+<b class="pc">&nbsp;            if (isNumericSeparator(byte)) {</b>
+<b class="nc">&nbsp;                position = startOfNumber</b>
+<b class="nc">&nbsp;                earlyExitResult = nextDouble().toInt()</b>
+&nbsp;            }
+&nbsp;            break
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (earlyExitResult != null) {</b>
+<b class="nc">&nbsp;        return earlyExitResult</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (!hasDigitsFound) {</b>
+<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return accumulatedValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses long digits bitwise with overflow checks.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
+<b class="fc">&nbsp;    var accumulatedValue = 0L</b>
+<b class="fc">&nbsp;    var digitCount = 0</b>
+<b class="fc">&nbsp;    var hasDigitsFound = false</b>
+<b class="fc">&nbsp;    nextTokenByte = -1</b>
+<b class="fc">&nbsp;    var earlyExitResult: Long? = null</b>
+&nbsp;
+<b class="fc">&nbsp;    val data = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;        if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
+<b class="fc">&nbsp;            accumulatedValue = if (digitCount &lt; C.LONG_SAFE_DIGITS) {</b>
+<b class="fc">&nbsp;                accumulatedValue * C.BASE_TEN + digit</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                calculateLongWithOverflowCheck(accumulatedValue, digit, isNegative)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            digitCount++</b>
+<b class="fc">&nbsp;            hasDigitsFound = true</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        } else {
+<b class="pc">&nbsp;            if (isNumericSeparator(byte)) {</b>
+<b class="nc">&nbsp;                position = startOfNumber</b>
+<b class="nc">&nbsp;                earlyExitResult = nextDouble().toLong()</b>
+&nbsp;            }
+&nbsp;            break
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (earlyExitResult != null) {</b>
+<b class="nc">&nbsp;        return earlyExitResult</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (!hasDigitsFound) {</b>
+<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return accumulatedValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Consumes the trailing quotation mark when parsing coerced numeric string values.
+&nbsp; */
+&nbsp;private inline fun GhostJsonFlatReader.consumeNumericCoercionFooter() {
+<b class="pc">&nbsp;    if (position &gt;= limit || getByte(position) != C.QUOTE_INT) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_COERCION_QUOTE)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    internalSkip(1)</b>
+<b class="fc">&nbsp;    skipWhitespace()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Accumulates int value and throws if it overflows the safe JVM Int limit.
+&nbsp; */
+&nbsp;private inline fun GhostJsonFlatReader.calculateIntWithOverflowCheck(
+&nbsp;    current: Int,
+&nbsp;    digitValue: Int,
+&nbsp;    isNegative: Boolean
+&nbsp;): Int {
+<b class="pc">&nbsp;    if (current &gt; C.INT_OVERFLOW_LIMIT ||</b>
+<b class="nc">&nbsp;        (current == C.INT_OVERFLOW_LIMIT &amp;&amp;</b>
+<b class="nc">&nbsp;                digitValue &gt; (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        throwError(C.ERR_INT_OVERFLOW)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return current * C.BASE_TEN + digitValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Accumulates long value and throws if it overflows the safe JVM Long limit.
+&nbsp; */
+&nbsp;private inline fun GhostJsonFlatReader.calculateLongWithOverflowCheck(
+&nbsp;    current: Long,
+&nbsp;    digitValue: Int,
+&nbsp;    isNegative: Boolean
+&nbsp;): Long {
+<b class="fc">&nbsp;    if (current == Long.MIN_VALUE ||</b>
+<b class="pc">&nbsp;        current &gt; C.LONG_OVERFLOW_LIMIT ||</b>
+<b class="pc">&nbsp;        (current == C.LONG_OVERFLOW_LIMIT &amp;&amp; digitValue &gt; C.LONG_MAX_LAST_DIGIT)</b>
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (isNegative &amp;&amp; current == C.LONG_OVERFLOW_LIMIT &amp;&amp;</b>
+<b class="pc">&nbsp;            digitValue == C.LONG_MIN_LAST_DIGIT</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            return Long.MIN_VALUE</b>
+&nbsp;        }
+<b class="fc">&nbsp;        throwError(C.ERR_LONG_OVERFLOW)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return current * C.BASE_TEN + digitValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Validates leading zero presence for numbers.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.validateLeadingZero() {
+<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == C.ZERO_INT &amp;&amp;</b>
+<b class="pc">&nbsp;        position + 1 &lt; limit</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        val nextDigitByte = getByte(position + 1)</b>
+<b class="pc">&nbsp;        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_LEADING_ZEROS)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Validates that float values parsed are finite numbers.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.validateNumericRangeFloat(valueToValidate: Float) {
+<b class="pc">&nbsp;    if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_NUMERIC_OVERFLOW)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Validates that double values parsed are finite numbers.
+&nbsp; */
+&nbsp;private fun GhostJsonFlatReader.validateNumericRange(valueToValidate: Double) {
+<b class="pc">&nbsp;    if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {</b>
+<b class="fc">&nbsp;        throwError(C.ERR_NUMERIC_OVERFLOW)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Skips the next numeric token value in the JSON stream.
+&nbsp; *
+&nbsp; * Validates scientific exponent format, dot separation, and handles string coercion bounds.
+&nbsp; *
+&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException if number is malformed.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.skipNumber() {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    var hasDigits = false</b>
+&nbsp;
+&nbsp;    // Integer part
+<b class="fc">&nbsp;    val numberPosition = position</b>
+<b class="fc">&nbsp;    val numberLimit = limit</b>
+<b class="fc">&nbsp;    val data = rawData</b>
+<b class="pc">&nbsp;    if (numberPosition &lt; numberLimit &amp;&amp; getByte(numberPosition) == C.ZERO_INT) {</b>
+<b class="fc">&nbsp;        val newPos = numberPosition + 1</b>
+<b class="fc">&nbsp;        position = newPos</b>
+<b class="fc">&nbsp;        hasDigits = true</b>
+<b class="pc">&nbsp;        if (newPos &lt; numberLimit &amp;&amp; isDigit(getByte(newPos))) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_LEADING_ZEROS)</b>
+&nbsp;        }
+&nbsp;    } else {
+<b class="pc">&nbsp;        while (position &lt; numberLimit) {</b>
+<b class="fc">&nbsp;            val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;            if (isDigit(byte)) {</b>
+<b class="fc">&nbsp;                hasDigits = true</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (!hasDigits) {</b>
+<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Decimal part
+<b class="pc">&nbsp;    if (position &lt; numberLimit &amp;&amp; getByte(position) == C.DOT_INT) {</b>
+<b class="nc">&nbsp;        position++</b>
+<b class="nc">&nbsp;        var hasDecimalDigits = false</b>
+<b class="nc">&nbsp;        while (position &lt; numberLimit) {</b>
+<b class="nc">&nbsp;            val byte = data[position].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;            if (isDigit(byte)) {</b>
+<b class="nc">&nbsp;                hasDecimalDigits = true</b>
+<b class="nc">&nbsp;                position++</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        if (!hasDecimalDigits) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Exponent part
+<b class="pc">&nbsp;    if (position &lt; numberLimit) {</b>
+<b class="fc">&nbsp;        val byte = getByte(position)</b>
+<b class="pc">&nbsp;        if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {</b>
+<b class="nc">&nbsp;            var newPos = position + 1</b>
+<b class="nc">&nbsp;            position = newPos</b>
+<b class="nc">&nbsp;            if (newPos &lt; numberLimit) {</b>
+<b class="nc">&nbsp;                val sign = getByte(newPos)</b>
+<b class="nc">&nbsp;                if (sign == C.PLUS_INT || sign == C.MINUS_INT) {</b>
+<b class="nc">&nbsp;                    newPos++</b>
+<b class="nc">&nbsp;                    position = newPos</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            var hasExpDigits = false</b>
+<b class="nc">&nbsp;            while (position &lt; numberLimit) {</b>
+<b class="nc">&nbsp;                val byteCode = data[position].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                if (isDigit(byteCode)) {</b>
+<b class="nc">&nbsp;                    hasExpDigits = true</b>
+<b class="nc">&nbsp;                    position++</b>
+&nbsp;                } else {
+&nbsp;                    break
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            if (!hasExpDigits) {</b>
+<b class="nc">&nbsp;                throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (isQuoted) {</b>
+<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    nextTokenByte = -1</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

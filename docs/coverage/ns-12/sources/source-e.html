@@ -1,0 +1,96 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostFlatten</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.annotations</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostFlatten (com.ghost.serialization.annotations)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostFlatten</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
+&nbsp;
+&nbsp;/**
+&nbsp; * Maps a nested JSON property directly to a field in the annotated class.
+&nbsp; *
+&nbsp; * Example:
+&nbsp; * ```kotlin
+&nbsp; * @GhostSerialization
+&nbsp; * data class Device(
+&nbsp; *     @GhostFlatten(&quot;attributes.value.level&quot;)
+&nbsp; *     val level: Int
+&nbsp; * )
+&nbsp; * ```
+&nbsp; * JSON: `{&quot;attributes&quot;: {&quot;value&quot;: {&quot;level&quot;: 42}}}`
+&nbsp; *
+&nbsp; * This avoids creating intermediate wrapper classes and significantly reduces memory allocation
+&nbsp; * by parsing nested values directly into the target field.
+&nbsp; *
+&nbsp; * @param path The dot-separated path to the JSON property.
+&nbsp; */
+&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostFlatten(val path: String)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

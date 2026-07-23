@@ -1,0 +1,223 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostServerExtensionsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.ktor</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostServerExtensionsKt (com.ghost.serialization.ktor)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostServerExtensionsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.2%
+  </span>
+  <span class="absValue">
+    (140/144)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostServerExtensionsKt$respondGhostProto$$inlined$encodeToBytes$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (10/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (140/148)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.ktor
+&nbsp;
+&nbsp;import com.ghost.protobuf.GhostProtobuf
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import io.ktor.http.ContentType
+&nbsp;import io.ktor.http.HttpStatusCode
+&nbsp;import io.ktor.http.content.ByteArrayContent
+&nbsp;import io.ktor.server.application.ApplicationCall
+&nbsp;import io.ktor.server.response.respond
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal const val ERROR_PREFIX = &quot;Ghost serializer not found for class &quot;
+&nbsp;@PublishedApi
+&nbsp;internal const val ERROR_SUFFIX = &quot;. Make sure it is annotated with @GhostSerialization.&quot;
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializes the [value] directly using Ghost Serializer and responds,
+&nbsp; * bypassing the ContentNegotiation pipeline entirely to maximize throughput.
+&nbsp; */
+<b class="fc">&nbsp;suspend inline fun &lt;reified T : Any&gt; ApplicationCall.respondGhost(</b>
+&nbsp;    value: T,
+<b class="fc">&nbsp;    status: HttpStatusCode = HttpStatusCode.OK</b>
+&nbsp;) {
+<b class="pc">&nbsp;    val serializer = Ghost.getSerializer(T::class)</b>
+<b class="fc">&nbsp;        ?: throw IllegalArgumentException(&quot;$ERROR_PREFIX${T::class.simpleName}$ERROR_SUFFIX&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;    val bytes = Ghost.encodeToBytes(serializer, value)</b>
+<b class="fc">&nbsp;    respond(ByteArrayContent(bytes, ContentType.Application.Json, status))</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Proto3-JSON variant of [respondGhost] — named for discoverability alongside [respondGhost]
+&nbsp; * and `bodyGhostProto`. Encoding is identical either way: proto3 wire correctness (int64
+&nbsp; * quoting, Base64 bytes, default-value omission) is generated into the
+&nbsp; * `@GhostProtoSerialization` serializer&#39;s own `serialize()` method, not a separate writer.
+&nbsp; */
+<b class="fc">&nbsp;suspend inline fun &lt;reified T : Any&gt; ApplicationCall.respondGhostProto(</b>
+&nbsp;    value: T,
+<b class="fc">&nbsp;    status: HttpStatusCode = HttpStatusCode.OK</b>
+&nbsp;) {
+<b class="fc">&nbsp;    val bytes = GhostProtobuf.encodeToBytes(value)</b>
+<b class="fc">&nbsp;    respond(ByteArrayContent(bytes, ContentType.Application.Json, status))</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

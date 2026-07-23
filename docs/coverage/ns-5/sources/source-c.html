@@ -1,0 +1,502 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > FragmentedEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: FragmentedEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FragmentedEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/182)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/991)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;unused&quot;, &quot;SameParameterValue&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.FunSpec
+&nbsp;import com.squareup.kotlinpoet.INT
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Emitter for fragmented deserialization logic.
+&nbsp; *
+&nbsp; * This emitter is designed for large classes (typically &gt; 40 properties) to bypass JVM
+&nbsp; * method size limits (64KB bytecode limit). It fragments the decoding process by creating
+&nbsp; * a helper context class (`DecodingContext`) to store deserialized properties and bitmasks,
+&nbsp; * and splitting the field assignment logic into multiple chunk methods (e.g. `decodeChunk0`, `decodeChunk1`).
+&nbsp; *
+&nbsp; * @property properties The list of property models.
+&nbsp; * @property originalClassName The target class to deserialize.
+&nbsp; * @property readerClass The reader implementation class used.
+&nbsp; */
+&nbsp;internal class FragmentedEmitter(
+&nbsp;    properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;    originalClassName: ClassName,
+&nbsp;    readerClass: ClassName
+<b class="nc">&nbsp;) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the fragmented deserialization logic.
+&nbsp;     *
+&nbsp;     * It delegates the construction of the private `DecodingContext` class, declarations
+&nbsp;     * of chunk functions, and the emission of the main parsing loop to smaller helper methods,
+&nbsp;     * then validates and instantiates the target DTO.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     * @param isFlatPath Whether the flat reader path is used.
+&nbsp;     */
+&nbsp;    fun emit(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+<b class="nc">&nbsp;        isFlatPath: Boolean = false</b>
+&nbsp;    ) {
+<b class="nc">&nbsp;        emitPropertyMaskConstants(typeSpecBuilder)</b>
+<b class="nc">&nbsp;        val contextClassName = ClassName(</b>
+<b class="nc">&nbsp;            C.STR_EMPTY,</b>
+<b class="nc">&nbsp;            C.STR_CTX_CLASS</b>
+&nbsp;        )
+<b class="nc">&nbsp;        val chunkSize = C.DEFAULT_CHUNK_SIZE</b>
+<b class="nc">&nbsp;        val chunks = properties.chunked(chunkSize)</b>
+&nbsp;
+<b class="nc">&nbsp;        buildDecodingContext(typeSpecBuilder, contextClassName, isFlatPath)</b>
+&nbsp;
+<b class="nc">&nbsp;        chunks.forEachIndexed { chunkIdx, chunkProps -&gt;</b>
+<b class="nc">&nbsp;            emitChunkFunction(</b>
+<b class="nc">&nbsp;                chunkIdx,</b>
+<b class="nc">&nbsp;                chunkProps,</b>
+<b class="nc">&nbsp;                chunkSize,</b>
+<b class="nc">&nbsp;                readerClass,</b>
+<b class="nc">&nbsp;                contextClassName,</b>
+<b class="nc">&nbsp;                typeSpecBuilder</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        emitMainParseLoop(body, chunks, chunkSize)</b>
+<b class="nc">&nbsp;        emitValidation(body)</b>
+<b class="nc">&nbsp;        emitReturn(body, typeSpecBuilder)</b>
+&nbsp;
+<b class="nc">&nbsp;        emitValidationHelper(typeSpecBuilder, contextClassName)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds and registers the private `DecodingContext` class to track properties and masks.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     * @param contextClassName Class name of the context object holding property variables.
+&nbsp;     * @param isFlatPath Whether the flat reader path is used.
+&nbsp;     */
+&nbsp;    private fun buildDecodingContext(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        contextClassName: ClassName,
+&nbsp;        isFlatPath: Boolean
+&nbsp;    ) {
+<b class="nc">&nbsp;        val contextBuilder = TypeSpec.classBuilder(contextClassName)</b>
+<b class="nc">&nbsp;            .addModifiers(KModifier.PRIVATE)</b>
+&nbsp;
+<b class="nc">&nbsp;        properties.forEach {</b>
+<b class="nc">&nbsp;            val varType = it.getVariableType()</b>
+<b class="nc">&nbsp;            val initialValue = it.getInitialValue()</b>
+<b class="nc">&nbsp;            contextBuilder.addProperty(</b>
+<b class="nc">&nbsp;                PropertySpec.builder(</b>
+<b class="nc">&nbsp;                    it.kotlinName,</b>
+<b class="nc">&nbsp;                    varType</b>
+&nbsp;                )
+<b class="nc">&nbsp;                    .mutable(true)</b>
+<b class="nc">&nbsp;                    .initializer(initialValue)</b>
+<b class="nc">&nbsp;                    .build()</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        for (index in C.VAL_ZERO until maskCount) {</b>
+<b class="nc">&nbsp;            contextBuilder.addProperty(</b>
+<b class="nc">&nbsp;                PropertySpec.builder(</b>
+<b class="nc">&nbsp;                    C.STR_MASK_INDEX_FMT.format(index),</b>
+<b class="nc">&nbsp;                    com.squareup.kotlinpoet.LONG</b>
+&nbsp;                )
+<b class="nc">&nbsp;                    .mutable(true)</b>
+<b class="nc">&nbsp;                    .initializer(C.STR_ZERO_L)</b>
+<b class="nc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (!isFlatPath) {</b>
+<b class="nc">&nbsp;            typeSpecBuilder.addType(contextBuilder.build())</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the main parse loop mapping selector indexes to fragmented chunk calls.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param chunks Grouped DTO properties.
+&nbsp;     * @param chunkSize Size of a chunk.
+&nbsp;     */
+&nbsp;    private fun emitMainParseLoop(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        chunks: List&lt;List&lt;GhostPropertyModel&gt;&gt;,
+&nbsp;        chunkSize: Int
+&nbsp;    ) {
+<b class="nc">&nbsp;        body.addStatement(C.STR_CTX_INIT)</b>
+<b class="nc">&nbsp;        body.addStatement(C.STR_BEGIN_OBJECT)</b>
+<b class="nc">&nbsp;        body.beginControlFlow(C.STR_WHILE_TRUE)</b>
+<b class="nc">&nbsp;        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)</b>
+<b class="nc">&nbsp;        body.beginControlFlow(C.STR_WHEN_INDEX)</b>
+&nbsp;        
+<b class="nc">&nbsp;        chunks.forEachIndexed { chunkIdx, chunkProps -&gt;</b>
+<b class="nc">&nbsp;            val start = chunkIdx * chunkSize</b>
+<b class="nc">&nbsp;            val end = start + chunkProps.size - C.VAL_ONE</b>
+<b class="nc">&nbsp;            val chunkFunName = C.TEMPLATE_DECODE_CHUNK_NAME</b>
+<b class="nc">&nbsp;                .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)</b>
+&nbsp;
+<b class="nc">&nbsp;            body.addStatement(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_CHUNK_CALL,</b>
+<b class="nc">&nbsp;                start,</b>
+<b class="nc">&nbsp;                end,</b>
+<b class="nc">&nbsp;                chunkFunName</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        body.addStatement(C.STR_MINUS_ONE_BREAK)</b>
+&nbsp;
+<b class="nc">&nbsp;        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)</b>
+<b class="nc">&nbsp;        body.addStatement(C.STR_SKIP_VALUE)</b>
+<b class="nc">&nbsp;        body.endControlFlow()</b>
+<b class="nc">&nbsp;        body.endControlFlow() // when</b>
+<b class="nc">&nbsp;        body.endControlFlow() // while</b>
+<b class="nc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits a private chunk decoding helper function.
+&nbsp;     *
+&nbsp;     * This generated method maps index selections directly to field assignments and tracking masks
+&nbsp;     * in the `DecodingContext` instance, keeping the size of each method small.
+&nbsp;     *
+&nbsp;     * @param chunkIdx The chunk index.
+&nbsp;     * @param chunkProps The list of DTO properties assigned to this chunk.
+&nbsp;     * @param chunkSize Size of a chunk.
+&nbsp;     * @param readerClass The reader class used.
+&nbsp;     * @param contextClassName Class name of the context object holding property variables.
+&nbsp;     * @param typeSpecBuilder Serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitChunkFunction(
+&nbsp;        chunkIdx: Int,
+&nbsp;        chunkProps: List&lt;GhostPropertyModel&gt;,
+&nbsp;        chunkSize: Int,
+&nbsp;        readerClass: ClassName,
+&nbsp;        contextClassName: ClassName,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder
+&nbsp;    ) {
+<b class="nc">&nbsp;        val chunkFun = FunSpec</b>
+<b class="nc">&nbsp;            .builder(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_DECODE_CHUNK_NAME</b>
+<b class="nc">&nbsp;                    .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)</b>
+&nbsp;            )
+<b class="nc">&nbsp;            .addModifiers(KModifier.PRIVATE)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_READER_VAR, readerClass)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_CTX_VAR, contextClassName)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_INDEX_VAR, INT)</b>
+&nbsp;
+<b class="nc">&nbsp;        val chunkBody = CodeBlock.builder()</b>
+<b class="nc">&nbsp;        chunkBody.beginControlFlow(C.STR_WHEN_INDEX_PLAIN)</b>
+<b class="nc">&nbsp;        chunkProps.forEachIndexed { innerIdx, prop -&gt;</b>
+<b class="nc">&nbsp;            val globalIndex = chunkIdx * chunkSize + innerIdx</b>
+<b class="nc">&nbsp;            val call = buildCall(prop)</b>
+<b class="nc">&nbsp;            val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()</b>
+<b class="nc">&nbsp;            val constName = &quot;MASK_&quot; + prop.kotlinName.uppercase()</b>
+&nbsp;            
+<b class="nc">&nbsp;            chunkBody.beginControlFlow(&quot;$globalIndex${C.STR_ARROW}&quot;)</b>
+<b class="nc">&nbsp;            if (prop.isResilient) {</b>
+<b class="nc">&nbsp;                chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)</b>
+<b class="nc">&nbsp;                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.kotlinName)</b>
+<b class="nc">&nbsp;                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)</b>
+<b class="nc">&nbsp;                chunkBody.endControlFlow()</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_ASSIGN, prop.kotlinName, call)</b>
+<b class="nc">&nbsp;                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            chunkBody.endControlFlow()</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        chunkBody.endControlFlow()</b>
+<b class="nc">&nbsp;        chunkFun.addCode(chunkBody.build())</b>
+<b class="nc">&nbsp;        typeSpecBuilder.addFunction(chunkFun.build())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits required properties validation logic.
+&nbsp;     *
+&nbsp;     * Iterates over bitmasks. If a mask has required fields, it emits validation code that
+&nbsp;     * checks the tracking mask in `DecodingContext`.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     */
+&nbsp;    private fun emitValidation(body: CodeBlock.Builder) {
+<b class="nc">&nbsp;        val hasRequired = properties.any { !it.isNullable &amp;&amp; !it.hasDefaultValue }</b>
+<b class="nc">&nbsp;        if (hasRequired) {</b>
+<b class="nc">&nbsp;            body.addStatement(C.TEMPLATE_CALL_VALIDATION, C.STR_FUN_VALIDATE_FIELDS, C.STR_CTX_VAR, C.STR_READER_VAR)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a descriptive private helper method validating that all required properties
+&nbsp;     * were present in the bitmask of the context class, throwing a GhostJsonException for any missing field.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     * @param contextClassName Class name of the context object holding property variables.
+&nbsp;     */
+&nbsp;    private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder, contextClassName: ClassName) {
+<b class="nc">&nbsp;        val hasRequired = properties.any { !it.isNullable &amp;&amp; !it.hasDefaultValue }</b>
+<b class="nc">&nbsp;        if (!hasRequired) {</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)</b>
+<b class="nc">&nbsp;            .addModifiers(KModifier.PRIVATE)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_CTX_VAR, contextClassName)</b>
+<b class="nc">&nbsp;            .addParameter(C.STR_READER_VAR, readerClass)</b>
+&nbsp;
+<b class="nc">&nbsp;        val funBody = CodeBlock.builder()</b>
+<b class="nc">&nbsp;        for (maskIdx in C.VAL_ZERO until maskCount) {</b>
+<b class="nc">&nbsp;            val reqMask = requiredMasks[maskIdx]</b>
+<b class="nc">&nbsp;            if (reqMask != C.VAL_ZERO_L) {</b>
+<b class="nc">&nbsp;                val requiredMaskName = &quot;MASK_REQUIRED_$maskIdx&quot;</b>
+&nbsp;
+<b class="nc">&nbsp;                funBody.beginControlFlow(</b>
+<b class="nc">&nbsp;                    C.TEMPLATE_IF_MASK_NOT_MET,</b>
+<b class="nc">&nbsp;                    maskIdx,</b>
+<b class="nc">&nbsp;                    requiredMaskName,</b>
+<b class="nc">&nbsp;                    requiredMaskName</b>
+&nbsp;                )
+&nbsp;
+<b class="nc">&nbsp;                var isFirst = true</b>
+<b class="nc">&nbsp;                properties.forEachIndexed { propIdx, prop -&gt;</b>
+<b class="nc">&nbsp;                    if (</b>
+<b class="nc">&nbsp;                        !prop.isNullable &amp;&amp;</b>
+<b class="nc">&nbsp;                        !prop.hasDefaultValue</b>
+<b class="nc">&nbsp;                        &amp;&amp; (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx</b>
+&nbsp;                    ) {
+<b class="nc">&nbsp;                        val constName = &quot;MASK_&quot; + prop.kotlinName.uppercase()</b>
+&nbsp;
+<b class="nc">&nbsp;                        if (isFirst) {</b>
+<b class="nc">&nbsp;                            funBody.beginControlFlow(</b>
+<b class="nc">&nbsp;                                C.TEMPLATE_IF_MASK_MISSING,</b>
+<b class="nc">&nbsp;                                maskIdx,</b>
+<b class="nc">&nbsp;                                constName</b>
+&nbsp;                            )
+<b class="nc">&nbsp;                            isFirst = false</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                            funBody.nextControlFlow(</b>
+<b class="nc">&nbsp;                                C.TEMPLATE_ELSE_IF_MASK_MISSING,</b>
+<b class="nc">&nbsp;                                maskIdx,</b>
+<b class="nc">&nbsp;                                constName</b>
+&nbsp;                            )
+&nbsp;                        }
+&nbsp;
+<b class="nc">&nbsp;                        funBody.addStatement(</b>
+<b class="nc">&nbsp;                            C.TEMPLATE_THROW_S,</b>
+<b class="nc">&nbsp;                            C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2</b>
+&nbsp;                        )
+&nbsp;                    }
+<b class="nc">&nbsp;                }</b>
+<b class="nc">&nbsp;                if (!isFirst) {</b>
+<b class="nc">&nbsp;                    funBody.endControlFlow()</b>
+&nbsp;                }
+<b class="nc">&nbsp;                funBody.endControlFlow()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        funBuilder.addCode(funBody.build())</b>
+<b class="nc">&nbsp;        typeSpecBuilder.addFunction(funBuilder.build())</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Emits the target class instantiation return statement.
+&nbsp;     *
+&nbsp;     * Resolves variables from `DecodingContext`. Uses copy-based updates for default properties.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+<b class="nc">&nbsp;        val requiredProps = properties.filter { it.isInConstructor &amp;&amp; !it.hasDefaultValue }</b>
+<b class="nc">&nbsp;        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)</b>
+&nbsp;
+<b class="nc">&nbsp;        requiredProps.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            body.addStatement(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_NAMED_ARG,</b>
+<b class="nc">&nbsp;                prop.kotlinName,</b>
+<b class="nc">&nbsp;                prop.getFragmentedReturnExpression()</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        body.addStatement(C.STR_PAREN)</b>
+&nbsp;
+<b class="nc">&nbsp;        val defaultProps = properties.filter { it.isInConstructor &amp;&amp; it.hasDefaultValue }</b>
+<b class="nc">&nbsp;        if (defaultProps.isNotEmpty()) {</b>
+<b class="nc">&nbsp;            body.add(C.STR_IF_OPEN)</b>
+&nbsp;
+<b class="nc">&nbsp;            val conditions = mutableListOf&lt;String&gt;()</b>
+<b class="nc">&nbsp;            for (i in defaultMasks.indices) {</b>
+<b class="nc">&nbsp;                val defMask = defaultMasks[i]</b>
+<b class="nc">&nbsp;                if (defMask != C.VAL_ZERO_L) {</b>
+<b class="nc">&nbsp;                    val constName = emitDefaultMaskConstant(typeSpecBuilder, i)</b>
+<b class="nc">&nbsp;                    conditions.add(</b>
+<b class="nc">&nbsp;                        C.TEMPLATE_IF_MASK_MATCH_BIT_F</b>
+<b class="nc">&nbsp;                            .format(i, constName)</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            body.add(conditions.joinToString(C.STR_OR))</b>
+<b class="nc">&nbsp;            body.beginControlFlow(C.STR_CLOSE_PAREN_FLOW)</b>
+&nbsp;
+<b class="nc">&nbsp;            body.addStatement(C.STR_RETURN_RESULT_COPY)</b>
+<b class="nc">&nbsp;            val defaultPropsWithGlobalIndex = properties</b>
+<b class="nc">&nbsp;                .mapIndexedNotNull { globalIdx, prop -&gt;</b>
+&nbsp;
+<b class="nc">&nbsp;                if (prop.isInConstructor &amp;&amp; prop.hasDefaultValue) {</b>
+<b class="nc">&nbsp;                    Pair(globalIdx, prop)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    null</b>
+<b class="nc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            defaultPropsWithGlobalIndex.forEachIndexed { _, (propIndex, prop) -&gt;</b>
+<b class="nc">&nbsp;                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()</b>
+<b class="nc">&nbsp;                val constName = &quot;MASK_&quot; + prop.kotlinName.uppercase()</b>
+&nbsp;
+<b class="nc">&nbsp;                val valueExpr = prop</b>
+<b class="nc">&nbsp;                    .getFragmentedDefaultValueReturnExpression(maskIdx, constName)</b>
+<b class="nc">&nbsp;                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)</b>
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;            body.addStatement(C.STR_PAREN)</b>
+<b class="nc">&nbsp;            body.nextControlFlow(C.STR_ELSE)</b>
+<b class="nc">&nbsp;            body.addStatement(C.STR_RETURN_RESULT_FINAL)</b>
+<b class="nc">&nbsp;            body.endControlFlow()</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            body.addStatement(C.STR_RETURN_RESULT_FINAL)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

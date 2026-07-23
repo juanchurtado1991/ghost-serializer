@@ -1,0 +1,241 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoAnyRegistry</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoAnyRegistry (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoAnyRegistry</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.8%
+  </span>
+  <span class="absValue">
+    (9/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.3%
+  </span>
+  <span class="absValue">
+    (9/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84%
+  </span>
+  <span class="absValue">
+    (21/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.7%
+  </span>
+  <span class="absValue">
+    (142/176)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.protobuf.wkt.ProtoAnyRegistry.pack
+&nbsp;import com.ghost.protobuf.wkt.ProtoAnyRegistry.register
+&nbsp;import com.ghost.protobuf.wkt.ProtoAnyRegistry.unpack
+&nbsp;import com.ghost.protobuf.wkt.ProtoAnyRegistry.unpackDynamic
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostProtoJsonFlatReader
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Maps `typeUrl` strings to the Kotlin types packed inside a [ProtoAny], so `pack`/`unpack`
+&nbsp; * work without the caller manually juggling bytes.
+&nbsp; *
+&nbsp; * Registration is independent of [Ghost]&#39;s own serializer registry — the type still needs a
+&nbsp; * `GhostSerializer` registered there too (e.g. via `@GhostProtoSerialization` + KSP, or a manual
+&nbsp; * [com.ghost.serialization.contract.GhostRegistry]). This registry only remembers which
+&nbsp; * `typeUrl` string corresponds to which [KClass].
+&nbsp; *
+&nbsp; * ```kotlin
+&nbsp; * ProtoAnyRegistry.register&lt;DeviceRebooted&gt;(&quot;type.googleapis.com/myapp.DeviceRebooted&quot;)
+&nbsp; *
+&nbsp; * val any: ProtoAny = ProtoAnyRegistry.pack(DeviceRebooted(deviceId = 1))
+&nbsp; * val event: DeviceRebooted = ProtoAnyRegistry.unpack(any)
+&nbsp; * val dynamic: Any? = ProtoAnyRegistry.unpackDynamic(any) // resolved purely from any.typeUrl
+&nbsp; * ```
+&nbsp; */
+&nbsp;object ProtoAnyRegistry {
+&nbsp;
+<b class="fc">&nbsp;    private val typeUrlByClass = mutableMapOf&lt;KClass&lt;*&gt;, String&gt;()</b>
+<b class="fc">&nbsp;    private val classByTypeUrl = mutableMapOf&lt;String, KClass&lt;*&gt;&gt;()</b>
+&nbsp;
+&nbsp;    /** Registers the `typeUrl` a [ProtoAny] should carry for messages of type [kClass]. */
+&nbsp;    fun register(typeUrl: String, kClass: KClass&lt;*&gt;) {
+<b class="fc">&nbsp;        typeUrlByClass[kClass] = typeUrl</b>
+<b class="fc">&nbsp;        classByTypeUrl[typeUrl] = kClass</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reified convenience for [register]. */
+&nbsp;    inline fun &lt;reified T : Any&gt; register(typeUrl: String) {
+<b class="fc">&nbsp;        register(typeUrl, T::class)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** The `typeUrl` registered for [kClass], or `null` if none was registered. */
+<b class="nc">&nbsp;    fun typeUrlFor(kClass: KClass&lt;*&gt;): String? = typeUrlByClass[kClass]</b>
+&nbsp;
+&nbsp;    /** The [KClass] registered for [typeUrl], or `null` if none was registered. */
+<b class="nc">&nbsp;    fun classFor(typeUrl: String): KClass&lt;*&gt;? = classByTypeUrl[typeUrl]</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Serializes [message] and wraps it in a [ProtoAny] using the `typeUrl` registered for
+&nbsp;     * [kClass] via [register].
+&nbsp;     *
+&nbsp;     * @throws IllegalArgumentException if no `typeUrl` was registered for [kClass], or if
+&nbsp;     *   [kClass] has no [GhostSerializer] registered with [Ghost] (e.g. missing
+&nbsp;     *   `@GhostProtoSerialization`/`@GhostSerialization`).
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    fun &lt;T : Any&gt; pack(message: T, kClass: KClass&lt;T&gt;): ProtoAny {
+<b class="fc">&nbsp;        val typeUrl = typeUrlByClass[kClass]</b>
+<b class="fc">&nbsp;            ?: Ghost.throwError(</b>
+<b class="fc">&nbsp;                &quot;No typeUrl registered for ${kClass.simpleName}. &quot; +</b>
+<b class="fc">&nbsp;                        &quot;Call ProtoAnyRegistry.register&lt;${kClass.simpleName}&gt;(typeUrl) first.&quot;</b>
+&nbsp;            )
+<b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) as? GhostSerializer&lt;T&gt;</b>
+<b class="nc">&nbsp;            ?: Ghost.throwError(&quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;)</b>
+<b class="fc">&nbsp;        val bytes = Ghost.encodeToBytes(serializer, message)</b>
+<b class="fc">&nbsp;        return ProtoAny(typeUrl, bytes)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reified convenience for [pack]. */
+<b class="fc">&nbsp;    inline fun &lt;reified T : Any&gt; pack(message: T): ProtoAny = pack(message, T::class)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Decodes the payload captured in [any] as [kClass], using the [GhostSerializer] registered
+&nbsp;     * with [Ghost] for that type. Does not check [any]&#39;s `typeUrl` against [kClass] — use
+&nbsp;     * [unpackDynamic] when the target type is only known from the wire.
+&nbsp;     *
+&nbsp;     * @throws IllegalArgumentException if [kClass] has no [GhostSerializer] registered with [Ghost].
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    fun &lt;T : Any&gt; unpack(any: ProtoAny, kClass: KClass&lt;T&gt;): T {
+<b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) as? GhostSerializer&lt;T&gt;</b>
+<b class="nc">&nbsp;            ?: Ghost.throwError(&quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;)</b>
+<b class="fc">&nbsp;        return serializer.deserialize(GhostProtoJsonFlatReader(any.value))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reified convenience for [unpack]. */
+<b class="fc">&nbsp;    inline fun &lt;reified T : Any&gt; unpack(any: ProtoAny): T = unpack(any, T::class)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resolves [any]&#39;s Kotlin type purely from its `typeUrl` (via [register]) and decodes the
+&nbsp;     * payload, without the caller needing to know the target type at compile time.
+&nbsp;     *
+&nbsp;     * @return The decoded message, or `null` if no [KClass] was registered for `any.typeUrl`.
+&nbsp;     */
+&nbsp;    fun unpackDynamic(any: ProtoAny): Any? {
+<b class="fc">&nbsp;        val kClass = classByTypeUrl[any.typeUrl] ?: return null</b>
+<b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) ?: return null</b>
+<b class="fc">&nbsp;        return serializer.deserialize(GhostProtoJsonFlatReader(any.value))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Test-only: clears all registered typeUrl/KClass mappings. */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun resetForTest() {
+<b class="fc">&nbsp;        typeUrlByClass.clear()</b>
+<b class="fc">&nbsp;        classByTypeUrl.clear()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

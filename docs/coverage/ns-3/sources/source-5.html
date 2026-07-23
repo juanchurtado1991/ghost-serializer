@@ -1,0 +1,155 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoBoolValueSerializer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoBoolValueSerializer (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoBoolValueSerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42.1%
+  </span>
+  <span class="absValue">
+    (8/19)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.nextBoolean
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import kotlin.jvm.JvmInline
+&nbsp;
+&nbsp;/**
+&nbsp; * Wrapper message for `bool`.
+&nbsp; *
+&nbsp; * The JSON representation for `BoolValue` is JSON boolean.
+&nbsp; */
+&nbsp;@JvmInline value class ProtoBoolValue(val value: Boolean)
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer for [ProtoBoolValue].
+&nbsp; */
+&nbsp;object ProtoBoolValueSerializer : GhostSerializer&lt;ProtoBoolValue&gt; {
+<b class="fc">&nbsp;    override val typeName: String get() = C.WKT_BOOL_VALUE_TYPE</b>
+<b class="nc">&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoBoolValue) { writer.value(value.value) }</b>
+<b class="nc">&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBoolValue) { writer.value(value.value) }</b>
+<b class="fc">&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBoolValue) { writer.value(value.value) }</b>
+<b class="nc">&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoBoolValue = ProtoBoolValue(reader.nextBoolean())</b>
+<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoBoolValue = ProtoBoolValue(reader.nextBoolean())</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

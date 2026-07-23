@@ -1,0 +1,396 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoTimestampKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoTimestampKt (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoTimestampKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.5%
+  </span>
+  <span class="absValue">
+    (57/82)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.3%
+  </span>
+  <span class="absValue">
+    (137/150)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.7%
+  </span>
+  <span class="absValue">
+    (712/794)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * A Timestamp represents a point in time independent of any time zone or local
+&nbsp; * calendar, encoded as a count of seconds and fractions of seconds at
+&nbsp; * nanosecond resolution.
+&nbsp; */
+&nbsp;data class ProtoTimestamp(val seconds: Long, val nanos: Int)
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer for [ProtoTimestamp].
+&nbsp; */
+&nbsp;object ProtoTimestampSerializer : GhostSerializer&lt;ProtoTimestamp&gt; {
+&nbsp;    override val typeName: String get() = C.WKT_TIMESTAMP_TYPE
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoTimestamp) {
+&nbsp;        writer.value(formatTimestamp(value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoTimestamp) {
+&nbsp;        writer.value(formatTimestamp(value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoTimestamp) {
+&nbsp;        writer.value(formatTimestamp(value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoTimestamp {
+&nbsp;        return parseTimestamp(reader.nextString())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoTimestamp {
+&nbsp;        return parseTimestamp(reader.nextString())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoTimestamp {
+&nbsp;        return parseTimestamp(reader.nextString())
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal inline fun String.parseDecimalAt(start: Int, end: Int): Int {
+<b class="fc">&nbsp;    var result = 0</b>
+<b class="fc">&nbsp;    var index = start</b>
+<b class="fc">&nbsp;    while (index &lt; end) {</b>
+<b class="fc">&nbsp;        val code = this[index].code</b>
+<b class="pc">&nbsp;        if ((code - C.ZERO_INT) !in 0..9) throw IllegalArgumentException(C.ERR_MALFORMED_DIGIT)</b>
+<b class="fc">&nbsp;        result = result * C.BASE_TEN + (code - C.ZERO_INT)</b>
+<b class="fc">&nbsp;        index++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+&nbsp;// Writes `value` zero-padded to `width` digits directly into the ByteArray.
+&nbsp;internal fun writePaddedInt(buffer: ByteArray, startOffset: Int, value: Int, width: Int): Int {
+<b class="fc">&nbsp;    var position = startOffset</b>
+<b class="fc">&nbsp;    var digitCount = 1</b>
+<b class="fc">&nbsp;    var threshold = C.BASE_TEN</b>
+<b class="pc">&nbsp;    while (threshold &lt;= value &amp;&amp; digitCount &lt; width) {</b>
+<b class="fc">&nbsp;        digitCount++</b>
+<b class="fc">&nbsp;        threshold *= C.BASE_TEN</b>
+&nbsp;    }
+<b class="fc">&nbsp;    var remainingValue = value</b>
+<b class="fc">&nbsp;    var actualDigits = digitCount</b>
+<b class="pc">&nbsp;    while (threshold &lt;= remainingValue) {</b>
+<b class="nc">&nbsp;        actualDigits++</b>
+<b class="nc">&nbsp;        threshold *= C.BASE_TEN</b>
+&nbsp;    }
+<b class="fc">&nbsp;    var paddingCount = width - actualDigits</b>
+<b class="fc">&nbsp;    while (paddingCount &gt; 0) {</b>
+<b class="fc">&nbsp;        buffer[position++] = C.CHAR_ZERO.code.toByte()</b>
+<b class="fc">&nbsp;        paddingCount--</b>
+&nbsp;    }
+<b class="fc">&nbsp;    var divisor = 1</b>
+<b class="fc">&nbsp;    var digitIndex = actualDigits - 1</b>
+<b class="fc">&nbsp;    while (digitIndex &gt; 0) {</b>
+<b class="fc">&nbsp;        divisor *= C.BASE_TEN</b>
+<b class="fc">&nbsp;        digitIndex--</b>
+&nbsp;    }
+<b class="fc">&nbsp;    remainingValue = value</b>
+<b class="fc">&nbsp;    while (divisor &gt; 0) {</b>
+<b class="fc">&nbsp;        val digit = remainingValue / divisor</b>
+<b class="fc">&nbsp;        buffer[position++] = (digit + C.ZERO_INT).toByte()</b>
+<b class="fc">&nbsp;        remainingValue %= divisor</b>
+<b class="fc">&nbsp;        divisor /= C.BASE_TEN</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return position</b>
+&nbsp;}
+&nbsp;
+&nbsp;// Appends nanos as fractional digits. Proto3 JSON mandates exactly 0, 3, 6, or 9 fractional
+&nbsp;// digits (never an arbitrary trim) — e.g. 450_000_000 ns must render as &quot;.450&quot;, not &quot;.45&quot;.
+&nbsp;internal fun writeNanosFraction(buffer: ByteArray, startOffset: Int, nanos: Int): Int {
+<b class="fc">&nbsp;    val width: Int</b>
+<b class="fc">&nbsp;    val scale: Int</b>
+<b class="fc">&nbsp;    if (nanos % C.NANOS_PER_MILLI == 0) {</b>
+<b class="fc">&nbsp;        width = 3</b>
+<b class="fc">&nbsp;        scale = C.NANOS_PER_MILLI</b>
+<b class="pc">&nbsp;    } else if (nanos % C.NANOS_PER_MICRO == 0) {</b>
+<b class="nc">&nbsp;        width = 6</b>
+<b class="nc">&nbsp;        scale = C.NANOS_PER_MICRO</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        width = 9</b>
+<b class="fc">&nbsp;        scale = 1</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return writePaddedInt(buffer, startOffset, nanos / scale, width)</b>
+&nbsp;}
+&nbsp;
+&nbsp;// Zero-allocation calendar converter using Hatcher/Richards algorithm
+&nbsp;// Ranges validated: 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z
+&nbsp;internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
+<b class="fc">&nbsp;    if (timestampString.length &lt; C.TS_MIN_LENGTH) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_SHORT)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val year = timestampString.parseDecimalAt(C.TS_YEAR_START, C.TS_YEAR_END)</b>
+<b class="pc">&nbsp;    if (timestampString[C.TS_YEAR_END] != C.CHAR_HYPHEN) {</b>
+<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val month = timestampString.parseDecimalAt(C.TS_MONTH_START, C.TS_MONTH_END)</b>
+<b class="pc">&nbsp;    if (timestampString[C.TS_MONTH_END] != C.CHAR_HYPHEN) {</b>
+<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val day = timestampString.parseDecimalAt(C.TS_DAY_START, C.TS_DAY_END)</b>
+<b class="pc">&nbsp;    if (timestampString[C.TS_DAY_END] != C.CHAR_T_UPPER &amp;&amp; timestampString[C.TS_DAY_END] != C.CHAR_T) {</b>
+<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_T)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val hour = timestampString.parseDecimalAt(C.TS_HOUR_START, C.TS_HOUR_END)</b>
+<b class="pc">&nbsp;    if (timestampString[C.TS_HOUR_END] != C.CHAR_COLON) {</b>
+<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val minute = timestampString.parseDecimalAt(C.TS_MIN_START, C.TS_MIN_END)</b>
+<b class="pc">&nbsp;    if (timestampString[C.TS_MIN_END] != C.CHAR_COLON) {</b>
+<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val second = timestampString.parseDecimalAt(C.TS_SEC_START, C.TS_SEC_END)</b>
+&nbsp;
+<b class="fc">&nbsp;    var nanos = 0</b>
+<b class="fc">&nbsp;    var nextIndex = C.TS_SEC_END</b>
+<b class="fc">&nbsp;    if (timestampString[C.TS_SEC_END] == C.CHAR_DOT) {</b>
+<b class="fc">&nbsp;        var endIndex = C.TS_SEC_END + 1</b>
+<b class="fc">&nbsp;        val len = timestampString.length</b>
+<b class="pc">&nbsp;        while (endIndex &lt; len) {</b>
+<b class="fc">&nbsp;            val code = timestampString[endIndex].code</b>
+<b class="pc">&nbsp;            if ((code - C.ZERO_INT) !in 0..9) {</b>
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            endIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val fracDigits = endIndex - (C.TS_SEC_END + 1)</b>
+<b class="fc">&nbsp;        var fractionValue = 0</b>
+<b class="fc">&nbsp;        var fractionIndex = C.TS_SEC_END + 1</b>
+<b class="fc">&nbsp;        while (fractionIndex &lt; endIndex) {</b>
+<b class="fc">&nbsp;            fractionValue =</b>
+<b class="fc">&nbsp;                fractionValue * C.BASE_TEN + (timestampString[fractionIndex].code - C.ZERO_INT)</b>
+<b class="fc">&nbsp;            fractionIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var multiplier = 1</b>
+<b class="fc">&nbsp;        var multiplierIndex = 0</b>
+<b class="fc">&nbsp;        while (multiplierIndex &lt; C.NANOS_DIGITS - fracDigits) {</b>
+<b class="fc">&nbsp;            multiplier *= C.BASE_TEN</b>
+<b class="fc">&nbsp;            multiplierIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        nanos = fractionValue * multiplier</b>
+<b class="fc">&nbsp;        nextIndex = endIndex</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (nextIndex &gt;= timestampString.length) {</b>
+<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var offsetSec = 0</b>
+<b class="pc">&nbsp;    if (timestampString[nextIndex] != C.CHAR_Z_UPPER &amp;&amp; timestampString[nextIndex] != C.CHAR_Z_LOWER) {</b>
+<b class="fc">&nbsp;        if (</b>
+<b class="pc">&nbsp;            nextIndex + C.TS_TZ_OFFSET_LEN != timestampString.length ||</b>
+<b class="pc">&nbsp;            (timestampString[nextIndex] != C.CHAR_PLUS &amp;&amp; timestampString[nextIndex] != C.CHAR_HYPHEN)</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ_SUPPORT)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        val tzSign = if (timestampString[nextIndex] == C.CHAR_HYPHEN) -1 else 1</b>
+<b class="fc">&nbsp;        val tzHour = timestampString.parseDecimalAt(nextIndex + 1, nextIndex + 3)</b>
+<b class="fc">&nbsp;        val tzMin = timestampString.parseDecimalAt(nextIndex + 4, nextIndex + 6)</b>
+<b class="fc">&nbsp;        offsetSec = tzSign * (tzHour * 3600 + tzMin * 60)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val epochSeconds = dateToEpochSeconds(year, month, day, hour, minute, second) - offsetSec</b>
+<b class="fc">&nbsp;    return ProtoTimestamp(epochSeconds, nanos)</b>
+&nbsp;}
+&nbsp;
+&nbsp;// Convert YYYY-MM-DD HH:MM:SS to Epoch Seconds (UTC)
+&nbsp;internal fun dateToEpochSeconds(
+&nbsp;    year: Int,
+&nbsp;    month: Int,
+&nbsp;    day: Int,
+&nbsp;    hour: Int,
+&nbsp;    minute: Int,
+&nbsp;    second: Int
+&nbsp;): Long {
+<b class="fc">&nbsp;    val yearAdjustment = (if (month &lt;= 2) year - 1 else year).toLong()</b>
+<b class="fc">&nbsp;    val monthAdjustment = (if (month &lt;= 2) month + 12 else month).toLong()</b>
+<b class="fc">&nbsp;    val era =</b>
+<b class="pc">&nbsp;        (if (yearAdjustment &gt;= 0) yearAdjustment else yearAdjustment - (C.HINNANT_ERA_YEARS - 1)) / C.HINNANT_ERA_YEARS</b>
+<b class="fc">&nbsp;    val yearOfEra = yearAdjustment - era * C.HINNANT_ERA_YEARS</b>
+<b class="fc">&nbsp;    val dayOfYear = (153 * (monthAdjustment - 3) + 2) / 5 + day - 1</b>
+<b class="fc">&nbsp;    val dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear</b>
+<b class="fc">&nbsp;    val days = era * C.HINNANT_DAYS_PER_ERA + dayOfEra - C.HINNANT_EPOCH_OFFSET</b>
+<b class="fc">&nbsp;    return days * C.SECONDS_PER_DAY + hour * C.SECONDS_PER_HOUR + minute * C.SECONDS_PER_MINUTE + second</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun formatTimestamp(timestamp: ProtoTimestamp): String {
+<b class="fc">&nbsp;    val seconds = timestamp.seconds</b>
+<b class="fc">&nbsp;    var days = seconds / C.SECONDS_PER_DAY</b>
+<b class="fc">&nbsp;    var remSeconds = (seconds % C.SECONDS_PER_DAY).toInt()</b>
+<b class="pc">&nbsp;    if (remSeconds &lt; 0) {</b>
+<b class="nc">&nbsp;        days -= 1</b>
+<b class="nc">&nbsp;        remSeconds += C.SECONDS_PER_DAY.toInt()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val hour = remSeconds / C.SECONDS_PER_HOUR.toInt()</b>
+<b class="fc">&nbsp;    val remMinutes = remSeconds % C.SECONDS_PER_HOUR.toInt()</b>
+<b class="fc">&nbsp;    val minute = remMinutes / C.SECONDS_PER_MINUTE.toInt()</b>
+<b class="fc">&nbsp;    val second = remMinutes % C.SECONDS_PER_MINUTE.toInt()</b>
+&nbsp;
+<b class="fc">&nbsp;    val zeroDay = days + C.HINNANT_EPOCH_OFFSET</b>
+<b class="fc">&nbsp;    val era =</b>
+<b class="pc">&nbsp;        (if (zeroDay &gt;= 0) zeroDay else zeroDay - C.HINNANT_DAYS_CYCLE_ERA) / C.HINNANT_DAYS_PER_ERA</b>
+<b class="fc">&nbsp;    val dayOfEra = (zeroDay - era * C.HINNANT_DAYS_PER_ERA).toInt()</b>
+<b class="fc">&nbsp;    val yearOfEra =</b>
+<b class="fc">&nbsp;        (dayOfEra - dayOfEra / C.HINNANT_DAYS_CYCLE_4 + dayOfEra / C.HINNANT_DAYS_CYCLE_100 - dayOfEra / C.HINNANT_DAYS_CYCLE_ERA) / 365</b>
+<b class="fc">&nbsp;    val y = yearOfEra + era * C.HINNANT_ERA_YEARS</b>
+<b class="fc">&nbsp;    val dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)</b>
+<b class="fc">&nbsp;    val monthPosition = (5 * dayOfYear + 2) / 153</b>
+<b class="fc">&nbsp;    val day = dayOfYear - (153 * monthPosition + 2) / 5 + 1</b>
+<b class="fc">&nbsp;    val month = if (monthPosition &lt; 10) monthPosition + 3 else monthPosition - 9</b>
+<b class="fc">&nbsp;    val year = (if (month &lt;= 2) y + 1 else y).toInt()</b>
+&nbsp;
+<b class="fc">&nbsp;    val bytes = ByteArray(C.TS_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    var pos = 0</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(bytes, pos, year, 4)</b>
+<b class="fc">&nbsp;    bytes[pos++] = C.CHAR_HYPHEN.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(bytes, pos, month, 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = C.CHAR_HYPHEN.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(bytes, pos, day, 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = C.CHAR_T_UPPER.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(bytes, pos, hour, 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = C.CHAR_COLON.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(bytes, pos, minute, 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = C.CHAR_COLON.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(bytes, pos, second, 2)</b>
+&nbsp;
+<b class="fc">&nbsp;    if (timestamp.nanos &gt; 0) {</b>
+<b class="fc">&nbsp;        bytes[pos++] = C.CHAR_DOT.code.toByte()</b>
+<b class="fc">&nbsp;        pos = writeNanosFraction(bytes, pos, timestamp.nanos)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    bytes[pos++] = C.CHAR_Z_UPPER.code.toByte()</b>
+<b class="fc">&nbsp;    return bytes.decodeToString(0, pos)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

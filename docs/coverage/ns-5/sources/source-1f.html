@@ -1,0 +1,758 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > StandardEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: StandardEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StandardEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (12/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.5%
+  </span>
+  <span class="absValue">
+    (61/106)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.2%
+  </span>
+  <span class="absValue">
+    (210/287)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.9%
+  </span>
+  <span class="absValue">
+    (1345/1896)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">StandardEmitter$emitMultiBranchReturn$$inlined$sortedByDescending$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (12/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.5%
+  </span>
+  <span class="absValue">
+    (61/106)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.2%
+  </span>
+  <span class="absValue">
+    (210/287)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.9%
+  </span>
+  <span class="absValue">
+    (1345/1896)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;unused&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.FunSpec
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Emitter for standard deserialization logic.
+&nbsp; *
+&nbsp; * This emitter orchestrates code generation for classes that fit within standard JVM limits
+&nbsp; * (typically under 40 properties). It implements the strategy to declare local tracking variables,
+&nbsp; * initialize validation bitmasks, emit parsing loops for incoming JSON, validate required fields,
+&nbsp; * and instantiate the target class with an optimized return statement.
+&nbsp; *
+&nbsp; * @property properties The list of property models containing metadata for code generation.
+&nbsp; * @property originalClassName The target class name to instantiate.
+&nbsp; * @property readerClass The reader class used for deserialization.
+&nbsp; */
+&nbsp;internal class StandardEmitter(
+&nbsp;    properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;    originalClassName: ClassName,
+&nbsp;    readerClass: ClassName
+<b class="fc">&nbsp;) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Entry point to emit all standard deserialization code block builders.
+&nbsp;     *
+&nbsp;     * This method delegates the emission of variable declarations, parsing loops,
+&nbsp;     * field validation checks, and DTO construction to specialized helper functions.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder] to append generated code to.
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+<b class="fc">&nbsp;        emitPropertyMaskConstants(typeSpecBuilder)</b>
+<b class="fc">&nbsp;        WrappedKeysEmitter.addWrappedKeyConstants(typeSpecBuilder, properties)</b>
+<b class="fc">&nbsp;        emitLocalVariables(body)</b>
+<b class="fc">&nbsp;        WrappedKeysEmitter.emitCaptureVariables(body, properties)</b>
+<b class="fc">&nbsp;        emitMaskVariables(body)</b>
+<b class="fc">&nbsp;        emitParseLoop(body)</b>
+<b class="fc">&nbsp;        WrappedKeysEmitter.emitPostLoopDeserialization(</b>
+<b class="fc">&nbsp;            body,</b>
+<b class="fc">&nbsp;            properties,</b>
+<b class="fc">&nbsp;            propertyIndices,</b>
+<b class="fc">&nbsp;            readerClass,</b>
+&nbsp;        )
+<b class="fc">&nbsp;        emitFieldValidationCall(body)</b>
+<b class="fc">&nbsp;        emitReturnStatement(body, typeSpecBuilder)</b>
+&nbsp;
+<b class="fc">&nbsp;        emitValidationHelper(typeSpecBuilder)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the local placeholder variable declarations for tracking property values.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     */
+&nbsp;    private fun emitLocalVariables(body: CodeBlock.Builder) {
+<b class="fc">&nbsp;        properties.forEach {</b>
+<b class="fc">&nbsp;            val varType = it.getVariableType()</b>
+<b class="fc">&nbsp;            val initialValue = it.getInitialValue()</b>
+<b class="fc">&nbsp;            body.addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_VAR_VALUE_DECL,</b>
+<b class="fc">&nbsp;                it.kotlinName,</b>
+<b class="fc">&nbsp;                varType,</b>
+<b class="fc">&nbsp;                initialValue</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the initialization declarations of bitmasks to track parsed properties.
+&nbsp;     */
+&nbsp;    private fun emitMaskVariables(body: CodeBlock.Builder) {
+<b class="fc">&nbsp;        for (i in C.VAL_ZERO until maskCount) {</b>
+<b class="fc">&nbsp;            body.addStatement(C.STR_MASK_INIT, i)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates the main field parsing loop using the perfect hash options.
+&nbsp;     *
+&nbsp;     * This method writes:
+&nbsp;     * - `reader.beginObject()`
+&nbsp;     * - A `while (true)` loop with a `reader.selectNameAndConsume(OPTIONS)` index match.
+&nbsp;     * - A `when (index)` routing table that dispatches fields based on pre-compiled indices.
+&nbsp;     * Handles single-depth fields directly, and delegates multi-depth fields to [emitFlattenedGroup].
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     */
+&nbsp;    private fun emitParseLoop(body: CodeBlock.Builder) {
+<b class="fc">&nbsp;        body.addStatement(C.STR_BEGIN_OBJECT)</b>
+<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHILE_TRUE)</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)</b>
+<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHEN_INDEX)</b>
+&nbsp;
+<b class="fc">&nbsp;        val wrappedDispatch = WrappedKeysEmitter.wrappedKeyDispatch(properties)</b>
+<b class="fc">&nbsp;        val topLevelNames = DispatchNamesResolver.topLevelNames(properties)</b>
+<b class="fc">&nbsp;        val normalProperties = properties.filter { it.wrappedSourceKeys == null }</b>
+&nbsp;
+<b class="fc">&nbsp;        topLevelNames.forEachIndexed { topIndex, topName -&gt;</b>
+<b class="fc">&nbsp;            body.beginControlFlow(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WHEN_BRANCH,</b>
+<b class="fc">&nbsp;                topIndex</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;            val wrappedEntry = wrappedDispatch[topName]</b>
+<b class="fc">&nbsp;            if (wrappedEntry != null) {</b>
+<b class="fc">&nbsp;                val (prop, keyIndex) = wrappedEntry</b>
+<b class="fc">&nbsp;                WrappedKeysEmitter.emitWrappedKeyCapture(body, prop, keyIndex)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val propsForThisName = normalProperties</b>
+<b class="fc">&nbsp;                    .filter { fullPaths[propertyIndices[it]!!].first() == topName }</b>
+&nbsp;
+<b class="fc">&nbsp;                if (</b>
+<b class="fc">&nbsp;                    propsForThisName.size == C.VAL_ONE &amp;&amp;</b>
+<b class="fc">&nbsp;                    fullPaths[propertyIndices[propsForThisName[C.VAL_ZERO]]!!].size == C.VAL_ONE</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    emitPropertyAssignment(</b>
+<b class="fc">&nbsp;                        body,</b>
+<b class="fc">&nbsp;                        propsForThisName[C.VAL_ZERO],</b>
+<b class="fc">&nbsp;                        propertyIndices[propsForThisName[C.VAL_ZERO]]!!</b>
+&nbsp;                    )
+&nbsp;                } else {
+<b class="fc">&nbsp;                    emitFlattenedGroup(</b>
+<b class="fc">&nbsp;                        body,</b>
+<b class="fc">&nbsp;                        topName,</b>
+<b class="fc">&nbsp;                        propsForThisName,</b>
+<b class="fc">&nbsp;                        C.VAL_ONE,</b>
+<b class="fc">&nbsp;                        C.STR_EMPTY</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            body.endControlFlow()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        body.addStatement(C.STR_MINUS_ONE_BREAK)</b>
+<b class="fc">&nbsp;        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_SKIP_VALUE)</b>
+<b class="fc">&nbsp;        body.endControlFlow()</b>
+<b class="fc">&nbsp;        body.endControlFlow()</b>
+<b class="fc">&nbsp;        body.endControlFlow()</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Recursively generates nested parsing loops for flattened structure properties.
+&nbsp;     *
+&nbsp;     * This handles `@GhostFlatten` properties by nesting `beginObject()` loops corresponding
+&nbsp;     * to the structured hierarchy of keys inside the JSON source.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param name The name of the current node in the property path hierarchy.
+&nbsp;     * @param props The list of property models sharing this path prefix.
+&nbsp;     * @param pathIndex The current depth level of recursion.
+&nbsp;     * @param parentPrefix Cumulative path key prefix to locate nested perfect-hash lookup tables.
+&nbsp;     */
+&nbsp;    private fun emitFlattenedGroup(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        name: String,
+&nbsp;        props: List&lt;GhostPropertyModel&gt;,
+&nbsp;        pathIndex: Int,
+&nbsp;        parentPrefix: String
+&nbsp;    ) {
+<b class="pc">&nbsp;        val currentPrefix = if (parentPrefix.isEmpty()) {</b>
+<b class="fc">&nbsp;            name</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            &quot;${parentPrefix}${C.STR_UNDERSCORE}$name&quot;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()</b>
+&nbsp;
+<b class="fc">&nbsp;        body.addStatement(C.STR_BEGIN_OBJECT)</b>
+<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHILE_TRUE)</b>
+<b class="fc">&nbsp;        val subIndexName = &quot;${C.STR_SUB_INDEX_PREFIX}$pathIndex&quot;</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_SELECT_SUB_NAME, subIndexName, optionsName)</b>
+<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHEN_SUB_INDEX, subIndexName)</b>
+&nbsp;
+<b class="fc">&nbsp;        val nextLevelNames = props.map {</b>
+<b class="fc">&nbsp;            val path = fullPaths[propertyIndices[it]!!]</b>
+<b class="fc">&nbsp;            if (pathIndex &lt; path.size) {</b>
+<b class="fc">&nbsp;                path[pathIndex]</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                it.jsonName</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }.distinct()</b>
+&nbsp;
+<b class="fc">&nbsp;        nextLevelNames.forEachIndexed { subIndex, subName -&gt;</b>
+<b class="fc">&nbsp;            body.beginControlFlow(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_WHEN_BRANCH,</b>
+<b class="fc">&nbsp;                subIndex</b>
+&nbsp;            )
+<b class="fc">&nbsp;            val subProps = props.filter {</b>
+<b class="fc">&nbsp;                val path = fullPaths[propertyIndices[it]!!]</b>
+<b class="fc">&nbsp;                val currentName = if (pathIndex &lt; path.size) {</b>
+<b class="fc">&nbsp;                    path[pathIndex]</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    it.jsonName</b>
+&nbsp;                }
+<b class="fc">&nbsp;                currentName == subName</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            if (subProps.size &gt; 1 &amp;&amp; subProps.all { pathIndex &gt;= fullPaths[propertyIndices[it]!!].size }) {</b>
+<b class="fc">&nbsp;                throw IllegalStateException(&quot;Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class $originalClassName: &quot; + subProps.map { it.kotlinName + &quot; -&gt; &quot; + it.jsonName })</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (</b>
+<b class="pc">&nbsp;                subProps.size == C.VAL_ONE &amp;&amp;</b>
+<b class="pc">&nbsp;                pathIndex &gt;= fullPaths[propertyIndices[subProps[C.VAL_ZERO]]!!].size - C.VAL_ONE</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                emitPropertyAssignment(</b>
+<b class="fc">&nbsp;                    body,</b>
+<b class="fc">&nbsp;                    subProps[C.VAL_ZERO],</b>
+<b class="fc">&nbsp;                    propertyIndices[subProps[C.VAL_ZERO]]!!</b>
+&nbsp;                )
+&nbsp;            } else {
+<b class="nc">&nbsp;                emitFlattenedGroup(</b>
+<b class="nc">&nbsp;                    body,</b>
+<b class="nc">&nbsp;                    subName,</b>
+<b class="nc">&nbsp;                    subProps,</b>
+<b class="nc">&nbsp;                    pathIndex + C.VAL_ONE,</b>
+<b class="nc">&nbsp;                    currentPrefix</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            body.endControlFlow()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        body.addStatement(C.STR_MINUS_ONE_BREAK)</b>
+<b class="fc">&nbsp;        body.beginControlFlow(C.STR_ELSE_BRANCH)</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_SKIP_VALUE)</b>
+<b class="fc">&nbsp;        body.endControlFlow()</b>
+&nbsp;
+<b class="fc">&nbsp;        body.endControlFlow() // when</b>
+<b class="fc">&nbsp;        body.endControlFlow() // while</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits property value assignment statement and bitwise mask update.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param prop The property model.
+&nbsp;     * @param index The global index of this property.
+&nbsp;     */
+&nbsp;    private fun emitPropertyAssignment(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        index: Int
+&nbsp;    ) {
+<b class="fc">&nbsp;        val call = buildCall(prop)</b>
+<b class="fc">&nbsp;        val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;        val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
+&nbsp;
+<b class="fc">&nbsp;        val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)</b>
+<b class="fc">&nbsp;        if (prop.isResilient) {</b>
+<b class="fc">&nbsp;            body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)</b>
+<b class="fc">&nbsp;            body.addStatement(varName + C.TEMPLATE_ASSIGN_L, C.STR_IT)</b>
+<b class="fc">&nbsp;            body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, constName)</b>
+<b class="fc">&nbsp;            body.endControlFlow()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            body.addStatement(varName + C.TEMPLATE_ASSIGN_L, call)</b>
+<b class="fc">&nbsp;            body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, constName)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits a call to the descriptive private helper method validating that all required properties
+&nbsp;     * were present in the parsed JSON stream.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     */
+&nbsp;    private fun emitFieldValidationCall(body: CodeBlock.Builder) {
+<b class="fc">&nbsp;        val requiredProps = properties.filter { !it.isNullable &amp;&amp; !it.hasDefaultValue }</b>
+<b class="fc">&nbsp;        if (requiredProps.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            body.addStatement(C.TEMPLATE_CALL_VALIDATION, C.STR_FUN_VALIDATE_FIELDS, C.STR_PARAM_MASK0, C.STR_READER_VAR)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a descriptive private helper method validating that all required properties
+&nbsp;     * were present in the bitmask, throwing a GhostJsonException for any missing field.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder) {
+<b class="fc">&nbsp;        val requiredProps = properties.filter { !it.isNullable &amp;&amp; !it.hasDefaultValue }</b>
+<b class="fc">&nbsp;        if (requiredProps.isEmpty()) {</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val requiredMask0Name = C.STR_MASK_REQUIRED_0</b>
+&nbsp;
+<b class="fc">&nbsp;        val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)</b>
+<b class="fc">&nbsp;            .addModifiers(KModifier.PRIVATE)</b>
+<b class="fc">&nbsp;            .addParameter(C.STR_PARAM_MASK0, com.squareup.kotlinpoet.LONG)</b>
+<b class="fc">&nbsp;            .addParameter(C.STR_READER_VAR, readerClass)</b>
+&nbsp;
+<b class="fc">&nbsp;        val funBody = CodeBlock.builder()</b>
+<b class="fc">&nbsp;        if (requiredProps.size == 1) {</b>
+<b class="fc">&nbsp;            val prop = requiredProps[0]</b>
+<b class="fc">&nbsp;            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
+&nbsp;
+<b class="fc">&nbsp;            funBody.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_STMT, constName)</b>
+<b class="fc">&nbsp;            funBody.addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_THROW_S,</b>
+<b class="fc">&nbsp;                C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2</b>
+&nbsp;            )
+<b class="fc">&nbsp;            funBody.endControlFlow()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            funBody.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_STMT, requiredMask0Name, requiredMask0Name)</b>
+<b class="fc">&nbsp;            requiredProps.forEachIndexed { propIdx, prop -&gt;</b>
+<b class="fc">&nbsp;                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
+&nbsp;
+<b class="fc">&nbsp;                if (propIdx == 0) {</b>
+<b class="fc">&nbsp;                    funBody.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_STMT, constName)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    funBody.nextControlFlow(C.TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW, constName)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                funBody.addStatement(</b>
+<b class="fc">&nbsp;                    C.TEMPLATE_THROW_S,</b>
+<b class="fc">&nbsp;                    C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            funBody.endControlFlow()</b>
+<b class="fc">&nbsp;            funBody.endControlFlow()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        funBuilder.addCode(funBody.build())</b>
+<b class="fc">&nbsp;        typeSpecBuilder.addFunction(funBuilder.build())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the return statements using optimal constructor dispatch or copy-based logic.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitCreateInstanceHelper(typeSpecBuilder: TypeSpec.Builder) {
+<b class="nc">&nbsp;        val hasCreateInstance = typeSpecBuilder.funSpecs.any { it.name == &quot;createInstance&quot; }</b>
+<b class="nc">&nbsp;        if (hasCreateInstance) return</b>
+&nbsp;
+<b class="nc">&nbsp;        val funBuilder = FunSpec.builder(&quot;createInstance&quot;)</b>
+<b class="nc">&nbsp;            .addModifiers(KModifier.PRIVATE)</b>
+<b class="nc">&nbsp;            .returns(originalClassName)</b>
+&nbsp;
+<b class="nc">&nbsp;        for (i in 0 until maskCount) {</b>
+<b class="nc">&nbsp;            funBuilder.addParameter(&quot;mask$i&quot;, com.squareup.kotlinpoet.LONG)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            val varType = prop.getVariableType()</b>
+<b class="nc">&nbsp;            funBuilder.addParameter(&quot;${prop.kotlinName}Value&quot;, varType)</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        val helperBody = CodeBlock.builder()</b>
+<b class="nc">&nbsp;        val requiredProps = properties.filter { it.isInConstructor &amp;&amp; !it.hasDefaultValue }</b>
+<b class="nc">&nbsp;        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop -&gt;</b>
+<b class="nc">&nbsp;            if (prop.isInConstructor &amp;&amp; prop.hasDefaultValue) Pair(globalIdx, prop) else null</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (defaultPropsWithIndex.size &lt;= C.MAX_DEFAULT_BRANCH_COUNT) {</b>
+<b class="nc">&nbsp;            emitMultiBranchReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            emitCopyReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        funBuilder.addCode(helperBody.build())</b>
+<b class="nc">&nbsp;        typeSpecBuilder.addFunction(funBuilder.build())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun emitReturnStatement(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+<b class="pc">&nbsp;        val hasDefaults = properties.any { it.isInConstructor &amp;&amp; it.hasDefaultValue }</b>
+&nbsp;
+<b class="fc">&nbsp;        if (!hasDefaults) {</b>
+<b class="fc">&nbsp;            body.addStatement(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_RETURN_T_PAREN,</b>
+<b class="fc">&nbsp;                originalClassName</b>
+&nbsp;            )
+<b class="fc">&nbsp;            properties.filter { it.isInConstructor }.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;                body.addStatement(</b>
+<b class="fc">&nbsp;                    C.TEMPLATE_NAMED_ARG,</b>
+<b class="fc">&nbsp;                    prop.kotlinName,</b>
+<b class="fc">&nbsp;                    prop.getReturnExpression()</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            body.addStatement(C.STR_PAREN)</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop -&gt;</b>
+<b class="pc">&nbsp;            if (prop.isInConstructor &amp;&amp; prop.hasDefaultValue) Pair(globalIdx, prop) else null</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (defaultPropsWithIndex.size &lt;= C.MAX_DEFAULT_BRANCH_COUNT) {</b>
+<b class="pc">&nbsp;            val requiredProps = properties.filter { it.isInConstructor &amp;&amp; !it.hasDefaultValue }</b>
+<b class="fc">&nbsp;            emitMultiBranchReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        emitCreateInstanceHelper(typeSpecBuilder)</b>
+&nbsp;
+<b class="nc">&nbsp;        val args = mutableListOf&lt;String&gt;()</b>
+<b class="nc">&nbsp;        for (i in 0 until maskCount) {</b>
+<b class="nc">&nbsp;            args.add(&quot;mask$i&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            args.add(&quot;${prop.kotlinName}Value&quot;)</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        body.addStatement(&quot;return createInstance(${args.joinToString(&quot;, &quot;)})&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits the optimal return strategy when some properties have default values.
+&nbsp;     *
+&nbsp;     * To support Kotlin&#39;s default argument logic, it decides whether to generate a multi-branch
+&nbsp;     * return (no copy allocation overhead) or a copy-based return fallback (avoids code bloat).
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitDefaultValueReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+<b class="nc">&nbsp;        val requiredProps = properties.filter { it.isInConstructor &amp;&amp; !it.hasDefaultValue }</b>
+<b class="nc">&nbsp;        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop -&gt;</b>
+<b class="nc">&nbsp;            if (prop.isInConstructor &amp;&amp; prop.hasDefaultValue) Pair(globalIdx, prop) else null</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (defaultPropsWithIndex.size &lt;= C.MAX_DEFAULT_BRANCH_COUNT) {</b>
+<b class="nc">&nbsp;            emitMultiBranchReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            emitCopyReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates 2^N if-branches, each calling the primary constructor exactly once.
+&nbsp;     *
+&nbsp;     * Subsets of default values present in the input JSON are evaluated using bitmask checking.
+&nbsp;     * Iterates subsets from most bits set to fewest. If all else fails, it calls the constructor
+&nbsp;     * omitting all default properties so Kotlin&#39;s default values are used.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param requiredProps Required (non-default) property models.
+&nbsp;     * @param defaultPropsWithIndex Property models with default values and their index.
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitMultiBranchReturn(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        requiredProps: List&lt;GhostPropertyModel&gt;,
+&nbsp;        defaultPropsWithIndex: List&lt;Pair&lt;Int, GhostPropertyModel&gt;&gt;,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder
+&nbsp;    ) {
+<b class="fc">&nbsp;        val size = defaultPropsWithIndex.size</b>
+&nbsp;
+&nbsp;        // Iterate subsets from most bits set → fewest; skip the empty set (handled as fallback).
+<b class="fc">&nbsp;        val subsets = (C.VAL_ONE until (C.VAL_ONE shl size))</b>
+<b class="fc">&nbsp;            .sortedByDescending { mask -&gt; (C.VAL_ZERO until size).sumOf { bit -&gt; (mask shr bit) and C.VAL_ONE } }</b>
+&nbsp;
+<b class="fc">&nbsp;        for (subsetBits in subsets) {</b>
+<b class="fc">&nbsp;            val conditionStr = buildSubsetCondition(subsetBits, defaultPropsWithIndex, typeSpecBuilder)</b>
+<b class="fc">&nbsp;            body.beginControlFlow(C.STR_IF_OPEN + conditionStr + C.STR_CLOSE_PAREN_FLOW)</b>
+<b class="fc">&nbsp;            body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)</b>
+<b class="fc">&nbsp;            requiredProps.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())</b>
+<b class="nc">&nbsp;            }</b>
+<b class="fc">&nbsp;            for (i in C.VAL_ZERO until size) {</b>
+<b class="fc">&nbsp;                if (subsetBits and (C.VAL_ONE shl i) != C.VAL_ZERO) {</b>
+<b class="fc">&nbsp;                    val (_, prop) = defaultPropsWithIndex[i]</b>
+<b class="fc">&nbsp;                    body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            body.addStatement(C.STR_PAREN)</b>
+<b class="fc">&nbsp;            body.endControlFlow()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Fallback: no default props present — omit them so Kotlin uses their default values.
+<b class="fc">&nbsp;        body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)</b>
+<b class="fc">&nbsp;        requiredProps.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())</b>
+<b class="nc">&nbsp;        }</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_PAREN)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds the condition string for a subset bitmask of default props.
+&nbsp;     *
+&nbsp;     * Groups properties by their mask index and builds conditions checking if
+&nbsp;     * all subset bits are active in the target mask.
+&nbsp;     *
+&nbsp;     * @param subsetBits Bitmask of default properties present in the subset.
+&nbsp;     * @param defaultPropsWithIndex Default properties and their global indices.
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     * @return Formatted boolean logic string.
+&nbsp;     */
+&nbsp;    private fun buildSubsetCondition(
+&nbsp;        subsetBits: Int,
+&nbsp;        defaultPropsWithIndex: List&lt;Pair&lt;Int, GhostPropertyModel&gt;&gt;,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val maskGroups = mutableMapOf&lt;Int, Long&gt;()</b>
+<b class="fc">&nbsp;        val defaultPropsInSubset = mutableListOf&lt;GhostPropertyModel&gt;()</b>
+<b class="fc">&nbsp;        for (i in defaultPropsWithIndex.indices) {</b>
+<b class="fc">&nbsp;            if (subsetBits and (C.VAL_ONE shl i) != C.VAL_ZERO) {</b>
+<b class="fc">&nbsp;                val pair = defaultPropsWithIndex[i]</b>
+<b class="fc">&nbsp;                val globalIdx = pair.first</b>
+<b class="fc">&nbsp;                val prop = pair.second</b>
+<b class="fc">&nbsp;                defaultPropsInSubset.add(prop)</b>
+<b class="fc">&nbsp;                val maskIdx = globalIdx / C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;                val bitIdx = globalIdx % C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;                maskGroups[maskIdx] = (maskGroups[maskIdx] ?: C.VAL_ZERO_L) or (C.VAL_ONE_L shl bitIdx)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        val constName = C.STR_MASK_OPTS_PREFIX + defaultPropsInSubset</b>
+<b class="fc">&nbsp;            .map { it.kotlinName.uppercase() }</b>
+<b class="fc">&nbsp;            .sorted()</b>
+<b class="fc">&nbsp;            .joinToString(C.STR_UNDERSCORE)</b>
+&nbsp;
+<b class="pc">&nbsp;        val combinedBits = maskGroups[0] ?: C.VAL_ZERO_L</b>
+<b class="fc">&nbsp;        val bitsStr = formatMaskString(combinedBits)</b>
+<b class="fc">&nbsp;        if (typeSpecBuilder.propertySpecs.none { it.name == constName }) {</b>
+<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)</b>
+<b class="fc">&nbsp;                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)</b>
+<b class="fc">&nbsp;                    .initializer(C.TEMPLATE_L, bitsStr)</b>
+<b class="fc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        return C.TEMPLATE_MASK_ALL_MET_SIMPLE.format(0, constName, constName)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Legacy copy-based return for classes with &gt; MAX_DEFAULT_BRANCH_COUNT default props.
+&nbsp;     *
+&nbsp;     * Instantiates the class with required arguments first, then calls `.copy(...)` on the
+&nbsp;     * result for any default properties that were encountered, using if-statements to check their
+&nbsp;     * corresponding bits.
+&nbsp;     *
+&nbsp;     * @param body The target KotlinPoet [CodeBlock.Builder].
+&nbsp;     * @param requiredProps Required (non-default) property models.
+&nbsp;     * @param defaultPropsWithIndex Property models with default values and their index.
+&nbsp;     * @param typeSpecBuilder The serializer class builder.
+&nbsp;     */
+&nbsp;    private fun emitCopyReturn(
+&nbsp;        body: CodeBlock.Builder,
+&nbsp;        requiredProps: List&lt;GhostPropertyModel&gt;,
+&nbsp;        defaultPropsWithIndex: List&lt;Pair&lt;Int, GhostPropertyModel&gt;&gt;,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder
+&nbsp;    ) {
+<b class="nc">&nbsp;        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)</b>
+<b class="nc">&nbsp;        requiredProps.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)</b>
+<b class="nc">&nbsp;            val isPrimitive = prop.type.isPrimitive() &amp;&amp; !prop.isNullable</b>
+<b class="nc">&nbsp;            val expr = if (prop.isNullable || isPrimitive) {</b>
+<b class="nc">&nbsp;                varName</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                varName + C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="nc">&nbsp;            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, expr)</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        body.addStatement(C.STR_PAREN)</b>
+&nbsp;
+<b class="nc">&nbsp;        if (defaultPropsWithIndex.isNotEmpty()) {</b>
+<b class="nc">&nbsp;            body.add(C.STR_IF_OPEN)</b>
+<b class="nc">&nbsp;            val conditions = mutableListOf&lt;String&gt;()</b>
+<b class="nc">&nbsp;            for (i in defaultMasks.indices) {</b>
+<b class="nc">&nbsp;                val defMask = defaultMasks[i]</b>
+<b class="nc">&nbsp;                if (defMask != C.VAL_ZERO_L) {</b>
+<b class="nc">&nbsp;                    val constName = emitDefaultMaskConstant(typeSpecBuilder, i)</b>
+<b class="nc">&nbsp;                    conditions.add(C.TEMPLATE_MASK_CHECK_MATCH.format(i, constName))</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            body.add(conditions.joinToString(C.STR_OR))</b>
+<b class="nc">&nbsp;            body.beginControlFlow(C.STR_CLOSE_PAREN_FLOW)</b>
+&nbsp;
+<b class="nc">&nbsp;            body.addStatement(C.STR_RETURN_RESULT_COPY)</b>
+<b class="nc">&nbsp;            defaultPropsWithIndex.forEach { (propIndex, prop) -&gt;</b>
+<b class="nc">&nbsp;                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()</b>
+<b class="nc">&nbsp;                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
+<b class="nc">&nbsp;                val valueExpr = prop.getDefaultValueReturnExpression(maskIdx, constName)</b>
+<b class="nc">&nbsp;                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)</b>
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;            body.addStatement(C.STR_PAREN)</b>
+<b class="nc">&nbsp;            body.nextControlFlow(C.STR_ELSE)</b>
+<b class="nc">&nbsp;            body.addStatement(C.STR_RETURN_RESULT_FINAL)</b>
+<b class="nc">&nbsp;            body.endControlFlow()</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            body.addStatement(C.STR_RETURN_RESULT_FINAL)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

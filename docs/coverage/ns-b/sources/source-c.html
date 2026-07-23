@@ -1,0 +1,759 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonReader</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonReader (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonReader</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.5%
+  </span>
+  <span class="absValue">
+    (34/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.2%
+  </span>
+  <span class="absValue">
+    (117/174)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.6%
+  </span>
+  <span class="absValue">
+    (275/314)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (1338/1606)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;FunctionName&quot;, &quot;unused&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import okio.BufferedSource
+&nbsp;import okio.ByteString
+&nbsp;import okio.ByteString.Companion.encodeUtf8
+&nbsp;
+&nbsp;/**
+&nbsp; * A high-performance, zero-allocation JSON parser for Kotlin Multiplatform.
+&nbsp; *
+&nbsp; * This reader is optimized for generated code and raw speed by:
+&nbsp; * - Using an [Int]-based (0-255) data access pattern to eliminate sign-extension overhead.
+&nbsp; * - Implementing a &quot;Fast-Path&quot; that operates directly on [ByteArray] when possible.
+&nbsp; * - Reusing strings via an internal [stringPool] to reduce memory pressure.
+&nbsp; * - Providing a &quot;Discriminator Peeker&quot; for ultra-fast polymorphic deserialization.
+&nbsp; * - Minimizing virtual dispatch by caching the raw source data.
+&nbsp; */
+&nbsp;class GhostJsonReader(
+<b class="fc">&nbsp;    @PublishedApi internal var source: GhostSource,</b>
+<b class="fc">&nbsp;    @PublishedApi internal var limit: Int = source.size,</b>
+<b class="fc">&nbsp;    var maxDepth: Int = C.MAX_DEPTH,</b>
+&nbsp;    /**
+&nbsp;     * When true, enables strict JSON validation: rejects unknown/unmapped fields
+&nbsp;     * and performs strict bitwise syntax validation on missing or duplicate commas.
+&nbsp;     * Defaults to false for maximum lenient parsing performance.
+&nbsp;     */
+<b class="fc">&nbsp;    var strictMode: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceStringsToNumbers: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceBooleans: Boolean = false,</b>
+<b class="fc">&nbsp;    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize</b>
+&nbsp;) {
+&nbsp;
+&nbsp;    /** Cached raw byte array for fast-path access. Eliminates interface dispatch. */
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal var rawData: ByteArray = source.rawSourceData</b>
+&nbsp;
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal val isStreaming: Boolean = source is StreamingGhostSource</b>
+&nbsp;
+<b class="fc">&nbsp;    @PublishedApi</b>
+&nbsp;    internal var position: Int = 0
+&nbsp;
+<b class="fc">&nbsp;    @PublishedApi</b>
+<b class="fc">&nbsp;    internal var nextTokenByte: Int = -1</b>
+&nbsp;
+&nbsp;    @InternalGhostApi
+<b class="fc">&nbsp;    fun _getPosition(): Int = position</b>
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun _setPosition(p: Int) {
+<b class="fc">&nbsp;        position = p</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+<b class="nc">&nbsp;    fun _getRawData(): ByteArray = rawData</b>
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun _setNextTokenByte(t: Int) {
+<b class="nc">&nbsp;        nextTokenByte = t</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    internal val stringPool = arrayOfNulls&lt;String&gt;(C.STR_POOL_SIZE)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Set during [GhostSource.scanString] fast path: false if any content byte had bit 7 set
+&nbsp;     * (UTF-8 multibyte); true if only ASCII bytes were scanned (including empty string).
+&nbsp;     */
+<b class="nc">&nbsp;    internal var lastScanContentWas7BitOnly: Boolean = false</b>
+&nbsp;
+&nbsp;    /** Current nesting depth (object/array).
+&nbsp;     * Incremented on begin*, decremented on end*. */
+<b class="fc">&nbsp;    var depth: Int = 0</b>
+&nbsp;
+<b class="fc">&nbsp;    @PublishedApi internal var needsCommaMask: Long = 0L</b>
+<b class="fc">&nbsp;    @PublishedApi internal var commaConsumedMask: Long = 0L</b>
+&nbsp;
+&nbsp;    /** Convenience constructor for ByteArray —
+&nbsp;     * used by KSP-generated serializers and tests. */
+&nbsp;    constructor(
+&nbsp;        bytes: ByteArray,
+<b class="fc">&nbsp;        maxDepth: Int = C.MAX_DEPTH,</b>
+<b class="fc">&nbsp;        strictMode: Boolean = false,</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers: Boolean = false,</b>
+<b class="fc">&nbsp;        coerceBooleans: Boolean = false,</b>
+<b class="fc">&nbsp;        maxCollectionSize: Int = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;    ) : this(</b>
+<b class="fc">&nbsp;        createByteArraySource(bytes),</b>
+<b class="fc">&nbsp;        bytes.size,</b>
+<b class="fc">&nbsp;        maxDepth,</b>
+<b class="fc">&nbsp;        strictMode,</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers,</b>
+<b class="fc">&nbsp;        coerceBooleans,</b>
+<b class="fc">&nbsp;        maxCollectionSize</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    /** New Streaming Constructor for Okio Source */
+&nbsp;    constructor(
+&nbsp;        okioSource: BufferedSource,
+<b class="fc">&nbsp;        maxDepth: Int = C.MAX_DEPTH,</b>
+<b class="fc">&nbsp;        strictMode: Boolean = false,</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers: Boolean = false,</b>
+<b class="fc">&nbsp;        coerceBooleans: Boolean = false,</b>
+<b class="fc">&nbsp;        maxCollectionSize: Int = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;    ) : this(</b>
+<b class="fc">&nbsp;        createSourceBridge(okioSource),</b>
+<b class="fc">&nbsp;        Int.MAX_VALUE, // Limit is unknown for streaming</b>
+<b class="fc">&nbsp;        maxDepth,</b>
+<b class="fc">&nbsp;        strictMode,</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers,</b>
+<b class="fc">&nbsp;        coerceBooleans,</b>
+<b class="fc">&nbsp;        maxCollectionSize</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Optimized byte access.
+&nbsp;     * Uses hardware-level zero-extension if [rawData] is available,
+&nbsp;     * bypassing interface overhead.
+&nbsp;     */
+&nbsp;    @PublishedApi
+&nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;    internal inline fun getByte(index: Int): Int {
+<b class="pc">&nbsp;        if (isStreaming) {</b>
+<b class="fc">&nbsp;            return source[index]</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return rawData[index].toInt() and C.BYTE_MASK</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
+&nbsp;     */
+&nbsp;    fun throwError(message: String): Nothing {
+<b class="fc">&nbsp;        val errorPosition = position</b>
+<b class="fc">&nbsp;        val sourceRef = source</b>
+<b class="pc">&nbsp;        val errorEnd = if (errorPosition &gt; sourceRef.size) {</b>
+<b class="nc">&nbsp;            sourceRef.size</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            errorPosition</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        throw GhostJsonException(</b>
+<b class="fc">&nbsp;            baseMessage = &quot;$message at position $errorPosition&quot;,</b>
+<b class="fc">&nbsp;            computeLineCol = {</b>
+<b class="fc">&nbsp;                var columnNumber = 0</b>
+<b class="fc">&nbsp;                var lineNumber = 0</b>
+<b class="fc">&nbsp;                var byteIndex = 0</b>
+<b class="fc">&nbsp;                while (byteIndex &lt; errorEnd) {</b>
+<b class="fc">&nbsp;                    if (sourceRef[byteIndex] == C.NEWLINE_INT) {</b>
+<b class="fc">&nbsp;                        lineNumber++</b>
+<b class="fc">&nbsp;                        columnNumber = 0</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        columnNumber++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    byteIndex++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                intArrayOf(lineNumber, columnNumber)</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Consumes the next non-whitespace byte and validates it against [expected].
+&nbsp;     * Primarily used for manual parsing and testing.
+&nbsp;     */
+&nbsp;    fun expectByte(expected: Int) {
+<b class="pc">&nbsp;        if (peekNextToken() != expected) {</b>
+<b class="nc">&nbsp;            throwError(</b>
+<b class="nc">&nbsp;                &quot;Expected &#39;${Char(expected)}&#39; but found &#39;${Char(nextTokenByte)}&#39;&quot;</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        if (expected == C.COMMA_INT) {</b>
+<b class="pc">&nbsp;            if (depth &lt; C.MAX_BITMASK_DEPTH) {</b>
+<b class="fc">&nbsp;                val bit = C.BITMASK_UNIT shl depth</b>
+<b class="fc">&nbsp;                commaConsumedMask = commaConsumedMask or bit</b>
+<b class="fc">&nbsp;                needsCommaMask = needsCommaMask and bit.inv()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        internalSkip(1)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Skips [n] bytes and resets the cached [nextTokenByte].
+&nbsp;     */
+&nbsp;    fun internalSkip(n: Int) {
+<b class="fc">&nbsp;        position += n</b>
+<b class="fc">&nbsp;        nextTokenByte = -1</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Advances the position past any whitespace and caches the next non-whitespace token byte.
+&nbsp;     */
+&nbsp;    fun skipWhitespace() {
+<b class="fc">&nbsp;        val nextPos = if (isStreaming) {</b>
+<b class="fc">&nbsp;            source.findNextNonWhitespace(position, limit)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val localData = rawData</b>
+<b class="fc">&nbsp;            findNextNonWhitespaceImpl(position, limit) { localData[it].toInt() and C.BYTE_MASK }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (nextPos != -1) {</b>
+<b class="fc">&nbsp;            position = nextPos</b>
+<b class="fc">&nbsp;            nextTokenByte = getByte(position)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            position = limit</b>
+<b class="fc">&nbsp;            nextTokenByte = C.MATCH_END</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Attempts to peek at the discriminator value (e.g. &quot;type&quot;) of the current object.
+&nbsp;     * Does not advance the reader&#39;s position.
+&nbsp;     * Returns null if not found or if the current token is not an object start.
+&nbsp;     * Used by KSP-generated serializers for polymorphic deserialization.
+&nbsp;     */
+<b class="fc">&nbsp;    fun peekDiscriminator(key: String = C.DEFAULT_DISCRIMINATOR_KEY): String? {</b>
+<b class="fc">&nbsp;        if (key == C.DEFAULT_DISCRIMINATOR_KEY) {</b>
+<b class="fc">&nbsp;            return peekDiscriminator(C.TYPE_BS)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return peekDiscriminator(key.encodeUtf8())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Internal version that takes a [ByteString] for maximum performance.
+&nbsp;     * Used by KSP-generated serializers for polymorphic deserialization.
+&nbsp;     */
+&nbsp;    fun peekDiscriminator(key: ByteString): String? {
+<b class="fc">&nbsp;        return GhostDiscriminatorPeeker.peek(</b>
+<b class="fc">&nbsp;            source,</b>
+<b class="fc">&nbsp;            rawData,</b>
+<b class="fc">&nbsp;            isStreaming,</b>
+<b class="fc">&nbsp;            position,</b>
+<b class="fc">&nbsp;            limit,</b>
+<b class="fc">&nbsp;            key</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Peeks and returns the next token byte in the stream, skipping preceding whitespaces.
+&nbsp;     */
+&nbsp;    fun peekNextToken(): Int {
+<b class="fc">&nbsp;        val cached = nextTokenByte</b>
+<b class="fc">&nbsp;        if (cached != -1) return cached</b>
+<b class="fc">&nbsp;        skipWhitespace()</b>
+<b class="fc">&nbsp;        return nextTokenByte</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Peeks and returns the next token byte as a [Byte].
+&nbsp;     */
+<b class="fc">&nbsp;    fun peekByte(): Byte = peekNextToken().toByte()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Consumes and returns the next non-whitespace token byte in the stream.
+&nbsp;     */
+&nbsp;    fun nextNonWhitespace(): Int {
+<b class="fc">&nbsp;        val nextToken = peekNextToken()</b>
+<b class="fc">&nbsp;        if (nextToken == -1) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_UNEXPECTED_EOF)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        internalSkip(1)</b>
+<b class="fc">&nbsp;        return nextToken</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Skips and validates that the next characters in the stream match the [expected] byte sequence.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun skipAndValidateLiteral(expected: ByteString) {
+<b class="fc">&nbsp;        val size = expected.size</b>
+<b class="pc">&nbsp;        val isValid = if (isStreaming) {</b>
+<b class="nc">&nbsp;            source.contentEquals(position, expected)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            position + size &lt;= limit &amp;&amp; expected.rangeEquals(0, rawData, position, size)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (!isValid) {</b>
+<b class="fc">&nbsp;            throwError(&quot;Expected literal ${expected.utf8()}&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        position += size</b>
+<b class="fc">&nbsp;        nextTokenByte = -1</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads a quoted JSON string.
+&nbsp;     *
+&nbsp;     * This implementation features:
+&nbsp;     * 1. **Fast-path**: Direct decoding if no escapes are present.
+&nbsp;     * 2. **String Pooling**: Checks [stringPool] to reuse existing String instances.
+&nbsp;     * 3. **Slow-path**: StringBuilder-like approach using a pooled char buffer for escapes.
+&nbsp;     */
+&nbsp;    fun readQuotedString(): String {
+<b class="fc">&nbsp;        if (nextNonWhitespace() != C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_QUOTE)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val start = position</b>
+<b class="fc">&nbsp;        val scanResult = if (isStreaming) {</b>
+<b class="fc">&nbsp;            source.scanString(start, limit)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val localData = rawData</b>
+<b class="fc">&nbsp;            scanStringImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (scanResult != -1L) {</b>
+<b class="fc">&nbsp;            val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()</b>
+<b class="fc">&nbsp;            val rollingHash = scanResult.toInt()</b>
+<b class="fc">&nbsp;            val only7Bit = (scanResult and C.SCAN_7BIT_BIT) != 0L</b>
+<b class="fc">&nbsp;            lastScanContentWas7BitOnly = only7Bit</b>
+<b class="fc">&nbsp;            val end = start + length</b>
+<b class="fc">&nbsp;            if (length &lt;= 0) {</b>
+<b class="fc">&nbsp;                position = end + 1</b>
+<b class="fc">&nbsp;                nextTokenByte = -1</b>
+<b class="fc">&nbsp;                return &quot;&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (length &gt; GhostHeuristics.maxStringPoolLength) {</b>
+<b class="fc">&nbsp;                val result = source.decodeJsonStringRange(start, end, only7Bit)</b>
+<b class="fc">&nbsp;                position = end + 1</b>
+<b class="fc">&nbsp;                nextTokenByte = -1</b>
+<b class="fc">&nbsp;                return result</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)</b>
+<b class="fc">&nbsp;            val cachedString = stringPool[poolBucketIndex]</b>
+&nbsp;
+<b class="fc">&nbsp;            val isMatch = if (only7Bit &amp;&amp; cachedString != null) {</b>
+<b class="pc">&nbsp;                if (isStreaming) {</b>
+<b class="nc">&nbsp;                    source.contentEqualsString(start, length, cachedString)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    val localData = rawData</b>
+<b class="fc">&nbsp;                    contentEqualsStringImpl(start, length, cachedString) { localData[it].toInt() and C.BYTE_MASK }</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                false</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (isMatch) {</b>
+<b class="fc">&nbsp;                position = end + 1</b>
+<b class="fc">&nbsp;                nextTokenByte = -1</b>
+<b class="fc">&nbsp;                return cachedString!!</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val decodedString = source.decodeJsonStringRange(start, end, only7Bit)</b>
+<b class="fc">&nbsp;            if (only7Bit) {</b>
+<b class="fc">&nbsp;                stringPool[poolBucketIndex] = decodedString</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position = end + 1</b>
+<b class="fc">&nbsp;            nextTokenByte = -1</b>
+<b class="fc">&nbsp;            return decodedString</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return readQuotedStringSlow(start)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun GhostJsonReader.readQuotedStringSlow(start: Int): String {
+&nbsp;        // Slow path: manual string building for escapes (Bitwise &amp; Zero-Allocation approach)
+<b class="fc">&nbsp;        var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)</b>
+<b class="fc">&nbsp;        var outPos = 0</b>
+&nbsp;
+&nbsp;        try {
+<b class="fc">&nbsp;            var pos = start</b>
+<b class="fc">&nbsp;            while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;                val byteValue = getByte(pos++)</b>
+<b class="fc">&nbsp;                if (byteValue == C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;                    position = pos</b>
+<b class="fc">&nbsp;                    nextTokenByte = -1</b>
+<b class="fc">&nbsp;                    return outBuffer.decodeToString(0, outPos)</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                if (byteValue == C.BACKSLASH_INT) {</b>
+<b class="pc">&nbsp;                    if (pos &gt;= limit) {</b>
+<b class="nc">&nbsp;                        position = pos</b>
+<b class="nc">&nbsp;                        throwError(C.UNTERMINATED_ESCAPE_ERROR)</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    when (val escaped = getByte(pos++)) {</b>
+&nbsp;                        C.UNICODE_PREFIX_U_INT -&gt; {
+<b class="pc">&nbsp;                            if (pos + C.UNICODE_HEX_LENGTH &gt; limit) {</b>
+<b class="nc">&nbsp;                                position = pos</b>
+<b class="nc">&nbsp;                                throwError(C.UNTERMINATED_UNICODE_ERROR)</b>
+&nbsp;                            }
+&nbsp;
+<b class="fc">&nbsp;                            var code = parseUnicodeHex(pos)</b>
+<b class="fc">&nbsp;                            pos += C.UNICODE_HEX_LENGTH</b>
+&nbsp;
+<b class="pc">&nbsp;                            if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {</b>
+<b class="fc">&nbsp;                                if (pos + C.SURROGATE_OFFSET &lt;= limit &amp;&amp;</b>
+<b class="pc">&nbsp;                                    getByte(pos) == C.BACKSLASH_INT &amp;&amp;</b>
+<b class="pc">&nbsp;                                    getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT</b>
+&nbsp;                                ) {
+&nbsp;                                    // Valid surrogate pair check
+<b class="fc">&nbsp;                                    pos += C.UNICODE_ESCAPE_PREFIX_SIZE</b>
+<b class="fc">&nbsp;                                    val lowCode = parseUnicodeHex(pos)</b>
+<b class="pc">&nbsp;                                    if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {</b>
+<b class="fc">&nbsp;                                        pos += C.UNICODE_HEX_LENGTH</b>
+<b class="fc">&nbsp;                                        code = C.UNICODE_BASE +</b>
+<b class="fc">&nbsp;                                                ((code - C.HIGH_SURROGATE_START) shl C.SHIFT_10) +</b>
+<b class="fc">&nbsp;                                                (lowCode - C.LOW_SURROGATE_START)</b>
+&nbsp;                                    } else {
+<b class="fc">&nbsp;                                        position = pos</b>
+<b class="fc">&nbsp;                                        throwError(C.ERR_HIGH_SURROGATE)</b>
+&nbsp;                                    }
+&nbsp;                                } else {
+<b class="fc">&nbsp;                                    position = pos</b>
+<b class="fc">&nbsp;                                    throwError(C.ERR_HIGH_SURROGATE)</b>
+&nbsp;                                }
+&nbsp;                            }
+&nbsp;
+&nbsp;                            // Encode code point to UTF-8 bytes in outBuffer
+<b class="fc">&nbsp;                            if (code &lt;= C.UTF8_1BYTE_MAX) {</b>
+<b class="pc">&nbsp;                                if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                    outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                                }
+<b class="fc">&nbsp;                                outBuffer[outPos++] = code.toByte()</b>
+<b class="fc">&nbsp;                            } else if (code &lt;= C.UTF8_2BYTE_MAX) {</b>
+<b class="pc">&nbsp;                                if (outPos + 2 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                    outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                                }
+<b class="fc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()</b>
+<b class="fc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="pc">&nbsp;                            } else if (code &lt;= C.BMP_LIMIT) {</b>
+<b class="nc">&nbsp;                                if (outPos + 3 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                    outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                                }
+<b class="nc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()</b>
+<b class="nc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                            } else {
+<b class="pc">&nbsp;                                if (outPos + 4 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                    outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                                }
+<b class="fc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()</b>
+<b class="fc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;
+&nbsp;                        C.N_BYTE_INT -&gt; {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = C.LF_INT.toByte()</b>
+&nbsp;                        }
+&nbsp;
+&nbsp;                        C.R_BYTE_INT -&gt; {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = C.CR_INT.toByte()</b>
+&nbsp;                        }
+&nbsp;
+&nbsp;                        C.T_BYTE_INT -&gt; {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                  outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = C.TAB_INT.toByte()</b>
+&nbsp;                        }
+&nbsp;
+&nbsp;                        C.B_BYTE_INT -&gt; {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = C.BS_INT.toByte()</b>
+&nbsp;                        }
+&nbsp;
+&nbsp;                        C.F_BYTE_INT -&gt; {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = C.FF_INT.toByte()</b>
+&nbsp;                        }
+&nbsp;
+&nbsp;                        else -&gt; {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = escaped.toByte()</b>
+&nbsp;                        }
+&nbsp;                    }
+<b class="fc">&nbsp;                } else if (byteValue &lt; C.SPACE_INT) {</b>
+<b class="fc">&nbsp;                    position = pos</b>
+<b class="fc">&nbsp;                    throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                        outBuffer = growBuffer(outBuffer, outPos)</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    outBuffer[outPos++] = byteValue.toByte()</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            position = pos</b>
+&nbsp;        } finally {
+<b class="fc">&nbsp;            releaseScratchBuffer(outBuffer)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        throwError(C.UNTERMINATED_STRING_ERROR)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Skips a double-quoted JSON string in the raw source without decoding its content.
+&nbsp;     */
+&nbsp;    fun skipQuotedString() {
+<b class="pc">&nbsp;        if (nextNonWhitespace() != C.QUOTE_INT) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_QUOTE)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val start = position</b>
+<b class="pc">&nbsp;        val end = if (isStreaming) {</b>
+<b class="nc">&nbsp;            source.findClosingQuote(start, limit)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val localData = rawData</b>
+<b class="fc">&nbsp;            findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (end != -1) {</b>
+<b class="fc">&nbsp;            position = end + 1</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var pos = start</b>
+<b class="pc">&nbsp;        while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;            val byteValue = getByte(pos++)</b>
+<b class="fc">&nbsp;            if (byteValue == C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;                position = pos</b>
+<b class="fc">&nbsp;                nextTokenByte = -1</b>
+&nbsp;                return
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (byteValue == C.BACKSLASH_INT) {</b>
+<b class="pc">&nbsp;                if (pos &gt;= limit) {</b>
+<b class="nc">&nbsp;                    position = pos</b>
+<b class="nc">&nbsp;                    throwError(C.UNTERMINATED_ESCAPE_ERROR)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val escaped = getByte(pos++)</b>
+&nbsp;
+<b class="fc">&nbsp;                if (escaped == C.UNICODE_PREFIX_U_INT) {</b>
+<b class="pc">&nbsp;                    if (pos + C.UNICODE_HEX_LENGTH &gt; limit) {</b>
+<b class="nc">&nbsp;                        position = pos</b>
+<b class="nc">&nbsp;                        throwError(C.UNTERMINATED_UNICODE_ERROR)</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    parseUnicodeHex(pos)</b>
+<b class="nc">&nbsp;                    pos += C.UNICODE_HEX_LENGTH</b>
+&nbsp;                }
+<b class="pc">&nbsp;            } else if (byteValue &lt; C.SPACE_INT) {</b>
+<b class="nc">&nbsp;                position = pos</b>
+<b class="nc">&nbsp;                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        position = pos</b>
+<b class="nc">&nbsp;        throwError(C.UNTERMINATED_STRING_ERROR)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Parses 4 hex digits from the byte array at the given position and returns the resulting code point.
+&nbsp;     */
+&nbsp;    private fun parseUnicodeHex(currentPosition: Int): Int {
+<b class="fc">&nbsp;        val hexByte0 = getByte(currentPosition)</b>
+<b class="fc">&nbsp;        val hexByte1 = getByte(currentPosition + 1)</b>
+<b class="fc">&nbsp;        val hexByte2 = getByte(currentPosition + 2)</b>
+<b class="fc">&nbsp;        val hexByte3 = getByte(currentPosition + 3)</b>
+&nbsp;
+<b class="fc">&nbsp;        val hexLookupTable = C.HEX_LUT</b>
+<b class="fc">&nbsp;        val digitValue0 = hexLookupTable[hexByte0]</b>
+<b class="fc">&nbsp;        val digitValue1 = hexLookupTable[hexByte1]</b>
+<b class="fc">&nbsp;        val digitValue2 = hexLookupTable[hexByte2]</b>
+<b class="fc">&nbsp;        val digitValue3 = hexLookupTable[hexByte3]</b>
+&nbsp;
+<b class="fc">&nbsp;        if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) &lt; 0) {</b>
+<b class="fc">&nbsp;            throwError(&quot;Invalid unicode escape at $currentPosition&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return (digitValue0 shl C.SHIFT_12) or</b>
+<b class="fc">&nbsp;                (digitValue1 shl C.SHIFT_8) or</b>
+<b class="fc">&nbsp;                (digitValue2 shl C.SHIFT_4) or</b>
+<b class="fc">&nbsp;                digitValue3</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Utility helper to grow a temporary byte array buffer.
+&nbsp;     */
+&nbsp;    private fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
+<b class="fc">&nbsp;        val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="fc">&nbsp;        outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="fc">&nbsp;        releaseScratchBuffer(outBuffer)</b>
+<b class="fc">&nbsp;        return newBuffer</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resets the reader&#39;s state to process a new flat byte array payload.
+&nbsp;     */
+<b class="fc">&nbsp;    fun reset(newData: ByteArray, newLimit: Int = newData.size) {</b>
+<b class="fc">&nbsp;        val currentSource = this.source</b>
+<b class="pc">&nbsp;        if (currentSource is ByteArrayGhostSource) {</b>
+<b class="fc">&nbsp;            currentSource.data = newData</b>
+<b class="fc">&nbsp;            reset(currentSource, newLimit)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            reset(createByteArraySource(newData), newLimit)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resets the reader&#39;s state to process a new streaming Okio [BufferedSource] payload.
+&nbsp;     */
+&nbsp;    fun reset(okioSource: BufferedSource) {
+<b class="fc">&nbsp;        reset(createSourceBridge(okioSource), Int.MAX_VALUE)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resets the reader state with a new [GhostSource].
+&nbsp;     * Clears cached tokens, positions, and depth for reuse.
+&nbsp;     */
+<b class="nc">&nbsp;    fun reset(newSource: GhostSource, newLimit: Int = newSource.size) {</b>
+<b class="fc">&nbsp;        this.source = newSource</b>
+<b class="fc">&nbsp;        this.rawData = newSource.rawSourceData</b>
+<b class="fc">&nbsp;        this.position = 0</b>
+<b class="fc">&nbsp;        this.limit = newLimit</b>
+<b class="fc">&nbsp;        this.nextTokenByte = -1</b>
+<b class="fc">&nbsp;        this.depth = 0</b>
+<b class="fc">&nbsp;        this.needsCommaMask = 0L</b>
+<b class="fc">&nbsp;        this.commaConsumedMask = 0L</b>
+<b class="fc">&nbsp;        this.strictMode = false</b>
+<b class="fc">&nbsp;        this.coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        this.coerceBooleans = false</b>
+<b class="fc">&nbsp;        this.maxDepth = C.MAX_DEPTH</b>
+<b class="fc">&nbsp;        this.maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;        this.lastScanContentWas7BitOnly = false</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

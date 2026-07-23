@@ -1,0 +1,500 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > StreamingGhostSource</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: StreamingGhostSource (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StreamingGhostSource</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (10/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.6%
+  </span>
+  <span class="absValue">
+    (115/170)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.8%
+  </span>
+  <span class="absValue">
+    (208/237)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.9%
+  </span>
+  <span class="absValue">
+    (957/1064)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import okio.BufferedSource
+&nbsp;import okio.ByteString
+&nbsp;import okio.Buffer
+&nbsp;
+&nbsp;/**
+&nbsp; * Implementation of [GhostSource] for streaming data from an [okio.BufferedSource].
+&nbsp; * Automatically requests data from the source as needed.
+&nbsp; */
+<b class="fc">&nbsp;@InternalGhostApi</b>
+<b class="fc">&nbsp;class StreamingGhostSource(</b>
+<b class="fc">&nbsp;    val okioSource: BufferedSource</b>
+&nbsp;) : GhostSource {
+&nbsp;
+<b class="fc">&nbsp;    private val buffer = okioSource.buffer</b>
+&nbsp;
+&nbsp;    /** Reused across every [getSlow] call and every [decodeToString] call to avoid per-operation allocations. */
+<b class="fc">&nbsp;    private val tempBuffer = Buffer()</b>
+&nbsp;
+<b class="nc">&nbsp;    override val size: Int get() = Int.MAX_VALUE</b>
+&nbsp;
+<b class="fc">&nbsp;    private val bufferBytes = ByteArray(GhostJsonConstants.STREAMING_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    private var bufferStart = -1</b>
+<b class="fc">&nbsp;    private var bufferEnd = -1</b>
+&nbsp;
+&nbsp;    override fun get(index: Int): Int {
+<b class="fc">&nbsp;        if (index in bufferStart..&lt;bufferEnd) {</b>
+<b class="fc">&nbsp;            return bufferBytes[index - bufferStart].toInt() and GhostJsonConstants.BYTE_MASK</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return getSlow(index)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getSlow(index: Int): Int {
+<b class="fc">&nbsp;        val requestedIndexL = index.toLong()</b>
+<b class="fc">&nbsp;        okioSource.request(requestedIndexL + 1L)</b>
+<b class="fc">&nbsp;        val available = buffer.size</b>
+<b class="fc">&nbsp;        if (requestedIndexL &gt;= available) {</b>
+<b class="fc">&nbsp;            throw IndexOutOfBoundsException(&quot;Index $index is out of bounds (available: $available)&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val alignedStart = (index / GhostJsonConstants.STREAMING_BUFFER_SIZE) * GhostJsonConstants.STREAMING_BUFFER_SIZE</b>
+<b class="fc">&nbsp;        val toCopy = minOf(GhostJsonConstants.STREAMING_BUFFER_SIZE.toLong(), available - alignedStart)</b>
+&nbsp;
+<b class="pc">&nbsp;        if (toCopy &lt;= 0L) {</b>
+<b class="nc">&nbsp;            throw IndexOutOfBoundsException(&quot;Index $index is out of bounds&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        buffer.copyTo(tempBuffer, alignedStart.toLong(), toCopy)</b>
+&nbsp;        // Buffer.read(sink, offset, byteCount) reads only UP TO byteCount bytes per call (same
+&nbsp;        // &quot;may return fewer than requested&quot; contract as InputStream.read) -- when [toCopy] spans
+&nbsp;        // two of Okio&#39;s own internal segments (also 8192 bytes), a single call silently stops at
+&nbsp;        // the first segment boundary, leaving the rest of [bufferBytes] as stale/zeroed data with
+&nbsp;        // no error. Loop until the exact byte count copied above is fully drained.
+<b class="fc">&nbsp;        val bytesToDrain = toCopy.toInt()</b>
+<b class="fc">&nbsp;        var bytesDrained = 0</b>
+<b class="fc">&nbsp;        while (bytesDrained &lt; bytesToDrain) {</b>
+<b class="fc">&nbsp;            val bytesReadThisCall = tempBuffer.read(</b>
+<b class="fc">&nbsp;                sink = bufferBytes,</b>
+<b class="fc">&nbsp;                offset = bytesDrained,</b>
+<b class="fc">&nbsp;                byteCount = bytesToDrain - bytesDrained</b>
+&nbsp;            )
+<b class="pc">&nbsp;            if (bytesReadThisCall == -1) break</b>
+<b class="fc">&nbsp;            bytesDrained += bytesReadThisCall</b>
+&nbsp;        }
+<b class="fc">&nbsp;        bufferStart = alignedStart</b>
+<b class="fc">&nbsp;        bufferEnd = (alignedStart + toCopy).toInt()</b>
+&nbsp;
+<b class="fc">&nbsp;        return bufferBytes[index - bufferStart].toInt() and GhostJsonConstants.BYTE_MASK</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun decodeToString(start: Int, end: Int): String {
+<b class="fc">&nbsp;        val length = end - start</b>
+<b class="fc">&nbsp;        val segmentStart = bufferStart</b>
+<b class="fc">&nbsp;        val segmentEnd = bufferEnd</b>
+<b class="fc">&nbsp;        if (start &gt;= segmentStart &amp;&amp; end &lt;= segmentEnd) {</b>
+<b class="fc">&nbsp;            return bufferBytes.decodeToString(start - segmentStart, end - segmentStart)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        okioSource.request(end.toLong())</b>
+&nbsp;        // copyTo fills the reusable tempBuffer with exactly [length] bytes from the live Okio
+&nbsp;        // buffer without advancing its read position.  readUtf8 then decodes them in one pass
+&nbsp;        // and returns the final String — no intermediate ByteString, no snapshot, no substring.
+<b class="fc">&nbsp;        buffer.copyTo(tempBuffer, start.toLong(), length.toLong())</b>
+<b class="fc">&nbsp;        return tempBuffer.readUtf8(length.toLong())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun contentEquals(start: Int, expected: ByteString): Boolean {
+<b class="fc">&nbsp;        return okioSource.rangeEquals(start.toLong(), expected)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun findNextNonWhitespace(position: Int, limit: Int): Int {
+<b class="fc">&nbsp;        var currentPosition = position</b>
+<b class="fc">&nbsp;        val localByteMask = GhostJsonConstants.BYTE_MASK</b>
+<b class="fc">&nbsp;        val localSpaceInt = GhostJsonConstants.SPACE_INT</b>
+<b class="fc">&nbsp;        val localWhitespaceMask = GhostJsonConstants.WHITESPACE_MASK</b>
+<b class="fc">&nbsp;        val localByteShiftUnit = GhostJsonConstants.BYTE_SHIFT_UNIT</b>
+<b class="fc">&nbsp;        val localResultNone = GhostJsonConstants.RESULT_NONE</b>
+&nbsp;
+<b class="fc">&nbsp;        while (true) {</b>
+<b class="fc">&nbsp;            val segmentStart = bufferStart</b>
+<b class="fc">&nbsp;            val segmentEnd = bufferEnd</b>
+<b class="pc">&nbsp;            if (currentPosition &gt;= segmentStart &amp;&amp; currentPosition &lt; segmentEnd) {</b>
+<b class="fc">&nbsp;                val segmentLimit = minOf(limit, segmentEnd)</b>
+<b class="fc">&nbsp;                var localPosition = currentPosition</b>
+&nbsp;
+<b class="fc">&nbsp;                while (localPosition + 3 &lt; segmentLimit) {</b>
+<b class="fc">&nbsp;                    val byte0 = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (byte0 &gt; localSpaceInt ||</b>
+<b class="pc">&nbsp;                        (localWhitespaceMask shr byte0) and localByteShiftUnit == localResultNone</b>
+<b class="fc">&nbsp;                    ) return localPosition</b>
+&nbsp;
+<b class="fc">&nbsp;                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (byte1 &gt; localSpaceInt ||</b>
+<b class="pc">&nbsp;                        (localWhitespaceMask shr byte1) and localByteShiftUnit == localResultNone</b>
+<b class="fc">&nbsp;                    ) return localPosition + 1</b>
+&nbsp;
+<b class="fc">&nbsp;                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask</b>
+<b class="pc">&nbsp;                    if (byte2 &gt; localSpaceInt ||</b>
+<b class="pc">&nbsp;                        (localWhitespaceMask shr byte2) and localByteShiftUnit == localResultNone</b>
+<b class="nc">&nbsp;                    ) return localPosition + 2</b>
+&nbsp;
+<b class="fc">&nbsp;                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask</b>
+<b class="pc">&nbsp;                    if (byte3 &gt; localSpaceInt ||</b>
+<b class="pc">&nbsp;                        (localWhitespaceMask shr byte3) and localByteShiftUnit == localResultNone</b>
+<b class="nc">&nbsp;                    ) return localPosition + 3</b>
+&nbsp;
+<b class="fc">&nbsp;                    localPosition += 4</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
+<b class="fc">&nbsp;                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (singleByte &gt; localSpaceInt ||</b>
+<b class="pc">&nbsp;                        (localWhitespaceMask shr singleByte) and localByteShiftUnit == localResultNone</b>
+<b class="fc">&nbsp;                    ) return localPosition</b>
+<b class="fc">&nbsp;                    localPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                currentPosition = localPosition</b>
+<b class="pc">&nbsp;                if (currentPosition &gt;= limit) return -1</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                getSlow(currentPosition)</b>
+<b class="pc">&nbsp;                if (bufferStart == -1 || currentPosition &gt;= bufferEnd) return -1</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun findClosingQuote(position: Int, limit: Int): Int {
+<b class="fc">&nbsp;        var currentPosition = position</b>
+<b class="fc">&nbsp;        val escapeMasks = GhostJsonConstants.ESCAPE_MASKS</b>
+<b class="fc">&nbsp;        val localByteMask = GhostJsonConstants.BYTE_MASK</b>
+<b class="fc">&nbsp;        val localAsciiLimit = GhostJsonConstants.ASCII_LIMIT</b>
+<b class="fc">&nbsp;        val localBitmaskShift = GhostJsonConstants.BITMASK_SHIFT</b>
+<b class="fc">&nbsp;        val localBitmaskIndexMask = GhostJsonConstants.BITMASK_INDEX_MASK</b>
+<b class="fc">&nbsp;        val localBitmaskUnit = GhostJsonConstants.BITMASK_UNIT</b>
+<b class="fc">&nbsp;        val localResultNone = GhostJsonConstants.RESULT_NONE</b>
+<b class="fc">&nbsp;        val localQuoteInt = GhostJsonConstants.QUOTE_INT</b>
+&nbsp;
+<b class="fc">&nbsp;        while (true) {</b>
+<b class="fc">&nbsp;            val segmentStart = bufferStart</b>
+<b class="fc">&nbsp;            val segmentEnd = bufferEnd</b>
+<b class="pc">&nbsp;            if (currentPosition in segmentStart..&lt;segmentEnd) {</b>
+<b class="fc">&nbsp;                val segmentLimit = minOf(limit, segmentEnd)</b>
+<b class="fc">&nbsp;                var localPosition = currentPosition</b>
+&nbsp;
+<b class="pc">&nbsp;                while (localPosition + 3 &lt; segmentLimit) {</b>
+<b class="fc">&nbsp;                    val byte0 = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="pc">&nbsp;                    if (byte0 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte0 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="pc">&nbsp;                        if (byte0 == localQuoteInt) return localPosition</b>
+<b class="nc">&nbsp;                        return -1</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask</b>
+<b class="pc">&nbsp;                    if (byte1 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte1 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="pc">&nbsp;                        if (byte1 == localQuoteInt) return localPosition + 1</b>
+<b class="nc">&nbsp;                        return -1</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask</b>
+<b class="pc">&nbsp;                    if (byte2 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte2 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="pc">&nbsp;                        if (byte2 == localQuoteInt) return localPosition + 2</b>
+<b class="nc">&nbsp;                        return -1</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask</b>
+<b class="pc">&nbsp;                    if (byte3 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="pc">&nbsp;                        (escapeMasks[byte3 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="nc">&nbsp;                        if (byte3 == localQuoteInt) return localPosition + 3</b>
+<b class="nc">&nbsp;                        return -1</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    localPosition += 4</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
+<b class="nc">&nbsp;                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="nc">&nbsp;                    if (singleByte &lt; localAsciiLimit &amp;&amp;</b>
+<b class="nc">&nbsp;                        (escapeMasks[singleByte shr localBitmaskShift] shr</b>
+<b class="nc">&nbsp;                                (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="nc">&nbsp;                        if (singleByte == localQuoteInt) return localPosition</b>
+<b class="nc">&nbsp;                        return -1</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    localPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                currentPosition = localPosition</b>
+<b class="nc">&nbsp;                if (currentPosition &gt;= limit) return -1</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                getSlow(currentPosition)</b>
+<b class="nc">&nbsp;                if (bufferStart == -1 || currentPosition &gt;= bufferEnd) return -1</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun scanString(start: Int, limit: Int): Long {
+<b class="fc">&nbsp;        var currentPosition = start</b>
+<b class="fc">&nbsp;        var accumulatedHash = 0</b>
+<b class="fc">&nbsp;        var isPureAscii = true</b>
+<b class="fc">&nbsp;        val escapeMasks = GhostJsonConstants.ESCAPE_MASKS</b>
+<b class="fc">&nbsp;        val localByteMask = GhostJsonConstants.BYTE_MASK</b>
+<b class="fc">&nbsp;        val localAsciiLimit = GhostJsonConstants.ASCII_LIMIT</b>
+<b class="fc">&nbsp;        val localBitmaskShift = GhostJsonConstants.BITMASK_SHIFT</b>
+<b class="fc">&nbsp;        val localBitmaskIndexMask = GhostJsonConstants.BITMASK_INDEX_MASK</b>
+<b class="fc">&nbsp;        val localBitmaskUnit = GhostJsonConstants.BITMASK_UNIT</b>
+<b class="fc">&nbsp;        val localResultNone = GhostJsonConstants.RESULT_NONE</b>
+<b class="fc">&nbsp;        val localQuoteInt = GhostJsonConstants.QUOTE_INT</b>
+<b class="fc">&nbsp;        val localHashShift = GhostJsonConstants.HASH_SHIFT</b>
+<b class="fc">&nbsp;        val localMatchEnd = GhostJsonConstants.MATCH_END</b>
+&nbsp;
+<b class="fc">&nbsp;        while (true) {</b>
+<b class="fc">&nbsp;            val segmentStart = bufferStart</b>
+<b class="fc">&nbsp;            val segmentEnd = bufferEnd</b>
+<b class="pc">&nbsp;            if (currentPosition &gt;= segmentStart &amp;&amp; currentPosition &lt; segmentEnd) {</b>
+<b class="fc">&nbsp;                val segmentLimit = minOf(limit, segmentEnd)</b>
+<b class="fc">&nbsp;                var localPosition = currentPosition</b>
+&nbsp;
+<b class="fc">&nbsp;                while (localPosition + 3 &lt; segmentLimit) {</b>
+<b class="fc">&nbsp;                    val byte0 = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (byte0 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte0 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="pc">&nbsp;                        if (byte0 == localQuoteInt) {</b>
+<b class="fc">&nbsp;                            return GhostJsonConstants.packScanResult(localPosition - start, accumulatedHash, isPureAscii)</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        return localMatchEnd.toLong()</b>
+<b class="fc">&nbsp;                    } else if (byte0 &gt;= localAsciiLimit) {</b>
+<b class="fc">&nbsp;                        isPureAscii = false</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte0</b>
+&nbsp;
+<b class="fc">&nbsp;                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (byte1 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte1 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="pc">&nbsp;                        if (byte1 == localQuoteInt) {</b>
+<b class="fc">&nbsp;                            return GhostJsonConstants.packScanResult(</b>
+<b class="fc">&nbsp;                                localPosition + 1 - start, accumulatedHash,</b>
+<b class="fc">&nbsp;                                isPureAscii</b>
+&nbsp;                            )
+&nbsp;                        }
+<b class="nc">&nbsp;                        return localMatchEnd.toLong()</b>
+<b class="fc">&nbsp;                    } else if (byte1 &gt;= localAsciiLimit) {</b>
+<b class="fc">&nbsp;                        isPureAscii = false</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte1</b>
+&nbsp;
+<b class="fc">&nbsp;                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (byte2 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte2 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="fc">&nbsp;                        if (byte2 == localQuoteInt) {</b>
+<b class="fc">&nbsp;                            return GhostJsonConstants.packScanResult(</b>
+<b class="fc">&nbsp;                                localPosition + 2 - start, accumulatedHash,</b>
+<b class="fc">&nbsp;                                isPureAscii</b>
+&nbsp;                            )
+&nbsp;                        }
+<b class="fc">&nbsp;                        return localMatchEnd.toLong()</b>
+<b class="fc">&nbsp;                    } else if (byte2 &gt;= localAsciiLimit) {</b>
+<b class="fc">&nbsp;                        isPureAscii = false</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte2</b>
+&nbsp;
+<b class="fc">&nbsp;                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (byte3 &lt; localAsciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (escapeMasks[byte3 shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="pc">&nbsp;                        if (byte3 == localQuoteInt) {</b>
+<b class="fc">&nbsp;                            return GhostJsonConstants.packScanResult(</b>
+<b class="fc">&nbsp;                                localPosition + 3 - start, accumulatedHash,</b>
+<b class="fc">&nbsp;                                isPureAscii</b>
+&nbsp;                            )
+&nbsp;                        }
+<b class="nc">&nbsp;                        return localMatchEnd.toLong()</b>
+<b class="fc">&nbsp;                    } else if (byte3 &gt;= localAsciiLimit) {</b>
+<b class="fc">&nbsp;                        isPureAscii = false</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + byte3</b>
+&nbsp;
+<b class="fc">&nbsp;                    localPosition += 4</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
+<b class="fc">&nbsp;                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    if (singleByte &lt; localAsciiLimit &amp;&amp;</b>
+<b class="pc">&nbsp;                        (escapeMasks[singleByte shr localBitmaskShift] shr</b>
+<b class="fc">&nbsp;                                (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
+&nbsp;                    ) {
+<b class="nc">&nbsp;                        if (singleByte == localQuoteInt) {</b>
+<b class="nc">&nbsp;                            return GhostJsonConstants.packScanResult(</b>
+<b class="nc">&nbsp;                                localPosition - start, accumulatedHash,</b>
+<b class="nc">&nbsp;                                isPureAscii</b>
+&nbsp;                            )
+&nbsp;                        }
+<b class="nc">&nbsp;                        return localMatchEnd.toLong()</b>
+<b class="fc">&nbsp;                    } else if (singleByte &gt;= localAsciiLimit) {</b>
+<b class="fc">&nbsp;                        isPureAscii = false</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    accumulatedHash = (accumulatedHash shl localHashShift) - accumulatedHash + singleByte</b>
+<b class="fc">&nbsp;                    localPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                currentPosition = localPosition</b>
+<b class="pc">&nbsp;                if (currentPosition &gt;= limit) return localMatchEnd.toLong()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                getSlow(currentPosition)</b>
+<b class="pc">&nbsp;                if (bufferStart == -1 || currentPosition &gt;= bufferEnd) return localMatchEnd.toLong()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun contentEqualsString(
+&nbsp;        start: Int,
+&nbsp;        length: Int,
+&nbsp;        str: String
+&nbsp;    ): Boolean {
+<b class="fc">&nbsp;        var currentPosition = start</b>
+<b class="fc">&nbsp;        if (str.length != length) return false</b>
+&nbsp;
+<b class="fc">&nbsp;        while (true) {</b>
+<b class="fc">&nbsp;            val segmentStart = bufferStart</b>
+<b class="fc">&nbsp;            val segmentEnd = bufferEnd</b>
+<b class="pc">&nbsp;            if (currentPosition in segmentStart..&lt;segmentEnd) {</b>
+<b class="fc">&nbsp;                val segmentLimit = minOf(start + length, segmentEnd)</b>
+<b class="fc">&nbsp;                var localPosition = currentPosition</b>
+&nbsp;
+<b class="fc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
+<b class="fc">&nbsp;                    val byteValue = bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK</b>
+<b class="fc">&nbsp;                    if (byteValue != str[localPosition - start].code) return false</b>
+<b class="fc">&nbsp;                    localPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                currentPosition = localPosition</b>
+<b class="pc">&nbsp;                if (currentPosition &gt;= start + length) return true</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                getSlow(currentPosition)</b>
+<b class="pc">&nbsp;                if (bufferStart == -1 || currentPosition &gt;= bufferEnd) return false</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

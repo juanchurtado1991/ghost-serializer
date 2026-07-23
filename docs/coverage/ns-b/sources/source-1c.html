@@ -1,0 +1,261 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostWrappedKeysCaptureKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostWrappedKeysCaptureKt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostWrappedKeysCaptureKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (5/15)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;
+&nbsp;/**
+&nbsp; * Stack-scoped accumulator for [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+&nbsp; * deserialization.
+&nbsp; *
+&nbsp; * Each slot stores a zero-copy [RawJson] slice for one wire key. [materializeWrappedObject] builds
+&nbsp; * a synthetic `{ &quot;k1&quot;: v1, &quot;k2&quot;: v2, ... }` object in a pooled scratch buffer (amortized zero
+&nbsp; * allocation on the hot path).
+&nbsp; */
+&nbsp;class GhostWrappedKeysCapture(
+&nbsp;  private val slotCount: Int,
+&nbsp;) {
+&nbsp;    private val values = arrayOfNulls&lt;RawJson&gt;(slotCount)
+&nbsp;    private var presentMask = 0
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Records a captured JSON value for [index] (position in the annotation `keys` array).
+&nbsp;     */
+&nbsp;    fun put(index: Int, value: RawJson) {
+&nbsp;        values[index] = value
+&nbsp;        presentMask = presentMask or (1 shl index)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds UTF-8 bytes for a synthetic wrapper object, or `null` when [omitIfEmpty] /
+&nbsp;     * [omitIfAbsentIndices] rules reject assembly.
+&nbsp;     *
+&nbsp;     * @param keyUtf8Literals Pre-encoded `&quot;key&quot;:` prefixes (including quotes and colon) in key order.
+&nbsp;     * @param omitIfEmpty Skip assembly when every slot is absent or JSON `null`.
+&nbsp;     * @param omitIfAbsentIndices Slot indices that must be present and non-null.
+&nbsp;     */
+&nbsp;    fun materializeWrappedObject(
+&nbsp;        keyUtf8Literals: Array&lt;ByteArray&gt;,
+&nbsp;        omitIfEmpty: Boolean,
+&nbsp;        omitIfAbsentIndices: IntArray,
+&nbsp;    ): ByteArray? {
+&nbsp;        if (omitIfEmpty &amp;&amp; !hasNonNullValue()) {
+&nbsp;            return null
+&nbsp;        }
+&nbsp;        for (index in omitIfAbsentIndices) {
+&nbsp;            val captured = values[index]
+&nbsp;            if (captured == null || captured.isJsonNull) {
+&nbsp;                return null
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        var estimatedSize = OPEN_CLOSE_BRACE_SIZE
+&nbsp;        var presentCount = 0
+&nbsp;        for (index in 0 until slotCount) {
+&nbsp;            if ((presentMask and (1 shl index)) == 0) {
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            presentCount++
+&nbsp;            estimatedSize += keyUtf8Literals[index].size
+&nbsp;            estimatedSize += values[index]!!.storageLength
+&nbsp;        }
+&nbsp;        if (presentCount == 0) {
+&nbsp;            return if (omitIfEmpty) {
+&nbsp;                null
+&nbsp;            } else {
+&nbsp;                byteArrayOf(OPEN_BRACE, CLOSE_BRACE)
+&nbsp;            }
+&nbsp;        }
+&nbsp;        if (presentCount &gt; 1) {
+&nbsp;            estimatedSize += presentCount - 1
+&nbsp;        }
+&nbsp;
+&nbsp;        val scratch = acquireScratchBuffer(estimatedSize)
+&nbsp;        var writePos = 0
+&nbsp;        scratch[writePos++] = OPEN_BRACE
+&nbsp;        var wroteAny = false
+&nbsp;        for (index in 0 until slotCount) {
+&nbsp;            if ((presentMask and (1 shl index)) == 0) {
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            if (wroteAny) {
+&nbsp;                scratch[writePos++] = COMMA
+&nbsp;            }
+&nbsp;            wroteAny = true
+&nbsp;            val keyPrefix = keyUtf8Literals[index]
+&nbsp;            keyPrefix.copyInto(scratch, writePos)
+&nbsp;            writePos += keyPrefix.size
+&nbsp;            val captured = values[index]!!
+&nbsp;            captured.storage.copyInto(
+&nbsp;                scratch,
+&nbsp;                writePos,
+&nbsp;                captured.storageOffset,
+&nbsp;                captured.endExclusive,
+&nbsp;            )
+&nbsp;            writePos += captured.storageLength
+&nbsp;        }
+&nbsp;        scratch[writePos++] = CLOSE_BRACE
+&nbsp;        return scratch.copyOf(writePos)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun hasNonNullValue(): Boolean {
+&nbsp;        for (index in 0 until slotCount) {
+&nbsp;            val captured = values[index]
+&nbsp;            if (captured != null &amp;&amp; !captured.isJsonNull) {
+&nbsp;                return true
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return false
+&nbsp;    }
+&nbsp;
+&nbsp;    private companion object {
+&nbsp;        private const val OPEN_BRACE: Byte = &#39;{&#39;.code.toByte()
+&nbsp;        private const val CLOSE_BRACE: Byte = &#39;}&#39;.code.toByte()
+&nbsp;        private const val COMMA: Byte = &#39;,&#39;.code.toByte()
+&nbsp;        private const val OPEN_CLOSE_BRACE_SIZE = 2
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Captures the next JSON value into [capture] at [slotIndex] using a zero-copy [RawJson] slice.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.captureWrappedKey(capture: GhostWrappedKeysCapture, slotIndex: Int) {
+<b class="fc">&nbsp;    capture.put(slotIndex, captureRawJson())</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * @see captureWrappedKey
+&nbsp; */
+&nbsp;fun GhostJsonReader.captureWrappedKey(capture: GhostWrappedKeysCapture, slotIndex: Int) {
+<b class="nc">&nbsp;    capture.put(slotIndex, captureRawJson())</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * @see captureWrappedKey
+&nbsp; */
+&nbsp;fun GhostJsonStringReader.captureWrappedKey(capture: GhostWrappedKeysCapture, slotIndex: Int) {
+<b class="nc">&nbsp;    capture.put(slotIndex, captureRawJson())</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

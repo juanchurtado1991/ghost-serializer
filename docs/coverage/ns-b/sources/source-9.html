@@ -1,0 +1,176 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonFlatReaderCharsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonFlatReaderCharsKt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonFlatReaderCharsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (6/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.9%
+  </span>
+  <span class="absValue">
+    (17/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.5%
+  </span>
+  <span class="absValue">
+    (100/136)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads a JSON string value that must contain exactly one UTF-16 [Char].
+&nbsp; *
+&nbsp; * Fast path: single unescaped ASCII/Latin-1 byte between quotes — no [String] allocation.
+&nbsp; */
+&nbsp;fun GhostJsonFlatReader.nextChar(): Char {
+<b class="pc">&nbsp;    if (nextNonWhitespace() != C.QUOTE_INT) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_QUOTE)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val start = position</b>
+<b class="fc">&nbsp;    val localData = rawData</b>
+<b class="fc">&nbsp;    val scanResult = scanStringImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }</b>
+&nbsp;
+<b class="fc">&nbsp;    if (scanResult != -1L) {</b>
+<b class="fc">&nbsp;        val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()</b>
+<b class="fc">&nbsp;        val only7Bit = (scanResult and C.SCAN_7BIT_BIT) != 0L</b>
+<b class="fc">&nbsp;        val end = start + length</b>
+<b class="pc">&nbsp;        if (length == C.SINGLE_CHAR_JSON_LENGTH &amp;&amp; only7Bit) {</b>
+<b class="fc">&nbsp;            position = end + 1</b>
+<b class="fc">&nbsp;            nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;            return (localData[start].toInt() and C.BYTE_MASK).toChar()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (length == 0) {</b>
+<b class="nc">&nbsp;            position = end + 1</b>
+<b class="nc">&nbsp;            nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val decoded = readQuotedStringFromContentStart(start)</b>
+<b class="pc">&nbsp;    if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {</b>
+<b class="nc">&nbsp;        throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return decoded[0]</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.readQuotedStringFromContentStart(contentStart: Int): String {
+<b class="fc">&nbsp;    position = contentStart - 1</b>
+<b class="fc">&nbsp;    return readQuotedString()</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

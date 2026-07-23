@@ -1,0 +1,677 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ListSerializer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.serializers</a>
+</div>
+
+<h1>Coverage Summary for Class: ListSerializer (com.ghost.serialization.serializers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ListSerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    55.6%
+  </span>
+  <span class="absValue">
+    (5/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    26.7%
+  </span>
+  <span class="absValue">
+    (8/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    39.7%
+  </span>
+  <span class="absValue">
+    (23/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    36.2%
+  </span>
+  <span class="absValue">
+    (92/254)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.serializers
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.beginArray
+&nbsp;import com.ghost.serialization.parser.beginObject
+&nbsp;import com.ghost.serialization.parser.consumeArraySeparator
+&nbsp;import com.ghost.serialization.parser.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.decodeResilient
+&nbsp;import com.ghost.serialization.parser.endArray
+&nbsp;import com.ghost.serialization.parser.endObject
+&nbsp;import com.ghost.serialization.parser.hasNext
+&nbsp;import com.ghost.serialization.parser.nextInt
+&nbsp;import com.ghost.serialization.parser.nextKey
+&nbsp;import com.ghost.serialization.parser.nextLong
+&nbsp;import com.ghost.serialization.parser.readList
+&nbsp;import com.ghost.serialization.parser.readSet
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import kotlin.collections.RandomAccess
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer implementation for standard Kotlin [List] collections.
+&nbsp; */
+<b class="nc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+<b class="fc">&nbsp;class ListSerializer&lt;T&gt;(</b>
+<b class="fc">&nbsp;    private val itemSerializer: GhostSerializer&lt;T&gt;</b>
+&nbsp;) : GhostSerializer&lt;List&lt;T&gt;&gt; {
+&nbsp;
+&nbsp;    override val typeName: String
+<b class="nc">&nbsp;        get() = &quot;List&lt;${itemSerializer.typeName}&gt;&quot;</b>
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: List&lt;T&gt;
+&nbsp;    ) {
+<b class="nc">&nbsp;        writer.beginArray()</b>
+<b class="nc">&nbsp;        val size = value.size</b>
+<b class="nc">&nbsp;        if (size == 0) {</b>
+<b class="nc">&nbsp;            writer.endArray()</b>
+&nbsp;            return
+&nbsp;        }
+<b class="nc">&nbsp;        if (value is RandomAccess) {</b>
+<b class="nc">&nbsp;            for (i in 0 until size) {</b>
+<b class="nc">&nbsp;                itemSerializer.serialize(writer, value[i])</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="nc">&nbsp;            for (item in value) {</b>
+<b class="nc">&nbsp;                itemSerializer.serialize(writer, item)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        writer.endArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonFlatWriter,
+&nbsp;        value: List&lt;T&gt;
+&nbsp;    ) {
+<b class="nc">&nbsp;        writer.beginArray()</b>
+<b class="nc">&nbsp;        val size = value.size</b>
+<b class="nc">&nbsp;        if (size == 0) {</b>
+<b class="nc">&nbsp;            writer.endArray()</b>
+&nbsp;            return
+&nbsp;        }
+<b class="nc">&nbsp;        if (value is RandomAccess) {</b>
+<b class="nc">&nbsp;            for (i in 0 until size) {</b>
+<b class="nc">&nbsp;                itemSerializer.serialize(writer, value[i])</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="nc">&nbsp;            for (item in value) {</b>
+<b class="nc">&nbsp;                itemSerializer.serialize(writer, item)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        writer.endArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: List&lt;T&gt;
+&nbsp;    ) {
+<b class="fc">&nbsp;        writer.beginArray()</b>
+<b class="fc">&nbsp;        val size = value.size</b>
+<b class="pc">&nbsp;        if (size == 0) {</b>
+<b class="nc">&nbsp;            writer.endArray()</b>
+&nbsp;            return
+&nbsp;        }
+<b class="pc">&nbsp;        if (value is RandomAccess) {</b>
+<b class="fc">&nbsp;            for (i in 0 until size) {</b>
+<b class="fc">&nbsp;                itemSerializer.serialize(writer, value[i])</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="nc">&nbsp;            for (item in value) {</b>
+<b class="nc">&nbsp;                itemSerializer.serialize(writer, item)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonReader
+&nbsp;    ): List&lt;T&gt; {
+<b class="pc">&nbsp;        return if (itemSerializer.isResilient) {</b>
+<b class="nc">&nbsp;            reader.readList {</b>
+<b class="nc">&nbsp;                reader.decodeResilient {</b>
+<b class="nc">&nbsp;                    itemSerializer.deserialize(reader)</b>
+<b class="nc">&nbsp;                }</b>
+<b class="nc">&nbsp;            }.filterNotNull()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            reader.readList {</b>
+<b class="fc">&nbsp;                itemSerializer.deserialize(reader)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonFlatReader
+&nbsp;    ): List&lt;T&gt; {
+<b class="pc">&nbsp;        return if (itemSerializer.isResilient) {</b>
+<b class="nc">&nbsp;            reader.readList {</b>
+<b class="nc">&nbsp;                reader.decodeResilient {</b>
+<b class="nc">&nbsp;                    itemSerializer.deserialize(reader)</b>
+<b class="nc">&nbsp;                }</b>
+<b class="nc">&nbsp;            }.filterNotNull()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            reader.readList {</b>
+<b class="fc">&nbsp;                itemSerializer.deserialize(reader)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): List&lt;T&gt; {
+<b class="fc">&nbsp;        return if (itemSerializer.isResilient) {</b>
+<b class="fc">&nbsp;            reader.readList {</b>
+<b class="fc">&nbsp;                reader.decodeResilient {</b>
+<b class="fc">&nbsp;                    itemSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }.filterNotNull()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            reader.readList {</b>
+<b class="fc">&nbsp;                itemSerializer.deserialize(reader)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer implementation for standard Kotlin [Set] collections.
+&nbsp; * Wire format is a JSON array; decode builds [HashSet] directly without a [List] intermediate.
+&nbsp; */
+&nbsp;@OptIn(InternalGhostApi::class)
+&nbsp;class SetSerializer&lt;T&gt;(
+&nbsp;    private val itemSerializer: GhostSerializer&lt;T&gt;
+&nbsp;) : GhostSerializer&lt;Set&lt;T&gt;&gt; {
+&nbsp;
+&nbsp;    override val typeName: String
+&nbsp;        get() = &quot;Set&lt;${itemSerializer.typeName}&gt;&quot;
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: Set&lt;T&gt;
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        if (value.isEmpty()) {
+&nbsp;            writer.endArray()
+&nbsp;            return
+&nbsp;        }
+&nbsp;        for (item in value) {
+&nbsp;            itemSerializer.serialize(writer, item)
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonFlatWriter,
+&nbsp;        value: Set&lt;T&gt;
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        if (value.isEmpty()) {
+&nbsp;            writer.endArray()
+&nbsp;            return
+&nbsp;        }
+&nbsp;        for (item in value) {
+&nbsp;            itemSerializer.serialize(writer, item)
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: Set&lt;T&gt;
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        if (value.isEmpty()) {
+&nbsp;            writer.endArray()
+&nbsp;            return
+&nbsp;        }
+&nbsp;        for (item in value) {
+&nbsp;            itemSerializer.serialize(writer, item)
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonReader
+&nbsp;    ): Set&lt;T&gt; {
+&nbsp;        return if (itemSerializer.isResilient) {
+&nbsp;            reader.readSet {
+&nbsp;                reader.decodeResilient {
+&nbsp;                    itemSerializer.deserialize(reader)
+&nbsp;                }
+&nbsp;            }.filterNotNull().toSet()
+&nbsp;        } else {
+&nbsp;            reader.readSet {
+&nbsp;                itemSerializer.deserialize(reader)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonFlatReader
+&nbsp;    ): Set&lt;T&gt; {
+&nbsp;        return if (itemSerializer.isResilient) {
+&nbsp;            reader.readSet {
+&nbsp;                reader.decodeResilient {
+&nbsp;                    itemSerializer.deserialize(reader)
+&nbsp;                }
+&nbsp;            }.filterNotNull().toSet()
+&nbsp;        } else {
+&nbsp;            reader.readSet {
+&nbsp;                itemSerializer.deserialize(reader)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): Set&lt;T&gt; {
+&nbsp;        return if (itemSerializer.isResilient) {
+&nbsp;            reader.readSet {
+&nbsp;                reader.decodeResilient {
+&nbsp;                    itemSerializer.deserialize(reader)
+&nbsp;                }
+&nbsp;            }.filterNotNull().toSet()
+&nbsp;        } else {
+&nbsp;            reader.readSet {
+&nbsp;                itemSerializer.deserialize(reader)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer implementation for standard Kotlin [Map] collections with String keys.
+&nbsp; */
+&nbsp;class MapSerializer&lt;V&gt;(
+&nbsp;    private val valueSerializer: GhostSerializer&lt;V&gt;
+&nbsp;) : GhostSerializer&lt;Map&lt;String, V&gt;&gt; {
+&nbsp;
+&nbsp;    override val typeName: String get() =
+&nbsp;        &quot;Map&lt;String, ${valueSerializer.typeName}&gt;&quot;
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) {
+&nbsp;        writer.beginObject()
+&nbsp;        for (entry in value.entries) {
+&nbsp;            writer.name(entry.key)
+&nbsp;            valueSerializer.serialize(writer, entry.value)
+&nbsp;        }
+&nbsp;        writer.endObject()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonFlatWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) {
+&nbsp;        writer.beginObject()
+&nbsp;        for (entry in value.entries) {
+&nbsp;            writer.name(entry.key)
+&nbsp;            valueSerializer.serialize(writer, entry.value)
+&nbsp;        }
+&nbsp;        writer.endObject()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) {
+&nbsp;        writer.beginObject()
+&nbsp;        for (entry in value.entries) {
+&nbsp;            writer.name(entry.key)
+&nbsp;            valueSerializer.serialize(writer, entry.value)
+&nbsp;        }
+&nbsp;        writer.endObject()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonReader
+&nbsp;    ): Map&lt;String, V&gt; {
+&nbsp;        reader.beginObject()
+&nbsp;        if (reader.peekByte() == CLOSE_OBJ) {
+&nbsp;            reader.endObject()
+&nbsp;            return emptyMap()
+&nbsp;        }
+&nbsp;
+&nbsp;        return buildMap {
+&nbsp;            while (true) {
+&nbsp;                val key = reader.nextKey() ?: break
+&nbsp;                reader.consumeKeySeparator()
+&nbsp;                put(
+&nbsp;                    key,
+&nbsp;                    valueSerializer.deserialize(reader)
+&nbsp;                )
+&nbsp;            }
+&nbsp;            reader.endObject()
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonFlatReader
+&nbsp;    ): Map&lt;String, V&gt; {
+&nbsp;        reader.beginObject()
+&nbsp;        if (reader.peekByte() == CLOSE_OBJ) {
+&nbsp;            reader.endObject()
+&nbsp;            return emptyMap()
+&nbsp;        }
+&nbsp;
+&nbsp;        return buildMap {
+&nbsp;            while (true) {
+&nbsp;                val key = reader.nextKey() ?: break
+&nbsp;                reader.consumeKeySeparator()
+&nbsp;                put(
+&nbsp;                    key,
+&nbsp;                    valueSerializer.deserialize(reader)
+&nbsp;                )
+&nbsp;            }
+&nbsp;            reader.endObject()
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): Map&lt;String, V&gt; {
+&nbsp;        reader.beginObject()
+&nbsp;        if (reader.peekByte() == CLOSE_OBJ) {
+&nbsp;            reader.endObject()
+&nbsp;            return emptyMap()
+&nbsp;        }
+&nbsp;
+&nbsp;        return buildMap {
+&nbsp;            while (true) {
+&nbsp;                val key = reader.nextKey() ?: break
+&nbsp;                reader.consumeKeySeparator()
+&nbsp;                put(
+&nbsp;                    key,
+&nbsp;                    valueSerializer.deserialize(reader)
+&nbsp;                )
+&nbsp;            }
+&nbsp;            reader.endObject()
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer implementation for primitive [IntArray].
+&nbsp; */
+&nbsp;object IntArraySerializer : GhostSerializer&lt;IntArray&gt; {
+&nbsp;
+&nbsp;    override val typeName: String = &quot;IntArray&quot;
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: IntArray
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        val size = value.size
+&nbsp;        for (i in 0 until size) {
+&nbsp;            writer.value(value[i])
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonFlatWriter,
+&nbsp;        value: IntArray
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        val size = value.size
+&nbsp;        for (i in 0 until size) {
+&nbsp;            writer.value(value[i])
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: IntArray
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        val size = value.size
+&nbsp;        for (i in 0 until size) {
+&nbsp;            writer.value(value[i])
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonReader
+&nbsp;    ): IntArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return IntArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostIntList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextInt())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonFlatReader
+&nbsp;    ): IntArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return IntArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostIntList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextInt())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer implementation for primitive [LongArray].
+&nbsp; */
+&nbsp;object LongArraySerializer : GhostSerializer&lt;LongArray&gt; {
+&nbsp;
+&nbsp;    override val typeName: String = &quot;LongArray&quot;
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: LongArray
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        val size = value.size
+&nbsp;        for (i in 0 until size) {
+&nbsp;            writer.value(value[i])
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonFlatWriter,
+&nbsp;        value: LongArray
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        val size = value.size
+&nbsp;        for (i in 0 until size) {
+&nbsp;            writer.value(value[i])
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: LongArray
+&nbsp;    ) {
+&nbsp;        writer.beginArray()
+&nbsp;        val size = value.size
+&nbsp;        for (i in 0 until size) {
+&nbsp;            writer.value(value[i])
+&nbsp;        }
+&nbsp;        writer.endArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonReader
+&nbsp;    ): LongArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return LongArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostLongList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextLong())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonFlatReader
+&nbsp;    ): LongArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return LongArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostLongList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextLong())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

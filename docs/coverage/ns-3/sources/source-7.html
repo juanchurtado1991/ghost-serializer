@@ -1,0 +1,180 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoBytesValueSerializer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoBytesValueSerializer (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoBytesValueSerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (6/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.7%
+  </span>
+  <span class="absValue">
+    (21/31)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostProtoJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.decodeBase64String
+&nbsp;import com.ghost.serialization.parser.encodeBase64String
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import kotlin.jvm.JvmInline
+&nbsp;
+&nbsp;/**
+&nbsp; * Wrapper message for `bytes`.
+&nbsp; *
+&nbsp; * The JSON representation for `BytesValue` is JSON string.
+&nbsp; */
+&nbsp;@JvmInline value class ProtoBytesValue(val value: ByteArray)
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer for [ProtoBytesValue].
+&nbsp; */
+&nbsp;object ProtoBytesValueSerializer : GhostSerializer&lt;ProtoBytesValue&gt; {
+<b class="fc">&nbsp;    override val typeName: String get() = C.WKT_BYTES_VALUE_TYPE</b>
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
+<b class="nc">&nbsp;        writer.value(encodeBase64String(value.value))</b>
+&nbsp;    }
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBytesValue) {
+<b class="fc">&nbsp;        writer.value(encodeBase64String(value.value))</b>
+&nbsp;    }
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBytesValue) {
+<b class="nc">&nbsp;        writer.value(encodeBase64String(value.value))</b>
+&nbsp;    }
+&nbsp;    // Reader-agnostic: works on any reader flavor via nextString() + shared decoder, rather
+&nbsp;    // than requiring the pooled-scratch-buffer fast path on GhostProtoJsonFlatReader
+&nbsp;    // specifically.
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
+<b class="fc">&nbsp;        ProtoBytesValue(decodeBase64String(reader.nextString()))</b>
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
+<b class="fc">&nbsp;        if (reader is GhostProtoJsonFlatReader) {</b>
+<b class="fc">&nbsp;            return ProtoBytesValue(reader.nextProtoBytes())</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return ProtoBytesValue(decodeBase64String(reader.nextString()))</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

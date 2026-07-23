@@ -1,0 +1,98 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostHeuristics_jvmKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostHeuristics_jvmKt (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostHeuristics_jvmKt</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;private const val PROP_INITIAL_COLLECTION_CAPACITY = &quot;ghost.initialCollectionCapacity&quot;
+&nbsp;private const val PROP_MAX_STRING_POOL_LENGTH = &quot;ghost.maxStringPoolLength&quot;
+&nbsp;private const val PROP_MAX_COLLECTION_SIZE = &quot;ghost.maxCollectionSize&quot;
+&nbsp;private const val PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE = &quot;ghost.maxDiscriminatorPeekDistance&quot;
+&nbsp;private const val PROP_MAX_WARM_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmWriteBufferCapacity&quot;
+&nbsp;private const val PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmCharWriteBufferCapacity&quot;
+&nbsp;
+&nbsp;actual object GhostHeuristics {
+&nbsp;    actual val initialCollectionCapacity: Int = 
+&nbsp;        System.getProperty(PROP_INITIAL_COLLECTION_CAPACITY)?.toIntOrNull() ?: 10
+&nbsp;    actual val maxStringPoolLength: Int = 
+&nbsp;        System.getProperty(PROP_MAX_STRING_POOL_LENGTH)?.toIntOrNull() ?: 64
+&nbsp;    actual val maxCollectionSize: Int = 
+&nbsp;        System.getProperty(PROP_MAX_COLLECTION_SIZE)?.toIntOrNull() ?: 1_000_000
+&nbsp;    actual val maxDiscriminatorPeekDistance: Int = 
+&nbsp;        System.getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)?.toIntOrNull() ?: 2048
+&nbsp;    actual val maxWarmWriteBufferCapacity: Int = 
+&nbsp;        System.getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (8 * 1024 * 1024)
+&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int = 
+&nbsp;        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (2 * 1024 * 1024)
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

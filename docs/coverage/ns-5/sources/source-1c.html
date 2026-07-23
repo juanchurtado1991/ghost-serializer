@@ -1,0 +1,320 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > SerializeCodeEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: SerializeCodeEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SerializeCodeEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.7%
+  </span>
+  <span class="absValue">
+    (27/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (90/100)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.9%
+  </span>
+  <span class="absValue">
+    (426/474)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.FunSpec
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Main coordinator (Orchestrator) for the serialization code generation process.
+&nbsp; *
+&nbsp; * This class implements the Strategy Pattern to select the most efficient serialization
+&nbsp; * strategy for a given DTO. It inspects the DTO&#39;s metadata (sealed hierarchy, enum, size)
+&nbsp; * and delegates the generation task to specialized emitters.
+&nbsp; */
+&nbsp;internal class SerializeCodeEmitter(
+<b class="fc">&nbsp;    private val properties: List&lt;GhostPropertyModel&gt;,</b>
+<b class="fc">&nbsp;    private val originalClassName: ClassName,</b>
+<b class="fc">&nbsp;    private val isSealed: Boolean,</b>
+<b class="fc">&nbsp;    private val isValue: Boolean,</b>
+<b class="fc">&nbsp;    private val isEnum: Boolean,</b>
+<b class="fc">&nbsp;    private val sealedSubclasses: List&lt;KSClassDeclaration&gt;,</b>
+<b class="fc">&nbsp;    private val discriminator: String? = null,</b>
+<b class="fc">&nbsp;    private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY</b>
+&nbsp;) {
+&nbsp;    // Sorts properties to group flattened paths together, avoiding duplicate bracket opens/closes.
+<b class="fc">&nbsp;    private val sortedProperties = run {</b>
+<b class="fc">&nbsp;        val rootToFirstIndex = mutableMapOf&lt;String, Int&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;        properties.forEachIndexed { index, prop -&gt;</b>
+<b class="pc">&nbsp;            val root = prop.flattenPath?.firstOrNull()</b>
+<b class="pc">&nbsp;                ?: prop.wrapPath?.firstOrNull()</b>
+<b class="fc">&nbsp;                ?: prop.jsonName</b>
+&nbsp;
+<b class="fc">&nbsp;            rootToFirstIndex.putIfAbsent(root, index)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        val propertyPaths = properties.associateWith { prop -&gt;</b>
+<b class="pc">&nbsp;            prop.flattenPath?.joinToString(C.STR_DOT) ?: prop.jsonName</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        properties.sortedWith { p1, p2 -&gt;</b>
+<b class="pc">&nbsp;            val root1 = p1.flattenPath?.firstOrNull()</b>
+<b class="pc">&nbsp;                ?: p1.wrapPath?.firstOrNull()</b>
+<b class="fc">&nbsp;                ?: p1.jsonName</b>
+&nbsp;
+<b class="pc">&nbsp;            val root2 = p2.flattenPath?.firstOrNull()</b>
+<b class="pc">&nbsp;                ?: p2.wrapPath?.firstOrNull()</b>
+<b class="fc">&nbsp;                ?: p2.jsonName</b>
+&nbsp;
+<b class="fc">&nbsp;            val index1 = rootToFirstIndex[root1]!!</b>
+<b class="fc">&nbsp;            val index2 = rootToFirstIndex[root2]!!</b>
+&nbsp;
+<b class="fc">&nbsp;            if (index1 != index2) {</b>
+<b class="fc">&nbsp;                index1.compareTo(index2)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val path1 = propertyPaths[p1]!!</b>
+<b class="fc">&nbsp;                val path2 = propertyPaths[p2]!!</b>
+<b class="fc">&nbsp;                path1.compareTo(path2)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private var activeEmitter: BaseSerializeEmitter? = null
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds the [FunSpec] of the serialize function.
+&nbsp;     *
+&nbsp;     * @param writerClass The JSON writer class being targeted.
+&nbsp;     * @param typeSpecBuilder Companion object builder where nested options or shards can be registered.
+&nbsp;     * @return Generated KotlinPoet FunSpec for serialization.
+&nbsp;     */
+&nbsp;    fun build(
+&nbsp;        writerClass: ClassName,
+&nbsp;        typeSpecBuilder: TypeSpec.Builder
+&nbsp;    ): FunSpec {
+<b class="fc">&nbsp;        val code = CodeBlock.builder()</b>
+&nbsp;
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            isSealed -&gt; {</b>
+<b class="fc">&nbsp;                emitSealedDispatch(code)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            isValue -&gt; {</b>
+<b class="fc">&nbsp;                emitValueUnboxing(code)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            isEnum -&gt; {</b>
+<b class="fc">&nbsp;                emitEnumSerialization(code)</b>
+&nbsp;            }
+<b class="pc">&nbsp;            properties.size &gt; C.PROPERTY_MAX_SIZE -&gt; {</b>
+<b class="nc">&nbsp;                val fragmented = FragmentedSerializeEmitter(</b>
+<b class="nc">&nbsp;                    sortedProperties,</b>
+<b class="nc">&nbsp;                    originalClassName,</b>
+<b class="nc">&nbsp;                    writerClass</b>
+&nbsp;                )
+<b class="nc">&nbsp;                activeEmitter = fragmented</b>
+<b class="nc">&nbsp;                fragmented.emit(</b>
+<b class="nc">&nbsp;                    code,</b>
+<b class="nc">&nbsp;                    typeSpecBuilder,</b>
+<b class="nc">&nbsp;                    discriminator,</b>
+<b class="nc">&nbsp;                    sealedDiscriminatorKey</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;            else -&gt; {
+<b class="fc">&nbsp;                val standard = StandardSerializeEmitter(</b>
+<b class="fc">&nbsp;                    sortedProperties,</b>
+<b class="fc">&nbsp;                    originalClassName,</b>
+<b class="fc">&nbsp;                    writerClass</b>
+&nbsp;                )
+<b class="fc">&nbsp;                activeEmitter = standard</b>
+<b class="fc">&nbsp;                standard.emit(</b>
+<b class="fc">&nbsp;                    code,</b>
+<b class="fc">&nbsp;                    discriminator,</b>
+<b class="fc">&nbsp;                    sealedDiscriminatorKey</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return FunSpec.builder(C.STR_FUN_SERIALIZE)</b>
+<b class="fc">&nbsp;            .addModifiers(KModifier.OVERRIDE)</b>
+<b class="fc">&nbsp;            .addParameter(C.STR_PARAM_WRITER, writerClass)</b>
+<b class="fc">&nbsp;            .addParameter(C.STR_PARAM_VALUE, originalClassName)</b>
+<b class="fc">&nbsp;            .addCode(code.build())</b>
+<b class="fc">&nbsp;            .build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Forwards the contextual serializers injection call to the active delegated emitter.
+&nbsp;     */
+&nbsp;    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
+<b class="pc">&nbsp;        activeEmitter?.injectContextualSerializers(typeSpecBuilder)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits enum serialization statements.
+&nbsp;     */
+&nbsp;    private fun emitEnumSerialization(code: CodeBlock.Builder) {
+<b class="pc">&nbsp;        val enumValues = properties.firstOrNull()?.enumValues</b>
+<b class="pc">&nbsp;        if (enumValues != null) {</b>
+<b class="fc">&nbsp;            code.beginControlFlow(C.STR_WHEN_VALUE)</b>
+<b class="fc">&nbsp;            enumValues.forEach { (kotlinName, serialName) -&gt;</b>
+<b class="fc">&nbsp;                code.addStatement(</b>
+<b class="fc">&nbsp;                    C.STR_ENUM_MEMBER_VAL,</b>
+<b class="fc">&nbsp;                    originalClassName,</b>
+<b class="fc">&nbsp;                    kotlinName,</b>
+<b class="fc">&nbsp;                    serialName</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            code.endControlFlow()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            code.addStatement(C.STR_WRITER_VAL_ENUM_NAME)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits polymorphic sealed class type-matching dispatch blocks.
+&nbsp;     */
+&nbsp;    private fun emitSealedDispatch(code: CodeBlock.Builder) {
+<b class="fc">&nbsp;        code.beginControlFlow(C.STR_WHEN_VALUE)</b>
+<b class="fc">&nbsp;        sealedSubclasses.forEach { subclass -&gt;</b>
+<b class="fc">&nbsp;            val subClassName = subclass.toClassName()</b>
+<b class="fc">&nbsp;            val serializerName = subClassName.serializerClassName()</b>
+<b class="fc">&nbsp;            code.addStatement(</b>
+<b class="fc">&nbsp;                C.STR_IS_T_ARROW_T_SERIALIZE,</b>
+<b class="fc">&nbsp;                subClassName,</b>
+<b class="fc">&nbsp;                serializerName</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        code.endControlFlow()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits value class unboxing statement.
+&nbsp;     */
+&nbsp;    private fun emitValueUnboxing(code: CodeBlock.Builder) {
+<b class="pc">&nbsp;        val prop = properties.firstOrNull() ?: return</b>
+<b class="fc">&nbsp;        val accessor = CodeBlock.of(</b>
+<b class="fc">&nbsp;            C.TEMPLATE_ACCESSOR,</b>
+<b class="fc">&nbsp;            C.STR_PARAM_VALUE,</b>
+<b class="fc">&nbsp;            prop.kotlinName</b>
+&nbsp;        )
+&nbsp;        // Instantiates a standard emitter to resolve value writing of the unboxed value.
+<b class="fc">&nbsp;        val valueEmitter = StandardSerializeEmitter(</b>
+<b class="fc">&nbsp;            properties,</b>
+<b class="fc">&nbsp;            originalClassName,</b>
+<b class="fc">&nbsp;            ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_WRITER)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        valueEmitter.emitValue(code, prop, accessor)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

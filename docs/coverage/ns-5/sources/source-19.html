@@ -1,0 +1,275 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > InferredSubclassModel</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: InferredSubclassModel (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">InferredSubclassModel</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.TypeName
+&nbsp;
+&nbsp;/**
+&nbsp; * Reader parameter type resolved from a custom coder function signature.
+&nbsp; */
+&nbsp;internal enum class CustomCoderReaderKind {
+&nbsp;    /** `fun(GhostJsonReader): T` — bytes / streaming channel. */
+&nbsp;    BYTES,
+&nbsp;
+&nbsp;    /** `fun(GhostJsonFlatReader): T` — flat byte buffer channel. */
+&nbsp;    FLAT,
+&nbsp;
+&nbsp;    /** `fun(GhostJsonStringReader): T` — native string channel (textChannel). */
+&nbsp;    STRING,
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Metadata configuration for custom encoding/decoding providers.
+&nbsp; *
+&nbsp; * @property provider The KotlinPoet [TypeName] of the object/class containing the custom coder function.
+&nbsp; * @property functionName The name of the custom encoding/decoding function to delegate to.
+&nbsp; * @property readerKinds Reader parameter types available across function overloads.
+&nbsp; */
+&nbsp;internal data class CustomCoderModel(
+&nbsp;    val provider: TypeName,
+&nbsp;    val functionName: String,
+&nbsp;    val readerKinds: Set&lt;CustomCoderReaderKind&gt; = setOf(CustomCoderReaderKind.BYTES),
+&nbsp;) {
+&nbsp;    fun supports(kind: CustomCoderReaderKind): Boolean = kind in readerKinds
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Metadata representation of a subclass target during inferred sealed class deserialization.
+&nbsp; *
+&nbsp; * @property declaration The KSP class declaration of the sealed subclass.
+&nbsp; * @property properties The list of analyzed property models belonging to this subclass.
+&nbsp; */
+<b class="fc">&nbsp;internal data class InferredSubclassModel(</b>
+<b class="fc">&nbsp;    val declaration: KSClassDeclaration,</b>
+<b class="fc">&nbsp;    val properties: List&lt;GhostPropertyModel&gt;</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Main metadata model representing a serializable property.
+&nbsp; *
+&nbsp; * Contains all type resolutions, constraints, annotations, and hierarchical structures
+&nbsp; * resolved during compiler analysis to drive target code generation.
+&nbsp; *
+&nbsp; * @property kotlinName Name of the property as declared in Kotlin code.
+&nbsp; * @property jsonName Target JSON field name (resolves compatibility annotations like GhostName).
+&nbsp; * @property type The KSP [KSType] representation of the property&#39;s resolved type.
+&nbsp; * @property typeName KotlinPoet [TypeName] representation of the property&#39;s type.
+&nbsp; * @property isNullable True if the property&#39;s type is marked nullable.
+&nbsp; * @property isGhost True if the property&#39;s type is itself annotated with @GhostSerialization.
+&nbsp; * @property isList True if the property type is a [List].
+&nbsp; * @property isSet True if the property type is a [Set].
+&nbsp; * @property isEnum True if the property type is an [Enum].
+&nbsp; * @property listInnerType The resolved [KSType] of the generic element inside the list, if applicable.
+&nbsp; * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
+&nbsp; * @property listInnerIsEnum True if the list inner type is an enum.
+&nbsp; * @property hasDefaultValue True if the property has a parameter default value in the constructor.
+&nbsp; * @property isMap True if the property type is a [Map].
+&nbsp; * @property mapValueType The resolved [KSType] of the map&#39;s value parameter, if applicable.
+&nbsp; * @property mapValueIsGhost True if the map&#39;s value type is annotated with @GhostSerialization.
+&nbsp; * @property isPrimitiveArray True if the type represents a primitive array (e.g. IntArray, LongArray).
+&nbsp; * @property primitiveArrayType String suffix/type representing the primitive array element type.
+&nbsp; * @property isValueClass True if the type is declared as an inline or value class.
+&nbsp; * @property valueClassProperty Analyzed property model of the underlying value class property, if applicable.
+&nbsp; * @property isSealedClass True if the type represents a sealed class hierarchy.
+&nbsp; * @property sealedSubclasses List of declarations for all direct subclasses of the sealed class.
+&nbsp; * @property enumValues Map of enum entry names to their customized JSON serialization names.
+&nbsp; * @property isResilient True if this property or class is marked with @GhostResilient.
+&nbsp; * @property isContextual True if the type relies on contextual serialization (e.g., third party classes).
+&nbsp; * @property customDecoder Provider configuration for a custom decoder annotated on this property.
+&nbsp; * @property customEncoder Provider configuration for a custom encoder annotated on this property.
+&nbsp; * @property flattenPath Nested JSON path list if this property is flattened using @GhostFlatten.
+&nbsp; * @property wrapPath Nested JSON path list if this property is wrapped using @GhostWrap.
+&nbsp; * @property wrappedSourceKeys Wire keys collapsed into this property via @GhostWrappedKeys.
+&nbsp; * @property wrappedOmitIfEmpty When true, absent/null-only captures yield a null wrapper property.
+&nbsp; * @property wrappedOmitIfAbsent Keys that force a null wrapper when absent or JSON null.
+&nbsp; * @property wrappedUnwrapFields Ordered wire fields used to unwrap this property during serialization.
+&nbsp; * @property isInferredSignature True if this property serves as an inferred signature candidate.
+&nbsp; * @property inferredSubclasses Inferred sealed subclasses associated with this property model.
+&nbsp; * @property isProto True if the enclosing class is annotated with `@GhostProtoSerialization`.
+&nbsp; *   Applies proto3 JSON mapping rules to this property: 64-bit integer (`Long`) fields are
+&nbsp; *   read/written as quoted decimal strings instead of bare JSON numbers.
+&nbsp; */
+&nbsp;internal data class GhostPropertyModel(
+&nbsp;    val kotlinName: String,
+&nbsp;    val jsonName: String,
+&nbsp;    val type: KSType,
+&nbsp;    val typeName: TypeName,
+&nbsp;    val isNullable: Boolean,
+&nbsp;    val isGhost: Boolean,
+&nbsp;    val isList: Boolean,
+&nbsp;    val isSet: Boolean = false,
+&nbsp;    val isEnum: Boolean,
+&nbsp;    val listInnerType: KSType? = null,
+&nbsp;    val listInnerIsGhost: Boolean = false,
+&nbsp;    val listInnerIsEnum: Boolean = false,
+&nbsp;    val hasDefaultValue: Boolean = false,
+&nbsp;    val isInConstructor: Boolean = true,
+&nbsp;    val isMap: Boolean = false,
+&nbsp;    val mapValueType: KSType? = null,
+&nbsp;    val mapValueIsGhost: Boolean = false,
+&nbsp;    val isPrimitiveArray: Boolean = false,
+&nbsp;    val primitiveArrayType: String? = null,
+&nbsp;    val isValueClass: Boolean = false,
+&nbsp;    val valueClassProperty: GhostPropertyModel? = null,
+&nbsp;    val isSealedClass: Boolean = false,
+&nbsp;    val sealedSubclasses: List&lt;KSClassDeclaration&gt; = emptyList(),
+&nbsp;    val enumValues: Map&lt;String, String&gt;? = null,
+&nbsp;    val isResilient: Boolean = false,
+&nbsp;    val isContextual: Boolean = false,
+&nbsp;    val customDecoder: CustomCoderModel? = null,
+&nbsp;    val customEncoder: CustomCoderModel? = null,
+&nbsp;    val flattenPath: List&lt;String&gt;? = null,
+&nbsp;    val wrapPath: List&lt;String&gt;? = null,
+&nbsp;    val wrappedSourceKeys: List&lt;String&gt;? = null,
+&nbsp;    val wrappedOmitIfEmpty: Boolean = false,
+&nbsp;    val wrappedOmitIfAbsent: List&lt;String&gt; = emptyList(),
+&nbsp;    val wrappedUnwrapFields: List&lt;WrappedUnwrapFieldModel&gt; = emptyList(),
+&nbsp;    val isInferredSignature: Boolean = false,
+&nbsp;    val inferredSubclasses: List&lt;InferredSubclassModel&gt; = emptyList(),
+&nbsp;    val isProto: Boolean = false
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * One wire field emitted when unwrapping a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+&nbsp; * property during serialization.
+&nbsp; *
+&nbsp; * @property jsonName JSON key written at the parent object level.
+&nbsp; * @property kotlinPath Property accessor segments from the wrapper value (e.g. `[&quot;extras&quot;, &quot;extra1&quot;]`).
+&nbsp; * @property isNullable Whether the leaf property accepts JSON null / omission.
+&nbsp; * @property typeName Kotlin type of the leaf property for serialization dispatch.
+&nbsp; * @property sealedSubclassName Non-null when this field was resolved from a sealed subclass of
+&nbsp; *   the wrapped type rather than the wrapped type&#39;s own properties (proto3 `oneof` mapping: each
+&nbsp; *   wire key corresponds to one subclass&#39; field, e.g. `Text.text`/`Code.code` on a
+&nbsp; *   `sealed class Payload`). Emission must `is`-check/smart-cast to this subclass before
+&nbsp; *   accessing [kotlinPath] on it.
+&nbsp; */
+&nbsp;internal data class WrappedUnwrapFieldModel(
+&nbsp;    val jsonName: String,
+&nbsp;    val kotlinPath: List&lt;String&gt;,
+&nbsp;    val isNullable: Boolean,
+&nbsp;    val typeName: com.squareup.kotlinpoet.TypeName,
+&nbsp;    val type: KSType,
+&nbsp;    val sealedSubclassName: ClassName? = null,
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

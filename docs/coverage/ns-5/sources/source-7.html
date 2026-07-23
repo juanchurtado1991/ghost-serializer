@@ -1,0 +1,367 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > EnvelopeAnalyzer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: EnvelopeAnalyzer (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">EnvelopeAnalyzer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (8/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.9%
+  </span>
+  <span class="absValue">
+    (111/166)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.6%
+  </span>
+  <span class="absValue">
+    (96/136)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.7%
+  </span>
+  <span class="absValue">
+    (760/942)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.processing.KSPLogger
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves [@GhostJsonEnvelope][com.ghost.serialization.annotations.GhostJsonEnvelope] metadata
+&nbsp; * and validates payload field conventions.
+&nbsp; */
+<b class="fc">&nbsp;internal class EnvelopeAnalyzer(private val logger: KSPLogger) {</b>
+&nbsp;
+&nbsp;    fun analyze(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;
+&nbsp;    ): GhostEnvelopeModel? {
+<b class="fc">&nbsp;        val envelopeAnnotation = classDeclaration.annotations.find {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == C.STR_GHOST_JSON_ENVELOPE</b>
+<b class="fc">&nbsp;        } ?: return null</b>
+&nbsp;
+<b class="pc">&nbsp;        val discriminatorField = envelopeAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == C.ARG_ENVELOPE_DISCRIMINATOR }</b>
+<b class="pc">&nbsp;            ?.value as? String</b>
+<b class="nc">&nbsp;            ?: C.STR_DEFAULT_DISCRIMINATOR</b>
+&nbsp;
+<b class="pc">&nbsp;        val timeField = (envelopeAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == C.ARG_ENVELOPE_TIME_FIELD }</b>
+<b class="pc">&nbsp;            ?.value as? String)</b>
+<b class="pc">&nbsp;            ?.takeIf { it.isNotEmpty() }</b>
+&nbsp;
+<b class="pc">&nbsp;        val dataField = (envelopeAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == C.ARG_ENVELOPE_DATA_FIELD }</b>
+<b class="pc">&nbsp;            ?.value as? String)</b>
+<b class="pc">&nbsp;            ?.takeIf { it.isNotEmpty() }</b>
+&nbsp;
+<b class="pc">&nbsp;        val discriminatorProperty = resolveProperty(properties, discriminatorField)</b>
+<b class="nc">&nbsp;            ?: run {</b>
+<b class="nc">&nbsp;                logger.error(</b>
+<b class="nc">&nbsp;                    &quot;${C.STR_ERR_ENVELOPE_DISC_1}$discriminatorField${C.STR_ERR_ENVELOPE_DISC_2}${</b>
+<b class="nc">&nbsp;                        classDeclaration.simpleName.asString()</b>
+&nbsp;                    }${C.STR_ERR_ENVELOPE_DISC_3}&quot;,
+<b class="nc">&nbsp;                    classDeclaration</b>
+&nbsp;                )
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;        if (!isStringType(discriminatorProperty.type)) {</b>
+<b class="nc">&nbsp;            logger.error(</b>
+<b class="nc">&nbsp;                &quot;${C.STR_ERR_ENVELOPE_DISC_TYPE_1}${discriminatorProperty.kotlinName}${C.STR_ERR_ENVELOPE_DISC_TYPE_2}&quot;,</b>
+<b class="nc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val timeKotlinName = timeField?.let { fieldName -&gt;</b>
+<b class="pc">&nbsp;            resolveProperty(properties, fieldName)?.kotlinName</b>
+<b class="nc">&nbsp;                ?: run {</b>
+<b class="nc">&nbsp;                    logger.warn(</b>
+<b class="nc">&nbsp;                        &quot;${C.STR_WARN_ENVELOPE_TIME_1}$fieldName${C.STR_WARN_ENVELOPE_TIME_2}&quot;,</b>
+<b class="nc">&nbsp;                        classDeclaration</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                    null</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val propertyDeclarations = classDeclaration.getAllProperties()</b>
+<b class="fc">&nbsp;            .filterNot { prop -&gt; prop.annotations.any { it.shortName.asString() == C.GHOST_IGNORE } }</b>
+<b class="fc">&nbsp;            .associateBy { it.simpleName.asString() }</b>
+&nbsp;
+<b class="fc">&nbsp;        val fallbackDeclarations = propertyDeclarations.values.filter { prop -&gt;</b>
+<b class="fc">&nbsp;            prop.annotations.any { it.shortName.asString() == C.STR_GHOST_ENVELOPE_FALLBACK }</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (fallbackDeclarations.size &gt; C.VAL_ONE) {</b>
+<b class="nc">&nbsp;            logger.error(C.STR_ERR_ENVELOPE_MULTI_FALLBACK, classDeclaration)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val fallbackMapping = fallbackDeclarations.firstOrNull()?.let { prop -&gt;</b>
+<b class="fc">&nbsp;            buildFallbackMapping(prop, properties)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val isGenericMode = dataField != null</b>
+<b class="fc">&nbsp;        val genericDataProperty = if (isGenericMode) {</b>
+<b class="pc">&nbsp;            resolveProperty(properties, dataField!!)</b>
+<b class="nc">&nbsp;                ?: run {</b>
+<b class="nc">&nbsp;                    logger.error(</b>
+<b class="nc">&nbsp;                        &quot;${C.STR_ERR_ENVELOPE_DATA_1}$dataField${C.STR_ERR_ENVELOPE_DATA_2}&quot;,</b>
+<b class="nc">&nbsp;                        classDeclaration</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                    return null</b>
+&nbsp;                }
+&nbsp;        } else {
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (isGenericMode) {</b>
+<b class="fc">&nbsp;            validateOpaquePayload(genericDataProperty!!, classDeclaration)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val payloadMappings = if (isGenericMode) {</b>
+<b class="fc">&nbsp;            val genericProp = genericDataProperty!!</b>
+<b class="fc">&nbsp;            properties.filter { prop -&gt;</b>
+<b class="fc">&nbsp;                prop.kotlinName != discriminatorProperty.kotlinName &amp;&amp;</b>
+<b class="pc">&nbsp;                    prop.kotlinName != timeKotlinName &amp;&amp;</b>
+<b class="pc">&nbsp;                    prop.kotlinName != fallbackMapping?.kotlinName</b>
+<b class="fc">&nbsp;            }.mapNotNull { prop -&gt;</b>
+<b class="pc">&nbsp;                val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null</b>
+<b class="pc">&nbsp;                val payloadAnnotation = declaration.annotations.find {</b>
+<b class="fc">&nbsp;                    it.shortName.asString() == C.STR_GHOST_ENVELOPE_PAYLOAD</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (payloadAnnotation == null) {</b>
+<b class="pc">&nbsp;                    if (prop.kotlinName == genericProp.kotlinName) {</b>
+<b class="fc">&nbsp;                        null</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        null</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    buildPayloadMapping(payloadAnnotation, prop, classDeclaration)</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="fc">&nbsp;            properties.mapNotNull { prop -&gt;</b>
+<b class="fc">&nbsp;                if (prop.kotlinName == discriminatorProperty.kotlinName ||</b>
+<b class="fc">&nbsp;                    prop.kotlinName == timeKotlinName ||</b>
+<b class="fc">&nbsp;                    prop.kotlinName == fallbackMapping?.kotlinName</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    return@mapNotNull null</b>
+&nbsp;                }
+<b class="pc">&nbsp;                val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null</b>
+<b class="pc">&nbsp;                val payloadAnnotation = declaration.annotations.find {</b>
+<b class="fc">&nbsp;                    it.shortName.asString() == C.STR_GHOST_ENVELOPE_PAYLOAD</b>
+<b class="nc">&nbsp;                } ?: run {</b>
+<b class="nc">&nbsp;                    if (prop.isNullable &amp;&amp; prop.type.isRawJson()) {</b>
+<b class="nc">&nbsp;                        logger.warn(</b>
+<b class="nc">&nbsp;                            &quot;${C.STR_WARN_ENVELOPE_UNTAGGED_1}${prop.kotlinName}${C.STR_WARN_ENVELOPE_UNTAGGED_2}&quot;,</b>
+<b class="nc">&nbsp;                            declaration</b>
+&nbsp;                        )
+&nbsp;                    }
+<b class="nc">&nbsp;                    return@mapNotNull null</b>
+&nbsp;                }
+<b class="fc">&nbsp;                validateOpaquePayload(prop, classDeclaration)</b>
+<b class="fc">&nbsp;                buildPayloadMapping(payloadAnnotation, prop, classDeclaration)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (!isGenericMode &amp;&amp; payloadMappings.isEmpty()) {</b>
+<b class="nc">&nbsp;            logger.error(C.STR_ERR_ENVELOPE_NO_PAYLOADS, classDeclaration)</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        val duplicateValues = payloadMappings.groupBy { it.discriminatorValue }.filter { it.value.size &gt; 1 }</b>
+<b class="fc">&nbsp;        duplicateValues.forEach { (value, mappings) -&gt;</b>
+<b class="nc">&nbsp;            logger.error(</b>
+<b class="nc">&nbsp;                &quot;${C.STR_ERR_ENVELOPE_DUP_VALUE_1}$value${C.STR_ERR_ENVELOPE_DUP_VALUE_2}${</b>
+<b class="nc">&nbsp;                    mappings.joinToString { it.kotlinName }</b>
+&nbsp;                }&quot;,
+<b class="nc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        return GhostEnvelopeModel(</b>
+<b class="fc">&nbsp;            discriminatorKotlinName = discriminatorProperty.kotlinName,</b>
+<b class="fc">&nbsp;            discriminatorJsonName = discriminatorProperty.jsonName,</b>
+<b class="fc">&nbsp;            timeKotlinName = timeKotlinName,</b>
+<b class="fc">&nbsp;            isGenericMode = isGenericMode,</b>
+<b class="fc">&nbsp;            genericDataKotlinName = genericDataProperty?.kotlinName,</b>
+<b class="fc">&nbsp;            payloadMappings = payloadMappings,</b>
+<b class="fc">&nbsp;            fallbackMapping = fallbackMapping</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun resolveProperty(
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;        fieldName: String
+&nbsp;    ): GhostPropertyModel? =
+<b class="pc">&nbsp;        properties.find { it.jsonName == fieldName || it.kotlinName == fieldName }</b>
+&nbsp;
+&nbsp;    private fun isStringType(type: KSType): Boolean =
+<b class="pc">&nbsp;        type.declaration.qualifiedName?.asString() == C.STRING_QUALIFIED</b>
+&nbsp;
+&nbsp;    private fun validateOpaquePayload(prop: GhostPropertyModel, classDeclaration: KSClassDeclaration) {
+<b class="pc">&nbsp;        if (!prop.isNullable || !prop.type.isRawJson()) {</b>
+<b class="nc">&nbsp;            logger.error(</b>
+<b class="nc">&nbsp;                &quot;${C.STR_ERR_ENVELOPE_PAYLOAD_TYPE_1}${prop.kotlinName}${C.STR_ERR_ENVELOPE_PAYLOAD_TYPE_2}&quot;,</b>
+<b class="nc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildFallbackMapping(
+&nbsp;        prop: KSPropertyDeclaration,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;
+&nbsp;    ): EnvelopePayloadMapping? {
+<b class="pc">&nbsp;        val model = properties.find { it.kotlinName == prop.simpleName.asString() } ?: return null</b>
+<b class="fc">&nbsp;        validateOpaquePayload(model, prop.parentDeclaration as KSClassDeclaration)</b>
+<b class="fc">&nbsp;        return EnvelopePayloadMapping(</b>
+<b class="fc">&nbsp;            discriminatorValue = C.STR_EMPTY,</b>
+<b class="fc">&nbsp;            kotlinName = model.kotlinName,</b>
+<b class="fc">&nbsp;            isRawJson = model.type.isRawJson(),</b>
+<b class="fc">&nbsp;            targetType = null</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildPayloadMapping(
+&nbsp;        payloadAnnotation: com.google.devtools.ksp.symbol.KSAnnotation,
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        classDeclaration: KSClassDeclaration
+&nbsp;    ): EnvelopePayloadMapping? {
+<b class="pc">&nbsp;        val value = payloadAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == C.STR_VALUE_ARG }</b>
+<b class="pc">&nbsp;            ?.value as? String</b>
+<b class="nc">&nbsp;            ?: run {</b>
+<b class="nc">&nbsp;                logger.error(C.STR_ERR_ENVELOPE_PAYLOAD_VALUE, classDeclaration)</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;        val targetType = payloadAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == C.ARG_ENVELOPE_TARGET }</b>
+<b class="pc">&nbsp;            ?.value as? KSType</b>
+&nbsp;
+<b class="pc">&nbsp;        val targetClassName = if (targetType != null &amp;&amp; !isSentinelTarget(targetType)) {</b>
+<b class="fc">&nbsp;            targetType.toClassName()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return EnvelopePayloadMapping(</b>
+<b class="fc">&nbsp;            discriminatorValue = value,</b>
+<b class="fc">&nbsp;            kotlinName = prop.kotlinName,</b>
+<b class="fc">&nbsp;            isRawJson = prop.type.isRawJson(),</b>
+<b class="fc">&nbsp;            targetType = targetClassName</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isSentinelTarget(type: KSType): Boolean {
+<b class="pc">&nbsp;        val name = type.declaration.qualifiedName?.asString()</b>
+<b class="fc">&nbsp;        return name == C.K_UNIT || name == C.K_NOTHING</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

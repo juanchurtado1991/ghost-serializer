@@ -1,0 +1,220 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostReactiveDecoderKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.spring</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostReactiveDecoderKt (com.ghost.serialization.spring)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostReactiveDecoderKt</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import org.reactivestreams.Publisher
+&nbsp;import org.springframework.core.ResolvableType
+&nbsp;import org.springframework.core.codec.AbstractDecoder
+&nbsp;import org.springframework.core.io.buffer.DataBuffer
+&nbsp;import org.springframework.core.io.buffer.DataBufferUtils
+&nbsp;import org.springframework.util.MimeType
+&nbsp;import org.springframework.util.MimeTypeUtils
+&nbsp;import reactor.core.publisher.Flux
+&nbsp;import reactor.core.publisher.Mono
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;private const val NDJSON_NEWLINE: Byte = &#39;\n&#39;.code.toByte()
+&nbsp;
+&nbsp;/**
+&nbsp; * Reactive Decoder for Ghost Serialization.
+&nbsp; *
+&nbsp; * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
+&nbsp; * to the pooled [com.ghost.serialization.parser.GhostJsonReader], avoiding
+&nbsp; * intermediate Okio/InputStream wrappers entirely.
+&nbsp; */
+&nbsp;class GhostReactiveDecoder : AbstractDecoder&lt;Any&gt;(
+&nbsp;    MimeTypeUtils.APPLICATION_JSON,
+&nbsp;    MimeType(&quot;application&quot;, &quot;x-ndjson&quot;)
+&nbsp;) {
+&nbsp;    override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
+&nbsp;        val clazz = elementType.toClass()
+&nbsp;        return super.canDecode(elementType, mimeType) &amp;&amp;
+&nbsp;                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||
+&nbsp;                        Ghost.getSerializer(clazz.kotlin) != null)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun decode(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        elementType: ResolvableType,
+&nbsp;        mimeType: MimeType?,
+&nbsp;        hints: MutableMap&lt;String, Any&gt;?
+&nbsp;    ): Flux&lt;Any&gt; {
+&nbsp;        val clazz = elementType.toClass()
+&nbsp;        val isNdJson = isNdJson(mimeType)
+&nbsp;
+&nbsp;        return if (isNdJson) {
+&nbsp;            decodeStreaming(inputStream, clazz)
+&nbsp;        } else {
+&nbsp;            decodeJoined(inputStream, clazz)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun decodeToMono(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        elementType: ResolvableType,
+&nbsp;        mimeType: MimeType?,
+&nbsp;        hints: MutableMap&lt;String, Any&gt;?
+&nbsp;    ): Mono&lt;Any&gt; {
+&nbsp;        val clazz = elementType.toClass()
+&nbsp;        return decodeJoined(inputStream, clazz).next()
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * NDJSON records aren&#39;t guaranteed to arrive one-per-[DataBuffer] — a small multi-line
+&nbsp;     * request body will typically arrive as a single network buffer, and a single record can
+&nbsp;     * just as easily be split across two. This re-frames the raw buffer stream on `\n` before
+&nbsp;     * decoding each line, carrying any trailing partial line over to the next buffer and
+&nbsp;     * flushing a final unterminated line at stream completion.
+&nbsp;     */
+&nbsp;    private fun decodeStreaming(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Flux&lt;Any&gt; = Flux.defer {
+&nbsp;        var carry = ByteArray(0)
+&nbsp;
+&nbsp;        Flux.from(inputStream)
+&nbsp;            .concatMap { buffer -&gt;
+&nbsp;                val bytes: ByteArray
+&nbsp;                try {
+&nbsp;                    bytes = ByteArray(buffer.readableByteCount())
+&nbsp;                    buffer.read(bytes)
+&nbsp;                } finally {
+&nbsp;                    DataBufferUtils.release(buffer)
+&nbsp;                }
+&nbsp;
+&nbsp;                val combined = if (carry.isEmpty()) bytes else carry + bytes
+&nbsp;                val lines = mutableListOf&lt;ByteArray&gt;()
+&nbsp;                var lineStart = 0
+&nbsp;                for (index in combined.indices) {
+&nbsp;                    if (combined[index] == NDJSON_NEWLINE) {
+&nbsp;                        if (index &gt; lineStart) lines += combined.copyOfRange(lineStart, index)
+&nbsp;                        lineStart = index + 1
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                carry = combined.copyOfRange(lineStart, combined.size)
+&nbsp;                Flux.fromIterable(lines)
+&nbsp;            }
+&nbsp;            .concatWith(Flux.defer { if (carry.isEmpty()) Flux.empty() else Flux.just(carry) })
+&nbsp;            .map { line -&gt; deserializeBytes(line, clazz) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun decodeJoined(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Flux&lt;Any&gt; = DataBufferUtils
+&nbsp;        .join(inputStream).flatMapMany { buffer -&gt;
+&nbsp;            try {
+&nbsp;                Flux.just(deserializeBuffer(buffer, clazz))
+&nbsp;            } finally {
+&nbsp;                DataBufferUtils.release(buffer)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun deserializeBuffer(
+&nbsp;        buffer: DataBuffer,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Any {
+&nbsp;        val bytes = ByteArray(buffer.readableByteCount())
+&nbsp;        buffer.read(bytes)
+&nbsp;        return deserializeBytes(bytes, clazz)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun deserializeBytes(
+&nbsp;        bytes: ByteArray,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Any {
+&nbsp;        return try {
+&nbsp;            val serializer = Ghost.getSerializer(clazz.kotlin as KClass&lt;Any&gt;)
+&nbsp;                ?: throw IllegalArgumentException(
+&nbsp;                    &quot;${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}&quot;
+&nbsp;                )
+&nbsp;            Ghost.deserialize(serializer, bytes)
+&nbsp;        } catch (e: Exception) {
+&nbsp;            throw GhostJsonException(
+&nbsp;                &quot;$DECODE_ERROR ${clazz.simpleName}: ${e.message}&quot;
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isNdJson(mimeType: MimeType?): Boolean {
+&nbsp;        return mimeType?.subtype?.contains(&quot;ndjson&quot;) == true
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        private const val DECODE_ERROR = &quot;Failed to decode reactive buffer for&quot;
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

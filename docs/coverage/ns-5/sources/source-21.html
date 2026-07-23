@@ -1,0 +1,314 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > TextChannelPlanner</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: TextChannelPlanner (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TextChannelPlanner</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38.5%
+  </span>
+  <span class="absValue">
+    (30/78)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    63.2%
+  </span>
+  <span class="absValue">
+    (36/57)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.9%
+  </span>
+  <span class="absValue">
+    (226/412)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TextChannelPlanner$AnalyzedClass</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (5/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38.5%
+  </span>
+  <span class="absValue">
+    (30/78)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65%
+  </span>
+  <span class="absValue">
+    (39/60)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    56.1%
+  </span>
+  <span class="absValue">
+    (238/424)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.google.devtools.ksp.symbol.Modifier
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves which `@GhostSerialization` models in a compilation round need the native
+&nbsp; * string reader/writer overloads.
+&nbsp; *
+&nbsp; * Priority:
+&nbsp; * 1. `ghost.textChannel=true` KSP option → every model in the module.
+&nbsp; * 2. Otherwise `@GhostSerialization(textChannel = true)` on a model, plus transitive
+&nbsp; *    `@GhostSerialization` types reachable from its property graph (lists, maps, sealed
+&nbsp; *    subclasses, inferred variants).
+&nbsp; */
+&nbsp;internal object TextChannelPlanner {
+&nbsp;
+<b class="fc">&nbsp;    data class AnalyzedClass(</b>
+<b class="fc">&nbsp;        val declaration: KSClassDeclaration,</b>
+<b class="fc">&nbsp;        val properties: List&lt;GhostPropertyModel&gt;,</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun plan(
+&nbsp;        analyzed: List&lt;AnalyzedClass&gt;,
+&nbsp;        moduleTextChannelEnabled: Boolean,
+&nbsp;    ): Map&lt;KSClassDeclaration, Boolean&gt; {
+<b class="fc">&nbsp;        if (analyzed.isEmpty()) {</b>
+<b class="fc">&nbsp;            return emptyMap()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val byDeclaration = analyzed.associate { it.declaration to it.properties }</b>
+<b class="fc">&nbsp;        if (moduleTextChannelEnabled) {</b>
+<b class="fc">&nbsp;            return byDeclaration.keys.associateWith { true }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val enabled = mutableSetOf&lt;KSClassDeclaration&gt;()</b>
+<b class="fc">&nbsp;        analyzed.forEach { entry -&gt;</b>
+<b class="fc">&nbsp;            if (entry.declaration.declaresTextChannel()) {</b>
+<b class="fc">&nbsp;                enabled.add(entry.declaration)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        val pending = ArrayDeque(enabled)</b>
+<b class="fc">&nbsp;        while (pending.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            val current = pending.removeFirst()</b>
+<b class="pc">&nbsp;            val properties = byDeclaration[current] ?: emptyList()</b>
+<b class="fc">&nbsp;            for (dependency in ghostDependencies(current, properties)) {</b>
+<b class="pc">&nbsp;                if (enabled.add(dependency)) {</b>
+<b class="fc">&nbsp;                    pending.addLast(dependency)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return byDeclaration.keys.associateWith { it in enabled }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KSClassDeclaration.declaresTextChannel(): Boolean {
+<b class="fc">&nbsp;        val annotation = annotations.firstOrNull {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION</b>
+<b class="fc">&nbsp;        } ?: return false</b>
+<b class="fc">&nbsp;        return annotation.arguments.any { arg -&gt;</b>
+<b class="pc">&nbsp;            arg.name?.asString() == C.ARG_TEXT_CHANNEL &amp;&amp; arg.value == true</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ghostDependencies(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;    ): Set&lt;KSClassDeclaration&gt; {
+<b class="fc">&nbsp;        val deps = mutableSetOf&lt;KSClassDeclaration&gt;()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {</b>
+<b class="nc">&nbsp;            classDeclaration.getSealedSubclasses().forEach { subclass -&gt;</b>
+<b class="nc">&nbsp;                subclass.toGhostDeclaration()?.let { deps.add(it) }</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        for (property in properties) {</b>
+<b class="fc">&nbsp;            if (property.isGhost) {</b>
+<b class="pc">&nbsp;                property.type.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (property.listInnerIsGhost) {</b>
+<b class="nc">&nbsp;                property.listInnerType?.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (property.mapValueIsGhost) {</b>
+<b class="nc">&nbsp;                property.mapValueType?.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;            }
+<b class="pc">&nbsp;            property.valueClassProperty?.let { inner -&gt;</b>
+<b class="nc">&nbsp;                if (inner.isGhost) {</b>
+<b class="nc">&nbsp;                    inner.type.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;                }
+<b class="nc">&nbsp;            }</b>
+<b class="pc">&nbsp;            for (subclass in property.inferredSubclasses) {</b>
+<b class="nc">&nbsp;                subclass.declaration.toGhostDeclaration()?.let { deps.add(it) }</b>
+<b class="nc">&nbsp;                for (subProperty in subclass.properties) {</b>
+<b class="nc">&nbsp;                    collectPropertyDependencies(subProperty, deps)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return deps</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun collectPropertyDependencies(
+&nbsp;        property: GhostPropertyModel,
+&nbsp;        deps: MutableSet&lt;KSClassDeclaration&gt;,
+&nbsp;    ) {
+<b class="nc">&nbsp;        if (property.isGhost) {</b>
+<b class="nc">&nbsp;            property.type.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (property.listInnerIsGhost) {</b>
+<b class="nc">&nbsp;            property.listInnerType?.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (property.mapValueIsGhost) {</b>
+<b class="nc">&nbsp;            property.mapValueType?.toGhostDeclaration()?.let { deps.add(it) }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KSType.toGhostDeclaration(): KSClassDeclaration? {
+<b class="pc">&nbsp;        val declaration = declaration as? KSClassDeclaration ?: return null</b>
+<b class="pc">&nbsp;        if (!declaration.annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }) {</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return declaration</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KSClassDeclaration.toGhostDeclaration(): KSClassDeclaration? {
+<b class="nc">&nbsp;        if (!annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }) {</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

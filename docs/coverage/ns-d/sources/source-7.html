@@ -1,0 +1,205 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostLongList</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.serializers</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostLongList (com.ghost.serialization.serializers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostLongList</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.5%
+  </span>
+  <span class="absValue">
+    (67/74)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.serializers
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Highly optimized, zero-allocation internal list implementation for [Int] primitives.
+&nbsp; * Avoids boxing overhead and memory allocation pressure.
+&nbsp; */
+&nbsp;internal class GhostIntList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {
+&nbsp;    private var buffer = IntArray(initialCapacity)
+&nbsp;    private var currentSize = 0
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds an integer item to the list, expanding the backing buffer if necessary.
+&nbsp;     */
+&nbsp;    fun add(value: Int) {
+&nbsp;        if (currentSize == buffer.size) {
+&nbsp;            val newCapacity = if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
+&nbsp;            buffer = buffer.copyOf(newCapacity)
+&nbsp;        }
+&nbsp;        buffer[currentSize++] = value
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the accumulated list elements as a raw [IntArray].
+&nbsp;     */
+&nbsp;    fun toArray(): IntArray {
+&nbsp;        if (currentSize == buffer.size) {
+&nbsp;            return buffer
+&nbsp;        }
+&nbsp;        return buffer.copyOf(currentSize)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the collection has no elements.
+&nbsp;     */
+&nbsp;    fun isEmpty(): Boolean {
+&nbsp;        return currentSize == 0
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Highly optimized, zero-allocation internal list implementation for [Long] primitives.
+&nbsp; * Avoids boxing overhead and memory allocation pressure.
+&nbsp; */
+<b class="fc">&nbsp;internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {</b>
+<b class="fc">&nbsp;    private var buffer = LongArray(initialCapacity)</b>
+&nbsp;    private var currentSize = 0
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a long item to the list, expanding the backing buffer if necessary.
+&nbsp;     */
+&nbsp;    fun add(value: Long) {
+<b class="fc">&nbsp;        if (currentSize == buffer.size) {</b>
+<b class="pc">&nbsp;            val newCapacity = if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="fc">&nbsp;            buffer = buffer.copyOf(newCapacity)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        buffer[currentSize++] = value</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the accumulated list elements as a raw [LongArray].
+&nbsp;     */
+&nbsp;    fun toArray(): LongArray {
+<b class="pc">&nbsp;        if (currentSize == buffer.size) {</b>
+<b class="nc">&nbsp;            return buffer</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return buffer.copyOf(currentSize)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if the collection has no elements.
+&nbsp;     */
+&nbsp;    fun isEmpty(): Boolean {
+<b class="fc">&nbsp;        return currentSize == 0</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

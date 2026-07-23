@@ -16,6 +16,8 @@ Ghost is a byte-first, compile-time JSON serializer designed for Kotlin Multipla
 👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
 &nbsp;&nbsp;|&nbsp;&nbsp;
 📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.7`
+&nbsp;&nbsp;|&nbsp;&nbsp;
+📊 **[Coverage Report →](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
 
 ---
 

@@ -1,0 +1,254 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostProtoContentConverter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.ktor</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostProtoContentConverter (com.ghost.serialization.ktor)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostProtoContentConverter</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70%
+  </span>
+  <span class="absValue">
+    (14/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.3%
+  </span>
+  <span class="absValue">
+    (25/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (156/182)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostProtoContentConverter$Companion</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">GhostProtoContentConverter$deserialize$1</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70%
+  </span>
+  <span class="absValue">
+    (14/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.3%
+  </span>
+  <span class="absValue">
+    (25/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (156/182)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.ktor
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.parser.GhostProtoJsonFlatReader
+&nbsp;import io.ktor.http.ContentType
+&nbsp;import io.ktor.http.content.ByteArrayContent
+&nbsp;import io.ktor.http.content.OutgoingContent
+&nbsp;import io.ktor.serialization.ContentConverter
+&nbsp;import io.ktor.util.reflect.TypeInfo
+&nbsp;import io.ktor.utils.io.ByteReadChannel
+&nbsp;import io.ktor.utils.io.charsets.Charset
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Ktor [ContentConverter] for proto3 JSON mapping (`@GhostProtoSerialization`).
+&nbsp; *
+&nbsp; * Differs from [GhostContentConverter] only on the read path: request/response bodies are
+&nbsp; * parsed through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare
+&nbsp; * int64/uint64, lenient int32 (rejects fractional values), and quoted `&quot;NaN&quot;`/`&quot;Infinity&quot;`
+&nbsp; * literals per proto3 JSON rules. `serializeNullable` reuses [Ghost.encodeToBytes] since wire
+&nbsp; * correctness on write is already generated into the `@GhostProtoSerialization` serializer&#39;s
+&nbsp; * own `serialize()` method.
+&nbsp; *
+&nbsp; * ```kotlin
+&nbsp; * install(ContentNegotiation) { ghostProto() }
+&nbsp; * ```
+&nbsp; */
+<b class="nc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+&nbsp;class GhostProtoContentConverter(
+<b class="fc">&nbsp;    private val configurer: ((GhostProtoJsonFlatReader) -&gt; Unit)? = null</b>
+&nbsp;) : ContentConverter {
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    override suspend fun serializeNullable(
+&nbsp;        contentType: ContentType,
+&nbsp;        charset: Charset,
+&nbsp;        typeInfo: TypeInfo,
+&nbsp;        value: Any?
+&nbsp;    ): OutgoingContent? {
+<b class="fc">&nbsp;        if (value == null) return null</b>
+<b class="fc">&nbsp;        val clazz = typeInfo.type</b>
+&nbsp;
+<b class="pc">&nbsp;        val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }</b>
+<b class="fc">&nbsp;            ?: Ghost.getSerializer(clazz as KClass&lt;Any&gt;)</b>
+<b class="fc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="nc">&nbsp;        val bytes = Ghost.encodeToBytes(serializer, value)</b>
+&nbsp;
+<b class="nc">&nbsp;        return ByteArrayContent(bytes, contentType)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    override suspend fun deserialize(
+&nbsp;        charset: Charset,
+&nbsp;        typeInfo: TypeInfo,
+&nbsp;        content: ByteReadChannel
+&nbsp;    ): Any? {
+<b class="pc">&nbsp;        val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }</b>
+<b class="fc">&nbsp;            ?: Ghost.getSerializer(typeInfo.type as KClass&lt;Any&gt;)</b>
+<b class="fc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;        var scratch = acquireScratchBuffer(BUFFER_SIZE)</b>
+&nbsp;
+&nbsp;        try {
+<b class="fc">&nbsp;            var offset = 0</b>
+<b class="fc">&nbsp;            while (true) {</b>
+<b class="fc">&nbsp;                if (offset == scratch.size) {</b>
+<b class="fc">&nbsp;                    val grown = acquireScratchBuffer(scratch.size * 2)</b>
+<b class="fc">&nbsp;                    scratch.copyInto(grown, 0, 0, offset)</b>
+<b class="fc">&nbsp;                    releaseScratchBuffer(scratch)</b>
+<b class="fc">&nbsp;                    scratch = grown</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                val read = content.readAvailable(scratch, offset, scratch.size - offset)</b>
+<b class="fc">&nbsp;                if (read == -1) break</b>
+<b class="fc">&nbsp;                offset += read</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val reader = GhostProtoJsonFlatReader(scratch)</b>
+<b class="fc">&nbsp;            reader.limit = offset</b>
+<b class="pc">&nbsp;            configurer?.invoke(reader)</b>
+&nbsp;
+<b class="fc">&nbsp;            return serializer.deserialize(reader)</b>
+&nbsp;        } finally {
+<b class="fc">&nbsp;            releaseScratchBuffer(scratch)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        private const val BUFFER_SIZE = 524288
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

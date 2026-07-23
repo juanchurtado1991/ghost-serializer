@@ -1,0 +1,714 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonStringReader</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonStringReader (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonStringReader</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.6%
+  </span>
+  <span class="absValue">
+    (29/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.9%
+  </span>
+  <span class="absValue">
+    (124/170)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.2%
+  </span>
+  <span class="absValue">
+    (293/344)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82%
+  </span>
+  <span class="absValue">
+    (1255/1531)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;FunctionName&quot;, &quot;NOTHING_TO_INLINE&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.writer.copyRangeToCharArray
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/**
+&nbsp; * High-performance JSON parser operating directly on Kotlin Strings.
+&nbsp; * Bypasses encodeToByteArray UTF-8 conversion overhead.
+&nbsp; */
+&nbsp;class GhostJsonStringReader(
+<b class="fc">&nbsp;    var rawData: String,</b>
+<b class="fc">&nbsp;    var maxDepth: Int = C.MAX_DEPTH,</b>
+<b class="fc">&nbsp;    var strictMode: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceStringsToNumbers: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceBooleans: Boolean = false,</b>
+<b class="fc">&nbsp;    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize</b>
+&nbsp;) {
+<b class="fc">&nbsp;    var limit: Int = rawData.length</b>
+<b class="fc">&nbsp;    var position: Int = 0</b>
+<b class="fc">&nbsp;    var nextTokenByte: Int = C.RESET_TOKEN_BYTE</b>
+<b class="nc">&nbsp;    var lastScanContentWas7BitOnly: Boolean = false</b>
+<b class="fc">&nbsp;    var depth: Int = 0</b>
+<b class="fc">&nbsp;    var needsCommaMask: Long = 0L</b>
+<b class="fc">&nbsp;    var commaConsumedMask: Long = 0L</b>
+&nbsp;
+&nbsp;    /** Reused CharArray cache to bypass String.charAt overhead. */
+<b class="fc">&nbsp;    var rawChars: CharArray</b>
+&nbsp;
+&nbsp;    /** Lazily encoded UTF-8 bytes for bridge paths (one encode per [reset] cycle). */
+&nbsp;    private var utf8CacheBytes: ByteArray? = null
+&nbsp;
+&nbsp;    /** Char-index → UTF-8 byte offset, built once per [reset] cycle. */
+&nbsp;    private var charToByteOffsets: IntArray? = null
+&nbsp;
+&nbsp;    /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
+<b class="fc">&nbsp;    val stringPool: Array&lt;String?&gt; = arrayOfNulls(C.STR_POOL_SIZE)</b>
+<b class="fc">&nbsp;    val stringPoolHashes = IntArray(C.STR_POOL_SIZE)</b>
+&nbsp;
+&nbsp;    // Reusable CharArray for decoding escapes in readQuotedString slow-path
+<b class="fc">&nbsp;    var slowPathChars: CharArray = CharArray(256)</b>
+&nbsp;
+&nbsp;    private fun growSlowPathChars(current: CharArray, requiredSize: Int): CharArray {
+<b class="nc">&nbsp;        val newSize = (current.size * 2).coerceAtLeast(requiredSize)</b>
+<b class="nc">&nbsp;        val newArray = CharArray(newSize)</b>
+<b class="nc">&nbsp;        current.copyInto(newArray, 0, 0, current.size)</b>
+<b class="nc">&nbsp;        slowPathChars = newArray</b>
+<b class="nc">&nbsp;        return newArray</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        val len = rawData.length</b>
+<b class="fc">&nbsp;        val chars = CharArray(len)</b>
+<b class="fc">&nbsp;        rawData.copyRangeToCharArray(chars, 0, 0, len)</b>
+<b class="fc">&nbsp;        rawChars = chars</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    inline fun getByte(index: Int): Int {
+<b class="fc">&nbsp;        return rawChars[index].code</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun throwError(message: String): Nothing {
+<b class="fc">&nbsp;        val errorPosition = position</b>
+<b class="pc">&nbsp;        val errorEnd = if (errorPosition &gt; limit) limit else errorPosition</b>
+&nbsp;
+<b class="fc">&nbsp;        throw GhostJsonException(</b>
+<b class="fc">&nbsp;            baseMessage = &quot;$message at position $errorPosition&quot;,</b>
+<b class="fc">&nbsp;            computeLineCol = {</b>
+<b class="nc">&nbsp;                var columnNumber = 0</b>
+<b class="nc">&nbsp;                var lineNumber = 0</b>
+<b class="nc">&nbsp;                var byteIndex = 0</b>
+<b class="nc">&nbsp;                val chars = rawChars</b>
+<b class="nc">&nbsp;                while (byteIndex &lt; errorEnd) {</b>
+<b class="nc">&nbsp;                    if (chars[byteIndex].code == C.NEWLINE_INT) {</b>
+<b class="nc">&nbsp;                        lineNumber++</b>
+<b class="nc">&nbsp;                        columnNumber = 0</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        columnNumber++</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    byteIndex++</b>
+&nbsp;                }
+<b class="nc">&nbsp;                intArrayOf(lineNumber, columnNumber)</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun internalSkip(n: Int) {
+<b class="fc">&nbsp;        position += n</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun skipWhitespace() {
+<b class="fc">&nbsp;        var scanPosition = position</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        val localSpaceInt = C.SPACE_INT</b>
+<b class="fc">&nbsp;        val localWhitespaceMask = C.WHITESPACE_MASK</b>
+<b class="fc">&nbsp;        val localByteShiftUnit = C.BYTE_SHIFT_UNIT</b>
+<b class="fc">&nbsp;        val localResultNone = C.RESULT_NONE</b>
+<b class="fc">&nbsp;        while (scanPosition &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val code = chars[scanPosition].code</b>
+<b class="fc">&nbsp;            if (</b>
+<b class="fc">&nbsp;                code &lt;= localSpaceInt &amp;&amp;</b>
+<b class="pc">&nbsp;                ((localWhitespaceMask shr code) and localByteShiftUnit) !=</b>
+<b class="fc">&nbsp;                localResultNone</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                scanPosition++</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                position = scanPosition</b>
+<b class="fc">&nbsp;                nextTokenByte = code</b>
+&nbsp;                return
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        position = localLimit</b>
+<b class="fc">&nbsp;        nextTokenByte = C.MATCH_END</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun peekNextToken(): Int {
+<b class="fc">&nbsp;        val cached = nextTokenByte</b>
+<b class="fc">&nbsp;        if (cached != -1) {</b>
+<b class="fc">&nbsp;            return cached</b>
+&nbsp;        }
+<b class="fc">&nbsp;        skipWhitespace()</b>
+<b class="fc">&nbsp;        return nextTokenByte</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun peekByte(): Byte = peekNextToken().toByte()</b>
+&nbsp;
+&nbsp;    fun nextNonWhitespace(): Int {
+<b class="fc">&nbsp;        val nextToken = peekNextToken()</b>
+<b class="fc">&nbsp;        if (nextToken == -1) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_UNEXPECTED_EOF)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        internalSkip(1)</b>
+<b class="fc">&nbsp;        return nextToken</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun skipAndValidateLiteral(expected: ByteString) {
+<b class="fc">&nbsp;        val size = expected.size</b>
+<b class="fc">&nbsp;        if (position + size &gt; limit) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        for (i in 0 until size) {</b>
+<b class="fc">&nbsp;            if (chars[position + i].code != (expected[i].toInt() and C.BYTE_MASK)) {</b>
+<b class="fc">&nbsp;                throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        position += size</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;StringReferentialEquality&quot;)
+<b class="fc">&nbsp;    fun reset(newData: String, newLimit: Int = newData.length) {</b>
+<b class="fc">&nbsp;        val oldData = this.rawData</b>
+<b class="fc">&nbsp;        this.rawData = newData</b>
+<b class="fc">&nbsp;        this.position = 0</b>
+<b class="fc">&nbsp;        this.limit = newLimit</b>
+<b class="fc">&nbsp;        this.nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        this.depth = 0</b>
+<b class="fc">&nbsp;        this.needsCommaMask = 0L</b>
+<b class="fc">&nbsp;        this.commaConsumedMask = 0L</b>
+<b class="fc">&nbsp;        this.strictMode = false</b>
+<b class="fc">&nbsp;        this.coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        this.coerceBooleans = false</b>
+<b class="fc">&nbsp;        this.maxDepth = C.MAX_DEPTH</b>
+<b class="fc">&nbsp;        this.maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;        this.lastScanContentWas7BitOnly = false</b>
+<b class="fc">&nbsp;        invalidateUtf8Cache()</b>
+&nbsp;
+<b class="fc">&nbsp;        if (newData !== oldData) {</b>
+<b class="fc">&nbsp;            val len = newData.length</b>
+<b class="fc">&nbsp;            var chars = rawChars</b>
+<b class="fc">&nbsp;            if (chars.size &lt; len) {</b>
+<b class="fc">&nbsp;                chars = CharArray(len)</b>
+<b class="fc">&nbsp;                rawChars = chars</b>
+&nbsp;            }
+<b class="fc">&nbsp;            newData.copyRangeToCharArray(chars, 0, 0, len)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun readQuotedString(): String {
+<b class="fc">&nbsp;        if (nextNonWhitespace() != C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_QUOTE)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val start = position</b>
+<b class="fc">&nbsp;        val end = findClosingQuote(start, limit)</b>
+&nbsp;
+<b class="fc">&nbsp;        if (end != C.MATCH_END) {</b>
+<b class="fc">&nbsp;            val length = end - start</b>
+<b class="fc">&nbsp;            position = end + C.SINGLE_CHAR_SIZE</b>
+<b class="fc">&nbsp;            nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;            if (length &lt;= 0) return &quot;&quot;</b>
+&nbsp;            // Fast path: no escape sequences — try string pool before allocating a new substring.
+<b class="fc">&nbsp;            if (length &lt;= GhostHeuristics.maxStringPoolLength) {</b>
+<b class="fc">&nbsp;                val hash = computeStringPoolHash(start, length)</b>
+&nbsp;                // XOR length into bucket selection to disambiguate strings that share
+&nbsp;                // the same first-4-chars prefix but have different lengths.
+<b class="fc">&nbsp;                val poolKey = hash xor (length * C.STR_POOL_HASH_MULTIPLIER)</b>
+<b class="fc">&nbsp;                val bucketIndex = poolKey and (C.STR_POOL_SIZE - 1)</b>
+<b class="fc">&nbsp;                if (stringPoolHashes[bucketIndex] == poolKey) {</b>
+<b class="fc">&nbsp;                    val cached = stringPool[bucketIndex]</b>
+<b class="pc">&nbsp;                    if (cached != null &amp;&amp; poolContentEquals(start, length, cached)) {</b>
+<b class="fc">&nbsp;                        return cached  // zero allocation — reuse existing String object</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                val newString = rawData.substring(start, start + length)</b>
+<b class="fc">&nbsp;                stringPool[bucketIndex] = newString</b>
+<b class="fc">&nbsp;                stringPoolHashes[bucketIndex] = poolKey</b>
+<b class="fc">&nbsp;                return newString</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return rawData.substring(start, start + length)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return readQuotedStringSlow(start)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun readQuotedStringSlow(start: Int): String {
+<b class="fc">&nbsp;        var outChars = slowPathChars</b>
+<b class="fc">&nbsp;        var outPos = 0</b>
+&nbsp;
+<b class="fc">&nbsp;        var startPosition = start</b>
+<b class="fc">&nbsp;        val chars = rawChars</b>
+&nbsp;
+<b class="fc">&nbsp;        val localQuoteInt = C.QUOTE_INT</b>
+<b class="fc">&nbsp;        val localControlCharStartInt = C.CONTROL_CHAR_START_INT</b>
+<b class="fc">&nbsp;        val localControlCharLimitInt = C.CONTROL_CHAR_LIMIT_INT</b>
+<b class="fc">&nbsp;        val localBackslashInt = C.BACKSLASH_INT</b>
+<b class="fc">&nbsp;        val localUnicodePrefixUInt = C.UNICODE_PREFIX_U_INT</b>
+<b class="fc">&nbsp;        val localUnicodeHexLength = C.UNICODE_HEX_LENGTH</b>
+<b class="fc">&nbsp;        val localHighSurrogateStart = C.HIGH_SURROGATE_START</b>
+<b class="fc">&nbsp;        val localHighSurrogateEnd = C.HIGH_SURROGATE_END</b>
+<b class="fc">&nbsp;        val localSurrogateOffset = C.SURROGATE_OFFSET</b>
+<b class="fc">&nbsp;        val localUnicodeEscapePrefixSize = C.UNICODE_ESCAPE_PREFIX_SIZE</b>
+<b class="fc">&nbsp;        val localLowSurrogateStart = C.LOW_SURROGATE_START</b>
+<b class="fc">&nbsp;        val localLowSurrogateEnd = C.LOW_SURROGATE_END</b>
+<b class="fc">&nbsp;        val localNByteInt = C.N_BYTE_INT</b>
+<b class="fc">&nbsp;        val localRByteInt = C.R_BYTE_INT</b>
+<b class="fc">&nbsp;        val localTByteInt = C.T_BYTE_INT</b>
+<b class="fc">&nbsp;        val localBByteInt = C.B_BYTE_INT</b>
+<b class="fc">&nbsp;        val localFByteInt = C.F_BYTE_INT</b>
+&nbsp;
+<b class="fc">&nbsp;        while (startPosition &lt; limit) {</b>
+<b class="fc">&nbsp;            val byteValue = chars[startPosition++].code</b>
+<b class="fc">&nbsp;            if (byteValue == localQuoteInt) {</b>
+<b class="fc">&nbsp;                position = startPosition</b>
+<b class="fc">&nbsp;                nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;                return outChars.concatToString(0, outPos)</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            if (byteValue in localControlCharStartInt..localControlCharLimitInt) {</b>
+<b class="nc">&nbsp;                position = startPosition</b>
+<b class="nc">&nbsp;                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (byteValue == localBackslashInt) {</b>
+<b class="pc">&nbsp;                if (startPosition &gt;= limit) {</b>
+<b class="nc">&nbsp;                    position = startPosition</b>
+<b class="nc">&nbsp;                    throwError(C.UNTERMINATED_ESCAPE_ERROR)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                when (val escaped = chars[startPosition++].code) {</b>
+<b class="fc">&nbsp;                    localUnicodePrefixUInt -&gt; {</b>
+<b class="pc">&nbsp;                        if (startPosition + localUnicodeHexLength &gt; limit) {</b>
+<b class="nc">&nbsp;                            position = startPosition</b>
+<b class="nc">&nbsp;                            throwError(C.UNTERMINATED_UNICODE_ERROR)</b>
+&nbsp;                        }
+&nbsp;
+<b class="fc">&nbsp;                        val code = parseUnicodeHex(startPosition)</b>
+<b class="fc">&nbsp;                        startPosition += localUnicodeHexLength</b>
+&nbsp;
+<b class="pc">&nbsp;                        if (code in localHighSurrogateStart..localHighSurrogateEnd) {</b>
+<b class="fc">&nbsp;                            if (startPosition + localSurrogateOffset &lt;= limit &amp;&amp;</b>
+<b class="pc">&nbsp;                                chars[startPosition].code == localBackslashInt &amp;&amp;</b>
+<b class="pc">&nbsp;                                chars[startPosition + C.SINGLE_CHAR_SIZE].code == localUnicodePrefixUInt</b>
+&nbsp;                            ) {
+<b class="fc">&nbsp;                                startPosition += localUnicodeEscapePrefixSize</b>
+<b class="fc">&nbsp;                                val lowCode = parseUnicodeHex(startPosition)</b>
+<b class="pc">&nbsp;                                if (lowCode in localLowSurrogateStart..localLowSurrogateEnd) {</b>
+<b class="fc">&nbsp;                                    startPosition += localUnicodeHexLength</b>
+<b class="pc">&nbsp;                                    if (outPos + 2 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                                        outChars = growSlowPathChars(outChars, outPos + 2)</b>
+&nbsp;                                    }
+<b class="fc">&nbsp;                                    outChars[outPos++] = code.toChar()</b>
+<b class="fc">&nbsp;                                    outChars[outPos++] = lowCode.toChar()</b>
+&nbsp;                                } else {
+<b class="nc">&nbsp;                                    position = startPosition</b>
+<b class="nc">&nbsp;                                    throwError(C.ERR_HIGH_SURROGATE)</b>
+&nbsp;                                }
+&nbsp;                            } else {
+<b class="fc">&nbsp;                                position = startPosition</b>
+<b class="fc">&nbsp;                                throwError(C.ERR_HIGH_SURROGATE)</b>
+&nbsp;                            }
+&nbsp;                        } else {
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                                outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outChars[outPos++] = code.toChar()</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    localNByteInt -&gt; {</b>
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                            outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outChars[outPos++] = C.LF_CHAR</b>
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    localRByteInt -&gt; {</b>
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                            outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outChars[outPos++] = C.CR_CHAR</b>
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    localTByteInt -&gt; {</b>
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                            outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outChars[outPos++] = C.TAB_CHAR</b>
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    localBByteInt -&gt; {</b>
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                            outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outChars[outPos++] = C.BS_CHAR</b>
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    localFByteInt -&gt; {</b>
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                            outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outChars[outPos++] = C.FF_CHAR</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    else -&gt; {
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                            outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outChars[outPos++] = escaped.toChar()</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            } else {
+<b class="pc">&nbsp;                if (outPos + 1 &gt; outChars.size) {</b>
+<b class="nc">&nbsp;                    outChars = growSlowPathChars(outChars, outPos + 1)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                outChars[outPos++] = chars[startPosition - 1]</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        position = startPosition</b>
+<b class="fc">&nbsp;        throwError(C.UNTERMINATED_STRING_ERROR)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun skipQuotedString() {
+<b class="pc">&nbsp;        if (nextNonWhitespace() != C.QUOTE_INT) {</b>
+<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_QUOTE)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val start = position</b>
+<b class="fc">&nbsp;        val end = findClosingQuote(start, limit)</b>
+<b class="fc">&nbsp;        if (end != -1) {</b>
+<b class="fc">&nbsp;            position = end + 1</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var scanPosition = start</b>
+<b class="fc">&nbsp;        val chars = rawChars</b>
+&nbsp;
+<b class="fc">&nbsp;        val localQuoteInt = C.QUOTE_INT</b>
+<b class="fc">&nbsp;        val localControlCharStartInt = C.CONTROL_CHAR_START_INT</b>
+<b class="fc">&nbsp;        val localControlCharLimitInt = C.CONTROL_CHAR_LIMIT_INT</b>
+<b class="fc">&nbsp;        val localBackslashInt = C.BACKSLASH_INT</b>
+<b class="fc">&nbsp;        val localUnicodePrefixUInt = C.UNICODE_PREFIX_U_INT</b>
+<b class="fc">&nbsp;        val localUnicodeHexLength = C.UNICODE_HEX_LENGTH</b>
+&nbsp;
+<b class="pc">&nbsp;        while (scanPosition &lt; limit) {</b>
+<b class="fc">&nbsp;            val byteValue = chars[scanPosition++].code</b>
+<b class="fc">&nbsp;            if (byteValue == localQuoteInt) {</b>
+<b class="fc">&nbsp;                position = scanPosition</b>
+<b class="fc">&nbsp;                nextTokenByte = C.RESET_TOKEN_BYTE</b>
+&nbsp;                return
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            if (byteValue in localControlCharStartInt..localControlCharLimitInt) {</b>
+<b class="nc">&nbsp;                position = scanPosition</b>
+<b class="nc">&nbsp;                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (byteValue == localBackslashInt) {</b>
+<b class="pc">&nbsp;                if (scanPosition &gt;= limit) {</b>
+<b class="nc">&nbsp;                    position = scanPosition</b>
+<b class="nc">&nbsp;                    throwError(C.UNTERMINATED_ESCAPE_ERROR)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val escaped = chars[scanPosition++].code</b>
+&nbsp;
+<b class="pc">&nbsp;                if (escaped == localUnicodePrefixUInt) {</b>
+<b class="nc">&nbsp;                    if (scanPosition + localUnicodeHexLength &gt; limit) {</b>
+<b class="nc">&nbsp;                        position = scanPosition</b>
+<b class="nc">&nbsp;                        throwError(C.UNTERMINATED_UNICODE_ERROR)</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    parseUnicodeHex(scanPosition)</b>
+<b class="nc">&nbsp;                    scanPosition += localUnicodeHexLength</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        position = scanPosition</b>
+<b class="nc">&nbsp;        throwError(C.UNTERMINATED_STRING_ERROR)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun parseUnicodeHex(currentPosition: Int): Int {
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        val hexByte0 = chars[currentPosition].code</b>
+<b class="fc">&nbsp;        val hexByte1 = chars[currentPosition + 1].code</b>
+<b class="fc">&nbsp;        val hexByte2 = chars[currentPosition + 2].code</b>
+<b class="fc">&nbsp;        val hexByte3 = chars[currentPosition + 3].code</b>
+&nbsp;
+<b class="fc">&nbsp;        val hexLookupTable = C.HEX_LUT</b>
+<b class="fc">&nbsp;        val digitValue0 = hexLookupTable[hexByte0]</b>
+<b class="fc">&nbsp;        val digitValue1 = hexLookupTable[hexByte1]</b>
+<b class="fc">&nbsp;        val digitValue2 = hexLookupTable[hexByte2]</b>
+<b class="fc">&nbsp;        val digitValue3 = hexLookupTable[hexByte3]</b>
+&nbsp;
+<b class="fc">&nbsp;        if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) &lt; 0) {</b>
+<b class="fc">&nbsp;            throwError(&quot;Invalid unicode escape at $currentPosition&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return (digitValue0 shl C.SHIFT_12) or</b>
+<b class="fc">&nbsp;                (digitValue1 shl C.SHIFT_8) or</b>
+<b class="fc">&nbsp;                (digitValue2 shl C.SHIFT_4) or</b>
+<b class="fc">&nbsp;                digitValue3</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    inline fun &lt;T&gt; decodeResilient(crossinline block: () -&gt; T): T? {
+<b class="fc">&nbsp;        val savedPos = position</b>
+<b class="fc">&nbsp;        val savedToken = nextTokenByte</b>
+<b class="fc">&nbsp;        val savedDepth = depth</b>
+<b class="fc">&nbsp;        val savedNeedsCommaMask = needsCommaMask</b>
+<b class="fc">&nbsp;        val savedCommaConsumedMask = commaConsumedMask</b>
+&nbsp;        try {
+<b class="fc">&nbsp;            return block()</b>
+&nbsp;        } catch (_: GhostJsonException) {
+<b class="fc">&nbsp;            position = savedPos</b>
+<b class="fc">&nbsp;            nextTokenByte = savedToken</b>
+<b class="fc">&nbsp;            depth = savedDepth</b>
+<b class="fc">&nbsp;            needsCommaMask = savedNeedsCommaMask</b>
+<b class="fc">&nbsp;            commaConsumedMask = savedCommaConsumedMask</b>
+<b class="fc">&nbsp;            skipValue()</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Computes a cheap hash from the first four char code-points of the string content.
+&nbsp;     * Mirrors the hash used in [GhostJsonFlatReader] for byte sources.
+&nbsp;     */
+&nbsp;    private fun computeStringPoolHash(start: Int, length: Int): Int {
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        return if (length &gt;= 4) {</b>
+<b class="fc">&nbsp;            chars[start].code or</b>
+<b class="fc">&nbsp;                    (chars[start + 1].code shl C.SHIFT_8) or</b>
+<b class="fc">&nbsp;                    (chars[start + 2].code shl C.SHIFT_16) or</b>
+<b class="fc">&nbsp;                    (chars[start + 3].code shl C.SHIFT_24)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            var key = 0</b>
+<b class="pc">&nbsp;            if (length &gt;= 1) key = key or chars[start].code</b>
+<b class="fc">&nbsp;            if (length &gt;= 2) key = key or (chars[start + 1].code shl C.SHIFT_8)</b>
+<b class="fc">&nbsp;            if (length &gt;= 3) key = key or (chars[start + 2].code shl C.SHIFT_16)</b>
+<b class="fc">&nbsp;            key</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true if [rawData]`[start, start+length)` equals [cached] char-by-char.
+&nbsp;     * No 7-bit restriction needed: rawData chars are already UTF-16.
+&nbsp;     */
+&nbsp;    private fun poolContentEquals(start: Int, length: Int, cached: String): Boolean {
+<b class="pc">&nbsp;        if (cached.length != length) return false</b>
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        for (i in 0 until length) {</b>
+<b class="fc">&nbsp;            if (cached[i] != chars[start + i]) return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun invalidateUtf8Cache() {
+<b class="fc">&nbsp;        utf8CacheBytes = null</b>
+<b class="fc">&nbsp;        charToByteOffsets = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns UTF-8 bytes for [rawData], encoding at most once until the next [reset].
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun ensureUtf8Bytes(): ByteArray {
+<b class="fc">&nbsp;        var bytes = utf8CacheBytes</b>
+<b class="fc">&nbsp;        if (bytes == null) {</b>
+<b class="fc">&nbsp;            bytes = rawData.encodeToByteArray()</b>
+<b class="fc">&nbsp;            utf8CacheBytes = bytes</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return bytes</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Maps a char index to its UTF-8 byte offset using a cached offset table.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun charPositionToBytePosition(charPos: Int): Int {
+<b class="fc">&nbsp;        val safePos = charPos.coerceIn(0, limit)</b>
+<b class="fc">&nbsp;        return ensureCharToByteOffsets()[safePos]</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Inverse of [charPositionToBytePosition] for syncing reader position after byte decoders.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun bytePositionToCharPosition(targetBytePos: Int): Int {
+<b class="fc">&nbsp;        return byteToCharPosition(rawData, targetBytePos)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns UTF-8 bytes for the char range [[charStart], [charEnd]).
+&nbsp;     *
+&nbsp;     * When [ensureUtf8Bytes] already materialized the payload, slices the cached array
+&nbsp;     * (used by custom-decoder bridges). Otherwise encodes only the range — avoids a full
+&nbsp;     * document UTF-8 pass for [captureRawJsonBytes] on large envelopes.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {
+<b class="fc">&nbsp;        val cached = utf8CacheBytes</b>
+<b class="pc">&nbsp;        if (cached != null) {</b>
+<b class="nc">&nbsp;            return cached.copyOfRange(</b>
+<b class="nc">&nbsp;                charPositionToBytePosition(charStart),</b>
+<b class="nc">&nbsp;                charPositionToBytePosition(charEnd),</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        return rawData.substring(charStart, charEnd).encodeToByteArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ensureCharToByteOffsets(): IntArray {
+<b class="fc">&nbsp;        val cached = charToByteOffsets</b>
+<b class="pc">&nbsp;        if (cached != null &amp;&amp; cached.size == limit + 1) {</b>
+<b class="fc">&nbsp;            return cached</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val currentLimit = limit</b>
+<b class="fc">&nbsp;        val table = IntArray(currentLimit + 1)</b>
+<b class="fc">&nbsp;        var bytePos = 0</b>
+<b class="fc">&nbsp;        var charIndex = 0</b>
+<b class="fc">&nbsp;        table[0] = 0</b>
+<b class="fc">&nbsp;        while (charIndex &lt; currentLimit) {</b>
+<b class="fc">&nbsp;            val code = rawData[charIndex].code</b>
+<b class="fc">&nbsp;            table[charIndex] = bytePos</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                code &lt;= C.UTF8_1BYTE_MAX -&gt; {</b>
+<b class="fc">&nbsp;                    bytePos += C.UTF8_1BYTE_SIZE</b>
+<b class="fc">&nbsp;                    charIndex++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                code &lt;= C.UTF8_2BYTE_MAX -&gt; {</b>
+<b class="nc">&nbsp;                    bytePos += C.UTF8_2BYTE_SIZE</b>
+<b class="nc">&nbsp;                    charIndex++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &amp;&amp;</b>
+<b class="pc">&nbsp;                    charIndex + 1 &lt; currentLimit &amp;&amp;</b>
+<b class="pc">&nbsp;                    rawData[charIndex + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -&gt; {</b>
+<b class="fc">&nbsp;                    bytePos += C.UTF8_4BYTE_SIZE</b>
+<b class="fc">&nbsp;                    table[charIndex + 1] = bytePos</b>
+<b class="fc">&nbsp;                    charIndex += 2</b>
+&nbsp;                }
+&nbsp;                else -&gt; {
+<b class="fc">&nbsp;                    bytePos += C.UTF8_3BYTE_SIZE</b>
+<b class="fc">&nbsp;                    charIndex++</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        table[currentLimit] = bytePos</b>
+<b class="fc">&nbsp;        charToByteOffsets = table</b>
+<b class="fc">&nbsp;        return table</b>
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

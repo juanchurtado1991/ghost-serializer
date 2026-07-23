@@ -1,0 +1,165 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ExternalColorSerializer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.integration.model</a>
+</div>
+
+<h1>Coverage Summary for Class: ExternalColorSerializer (com.ghost.serialization.integration.model)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ExternalColorSerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (4/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (10/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.7%
+  </span>
+  <span class="absValue">
+    (98/108)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.integration.model
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;
+&nbsp;@InternalGhostApi
+&nbsp;object ExternalColorSerializer : GhostSerializer&lt;ExternalColor&gt; {
+<b class="fc">&nbsp;    override val typeName: String = &quot;ExternalColor&quot;</b>
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ExternalColor) {
+<b class="nc">&nbsp;        serializeInternal(writer, value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ExternalColor) {
+<b class="fc">&nbsp;        serializeInternal(writer, value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun serializeInternal(writer: Any, value: ExternalColor) {
+<b class="fc">&nbsp;        val hex = &quot;#%02x%02x%02x&quot;.format(value.r, value.g, value.b)</b>
+<b class="pc">&nbsp;        if (writer is GhostJsonWriter) writer.value(hex)</b>
+<b class="pc">&nbsp;        else if (writer is GhostJsonFlatWriter) writer.value(hex)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ExternalColor {
+<b class="fc">&nbsp;        val hex = reader.nextString().removePrefix(&quot;#&quot;)</b>
+<b class="fc">&nbsp;        val r = hex.substring(0, 2).toInt(16)</b>
+<b class="fc">&nbsp;        val g = hex.substring(2, 4).toInt(16)</b>
+<b class="fc">&nbsp;        val b = hex.substring(4, 6).toInt(16)</b>
+<b class="fc">&nbsp;        return ExternalColor(r, g, b)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

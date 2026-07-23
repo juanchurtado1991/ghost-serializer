@@ -1,0 +1,209 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoStructSerializer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoStructSerializer (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoStructSerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (4/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97%
+  </span>
+  <span class="absValue">
+    (32/33)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.3%
+  </span>
+  <span class="absValue">
+    (138/139)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.beginObject
+&nbsp;import com.ghost.serialization.parser.consumeArraySeparator
+&nbsp;import com.ghost.serialization.parser.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.endObject
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Type alias for `Struct` message.
+&nbsp; *
+&nbsp; * `Struct` represents a structured data value, consisting of fields
+&nbsp; * which map to dynamically typed values.
+&nbsp; */
+&nbsp;typealias ProtoStruct = Map&lt;String, ProtoValue&gt;
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer for [ProtoStruct].
+&nbsp; */
+&nbsp;object ProtoStructSerializer : GhostSerializer&lt;ProtoStruct&gt; {
+<b class="nc">&nbsp;    override val typeName: String get() = C.WKT_STRUCT_TYPE</b>
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoStruct) {
+<b class="fc">&nbsp;        writer.beginObject()</b>
+<b class="fc">&nbsp;        for ((mapKey, mapValue) in value) {</b>
+<b class="fc">&nbsp;            writer.name(mapKey)</b>
+<b class="fc">&nbsp;            ProtoValueSerializer.serialize(writer, mapValue)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoStruct) {
+<b class="fc">&nbsp;        writer.beginObject()</b>
+<b class="fc">&nbsp;        for ((mapKey, mapValue) in value) {</b>
+<b class="fc">&nbsp;            writer.name(mapKey)</b>
+<b class="fc">&nbsp;            ProtoValueSerializer.serialize(writer, mapValue)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoStruct {
+<b class="fc">&nbsp;        val map = mutableMapOf&lt;String, ProtoValue&gt;()</b>
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="fc">&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            val key = reader.nextString()</b>
+<b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;            val value = ProtoValueSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;            map[key] = value</b>
+<b class="fc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        reader.endObject()</b>
+<b class="fc">&nbsp;        return map</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoStruct {
+<b class="fc">&nbsp;        val map = mutableMapOf&lt;String, ProtoValue&gt;()</b>
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="fc">&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            val key = reader.nextString()</b>
+<b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;            val value = ProtoValueSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;            map[key] = value</b>
+<b class="fc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        reader.endObject()</b>
+<b class="fc">&nbsp;        return map</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

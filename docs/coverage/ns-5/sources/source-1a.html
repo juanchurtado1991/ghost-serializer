@@ -1,0 +1,263 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > PerfectHashConfig</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: PerfectHashConfig (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PerfectHashConfig</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (22/22)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;ReplaceSizeCheckWithIsNotEmpty&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+<b class="fc">&nbsp;internal data class PerfectHashConfig(</b>
+<b class="fc">&nbsp;    val shift: Int,</b>
+<b class="fc">&nbsp;    val multiplier: Int,</b>
+<b class="fc">&nbsp;    val tableSize: Int,</b>
+<b class="fc">&nbsp;    val extendedKeyHash: Boolean</b>
+&nbsp;)
+&nbsp;
+&nbsp;internal object PerfectHashFinder {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Utility to find a collision-free hash multiplier and shift configuration
+&nbsp;     * mapping a set of field names to unique index slots inside a 1024-entry table.
+&nbsp;     *
+&nbsp;     * ### How the Reader uses these parameters (Runtime Walkthrough):
+&nbsp;     *
+&nbsp;     * Suppose we have a field named **&quot;age&quot;** (3 bytes: &#39;a&#39;=97, &#39;g&#39;=103, &#39;e&#39;=101)
+&nbsp;     * and the optimizer chose `multiplier = 31` and `shift = 5`.
+&nbsp;     *
+&nbsp;     * | Step | Action | Description | Resulting Value |
+&nbsp;     * | :--- | :--- | :--- | :--- |
+&nbsp;     * | **1. Bytes** | Capture | Read the first 4 bytes of &quot;age&quot; | `[97, 103, 101]` |
+&nbsp;     * | **2. Packing** | Create `key` | Place bytes into 4 slots (32-bit container) | `0x00656761` (hex) |
+&nbsp;     * | **3. Hash** | Apply formula | Calculate: `((key * mult + size) &gt;&gt; shift) &amp; 1023` | `((6645601 * 31 + 3) &gt;&gt; 5) &amp; 1023` |
+&nbsp;     * | **4. Lookup** | Index | Access the dispatch table | `dispatch(hash)` -&gt; Returns index |
+&nbsp;     *
+&nbsp;     * #### Deep dive into &quot;Packing&quot; (Step 2):
+&nbsp;     * Imagine a 32-bit Integer as 4 empty boxes. We place each byte into a box,
+&nbsp;     * shifting them to the left so they don&#39;t overlap:
+&nbsp;     *
+&nbsp;     * ```text
+&nbsp;     * Slot 4 (24-31) | Slot 3 (16-23) | Slot 2 (8-15) | Slot 1 (0-7)
+&nbsp;     * --------------------------------------------------------------
+&nbsp;     * Empty      |     &#39;e&#39; (101)  |   &#39;g&#39; (103)   |  &#39;a&#39; (97)
+&nbsp;     * ```
+&nbsp;     * *Each shift (&lt;&lt; 8, &lt;&lt; 16, etc.) just pushes the byte into its assigned slot.*
+&nbsp;     *
+&nbsp;     * @param names The list of unique field names to index.
+&nbsp;     * @return Optimal hash parameters and whether extended key hashing is required at runtime.
+&nbsp;     */
+&nbsp;    fun findPerfectHash(names: List&lt;String&gt;): PerfectHashConfig {
+&nbsp;        if (names.isEmpty()) {
+&nbsp;            return PerfectHashConfig(0, C.HASH_MULTIPLIER_START, 128, extendedKeyHash = false)
+&nbsp;        }
+&nbsp;        findPerfectHashInternal(names, useExtendedKeyHash = false)?.let { (shift, multiplier, tableSize) -&gt;
+&nbsp;            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = false)
+&nbsp;        }
+&nbsp;        findPerfectHashInternal(names, useExtendedKeyHash = true)?.let { (shift, multiplier, tableSize) -&gt;
+&nbsp;            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = true)
+&nbsp;        }
+&nbsp;        throw IllegalStateException(
+&nbsp;            C.STR_ERR_PERFECT_HASH_COLLISION_1 + names.joinToString() + C.STR_ERR_PERFECT_HASH_COLLISION_2
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun findPerfectHashInternal(
+&nbsp;        names: List&lt;String&gt;,
+&nbsp;        useExtendedKeyHash: Boolean
+&nbsp;    ): Triple&lt;Int, Int, Int&gt;? {
+&nbsp;        val rawBytes = names.map { it.encodeToByteArray() }
+&nbsp;        val hasCollisions = if (useExtendedKeyHash) {
+&nbsp;            true
+&nbsp;        } else {
+&nbsp;            detectPrefixLengthCollisions(rawBytes)
+&nbsp;        }
+&nbsp;
+&nbsp;        val tableSizes = listOf(128, 256, 512, 1024, 2048, 4096, 8192)
+&nbsp;        for (tableSize in tableSizes) {
+&nbsp;            val tableMask = tableSize - 1
+&nbsp;            for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
+&nbsp;                for (shift in 0..C.HASH_SHIFT_LIMIT) {
+&nbsp;                    val dispatch = IntArray(tableSize) { -1 }
+&nbsp;                    var collision = false
+&nbsp;                    for (index in rawBytes.indices) {
+&nbsp;                        val bytes = rawBytes[index]
+&nbsp;                        if (bytes.isNotEmpty()) {
+&nbsp;                            val key = computeDispatchKey(bytes, hasCollisions)
+&nbsp;                            val hash = ((key * multiplier + bytes.size) shr shift) and tableMask
+&nbsp;                            if (dispatch[hash] == -1) {
+&nbsp;                                dispatch[hash] = index
+&nbsp;                            } else {
+&nbsp;                                collision = true
+&nbsp;                                break
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                    if (!collision) {
+&nbsp;                        return Triple(shift, multiplier, tableSize)
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return null
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun detectPrefixLengthCollisions(rawBytes: List&lt;ByteArray&gt;): Boolean {
+&nbsp;        val seen = HashSet&lt;Long&gt;()
+&nbsp;        for (bytes in rawBytes) {
+&nbsp;            if (bytes.isNotEmpty()) {
+&nbsp;                var mask = 0L
+&nbsp;                if (bytes.size &gt;= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
+&nbsp;                if (bytes.size &gt;= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
+&nbsp;                if (bytes.size &gt;= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
+&nbsp;                if (bytes.size &gt;= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
+&nbsp;                val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)
+&nbsp;                if (!seen.add(packed)) {
+&nbsp;                    return true
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return false
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun computeDispatchKey(bytes: ByteArray, hasCollisions: Boolean): Int {
+&nbsp;        var key = 0
+&nbsp;        if (bytes.size &gt;= C.VAL_ONE) {
+&nbsp;            key = key or (bytes[C.VAL_ZERO].toInt() and C.BYTE_MASK)
+&nbsp;        }
+&nbsp;        if (bytes.size &gt;= C.VAL_TWO) {
+&nbsp;            key = key or ((bytes[C.VAL_ONE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_8)
+&nbsp;        }
+&nbsp;        if (bytes.size &gt;= C.VAL_THREE) {
+&nbsp;            key = key or ((bytes[C.VAL_TWO].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_16)
+&nbsp;        }
+&nbsp;        if (bytes.size &gt;= C.VAL_FOUR) {
+&nbsp;            key = key or ((bytes[C.VAL_THREE].toInt() and C.BYTE_MASK) shl C.BIT_SHIFT_24)
+&nbsp;        }
+&nbsp;        if (hasCollisions) {
+&nbsp;            var ci = C.VAL_FOUR
+&nbsp;            while (ci &lt; bytes.size) {
+&nbsp;                key = key * C.COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and C.BYTE_MASK)
+&nbsp;                ci++
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return key
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

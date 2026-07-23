@@ -1,0 +1,434 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostDiscriminatorPeeker</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostDiscriminatorPeeker (com.ghost.serialization.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostDiscriminatorPeeker</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (11/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.6%
+  </span>
+  <span class="absValue">
+    (45/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.1%
+  </span>
+  <span class="absValue">
+    (90/101)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.9%
+  </span>
+  <span class="absValue">
+    (422/440)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.BACKSLASH_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.BYTE_SHIFT_UNIT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.COLON_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.OPEN_ARR_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.OPEN_OBJ_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
+&nbsp;import com.ghost.serialization.parser.GhostHeuristics.maxDiscriminatorPeekDistance
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/**
+&nbsp; * Internal utility to peek at a JSON discriminator value without full parsing.
+&nbsp; * Optimized for speed and zero allocations.
+&nbsp; */
+&nbsp;@InternalGhostApi
+&nbsp;object GhostDiscriminatorPeeker {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Attempts to find the value of [key] in the JSON object starting at [start].
+&nbsp;     * Returns the value as a string, or null if not found or if the object is too complex.
+&nbsp;     *
+&nbsp;     * This method decides the branch (Streaming vs Array) once and enters a zero-cost
+&nbsp;     * modular implementation.
+&nbsp;     *
+&nbsp;     * Used by KSP-generated serializers for polymorphic deserialization.
+&nbsp;     */
+&nbsp;    fun peek(
+&nbsp;        source: GhostSource,
+&nbsp;        rawData: ByteArray,
+&nbsp;        isStreaming: Boolean,
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        key: ByteString,
+&nbsp;    ): String? {
+<b class="pc">&nbsp;        val getByte = if (isStreaming) {</b>
+<b class="nc">&nbsp;            { pos: Int -&gt; source[pos] }</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            { pos: Int -&gt; rawData[pos].toInt() and BYTE_MASK }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return peekInternal(</b>
+&nbsp;            start = start,
+&nbsp;            limit = limit,
+<b class="fc">&nbsp;            keySize = key.size,</b>
+&nbsp;            getByte = getByte,
+<b class="fc">&nbsp;            matchesKey = { keyStart -&gt; source.contentEquals(keyStart, key) },</b>
+<b class="fc">&nbsp;            decodeValue = { valueStart, valueEnd -&gt; source.decodeToString(valueStart, valueEnd) },</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Char-channel peek for [GhostJsonStringReader] — same scan logic as [peek], zero UTF-8 bridge.
+&nbsp;     */
+&nbsp;    fun peekChars(
+&nbsp;        chars: CharArray,
+&nbsp;        rawData: String,
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        key: String,
+&nbsp;    ): String? {
+<b class="fc">&nbsp;        return peekInternal(</b>
+&nbsp;            start = start,
+&nbsp;            limit = limit,
+<b class="fc">&nbsp;            keySize = key.length,</b>
+<b class="fc">&nbsp;            getByte = { pos -&gt; chars[pos].code },</b>
+<b class="fc">&nbsp;            matchesKey = { keyStart -&gt; contentEqualsKey(chars, keyStart, key) },</b>
+<b class="fc">&nbsp;            decodeValue = { valueStart, valueEnd -&gt; rawData.substring(valueStart, valueEnd) },</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;CascadeIf&quot;)
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun peekInternal(
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        keySize: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;        crossinline matchesKey: (keyStart: Int) -&gt; Boolean,
+&nbsp;        crossinline decodeValue: (valueStart: Int, valueEnd: Int) -&gt; String?,
+&nbsp;    ): String? {
+<b class="fc">&nbsp;        var position = skipLeadingWhitespace(start, limit, getByte)</b>
+<b class="pc">&nbsp;        if (position &gt;= limit) {</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        when (getByte(position)) {</b>
+<b class="fc">&nbsp;            OPEN_OBJ_INT -&gt; position++</b>
+&nbsp;            QUOTE_INT -&gt; {
+&nbsp;                // Already inside an object (e.g. after beginObject() on the string channel).
+&nbsp;            }
+<b class="nc">&nbsp;            else -&gt; return null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val scanLimit = (position + maxDiscriminatorPeekDistance)</b>
+<b class="fc">&nbsp;            .coerceAtMost(limit)</b>
+&nbsp;
+<b class="fc">&nbsp;        while (position &lt; scanLimit) {</b>
+<b class="fc">&nbsp;            val byte = getByte(position)</b>
+&nbsp;
+<b class="fc">&nbsp;            if (byte == QUOTE_INT) {</b>
+<b class="fc">&nbsp;                val keyStart = position + 1</b>
+&nbsp;
+<b class="fc">&nbsp;                if (</b>
+<b class="fc">&nbsp;                    keyStart + keySize &lt; scanLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                    getByte(keyStart + keySize) == QUOTE_INT &amp;&amp;</b>
+<b class="fc">&nbsp;                    matchesKey(keyStart)</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    return tryExtractValue(</b>
+<b class="fc">&nbsp;                        keyStart + keySize + 1,</b>
+&nbsp;                        scanLimit,
+&nbsp;                        getByte,
+&nbsp;                        decodeValue,
+&nbsp;                    )
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                position = skipString(keyStart, scanLimit, getByte)</b>
+&nbsp;            } else if (byte == OPEN_OBJ_INT) {
+<b class="fc">&nbsp;                position = skipBalanced(</b>
+&nbsp;                    start = position,
+<b class="fc">&nbsp;                    open = OPEN_OBJ_INT,</b>
+<b class="fc">&nbsp;                    close = CLOSE_OBJ_INT,</b>
+&nbsp;                    limit = scanLimit,
+&nbsp;                    getByte = getByte,
+&nbsp;                )
+&nbsp;            } else if (byte == OPEN_ARR_INT) {
+<b class="fc">&nbsp;                position = skipBalanced(</b>
+&nbsp;                    start = position,
+<b class="fc">&nbsp;                    open = OPEN_ARR_INT,</b>
+<b class="fc">&nbsp;                    close = CLOSE_ARR_INT,</b>
+&nbsp;                    limit = scanLimit,
+&nbsp;                    getByte = getByte,
+&nbsp;                )
+&nbsp;            } else {
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun tryExtractValue(
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;        crossinline decodeValue: (valueStart: Int, valueEnd: Int) -&gt; String?,
+&nbsp;    ): String? {
+<b class="fc">&nbsp;        val colonPosition = skipWhitespaceAndExpect(</b>
+&nbsp;            start,
+&nbsp;            limit,
+<b class="fc">&nbsp;            COLON_INT,</b>
+&nbsp;            getByte,
+&nbsp;        )
+<b class="pc">&nbsp;        if (colonPosition == -1) {</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val quotePosition = skipWhitespaceAndExpect(</b>
+&nbsp;            colonPosition,
+&nbsp;            limit,
+<b class="fc">&nbsp;            QUOTE_INT,</b>
+&nbsp;            getByte,
+&nbsp;        )
+<b class="fc">&nbsp;        if (quotePosition == -1) {</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return extractValue(</b>
+&nbsp;            quotePosition,
+&nbsp;            limit,
+&nbsp;            getByte,
+&nbsp;            decodeValue,
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun skipLeadingWhitespace(
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        val mask = GhostJsonConstants.WHITESPACE_MASK</b>
+<b class="fc">&nbsp;        var position = start</b>
+<b class="pc">&nbsp;        while (position &lt; limit) {</b>
+<b class="fc">&nbsp;            val byte = getByte(position)</b>
+<b class="fc">&nbsp;            if (</b>
+<b class="fc">&nbsp;                byte &gt; SPACE_INT ||</b>
+<b class="pc">&nbsp;                (mask and (BYTE_SHIFT_UNIT shl byte)) == RESULT_NONE</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                return position</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return position</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun skipWhitespaceAndExpect(
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        expected: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        val position = skipLeadingWhitespace(start, limit, getByte)</b>
+<b class="pc">&nbsp;        if (position &gt;= limit) {</b>
+<b class="nc">&nbsp;            return -1</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return if (getByte(position) == expected) {</b>
+<b class="fc">&nbsp;            position + 1</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            -1</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun skipBalanced(
+&nbsp;        start: Int,
+&nbsp;        open: Int,
+&nbsp;        close: Int,
+&nbsp;        limit: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;    ): Int {
+<b class="pc">&nbsp;        if (getByte(start) != open) {</b>
+<b class="nc">&nbsp;            return start + 1</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var position = start + 1</b>
+<b class="fc">&nbsp;        var depth = 1</b>
+<b class="pc">&nbsp;        while (position &lt; limit &amp;&amp; depth &gt; 0) {</b>
+<b class="pc">&nbsp;            when (val byte = getByte(position)) {</b>
+<b class="fc">&nbsp;                QUOTE_INT -&gt; position = skipString(position + 1, limit, getByte)</b>
+&nbsp;                OPEN_OBJ_INT, OPEN_ARR_INT -&gt; {
+<b class="fc">&nbsp;                    depth++</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+&nbsp;                CLOSE_OBJ_INT, CLOSE_ARR_INT -&gt; {
+<b class="fc">&nbsp;                    depth--</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                else -&gt; position++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return position</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun skipString(
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        var position = start</b>
+<b class="pc">&nbsp;        while (position &lt; limit) {</b>
+<b class="fc">&nbsp;            val skipByte = getByte(position)</b>
+<b class="fc">&nbsp;            if (skipByte == QUOTE_INT) {</b>
+<b class="fc">&nbsp;                return position + 1</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (skipByte == BACKSLASH_INT) {</b>
+<b class="nc">&nbsp;                position++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return limit</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal inline fun extractValue(
+&nbsp;        start: Int,
+&nbsp;        limit: Int,
+&nbsp;        crossinline getByte: (Int) -&gt; Int,
+&nbsp;        crossinline decodeValue: (valueStart: Int, valueEnd: Int) -&gt; String?,
+&nbsp;    ): String? {
+<b class="fc">&nbsp;        var position = start</b>
+<b class="fc">&nbsp;        val valueStart = position</b>
+<b class="pc">&nbsp;        while (position &lt; limit) {</b>
+<b class="fc">&nbsp;            val valueByte = getByte(position)</b>
+<b class="fc">&nbsp;            if (valueByte == QUOTE_INT) {</b>
+<b class="fc">&nbsp;                return decodeValue(valueStart, position)</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (valueByte == BACKSLASH_INT) {</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun contentEqualsKey(
+&nbsp;        chars: CharArray,
+&nbsp;        keyStart: Int,
+&nbsp;        key: String,
+&nbsp;    ): Boolean {
+<b class="fc">&nbsp;        val keySize = key.length</b>
+<b class="fc">&nbsp;        for (i in 0 until keySize) {</b>
+<b class="fc">&nbsp;            if (chars[keyStart + i] != key[i]) {</b>
+<b class="fc">&nbsp;                return false</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

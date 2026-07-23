@@ -1,0 +1,191 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > OmitIfAbsentWrappedKeysFixture</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.integration.model</a>
+</div>
+
+<h1>Coverage Summary for Class: OmitIfAbsentWrappedKeysFixture (com.ghost.serialization.integration.model)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">OmitIfAbsentWrappedKeysFixture</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+&nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostName
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class WireExtras(
+&nbsp;    @GhostName(&quot;extra1&quot;) val extra1: String?,
+&nbsp;    @GhostName(&quot;extra2&quot;) val extra2: String?,
+&nbsp;    @GhostName(&quot;extra3&quot;) val extra3: String?,
+&nbsp;    @GhostName(&quot;extra4&quot;) val extra4: String?,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class WrappedKeysFixture(
+&nbsp;    val id: String,
+&nbsp;    @GhostWrappedKeys(keys = [&quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;])
+&nbsp;    @GhostName(&quot;extras&quot;)
+&nbsp;    val extras: WireExtras,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class OmitIfEmptyWrappedKeysFixture(
+&nbsp;    val id: String,
+&nbsp;    @GhostWrappedKeys(keys = [&quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;], omitIfEmpty = true)
+&nbsp;    @GhostName(&quot;extras&quot;)
+&nbsp;    val extras: WireExtras?,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+<b class="fc">&nbsp;data class OmitIfAbsentWrappedKeysFixture(</b>
+<b class="fc">&nbsp;    val id: String,</b>
+<b class="fc">&nbsp;    @GhostWrappedKeys(</b>
+&nbsp;        keys = [&quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;],
+&nbsp;        omitIfAbsent = [&quot;extra2&quot;, &quot;extra4&quot;],
+&nbsp;    )
+&nbsp;    @GhostName(&quot;extras&quot;)
+&nbsp;    val extras: WireExtras?,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class HierarchyWrappedKeysFixture(
+&nbsp;    @GhostWrappedKeys(keys = [&quot;id&quot;, &quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;])
+&nbsp;    @GhostName(&quot;wrappedKeysTestClass&quot;)
+&nbsp;    val wrappedKeysTestClass: WrappedKeysFixture,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class WireExtras12(
+&nbsp;    @GhostName(&quot;extra1&quot;) val extra1: String,
+&nbsp;    @GhostName(&quot;extra2&quot;) val extra2: String,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class WireExtras34(
+&nbsp;    @GhostName(&quot;extra3&quot;) val extra3: String,
+&nbsp;    @GhostName(&quot;extra4&quot;) val extra4: String,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class RepeatedWrappedKeysFixture(
+&nbsp;    val id: String,
+&nbsp;    @GhostWrappedKeys(keys = [&quot;extra1&quot;, &quot;extra2&quot;])
+&nbsp;    @GhostName(&quot;extras12&quot;)
+&nbsp;    val extras12: WireExtras12,
+&nbsp;    @GhostWrappedKeys(keys = [&quot;extra3&quot;, &quot;extra4&quot;])
+&nbsp;    @GhostName(&quot;extras34&quot;)
+&nbsp;    val extras34: WireExtras34,
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

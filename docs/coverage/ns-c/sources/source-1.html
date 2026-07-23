@@ -1,0 +1,345 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostConverterFactory</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.retrofit</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostConverterFactory (com.ghost.serialization.retrofit)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostConverterFactory</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (30/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.2%
+  </span>
+  <span class="absValue">
+    (65/69)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (284/295)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostConverterFactory$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (30/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.3%
+  </span>
+  <span class="absValue">
+    (66/70)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (288/299)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.retrofit
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.ghostInternalUseFlatReader
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.serializers.ListSerializer
+&nbsp;import com.ghost.serialization.serializers.MapSerializer
+&nbsp;import okhttp3.MediaType.Companion.toMediaType
+&nbsp;import okhttp3.RequestBody
+&nbsp;import okhttp3.RequestBody.Companion.toRequestBody
+&nbsp;import okhttp3.ResponseBody
+&nbsp;import retrofit2.Converter
+&nbsp;import retrofit2.Retrofit
+&nbsp;import java.lang.reflect.ParameterizedType
+&nbsp;import java.lang.reflect.Type
+&nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Retrofit Converter Factory for Ghost Serialization.
+&nbsp; */
+&nbsp;@OptIn(InternalGhostApi::class)
+<b class="fc">&nbsp;class GhostConverterFactory private constructor() : Converter.Factory() {</b>
+&nbsp;
+&nbsp;    private val serializerCache =
+<b class="fc">&nbsp;        ConcurrentHashMap&lt;Type, GhostSerializer&lt;Any&gt;&gt;()</b>
+&nbsp;
+&nbsp;    override fun responseBodyConverter(
+&nbsp;        type: Type,
+&nbsp;        annotations: Array&lt;out Annotation&gt;,
+&nbsp;        retrofit: Retrofit
+&nbsp;    ): Converter&lt;ResponseBody, *&gt;? {
+<b class="fc">&nbsp;        val serializer = getSerializerWithCache(type)</b>
+<b class="fc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val isStrict = annotations.any { it is com.ghost.serialization.annotations.GhostStrict }</b>
+<b class="fc">&nbsp;        val isCoerce = annotations.any { it is com.ghost.serialization.annotations.GhostCoerce }</b>
+&nbsp;
+<b class="fc">&nbsp;        return Converter { body -&gt;</b>
+<b class="fc">&nbsp;            body.use {</b>
+<b class="fc">&nbsp;                val stream = it.byteStream()</b>
+<b class="fc">&nbsp;                var scratch = acquireScratchBuffer(BUFFER_SIZE)</b>
+&nbsp;                try {
+&nbsp;
+<b class="fc">&nbsp;                    var offset = 0</b>
+<b class="fc">&nbsp;                    while (true) {</b>
+<b class="fc">&nbsp;                        if (offset == scratch.size) {</b>
+<b class="fc">&nbsp;                            val grown =</b>
+<b class="fc">&nbsp;                                acquireScratchBuffer(scratch.size * 2)</b>
+&nbsp;
+<b class="fc">&nbsp;                            scratch.copyInto(</b>
+<b class="fc">&nbsp;                                grown,</b>
+<b class="fc">&nbsp;                                0,</b>
+<b class="fc">&nbsp;                                0,</b>
+<b class="fc">&nbsp;                                offset</b>
+&nbsp;                            )
+&nbsp;
+<b class="fc">&nbsp;                            releaseScratchBuffer(scratch)</b>
+<b class="fc">&nbsp;                            scratch = grown</b>
+&nbsp;                        }
+&nbsp;
+<b class="fc">&nbsp;                        val read = stream.read(</b>
+<b class="fc">&nbsp;                            scratch,</b>
+<b class="fc">&nbsp;                            offset,</b>
+<b class="fc">&nbsp;                            scratch.size - offset</b>
+&nbsp;                        )
+&nbsp;
+<b class="fc">&nbsp;                        if (read == -1) break</b>
+<b class="fc">&nbsp;                        offset += read</b>
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    ghostInternalUseFlatReader(</b>
+<b class="fc">&nbsp;                        scratch, offset</b>
+&nbsp;                    ) { reader -&gt;
+<b class="fc">&nbsp;                        reader.strictMode = isStrict</b>
+<b class="fc">&nbsp;                        if (isCoerce) {</b>
+<b class="fc">&nbsp;                            reader.coerceStringsToNumbers = true</b>
+<b class="fc">&nbsp;                            reader.coerceBooleans = true</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        if (reader.isNextNullValue()) {</b>
+<b class="fc">&nbsp;                            reader.consumeNull()</b>
+<b class="fc">&nbsp;                            null</b>
+&nbsp;                        } else {
+<b class="fc">&nbsp;                            serializer.deserialize(reader)</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                } finally {
+<b class="fc">&nbsp;                    releaseScratchBuffer(scratch)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun requestBodyConverter(
+&nbsp;        type: Type,
+&nbsp;        parameterAnnotations: Array&lt;out Annotation&gt;,
+&nbsp;        methodAnnotations: Array&lt;out Annotation&gt;,
+&nbsp;        retrofit: Retrofit
+&nbsp;    ): Converter&lt;*, RequestBody&gt;? {
+<b class="fc">&nbsp;        val serializer = getSerializerWithCache(type)</b>
+<b class="fc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;        return Converter&lt;Any, RequestBody&gt; { value -&gt;</b>
+<b class="fc">&nbsp;            Ghost.encodeToBytes(serializer, value)</b>
+<b class="fc">&nbsp;                .toRequestBody(MEDIA_TYPE)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getSerializerWithCache(type: Type): GhostSerializer&lt;Any&gt;? {
+<b class="fc">&nbsp;        val cached = serializerCache[type]</b>
+&nbsp;
+<b class="fc">&nbsp;        if (cached != null) {</b>
+<b class="fc">&nbsp;            return cached</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val serializer = getSerializerForType(type) ?: return null</b>
+<b class="fc">&nbsp;        val existing = serializerCache.putIfAbsent(type, serializer)</b>
+<b class="pc">&nbsp;        return existing ?: serializer</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getSerializerForType(type: Type): GhostSerializer&lt;Any&gt;? {
+<b class="fc">&nbsp;        if (type is Class&lt;*&gt;) {</b>
+<b class="fc">&nbsp;            return Ghost</b>
+<b class="fc">&nbsp;                .getSerializer(type.kotlin as KClass&lt;Any&gt;)</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (type is ParameterizedType) {</b>
+<b class="pc">&nbsp;            val rawType = type.rawType as? Class&lt;*&gt; ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;            if (List::class.java.isAssignableFrom(rawType)) {</b>
+<b class="pc">&nbsp;                val arg = type.actualTypeArguments.firstOrNull()</b>
+<b class="nc">&nbsp;                    ?: return null</b>
+&nbsp;
+<b class="pc">&nbsp;                val itemSerializer = getSerializerWithCache(arg)</b>
+<b class="nc">&nbsp;                    ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;                return ListSerializer(itemSerializer) as GhostSerializer&lt;Any&gt;</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (Map::class.java.isAssignableFrom(rawType)) {</b>
+<b class="pc">&nbsp;                val arg = type.actualTypeArguments.getOrNull(1)</b>
+<b class="nc">&nbsp;                    ?: return null</b>
+&nbsp;
+<b class="pc">&nbsp;                val valueSerializer = getSerializerWithCache(arg)</b>
+<b class="nc">&nbsp;                    ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;                return MapSerializer(valueSerializer) as GhostSerializer&lt;Any&gt;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;        }
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        private const val STR_MEDIA_TYPE = &quot;application/json; charset=UTF-8&quot;
+<b class="fc">&nbsp;        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()</b>
+&nbsp;        private const val BUFFER_SIZE = 524288
+&nbsp;
+<b class="fc">&nbsp;        fun create(): GhostConverterFactory = GhostConverterFactory()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,176 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonException</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.exception</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonException (com.ghost.serialization.exception)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonException</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (73/73)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.exception
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;
+&nbsp;/**
+&nbsp; * Exception type thrown for JSON parsing/encoding errors.
+&nbsp; *
+&nbsp; * To keep the failure path cheap (the parser may raise this exception in tight
+&nbsp; * loops while probing payloads), [line] and [column] are computed lazily — the
+&nbsp; * O(N) scan over the source bytes is only paid if the caller actually reads
+&nbsp; * either property or accesses [message].
+&nbsp; */
+&nbsp;class GhostJsonException @InternalGhostApi internal constructor(
+<b class="fc">&nbsp;    private val baseMessage: String,</b>
+<b class="fc">&nbsp;    private val computeLineCol: () -&gt; IntArray,</b>
+&nbsp;    /**
+&nbsp;     * The dot-separated JSON path where the parsing/encoding error occurred.
+&nbsp;     * Defaults to the root element `&quot;$&quot;` if path is unknown or at startup.
+&nbsp;     */
+<b class="fc">&nbsp;    val path: String = &quot;$&quot;</b>
+<b class="fc">&nbsp;) : RuntimeException() {</b>
+&nbsp;
+<b class="fc">&nbsp;    private val lineCol: IntArray by lazy(LazyThreadSafetyMode.NONE) {</b>
+<b class="fc">&nbsp;        computeLineCol()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** The 1-indexed line number in the JSON source where the error occurred. */
+<b class="fc">&nbsp;    val line: Int get() = lineCol[0]</b>
+&nbsp;
+&nbsp;    /** The 1-indexed column number in the JSON source where the error occurred. */
+<b class="fc">&nbsp;    val column: Int get() = lineCol[1]</b>
+&nbsp;
+&nbsp;    override val message: String
+<b class="fc">&nbsp;        get() = &quot;$baseMessage [at line $line, col $column, path $path]&quot;</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Constructs a [GhostJsonException] with an explicit line, column, and path.
+&nbsp;     *
+&nbsp;     * @param message The detailed error message.
+&nbsp;     * @param line The 1-indexed line number where the error occurred.
+&nbsp;     * @param column The 1-indexed column number where the error occurred.
+&nbsp;     * @param path The JSON path where the error occurred.
+&nbsp;     */
+&nbsp;    @OptIn(InternalGhostApi::class)
+&nbsp;    constructor(
+&nbsp;        message: String,
+<b class="fc">&nbsp;        line: Int = -1,</b>
+<b class="fc">&nbsp;        column: Int = -1,</b>
+<b class="fc">&nbsp;        path: String = &quot;$&quot;</b>
+<b class="fc">&nbsp;    ) : this(</b>
+<b class="fc">&nbsp;        message,</b>
+<b class="fc">&nbsp;        { intArrayOf(line, column) },</b>
+<b class="fc">&nbsp;        path</b>
+&nbsp;    )
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

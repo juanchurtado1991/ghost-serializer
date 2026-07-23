@@ -1,0 +1,312 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > RawJson</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.types</a>
+</div>
+
+<h1>Coverage Summary for Class: RawJson (com.ghost.serialization.types)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">RawJson</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.4%
+  </span>
+  <span class="absValue">
+    (17/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.3%
+  </span>
+  <span class="absValue">
+    (25/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95%
+  </span>
+  <span class="absValue">
+    (38/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.5%
+  </span>
+  <span class="absValue">
+    (192/197)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">RawJson$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    95.2%
+  </span>
+  <span class="absValue">
+    (20/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.3%
+  </span>
+  <span class="absValue">
+    (25/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.3%
+  </span>
+  <span class="absValue">
+    (41/43)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.7%
+  </span>
+  <span class="absValue">
+    (209/214)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.types
+&nbsp;
+&nbsp;/**
+&nbsp; * Opaque JSON held as verbatim UTF-8 bytes of the wire representation.
+&nbsp; *
+&nbsp; * Ghost serializes and deserializes [RawJson] as an inline JSON value (object, array,
+&nbsp; * string, number, boolean, or null) using zero-copy capture when parsed from a
+&nbsp; * [ByteArray] source, without building an intermediate parse tree.
+&nbsp; *
+&nbsp; * Prefer [RawJson] over [kotlin.ByteArray] on public model fields: it documents intent
+&nbsp; * and provides value-based [equals] / [hashCode].
+&nbsp; *
+&nbsp; * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength]
+&nbsp; * alias the parse input buffer until [bytes] is accessed (which materializes an
+&nbsp; * exact-length copy for slice values).
+&nbsp; */
+<b class="fc">&nbsp;class RawJson internal constructor(</b>
+<b class="fc">&nbsp;    val storage: ByteArray,</b>
+<b class="fc">&nbsp;    val storageOffset: Int,</b>
+<b class="fc">&nbsp;    val storageLength: Int</b>
+&nbsp;) {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Exact-length UTF-8 payload. Materializes a copy when this value is a slice into
+&nbsp;     * a larger [storage] buffer.
+&nbsp;     */
+&nbsp;    val bytes: ByteArray
+<b class="pc">&nbsp;        get() = if (storageOffset == 0 &amp;&amp; storageLength == storage.size) {</b>
+<b class="fc">&nbsp;            storage</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            storage.copyOfRange(storageOffset, storageOffset + storageLength)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    /** Decodes the captured UTF-8 JSON bytes as a [String] (wire form, including quotes for strings). */
+&nbsp;    fun decodeToString(): String =
+<b class="fc">&nbsp;        storage.decodeToString(storageOffset, storageOffset + storageLength)</b>
+&nbsp;
+&nbsp;    /** Exclusive end index of this slice in [storage] (`storageOffset + storageLength`). */
+&nbsp;    val endExclusive: Int
+<b class="fc">&nbsp;        get() = storageOffset + storageLength</b>
+&nbsp;
+&nbsp;    /** Classifies the JSON value without parsing or copying the payload. */
+<b class="fc">&nbsp;    fun kind(): RawJsonKind = RawJsonValueScanner.kind(this)</b>
+&nbsp;
+&nbsp;    /** `true` when the payload is the JSON literal `null`. */
+&nbsp;    val isJsonNull: Boolean
+<b class="fc">&nbsp;        get() = RawJsonValueScanner.isJsonNull(this)</b>
+&nbsp;
+&nbsp;    /** `true`/`false` for JSON booleans; `null` for `null`, non-boolean, or invalid payloads. */
+<b class="fc">&nbsp;    fun asBooleanOrNull(): Boolean? = RawJsonValueScanner.asBooleanOrNull(this)</b>
+&nbsp;
+&nbsp;    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
+<b class="fc">&nbsp;    fun asIntOrNull(): Int? = RawJsonValueScanner.asIntOrNull(this)</b>
+&nbsp;
+&nbsp;    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
+<b class="fc">&nbsp;    fun asLongOrNull(): Long? = RawJsonValueScanner.asLongOrNull(this)</b>
+&nbsp;
+&nbsp;    /** JSON number as [Double]; integer path is zero-allocation, fraction/exponent uses UTF-8 decode once. */
+<b class="fc">&nbsp;    fun asDoubleOrNull(): Double? = RawJsonValueScanner.asDoubleOrNull(this)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Decoded string contents when the payload is a JSON string (`&quot;...&quot;`); otherwise `null`.
+&nbsp;     * ASCII fast path avoids escape scanning allocations when no `\` is present.
+&nbsp;     */
+<b class="fc">&nbsp;    fun asStringOrNull(): String? = RawJsonValueScanner.asStringOrNull(this)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Human-readable scalar for UI (capability status, labels). Strings are unquoted;
+&nbsp;     * numbers/booleans/null use wire text; objects/arrays return full JSON text.
+&nbsp;     */
+<b class="fc">&nbsp;    fun asDisplayString(): String = RawJsonValueScanner.asDisplayString(this)</b>
+&nbsp;
+&nbsp;    /** Value-based equality for the underlying JSON bytes. */
+&nbsp;    fun contentEquals(other: RawJson?): Boolean {
+<b class="fc">&nbsp;        if (other == null) return false</b>
+<b class="fc">&nbsp;        if (storageLength != other.storageLength) return false</b>
+<b class="fc">&nbsp;        if (isFullStorageSpan() &amp;&amp; other.isFullStorageSpan()) {</b>
+<b class="fc">&nbsp;            return storage.contentEquals(other.storage)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val end = storageOffset + storageLength</b>
+<b class="fc">&nbsp;        var otherIndex = other.storageOffset</b>
+<b class="fc">&nbsp;        for (index in storageOffset until end) {</b>
+<b class="pc">&nbsp;            if (storage[index] != other.storage[otherIndex++]) {</b>
+<b class="nc">&nbsp;                return false</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Value-based hash for the underlying JSON bytes. */
+&nbsp;    fun contentHashCode(): Int {
+<b class="fc">&nbsp;        if (isFullStorageSpan()) {</b>
+<b class="fc">&nbsp;            return storage.contentHashCode()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var result = CONTENT_HASH_SEED</b>
+<b class="fc">&nbsp;        val end = storageOffset + storageLength</b>
+<b class="fc">&nbsp;        for (index in storageOffset until end) {</b>
+<b class="fc">&nbsp;            result = CONTENT_HASH_MULTIPLIER * result + storage[index]</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isFullStorageSpan(): Boolean =
+<b class="pc">&nbsp;        storageOffset == 0 &amp;&amp; storageLength == storage.size</b>
+&nbsp;
+&nbsp;    override fun equals(other: Any?): Boolean {
+<b class="fc">&nbsp;        if (this === other) return true</b>
+<b class="fc">&nbsp;        if (other !is RawJson) return false</b>
+<b class="fc">&nbsp;        return contentEquals(other)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    override fun hashCode(): Int = contentHashCode()</b>
+&nbsp;
+<b class="nc">&nbsp;    override fun toString(): String = &quot;RawJson(${decodeToString()})&quot;</b>
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /** Initial accumulator for [contentHashCode]; matches [ByteArray.contentHashCode]. */
+&nbsp;        private const val CONTENT_HASH_SEED = 1
+&nbsp;
+&nbsp;        /** Multiplier for [contentHashCode]; matches `java.util.Arrays.hashCode` and [String.hashCode]. */
+&nbsp;        private const val CONTENT_HASH_MULTIPLIER = 31
+&nbsp;
+&nbsp;        /** Wraps an owned UTF-8 buffer exactly as it appears in JSON. */
+<b class="fc">&nbsp;        fun fromUtf8Bytes(bytes: ByteArray): RawJson = RawJson(bytes, 0, bytes.size)</b>
+&nbsp;
+&nbsp;        /** Wraps a slice of an existing buffer without copying (flat-reader capture path). */
+&nbsp;        fun fromBufferSlice(buffer: ByteArray, offset: Int, length: Int): RawJson =
+<b class="fc">&nbsp;            RawJson(buffer, offset, length)</b>
+&nbsp;
+&nbsp;        /** Encodes [json] to UTF-8 bytes. For round-trip tests, prefer wire capture. */
+<b class="fc">&nbsp;        fun fromString(json: String): RawJson = fromUtf8Bytes(json.encodeToByteArray())</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

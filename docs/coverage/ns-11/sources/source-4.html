@@ -1,0 +1,391 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > FlatCharArrayWriter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.writer</a>
+</div>
+
+<h1>Coverage Summary for Class: FlatCharArrayWriter (com.ghost.serialization.writer)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FlatCharArrayWriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81%
+  </span>
+  <span class="absValue">
+    (17/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.3%
+  </span>
+  <span class="absValue">
+    (22/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.7%
+  </span>
+  <span class="absValue">
+    (111/141)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78%
+  </span>
+  <span class="absValue">
+    (520/667)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.BUFFER_SCALE_FACTOR
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ERR_CAPACITY_OVERFLOW_PREFIX
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_QUOTE
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_T
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_R
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_U
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_E
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_F
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_A
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_L
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_S
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_N
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_DOT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_ZERO
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.parser.GhostHeuristics.maxWarmCharWriteBufferCapacity
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/**
+&nbsp; * A growing flat-array character buffer used as the in-memory output target for
+&nbsp; * [GhostJsonStringWriter]. Concrete final class with no interface or superclass
+&nbsp; * to allow direct JIT/AOT inlining.
+&nbsp; */
+&nbsp;@InternalGhostApi
+<b class="fc">&nbsp;class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {</b>
+&nbsp;
+<b class="fc">&nbsp;    var array: CharArray = CharArray(initialCapacity)</b>
+&nbsp;        private set
+&nbsp;
+<b class="fc">&nbsp;    var size: Int = 0</b>
+&nbsp;        private set
+&nbsp;
+&nbsp;    private fun ensureCapacity(extraChars: Int) {
+<b class="fc">&nbsp;        val requiredCapacity = size + extraChars</b>
+<b class="pc">&nbsp;        if (requiredCapacity &lt; 0) {</b>
+<b class="nc">&nbsp;            throw IllegalStateException(ERR_CAPACITY_OVERFLOW_PREFIX + &quot;size=$size, extraChars=$extraChars&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (requiredCapacity &gt; array.size) {</b>
+<b class="fc">&nbsp;            var newCapacity = array.size</b>
+<b class="fc">&nbsp;            if (newCapacity == 0) {</b>
+<b class="fc">&nbsp;                newCapacity = INITIAL_WRITE_BUFFER_SIZE</b>
+&nbsp;            }
+<b class="fc">&nbsp;            while (newCapacity &lt; requiredCapacity) {</b>
+<b class="fc">&nbsp;                val nextCapacity = newCapacity + (newCapacity shr CAPACITY_GROWTH_SHIFT)</b>
+<b class="pc">&nbsp;                if (nextCapacity &lt; newCapacity) {</b>
+<b class="nc">&nbsp;                    newCapacity = Int.MAX_VALUE</b>
+&nbsp;                    break
+&nbsp;                }
+<b class="fc">&nbsp;                newCapacity = nextCapacity</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (newCapacity &lt; requiredCapacity) {</b>
+<b class="nc">&nbsp;                newCapacity = requiredCapacity</b>
+&nbsp;            }
+<b class="fc">&nbsp;            array = array.copyOf(newCapacity)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends a single character. */
+&nbsp;    fun writeChar(charAsInt: Int) {
+<b class="fc">&nbsp;        val currentSize = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        if (currentSize &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;            backingArray[currentSize] = charAsInt.toChar()</b>
+<b class="fc">&nbsp;            size = currentSize + 1</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            growAndWrite(charAsInt)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun growAndWrite(charAsInt: Int) {
+<b class="fc">&nbsp;        ensureCapacity(1)</b>
+<b class="fc">&nbsp;        array[size++] = charAsInt.toChar()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends exactly two characters. */
+&nbsp;    fun write2Chars(firstChar: Int, secondChar: Int) {
+<b class="fc">&nbsp;        val currentSize = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="pc">&nbsp;        if (currentSize + 1 &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;            backingArray[currentSize] = firstChar.toChar()</b>
+<b class="fc">&nbsp;            backingArray[currentSize + 1] = secondChar.toChar()</b>
+<b class="fc">&nbsp;            size = currentSize + 2</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            ensureCapacity(2)</b>
+<b class="nc">&nbsp;            val updatedArray = array</b>
+<b class="nc">&nbsp;            updatedArray[currentSize] = firstChar.toChar()</b>
+<b class="nc">&nbsp;            updatedArray[currentSize + 1] = secondChar.toChar()</b>
+<b class="nc">&nbsp;            size = currentSize + 2</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes a plain-ASCII string directly with minimal checks. */
+&nbsp;    fun writeQuotedAscii(text: String, length: Int) {
+<b class="fc">&nbsp;        ensureCapacity(length + STRING_QUOTE_PAIR_BYTES)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        val writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex] = CHAR_QUOTE</b>
+<b class="fc">&nbsp;        text.copyRangeToCharArray(backingArray, writeIndex + 1, 0, length)</b>
+<b class="fc">&nbsp;        backingArray[writeIndex + 1 + length] = CHAR_QUOTE</b>
+<b class="fc">&nbsp;        size = writeIndex + length + STRING_QUOTE_PAIR_BYTES</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun write(chars: CharArray) {
+<b class="nc">&nbsp;        ensureCapacity(chars.size)</b>
+<b class="nc">&nbsp;        chars.copyInto(array, size)</b>
+<b class="nc">&nbsp;        size += chars.size</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun write(chars: CharArray, offset: Int, length: Int) {
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        chars.copyInto(</b>
+<b class="fc">&nbsp;            array,</b>
+<b class="fc">&nbsp;            size,</b>
+<b class="fc">&nbsp;            offset,</b>
+<b class="fc">&nbsp;            offset + length</b>
+&nbsp;        )
+<b class="fc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeString(text: String) {
+<b class="fc">&nbsp;        writeString(text, 0, text.length)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeString(text: String, beginIndex: Int, endIndex: Int) {
+<b class="fc">&nbsp;        val length = endIndex - beginIndex</b>
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        text.copyRangeToCharArray(array, size, beginIndex, endIndex)</b>
+<b class="fc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Decodes a UTF-8 byte range directly into the char buffer without an intermediate [String]. */
+&nbsp;    fun appendUtf8(bytes: ByteArray, offset: Int, length: Int) {
+<b class="pc">&nbsp;        if (length &lt;= 0) {</b>
+&nbsp;            return
+&nbsp;        }
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        var readIndex = offset</b>
+<b class="fc">&nbsp;        val end = offset + length</b>
+<b class="fc">&nbsp;        while (readIndex &lt; end) {</b>
+<b class="fc">&nbsp;            val byte = bytes[readIndex].toInt() and 0xFF</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                byte &lt;= C.UTF8_1BYTE_MAX -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] = byte.toChar()</b>
+<b class="fc">&nbsp;                    readIndex++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                (byte shr 5) == 0x6 -&gt; {</b>
+<b class="nc">&nbsp;                    val b2 = bytes[readIndex + 1].toInt() and 0xFF</b>
+<b class="nc">&nbsp;                    val codePoint = ((byte and 0x1F) shl 6) or (b2 and 0x3F)</b>
+<b class="nc">&nbsp;                    backingArray[writeIndex++] = codePoint.toChar()</b>
+<b class="nc">&nbsp;                    readIndex += 2</b>
+&nbsp;                }
+<b class="fc">&nbsp;                (byte shr 4) == 0xE -&gt; {</b>
+<b class="fc">&nbsp;                    val b2 = bytes[readIndex + 1].toInt() and 0xFF</b>
+<b class="fc">&nbsp;                    val b3 = bytes[readIndex + 2].toInt() and 0xFF</b>
+<b class="fc">&nbsp;                    val codePoint = ((byte and 0x0F) shl 12) or ((b2 and 0x3F) shl 6) or (b3 and 0x3F)</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] = codePoint.toChar()</b>
+<b class="fc">&nbsp;                    readIndex += 3</b>
+&nbsp;                }
+&nbsp;                else -&gt; {
+<b class="fc">&nbsp;                    val b2 = bytes[readIndex + 1].toInt() and 0xFF</b>
+<b class="fc">&nbsp;                    val b3 = bytes[readIndex + 2].toInt() and 0xFF</b>
+<b class="fc">&nbsp;                    val b4 = bytes[readIndex + 3].toInt() and 0xFF</b>
+<b class="fc">&nbsp;                    val codePoint = ((byte and 0x07) shl 18) or</b>
+<b class="fc">&nbsp;                        ((b2 and 0x3F) shl 12) or</b>
+<b class="fc">&nbsp;                        ((b3 and 0x3F) shl 6) or</b>
+<b class="fc">&nbsp;                        (b4 and 0x3F)</b>
+<b class="pc">&nbsp;                    if (writeIndex + 1 &gt;= backingArray.size) {</b>
+<b class="nc">&nbsp;                        size = writeIndex</b>
+<b class="nc">&nbsp;                        ensureCapacity(2)</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val updatedArray = array</b>
+<b class="fc">&nbsp;                    val high = ((codePoint - 0x10000) shr 10) + 0xD800</b>
+<b class="fc">&nbsp;                    val low = ((codePoint - 0x10000) and 0x3FF) + 0xDC00</b>
+<b class="fc">&nbsp;                    updatedArray[writeIndex++] = high.toChar()</b>
+<b class="fc">&nbsp;                    updatedArray[writeIndex++] = low.toChar()</b>
+<b class="fc">&nbsp;                    readIndex += 4</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes a ByteString interpreting its bytes directly as ASCII chars. */
+&nbsp;    fun writeAscii(byteString: ByteString) {
+<b class="nc">&nbsp;        val str = byteString.utf8()</b>
+<b class="nc">&nbsp;        val length = str.length</b>
+<b class="nc">&nbsp;        ensureCapacity(length)</b>
+<b class="nc">&nbsp;        str.copyRangeToCharArray(array, size, 0, length)</b>
+<b class="nc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;true&quot;. */
+&nbsp;    fun writeTrue() {
+<b class="fc">&nbsp;        ensureCapacity(4)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_T</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_R</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_U</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_E</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;false&quot;. */
+&nbsp;    fun writeFalse() {
+<b class="fc">&nbsp;        ensureCapacity(5)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_F</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_A</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_L</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_S</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_E</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;null&quot;. */
+&nbsp;    fun writeNull() {
+<b class="fc">&nbsp;        ensureCapacity(4)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_N</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_U</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_L</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_L</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;.0&quot;. */
+&nbsp;    fun writeDotZero() {
+<b class="nc">&nbsp;        ensureCapacity(2)</b>
+<b class="nc">&nbsp;        val backingArray = array</b>
+<b class="nc">&nbsp;        var writeIndex = size</b>
+<b class="nc">&nbsp;        backingArray[writeIndex++] = CHAR_DOT</b>
+<b class="nc">&nbsp;        backingArray[writeIndex++] = CHAR_ZERO</b>
+<b class="nc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun reset() {
+<b class="fc">&nbsp;        size = 0</b>
+<b class="fc">&nbsp;        contractCapacity()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun contractCapacity() {
+<b class="pc">&nbsp;        if (array.size &gt; maxWarmCharWriteBufferCapacity) {</b>
+<b class="nc">&nbsp;            array = CharArray(initialCapacity)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun toCharArray(): CharArray = array.copyOf(size)</b>
+&nbsp;
+&nbsp;    override fun toString(): String {
+<b class="fc">&nbsp;        return array.concatToString(0, size)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

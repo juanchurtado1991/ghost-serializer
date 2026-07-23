@@ -1,0 +1,235 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoAnySerializer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.protobuf.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoAnySerializer (com.ghost.protobuf.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoAnySerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95%
+  </span>
+  <span class="absValue">
+    (19/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.6%
+  </span>
+  <span class="absValue">
+    (40/41)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.7%
+  </span>
+  <span class="absValue">
+    (155/157)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.protobuf.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.beginObject
+&nbsp;import com.ghost.serialization.parser.captureRawJsonBytes
+&nbsp;import com.ghost.serialization.parser.consumeArraySeparator
+&nbsp;import com.ghost.serialization.parser.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.endObject
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.parser.skipValue
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import com.ghost.serialization.parser.GhostJsonConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * `Any` contains an arbitrary serialized protocol buffer message along with a
+&nbsp; * URL that describes the type of the serialized message.
+&nbsp; *
+&nbsp; * [value] holds the raw JSON bytes of the WKT-style `&quot;value&quot;` sibling key verbatim
+&nbsp; * (e.g. `&quot;123s&quot;` for a packed `Duration`, or a full JSON object for a packed `Struct`).
+&nbsp; * Empty when the wire object had no `&quot;value&quot;` key. This preserves round-tripping without
+&nbsp; * a type registry to resolve [typeUrl] into a concrete message — see docs/wiki for details.
+&nbsp; */
+&nbsp;data class ProtoAny(val typeUrl: String, val value: ByteArray) {
+&nbsp;    override fun equals(other: Any?): Boolean {
+&nbsp;        if (this === other) return true
+&nbsp;        if (other !is ProtoAny) return false
+&nbsp;        return typeUrl == other.typeUrl &amp;&amp; value.contentEquals(other.value)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun hashCode(): Int = 31 * typeUrl.hashCode() + value.contentHashCode()
+&nbsp;
+&nbsp;    override fun toString(): String =
+&nbsp;        &quot;ProtoAny(typeUrl=$typeUrl, value=${value.decodeToString()})&quot;
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Serializer for [ProtoAny].
+&nbsp; */
+&nbsp;object ProtoAnySerializer : GhostSerializer&lt;ProtoAny&gt; {
+<b class="fc">&nbsp;    override val typeName: String get() = C.WKT_ANY_TYPE</b>
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoAny) {
+<b class="fc">&nbsp;        writer.beginObject()</b>
+<b class="fc">&nbsp;        writer.name(C.PROTO_TYPE_URL_KEY).value(value.typeUrl)</b>
+<b class="fc">&nbsp;        if (value.value.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            writer.name(C.PROTO_VALUE_KEY)</b>
+<b class="fc">&nbsp;            writer.rawValue(value.value)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoAny) {
+<b class="fc">&nbsp;        writer.beginObject()</b>
+<b class="fc">&nbsp;        writer.name(C.PROTO_TYPE_URL_KEY).value(value.typeUrl)</b>
+<b class="fc">&nbsp;        if (value.value.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            writer.name(C.PROTO_VALUE_KEY)</b>
+<b class="fc">&nbsp;            writer.rawValue(value.value)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoAny {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="fc">&nbsp;        var typeUrl = &quot;&quot;</b>
+<b class="fc">&nbsp;        var payload = ByteArray(0)</b>
+<b class="fc">&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            val key = reader.nextString()</b>
+<b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;            when (key) {</b>
+<b class="fc">&nbsp;                C.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
+<b class="pc">&nbsp;                C.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="nc">&nbsp;                else -&gt; reader.skipValue()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        reader.endObject()</b>
+<b class="fc">&nbsp;        return ProtoAny(typeUrl, payload)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoAny {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="fc">&nbsp;        var typeUrl = &quot;&quot;</b>
+<b class="fc">&nbsp;        var payload = ByteArray(0)</b>
+<b class="fc">&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            val key = reader.nextString()</b>
+<b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;            when (key) {</b>
+<b class="fc">&nbsp;                C.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
+<b class="fc">&nbsp;                C.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="fc">&nbsp;                else -&gt; reader.skipValue()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        reader.endObject()</b>
+<b class="fc">&nbsp;        return ProtoAny(typeUrl, payload)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

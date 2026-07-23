@@ -1,0 +1,629 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > BaseDeserializeEmitter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler</a>
+</div>
+
+<h1>Coverage Summary for Class: BaseDeserializeEmitter (com.ghost.serialization.compiler)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">BaseDeserializeEmitter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (15/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66%
+  </span>
+  <span class="absValue">
+    (103/156)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.7%
+  </span>
+  <span class="absValue">
+    (154/221)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68%
+  </span>
+  <span class="absValue">
+    (922/1356)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
+&nbsp;
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.CodeBlock
+&nbsp;import com.squareup.kotlinpoet.KModifier
+&nbsp;import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+&nbsp;import com.squareup.kotlinpoet.PropertySpec
+&nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
+&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Abstract base class for all deserialization emitters within the Ghost compiler.
+&nbsp; *
+&nbsp; * This class serves as the foundation for generating deserialization logic. It manages
+&nbsp; * shared state and provides a suite of helper methods to transform KSP symbols into
+&nbsp; * executable [CodeBlock] instructions via KotlinPoet.
+&nbsp; *
+&nbsp; * ### Responsibilities:
+&nbsp; * - **Schema Validation:** Pre-calculates [requiredMasks] and [defaultMasks] using bitwise operations
+&nbsp; * to ensure data integrity during runtime with minimal CPU overhead.
+&nbsp; * - **Path Resolution:** Flattens nested property paths (e.g., &quot;user.profile.id&quot;) to allow mapping
+&nbsp; * deeply nested JSON structures directly to flat DTOs.
+&nbsp; * - **Type Resolution:** Encapsulates the logic for determining which deserialization strategy
+&nbsp; * to apply (primitives vs. lists vs. recursive calls to other serializers).
+&nbsp; * - **Code Generation Helpers:** Provides common templates for `null` handling, custom decoders,
+&nbsp; * and contextual serializer injection.
+&nbsp; *
+&nbsp; * @param properties The list of [GhostPropertyModel] describing the fields of the target class.
+&nbsp; * @param originalClassName The [ClassName] of the DTO being deserialized.
+&nbsp; * @param readerClass The [ClassName] of the reader being used (e.g., GhostJsonReader or GhostJsonFlatReader).
+&nbsp; */
+<b class="fc">&nbsp;internal abstract class BaseDeserializeEmitter(</b>
+<b class="fc">&nbsp;    protected val properties: List&lt;GhostPropertyModel&gt;,</b>
+<b class="fc">&nbsp;    protected val originalClassName: ClassName,</b>
+<b class="fc">&nbsp;    protected val readerClass: ClassName</b>
+&nbsp;) {
+&nbsp;
+<b class="fc">&nbsp;    protected val contextualSerializers = mutableMapOf&lt;KSType, String&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    protected val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /</b>
+<b class="fc">&nbsp;            C.MASK_SIZE_BITS.toInt()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resolves the flatten path for nested properties.
+&nbsp;     * This allows Ghost to map deeply nested JSON structures (e.g., &quot;user.profile.id&quot;)
+&nbsp;     * directly to a flat DTO field without needing intermediate data classes.
+&nbsp;     * This is an optimization to keep the domain model clean while maintaining
+&nbsp;     * compatibility with non-flat JSON structures.
+&nbsp;     */
+<b class="fc">&nbsp;    protected val fullPaths = properties.map {</b>
+<b class="pc">&nbsp;        it.flattenPath ?: (it.wrapPath?.let { path -&gt;</b>
+<b class="nc">&nbsp;            path + it.jsonName</b>
+<b class="fc">&nbsp;        } ?: listOf(it.jsonName))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Maps each property model to its unique zero-based index.
+&nbsp;     * This is essential for calculating the maskIdx and bitIdx used in bitwise operations.
+&nbsp;     */
+<b class="fc">&nbsp;    protected val propertyIndices = properties</b>
+<b class="fc">&nbsp;        .mapIndexed { index, prop -&gt; prop to index }</b>
+<b class="fc">&nbsp;        .toMap()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the validation bitmask for required fields of the DTO.
+&nbsp;     *
+&nbsp;     * This property identifies which fields must be present in the JSON during deserialization.
+&nbsp;     * A field is considered mandatory if:
+&nbsp;     * 1. It is not nullable (`!isNullable`).
+&nbsp;     * 2. It does not have a default value (`!hasDefaultValue`).
+&nbsp;     *
+&nbsp;     * **Validation Architecture:**
+&nbsp;     * The bits are distributed across a [LongArray] to support schemas with more than 64 properties.
+&nbsp;     * Each field is assigned to a position (maskIdx, bitIdx) based on its index in the property list.
+&nbsp;     *
+&nbsp;     * During runtime, the generated serializer uses this mask to perform high-performance schema validation.
+&nbsp;     * By comparing the received mask against this required mask using a binary AND operation
+&nbsp;     * (`mask &amp; requiredMask == requiredMask`), we validate the object integrity in a single CPU cycle.
+&nbsp;     *
+&nbsp;     * @return A [LongArray] where each set bit represents a mandatory field that must be validated
+&nbsp;     * after the deserialization process completes.
+&nbsp;     */
+<b class="fc">&nbsp;    protected val requiredMasks: LongArray by lazy {</b>
+<b class="fc">&nbsp;        val masks = LongArray(maskCount)</b>
+<b class="fc">&nbsp;        properties.forEachIndexed { index, prop -&gt;</b>
+<b class="fc">&nbsp;            if (!prop.isNullable &amp;&amp; !prop.hasDefaultValue) {</b>
+<b class="fc">&nbsp;                val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;                val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        masks</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the bitmask for properties that have defined default values.
+&nbsp;     *
+&nbsp;     * This mask identifies fields for which the generated deserializer can safely
+&nbsp;     * fall back to the class-level default values if the property is missing from the JSON input.
+&nbsp;     *
+&nbsp;     * **Architectural Purpose:**
+&nbsp;     * During the final return/instantiation stage, the generated deserializer uses this mask
+&nbsp;     * to perform &quot;Constructor Dispatching&quot;. If a field is missing, instead of throwing an error
+&nbsp;     * (as it would for [requiredMasks]), it relies on this mask to know that it is safe
+&nbsp;     * to omit the argument from the constructor call, allowing Kotlin&#39;s default
+&nbsp;     * parameter logic to take over.
+&nbsp;     *
+&nbsp;     * @return A [LongArray] where each set bit represents a property that possesses a
+&nbsp;     * default value, assisting in optimal constructor selection and object instantiation.
+&nbsp;     */
+<b class="fc">&nbsp;    protected val defaultMasks: LongArray by lazy {</b>
+<b class="nc">&nbsp;        val masks = LongArray(maskCount)</b>
+<b class="nc">&nbsp;        properties.forEachIndexed { index, prop -&gt;</b>
+<b class="nc">&nbsp;            if (prop.hasDefaultValue) {</b>
+<b class="nc">&nbsp;                val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
+<b class="nc">&nbsp;                val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
+<b class="nc">&nbsp;                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)</b>
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        masks</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Formats a bitmask into a constant string literal for code generation.
+&nbsp;     * Handles edge cases like [Long.MIN_VALUE] which requires specific formatting.
+&nbsp;     */
+&nbsp;    protected fun formatMaskString(mask: Long): String {
+<b class="pc">&nbsp;        return if (mask == Long.MIN_VALUE) {</b>
+<b class="nc">&nbsp;            C.STR_BIT_MASK_MIN_LONG</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            C.FMT_LONG_LITERAL.format(mask)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The main entry point for generating the reader call for a specific property.
+&nbsp;     * Handles dispatching to specialized logic based on property attributes
+&nbsp;     * (e.g., custom decoders, nullability, sealed classes).
+&nbsp;     */
+&nbsp;    protected fun buildCall(prop: GhostPropertyModel): CodeBlock {
+<b class="fc">&nbsp;        if (prop.customDecoder != null) {</b>
+<b class="fc">&nbsp;            return buildCustomDecoderCall(prop)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (prop.isNullable) {</b>
+<b class="fc">&nbsp;            return buildNullableCall(prop)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return when {</b>
+<b class="pc">&nbsp;            prop.isValueClass &amp;&amp; prop.valueClassProperty != null -&gt; {</b>
+<b class="fc">&nbsp;                buildCall(prop.valueClassProperty)</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            prop.isSealedClass -&gt; CodeBlock.of(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_DESERIALIZE_T,</b>
+<b class="nc">&nbsp;                prop.type.serializerClassName()</b>
+&nbsp;            )
+&nbsp;
+<b class="pc">&nbsp;            prop.isPrimitiveArray -&gt; CodeBlock.of(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_DESERIALIZE_T,</b>
+<b class="nc">&nbsp;                ClassName(</b>
+<b class="nc">&nbsp;                    C.STR_SERIALIZERS_PKG,</b>
+<b class="nc">&nbsp;                    &quot;${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}&quot;</b>
+&nbsp;                )
+&nbsp;            )
+&nbsp;
+<b class="pc">&nbsp;            prop.isContextual -&gt; {</b>
+<b class="nc">&nbsp;                val name = getContextualSerializerName(prop.type)</b>
+<b class="nc">&nbsp;                CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            prop.isProto &amp;&amp; prop.type.isPrimitiveLong() -&gt; CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)</b>
+&nbsp;
+<b class="fc">&nbsp;            prop.isProto &amp;&amp; prop.type.isByteArray() -&gt; CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)</b>
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; buildTypeReaderCall(prop.type, prop.isProto)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates the code block for a nullable property.
+&nbsp;     * It handles null-safety by wrapping the reader call in a null check template.
+&nbsp;     */
+&nbsp;    protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
+<b class="pc">&nbsp;        if (prop.customDecoder != null) {</b>
+<b class="nc">&nbsp;            return nullGuarded(buildCustomDecoderCall(prop))</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (prop.isPrimitiveArray) {</b>
+<b class="nc">&nbsp;            return nullGuarded(</b>
+<b class="nc">&nbsp;                CodeBlock.of(</b>
+<b class="nc">&nbsp;                    C.TEMPLATE_DESERIALIZE_T,</b>
+<b class="nc">&nbsp;                    ClassName(</b>
+<b class="nc">&nbsp;                        C.STR_SERIALIZERS_PKG,</b>
+<b class="nc">&nbsp;                        &quot;${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}&quot;</b>
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (prop.isProto &amp;&amp; prop.type.isPrimitiveLong()) {</b>
+<b class="nc">&nbsp;            return CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (prop.isProto &amp;&amp; prop.type.isByteArray()) {</b>
+<b class="nc">&nbsp;            return CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return buildTypeReaderCall(prop.type, prop.isProto)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates code for custom decoder implementations.
+&nbsp;     * Handles the transition between standard reader and the custom decoding logic.
+&nbsp;     */
+&nbsp;    protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
+<b class="fc">&nbsp;        val coder = prop.customDecoder!!</b>
+<b class="fc">&nbsp;        if (usesDirectCustomDecoderCall(coder)) {</b>
+<b class="fc">&nbsp;            return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return when (readerClass.simpleName) {</b>
+<b class="fc">&nbsp;            C.STR_GHOST_JSON_FLAT_READER -&gt; buildFlatReaderCustomDecoderBridge(coder)</b>
+<b class="pc">&nbsp;            C.STR_GHOST_JSON_STRING_READER -&gt; buildStringReaderCustomDecoderBridge(coder)</b>
+<b class="nc">&nbsp;            else -&gt; buildFlatReaderCustomDecoderBridge(coder)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun usesDirectCustomDecoderCall(coder: CustomCoderModel): Boolean {
+<b class="fc">&nbsp;        val channelKind = when (readerClass.simpleName) {</b>
+<b class="fc">&nbsp;            C.STR_GHOST_JSON_STRING_READER -&gt; CustomCoderReaderKind.STRING</b>
+<b class="fc">&nbsp;            C.STR_GHOST_JSON_FLAT_READER -&gt; CustomCoderReaderKind.FLAT</b>
+<b class="fc">&nbsp;            else -&gt; CustomCoderReaderKind.BYTES</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return coder.supports(channelKind)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildFlatReaderCustomDecoderBridge(coder: CustomCoderModel): CodeBlock {
+<b class="fc">&nbsp;        return CodeBlock.builder()</b>
+<b class="fc">&nbsp;            .add(C.STR_RUN_OPEN)</b>
+<b class="fc">&nbsp;            .add(C.STR_CUSTOM_DECODER_TEMP_READER)</b>
+<b class="fc">&nbsp;            .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)</b>
+<b class="fc">&nbsp;            .add(C.STR_CUSTOM_DECODER_UPDATE_POS)</b>
+<b class="fc">&nbsp;            .add(C.STR_RESET_TOKEN_BYTE_CALL)</b>
+<b class="fc">&nbsp;            .add(C.STR_CUSTOM_DECODER_RETURN_RES)</b>
+<b class="fc">&nbsp;            .add(C.STR_RUN_CLOSE)</b>
+<b class="fc">&nbsp;            .build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildStringReaderCustomDecoderBridge(coder: CustomCoderModel): CodeBlock {
+<b class="fc">&nbsp;        return CodeBlock.builder()</b>
+<b class="fc">&nbsp;            .add(C.STR_RUN_OPEN)</b>
+<b class="fc">&nbsp;            .add(C.STR_CUSTOM_DECODER_TEMP_READER_STRING)</b>
+<b class="fc">&nbsp;            .add(C.TEMPLATE_CUSTOM_DECODER_TEMP_CALL, coder.provider, coder.functionName)</b>
+<b class="fc">&nbsp;            .add(C.STR_CUSTOM_DECODER_UPDATE_POS_STRING)</b>
+<b class="fc">&nbsp;            .add(C.STR_CUSTOM_DECODER_RETURN_RES)</b>
+<b class="fc">&nbsp;            .add(C.STR_RUN_CLOSE)</b>
+<b class="fc">&nbsp;            .build()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Dispatches the correct [CodeBlock] to read a specific [KSType] from the JSON reader.
+&nbsp;     * * This acts as the recursive entry point for the emitter. It follows these resolution rules:
+&nbsp;     * 1. **Ghost/Enum types:** Delegates to an existing serializer (recursive call).
+&nbsp;     * 2. **Primitives:** Maps directly to optimized `GhostJsonReader` methods (e.g., [kotlin.random.Random.Default.nextInt]).
+&nbsp;     * 3. **Collections (List/Map):** Applies a recursive template to handle generic types.
+&nbsp;     * 4. **Fallbacks:** Uses contextual resolution for unknown or custom types.
+&nbsp;     *
+&nbsp;     * @param type The KSP type being resolved.
+&nbsp;     * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
+&nbsp;     *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
+&nbsp;     *   proto3 quoted-int64/Base64 decoding.
+&nbsp;     * @return A [CodeBlock] containing the optimized reader instruction.
+&nbsp;     */
+<b class="nc">&nbsp;    protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {</b>
+<b class="fc">&nbsp;        val readerCall = when {</b>
+<b class="fc">&nbsp;            type.isRawJson() -&gt; CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)</b>
+&nbsp;
+<b class="fc">&nbsp;            type.isByteArray() -&gt; if (isProto) {</b>
+<b class="fc">&nbsp;                CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            isValueClassType(type) -&gt; {</b>
+<b class="fc">&nbsp;                val innerType = resolveValueClassInnerType(type)</b>
+<b class="pc">&nbsp;                if (innerType != null) {</b>
+<b class="fc">&nbsp;                    val constructorCall = buildTypeReaderCall(innerType, isProto)</b>
+<b class="pc">&nbsp;                    val className = type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) } ?: type.toTypeName()</b>
+<b class="fc">&nbsp;                    CodeBlock.of(C.TEMPLATE_CONSTRUCTOR, className, constructorCall)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    val name = getContextualSerializerName(type)</b>
+<b class="nc">&nbsp;                    CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            type.isGhost() || type.isEnum() -&gt; CodeBlock.of(</b>
+<b class="fc">&nbsp;                C.TEMPLATE_DESERIALIZE_T,</b>
+<b class="fc">&nbsp;                type.serializerClassName()</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;            type.isPrimitiveInt() -&gt; CodeBlock.of(C.STR_NEXT_INT)</b>
+<b class="fc">&nbsp;            type.isPrimitiveBoolean() -&gt; CodeBlock.of(C.STR_NEXT_BOOLEAN)</b>
+<b class="fc">&nbsp;            type.isPrimitiveLong() -&gt; if (isProto) {</b>
+<b class="fc">&nbsp;                CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                CodeBlock.of(C.STR_NEXT_LONG)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            type.isPrimitiveDouble() -&gt; CodeBlock.of(C.STR_NEXT_DOUBLE)</b>
+<b class="pc">&nbsp;            type.isPrimitiveFloat() -&gt; CodeBlock.of(C.STR_NEXT_FLOAT)</b>
+<b class="pc">&nbsp;            type.isPrimitiveByte() -&gt; CodeBlock.of(C.STR_NEXT_BYTE)</b>
+<b class="pc">&nbsp;            type.isPrimitiveShort() -&gt; CodeBlock.of(C.STR_NEXT_SHORT)</b>
+<b class="fc">&nbsp;            type.isPrimitiveChar() -&gt; CodeBlock.of(C.STR_NEXT_CHAR)</b>
+&nbsp;
+<b class="fc">&nbsp;            type.isSet() -&gt; {</b>
+<b class="pc">&nbsp;                val inner = type.arguments.firstOrNull()?.type?.resolve()</b>
+<b class="nc">&nbsp;                    ?: return CodeBlock.of(C.STR_NEXT_STRING)</b>
+&nbsp;
+<b class="fc">&nbsp;                CodeBlock.of(</b>
+<b class="fc">&nbsp;                    C.STR_READ_SET_TEMPLATE,</b>
+<b class="fc">&nbsp;                    buildTypeReaderCall(inner, isProto)</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            type.isList() -&gt; {</b>
+<b class="pc">&nbsp;                val inner = type.arguments.firstOrNull()?.type?.resolve()</b>
+<b class="nc">&nbsp;                    ?: return CodeBlock.of(C.STR_NEXT_STRING)</b>
+&nbsp;
+<b class="fc">&nbsp;                CodeBlock.of(</b>
+<b class="fc">&nbsp;                    C.STR_READ_LIST_TEMPLATE,</b>
+<b class="fc">&nbsp;                    buildTypeReaderCall(inner, isProto)</b>
+&nbsp;                )
+&nbsp;
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            type.isMap() -&gt; {</b>
+<b class="pc">&nbsp;                val valueType = type</b>
+<b class="fc">&nbsp;                    .arguments</b>
+<b class="fc">&nbsp;                    .getOrNull(1)</b>
+<b class="pc">&nbsp;                    ?.type?.resolve()</b>
+<b class="nc">&nbsp;                    ?: return CodeBlock.of(C.STR_NEXT_STRING)</b>
+&nbsp;
+<b class="fc">&nbsp;                CodeBlock.of(</b>
+<b class="fc">&nbsp;                    C.STR_READ_MAP_TEMPLATE,</b>
+<b class="fc">&nbsp;                    buildTypeReaderCall(valueType, isProto)</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="pc">&nbsp;                if (type.isString()) {</b>
+<b class="fc">&nbsp;                    CodeBlock.of(C.STR_NEXT_STRING)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    val name = getContextualSerializerName(type)</b>
+<b class="nc">&nbsp;                    CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return if (type.isMarkedNullable) {</b>
+<b class="fc">&nbsp;            nullGuarded(readerCall)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            readerCall</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a unique variable name for a contextual serializer.
+&nbsp;     * Example: &quot;User&quot; -&gt; &quot;contextualUserSerializer&quot;.
+&nbsp;     */
+&nbsp;    private fun getContextualSerializerName(type: KSType): String {
+<b class="nc">&nbsp;        return contextualSerializers.getOrPut(type) {</b>
+<b class="nc">&nbsp;            val simpleName = type.declaration.simpleName.asString()</b>
+<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) &quot;Nullable&quot; else &quot;&quot;</b>
+&nbsp;            C.STR_CONTEXTUAL_PREFIX +
+<b class="nc">&nbsp;                    simpleName.replaceFirstChar { it.lowercase() } +</b>
+<b class="nc">&nbsp;                    nullableSuffix +</b>
+<b class="nc">&nbsp;                    C.STR_SERIALIZER_SUFFIX</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers descriptive private bitmask constants on the companion/object builder
+&nbsp;     * for every property and all validation/defaults masks, completely eliminating magic numbers.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
+&nbsp;     */
+&nbsp;    protected fun emitPropertyMaskConstants(typeSpecBuilder: TypeSpec.Builder) {
+<b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            val index = propertyIndices[prop]!!</b>
+<b class="fc">&nbsp;            val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;            val bitMask = C.VAL_ONE_L shl bitIdx</b>
+<b class="fc">&nbsp;            val bitMaskStr = formatMaskString(bitMask)</b>
+<b class="fc">&nbsp;            val name = &quot;MASK_&quot; + prop.kotlinName.uppercase()</b>
+<b class="fc">&nbsp;            if (typeSpecBuilder.propertySpecs.none { it.name == name }) {</b>
+<b class="fc">&nbsp;                typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                    PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)</b>
+<b class="fc">&nbsp;                        .addModifiers(KModifier.PRIVATE, KModifier.CONST)</b>
+<b class="fc">&nbsp;                        .initializer(&quot;%L&quot;, bitMaskStr)</b>
+<b class="fc">&nbsp;                        .build()</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        for (i in requiredMasks.indices) {</b>
+<b class="fc">&nbsp;            val reqMask = requiredMasks[i]</b>
+<b class="fc">&nbsp;            if (reqMask != C.VAL_ZERO_L) {</b>
+<b class="fc">&nbsp;                val reqMaskStr = formatMaskString(reqMask)</b>
+<b class="fc">&nbsp;                val name = &quot;MASK_REQUIRED_$i&quot;</b>
+<b class="fc">&nbsp;                if (typeSpecBuilder.propertySpecs.none { it.name == name }) {</b>
+<b class="fc">&nbsp;                    typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                        PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)</b>
+<b class="fc">&nbsp;                            .addModifiers(KModifier.PRIVATE, KModifier.CONST)</b>
+<b class="fc">&nbsp;                            .initializer(&quot;%L&quot;, reqMaskStr)</b>
+<b class="fc">&nbsp;                            .build()</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers a [MASK_DEFAULTS_N] constant when the copy-based default-value return path needs it.
+&nbsp;     */
+&nbsp;    protected fun emitDefaultMaskConstant(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        maskIndex: Int,
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val defMask = defaultMasks[maskIndex]</b>
+<b class="nc">&nbsp;        val constName = &quot;${C.STR_MASK_DEFAULTS_PREFIX}$maskIndex&quot;</b>
+<b class="nc">&nbsp;        if (defMask != C.VAL_ZERO_L &amp;&amp;</b>
+<b class="nc">&nbsp;            typeSpecBuilder.propertySpecs.none { it.name == constName }</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="nc">&nbsp;                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)</b>
+<b class="nc">&nbsp;                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)</b>
+<b class="nc">&nbsp;                    .initializer(&quot;%L&quot;, formatMaskString(defMask))</b>
+<b class="nc">&nbsp;                    .build()</b>
+&nbsp;            )
+&nbsp;        }
+<b class="nc">&nbsp;        return constName</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Injects private property references for contextual serializers into the generated class.
+&nbsp;     *
+&nbsp;     * This implements a static Dependency Injection strategy. Instead of looking up
+&nbsp;     * serializers at runtime (which would require reflection), we pre-resolve and
+&nbsp;     * inject them as private final fields during the compilation phase.
+&nbsp;     *
+&nbsp;     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
+&nbsp;     */
+&nbsp;    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
+<b class="fc">&nbsp;        val ghostClass = ClassName(</b>
+<b class="fc">&nbsp;            C.STR_GHOST_PKG,</b>
+<b class="fc">&nbsp;            C.STR_GHOST_OBJ</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        contextualSerializers.forEach { (type, name) -&gt;</b>
+<b class="nc">&nbsp;            val nonNullableType = type.makeNotNullable()</b>
+<b class="nc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="nc">&nbsp;                PropertySpec.builder(</b>
+<b class="nc">&nbsp;                    name,</b>
+<b class="nc">&nbsp;                    ClassName(</b>
+<b class="nc">&nbsp;                        C.STR_CONTRACT_PKG,</b>
+<b class="nc">&nbsp;                        C.STR_GHOST_SERIALIZER</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                        .parameterizedBy(nonNullableType.toTypeName()),</b>
+<b class="nc">&nbsp;                    KModifier.PRIVATE</b>
+&nbsp;                )
+<b class="nc">&nbsp;                    .initializer(</b>
+<b class="nc">&nbsp;                        C.TEMPLATE_RESOLVE_SERIALIZER,</b>
+<b class="nc">&nbsp;                        ghostClass,</b>
+<b class="nc">&nbsp;                        nonNullableType.toTypeName()</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                    .build()</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Wraps a deserialization reader instruction with a null-check condition.
+&nbsp;     *
+&nbsp;     * In the generated code, this wraps the reader call with a check:
+&nbsp;     * `if (reader.isNextNullValue()) { reader.consumeNull(); null } else { ... }`
+&nbsp;     */
+&nbsp;    protected fun nullGuarded(inner: CodeBlock): CodeBlock =
+<b class="fc">&nbsp;        CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)</b>
+&nbsp;
+&nbsp;    private fun isValueClassType(type: KSType): Boolean {
+<b class="pc">&nbsp;        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false</b>
+<b class="fc">&nbsp;        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||</b>
+<b class="fc">&nbsp;                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun resolveValueClassInnerType(type: KSType): KSType? {
+<b class="pc">&nbsp;        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null</b>
+<b class="pc">&nbsp;        val primaryConstructor = declaration.primaryConstructor ?: return null</b>
+<b class="pc">&nbsp;        val param = primaryConstructor.parameters.firstOrNull() ?: return null</b>
+<b class="fc">&nbsp;        return param.type.resolve()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

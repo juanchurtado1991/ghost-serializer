@@ -1,0 +1,147 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostReactiveEncoderKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.spring</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostReactiveEncoderKt (com.ghost.serialization.spring)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostReactiveEncoderKt</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import org.reactivestreams.Publisher
+&nbsp;import org.springframework.core.ResolvableType
+&nbsp;import org.springframework.core.codec.AbstractEncoder
+&nbsp;import org.springframework.core.io.buffer.DataBuffer
+&nbsp;import org.springframework.core.io.buffer.DataBufferFactory
+&nbsp;import org.springframework.util.MimeType
+&nbsp;import org.springframework.util.MimeTypeUtils
+&nbsp;import reactor.core.publisher.Flux
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;private const val NDJSON_NEWLINE: Byte = &#39;\n&#39;.code.toByte()
+&nbsp;
+&nbsp;/**
+&nbsp; * Reactive Encoder for Ghost Serialization.
+&nbsp; *
+&nbsp; * Serializes through the pooled [com.ghost.serialization.writer.GhostJsonFlatWriter]
+&nbsp; * to a [ByteArray] and wraps it with [DataBufferFactory.wrap], producing a
+&nbsp; * zero-copy [DataBuffer] backed by the serialized bytes directly.
+&nbsp; */
+&nbsp;class GhostReactiveEncoder : AbstractEncoder&lt;Any&gt;(
+&nbsp;    MimeTypeUtils.APPLICATION_JSON,
+&nbsp;    MimeType(&quot;application&quot;, &quot;x-ndjson&quot;)
+&nbsp;) {
+&nbsp;    override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
+&nbsp;        val clazz = elementType.toClass()
+&nbsp;        return super.canEncode(elementType, mimeType) &amp;&amp;
+&nbsp;                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||
+&nbsp;                        Ghost.getSerializer(clazz.kotlin) != null)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun encode(
+&nbsp;        inputStream: Publisher&lt;out Any&gt;,
+&nbsp;        bufferFactory: DataBufferFactory,
+&nbsp;        elementType: ResolvableType,
+&nbsp;        mimeType: MimeType?,
+&nbsp;        hints: MutableMap&lt;String, Any&gt;?
+&nbsp;    ): Flux&lt;DataBuffer&gt; {
+&nbsp;        val isNdJson = isNdJson(mimeType)
+&nbsp;
+&nbsp;        return Flux.from(inputStream).map { value -&gt;
+&nbsp;            encodeValue(value, bufferFactory, isNdJson)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun encodeValue(
+&nbsp;        value: Any,
+&nbsp;        bufferFactory: DataBufferFactory,
+&nbsp;        isNdJson: Boolean
+&nbsp;    ): DataBuffer {
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;        val kClass = value::class as KClass&lt;Any&gt;
+&nbsp;        val serializer = Ghost.getSerializer(kClass)
+&nbsp;            ?: throw IllegalArgumentException(
+&nbsp;                &quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;
+&nbsp;            )
+&nbsp;
+&nbsp;        val encoded = Ghost.encodeToBytes(serializer, value)
+&nbsp;
+&nbsp;        if (!isNdJson) return bufferFactory.wrap(encoded)
+&nbsp;
+&nbsp;        val bytes = ByteArray(encoded.size + 1)
+&nbsp;        encoded.copyInto(bytes)
+&nbsp;        bytes[encoded.size] = NDJSON_NEWLINE
+&nbsp;        return bufferFactory.wrap(bytes)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isNdJson(mimeType: MimeType?): Boolean {
+&nbsp;        return mimeType?.subtype?.contains(&quot;ndjson&quot;) == true
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>

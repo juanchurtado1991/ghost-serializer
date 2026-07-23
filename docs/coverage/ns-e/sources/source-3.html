@@ -1,0 +1,302 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostReactiveDecoder</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.spring</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostReactiveDecoder (com.ghost.serialization.spring)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostReactiveDecoder</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.6%
+  </span>
+  <span class="absValue">
+    (22/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (46/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.4%
+  </span>
+  <span class="absValue">
+    (327/329)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostReactiveDecoder$Companion</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.6%
+  </span>
+  <span class="absValue">
+    (22/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (46/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.4%
+  </span>
+  <span class="absValue">
+    (327/329)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import org.reactivestreams.Publisher
+&nbsp;import org.springframework.core.ResolvableType
+&nbsp;import org.springframework.core.codec.AbstractDecoder
+&nbsp;import org.springframework.core.io.buffer.DataBuffer
+&nbsp;import org.springframework.core.io.buffer.DataBufferUtils
+&nbsp;import org.springframework.util.MimeType
+&nbsp;import org.springframework.util.MimeTypeUtils
+&nbsp;import reactor.core.publisher.Flux
+&nbsp;import reactor.core.publisher.Mono
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;private const val NDJSON_NEWLINE: Byte = &#39;\n&#39;.code.toByte()
+&nbsp;
+&nbsp;/**
+&nbsp; * Reactive Decoder for Ghost Serialization.
+&nbsp; *
+&nbsp; * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
+&nbsp; * to the pooled [com.ghost.serialization.parser.GhostJsonReader], avoiding
+&nbsp; * intermediate Okio/InputStream wrappers entirely.
+&nbsp; */
+<b class="fc">&nbsp;class GhostReactiveDecoder : AbstractDecoder&lt;Any&gt;(</b>
+<b class="fc">&nbsp;    MimeTypeUtils.APPLICATION_JSON,</b>
+<b class="fc">&nbsp;    MimeType(&quot;application&quot;, &quot;x-ndjson&quot;)</b>
+&nbsp;) {
+&nbsp;    override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
+<b class="fc">&nbsp;        val clazz = elementType.toClass()</b>
+<b class="fc">&nbsp;        return super.canDecode(elementType, mimeType) &amp;&amp;</b>
+<b class="pc">&nbsp;                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||</b>
+<b class="fc">&nbsp;                        Ghost.getSerializer(clazz.kotlin) != null)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun decode(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        elementType: ResolvableType,
+&nbsp;        mimeType: MimeType?,
+&nbsp;        hints: MutableMap&lt;String, Any&gt;?
+&nbsp;    ): Flux&lt;Any&gt; {
+<b class="fc">&nbsp;        val clazz = elementType.toClass()</b>
+<b class="fc">&nbsp;        val isNdJson = isNdJson(mimeType)</b>
+&nbsp;
+<b class="fc">&nbsp;        return if (isNdJson) {</b>
+<b class="fc">&nbsp;            decodeStreaming(inputStream, clazz)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            decodeJoined(inputStream, clazz)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun decodeToMono(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        elementType: ResolvableType,
+&nbsp;        mimeType: MimeType?,
+&nbsp;        hints: MutableMap&lt;String, Any&gt;?
+&nbsp;    ): Mono&lt;Any&gt; {
+<b class="fc">&nbsp;        val clazz = elementType.toClass()</b>
+<b class="fc">&nbsp;        return decodeJoined(inputStream, clazz).next()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * NDJSON records aren&#39;t guaranteed to arrive one-per-[DataBuffer] — a small multi-line
+&nbsp;     * request body will typically arrive as a single network buffer, and a single record can
+&nbsp;     * just as easily be split across two. This re-frames the raw buffer stream on `\n` before
+&nbsp;     * decoding each line, carrying any trailing partial line over to the next buffer and
+&nbsp;     * flushing a final unterminated line at stream completion.
+&nbsp;     */
+&nbsp;    private fun decodeStreaming(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        clazz: Class&lt;*&gt;
+<b class="fc">&nbsp;    ): Flux&lt;Any&gt; = Flux.defer {</b>
+<b class="fc">&nbsp;        var carry = ByteArray(0)</b>
+&nbsp;
+<b class="fc">&nbsp;        Flux.from(inputStream)</b>
+<b class="fc">&nbsp;            .concatMap { buffer -&gt;</b>
+<b class="fc">&nbsp;                val bytes: ByteArray</b>
+&nbsp;                try {
+<b class="fc">&nbsp;                    bytes = ByteArray(buffer.readableByteCount())</b>
+<b class="fc">&nbsp;                    buffer.read(bytes)</b>
+&nbsp;                } finally {
+<b class="fc">&nbsp;                    DataBufferUtils.release(buffer)</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                val combined = if (carry.isEmpty()) bytes else carry + bytes</b>
+<b class="fc">&nbsp;                val lines = mutableListOf&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;                var lineStart = 0</b>
+<b class="fc">&nbsp;                for (index in combined.indices) {</b>
+<b class="fc">&nbsp;                    if (combined[index] == NDJSON_NEWLINE) {</b>
+<b class="pc">&nbsp;                        if (index &gt; lineStart) lines += combined.copyOfRange(lineStart, index)</b>
+<b class="fc">&nbsp;                        lineStart = index + 1</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                carry = combined.copyOfRange(lineStart, combined.size)</b>
+<b class="fc">&nbsp;                Flux.fromIterable(lines)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            .concatWith(Flux.defer { if (carry.isEmpty()) Flux.empty() else Flux.just(carry) })</b>
+<b class="fc">&nbsp;            .map { line -&gt; deserializeBytes(line, clazz) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun decodeJoined(
+&nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Flux&lt;Any&gt; = DataBufferUtils
+<b class="fc">&nbsp;        .join(inputStream).flatMapMany { buffer -&gt;</b>
+&nbsp;            try {
+<b class="fc">&nbsp;                Flux.just(deserializeBuffer(buffer, clazz))</b>
+&nbsp;            } finally {
+<b class="fc">&nbsp;                DataBufferUtils.release(buffer)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun deserializeBuffer(
+&nbsp;        buffer: DataBuffer,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Any {
+<b class="fc">&nbsp;        val bytes = ByteArray(buffer.readableByteCount())</b>
+<b class="fc">&nbsp;        buffer.read(bytes)</b>
+<b class="fc">&nbsp;        return deserializeBytes(bytes, clazz)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun deserializeBytes(
+&nbsp;        bytes: ByteArray,
+&nbsp;        clazz: Class&lt;*&gt;
+&nbsp;    ): Any {
+&nbsp;        return try {
+<b class="fc">&nbsp;            val serializer = Ghost.getSerializer(clazz.kotlin as KClass&lt;Any&gt;)</b>
+<b class="fc">&nbsp;                ?: throw IllegalArgumentException(</b>
+<b class="fc">&nbsp;                    &quot;${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}&quot;</b>
+&nbsp;                )
+<b class="fc">&nbsp;            Ghost.deserialize(serializer, bytes)</b>
+&nbsp;        } catch (e: Exception) {
+<b class="fc">&nbsp;            throw GhostJsonException(</b>
+<b class="fc">&nbsp;                &quot;$DECODE_ERROR ${clazz.simpleName}: ${e.message}&quot;</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isNdJson(mimeType: MimeType?): Boolean {
+<b class="pc">&nbsp;        return mimeType?.subtype?.contains(&quot;ndjson&quot;) == true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        private const val DECODE_ERROR = &quot;Failed to decode reactive buffer for&quot;
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-22 20:46</div>
+</div>
+</body>
+</html>
