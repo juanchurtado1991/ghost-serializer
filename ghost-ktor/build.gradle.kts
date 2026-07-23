@@ -31,6 +31,12 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
         }
+        jvmTest.dependencies {
+            // Server-side (ApplicationCall) extension tests need a real routing/response
+            // pipeline — JVM-only, test-only, doesn't affect the compileOnly server dependency.
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.test.host)
+        }
     }
 }
 
