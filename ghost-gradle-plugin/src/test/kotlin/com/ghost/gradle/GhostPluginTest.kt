@@ -3,6 +3,7 @@ package com.ghost.gradle
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.api.Project
 import org.gradle.api.internal.project.DefaultProject
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -168,6 +169,30 @@ class GhostPluginTest {
         assertTrue(
             commonMainImplDependencies.any { it.name == "ghost-ktor" },
             "Should inject ghost-ktor into commonMainImplementation (not 'implementation') for KMP projects"
+        )
+    }
+
+    @Test
+    fun `plugin wires ksp for every declared kmp target plus the implicit metadata target`() {
+        val project = ProjectBuilder.builder().build()
+
+        project.pluginManager.apply("org.jetbrains.kotlin.multiplatform")
+        project.pluginManager.apply("com.google.devtools.ksp")
+        project.extensions.getByType(KotlinMultiplatformExtension::class.java).jvm()
+        project.pluginManager.apply(GhostPlugin::class.java)
+
+        evaluated(project)
+
+        val kspJvmDeps = project.configurations.getByName("kspJvm").dependencies
+        assertTrue(
+            kspJvmDeps.any { it.name == "ghost-compiler" },
+            "Should add ghost-compiler to kspJvm for the declared jvm() target"
+        )
+
+        val kspCommonDeps = project.configurations.getByName("kspCommonMainMetadata").dependencies
+        assertTrue(
+            kspCommonDeps.any { it.name == "ghost-compiler" },
+            "Should add ghost-compiler to kspCommonMainMetadata for the implicit 'metadata' target"
         )
     }
 }

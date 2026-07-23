@@ -40,6 +40,9 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.kotlin.gradle.plugin)
+    // Needed so GhostPluginTest can apply the real KSP plugin in-process (ProjectBuilder) to
+    // reach the KMP-target-iteration branch in configureKspDependencies().
+    testImplementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:${libs.versions.ksp.get()}")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
