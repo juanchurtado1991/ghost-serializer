@@ -19,7 +19,9 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.engine)
     testImplementation(libs.spring.boot.starter.web)
+    testImplementation(libs.spring.boot.starter.webflux)
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.reactor.test)
 }
 
 ksp {

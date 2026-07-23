@@ -1,0 +1,6 @@
+package com.ghost.serialization.spring.reactivefixture
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+
+@SpringBootApplication
+class GhostSpringReactiveTestApplication

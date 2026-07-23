@@ -14,6 +14,8 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
 
+private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
+
 /**
  * Reactive Decoder for Ghost Serialization.
  *
@@ -58,15 +60,43 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
         return decodeJoined(inputStream, clazz).next()
     }
 
+    /**
+     * NDJSON records aren't guaranteed to arrive one-per-[DataBuffer] — a small multi-line
+     * request body will typically arrive as a single network buffer, and a single record can
+     * just as easily be split across two. This re-frames the raw buffer stream on `\n` before
+     * decoding each line, carrying any trailing partial line over to the next buffer and
+     * flushing a final unterminated line at stream completion.
+     */
     private fun decodeStreaming(
         inputStream: Publisher<DataBuffer>,
         clazz: Class<*>
-    ): Flux<Any> = Flux.from(inputStream).map { buffer ->
-        try {
-            deserializeBuffer(buffer, clazz)
-        } finally {
-            DataBufferUtils.release(buffer)
-        }
+    ): Flux<Any> = Flux.defer {
+        var carry = ByteArray(0)
+
+        Flux.from(inputStream)
+            .concatMap { buffer ->
+                val bytes: ByteArray
+                try {
+                    bytes = ByteArray(buffer.readableByteCount())
+                    buffer.read(bytes)
+                } finally {
+                    DataBufferUtils.release(buffer)
+                }
+
+                val combined = if (carry.isEmpty()) bytes else carry + bytes
+                val lines = mutableListOf<ByteArray>()
+                var lineStart = 0
+                for (index in combined.indices) {
+                    if (combined[index] == NDJSON_NEWLINE) {
+                        if (index > lineStart) lines += combined.copyOfRange(lineStart, index)
+                        lineStart = index + 1
+                    }
+                }
+                carry = combined.copyOfRange(lineStart, combined.size)
+                Flux.fromIterable(lines)
+            }
+            .concatWith(Flux.defer { if (carry.isEmpty()) Flux.empty() else Flux.just(carry) })
+            .map { line -> deserializeBytes(line, clazz) }
     }
 
     private fun decodeJoined(
@@ -87,7 +117,13 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
     ): Any {
         val bytes = ByteArray(buffer.readableByteCount())
         buffer.read(bytes)
+        return deserializeBytes(bytes, clazz)
+    }
 
+    private fun deserializeBytes(
+        bytes: ByteArray,
+        clazz: Class<*>
+    ): Any {
         return try {
             val serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
                 ?: throw IllegalArgumentException(
