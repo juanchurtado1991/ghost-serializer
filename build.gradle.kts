@@ -146,6 +146,7 @@ val ciTestIos = tasks.register("ciTestIos") {
  * When you add a new `:module:test`, append it here — do not wire CI/benchmark separately.
  */
 val ciTestJvmModules = listOf(
+    ":ghost-api:jvmTest",
     ":ghost-serialization:jvmTest",
     ":ghost-ktor:jvmTest",
     ":ghost-compiler:test",

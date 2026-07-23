@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **Test coverage for `ghost-api`**: the module had zero tests despite housing `RawJsonValueScanner` (the hand-written byte-level scanner behind `RawJson.kind()`/`asIntOrNull()`/`asLongOrNull()`/`asDoubleOrNull()`/`asStringOrNull()`) and `RawJson`'s slice-based `equals()`/`hashCode()`. It was previously only exercised indirectly through KSP-generated round-trips in other modules. Added `RawJsonNumberScanningTest`, `RawJsonStringEscapeTest`, `RawJsonSliceEqualityTest` (`ghost-api/src/commonTest`) covering number-grammar rejection (leading zeros, incomplete fraction/exponent), `Int`/`Long` overflow boundaries, Unicode escape decoding (surrogate pairs, truncated/invalid `\u` escapes), and `fromBufferSlice` equality/hashCode consistency against full-buffer instances. Wired `:ghost-api:jvmTest` into `ciTestJvmModules` (previously missing, so the module was never exercised in CI even after adding tests).
+
+### Fixed
+- **`RawJson.asLongOrNull()`/`asIntOrNull()` silently corrupted sign on overflow**: `RawJsonValueScanner.parseIntegerOrNull()` accumulates digits into a negative `Long` and negates at the end for positive input. A positive token whose magnitude is exactly `-Long.MIN_VALUE` (i.e. `9223372036854775808`, one past `Long.MAX_VALUE`) accumulated to exactly `Long.MIN_VALUE`, and negating `Long.MIN_VALUE` overflows back to itself in two's complement — so `"9223372036854775808".asLongOrNull()` returned `-9223372036854775808` instead of `null`. Same root cause as the `Long.MIN_VALUE` formatting bugs fixed in 1.2.7 (`ProtoWrappers.kt`/`ProtoDuration.kt`), on the parse side instead of format side. Found by the new `RawJsonNumberScanningTest`. Now checks for this boundary explicitly before negating.
+
 ## [1.2.7] - 2026-07-08
 
 ### Added
