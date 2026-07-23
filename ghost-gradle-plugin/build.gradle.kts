@@ -6,6 +6,7 @@ plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kover)
 }
 
 java {

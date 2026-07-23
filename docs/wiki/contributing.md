@@ -38,6 +38,10 @@ cd ghost-serializer
 | `./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests` | Benchmark only — no test gate |
 | `./gradlew :ghost-benchmark:run` | `allTests` first, then full JVM benchmark harness |
 | `./gradlew :ghost-benchmark:run -PskipTests` | Benchmark only — no test gate |
+| `./gradlew koverHtmlReport` | Merged JVM/Android line/branch coverage across all Kover-enabled modules — `build/reports/kover/html/index.html` |
+| `./gradlew koverXmlReport` | Same, machine-readable — `build/reports/kover/report.xml` |
+
+Kover only measures JVM bytecode — it does not cover Kotlin/Native (`iosSimulatorArm64Test`) or the `expect`/`actual` bodies that only exist on the `iosMain`/`nativeMain` source sets.
 
 On **Linux/Windows**, `ciTest` logs that iOS tests are skipped and runs **642** tests.
 On **macOS** with Xcode, the full suite is **~874** (642 + `iosSimulatorArm64Test`).
@@ -57,8 +61,9 @@ On **macOS** with Xcode, the full suite is **~874** (642 + `iosSimulatorArm64Tes
    )
    ```
 
-4. Run `./gradlew ciTestJvm` locally.
-5. Do **not** add a separate CI step in `.github/workflows/ci.yml` — the workflow already runs `./gradlew ciTestJvm`.
+4. Append the module to the root `build.gradle.kts`'s `dependencies { kover(project(":your-module")) }` block if you want it counted in the merged coverage report.
+5. Run `./gradlew ciTestJvm` locally.
+6. Do **not** add a separate CI step in `.github/workflows/ci.yml` — the workflow already runs `./gradlew ciTestJvm`.
 
 ### KSP-Generated Models in Tests
 

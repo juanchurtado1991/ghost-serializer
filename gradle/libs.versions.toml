@@ -4,6 +4,7 @@ kotlin-sdk                      = "2.1.10"
 #noinspection AndroidGradlePluginVersion
 agp                             = "8.4.2"
 ksp                             = "2.1.10-1.0.31"
+kover                           = "0.9.9"
 compose-plugin                  = "1.8.2"
 publish-version                 = "1.2.7"
 publish-group                   = "com.ghostserializer"
@@ -116,6 +117,7 @@ android-application             = { id = "com.android.application", version.ref 
 android-library                 = { id = "com.android.library", version.ref = "agp" }
 jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kover                           = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 dokka                           = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 nexus-publish                   = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
 vanniktech-publish              = { id = "com.vanniktech.maven.publish", version = "0.30.0" }

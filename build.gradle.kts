@@ -37,6 +37,22 @@ plugins {
     alias(libs.plugins.nexus.publish)
     alias(libs.plugins.dokka)
     alias(libs.plugins.vanniktech.publish) apply false
+    alias(libs.plugins.kover)
+}
+
+dependencies {
+    // Aggregates coverage from the same JVM-testable modules as [ciTestJvmModules] below —
+    // keep both lists in sync. KMP modules (ghost-api/ghost-serialization/ghost-ktor/ghost-protobuf)
+    // only report JVM-target coverage; Kover doesn't measure Kotlin/Native (iOS) tests.
+    kover(project(":ghost-api"))
+    kover(project(":ghost-serialization"))
+    kover(project(":ghost-ktor"))
+    kover(project(":ghost-compiler"))
+    kover(project(":ghost-integration-test"))
+    kover(project(":ghost-retrofit"))
+    kover(project(":ghost-spring-boot-starter"))
+    kover(project(":ghost-gradle-plugin"))
+    kover(project(":ghost-protobuf"))
 }
 
 allprojects {
