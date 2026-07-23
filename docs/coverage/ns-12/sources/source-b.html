@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostFallback</title>
+  <title>GhostSerialization Coverage Report > GhostEnvelopeFallback</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostFallback (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEnvelopeFallback (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostFallback</td>
+  <td class="name">GhostEnvelopeFallback</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,14 +47,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Indicates that this subclass should be used as the fallback when deserializing
-&nbsp; * a sealed class and the discriminator value in the JSON does not match any known subclass.
+&nbsp; * Marks the fallback payload field when an envelope discriminator is unknown.
 &nbsp; *
-&nbsp; * Only one subclass per sealed class hierarchy can be annotated with this annotation.
+&nbsp; * Must be a nullable [com.ghost.serialization.types.RawJson] (or `ByteArray`) property.
+&nbsp; * At most one fallback property is allowed per envelope class.
+&nbsp; *
+&nbsp; * When no fallback is declared, unknown discriminators route to `null`.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostFallback
+&nbsp;annotation class GhostEnvelopeFallback
 </code>
 </pre>
 </div>
@@ -78,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>

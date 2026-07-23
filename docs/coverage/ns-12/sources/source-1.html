@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostName</title>
+  <title>GhostSerialization Coverage Report > GhostEncoder</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostName (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEncoder (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostName</td>
+  <td class="name">GhostEncoder</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,17 +46,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
 &nbsp;/**
-&nbsp; * Customizes the key name used for the annotated property during serialization and deserialization.
+&nbsp; * Delegated field encoding.
 &nbsp; *
-&nbsp; * By default, the serializer uses the property&#39;s name in Kotlin. When this annotation is applied,
-&nbsp; * the serializer will use the provided [name] instead.
-&nbsp; *
-&nbsp; * @property name The custom key name to use in the serialized JSON representation.
+&nbsp; * @param provider The class/object containing the encoding function.
+&nbsp; * @param functionName The name of the static function: `fun(GhostJsonFlatWriter, T)`
 &nbsp; */
 &nbsp;@Target(AnnotationTarget.PROPERTY)
-&nbsp;@Retention(AnnotationRetention.SOURCE)
-&nbsp;annotation class GhostName(val name: String)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostEncoder(
+&nbsp;    val provider: KClass&lt;*&gt;,
+&nbsp;    val functionName: String
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -80,7 +83,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>

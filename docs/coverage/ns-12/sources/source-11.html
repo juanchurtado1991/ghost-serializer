@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostEnvelopePayload</title>
+  <title>GhostSerialization Coverage Report > GhostWrappedKeys</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostEnvelopePayload (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostWrappedKeys (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostEnvelopePayload</td>
+  <td class="name">GhostWrappedKeys</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,23 +46,46 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
-&nbsp;import kotlin.reflect.KClass
-&nbsp;
 &nbsp;/**
-&nbsp; * Maps a wire discriminator value to a nullable payload field on a [GhostJsonEnvelope] class.
+&nbsp; * Collapses sibling JSON keys at the current object level into a single Kotlin property.
 &nbsp; *
-&nbsp; * The generated router selects this property when the envelope discriminator matches [value].
-&nbsp; * When [target] is set to a [GhostSerialization] model, `routeTyped` / `parseTyped` decode via
-&nbsp; * zero-copy [com.ghost.serialization.types.RawJson] slice parsing.
+&nbsp; * This is the inverse of [GhostWrap]: wire payloads expose flat keys (`extra1`, `type`, `dth`, …)
+&nbsp; * while the model groups them under one property (`extras`, `integration`, …).
 &nbsp; *
-&nbsp; * @param value Wire discriminator string (e.g. `&quot;DEVICE_EVENT&quot;`, `&quot;invoice.paid&quot;`).
-&nbsp; * @param target Typed model to decode into; default means return [RawJson] only.
+&nbsp; * Example — API wire vs Kotlin model:
+&nbsp; * ```kotlin
+&nbsp; * // Wire:  { &quot;deviceId&quot;: &quot;x&quot;, &quot;type&quot;: &quot;DTH&quot;, &quot;dth&quot;: { ... } }
+&nbsp; * // Model: Device(deviceId, integration = Integration.Dth(...))
+&nbsp; *
+&nbsp; * @GhostSerialization
+&nbsp; * data class Device(
+&nbsp; *     val deviceId: String,
+&nbsp; *     @GhostWrappedKeys(keys = [&quot;type&quot;, &quot;dth&quot;])
+&nbsp; *     @GhostName(&quot;integration&quot;)
+&nbsp; *     val integration: Integration,
+&nbsp; * )
+&nbsp; * ```
+&nbsp; *
+&nbsp; * During **deserialization**, each listed [keys] entry is captured from the parent object
+&nbsp; * (zero-copy [com.ghost.serialization.types.RawJson] slices) and assembled into a synthetic
+&nbsp; * wrapper object `{ &quot;type&quot;: &quot;...&quot;, &quot;dth&quot;: { ... } }` before the property type is parsed.
+&nbsp; *
+&nbsp; * During **serialization**, the wrapper property is **unwrapped**: inner fields are written as
+&nbsp; * sibling keys at the same JSON depth (matching the wire format above).
+&nbsp; *
+&nbsp; * @param keys JSON field names at the current object level that belong to the wrapper property.
+&nbsp; * @param omitIfEmpty When `true`, if every captured key is absent or JSON `null`, the wrapper
+&nbsp; *   property is set to `null` instead of an object with all-null fields. The property must be
+&nbsp; *   nullable.
+&nbsp; * @param omitIfAbsent When any listed key is absent or JSON `null`, the wrapper property is set
+&nbsp; *   to `null` instead of being deserialized. Use for optional integration blocks.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY)
+&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostEnvelopePayload(
-&nbsp;    val value: String,
-&nbsp;    val target: KClass&lt;*&gt; = Unit::class
+&nbsp;annotation class GhostWrappedKeys(
+&nbsp;    val keys: Array&lt;String&gt;,
+&nbsp;    val omitIfEmpty: Boolean = false,
+&nbsp;    val omitIfAbsent: Array&lt;String&gt; = [],
 &nbsp;)
 </code>
 </pre>
@@ -87,7 +110,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>

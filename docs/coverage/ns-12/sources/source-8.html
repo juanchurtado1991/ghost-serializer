@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostEncoder</title>
+  <title>GhostSerialization Coverage Report > GhostDecoder</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostEncoder (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostDecoder (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostEncoder</td>
+  <td class="name">GhostDecoder</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -49,14 +49,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import kotlin.reflect.KClass
 &nbsp;
 &nbsp;/**
-&nbsp; * Delegated field encoding.
+&nbsp; * Delegated field decoding.
+&nbsp; * Useful for specific formats (custom dates, legacy booleans) without
+&nbsp; * writing a full serializer.
 &nbsp; *
-&nbsp; * @param provider The class/object containing the encoding function.
-&nbsp; * @param functionName The name of the static function: `fun(GhostJsonFlatWriter, T)`
+&nbsp; * @param provider The class/object containing the decoding function.
+&nbsp; * @param functionName The name of the static function. Supported first-parameter types:
+&nbsp; *   - `GhostJsonReader` — bytes / streaming channel (default)
+&nbsp; *   - `GhostJsonFlatReader` — flat byte buffer channel
+&nbsp; *   - `GhostJsonStringReader` — native string channel when `textChannel=true` on `@GhostSerialization` (or module `ghost.textChannel=true`)
 &nbsp; */
 &nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostEncoder(
+&nbsp;annotation class GhostDecoder(
 &nbsp;    val provider: KClass&lt;*&gt;,
 &nbsp;    val functionName: String
 &nbsp;)
@@ -83,7 +88,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>

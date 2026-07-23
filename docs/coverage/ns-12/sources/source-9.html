@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostWrappedKeys</title>
+  <title>GhostSerialization Coverage Report > GhostJsonEnvelope</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostWrappedKeys (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostJsonEnvelope (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostWrappedKeys</td>
+  <td class="name">GhostJsonEnvelope</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,45 +47,47 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Collapses sibling JSON keys at the current object level into a single Kotlin property.
+&nbsp; * Marks a data class as an external-discriminator JSON envelope (webhook / SSE / EventBridge shape).
 &nbsp; *
-&nbsp; * This is the inverse of [GhostWrap]: wire payloads expose flat keys (`extra1`, `type`, `dth`, …)
-&nbsp; * while the model groups them under one property (`extras`, `integration`, …).
+&nbsp; * The KSP plugin generates zero-copy payload routing on the companion serializer:
+&nbsp; * `routePayload(envelope)`, `parsePayload(bytes)`, and optional typed variants when
+&nbsp; * [GhostEnvelopePayload.target] is set.
 &nbsp; *
-&nbsp; * Example — API wire vs Kotlin model:
+&nbsp; * ### Fat envelope (SmartThings SSE)
+&nbsp; * One nullable [com.ghost.serialization.types.RawJson] field per event type, each tagged with
+&nbsp; * [GhostEnvelopePayload]:
 &nbsp; * ```kotlin
-&nbsp; * // Wire:  { &quot;deviceId&quot;: &quot;x&quot;, &quot;type&quot;: &quot;DTH&quot;, &quot;dth&quot;: { ... } }
-&nbsp; * // Model: Device(deviceId, integration = Integration.Dth(...))
-&nbsp; *
+&nbsp; * @GhostJsonEnvelope(discriminator = &quot;eventType&quot;, timeField = &quot;eventTime&quot;)
 &nbsp; * @GhostSerialization
-&nbsp; * data class Device(
-&nbsp; *     val deviceId: String,
-&nbsp; *     @GhostWrappedKeys(keys = [&quot;type&quot;, &quot;dth&quot;])
-&nbsp; *     @GhostName(&quot;integration&quot;)
-&nbsp; *     val integration: Integration,
+&nbsp; * data class RawSseEventEnvelope(
+&nbsp; *     @GhostName(&quot;eventType&quot;) val eventType: String = &quot;&quot;,
+&nbsp; *     @GhostName(&quot;eventTime&quot;) val timeMillis: Long = 0L,
+&nbsp; *     @GhostEnvelopePayload(&quot;DEVICE_EVENT&quot;)
+&nbsp; *     @GhostName(&quot;deviceEvent&quot;) val deviceEvent: RawJson? = null,
 &nbsp; * )
 &nbsp; * ```
 &nbsp; *
-&nbsp; * During **deserialization**, each listed [keys] entry is captured from the parent object
-&nbsp; * (zero-copy [com.ghost.serialization.types.RawJson] slices) and assembled into a synthetic
-&nbsp; * wrapper object `{ &quot;type&quot;: &quot;...&quot;, &quot;dth&quot;: { ... } }` before the property type is parsed.
+&nbsp; * ### Generic envelope (Stripe / GitHub / CloudEvents-like)
+&nbsp; * Single payload field shared by all types:
+&nbsp; * ```kotlin
+&nbsp; * @GhostJsonEnvelope(discriminator = &quot;type&quot;, dataField = &quot;data&quot;)
+&nbsp; * @GhostSerialization
+&nbsp; * data class WebhookEnvelope(
+&nbsp; *     val type: String = &quot;&quot;,
+&nbsp; *     val data: RawJson? = null,
+&nbsp; * )
+&nbsp; * ```
 &nbsp; *
-&nbsp; * During **serialization**, the wrapper property is **unwrapped**: inner fields are written as
-&nbsp; * sibling keys at the same JSON depth (matching the wire format above).
-&nbsp; *
-&nbsp; * @param keys JSON field names at the current object level that belong to the wrapper property.
-&nbsp; * @param omitIfEmpty When `true`, if every captured key is absent or JSON `null`, the wrapper
-&nbsp; *   property is set to `null` instead of an object with all-null fields. The property must be
-&nbsp; *   nullable.
-&nbsp; * @param omitIfAbsent When any listed key is absent or JSON `null`, the wrapper property is set
-&nbsp; *   to `null` instead of being deserialized. Use for optional integration blocks.
+&nbsp; * @param discriminator JSON field holding the wire type name (default `&quot;type&quot;`).
+&nbsp; * @param timeField Optional JSON field copied into routed results metadata (e.g. `&quot;eventTime&quot;`).
+&nbsp; * @param dataField When non-empty, enables generic single-payload mode using this JSON field name.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
+&nbsp;@Target(AnnotationTarget.CLASS)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostWrappedKeys(
-&nbsp;    val keys: Array&lt;String&gt;,
-&nbsp;    val omitIfEmpty: Boolean = false,
-&nbsp;    val omitIfAbsent: Array&lt;String&gt; = [],
+&nbsp;annotation class GhostJsonEnvelope(
+&nbsp;    val discriminator: String = &quot;type&quot;,
+&nbsp;    val timeField: String = &quot;&quot;,
+&nbsp;    val dataField: String = &quot;&quot;
 &nbsp;)
 </code>
 </pre>
@@ -110,7 +112,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>

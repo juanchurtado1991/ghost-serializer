@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostEnvelopeFallback</title>
+  <title>GhostSerialization Coverage Report > GhostWrap</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostEnvelopeFallback (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostWrap (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostEnvelopeFallback</td>
+  <td class="name">GhostWrap</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,16 +47,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Marks the fallback payload field when an envelope discriminator is unknown.
+&nbsp; * Re-structures a class property into a nested JSON object during serialization.
+&nbsp; * This is the inverse of [GhostFlatten].
 &nbsp; *
-&nbsp; * Must be a nullable [com.ghost.serialization.types.RawJson] (or `ByteArray`) property.
-&nbsp; * At most one fallback property is allowed per envelope class.
+&nbsp; * Example:
+&nbsp; * ```kotlin
+&nbsp; * @GhostSerialization
+&nbsp; * data class Device(
+&nbsp; *     @GhostWrap(&quot;metadata.info&quot;)
+&nbsp; *     val id: String
+&nbsp; * )
+&nbsp; * ```
+&nbsp; * Result JSON: `{&quot;metadata&quot;: {&quot;info&quot;: {&quot;id&quot;: &quot;ABC&quot;}}}`
 &nbsp; *
-&nbsp; * When no fallback is declared, unknown discriminators route to `null`.
+&nbsp; * @param path The dot-separated path where the property should be wrapped.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY)
+&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostEnvelopeFallback
+&nbsp;annotation class GhostWrap(val path: String)
 </code>
 </pre>
 </div>
@@ -80,7 +88,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>

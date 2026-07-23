@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostFlatten</title>
+  <title>GhostSerialization Coverage Report > GhostEnvelopePayload</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostFlatten (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEnvelopePayload (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostFlatten</td>
+  <td class="name">GhostEnvelopePayload</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,27 +46,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
 &nbsp;/**
-&nbsp; * Maps a nested JSON property directly to a field in the annotated class.
+&nbsp; * Maps a wire discriminator value to a nullable payload field on a [GhostJsonEnvelope] class.
 &nbsp; *
-&nbsp; * Example:
-&nbsp; * ```kotlin
-&nbsp; * @GhostSerialization
-&nbsp; * data class Device(
-&nbsp; *     @GhostFlatten(&quot;attributes.value.level&quot;)
-&nbsp; *     val level: Int
-&nbsp; * )
-&nbsp; * ```
-&nbsp; * JSON: `{&quot;attributes&quot;: {&quot;value&quot;: {&quot;level&quot;: 42}}}`
+&nbsp; * The generated router selects this property when the envelope discriminator matches [value].
+&nbsp; * When [target] is set to a [GhostSerialization] model, `routeTyped` / `parseTyped` decode via
+&nbsp; * zero-copy [com.ghost.serialization.types.RawJson] slice parsing.
 &nbsp; *
-&nbsp; * This avoids creating intermediate wrapper classes and significantly reduces memory allocation
-&nbsp; * by parsing nested values directly into the target field.
-&nbsp; *
-&nbsp; * @param path The dot-separated path to the JSON property.
+&nbsp; * @param value Wire discriminator string (e.g. `&quot;DEVICE_EVENT&quot;`, `&quot;invoice.paid&quot;`).
+&nbsp; * @param target Typed model to decode into; default means return [RawJson] only.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
+&nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostFlatten(val path: String)
+&nbsp;annotation class GhostEnvelopePayload(
+&nbsp;    val value: String,
+&nbsp;    val target: KClass&lt;*&gt; = Unit::class
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -90,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-22 20:46</div>
+    <div style="float:right;">generated on 2026-07-23 03:08</div>
 </div>
 </body>
 </html>
