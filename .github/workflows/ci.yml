@@ -78,7 +78,8 @@ jobs:
   test-ios:
     name: Tests (iOS)
     # Apple Silicon + Xcode required; iosSimulatorArm64Test is SKIPPED on Linux/Intel runners.
-    runs-on: macos-14
+    # macos-26 required: Kotlin 2.4.0's Kotlin/Native toolchain needs Xcode 26.4, unavailable on macos-14/15.
+    runs-on: macos-26
     timeout-minutes: 60
 
     steps:
