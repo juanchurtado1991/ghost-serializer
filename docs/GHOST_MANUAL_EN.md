@@ -779,7 +779,7 @@ Pools: `ThreadLocal` JVM/Android, `@ThreadLocal` iOS in `Ghost.*.kt`.
 
 - Growing flat buffer
 - `reset()` after each encode — releases capacity above `maxWarmWriteBufferCapacity`
-- JVM: 8 MB warm cap; Android/Native: 4 MB; (Wasm sources not published)
+- JVM: 8 MB warm cap; Android/Native/Wasm: 4 MB
 
 ```kotlin
 // After encode, reset keeps buffer up to cap
@@ -2125,7 +2125,7 @@ This manual was cross-checked against the `ghost-serializer` repository on the l
 | 642 tests `./gradlew ciTest` on Linux | 416 + 226 Android `testDebugUnitTest` |
 | ~874 with iOS on macOS | README: 642 + `iosSimulatorArm64Test` (~232) |
 | Spring Boot 3.4.5 in tests | `gradle/libs.versions.toml` `spring-boot = "3.4.5"` |
-| Ktor 2.3.11 | `gradle/libs.versions.toml` `ktor = "2.3.11"` |
+| Ktor 3.5.1 | `gradle/libs.versions.toml` `ktor = "3.5.1"` |
 | iOS without ServiceLoader | `Ghost.ios.kt` → `discoverRegistries() = emptyList()` |
 | JVM registry fast-path | `Ghost.jvm.kt` → `Class.forName` + `ServiceLoader` |
 | List/Map at runtime | `Ghost.kt` → `ListSerializer`, `MapSerializer` |

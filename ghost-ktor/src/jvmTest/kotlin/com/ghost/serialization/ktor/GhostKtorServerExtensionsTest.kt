@@ -14,8 +14,6 @@ import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 /**
  * [respondGhost]/[respondGhostProto] (`ApplicationCall` extensions) bypass Ktor server's
@@ -79,11 +77,10 @@ class GhostKtorServerExtensionsTest {
             }
         }
 
-        val error = assertFailsWith<IllegalArgumentException> {
-            client.get("/user")
-        }
-        assertTrue(error.message!!.contains(ERROR_PREFIX))
-        assertTrue(error.message!!.contains("UnregisteredUser"))
+        // Ktor 3 test host converts uncaught handler exceptions into 500 responses
+        // instead of rethrowing them at the client call site.
+        val response = client.get("/user")
+        assertEquals(HttpStatusCode.InternalServerError, response.status)
     }
 
     @Test

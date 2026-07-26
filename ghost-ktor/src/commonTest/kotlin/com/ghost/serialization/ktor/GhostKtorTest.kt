@@ -297,7 +297,7 @@ class GhostKtorTest {
         }
 
         val fallbackConverter = object : ContentConverter {
-            override suspend fun serializeNullable(
+            override suspend fun serialize(
                 contentType: ContentType,
                 charset: Charset,
                 typeInfo: TypeInfo,

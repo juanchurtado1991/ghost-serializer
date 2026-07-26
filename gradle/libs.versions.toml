@@ -10,7 +10,7 @@ publish-version                 = "1.2.7"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization
-ktor                            = "2.3.11"
+ktor                            = "3.5.1"
 kotlinx-serialization           = "1.8.1"
 okio                            = "3.9.0"
 okhttp                          = "4.12.0"

@@ -36,9 +36,9 @@ class GhostContentConverterDirectTest {
     }
 
     @Test
-    fun serializeNullable_returnsNullForNullValue() = runTest {
+    fun serialize_returnsNullForNullValue() = runTest {
         val converter = GhostContentConverter()
-        val result = converter.serializeNullable(
+        val result = converter.serialize(
             ContentType.Application.Json,
             Charsets.UTF_8,
             typeInfo<KtorUser>(),
@@ -48,9 +48,9 @@ class GhostContentConverterDirectTest {
     }
 
     @Test
-    fun serializeNullable_returnsNullForUnregisteredType() = runTest {
+    fun serialize_returnsNullForUnregisteredType() = runTest {
         val converter = GhostContentConverter()
-        val result = converter.serializeNullable(
+        val result = converter.serialize(
             ContentType.Application.Json,
             Charsets.UTF_8,
             typeInfo<UnregisteredUser>(),
