@@ -11,6 +11,7 @@ fun GhostJsonStringReader.beginObject() {
     if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
         throwError(C.ERR_EXPECTED_BEGIN_OBJ)
     }
+    predictedFieldIndex = C.FIELD_PREDICTION_START
     depth++
     if (depth > maxDepth) {
         throwError(C.ERR_DEPTH_EXCEEDED)
@@ -353,7 +354,48 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
-    val end = findClosingQuote(start, limit)
+    val lim = limit
+    val chars = rawChars
+
+    // Optimistic in-order field match: compare the key against the predicted candidate in one
+    // pass, skipping findClosingQuote + hash + verify on a hit.
+    val predicted = predictedFieldIndex
+    val candidates = options.rawChars
+    if (predicted < candidates.size) {
+        val candidate = candidates[predicted]
+        val candLen = candidate.size
+        val keyEnd = start + candLen
+        if (candLen > 0 && keyEnd < lim && chars[keyEnd].code == C.QUOTE_INT) {
+            var i = 0
+            while (i + 3 < candLen &&
+                chars[start + i] == candidate[i] &&
+                chars[start + i + 1] == candidate[i + 1] &&
+                chars[start + i + 2] == candidate[i + 2] &&
+                chars[start + i + 3] == candidate[i + 3]
+            ) {
+                i += 4
+            }
+            while (i < candLen && chars[start + i] == candidate[i]) {
+                i++
+            }
+            if (i == candLen) {
+                predictedFieldIndex = predicted + 1
+                val newPos = keyEnd + 1
+                position = newPos
+                nextTokenByte = C.RESET_TOKEN_BYTE
+                if (consumeSeparator) {
+                    if (newPos < lim && chars[newPos].code == C.COLON_INT) {
+                        position = newPos + 1
+                    } else {
+                        consumeKeySeparator()
+                    }
+                }
+                return predicted
+            }
+        }
+    }
+
+    val end = findClosingQuote(start, lim)
 
     if (end == -1) {
         throwUnterminatedStringError()
@@ -368,6 +410,7 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
 
     if (index != C.MATCH_END) {
         if (verifyKeyMatch(start, length, options.rawChars[index], consumeSeparator)) {
+            predictedFieldIndex = index + 1
             return index
         }
     }

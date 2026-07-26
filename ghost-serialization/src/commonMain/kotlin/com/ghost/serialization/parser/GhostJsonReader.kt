@@ -75,6 +75,13 @@ class GhostJsonReader(
      */
     internal var lastScanContentWas7BitOnly: Boolean = false
 
+    /**
+     * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
+     * fields in declaration order. Reset to 0 on [beginObject]; mispredictions fall back to
+     * hashed dispatch, so this never affects correctness.
+     */
+    internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
+
     /** Current nesting depth (object/array).
      * Incremented on begin*, decremented on end*. */
     var depth: Int = 0
@@ -641,5 +648,6 @@ class GhostJsonReader(
         this.maxDepth = C.MAX_DEPTH
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
+        this.predictedFieldIndex = C.FIELD_PREDICTION_START
     }
 }

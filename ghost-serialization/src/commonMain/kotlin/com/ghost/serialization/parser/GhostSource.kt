@@ -20,6 +20,15 @@ interface GhostSource {
 
     operator fun get(index: Int): Int
 
+    /**
+     * Like [get], but returns [GhostJsonConstants.MATCH_END] instead of throwing when [index]
+     * is past the available data. Streaming sources report [size] as [Int.MAX_VALUE] because
+     * the document length is unknown, so callers that speculatively read ahead (such as the
+     * in-order field prediction) cannot bounds-check against [size] and need this instead.
+     */
+    fun byteOrEof(index: Int): Int =
+        if (index < size) get(index) else GhostJsonConstants.MATCH_END
+
     fun decodeToString(start: Int, end: Int): String
 
     /**

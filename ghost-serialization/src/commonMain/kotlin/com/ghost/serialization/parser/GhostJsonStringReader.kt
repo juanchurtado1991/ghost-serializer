@@ -29,6 +29,13 @@ class GhostJsonStringReader(
     var needsCommaMask: Long = 0L
     var commaConsumedMask: Long = 0L
 
+    /**
+     * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
+     * fields in declaration order. Reset to 0 on [beginObject]; mispredictions fall back to
+     * hashed dispatch, so this never affects correctness.
+     */
+    internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
+
     /** Reused CharArray cache to bypass String.charAt overhead. */
     var rawChars: CharArray
 
@@ -171,6 +178,7 @@ class GhostJsonStringReader(
         this.maxDepth = C.MAX_DEPTH
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
+        this.predictedFieldIndex = C.FIELD_PREDICTION_START
         invalidateUtf8Cache()
 
         if (newData !== oldData) {
