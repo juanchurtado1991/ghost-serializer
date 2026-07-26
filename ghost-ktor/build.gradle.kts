@@ -11,7 +11,7 @@ plugins {
 kotlin {
     android {
         namespace = "com.ghost.serialization.ktor"
-        compileSdk = 35
+        compileSdk = 36
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
