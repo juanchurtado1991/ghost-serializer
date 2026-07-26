@@ -69,6 +69,9 @@ Generated JSON almost always lists object fields in declaration order. Each read
 
 Wide compares use `ghostReadLong8` (8 bytes at a time) on byte/streaming paths. The string channel compares `CharArray` candidates the same way, without a portable wide-load API.
 
+> [!TIP]
+> **Pro tip:** align DTO property order with the JSON key order from your producer so prediction hits on every field. Correctness does not depend on order; throughput does. See [Advanced Features § Align DTO property order](advanced-features.md#align-dto-property-order-with-json-pro-tip).
+
 ### 3.2 SWAR whitespace and string scanning
 
 Pretty-printed payloads are often ~25% ASCII spaces. Readers swallow **8-byte space runs** with a single `Long` compare (`SPACE_RUN_LONG`).

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- **Docs: field-order pro tip** — Quick Start, Advanced Features, and Architecture now recommend aligning `data class` property order with the producer’s JSON key order so in-order field prediction stays on the hot path (hash fallback remains correct for shuffled keys).
+
 ## [1.3.0] - 2026-07-26
 
 ### Added

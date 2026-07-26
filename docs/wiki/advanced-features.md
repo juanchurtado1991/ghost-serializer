@@ -243,6 +243,35 @@ val user: User = Ghost.deserialize(response.body().string())
 
 ¹ Prefer `ByteArray` for network responses either way. Opt out of the string channel only when binary size matters more than occasional `String` parsing (see [§5 — When to opt out](#when-to-opt-out)).
 
+### Align DTO property order with JSON (pro tip)
+
+Ghost’s decode hot path **predicts the next field in declaration order**. When the wire object lists keys in the same order as the `data class` properties, the reader matches the key in one pass and skips closing-quote scan + hash + verify. Out-of-order keys still decode correctly via the perfect-hash fallback — you only leave speed on the table.
+
+> [!TIP]
+> **Pro tip:** for maximum decode speed, declare Kotlin properties in the **same order** the producer emits JSON keys. Most backends and Ghost’s own encoder already write fields in a stable order; matching that order is free correctness and a large win on wide objects.
+
+```kotlin
+// Wire: {"id":1,"name":"Ada","email":"a@b.c"}
+@GhostSerialization
+data class User(
+    val id: Long,      // 1st key → predicted
+    val name: String,  // 2nd key → predicted
+    val email: String, // 3rd key → predicted
+)
+
+// Same names, worse order for this payload — still correct, more hash fallbacks:
+@GhostSerialization
+data class UserSlow(
+    val email: String,
+    val name: String,
+    val id: Long,
+)
+```
+
+`@GhostName` / `@SerialName` only rename the wire key; **property order in the class** is what prediction follows. Extra unknown keys between known ones are fine (skipped); they do not require reordering the DTO.
+
+How the shortcut works → [Architecture §3.1](architecture.md#31-in-order-field-prediction).
+
 ### Input encoding (RFC 8259 §8.1)
 
 Ghost's parsers operate on **UTF-8** internally, but every byte and streaming entrypoint

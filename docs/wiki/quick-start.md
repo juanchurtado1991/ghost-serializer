@@ -127,7 +127,11 @@ The starter places Ghost before the default codecs. `@GhostSerialization` DTOs u
 
 See [Spring Boot](usage-spring-boot.md).
 
-## 5. Choose the next guide
+## 5. Pro tip — align DTO order with JSON
+
+Ghost predicts the next field in **declaration order**. Matching your `data class` property order to the producer’s key order keeps decode on the fastest path (hash fallback still handles shuffled keys correctly). Details → [Advanced Features](advanced-features.md#align-dto-property-order-with-json-pro-tip).
+
+## 6. Choose the next guide
 
 - [Android & Retrofit](usage-android.md)
 - [Kotlin Multiplatform & Ktor](usage-kmp.md)
