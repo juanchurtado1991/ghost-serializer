@@ -277,6 +277,13 @@ public object GhostJsonConstants {
     /** Size of the hot-path writer scratch buffer. */
     const val WRITER_SCRATCH_SIZE = 512
 
+    /**
+     * Initial capacity of [com.ghost.serialization.parser.GhostJsonStringReader.slowPathChars]
+     * for decoding escaped JSON strings. Grows on demand; kept as a constant (not a heuristic)
+     * because escape decode is rare and the size only amortizes the first few escapes.
+     */
+    const val STRING_ESCAPE_SCRATCH_SIZE = 256
+
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
     const val STREAMING_BUFFER_SIZE = 8192
 

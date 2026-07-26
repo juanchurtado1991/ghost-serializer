@@ -75,7 +75,7 @@ class GhostJsonStringReader(
     val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
 
     // Reusable CharArray for decoding escapes in readQuotedString slow-path
-    var slowPathChars: CharArray = CharArray(256)
+    var slowPathChars: CharArray = CharArray(C.STRING_ESCAPE_SCRATCH_SIZE)
 
     private fun growSlowPathChars(current: CharArray, requiredSize: Int): CharArray {
         val newSize = (current.size * 2).coerceAtLeast(requiredSize)
