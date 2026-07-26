@@ -36,17 +36,17 @@ Your other models keep using KotlinX, Jackson, Gson, or Moshi — unchanged.
 
 ---
 
-## Throughput at a glance
+## Decode at a glance
 
-Twitter macro fixture (**631 KB**). Higher bars = faster (GB/s):
+Twitter macro fixture (**631 KB**). Three views of the same decode run — throughput ↑, latency ↓, memory ↓:
 
-![Twitter macro decode throughput: Ghost vs KotlinX — String 1.219 vs 0.713, Bytes 1.011 vs 0.413, Streaming 0.525 vs. 0.190 GB/s](readme-assets/twitter-throughput.png)
+![Twitter macro decode: Ghost vs KotlinX — throughput GB/s, latency µs/op, memory KB/op for string, bytes, and streaming](readme-assets/twitter-throughput.png)
 
 | | Ghost | KotlinX | Ghost advantage |
 |:---|---:|---:|:---|
-| Decode string | **1.219 GB/s** · 518 µs | 0.713 GB/s | **~1.7× faster** · **73% less memory** |
-| Decode bytes | **1.011 GB/s** · 624 µs | 0.413 GB/s | **~2.4× faster** · **85% less memory** |
-| Decode streaming | **0.525 GB/s** · 1204 µs | 0.190 GB/s | **~2.8× faster** · **33% less memory** |
+| Decode string | **1.219 GB/s** · 518 µs · 361 KB | 0.713 GB/s · 886 µs · 1338 KB | **~1.7× faster** · **73% less memory** |
+| Decode bytes | **1.011 GB/s** · 624 µs · 621 KB | 0.413 GB/s · 1529 µs · 4297 KB | **~2.4× faster** · **85% less memory** |
+| Decode streaming | **0.525 GB/s** · 1204 µs · 1269 KB | 0.190 GB/s · 3332 µs · 1905 KB | **~2.8× faster** · **33% less memory** |
 
 Full tables + how to run them → **[Benchmarks](docs/wiki/benchmarks.md)** · also [`ktor-ghost`](https://www.http-arena.com/#sort=rps:-1&q=kotlin) on HTTP Arena (+14% vs plain Ktor).
 
