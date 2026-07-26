@@ -62,18 +62,18 @@ Results on [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter
 
 | Operation | Engine |        Throughput (ops/s)        | Mem (KB/op) |
 | :--- | :---: |:--------------------------------:| :---: |
-| **Decode (String)** | **👻 Ghost** | **1271.2** 🏆 *(+24.7% vs KSER)* | **406.8** 💾 *(-69.6% vs KSER)* |
-| | KSER |              1108.0              | 1337.4 |
-| **Decode (Bytes)** | **👻 Ghost** | **1105.8** 🏆 *(+74.3% vs KSER)* | **671.7** 💾 *(-84.4% vs KSER)* |
-| | KSER |              634.3               | 4296.9 |
-| **Decode (Streaming)** | **👻 Ghost** | **481.9** 🏆 *(+66.7% vs KSER)*  | **1320.1** 💾 *(-30.7% vs KSER)* |
-| | KSER |              289.0               | 1904.7 |
-| **Encode (String)** | **👻 Ghost** | **4220.4** 🏆 *(+35.3% vs KSER)* | 1074.3 |
-| | KSER |              3119.0              | **972.1** 💾 |
-| **Encode (Bytes)** | **👻 Ghost** | **2609.6** 🏆 *(+58.6% vs KSER)* | **420.2** 💾 *(-81.0% vs KSER)* |
-| | KSER |              1645.2              | 2206.8 |
-| **Encode (Streaming)** | **👻 Ghost** | **2614.9** 🏆 *(+75.0% vs KSER)* | **426.9** 💾 *(-6.2% vs KSER)* |
-| | KSER |              1494.2              | 455.0 |
+| **Decode (String)** | **👻 Ghost** | **1384.2** 🏆 *(+27.7% vs KSER)* | **361.2** 💾 *(-73.0% vs KSER)* |
+| | KSER |              1084.3              | 1337.6 |
+| **Decode (Bytes)** | **👻 Ghost** | **1144.5** 🏆 *(+74.0% vs KSER)* | **621.2** 💾 *(-85.5% vs KSER)* |
+| | KSER |              657.8               | 4297.0 |
+| **Decode (Streaming)** | **👻 Ghost** | **686.6** 🏆 *(+132.7% vs KSER)* | **1269.7** 💾 *(-33.3% vs KSER)* |
+| | KSER |              295.1               | 1904.9 |
+| **Encode (String)** | **👻 Ghost** | **4472.5** 🏆 *(+55.8% vs KSER)* | 1074.3 |
+| | KSER |              2869.6              | **972.1** 💾 |
+| **Encode (Bytes)** | **👻 Ghost** | **2341.8** 🏆 *(+90.9% vs KSER)* | **420.2** 💾 *(-81.0% vs KSER)* |
+| | KSER |              1226.5              | 2206.8 |
+| **Encode (Streaming)** | **👻 Ghost** | **2325.2** 🏆 *(+61.9% vs KSER)* | **426.9** 💾 *(-6.2% vs KSER)* |
+| | KSER |              1436.1              | 455.0 |
 
 ---
 

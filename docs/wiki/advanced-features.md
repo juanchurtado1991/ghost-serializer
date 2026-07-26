@@ -209,7 +209,7 @@ val user: User = Ghost.deserialize(jsonString)
 | `encodeToString()` path | Bytes bridge (default interface) | Native `GhostJsonStringWriter` |
 | Binary per DTO | Baseline | +4 KB dispatch table |
 | Typical REST / synthetic DTOs | **Faster deserialize** (benchmark) | Slower deserialize vs bridge |
-| Very large String payloads (Twitter macro) | Bridge still works | **+14–75% throughput vs KSER** (see [benchmarks](benchmarks.md)) |
+| Very large String payloads (Twitter macro) | Bridge still works | **+28% throughput vs KSER** (see [benchmarks](benchmarks.md)) |
 
 ### When to enable `textChannel`
 
@@ -219,7 +219,7 @@ Benchmark evidence (`benchmarkSynthetic` + `benchmarkTwitter`, JVM, 500 sessions
 |:---|:---|:---|
 | Small / medium DTOs (≈200 objects, LIST_MEDIUM) | Ghost **0.080 ms** deserialize String | **0.094 ms** — ~17% slower |
 | Large nested DTOs (≈2000 objects, SYNC_FULL_LARGE) | Ghost **0.654 ms** (bridge) | **0.805 ms** — bridge wins |
-| Twitter macro JSON (multi‑MB `String` in memory) | Not measured as primary path | Ghost **1271 ops/s** decode String 🏆 |
+| Twitter macro JSON (multi‑MB `String` in memory) | Not measured as primary path | Ghost **1384 ops/s** decode String 🏆 |
 | Network `ByteArray` / Okio | Always use default — no `textChannel` needed | N/A |
 
 **Rule of thumb:** leave **`textChannel = false`** (default) for almost all models. The interface bridge reuses the byte-first `GhostJsonFlatReader`, which is the most JIT-friendly path for deserialize on typical and large synthetic payloads.
