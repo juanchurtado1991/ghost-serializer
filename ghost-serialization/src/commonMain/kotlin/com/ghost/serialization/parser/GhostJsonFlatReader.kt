@@ -517,9 +517,59 @@ open class GhostJsonFlatReader(
 
     /**
      * Consumes the null value literal from the stream.
+     *
+     * After [peekNextToken] has already positioned on `'n'`, validates the remaining
+     * `ull` bytes inline — avoids [okio.ByteString.rangeEquals] on the hot nullable path.
      */
     fun consumeNull() {
-        skipAndValidateLiteral(C.NULL_BS)
+        val p = position
+        val data = rawData
+        if (p + 4 > limit ||
+            (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
+            (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
+            (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
+            (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
+        ) {
+            throwError(C.ERR_EXPECTED_LITERAL + "null")
+        }
+        position = p + 4
+        nextTokenByte = C.RESET_TOKEN_BYTE
+    }
+
+    /** Reads a JSON string, or `null` when the next token is the `null` literal. */
+    fun nextStringOrNull(): String? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextString()
+    }
+
+    /** Reads a JSON int, or `null` when the next token is the `null` literal. */
+    fun nextIntOrNull(): Int? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextInt()
+    }
+
+    /** Reads a JSON long, or `null` when the next token is the `null` literal. */
+    fun nextLongOrNull(): Long? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextLong()
+    }
+
+    /** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
+    fun nextBooleanOrNull(): Boolean? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextBoolean()
     }
 
     /**

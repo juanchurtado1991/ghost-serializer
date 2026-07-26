@@ -247,7 +247,54 @@ fun GhostJsonStringReader.nextChar(): Char {
 fun GhostJsonStringReader.isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
 fun GhostJsonStringReader.consumeNull() {
-    skipAndValidateLiteral(C.NULL_BS)
+    val p = position
+    val chars = rawChars
+    if (p + 4 > limit ||
+        chars[p].code != C.NULL_CHAR_INT ||
+        chars[p + 1].code != C.U_BYTE_INT ||
+        chars[p + 2].code != C.L_BYTE_INT ||
+        chars[p + 3].code != C.L_BYTE_INT
+    ) {
+        throwError(C.ERR_EXPECTED_LITERAL + "null")
+    }
+    position = p + 4
+    nextTokenByte = C.RESET_TOKEN_BYTE
+}
+
+/** Reads a JSON string, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextStringOrNull(): String? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextString()
+}
+
+/** Reads a JSON int, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextIntOrNull(): Int? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextInt()
+}
+
+/** Reads a JSON long, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextLongOrNull(): Long? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextLong()
+}
+
+/** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextBooleanOrNull(): Boolean? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextBoolean()
 }
 
 internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int): Int {
