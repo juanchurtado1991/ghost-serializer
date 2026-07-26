@@ -44,8 +44,9 @@ class GhostCoreBugsTest {
     @Test
     fun testWriterCapacityOverflowCheck() {
         val writer = FlatByteArrayWriter()
+        writer.writeByte(0)
         assertFails {
-            // Int.MAX_VALUE will cause requiredCapacity to overflow size + extraBytes
+            // A non-zero size plus Int.MAX_VALUE must overflow before attempting allocation.
             writer.write(ByteArray(0), 0, Int.MAX_VALUE)
         }
     }
