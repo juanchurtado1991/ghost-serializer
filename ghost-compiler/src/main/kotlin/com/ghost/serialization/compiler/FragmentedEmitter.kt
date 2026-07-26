@@ -93,7 +93,7 @@ internal class FragmentedEmitter(
             val initialValue = it.getInitialValue()
             contextBuilder.addProperty(
                 PropertySpec.builder(
-                    it.kotlinName,
+                    it.localTrackingName(),
                     varType
                 )
                     .mutable(true)
@@ -198,16 +198,16 @@ internal class FragmentedEmitter(
             val globalIndex = chunkIdx * chunkSize + innerIdx
             val call = buildCall(prop)
             val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()
-            val constName = "MASK_" + prop.kotlinName.uppercase()
+            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
             
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
             if (prop.isResilient) {
                 chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
-                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.kotlinName)
+                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.localTrackingName())
                 chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
                 chunkBody.endControlFlow()
             } else {
-                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_ASSIGN, prop.kotlinName, call)
+                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_ASSIGN, prop.localTrackingName(), call)
                 chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
             }
             chunkBody.endControlFlow()
@@ -254,7 +254,7 @@ internal class FragmentedEmitter(
         for (maskIdx in C.VAL_ZERO until maskCount) {
             val reqMask = requiredMasks[maskIdx]
             if (reqMask != C.VAL_ZERO_L) {
-                val requiredMaskName = "MASK_REQUIRED_$maskIdx"
+                val requiredMaskName = C.STR_MASK_REQUIRED_PREFIX + maskIdx
 
                 funBody.beginControlFlow(
                     C.TEMPLATE_IF_MASK_NOT_MET,
@@ -270,7 +270,7 @@ internal class FragmentedEmitter(
                         !prop.hasDefaultValue
                         && (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx
                     ) {
-                        val constName = "MASK_" + prop.kotlinName.uppercase()
+                        val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
                         if (isFirst) {
                             funBody.beginControlFlow(

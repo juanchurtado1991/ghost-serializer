@@ -67,7 +67,7 @@ internal fun GhostPropertyModel.getInitialValue(): String {
 internal fun GhostPropertyModel.getReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)
+    val varName = localValueName()
 
     return when {
         isPrimitive -> varName
@@ -106,7 +106,7 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
 
     val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
-    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)
+    val varName = localValueName()
     val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)
 
     return when {
@@ -173,7 +173,7 @@ internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
         return getReturnExpression()
     }
     val expression = defaultExpression
-        ?: error("single-shot requires defaultExpression for $kotlinName")
+        ?: error(C.STR_ERR_SINGLE_SHOT_DEFAULT_1 + kotlinName)
     val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
     return C.TEMPLATE_IF_MASK_RETURN.format(
         maskName,
@@ -194,7 +194,7 @@ internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
         return getFragmentedReturnExpression()
     }
     val expression = defaultExpression
-        ?: error("single-shot requires defaultExpression for $kotlinName")
+        ?: error(C.STR_ERR_SINGLE_SHOT_DEFAULT_1 + kotlinName)
     val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
     return C.TEMPLATE_IF_MASK_RETURN.format(
         maskName,
@@ -211,7 +211,7 @@ internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
 internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)
+    val ctxVar = C.TEMPLATE_CTX_VAR.format(localTrackingName())
 
     return when {
         isPrimitive -> ctxVar
@@ -252,7 +252,7 @@ internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
 
     val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
-    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)
+    val ctxVar = C.TEMPLATE_CTX_VAR.format(localTrackingName())
     val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)
 
     return when {

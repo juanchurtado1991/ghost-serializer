@@ -163,3 +163,35 @@ internal fun KSType.isRawJson(): Boolean {
  * Checks whether this type captures opaque JSON inline (ByteArray or RawJson).
  */
 internal fun KSType.isOpaqueJson(): Boolean = isByteArray() || isRawJson()
+
+/**
+ * Converts a Kotlin property name into a generated local-identifier base without underscores.
+ * Example: `id_internal` → `idInternal`. Named constructor args keep the original [String].
+ */
+internal fun String.toGeneratedLocalBase(): String {
+    if (C.STR_UNDERSCORE !in this) {
+        return this
+    }
+    return split(C.STR_UNDERSCORE)
+        .filter { it.isNotEmpty() }
+        .mapIndexed { index, part ->
+            if (index == 0) {
+                part
+            } else {
+                part.replaceFirstChar { it.uppercaseChar() }
+            }
+        }
+        .joinToString(C.STR_EMPTY)
+}
+
+/** Local tracking variable name: `id` → `idValue`, `id_internal` → `idInternalValue`. */
+internal fun GhostPropertyModel.localValueName(): String =
+    C.TEMPLATE_VAR_NAME.format(kotlinName.toGeneratedLocalBase())
+
+/** DecodingContext field name mirroring [localValueName] base (no `Value` suffix). */
+internal fun GhostPropertyModel.localTrackingName(): String =
+    kotlinName.toGeneratedLocalBase()
+
+/** CamelCase suffix for compound locals: `extras` → `Extras`, `id_internal` → `IdInternal`. */
+internal fun GhostPropertyModel.localNameSuffix(): String =
+    localTrackingName().replaceFirstChar { it.uppercaseChar() }

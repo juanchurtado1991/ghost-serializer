@@ -38,7 +38,12 @@ internal class StandardEmitter(
      * @param typeSpecBuilder The serializer class builder.
      */
     fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        emitPropertyMaskConstants(typeSpecBuilder)
+        val requiredPropCount = properties.count { !it.isNullable && !it.hasDefaultValue }
+        // Single-required validation uses MASK_<PROP> only; skip unused MASK_REQUIRED_N.
+        emitPropertyMaskConstants(
+            typeSpecBuilder,
+            emitRequiredAggregateMasks = requiredPropCount > 1,
+        )
         WrappedKeysEmitter.addWrappedKeyConstants(typeSpecBuilder, properties)
         emitLocalVariables(body)
         WrappedKeysEmitter.emitCaptureVariables(body, properties)
@@ -67,7 +72,7 @@ internal class StandardEmitter(
             val initialValue = it.getInitialValue()
             body.addStatement(
                 C.TEMPLATE_VAR_VALUE_DECL,
-                it.kotlinName,
+                it.localTrackingName(),
                 varType,
                 initialValue
             )
@@ -207,7 +212,11 @@ internal class StandardEmitter(
             }
 
             if (subProps.size > 1 && subProps.all { pathIndex >= fullPaths[propertyIndices[it]!!].size }) {
-                throw IllegalStateException("Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class $originalClassName: " + subProps.map { it.kotlinName + " -> " + it.jsonName })
+                throw IllegalStateException(
+                    C.STR_ERR_FLATTEN_INFINITE_LOOP_1 + originalClassName +
+                        C.STR_ERR_FLATTEN_INFINITE_LOOP_2 +
+                        subProps.map { it.kotlinName + " -> " + it.jsonName }
+                )
             }
 
             if (
@@ -257,7 +266,7 @@ internal class StandardEmitter(
         val maskIdx = index / C.MASK_SIZE_BITS.toInt()
         val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
-        val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)
+        val varName = prop.localValueName()
         if (prop.isResilient) {
             body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
             body.addStatement(varName + C.TEMPLATE_ASSIGN_L, C.STR_IT)
@@ -336,26 +345,27 @@ internal class StandardEmitter(
     }
 
     /**
-     * Emits the return statements using optimal constructor dispatch or copy-based logic.
+     * Emits a private `createInstance` helper when default-property count exceeds
+     * [GhostEmitterConstants.MAX_DEFAULT_BRANCH_COUNT]. The body is single-shot or
+     * required-ctor + `.copy(...)` via [emitCopyReturn].
      *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
      * @param typeSpecBuilder The serializer class builder.
      */
     private fun emitCreateInstanceHelper(typeSpecBuilder: TypeSpec.Builder) {
-        val hasCreateInstance = typeSpecBuilder.funSpecs.any { it.name == "createInstance" }
+        val hasCreateInstance = typeSpecBuilder.funSpecs.any { it.name == C.STR_FUN_CREATE_INSTANCE }
         if (hasCreateInstance) return
 
-        val funBuilder = FunSpec.builder("createInstance")
+        val funBuilder = FunSpec.builder(C.STR_FUN_CREATE_INSTANCE)
             .addModifiers(KModifier.PRIVATE)
             .returns(originalClassName)
 
         for (i in 0 until maskCount) {
-            funBuilder.addParameter("mask$i", com.squareup.kotlinpoet.LONG)
+            funBuilder.addParameter(C.STR_MASK_INDEX_FMT.format(i), com.squareup.kotlinpoet.LONG)
         }
 
         properties.forEach { prop ->
             val varType = prop.getVariableType()
-            funBuilder.addParameter("${prop.kotlinName}Value", varType)
+            funBuilder.addParameter(prop.localValueName(), varType)
         }
 
         val helperBody = CodeBlock.builder()
@@ -364,11 +374,7 @@ internal class StandardEmitter(
             if (prop.isInConstructor && prop.hasDefaultValue) Pair(globalIdx, prop) else null
         }
 
-        if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
-            emitMultiBranchReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
-        } else {
-            emitCopyReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
-        }
+        emitCopyReturn(helperBody, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
 
         funBuilder.addCode(helperBody.build())
         typeSpecBuilder.addFunction(funBuilder.build())
@@ -407,34 +413,14 @@ internal class StandardEmitter(
 
         val args = mutableListOf<String>()
         for (i in 0 until maskCount) {
-            args.add("mask$i")
+            args.add(C.STR_MASK_INDEX_FMT.format(i))
         }
         properties.forEach { prop ->
-            args.add("${prop.kotlinName}Value")
+            args.add(prop.localValueName())
         }
-        body.addStatement("return createInstance(${args.joinToString(", ")})")
-    }
-
-    /**
-     * Emits the optimal return strategy when some properties have default values.
-     *
-     * To support Kotlin's default argument logic, it decides whether to generate a multi-branch
-     * return (no copy allocation overhead) or a copy-based return fallback (avoids code bloat).
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param typeSpecBuilder The serializer class builder.
-     */
-    private fun emitDefaultValueReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
-        val defaultPropsWithIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-            if (prop.isInConstructor && prop.hasDefaultValue) Pair(globalIdx, prop) else null
-        }
-
-        if (defaultPropsWithIndex.size <= C.MAX_DEFAULT_BRANCH_COUNT) {
-            emitMultiBranchReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
-        } else {
-            emitCopyReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
-        }
+        body.add("return ")
+        body.add(GeneratedCallFormat.invoke(C.STR_FUN_CREATE_INSTANCE, args))
+        body.add("\n")
     }
 
     /**
@@ -590,7 +576,7 @@ internal class StandardEmitter(
     ) {
         body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
         requiredProps.forEach { prop ->
-            val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)
+            val varName = prop.localValueName()
             val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
             val expr = if (prop.isNullable || isPrimitive) {
                 varName

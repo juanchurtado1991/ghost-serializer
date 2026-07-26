@@ -350,6 +350,11 @@ internal class SerializerImportResolver(
     }
 
     private fun typeNeedsNestedScalar(type: KSType, leaf: (KSType) -> Boolean): Boolean {
+        // List<AccountId> where AccountId is a value class over Long still emits nextLong().
+        if (isValueClassType(type)) {
+            val inner = resolveValueClassInnerType(type) ?: return false
+            return leaf(inner)
+        }
         if (type.isList() || type.isSet()) {
             val element = type.arguments.firstOrNull()?.type?.resolve() ?: return false
             return leaf(element)

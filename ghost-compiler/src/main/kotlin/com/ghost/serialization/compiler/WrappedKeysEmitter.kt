@@ -15,10 +15,10 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
 internal object WrappedKeysEmitter {
 
     fun captureVariableName(prop: GhostPropertyModel): String =
-        C.STR_WRAPPED_CAPTURE_PREFIX + prop.kotlinName
+        C.STR_WRAPPED_CAPTURE_PREFIX + prop.localNameSuffix()
 
-    fun hasWrappedProperties(properties: List<GhostPropertyModel>): Boolean =
-        properties.any { it.wrappedSourceKeys != null }
+    fun jsonVariableName(prop: GhostPropertyModel): String =
+        C.STR_WRAPPED_JSON_VAR_PREFIX + prop.localNameSuffix()
 
     fun wrappedKeyDispatch(properties: List<GhostPropertyModel>): Map<String, Pair<GhostPropertyModel, Int>> {
         val map = linkedMapOf<String, Pair<GhostPropertyModel, Int>>()
@@ -65,21 +65,22 @@ internal object WrappedKeysEmitter {
             val keys = prop.wrappedSourceKeys ?: return@forEach
             val index = propertyIndices[prop] ?: return@forEach
             val captureName = captureVariableName(prop)
+            val jsonName = jsonVariableName(prop)
             val maskIdx = index / C.MASK_SIZE_BITS.toInt()
             val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
-            val varName = C.TEMPLATE_VAR_NAME.format(prop.kotlinName)
+            val varName = prop.localValueName()
             val keyLiteralsName = wrappedKeyLiteralsConstantName(prop)
             val omitAbsentName = wrappedOmitAbsentConstantName(prop)
 
             body.addStatement(
                 C.TEMPLATE_WRAPPED_JSON_MATERIALIZE,
-                prop.kotlinName,
+                jsonName,
                 captureName,
                 keyLiteralsName,
                 prop.wrappedOmitIfEmpty,
                 omitAbsentName,
             )
-            body.beginControlFlow(C.TEMPLATE_WRAPPED_JSON_IF_NOT_NULL, prop.kotlinName)
+            body.beginControlFlow(C.TEMPLATE_WRAPPED_JSON_IF_NOT_NULL, jsonName)
             body.addStatement(
                 if (readerClass.simpleName == C.STR_GHOST_JSON_STRING_READER) {
                     C.TEMPLATE_WRAPPED_STRING_READER_VAR
@@ -87,7 +88,7 @@ internal object WrappedKeysEmitter {
                     C.TEMPLATE_WRAPPED_READER_VAR
                 },
                 readerClass,
-                prop.kotlinName,
+                jsonName,
             )
             val call = CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_WRAPPED_READER,
@@ -102,8 +103,8 @@ internal object WrappedKeysEmitter {
                 body.addStatement(varName + C.TEMPLATE_ASSIGN_L, call)
                 body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, constName)
             }
-            body.nextControlFlow(C.STR_ELSE)
             if (prop.isNullable) {
+                body.nextControlFlow(C.STR_ELSE)
                 body.addStatement(C.TEMPLATE_NULL_ASSIGN, varName)
             }
             body.endControlFlow()

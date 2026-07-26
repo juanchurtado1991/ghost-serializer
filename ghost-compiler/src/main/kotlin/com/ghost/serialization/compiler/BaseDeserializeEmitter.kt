@@ -426,7 +426,7 @@ internal abstract class BaseDeserializeEmitter(
     private fun getContextualSerializerName(type: KSType): String {
         return contextualSerializers.getOrPut(type) {
             val simpleName = type.declaration.simpleName.asString()
-            val nullableSuffix = if (type.isMarkedNullable) "Nullable" else ""
+            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else ""
             C.STR_CONTEXTUAL_PREFIX +
                     simpleName.replaceFirstChar { it.lowercase() } +
                     nullableSuffix +
@@ -439,14 +439,19 @@ internal abstract class BaseDeserializeEmitter(
      * for every property and all validation/defaults masks, completely eliminating magic numbers.
      *
      * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
+     * @param emitRequiredAggregateMasks When false, skip [MASK_REQUIRED_N] (e.g. StandardEmitter
+     * with a single required field validates via the property mask only).
      */
-    protected fun emitPropertyMaskConstants(typeSpecBuilder: TypeSpec.Builder) {
+    protected fun emitPropertyMaskConstants(
+        typeSpecBuilder: TypeSpec.Builder,
+        emitRequiredAggregateMasks: Boolean = true,
+    ) {
         properties.forEach { prop ->
             val index = propertyIndices[prop]!!
             val bitIdx = index % C.MASK_SIZE_BITS.toInt()
             val bitMask = C.VAL_ONE_L shl bitIdx
             val bitMaskStr = formatMaskString(bitMask)
-            val name = "MASK_" + prop.kotlinName.uppercase()
+            val name = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
             if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                 typeSpecBuilder.addProperty(
                     PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)
@@ -457,11 +462,15 @@ internal abstract class BaseDeserializeEmitter(
             }
         }
 
+        if (!emitRequiredAggregateMasks) {
+            return
+        }
+
         for (i in requiredMasks.indices) {
             val reqMask = requiredMasks[i]
             if (reqMask != C.VAL_ZERO_L) {
                 val reqMaskStr = formatMaskString(reqMask)
-                val name = "MASK_REQUIRED_$i"
+                val name = C.STR_MASK_REQUIRED_PREFIX + i
                 if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                     typeSpecBuilder.addProperty(
                         PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)

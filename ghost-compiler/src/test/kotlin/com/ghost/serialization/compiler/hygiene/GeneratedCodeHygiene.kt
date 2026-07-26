@@ -18,9 +18,12 @@ internal object GeneratedCodeHygiene {
     ) {
         enum class Kind {
             UNUSED_IMPORT,
+            UNUSED_CONSTANT,
             DUPLICATE_IMPORT,
             FORBIDDEN_IMPORT,
             MISSING_IMPORT,
+            BAD_LOCAL_NAME,
+            LONG_LINE,
         }
     }
 
@@ -149,20 +152,83 @@ internal object GeneratedCodeHygiene {
                 )
             }
         }
-        val body = stripImportSection(source)
-        Regex("""private const val (MASK_DEFAULTS_\d+): Long = \d+L""")
-            .findAll(body)
-            .forEach { match ->
-                val constName = match.groupValues[1]
-                if (!Regex("""(?<![.\w])${Regex.escape(constName)}(?![.\w])""").containsMatchIn(body)) {
-                    violations += Violation(
-                        Violation.Kind.UNUSED_IMPORT,
-                        "$fileLabel: unused mask constant `$constName`",
-                    )
-                }
-            }
+        violations += analyzeUnusedMaskConstants(source, fileLabel)
+        violations += analyzeLocalVariableNaming(source, fileLabel)
+        violations += analyzeLineLength(source, fileLabel)
         return violations
     }
+
+    /**
+     * Flags private `MASK_*` consts that are never referenced outside their own declaration.
+     * Dead mask constants inflate serializer bytecode without changing behavior.
+     */
+    fun analyzeUnusedMaskConstants(source: String, fileLabel: String = "serializer"): List<Violation> {
+        val body = stripImportSection(source)
+        val declRegex = Regex("""^\s*private const val (MASK_[A-Z0-9_]+): Long = .+$""", RegexOption.MULTILINE)
+        return declRegex.findAll(body).mapNotNull { match ->
+            val constName = match.groupValues[1]
+            val withoutDecl = body.replace(
+                Regex("""^\s*private const val ${Regex.escape(constName)}: Long = .+$""", RegexOption.MULTILINE),
+                "",
+            )
+            val used = Regex("""(?<![.\w])${Regex.escape(constName)}(?![.\w])""")
+                .containsMatchIn(withoutDecl)
+            if (used) {
+                null
+            } else {
+                Violation(
+                    Violation.Kind.UNUSED_CONSTANT,
+                    "$fileLabel: unused mask constant `$constName`",
+                )
+            }
+        }.toList()
+    }
+
+    /**
+     * Flags generated local `val`/`var` names that contain underscores.
+     * Property names on the model (named ctor args / `result.foo_bar`) may keep underscores;
+     * invented locals must be camelCase.
+     */
+    fun analyzeLocalVariableNaming(source: String, fileLabel: String = "serializer"): List<Violation> {
+        val body = stripImportSection(source)
+        val localDecl = Regex("""^\s+(?:var|val) ([A-Za-z][\w]*_[\w]*)\b""", RegexOption.MULTILINE)
+        return localDecl.findAll(body).map { match ->
+            val name = match.groupValues[1]
+            Violation(
+                Violation.Kind.BAD_LOCAL_NAME,
+                "$fileLabel: local variable `$name` must not contain underscores",
+            )
+        }.toList()
+    }
+
+    /**
+     * Soft max for generated source lines. Unwrappable string-literal payload lines
+     * (warm-up JSON) are excluded — those cannot be split without changing semantics.
+     */
+    fun analyzeLineLength(
+        source: String,
+        fileLabel: String = "serializer",
+        maxLength: Int = MAX_GENERATED_LINE_LENGTH,
+    ): List<Violation> {
+        return source.lineSequence().mapIndexedNotNull { index, line ->
+            if (line.length <= maxLength || isUnwrappableLiteralLine(line)) {
+                null
+            } else {
+                Violation(
+                    Violation.Kind.LONG_LINE,
+                    "$fileLabel:${index + 1}: line length ${line.length} exceeds $maxLength",
+                )
+            }
+        }.toList()
+    }
+
+    private fun isUnwrappableLiteralLine(line: String): Boolean {
+        val trimmed = line.trim()
+        return trimmed.startsWith("\"") &&
+            (trimmed.contains(".encodeToByteArray()") || trimmed.endsWith("\"") || trimmed.endsWith("\","))
+    }
+
+    const val MAX_GENERATED_LINE_LENGTH = 120
 
     fun parseImports(source: String): List<Import> {
         return source.lineSequence()
