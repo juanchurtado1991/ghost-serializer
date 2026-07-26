@@ -583,41 +583,42 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
             return
         }
 
-        // Fast path: plain ASCII with no characters needing escaping.
-        // A single scan (cheaper than the ESCAPE_MASKS bitmask lookup) to decide.
-        // If all chars qualify, writeQuotedAscii writes directly into the backing
-        // array with a single ensureCapacity and an unrolled loop — no scratch buffer.
+        // Short strings: scan for the first char that needs escaping / UTF-8. All-plain →
+        // writeQuotedAscii. Mixed → keep the ASCII prefix (breakIndex) so the slow path does
+        // not re-scan it (same shape as GhostJsonStringWriter).
+        var breakIndex = 0
         if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
-            var allPlain = true
-            var index = 0
-            while (index < length) {
-                val code = value[index].code
+            while (breakIndex < length) {
+                val code = value[breakIndex].code
                 if (code !in SPACE_INT..<ASCII_LIMIT || code == QUOTE_INT || code == BACKSLASH_INT) {
-                    allPlain = false
                     break
                 }
-                index++
+                breakIndex++
             }
-            if (allPlain) {
+            if (breakIndex == length) {
                 buffer.writeQuotedAscii(value, length)
                 return
             }
         }
 
-        writeStringValueRawSlow(value, length)
+        writeStringValueRawSlow(value, length, breakIndex)
     }
 
-    private fun writeStringValueRawSlow(value: String, length: Int) {
+    private fun writeStringValueRawSlow(value: String, length: Int, breakIndex: Int) {
         val scratchBuf = acquireScratch()
-        if (length + STRING_QUOTE_PAIR_BYTES > scratchBuf.size) {
-            buffer.writeByte(QUOTE_INT)
-            writeEscaped(value)
-            buffer.writeByte(QUOTE_INT)
+        if (breakIndex == 0 && length + STRING_QUOTE_PAIR_BYTES <= scratchBuf.size) {
+            scratchBuf[0] = QUOTE_BYTE
+            writeEscapedIntoScratch(value, length, scratchBuf)
             return
         }
 
-        scratchBuf[0] = QUOTE_BYTE
-        writeEscapedIntoScratch(value, length, scratchBuf)
+        buffer.writeByte(QUOTE_INT)
+        if (breakIndex > 0) {
+            // Prefix already verified plain ASCII — writeUtf8 collapses to 1 byte/char.
+            buffer.writeUtf8(value, 0, breakIndex)
+        }
+        writeEscaped(value, start = breakIndex)
+        buffer.writeByte(QUOTE_INT)
     }
 
     /**

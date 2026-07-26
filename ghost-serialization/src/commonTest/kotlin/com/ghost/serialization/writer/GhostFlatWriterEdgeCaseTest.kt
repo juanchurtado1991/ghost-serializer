@@ -196,6 +196,23 @@ class GhostFlatWriterEdgeCaseTest {
     }
 
     @Test
+    fun writesAsciiPrefixThenUnicodeWithoutRescanLoss() {
+        // Mixed string: ASCII run then BMP — exercises breakIndex preservation on the byte writer.
+        assertEquals(
+            """{"v":"hello漢字"}""",
+            writerToString { w -> w.beginObject().name("v").value("hello漢字").endObject() }
+        )
+    }
+
+    @Test
+    fun writesAsciiPrefixThenEscapedQuote() {
+        assertEquals(
+            "{\"v\":\"hi\\\"漢字\"}",
+            writerToString { w -> w.beginObject().name("v").value("hi\"漢字").endObject() }
+        )
+    }
+
+    @Test
     fun writesEmojiSurrogatePairDirectly() {
         assertEquals("""{"v":"🚀🔥"}""", writerToString { w -> w.beginObject().name("v").value("🚀🔥").endObject() })
     }
