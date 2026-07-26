@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -20,6 +21,10 @@ kotlin {
     jvm {
         withSourcesJar()
     }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -27,6 +32,9 @@ kotlin {
             implementation(project(":ghost-protobuf"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
+        }
+        jvmMain.dependencies {
+            // Server ApplicationCall extensions live in jvmMain — Ktor server is JVM-only.
             compileOnly(libs.ktor.server.core)
         }
         commonTest.dependencies {
