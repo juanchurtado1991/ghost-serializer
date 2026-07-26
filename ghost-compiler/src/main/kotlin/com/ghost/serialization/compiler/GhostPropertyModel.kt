@@ -64,6 +64,8 @@ internal data class InferredSubclassModel(
  * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
  * @property listInnerIsEnum True if the list inner type is an enum.
  * @property hasDefaultValue True if the property has a parameter default value in the constructor.
+ * @property defaultExpression Whitelisted Kotlin source of the ctor default (`"viewer"`, `1`,
+ *   `emptyList()`, …), or `null` when unavailable / unsafe — callers must fall back to `.copy()`.
  * @property isMap True if the property type is a [Map].
  * @property mapValueType The resolved [KSType] of the map's value parameter, if applicable.
  * @property mapValueIsGhost True if the map's value type is annotated with @GhostSerialization.
@@ -104,6 +106,7 @@ internal data class GhostPropertyModel(
     val listInnerIsGhost: Boolean = false,
     val listInnerIsEnum: Boolean = false,
     val hasDefaultValue: Boolean = false,
+    val defaultExpression: String? = null,
     val isInConstructor: Boolean = true,
     val isMap: Boolean = false,
     val mapValueType: KSType? = null,

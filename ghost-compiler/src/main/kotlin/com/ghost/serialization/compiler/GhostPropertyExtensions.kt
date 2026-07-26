@@ -140,6 +140,50 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
 }
 
 /**
+ * True when this list of default properties is non-empty and every entry has a whitelisted
+ * [GhostPropertyModel.defaultExpression]. Used to choose the single-ctor path over `.copy()`.
+ */
+internal fun List<GhostPropertyModel>.allDefaultsHaveExpressions(): Boolean =
+    isNotEmpty() && all { it.defaultExpression != null }
+
+/**
+ * Single-ctor arg for a default property: parsed value when the mask bit is set, otherwise the
+ * whitelisted source default expression.
+ */
+internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
+    maskIdx: Int,
+    bitMaskStr: String
+): String {
+    val expression = defaultExpression
+        ?: error("single-shot requires defaultExpression for $kotlinName")
+    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
+    return C.TEMPLATE_IF_MASK_RETURN.format(
+        maskName,
+        bitMaskStr,
+        getReturnExpression(),
+        expression
+    )
+}
+
+/**
+ * Fragmented (ctx.*) variant of [getSingleShotDefaultArgExpression].
+ */
+internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
+    maskIdx: Int,
+    bitMaskStr: String
+): String {
+    val expression = defaultExpression
+        ?: error("single-shot requires defaultExpression for $kotlinName")
+    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
+    return C.TEMPLATE_IF_MASK_RETURN.format(
+        maskName,
+        bitMaskStr,
+        getFragmentedReturnExpression(),
+        expression
+    )
+}
+
+/**
  * Generates the return expression string pointing to the generated `DecodingContext`
  * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
  */

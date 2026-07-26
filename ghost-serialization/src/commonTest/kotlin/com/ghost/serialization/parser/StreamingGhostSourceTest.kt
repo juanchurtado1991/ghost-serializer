@@ -169,19 +169,22 @@ class StreamingGhostSourceTest {
 
     @Test
     fun releaseBefore_skipsFullWindowsBehindReader() {
-        val payload = "a".repeat(30_000)
+        val window = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val touchAt = window * 3 + 1_000
+        val payload = "a".repeat(touchAt + window)
         val okio = Buffer().writeUtf8(payload)
         val source = StreamingGhostSource(okio)
 
         // Touch far into the document so Okio has buffered a large prefix.
-        assertEquals('a'.code, source[25_000])
+        assertEquals('a'.code, source[touchAt])
         val sizeBefore = okio.size
 
-        // retainFrom = 25000 - 8192 = 16808 → aligned down to 16384; skip 16384 bytes.
-        source.releaseBefore(25_000)
-        assertEquals(16_384, source.discarded)
+        // retainFrom = touchAt - window, aligned down to a window multiple.
+        source.releaseBefore(touchAt)
+        val expectedDiscarded = ((touchAt - window) / window) * window
+        assertEquals(expectedDiscarded, source.discarded)
         assertTrue(okio.size < sizeBefore, "Okio buffer should shrink after releaseBefore")
-        assertEquals('a'.code, source[25_000], "bytes at/after retain window must stay readable")
+        assertEquals('a'.code, source[touchAt], "bytes at/after retain window must stay readable")
         assertFailsWith<IndexOutOfBoundsException> {
             source[0]
         }
@@ -189,35 +192,37 @@ class StreamingGhostSourceTest {
 
     @Test
     fun releaseBefore_respectsPin() {
-        val payload = "a".repeat(30_000)
-        val source = StreamingGhostSource(Buffer().writeUtf8(payload))
-        source[20_000]
+        val window = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val touchAt = window * 4
+        val source = StreamingGhostSource(Buffer().writeUtf8("a".repeat(touchAt + window)))
+        source[touchAt]
         source.pin(100)
-        source.releaseBefore(20_000)
+        source.releaseBefore(touchAt)
         // Pin at 100 blocks aligned retainFrom from advancing past 0.
         assertEquals(0, source.discarded)
         assertEquals('a'.code, source[100])
         source.unpin()
-        source.releaseBefore(20_000)
-        assertTrue(source.discarded >= GhostJsonConstants.STREAMING_BUFFER_SIZE)
+        source.releaseBefore(touchAt)
+        assertTrue(source.discarded >= window)
     }
 
     @Test
     fun reader_slidingConsume_parsesMultiSegmentDocument() {
-        // Many small fields so skipWhitespace fires often and releaseBefore can discard.
-        val fields = (0 until 200).joinToString(",") { i ->
+        // Enough small fields to span several windows (need > window + margin to discard).
+        val fieldCount = (GhostJsonConstants.STREAMING_BUFFER_SIZE * 4 / 110) + 50
+        val fields = (0 until fieldCount).joinToString(",") { i ->
             val pad = "x".repeat(100)
             "\"f$i\":\"$pad$i\""
         }
         val json = "{$fields}"
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         reader.beginObject()
-        for (i in 0 until 200) {
+        for (i in 0 until fieldCount) {
             reader.skipWhitespace()
             assertEquals("f$i", reader.readQuotedString())
             reader.consumeKeySeparator()
             assertEquals("x".repeat(100) + "$i", reader.nextString())
-            if (i < 199) reader.consumeArraySeparator()
+            if (i < fieldCount - 1) reader.consumeArraySeparator()
         }
         reader.endObject()
         val streaming = reader.source as StreamingGhostSource

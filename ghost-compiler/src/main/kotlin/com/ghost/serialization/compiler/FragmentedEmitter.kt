@@ -314,8 +314,38 @@ internal class FragmentedEmitter(
      */
     private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
-        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+        val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
+            if (prop.isInConstructor && prop.hasDefaultValue) {
+                Pair(globalIdx, prop)
+            } else {
+                null
+            }
+        }
 
+        if (defaultPropsWithGlobalIndex.map { it.second }.allDefaultsHaveExpressions()) {
+            body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+            requiredProps.forEach { prop ->
+                body.addStatement(
+                    C.TEMPLATE_NAMED_ARG,
+                    prop.kotlinName,
+                    prop.getFragmentedReturnExpression()
+                )
+            }
+            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
+                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+                body.addStatement(
+                    C.TEMPLATE_NAMED_ARG,
+                    prop.kotlinName,
+                    prop.getFragmentedSingleShotDefaultArgExpression(maskIdx, constName)
+                )
+            }
+            body.addStatement(C.STR_PAREN)
+            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            return
+        }
+
+        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
         requiredProps.forEach { prop ->
             body.addStatement(
                 C.TEMPLATE_NAMED_ARG,
@@ -323,13 +353,10 @@ internal class FragmentedEmitter(
                 prop.getFragmentedReturnExpression()
             )
         }
-
         body.addStatement(C.STR_PAREN)
 
-        val defaultProps = properties.filter { it.isInConstructor && it.hasDefaultValue }
-        if (defaultProps.isNotEmpty()) {
+        if (defaultPropsWithGlobalIndex.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
-
             val conditions = mutableListOf<String>()
             for (i in defaultMasks.indices) {
                 val defMask = defaultMasks[i]
@@ -345,22 +372,10 @@ internal class FragmentedEmitter(
             body.beginControlFlow(C.STR_CLOSE_PAREN_FLOW)
 
             body.addStatement(C.STR_RETURN_RESULT_COPY)
-            val defaultPropsWithGlobalIndex = properties
-                .mapIndexedNotNull { globalIdx, prop ->
-
-                if (prop.isInConstructor && prop.hasDefaultValue) {
-                    Pair(globalIdx, prop)
-                } else {
-                    null
-                }
-            }
-
-            defaultPropsWithGlobalIndex.forEachIndexed { _, (propIndex, prop) ->
+            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
                 val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
-                val constName = "MASK_" + prop.kotlinName.uppercase()
-
-                val valueExpr = prop
-                    .getFragmentedDefaultValueReturnExpression(maskIdx, constName)
+                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+                val valueExpr = prop.getFragmentedDefaultValueReturnExpression(maskIdx, constName)
                 body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
             }
             body.addStatement(C.STR_PAREN)

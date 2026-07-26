@@ -232,7 +232,7 @@ public object GhostJsonConstants {
 
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
-    const val STR_POOL_SIZE = 2048
+    const val STR_POOL_SIZE = 4096
     /** Multiplier for string pool hashing. */
     const val STR_POOL_HASH_MULTIPLIER = 31
 
@@ -285,6 +285,14 @@ public object GhostJsonConstants {
     const val STRING_ESCAPE_SCRATCH_SIZE = 256
 
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
+
+    /**
+     * Streaming window size (bytes) copied out of the Okio buffer per [getSlow] refill,
+     * and the sliding-consume retain margin (see StreamingGhostSource.releaseBefore).
+     * Kept at one Okio segment (8 KB): doubling to 16 KB showed no Decode(Streaming)
+     * throughput gain on Twitter and raised both allocated KB/op and peak retained Okio
+     * prefix (retain = 1× window behind the reader).
+     */
     const val STREAMING_BUFFER_SIZE = 8192
 
     const val DEFAULT_DISCRIMINATOR_KEY = "type"

@@ -534,18 +534,55 @@ internal class StandardEmitter(
     }
 
     /**
-     * Legacy copy-based return for classes with > MAX_DEFAULT_BRANCH_COUNT default props.
-     *
-     * Instantiates the class with required arguments first, then calls `.copy(...)` on the
-     * result for any default properties that were encountered, using if-statements to check their
-     * corresponding bits.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param requiredProps Required (non-default) property models.
-     * @param defaultPropsWithIndex Property models with default values and their index.
-     * @param typeSpecBuilder The serializer class builder.
+     * Instantiates the class once when every default has a whitelisted source expression;
+     * otherwise falls back to required-ctor + `.copy(...)` so arbitrary Kotlin defaults stay correct.
      */
     private fun emitCopyReturn(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>,
+        typeSpecBuilder: TypeSpec.Builder
+    ) {
+        if (defaultPropsWithIndex.map { it.second }.allDefaultsHaveExpressions()) {
+            emitSingleShotReturn(body, requiredProps, defaultPropsWithIndex)
+        } else {
+            emitLegacyCopyReturn(body, requiredProps, defaultPropsWithIndex, typeSpecBuilder)
+        }
+    }
+
+    /**
+     * Single primary-constructor allocation. Each default arg is
+     * `if ((maskN and BIT) != 0L) parsed else <sourceDefault>`.
+     *
+     * Uses `val result = Type(...); return result` because KotlinPoet cannot nest
+     * named-arg [CodeBlock.Builder.addStatement]s under an open `return %T(` call.
+     */
+    private fun emitSingleShotReturn(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>
+    ) {
+        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+        requiredProps.forEach { prop ->
+            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+        }
+        defaultPropsWithIndex.forEach { (propIndex, prop) ->
+            val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+            body.addStatement(
+                C.TEMPLATE_NAMED_ARG,
+                prop.kotlinName,
+                prop.getSingleShotDefaultArgExpression(maskIdx, constName)
+            )
+        }
+        body.addStatement(C.STR_PAREN)
+        body.addStatement(C.STR_RETURN_RESULT_FINAL)
+    }
+
+    /**
+     * Required-args ctor (Kotlin applies real defaults) then optional `.copy(...)`.
+     */
+    private fun emitLegacyCopyReturn(
         body: CodeBlock.Builder,
         requiredProps: List<GhostPropertyModel>,
         defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>,
