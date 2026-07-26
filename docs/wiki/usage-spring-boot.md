@@ -50,7 +50,7 @@ data class UserResponse(
 )
 ```
 
-KSP generates the serializer at compile time. No `@JsonProperty`, no reflection, no `ObjectMapper` configuration.
+KSP generates the serializer at compile time. Annotated types skip Jackson for that payload; Jackson (and any other Spring codecs) still handle everything else.
 
 ---
 

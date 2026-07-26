@@ -105,7 +105,7 @@ sealed class SmartEvent {
 ```
 
 > [!IMPORTANT]
-> Ghost generates a **bitwise decision tree at compile time** for inferred polymorphism. It identifies the correct subclass in a single pass — no trial-and-error, O(1) performance.
+> Ghost generates a **compile-time decision tree** for inferred polymorphism. It picks the subclass from field presence in a single pass — no trial-and-error decoding.
 
 ---
 
@@ -197,8 +197,8 @@ val users: List<User> = client.get("https://api.example.com/users").bodyGhost()
 Internally:
 ```
 response.body<ByteArray>()                 // pulls raw bytes from Ktor
-  → Ghost.getSerializer(T::class)          // O(1) cached lookup, no reflection
-  → Ghost.deserialize(serializer, bytes)   // GhostJsonFlatReader — zero alloc hot path
+  → Ghost.getSerializer(T::class)          // O(1) cached lookup
+  → Ghost.deserialize(serializer, bytes)   // GhostJsonFlatReader — low-allocation hot path
 ```
 
 #### Server — `ApplicationCall.respondGhost(value, status?)`

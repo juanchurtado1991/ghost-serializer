@@ -35,7 +35,7 @@ implementation(libs.ghost.api)
 ---
 
 ### `ghost-serialization` — Runtime Engine
-The zero-allocation reader/writer engine. Includes `GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader` (streaming), all writer types, the thread-local pool, and the serializer registry.
+The low-allocation reader/writer engine. Includes `GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader` (streaming), all writer types, platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
 
 **Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
@@ -160,7 +160,7 @@ implementation(libs.ghost.spring.boot.starter)
 Layers [proto3 JSON mapping rules](https://protobuf.dev/programming-guides/json/) on top of Ghost's engine. Includes:
 
 - `GhostProtoJsonFlatReader` — overrides numeric parsing for proto3 rules (int64 as quoted strings, uint64 via `ULong`, etc.)
-- **Well-Known Types (WKTs)**: hand-rolled zero-allocation serializers for `ProtoDuration`, `ProtoTimestamp`, `ProtoStruct`, `ProtoValue`, `ProtoAny`, `ProtoFieldMask`, and all scalar wrapper types (`ProtoBoolValue`, `ProtoStringValue`, `ProtoBytesValue`, etc.)
+- **Well-Known Types (WKTs)**: hand-rolled serializers for `ProtoDuration`, `ProtoTimestamp`, `ProtoStruct`, `ProtoValue`, `ProtoAny`, `ProtoFieldMask`, and all scalar wrapper types (`ProtoBoolValue`, `ProtoStringValue`, `ProtoBytesValue`, etc.)
 - `ProtoAnyRegistry` — dynamic `typeUrl` resolution
 - `GhostProtobuf` entry point: `deserialize<T>()`, `encodeToBytes()`, `encodeToString()`
 
