@@ -59,7 +59,7 @@ private fun GhostJsonStringReader.nextFloatChars(): Float {
 
     nextTokenByte = -1
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -221,7 +221,7 @@ private fun GhostJsonStringReader.nextDoubleChars(): Double {
 
     nextTokenByte = -1
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -465,7 +465,7 @@ private fun GhostJsonStringReader.parseIntDigitsChars(isNegative: Boolean, start
     var earlyExitResult: Int? = null
 
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -551,7 +551,7 @@ private fun GhostJsonStringReader.parseLongDigitsChars(isNegative: Boolean, star
     var earlyExitResult: Long? = null
 
     val localLimit = limit
-    val chars = rawChars
+    val chars = rawData
     while (position < localLimit) {
         val byte = chars[position].code
         if (isDigit(byte)) {
@@ -684,7 +684,7 @@ private fun GhostJsonStringReader.skipNumberChars() {
 
     val numberPosition = position
     val numberLimit = limit
-    val chars = rawChars
+    val chars = rawData
     if (numberPosition < numberLimit && chars[numberPosition].code == C.ZERO_INT) {
         val newPos = numberPosition + 1
         position = newPos
