@@ -367,7 +367,7 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
     val index = dispatchTable[hasIndex]
 
     if (index != C.MATCH_END) {
-        if (verifyKeyMatch(start, length, options.rawStrings[index], consumeSeparator)) {
+        if (verifyKeyMatch(start, length, options.rawChars[index], consumeSeparator)) {
             return index
         }
     }
@@ -469,10 +469,10 @@ private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int,
 private inline fun GhostJsonStringReader.verifyKeyMatch(
     start: Int,
     length: Int,
-    expected: String,
+    expected: CharArray,
     consumeSeparator: Boolean
 ): Boolean {
-    if (expected.length == length) {
+    if (expected.size == length) {
         val chars = rawChars
         var index = 0
         while (index + 3 < length) {
