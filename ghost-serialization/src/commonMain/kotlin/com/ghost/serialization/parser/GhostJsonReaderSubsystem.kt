@@ -452,21 +452,23 @@ private fun GhostJsonReader.internalSelect(
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
-    val end = if (isStreaming) {
-        source.findClosingQuote(start, limit)
+    val scanResult = if (isStreaming) {
+        val localSource = source
+        findClosingQuoteWithKeyHashImpl(start, limit, options.hasCollisions) { localSource[it] }
     } else {
         val localData = rawData
-        findClosingQuoteImpl(start, limit) {
+        findClosingQuoteWithKeyHashImpl(start, limit, options.hasCollisions) {
             localData[it].toInt() and C.BYTE_MASK
         }
     }
 
-    if (end == -1) {
+    if (scanResult == C.MATCH_END.toLong()) {
         throwUnterminatedStringError()
     }
 
+    val end = unpackClosingQuoteIndex(scanResult)
     val length = end - start
-    val key = computeKeyHash(start, length, options.hasCollisions)
+    val key = unpackKeyHash(scanResult)
     val hasIndex =
         ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)
     val index = options.dispatch[hasIndex]
@@ -547,40 +549,6 @@ private fun GhostJsonReader.throwExpectedKeyOrStringError(consumeSeparator: Bool
 
 private fun GhostJsonReader.throwUnterminatedStringError() {
     throwError(C.UNTERMINATED_STRING_ERROR)
-}
-
-/**
- * Computes a fast, collision-reducing 32-bit hash value from a raw slice of the JSON buffer.
- *
- * Optimization:
- * - Packs the first 4 bytes directly into a single Int value using bitwise shifts and OR operations.
- * - This avoids allocating any temporary byte arrays or strings, allowing hardware-level key hashing.
- *
- * @param start The absolute 0-based byte position in the buffer.
- * @param length The length of the key.
- * @return The packed 32-bit hash key.
- */
-private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
-    var key = 0
-    if (length >= 4) {
-        val byte0 = getByte(start)
-        val byte1 = getByte(start + 1)
-        val byte2 = getByte(start + 2)
-        val byte3 = getByte(start + 3)
-        key = byte0 or
-                (byte1 shl C.SHIFT_8) or
-                (byte2 shl C.SHIFT_16) or
-                (byte3 shl C.SHIFT_24)
-        if (hasCollisions) {
-            var ci = C.UNICODE_HEX_LENGTH
-            while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++ }
-        }
-    } else {
-        if (length >= 1) key = key or getByte(start)
-        if (length >= 2) key = key or (getByte(start + 1) shl C.SHIFT_8)
-        if (length >= 3) key = key or (getByte(start + 2) shl C.SHIFT_16)
-    }
-    return key
 }
 
 /**
