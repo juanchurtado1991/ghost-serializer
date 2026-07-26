@@ -386,6 +386,10 @@ public object GhostJsonConstants {
     const val MATCH_END = -1
     const val RESET_TOKEN_BYTE = -1
     const val MATCH_NONE = -2
+    const val SHIFT_56 = 56
+    const val SHIFT_48 = 48
+    const val SHIFT_40 = 40
+    const val SHIFT_32 = 32
     const val SHIFT_24 = 24
     const val SHIFT_16 = 16
     const val SHIFT_12 = 12
@@ -403,6 +407,48 @@ public object GhostJsonConstants {
     const val BMP_LIMIT = 0xFFFF
 
     // --- Scanning & Escape Identifiers ---
+    /** Number of bytes packed into a Long by [ghostReadLong8] for SWAR scanning. */
+    const val LONG_BYTES = 8
+
+    /** A Long whose 8 bytes are all ASCII space (0x20); byte-order-independent (symmetric). */
+    const val SPACE_RUN_LONG = 0x2020202020202020L
+
+    /**
+     * SWAR "broadcast 1" mask: each of the 8 bytes is 0x01.
+     * Used by McIlroy zero-byte detection (`(v - ONES) & ~v & HIGHS`).
+     */
+    const val SWAR_ONES = 0x0101010101010101L
+
+    /**
+     * SWAR high-bit mask: each of the 8 bytes is 0x80 (`0x8080808080808080`).
+     * Written as a signed Long literal because bit 63 is set.
+     */
+    const val SWAR_HIGHS = -0x7f7f7f7f7f7f7f80L
+
+    /** SWAR broadcast of [QUOTE_INT] (`'"' * SWAR_ONES`); XOR then zero-byte detect finds quotes. */
+    const val SWAR_QUOTES = 0x2222222222222222L
+
+    /** SWAR broadcast of [BACKSLASH_INT] (`'\\' * SWAR_ONES`); XOR then zero-byte detect finds escapes. */
+    const val SWAR_BACKSLASHES = 0x5C5C5C5C5C5C5C5CL
+
+    /** Byte offsets within an 8-byte [ghostReadLong8] window (scalar platform assembly). */
+    const val LONG_BYTE_OFFSET_1 = 1
+    const val LONG_BYTE_OFFSET_2 = 2
+    const val LONG_BYTE_OFFSET_3 = 3
+    const val LONG_BYTE_OFFSET_4 = 4
+    const val LONG_BYTE_OFFSET_5 = 5
+    const val LONG_BYTE_OFFSET_6 = 6
+    const val LONG_BYTE_OFFSET_7 = 7
+
+    /**
+     * Initial / reset value for optimistic in-order field prediction
+     * ([GhostJsonFlatReader] `predictedFieldIndex`).
+     */
+    const val FIELD_PREDICTION_START = 0
+
+    /** Hash bits written by [packScanResult] when the SWAR scan skips rolling-hash accumulation. */
+    const val SCAN_HASH_NONE = 0
+
     const val SPACE_INT = 32
     const val QUOTE_BYTE: Byte = 34
     const val CONTROL_CHAR_START_INT = 0

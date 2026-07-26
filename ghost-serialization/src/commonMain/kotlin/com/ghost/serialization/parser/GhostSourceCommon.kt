@@ -4,12 +4,20 @@ import com.ghost.serialization.parser.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_UNIT
+import com.ghost.serialization.parser.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_SHIFT_UNIT
 import com.ghost.serialization.parser.GhostJsonConstants.HASH_SHIFT
+import com.ghost.serialization.parser.GhostJsonConstants.LONG_BYTES
 import com.ghost.serialization.parser.GhostJsonConstants.MATCH_END
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
+import com.ghost.serialization.parser.GhostJsonConstants.SCAN_HASH_NONE
 import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
+import com.ghost.serialization.parser.GhostJsonConstants.SPACE_RUN_LONG
+import com.ghost.serialization.parser.GhostJsonConstants.SWAR_BACKSLASHES
+import com.ghost.serialization.parser.GhostJsonConstants.SWAR_HIGHS
+import com.ghost.serialization.parser.GhostJsonConstants.SWAR_ONES
+import com.ghost.serialization.parser.GhostJsonConstants.SWAR_QUOTES
 import com.ghost.serialization.parser.GhostJsonConstants.WHITESPACE_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.packScanResult
 
@@ -234,6 +242,76 @@ internal inline fun scanStringImpl(
     }
 
     return matchEndLong
+}
+
+/** Branch-free "does any byte of [v] equal zero?" (McIlroy). Non-zero result ⇒ yes. */
+internal inline fun swarHasZeroByte(v: Long): Long =
+    (v - SWAR_ONES) and v.inv() and SWAR_HIGHS
+
+/**
+ * SWAR variant of [scanStringImpl] that does NOT accumulate the pool hash. Detects the closing
+ * quote, escapes/control bytes, and non-ASCII content eight bytes at a time using branch-free
+ * bit tricks, falling back to a byte scan only for the word that contains a boundary byte.
+ *
+ * Returns [packScanResult] with [SCAN_HASH_NONE] hash bits on success, or [MATCH_END] as a Long
+ * when an escape or control byte requires the slow path. The rolling hash — needed only for the
+ * small string pool — is recomputed cheaply by [rollingHashImpl] over short spans, so the bulk
+ * of the byte volume (long, never-pooled values) is never hashed.
+ */
+internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long {
+    var p = start
+    var isPureAscii = true
+    val matchEndLong = MATCH_END.toLong()
+
+    // SWAR fast path: consume LONG_BYTES windows with no quote, backslash, or control byte.
+    while (p + LONG_BYTES <= limit) {
+        val w = ghostReadLong8(data, p)
+        val hasQuote = swarHasZeroByte(w xor SWAR_QUOTES)
+        val hasBackslash = swarHasZeroByte(w xor SWAR_BACKSLASHES)
+        // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
+        val hasControl = (w - SPACE_RUN_LONG) and w.inv() and SWAR_HIGHS
+        if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {
+            break
+        }
+        if ((w and SWAR_HIGHS) != RESULT_NONE) {
+            isPureAscii = false
+        }
+        p += LONG_BYTES
+    }
+
+    // Byte tail: the window holding a boundary byte, plus the final < LONG_BYTES bytes.
+    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
+    val asciiLimit = ASCII_LIMIT
+    while (p < limit) {
+        val b = data[p].toInt() and BYTE_MASK
+        if (b < asciiLimit &&
+            ((escapeMasks[b shr BITMASK_SHIFT] shr (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+        ) {
+            if (b == QUOTE_INT) {
+                return packScanResult(p - start, SCAN_HASH_NONE, isPureAscii)
+            }
+            return matchEndLong
+        } else if (b >= asciiLimit) {
+            isPureAscii = false
+        }
+        p++
+    }
+    return matchEndLong
+}
+
+/**
+ * Recomputes the small-string-pool rolling hash over `[start, start+length)`. Must stay
+ * bit-for-bit identical to the accumulation in [scanStringImpl].
+ */
+internal fun rollingHashImpl(data: ByteArray, start: Int, length: Int): Int {
+    var accumulatedHash = SCAN_HASH_NONE
+    var i = 0
+    while (i < length) {
+        accumulatedHash =
+            (accumulatedHash shl HASH_SHIFT) - accumulatedHash + (data[start + i].toInt() and BYTE_MASK)
+        i++
+    }
+    return accumulatedHash
 }
 
 internal inline fun contentEqualsStringImpl(
