@@ -34,8 +34,15 @@ open class GhostJsonFlatReader(
     var materializeRawJsonCaptures: Boolean = false,
 ) {
 
+    /**
+     * Platform source used for string materialization ([GhostSource.decodeJsonStringRange]).
+     * Constructed via [createByteArraySource] so JVM/Android use ISO-8859-1 for known 7-bit
+     * spans instead of full UTF-8 [ByteArray.decodeToString]. Typed as [ByteArrayGhostSource]
+     * so [resetSlice] can rebind [ByteArrayGhostSource.data] without reallocating the wrapper.
+     */
     @PublishedApi
-    internal val source = ByteArrayGhostSource(rawData)
+    internal val source: ByteArrayGhostSource =
+        createByteArraySource(rawData) as ByteArrayGhostSource
 
     public var limit: Int = rawData.size
 
