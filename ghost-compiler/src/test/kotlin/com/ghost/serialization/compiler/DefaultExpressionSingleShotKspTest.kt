@@ -72,7 +72,10 @@ class DefaultExpressionSingleShotKspTest {
         assertTrue("else \"viewer\"" in generated, generated)
         assertTrue("else Priority.LOW" in generated, generated)
         assertTrue("else emptyList()" in generated, generated)
-        assertTrue("else null" in generated, generated)
+        // Defaults that match local init (null / 0) omit the mask ternary.
+        assertTrue("nullableName = nullableNameValue" in generated, generated)
+        assertTrue("defaultCount = defaultCountValue" in generated, generated)
+        assertFalse("else null" in generated, generated)
     }
 
     @Test

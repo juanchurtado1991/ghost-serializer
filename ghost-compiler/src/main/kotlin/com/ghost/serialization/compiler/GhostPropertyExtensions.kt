@@ -147,13 +147,31 @@ internal fun List<GhostPropertyModel>.allDefaultsHaveExpressions(): Boolean =
     isNotEmpty() && all { it.defaultExpression != null }
 
 /**
+ * True when the whitelisted ctor default equals the local placeholder init
+ * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed`.
+ *
+ * Safe because absent fields leave the local at its init value, which is already the
+ * Kotlin default (`null` / `false` / `0` / `0L` / …).
+ */
+internal fun GhostPropertyModel.defaultMatchesLocalInit(): Boolean {
+    val expr = defaultExpression ?: return false
+    return expr == getInitialValue()
+}
+
+/**
  * Single-ctor arg for a default property: parsed value when the mask bit is set, otherwise the
  * whitelisted source default expression.
+ *
+ * When [defaultMatchesLocalInit] is true, emits only the parsed local — the mask ternary is
+ * redundant because an absent field already left the local at the Kotlin default.
  */
 internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
     maskIdx: Int,
     bitMaskStr: String
 ): String {
+    if (defaultMatchesLocalInit()) {
+        return getReturnExpression()
+    }
     val expression = defaultExpression
         ?: error("single-shot requires defaultExpression for $kotlinName")
     val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
@@ -172,6 +190,9 @@ internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
     maskIdx: Int,
     bitMaskStr: String
 ): String {
+    if (defaultMatchesLocalInit()) {
+        return getFragmentedReturnExpression()
+    }
     val expression = defaultExpression
         ?: error("single-shot requires defaultExpression for $kotlinName")
     val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
