@@ -250,13 +250,72 @@ fun GhostJsonStringReader.consumeNull() {
 }
 
 internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int): Int {
-    val bytes = latin1Bytes
-    return if (bytes != null) {
-        findClosingQuoteImpl(start, lim) { bytes[it].toInt() and C.BYTE_MASK }
-    } else {
-        val chars = rawChars
-        findClosingQuoteImpl(start, lim) { chars[it].code }
+    var currentPosition = start
+    val chars = rawChars
+    val escapeMasks = C.ESCAPE_MASKS
+    val unrollStep = 4
+    val indexOffset1 = 1
+    val indexOffset2 = 2
+    val indexOffset3 = 3
+
+    val localAsciiLimit = C.ASCII_LIMIT
+    val localBitmaskShift = C.BITMASK_SHIFT
+    val localBitmaskIndexMask = C.BITMASK_INDEX_MASK
+    val localBitmaskUnit = C.BITMASK_UNIT
+    val localResultNone = C.RESULT_NONE
+    val localQuoteInt = C.QUOTE_INT
+    val localMatchEnd = C.MATCH_END
+
+    while (currentPosition + indexOffset3 < lim) {
+        val byte0 = chars[currentPosition].code
+        if (byte0 < localAsciiLimit &&
+            ((escapeMasks[byte0 shr localBitmaskShift] shr
+                    (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
+        ) {
+            if (byte0 == localQuoteInt) return currentPosition
+            return localMatchEnd
+        }
+        val byte1 = chars[currentPosition + indexOffset1].code
+        if (byte1 < localAsciiLimit &&
+            ((escapeMasks[byte1 shr localBitmaskShift] shr
+                    (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
+        ) {
+            if (byte1 == localQuoteInt) return currentPosition + indexOffset1
+            return localMatchEnd
+        }
+        val byte2 = chars[currentPosition + indexOffset2].code
+        if (byte2 < localAsciiLimit &&
+            ((escapeMasks[byte2 shr localBitmaskShift] shr
+                    (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
+        ) {
+            if (byte2 == localQuoteInt) return currentPosition + indexOffset2
+            return localMatchEnd
+        }
+        val byte3 = chars[currentPosition + indexOffset3].code
+        if (byte3 < localAsciiLimit &&
+            ((escapeMasks[byte3 shr localBitmaskShift] shr
+                    (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
+        ) {
+            if (byte3 == localQuoteInt) return currentPosition + indexOffset3
+            return localMatchEnd
+        }
+        currentPosition += unrollStep
     }
+
+    while (currentPosition < lim) {
+        val singleByte = chars[currentPosition].code
+        if (singleByte < localAsciiLimit &&
+            ((escapeMasks[singleByte shr localBitmaskShift] shr
+                    (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
+        ) {
+            if (singleByte == localQuoteInt) {
+                return currentPosition
+            }
+            return localMatchEnd
+        }
+        currentPosition++
+    }
+    return localMatchEnd
 }
 
 private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
@@ -382,34 +441,6 @@ private fun GhostJsonStringReader.throwUnterminatedStringError() {
 
 private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
     var key = 0
-    val bytes = latin1Bytes
-    if (bytes != null) {
-        if (length >= 4) {
-            val byte0 = bytes[start].toInt() and C.BYTE_MASK
-            val byte1 = bytes[start + 1].toInt() and C.BYTE_MASK
-            val byte2 = bytes[start + 2].toInt() and C.BYTE_MASK
-            val byte3 = bytes[start + 3].toInt() and C.BYTE_MASK
-            key = byte0 or (byte1 shl C.SHIFT_8) or (byte2 shl C.SHIFT_16) or (byte3 shl C.SHIFT_24)
-            if (hasCollisions) {
-                var ci = C.UNICODE_HEX_LENGTH
-                while (ci < length) {
-                    key = key * C.COLLISION_HASH_MULTIPLIER + (bytes[start + ci].toInt() and C.BYTE_MASK)
-                    ci++
-                }
-            }
-        } else {
-            if (length >= 1) {
-                key = key or (bytes[start].toInt() and C.BYTE_MASK)
-            }
-            if (length >= 2) {
-                key = key or ((bytes[start + 1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)
-            }
-            if (length >= 3) {
-                key = key or ((bytes[start + 2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)
-            }
-        }
-        return key
-    }
     val chars = rawChars
     if (length >= 4) {
         val byte0 = chars[start].code
@@ -441,24 +472,9 @@ private inline fun GhostJsonStringReader.verifyKeyMatch(
     expected: String,
     consumeSeparator: Boolean
 ): Boolean {
-    if (expected.length != length) return false
-
-    val bytes = latin1Bytes
-    var index = 0
-    if (bytes != null) {
-        while (index + 3 < length) {
-            if ((bytes[start + index].toInt() and C.BYTE_MASK) != expected[index].code) return false
-            if ((bytes[start + index + 1].toInt() and C.BYTE_MASK) != expected[index + 1].code) return false
-            if ((bytes[start + index + 2].toInt() and C.BYTE_MASK) != expected[index + 2].code) return false
-            if ((bytes[start + index + 3].toInt() and C.BYTE_MASK) != expected[index + 3].code) return false
-            index += 4
-        }
-        while (index < length) {
-            if ((bytes[start + index].toInt() and C.BYTE_MASK) != expected[index].code) return false
-            index++
-        }
-    } else {
+    if (expected.length == length) {
         val chars = rawChars
+        var index = 0
         while (index + 3 < length) {
             if (chars[start + index] != expected[index]) return false
             if (chars[start + index + 1] != expected[index + 1]) return false
@@ -470,25 +486,25 @@ private inline fun GhostJsonStringReader.verifyKeyMatch(
             if (chars[start + index] != expected[index]) return false
             index++
         }
-    }
-
-    val endPos = start + length
-    val newPos = endPos + C.SINGLE_CHAR_SIZE
-    position = newPos
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    if (consumeSeparator) {
-        if (newPos < limit) {
-            val colonToken = if (bytes != null) (bytes[newPos].toInt() and C.BYTE_MASK) else rawChars[newPos].code
-            if (colonToken == C.COLON_INT) {
-                position = newPos + C.SINGLE_CHAR_SIZE
+        val endPos = start + length
+        val newPos = endPos + C.SINGLE_CHAR_SIZE
+        position = newPos
+        nextTokenByte = C.RESET_TOKEN_BYTE
+        if (consumeSeparator) {
+            if (newPos < limit) {
+                val colonToken = chars[newPos].code
+                if (colonToken == C.COLON_INT) {
+                    position = newPos + C.SINGLE_CHAR_SIZE
+                } else {
+                    consumeKeySeparator()
+                }
             } else {
                 consumeKeySeparator()
             }
-        } else {
-            consumeKeySeparator()
         }
+        return true
     }
-    return true
+    return false
 }
 
 fun GhostJsonStringReader.peekStringField(name: String): String? {

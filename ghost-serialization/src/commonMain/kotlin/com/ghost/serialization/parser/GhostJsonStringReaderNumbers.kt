@@ -43,10 +43,6 @@ fun GhostJsonStringReader.nextLong(): Long {
 }
 
 fun GhostJsonStringReader.nextFloat(): Float {
-    return if (latin1Bytes != null) nextFloatLatin1() else nextFloatChars()
-}
-
-private fun GhostJsonStringReader.nextFloatChars(): Float {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -85,85 +81,6 @@ private fun GhostJsonStringReader.nextFloatChars(): Float {
         position = newPos
         while (position < localLimit) {
             val byte = chars[position].code
-            if (isDigit(byte)) {
-                val digit = byte - C.ZERO_INT
-                if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digit
-                    digitCount++
-                    exponent--
-                }
-                position++
-            } else {
-                break
-            }
-        }
-        if (position == newPos) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    if (position < localLimit && isExponentMarker(getByte(position))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toFloat()
-    if (exponent != 0) {
-        result *= getFloatPowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) {
-        result = -result
-    }
-    if (result.isInfinite() || result.isNaN()) {
-        throwError(C.ERR_NUMERIC_OVERFLOW)
-    }
-
-    if (isQuoted) {
-        consumeNumericCoercionFooter()
-    }
-
-    return result
-}
-
-private fun GhostJsonStringReader.nextFloatLatin1(): Float {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-
-    validateLeadingZero()
-
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
-    nextTokenByte = -1
-    val localLimit = limit
-    val bytes = latin1Bytes!!
-    while (position < localLimit) {
-        val byte = bytes[position].toInt() and C.BYTE_MASK
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-            } else {
-                exponent++
-            }
-            position++
-        } else {
-            break
-        }
-    }
-
-    if (digitCount == 0) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    if (position < localLimit && getByte(position) == C.DOT_INT) {
-        val newPos = position + 1
-        position = newPos
-        while (position < localLimit) {
-            val byte = bytes[position].toInt() and C.BYTE_MASK
             if (isDigit(byte)) {
                 val digit = byte - C.ZERO_INT
                 if (digitCount < C.FLOAT_PRECISION_LIMIT) {
@@ -205,10 +122,6 @@ private fun GhostJsonStringReader.nextFloatLatin1(): Float {
 }
 
 fun GhostJsonStringReader.nextDouble(): Double {
-    return if (latin1Bytes != null) nextDoubleLatin1() else nextDoubleChars()
-}
-
-private fun GhostJsonStringReader.nextDoubleChars(): Double {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
@@ -247,85 +160,6 @@ private fun GhostJsonStringReader.nextDoubleChars(): Double {
         position = newPos
         while (position < localLimit) {
             val byte = chars[position].code
-            if (isDigit(byte)) {
-                val digitValue = byte - C.ZERO_INT
-                if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digitValue
-                    digitCount++
-                    exponent--
-                }
-                position++
-            } else {
-                break
-            }
-        }
-        if (position == newPos) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    if (position < localLimit && isExponentMarker(getByte(position))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toDouble()
-    if (exponent != 0) {
-        result *= getDoublePowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) {
-        result = -result
-    }
-    if (result.isInfinite() || result.isNaN()) {
-        throwError(C.ERR_NUMERIC_OVERFLOW)
-    }
-
-    if (isQuoted) {
-        consumeNumericCoercionFooter()
-    }
-
-    return result
-}
-
-private fun GhostJsonStringReader.nextDoubleLatin1(): Double {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
-
-    validateLeadingZero()
-
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
-    nextTokenByte = -1
-    val localLimit = limit
-    val bytes = latin1Bytes!!
-    while (position < localLimit) {
-        val byte = bytes[position].toInt() and C.BYTE_MASK
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-            } else {
-                exponent++
-            }
-            position++
-        } else {
-            break
-        }
-    }
-
-    if (digitCount == 0) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    if (position < localLimit && getByte(position) == C.DOT_INT) {
-        val newPos = position + 1
-        position = newPos
-        while (position < localLimit) {
-            val byte = bytes[position].toInt() and C.BYTE_MASK
             if (isDigit(byte)) {
                 val digitValue = byte - C.ZERO_INT
                 if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
@@ -449,15 +283,6 @@ private fun GhostJsonStringReader.handleLeadingZero() {
 }
 
 private fun GhostJsonStringReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
-    val bytes = latin1Bytes
-    return if (bytes != null) {
-        parseIntDigitsLatin1(bytes, isNegative, startOfNumber)
-    } else {
-        parseIntDigitsChars(isNegative, startOfNumber)
-    }
-}
-
-private fun GhostJsonStringReader.parseIntDigitsChars(isNegative: Boolean, startOfNumber: Int): Int {
     var accumulatedValue = 0
     var digitCount = 0
     var hasDigitsFound = false
@@ -468,44 +293,6 @@ private fun GhostJsonStringReader.parseIntDigitsChars(isNegative: Boolean, start
     val chars = rawChars
     while (position < localLimit) {
         val byte = chars[position].code
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                calculateIntWithOverflowCheck(accumulatedValue, digit, isNegative)
-            }
-            digitCount++
-            hasDigitsFound = true
-            position++
-        } else {
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toInt()
-            }
-            break
-        }
-    }
-
-    if (earlyExitResult != null) {
-        return earlyExitResult
-    }
-    if (!hasDigitsFound) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-    return accumulatedValue
-}
-
-private fun GhostJsonStringReader.parseIntDigitsLatin1(bytes: ByteArray, isNegative: Boolean, startOfNumber: Int): Int {
-    var accumulatedValue = 0
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = -1
-    var earlyExitResult: Int? = null
-
-    val localLimit = limit
-    while (position < localLimit) {
-        val byte = bytes[position].toInt() and C.BYTE_MASK
         if (isDigit(byte)) {
             val digit = byte - C.ZERO_INT
             accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
@@ -535,15 +322,6 @@ private fun GhostJsonStringReader.parseIntDigitsLatin1(bytes: ByteArray, isNegat
 }
 
 private fun GhostJsonStringReader.parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
-    val bytes = latin1Bytes
-    return if (bytes != null) {
-        parseLongDigitsLatin1(bytes, isNegative, startOfNumber)
-    } else {
-        parseLongDigitsChars(isNegative, startOfNumber)
-    }
-}
-
-private fun GhostJsonStringReader.parseLongDigitsChars(isNegative: Boolean, startOfNumber: Int): Long {
     var accumulatedValue = 0L
     var digitCount = 0
     var hasDigitsFound = false
@@ -554,44 +332,6 @@ private fun GhostJsonStringReader.parseLongDigitsChars(isNegative: Boolean, star
     val chars = rawChars
     while (position < localLimit) {
         val byte = chars[position].code
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                calculateLongWithOverflowCheck(accumulatedValue, digit, isNegative)
-            }
-            digitCount++
-            hasDigitsFound = true
-            position++
-        } else {
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toLong()
-            }
-            break
-        }
-    }
-
-    if (earlyExitResult != null) {
-        return earlyExitResult
-    }
-    if (!hasDigitsFound) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-    return accumulatedValue
-}
-
-private fun GhostJsonStringReader.parseLongDigitsLatin1(bytes: ByteArray, isNegative: Boolean, startOfNumber: Int): Long {
-    var accumulatedValue = 0L
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = -1
-    var earlyExitResult: Long? = null
-
-    val localLimit = limit
-    while (position < localLimit) {
-        val byte = bytes[position].toInt() and C.BYTE_MASK
         if (isDigit(byte)) {
             val digit = byte - C.ZERO_INT
             accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
@@ -673,10 +413,6 @@ private fun GhostJsonStringReader.validateLeadingZero() {
 }
 
 fun GhostJsonStringReader.skipNumber() {
-    if (latin1Bytes != null) skipNumberLatin1() else skipNumberChars()
-}
-
-private fun GhostJsonStringReader.skipNumberChars() {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
 
@@ -741,90 +477,6 @@ private fun GhostJsonStringReader.skipNumberChars() {
             var hasExpDigits = false
             while (position < numberLimit) {
                 val byteCode = chars[position].code
-                if (isDigit(byteCode)) {
-                    hasExpDigits = true
-                    position++
-                } else {
-                    break
-                }
-            }
-            if (!hasExpDigits) {
-                throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)
-            }
-        }
-    }
-
-    if (isQuoted) {
-        consumeNumericCoercionFooter()
-    }
-    nextTokenByte = -1
-}
-
-private fun GhostJsonStringReader.skipNumberLatin1() {
-    val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-
-    var hasDigits = false
-
-    val numberPosition = position
-    val numberLimit = limit
-    val bytes = latin1Bytes!!
-    if (numberPosition < numberLimit && (bytes[numberPosition].toInt() and C.BYTE_MASK) == C.ZERO_INT) {
-        val newPos = numberPosition + 1
-        position = newPos
-        hasDigits = true
-        if (newPos < numberLimit && isDigit(bytes[newPos].toInt() and C.BYTE_MASK)) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    } else {
-        while (position < numberLimit) {
-            val byte = bytes[position].toInt() and C.BYTE_MASK
-            if (isDigit(byte)) {
-                hasDigits = true
-                position++
-            } else {
-                break
-            }
-        }
-    }
-
-    if (!hasDigits) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    if (position < numberLimit && (bytes[position].toInt() and C.BYTE_MASK) == C.DOT_INT) {
-        position++
-        var hasDecimalDigits = false
-        while (position < numberLimit) {
-            val byte = bytes[position].toInt() and C.BYTE_MASK
-            if (isDigit(byte)) {
-                hasDecimalDigits = true
-                position++
-            } else {
-                break
-            }
-        }
-        if (!hasDecimalDigits) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    if (position < numberLimit) {
-        val byte = bytes[position].toInt() and C.BYTE_MASK
-        if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {
-            var newPos = position + 1
-            position = newPos
-            if (newPos < numberLimit) {
-                val sign = bytes[newPos].toInt() and C.BYTE_MASK
-                if (sign == C.PLUS_INT || sign == C.MINUS_INT) {
-                    newPos++
-                    position = newPos
-                }
-            }
-
-            var hasExpDigits = false
-            while (position < numberLimit) {
-                val byteCode = bytes[position].toInt() and C.BYTE_MASK
                 if (isDigit(byteCode)) {
                     hasExpDigits = true
                     position++
