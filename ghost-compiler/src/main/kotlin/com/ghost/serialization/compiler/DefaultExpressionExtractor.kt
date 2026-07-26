@@ -3,6 +3,7 @@ package com.ghost.serialization.compiler
 import com.google.devtools.ksp.symbol.FileLocation
 import com.google.devtools.ksp.symbol.KSValueParameter
 import java.io.File
+import com.ghost.serialization.compiler.GhostEmitterConstants as C
 
 /**
  * Extracts constructor-parameter default expressions from Kotlin source text.
@@ -47,7 +48,7 @@ internal object DefaultExpressionExtractor {
         val trimmed = expr.trim()
         if (trimmed.isEmpty()) return null
         return when {
-            trimmed == "null" || trimmed == "true" || trimmed == "false" -> trimmed
+            trimmed in C.DEFAULT_EXPR_SCALAR_KEYWORDS -> trimmed
             isNumericLiteral(trimmed) -> trimmed
             isCharLiteral(trimmed) -> trimmed
             isStringLiteral(trimmed) -> trimmed
@@ -60,12 +61,12 @@ internal object DefaultExpressionExtractor {
     private fun offsetOfLine(source: String, lineNumber: Int): Int? {
         if (lineNumber < 1) return null
         var line = 1
-        var i = 0
-        while (i < source.length && line < lineNumber) {
-            if (source[i] == '\n') line++
-            i++
+        var index = 0
+        while (index < source.length && line < lineNumber) {
+            if (source[index] == CHAR_NEWLINE) line++
+            index++
         }
-        return if (line == lineNumber) i else null
+        return if (line == lineNumber) index else null
     }
 
     /**
@@ -73,39 +74,40 @@ internal object DefaultExpressionExtractor {
      * skipping string/char literals and comments.
      */
     private fun findParameterName(source: String, paramName: String, from: Int): Int? {
-        var i = from.coerceAtLeast(0)
+        var index = from.coerceAtLeast(0)
         // Search a bounded window: parameter declarations rarely span far past location.
-        val end = (from + MAX_PARAM_SEARCH_CHARS).coerceAtMost(source.length)
-        while (i < end) {
-            i = skipTrivia(source, i)
-            if (i >= end) break
-            when (val c = source[i]) {
-                '"', '\'' -> i = skipLiteral(source, i)
-                '/' -> {
-                    val next = skipTrivia(source, i)
-                    if (next == i) i++ else i = next
+        val end = (from + C.DEFAULT_EXPR_MAX_PARAM_SEARCH_CHARS).coerceAtMost(source.length)
+        while (index < end) {
+            index = skipTrivia(source, index)
+            if (index >= end) break
+            when (val ch = source[index]) {
+                CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -> index = skipLiteral(source, index)
+                CHAR_SLASH -> {
+                    val next = skipTrivia(source, index)
+                    if (next == index) index++ else index = next
                 }
+
                 else -> {
-                    if (c.isJavaIdentifierStart() && matchesIdentifier(source, i, paramName)) {
-                        val after = i + paramName.length
+                    if (ch.isJavaIdentifierStart() && matchesIdentifier(source, index, paramName)) {
+                        val after = index + paramName.length
                         // Must look like a parameter binder: name followed by ':' or annotation-free type start.
                         // Reject when the identifier is a receiver/qualifier (name.) or call (name().
                         if (after < source.length) {
                             val nextSignificant = skipTrivia(source, after)
                             if (nextSignificant < source.length) {
-                                val n = source[nextSignificant]
+                                val nextChar = source[nextSignificant]
                                 // Parameter form: `name:` or `name /* */ :` — also allow `@Ann name:`
                                 // after we already landed on the name.
-                                if (n == ':') return i
+                                if (nextChar == CHAR_COLON) return index
                             }
                         }
                     }
                     // Advance one identifier or one char.
-                    if (c.isJavaIdentifierStart()) {
-                        i++
-                        while (i < end && source[i].isJavaIdentifierPart()) i++
+                    if (ch.isJavaIdentifierStart()) {
+                        index++
+                        while (index < end && source[index].isJavaIdentifierPart()) index++
                     } else {
-                        i++
+                        index++
                     }
                 }
             }
@@ -113,7 +115,7 @@ internal object DefaultExpressionExtractor {
         // Fallback: scan from file start near the same line window if the location pointed
         // at an annotation above the parameter.
         if (from > 0) {
-            val back = (from - MAX_PARAM_BACKTRACK_CHARS).coerceAtLeast(0)
+            val back = (from - C.DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS).coerceAtLeast(0)
             return findParameterName(source, paramName, back)?.takeIf { it >= back }
                 ?: findParameterNameFromConstructor(source, paramName)
         }
@@ -122,21 +124,21 @@ internal object DefaultExpressionExtractor {
 
     private fun findParameterNameFromConstructor(source: String, paramName: String): Int? {
         // Last-resort scan: any `paramName:` that precedes an `=` before the next top-level comma/')'.
-        var i = 0
-        while (i < source.length) {
-            i = skipTrivia(source, i)
-            if (i >= source.length) break
-            if (source[i].isJavaIdentifierStart() && matchesIdentifier(source, i, paramName)) {
-                val afterName = skipTrivia(source, i + paramName.length)
-                if (afterName < source.length && source[afterName] == ':') {
+        var index = 0
+        while (index < source.length) {
+            index = skipTrivia(source, index)
+            if (index >= source.length) break
+            if (source[index].isJavaIdentifierStart() && matchesIdentifier(source, index, paramName)) {
+                val afterName = skipTrivia(source, index + paramName.length)
+                if (afterName < source.length && source[afterName] == CHAR_COLON) {
                     val eq = findDefaultEquals(source, afterName + 1)
-                    if (eq != null) return i
+                    if (eq != null) return index
                 }
-                i += paramName.length
-            } else if (source[i] == '"' || source[i] == '\'') {
-                i = skipLiteral(source, i)
+                index += paramName.length
+            } else if (source[index] == CHAR_DOUBLE_QUOTE || source[index] == CHAR_SINGLE_QUOTE) {
+                index = skipLiteral(source, index)
             } else {
-                i++
+                index++
             }
         }
         return null
@@ -155,233 +157,323 @@ internal object DefaultExpressionExtractor {
      * After the parameter name, skip the type (and annotations) until the default `=` at depth 0.
      */
     private fun findDefaultEquals(source: String, from: Int): Int? {
-        var i = from
+        var index = from
         var angle = 0
         var paren = 0
         var bracket = 0
         var brace = 0
-        while (i < source.length) {
-            i = skipTrivia(source, i)
-            if (i >= source.length) return null
-            when (val c = source[i]) {
-                '"' , '\'' -> i = skipLiteral(source, i)
-                '<' -> { angle++; i++ }
-                '>' -> { angle = (angle - 1).coerceAtLeast(0); i++ }
-                '(' -> { paren++; i++ }
-                ')' -> {
+        while (index < source.length) {
+            index = skipTrivia(source, index)
+            if (index >= source.length) return null
+            when (val ch = source[index]) {
+                CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -> index = skipLiteral(source, index)
+                CHAR_ANGLE_OPEN -> {
+                    angle++; index++
+                }
+
+                CHAR_ANGLE_CLOSE -> {
+                    angle = (angle - 1).coerceAtLeast(0); index++
+                }
+
+                CHAR_PAREN_OPEN -> {
+                    paren++; index++
+                }
+
+                CHAR_PAREN_CLOSE -> {
                     if (paren == 0 && angle == 0 && bracket == 0 && brace == 0) return null
                     paren = (paren - 1).coerceAtLeast(0)
-                    i++
+                    index++
                 }
-                '[' -> { bracket++; i++ }
-                ']' -> { bracket = (bracket - 1).coerceAtLeast(0); i++ }
-                '{' -> { brace++; i++ }
-                '}' -> { brace = (brace - 1).coerceAtLeast(0); i++ }
-                '=' -> {
+
+                CHAR_BRACKET_OPEN -> {
+                    bracket++; index++
+                }
+
+                CHAR_BRACKET_CLOSE -> {
+                    bracket = (bracket - 1).coerceAtLeast(0); index++
+                }
+
+                CHAR_BRACE_OPEN -> {
+                    brace++; index++
+                }
+
+                CHAR_BRACE_CLOSE -> {
+                    brace = (brace - 1).coerceAtLeast(0); index++
+                }
+
+                CHAR_EQUALS -> {
                     if (angle == 0 && paren == 0 && bracket == 0 && brace == 0) {
                         // Reject `==` / `!=` / `*=` etc. — default uses a single `=`.
-                        val prev = source.getOrNull(i - 1)
-                        val next = source.getOrNull(i + 1)
-                        if (next != '=' && prev != '!' && prev != '<' && prev != '>' &&
-                            prev != ':' // not relevant but keep `=` only
+                        val prev = source.getOrNull(index - 1)
+                        val next = source.getOrNull(index + 1)
+                        if (next != CHAR_EQUALS && prev != CHAR_BANG && prev != CHAR_ANGLE_OPEN &&
+                            prev != CHAR_ANGLE_CLOSE &&
+                            prev != CHAR_COLON // not relevant but keep `=` only
                         ) {
-                            return i
+                            return index
                         }
                     }
-                    i++
+                    index++
                 }
-                ',' -> {
+
+                CHAR_COMMA -> {
                     if (angle == 0 && paren == 0 && bracket == 0 && brace == 0) return null
-                    i++
+                    index++
                 }
-                else -> i++
+
+                else -> index++
             }
         }
         return null
     }
 
     private fun readExpression(source: String, from: Int): String? {
-        var i = skipTrivia(source, from)
-        if (i >= source.length) return null
-        val start = i
+        var index = skipTrivia(source, from)
+        if (index >= source.length) return null
+        val start = index
         var angle = 0
         var paren = 0
         var bracket = 0
         var brace = 0
-        while (i < source.length) {
-            when (val c = source[i]) {
-                '"' , '\'' -> i = skipLiteral(source, i)
-                '/' -> {
+        while (index < source.length) {
+            when (val ch = source[index]) {
+                CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -> index = skipLiteral(source, index)
+                CHAR_SLASH -> {
                     // End expression before a line comment that isn't inside nesting.
                     if (angle == 0 && paren == 0 && bracket == 0 && brace == 0 &&
-                        i + 1 < source.length && source[i + 1] == '/'
+                        index + 1 < source.length && source[index + 1] == CHAR_SLASH
                     ) {
                         break
                     }
-                    if (i + 1 < source.length && (source[i + 1] == '/' || source[i + 1] == '*')) {
-                        i = skipTrivia(source, i)
+                    if (index + 1 < source.length &&
+                        (source[index + 1] == CHAR_SLASH || source[index + 1] == CHAR_STAR)
+                    ) {
+                        index = skipTrivia(source, index)
                     } else {
-                        i++
+                        index++
                     }
                 }
-                '<' -> { angle++; i++ }
-                '>' -> { angle = (angle - 1).coerceAtLeast(0); i++ }
-                '(' -> { paren++; i++ }
-                ')' -> {
+
+                CHAR_ANGLE_OPEN -> {
+                    angle++; index++
+                }
+
+                CHAR_ANGLE_CLOSE -> {
+                    angle = (angle - 1).coerceAtLeast(0); index++
+                }
+
+                CHAR_PAREN_OPEN -> {
+                    paren++; index++
+                }
+
+                CHAR_PAREN_CLOSE -> {
                     if (paren == 0 && angle == 0 && bracket == 0 && brace == 0) break
                     paren = (paren - 1).coerceAtLeast(0)
-                    i++
+                    index++
                 }
-                '[' -> { bracket++; i++ }
-                ']' -> { bracket = (bracket - 1).coerceAtLeast(0); i++ }
-                '{' -> { brace++; i++ }
-                '}' -> { brace = (brace - 1).coerceAtLeast(0); i++ }
-                ',' -> {
+
+                CHAR_BRACKET_OPEN -> {
+                    bracket++; index++
+                }
+
+                CHAR_BRACKET_CLOSE -> {
+                    bracket = (bracket - 1).coerceAtLeast(0); index++
+                }
+
+                CHAR_BRACE_OPEN -> {
+                    brace++; index++
+                }
+
+                CHAR_BRACE_CLOSE -> {
+                    brace = (brace - 1).coerceAtLeast(0); index++
+                }
+
+                CHAR_COMMA -> {
                     if (angle == 0 && paren == 0 && bracket == 0 && brace == 0) break
-                    i++
+                    index++
                 }
-                '\n' -> {
+
+                CHAR_NEWLINE -> {
                     // Allow multiline defaults while nested; at depth 0 keep going until `,` / `)`.
-                    i++
+                    index++
                 }
-                else -> i++
+
+                else -> index++
             }
         }
-        if (i <= start) return null
-        return source.substring(start, i).trim().trimEnd(',')
+        if (index <= start) return null
+        return source.substring(start, index).trim().trimEnd(CHAR_COMMA)
     }
 
     private fun skipTrivia(source: String, from: Int): Int {
-        var i = from
-        while (i < source.length) {
+        var index = from
+        while (index < source.length) {
             when {
-                source[i].isWhitespace() -> i++
-                i + 1 < source.length && source[i] == '/' && source[i + 1] == '/' -> {
-                    i += 2
-                    while (i < source.length && source[i] != '\n') i++
+                source[index].isWhitespace() -> index++
+                index + 1 < source.length &&
+                    source[index] == CHAR_SLASH && source[index + 1] == CHAR_SLASH -> {
+                    index += 2
+                    while (index < source.length && source[index] != CHAR_NEWLINE) index++
                 }
-                i + 1 < source.length && source[i] == '/' && source[i + 1] == '*' -> {
-                    i += 2
-                    while (i + 1 < source.length && !(source[i] == '*' && source[i + 1] == '/')) i++
-                    i = (i + 2).coerceAtMost(source.length)
+
+                index + 1 < source.length &&
+                    source[index] == CHAR_SLASH && source[index + 1] == CHAR_STAR -> {
+                    index += 2
+                    while (index + 1 < source.length &&
+                        !(source[index] == CHAR_STAR && source[index + 1] == CHAR_SLASH)
+                    ) {
+                        index++
+                    }
+                    index = (index + 2).coerceAtMost(source.length)
                 }
-                else -> return i
+
+                else -> return index
             }
         }
-        return i
+        return index
     }
 
     private fun skipLiteral(source: String, from: Int): Int {
         if (from >= source.length) return from
         val quote = source[from]
-        if (quote != '"' && quote != '\'') return from + 1
+        if (quote != CHAR_DOUBLE_QUOTE && quote != CHAR_SINGLE_QUOTE) return from + 1
         // Triple-quoted string.
-        if (quote == '"' && from + 2 < source.length &&
-            source[from + 1] == '"' && source[from + 2] == '"'
+        if (quote == CHAR_DOUBLE_QUOTE && from + 2 < source.length &&
+            source[from + 1] == CHAR_DOUBLE_QUOTE && source[from + 2] == CHAR_DOUBLE_QUOTE
         ) {
-            var i = from + 3
-            while (i + 2 < source.length) {
-                if (source[i] == '"' && source[i + 1] == '"' && source[i + 2] == '"') {
-                    return i + 3
+            var index = from + 3
+            while (index + 2 < source.length) {
+                if (source[index] == CHAR_DOUBLE_QUOTE &&
+                    source[index + 1] == CHAR_DOUBLE_QUOTE &&
+                    source[index + 2] == CHAR_DOUBLE_QUOTE
+                ) {
+                    return index + 3
                 }
-                i++
+                index++
             }
             return source.length
         }
-        var i = from + 1
-        while (i < source.length) {
-            when (source[i]) {
-                '\\' -> i += 2
-                quote -> return i + 1
-                else -> i++
+        var index = from + 1
+        while (index < source.length) {
+            when (source[index]) {
+                CHAR_BACKSLASH -> index += 2
+                quote -> return index + 1
+                else -> index++
             }
         }
         return source.length
     }
 
-    private fun isNumericLiteral(s: String): Boolean {
+    private fun isNumericLiteral(value: String): Boolean {
         // Int/Long/Float/Double with optional sign and suffix; hex/bin rejected (not needed).
-        return NUMERIC_REGEX.matches(s)
+        return NUMERIC_REGEX.matches(value)
     }
 
-    private fun isCharLiteral(s: String): Boolean {
-        if (s.length < 3 || s.first() != '\'' || s.last() != '\'') return false
-        val inner = s.substring(1, s.length - 1)
+    private fun isCharLiteral(value: String): Boolean {
+        if (value.length < C.DEFAULT_EXPR_MIN_CHAR_LITERAL_LEN ||
+            value.first() != CHAR_SINGLE_QUOTE ||
+            value.last() != CHAR_SINGLE_QUOTE
+        ) {
+            return false
+        }
+        val inner = value.substring(1, value.length - 1)
         return when {
-            inner.length == 1 && inner[0] != '\\' && inner[0] != '\'' -> true
-            inner == "\\'" || inner == "\\\\" || inner == "\\n" || inner == "\\t" ||
-                inner == "\\r" || inner == "\\b" || inner == "\\\$" -> true
-            inner.startsWith("\\u") && inner.length == 6 &&
-                inner.substring(2).all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' } -> true
+            inner.length == 1 && inner[0] != CHAR_BACKSLASH && inner[0] != CHAR_SINGLE_QUOTE -> true
+            inner in C.DEFAULT_EXPR_CHAR_ESCAPES -> true
+            inner.startsWith(C.STR_UNICODE_ESC_PREFIX) &&
+                inner.length == C.DEFAULT_EXPR_UNICODE_ESC_LEN &&
+                isHexDigits(inner.substring(2)) -> true
+
             else -> false
         }
     }
 
-    private fun isStringLiteral(s: String): Boolean {
-        if (s.length < 2) return false
+    private fun isStringLiteral(value: String): Boolean {
+        if (value.length < C.DEFAULT_EXPR_MIN_STRING_LITERAL_LEN) return false
         // Reject templates and triple quotes (keep whitelist tight).
-        if (s.startsWith("\"\"\"")) return false
-        if (!s.startsWith("\"") || !s.endsWith("\"")) return false
-        var i = 1
-        val end = s.length - 1
-        while (i < end) {
-            when (val c = s[i]) {
-                '$' -> return false // string template
-                '\\' -> {
-                    if (i + 1 >= end) return false
-                    when (s[i + 1]) {
-                        '\\', '"', 'n', 't', 'r', 'b', '$', '\'' -> i += 2
-                        'u' -> {
-                            if (i + 5 >= end) return false
-                            val hex = s.substring(i + 2, i + 6)
-                            if (!hex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }) return false
-                            i += 6
+        if (value.startsWith(C.STR_TRIPLE_QUOTE)) return false
+        if (!value.startsWith(C.STR_DOUBLE_QUOTE) || !value.endsWith(C.STR_DOUBLE_QUOTE)) return false
+        var index = 1
+        val end = value.length - 1
+        while (index < end) {
+            when (val ch = value[index]) {
+                CHAR_DOLLAR -> return false // string template
+                CHAR_BACKSLASH -> {
+                    if (index + 1 >= end) return false
+                    when (value[index + 1]) {
+                        CHAR_BACKSLASH, CHAR_DOUBLE_QUOTE, CHAR_N, CHAR_T, CHAR_R, CHAR_B,
+                        CHAR_DOLLAR, CHAR_SINGLE_QUOTE,
+                        -> index += 2
+
+                        CHAR_U -> {
+                            if (index + 5 >= end) return false
+                            val hex = value.substring(index + 2, index + 6)
+                            if (!isHexDigits(hex)) return false
+                            index += 6
                         }
+
                         else -> return false
                     }
                 }
-                '"' -> return false // premature end
-                else -> i++
+
+                CHAR_DOUBLE_QUOTE -> return false // premature end
+                else -> index++
             }
         }
         return true
     }
 
-    private fun isEmptyCollectionCall(s: String): Boolean {
-        return s in EMPTY_COLLECTION_CALLS
+    private fun isEmptyCollectionCall(value: String): Boolean {
+        return value in C.DEFAULT_EXPR_EMPTY_COLLECTION_CALLS
     }
 
-    private fun isEnumOrConstRef(s: String): Boolean {
+    private fun isEnumOrConstRef(value: String): Boolean {
         // Qual.Name or Name — identifiers joined by dots, no calls/generics.
-        if (!ENUM_REF_REGEX.matches(s)) return false
+        if (!ENUM_REF_REGEX.matches(value)) return false
         // Reject lowercase-only single identifiers that look like variables (a, foo).
         // Allow ALL_CAPS consts and Capitalized enum entries / class refs.
-        val parts = s.split('.')
+        val parts = value.split(CHAR_DOT)
         return parts.all { part ->
-            part.first().isUpperCase() || part.all { it == '_' || it.isDigit() || it.isUpperCase() }
+            part.first().isUpperCase() ||
+                part.all { it == CHAR_UNDERSCORE || it.isDigit() || it.isUpperCase() }
         }
     }
 
-    private const val MAX_PARAM_SEARCH_CHARS = 8_192
-    private const val MAX_PARAM_BACKTRACK_CHARS = 512
+    private fun isHexDigits(value: String): Boolean =
+        value.length == C.DEFAULT_EXPR_UNICODE_HEX_LEN &&
+            value.all { it.isDigit() || it in HEX_LOWER_A..HEX_LOWER_F || it in HEX_UPPER_A..HEX_UPPER_F }
 
-    private val EMPTY_COLLECTION_CALLS = setOf(
-        "emptyList()",
-        "emptySet()",
-        "emptyMap()",
-        "listOf()",
-        "setOf()",
-        "mapOf()",
-    )
+    private val NUMERIC_REGEX = Regex(C.REGEX_DEFAULT_EXPR_NUMERIC)
+    private val ENUM_REF_REGEX = Regex(C.REGEX_DEFAULT_EXPR_ENUM_REF)
 
-    private val NUMERIC_REGEX = Regex(
-        """^-?(?:""" +
-            """(?:0|[1-9]\d*)(?:L|l)?|""" +
-            """(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?[fFdD]?|""" +
-            """(?:0|[1-9]\d*)(?:[eE][+-]?\d+)[fFdD]?|""" +
-            """(?:0|[1-9]\d*)[fFdD]""" +
-            """)$"""
-    )
-
-    private val ENUM_REF_REGEX = Regex("""^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$""")
+    private const val CHAR_NEWLINE = '\n'
+    private const val CHAR_DOUBLE_QUOTE = '"'
+    private const val CHAR_SINGLE_QUOTE = '\''
+    private const val CHAR_SLASH = '/'
+    private const val CHAR_STAR = '*'
+    private const val CHAR_COLON = ':'
+    private const val CHAR_EQUALS = '='
+    private const val CHAR_BANG = '!'
+    private const val CHAR_COMMA = ','
+    private const val CHAR_ANGLE_OPEN = '<'
+    private const val CHAR_ANGLE_CLOSE = '>'
+    private const val CHAR_PAREN_OPEN = '('
+    private const val CHAR_PAREN_CLOSE = ')'
+    private const val CHAR_BRACKET_OPEN = '['
+    private const val CHAR_BRACKET_CLOSE = ']'
+    private const val CHAR_BRACE_OPEN = '{'
+    private const val CHAR_BRACE_CLOSE = '}'
+    private const val CHAR_BACKSLASH = '\\'
+    private const val CHAR_DOLLAR = '$'
+    private const val CHAR_DOT = '.'
+    private const val CHAR_UNDERSCORE = '_'
+    private const val CHAR_N = 'n'
+    private const val CHAR_T = 't'
+    private const val CHAR_R = 'r'
+    private const val CHAR_B = 'b'
+    private const val CHAR_U = 'u'
+    private const val HEX_LOWER_A = 'a'
+    private const val HEX_LOWER_F = 'f'
+    private const val HEX_UPPER_A = 'A'
+    private const val HEX_UPPER_F = 'F'
 }
