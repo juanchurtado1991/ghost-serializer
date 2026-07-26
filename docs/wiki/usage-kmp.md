@@ -15,7 +15,7 @@ For the minimal setup, see the [Ghost Serializer Quick Start](quick-start.md).
 plugins {
     kotlin("multiplatform")
     id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.2.7"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 
 kotlin {

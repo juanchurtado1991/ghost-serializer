@@ -13,7 +13,7 @@ For the cross-platform setup flow, see the [Ghost Serializer Quick Start](quick-
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.7")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.0")
 }
 ```
 

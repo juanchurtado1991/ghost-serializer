@@ -23,7 +23,7 @@ The recommended Gradle plugin setup is designed for incremental adoption: it add
 
 ---
 
-## Maven Central (`1.2.7+`)
+## Maven Central (`1.3.0+`)
 
 Ghost is published to `mavenCentral()`. Ensure it is declared in your repositories:
 
@@ -41,7 +41,7 @@ dependencyResolutionManagement {
 
 ```toml
 [versions]
-ghost = "1.2.7"
+ghost = "1.3.0"
 ksp = "2.3.10"
 
 [libraries]

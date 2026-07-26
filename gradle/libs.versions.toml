@@ -6,7 +6,7 @@ agp                             = "9.1.1"
 ksp                             = "2.3.10"
 kover                           = "0.9.9"
 compose-plugin                  = "1.11.1"
-publish-version                 = "1.2.7"
+publish-version                 = "1.3.0"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization

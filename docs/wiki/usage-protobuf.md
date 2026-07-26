@@ -11,7 +11,7 @@
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-protobuf:1.2.7")
+    implementation("com.ghostserializer:ghost-protobuf:1.3.0")
 }
 ```
 

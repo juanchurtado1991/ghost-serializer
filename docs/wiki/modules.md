@@ -11,7 +11,7 @@ Start with the [Quick Start](quick-start.md), then add only the framework module
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.2.7"
+ghost = "1.3.0"
 ```
 
 ---
@@ -82,7 +82,7 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("com.ghostserializer.ghost") version "1.2.7"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 ```
 

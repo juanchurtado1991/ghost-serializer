@@ -17,7 +17,7 @@ The Ghost Gradle plugin automatically adds runtime dependencies and wires the KS
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.2.7"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 
 // Optional for byte-only apps: omit native String reader/writer generation.
