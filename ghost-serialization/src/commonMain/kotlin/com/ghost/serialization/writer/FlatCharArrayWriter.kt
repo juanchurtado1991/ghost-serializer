@@ -95,7 +95,10 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         }
     }
 
-    /** Writes a plain-ASCII string directly with minimal checks. */
+    /**
+     * Writes `"…"` for a string the caller already verified needs no JSON escapes.
+     * On the char channel that includes BMP/non-ASCII content (copied as UTF-16 code units).
+     */
     fun writeQuotedAscii(text: String, length: Int) {
         ensureCapacity(length + STRING_QUOTE_PAIR_BYTES)
         val backingArray = array
