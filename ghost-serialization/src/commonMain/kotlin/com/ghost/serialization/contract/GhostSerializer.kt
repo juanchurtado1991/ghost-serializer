@@ -8,6 +8,7 @@ import okio.BufferedSource
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.withPreparedUtf8Json
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.GhostJsonWriter
@@ -87,8 +88,12 @@ interface GhostSerializer<T> {
 
     /** Deserializes a new instance of [T] from the [source]. */
     fun deserialize(source: BufferedSource): T {
-        val reader = GhostJsonFlatReader(source.readByteArray())
-        return deserialize(reader)
+        val bytes = source.readByteArray()
+        return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
+            val reader = GhostJsonFlatReader(data)
+            reader.resetSlice(data, offset, length)
+            deserialize(reader)
+        }
     }
 
     /** Deserializes a new instance of [T] using a specialized streaming [reader]. */
