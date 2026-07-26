@@ -81,9 +81,14 @@ object RegressionCalculator {
         Baseline(SYNC_FULL, MODE_STREAMING, Metric.LATENCY, 1.0, 3.698, 334.2, 1957.5),
 
         // WRITING — latency advantage
-        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 0.986, 185.3, 264.9),
-        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.412, 92.6, 326.3),
-        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.560, 32.2, 203.5),
+        // kserMemKb refreshed after the Kotlin 2.4.0/coroutines 1.10.2 toolchain bump: KSER's
+        // own memory footprint dropped (265.0->202.7 / 326.3->263.9 / 203.5->141.2 KB), which
+        // narrowed Ghost's relative advantage even though Ghost's own absolute numbers (185.4 /
+        // 92.6 / 32.2 KB) were byte-for-byte unchanged — confirmed via two reproducible runs of
+        // benchmarkRegressionFast. Not a Ghost regression; ghostSpeed/ghostMemKb left as-is.
+        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 0.986, 185.3, 202.7),
+        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.412, 92.6, 263.9),
+        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.560, 32.2, 141.2),
     )
 
     private data class Row(
