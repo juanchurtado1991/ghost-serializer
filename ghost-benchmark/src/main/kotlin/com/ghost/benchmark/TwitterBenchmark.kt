@@ -17,7 +17,8 @@ import okio.Buffer
 /**
  * Twitter macro-dataset benchmark comparing Ghost vs KotlinX Serialization.
  *
- * Measures throughput (ops/s) and memory allocation (KB/op) across 6 categories:
+ * Measures throughput (µs/op + GB/s of JSON bytes) and memory allocation (KB/op)
+ * across 6 categories:
  * String / Bytes / Streaming × Decode / Encode
  *
  * JIT is warmed globally in [warmupGlobal] (phase 2); [run] only runs a short local warmup
@@ -210,18 +211,37 @@ object TwitterBenchmark {
     private fun printResults(
         categories: List<Pair<String, Pair<Triple<Double, Double, Double>, Triple<Double, Double, Double>>>>
     ) {
+        val payloadBytes = BenchmarkThroughput.TWITTER_PAYLOAD_BYTES
         println("\n--- Twitter Dataset Performance Summary (Fastest First) ---")
-        println("| Operation          | Engine | Throughput (ops/s) |  StDev (ops/s) | Mem (KB/op) |")
-        println("|--------------------|--------|---------------------|----------------|-------------|")
+        println(
+            "  Payload: %d bytes → µs/op and decimal GB/s (ops/s × payload / 10⁹)".format(payloadBytes)
+        )
+        println(
+            "| Operation          | Engine | Throughput (GB/s) | Latency (µs/op) | Mem (KB/op) |"
+        )
+        println(
+            "|--------------------|--------|-------------------|-----------------|-------------|"
+        )
         for ((label, scores) in categories) {
             val sorted = listOf(
                 "GHOST" to scores.first,
                 "KSER" to scores.second
             ).sortedByDescending { it.second.first }
             for (res in sorted) {
-                println("| %-18s | %-6s | %19.3f | %14.3f | %11.1f |".format(
-                    label, res.first, res.second.first, res.second.second, res.second.third
-                ))
+                val ops = res.second.first
+                val opsStdev = res.second.second
+                val micros = BenchmarkThroughput.opsPerSecToMicros(ops)
+                val microsStdev = if (ops <= 0.0) {
+                    0.0
+                } else {
+                    micros * (opsStdev / ops)
+                }
+                val gb = BenchmarkThroughput.opsPerSecToGbPerSec(ops, payloadBytes)
+                println(
+                    "| %-18s | %-6s | %17.3f | %7.1f ±%-5.1f | %11.1f |".format(
+                        label, res.first, gb, micros, microsStdev, res.second.third
+                    )
+                )
             }
             val winner = sorted[0]
             val loser = sorted[1]
@@ -241,7 +261,9 @@ object TwitterBenchmark {
                     label, winner.first, pct, memString, loser.first
                 )
             )
-            println("|--------------------|--------|---------------------|----------------|-------------|")
+            println(
+                "|--------------------|--------|-------------------|-----------------|-------------|"
+            )
         }
     }
 

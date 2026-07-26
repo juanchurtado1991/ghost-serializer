@@ -65,10 +65,25 @@ object RegressionCalculator {
         // Twitter macro dataset — throughput (ops/s).
         // Refreshed 2026-07-25 after single-shot defaults (P1) + CharArray string-channel
         // key match: mean of two full-profile runs on the same machine (Kotlin 2.4.0).
-        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1384.2, 1084.3, 361.2, 1337.6),
-        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1144.5, 657.8, 621.2, 4297.0),
-        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 686.6, 295.1, 1269.7, 1904.9),
-        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4472.5, 2869.6, 1074.3, 972.1),
+        // Refreshed after in-order field prediction on the string channel:
+        // Decode (String) 0.874 → 1.219 GB/s (advantage vs KSER +27.7% → +71.0%),
+        // memory unchanged at 361.2 KB/op.
+        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1930.3, 1129.0, 361.2, 1337.6),
+        // Refreshed after SWAR + in-order field prediction: Decode (Bytes) 0.723 → 1.011 GB/s
+        // (advantage vs KSER +74.0% → +144.9%), memory unchanged at 621.2 KB/op.
+        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1601.5, 653.8, 621.2, 4297.0),
+        // Refreshed after SWAR whitespace/scanString + field prediction on StreamingGhostSource:
+        // Decode (Streaming) 0.434 → 0.525 GB/s (advantage vs KSER +132.7% → +176.8%),
+        // memory ~unchanged (1269.7 → 1268.7 KB/op).
+        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 831.3, 300.9, 1268.7, 1904.9),
+        // Re-baselined from a 7-run pooled mean (3 runs at the commit that set the previous
+        // 4472.5/2869.6 pair, 4 runs after the decode work — the encode path is byte-identical
+        // between them). The previous value came from a lucky sample: it sits above every one
+        // of those 7 runs, so the gate failed on unchanged code. Encode (String) allocates the
+        // most of any category (1074 KB/op) and is the noisiest, ~10% per-run stdev on Ghost
+        // and on KSER alike; gating a ratio of two such means at 10% compounds that spread.
+        // Observed advantage across the 7 runs: +25.4% … +50.9%, mean +38.8%.
+        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4157.3, 2994.8, 1074.3, 972.1),
         Baseline(TWITTER, ENCODE_BYTES, Metric.THROUGHPUT, 2341.8, 1226.5, 420.2, 2206.8),
         Baseline(TWITTER, ENCODE_STREAMING, Metric.THROUGHPUT, 2325.2, 1436.1, 426.9, 455.0),
 

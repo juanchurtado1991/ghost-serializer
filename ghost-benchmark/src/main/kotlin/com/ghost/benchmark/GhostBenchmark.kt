@@ -46,7 +46,7 @@ import com.google.gson.stream.JsonWriter as GsonWriter
 
 internal fun runAndPrintColdStart(smallBytes: ByteString, engines: BenchmarkEngines) {
     val coldMetrics = runColdStart(smallBytes, engines.jackson)
-    printRankedTable("COLD START (first parse, before JUnit suite)", coldMetrics)
+    printColdStartTable("COLD START (first parse, before JUnit suite)", coldMetrics)
 }
 
 @Suppress("CheckResult")
@@ -565,46 +565,98 @@ private fun averageBenchResult(list: List<BenchResult>): BenchResult {
 // Printing & Presentation
 // ============================================================================
 
-internal fun printFinalResults(finalResults: BenchmarkSessionResults) {
+internal fun printFinalResults(finalResults: BenchmarkSessionResults, payloads: BenchmarkPayloads) {
     val sessions = BenchmarkStandard.SYNTHETIC_SESSIONS
     val samples = BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION
     val titleSuffix = " (STATISTICAL AVG OF $sessions SESSIONS × $samples SAMPLES)"
 
     printModeTables(
         "DESERIALIZATION: LIST_MEDIUM (200 objects)$titleSuffix",
-        finalResults.listMedium
+        finalResults.listMedium,
+        payloadBytes = payloads.listMediumBytes.size.toLong(),
     )
     printModeTables(
         "DESERIALIZATION: SYNC_FULL_LARGE (2000 objects)$titleSuffix",
-        finalResults.syncLarge
+        finalResults.syncLarge,
+        payloadBytes = payloads.syncLargeBytes.size.toLong(),
     )
-    printModeTables("SERIALIZATION: WRITING (1000 objects)$titleSuffix", finalResults.writing)
+    printModeTables(
+        "SERIALIZATION: WRITING (1000 objects)$titleSuffix",
+        finalResults.writing,
+        payloadBytes = payloads.writingBytes.size.toLong(),
+    )
     printRankedTable(
         "STRESS TEST: DEEP NESTING (20 Levels)$titleSuffix",
-        finalResults.stress.nesting
+        finalResults.stress.nesting,
+        payloadBytes = payloads.stressTreeBytes.size.toLong(),
     )
-    printRankedTable("FAILURE RESILIENCE (Malformed JSON)$titleSuffix", finalResults.failure)
+    printRankedTable(
+        "FAILURE RESILIENCE (Malformed JSON)$titleSuffix",
+        finalResults.failure,
+        payloadBytes = payloads.failureBytes.size.toLong(),
+    )
 }
 
-private fun printModeTables(title: String, metrics: ModeMetrics) {
+private fun printModeTables(title: String, metrics: ModeMetrics, payloadBytes: Long) {
     println("\n========================================================")
     println("BENCHMARK: $title")
     println("========================================================")
-    printRankedSubTable("STRING MODE", metrics.string)
-    printRankedSubTable("BYTES MODE", metrics.bytes)
-    printRankedSubTable("STREAMING MODE", metrics.streaming)
+    println(
+        "  Payload: %d bytes → µs/op and decimal GB/s (payload / seconds / 10⁹)".format(payloadBytes)
+    )
+    printRankedSubTable("STRING MODE", metrics.string, payloadBytes)
+    printRankedSubTable("BYTES MODE", metrics.bytes, payloadBytes)
+    printRankedSubTable("STREAMING MODE", metrics.streaming, payloadBytes)
 }
 
-private fun printRankedSubTable(label: String, metrics: BenchmarkMetrics) {
+private fun printRankedSubTable(label: String, metrics: BenchmarkMetrics, payloadBytes: Long) {
     println("\n--- $label ---")
-    printRankedTableBody(metrics)
+    printRankedTableBody(metrics, payloadBytes)
 }
 
-private fun printRankedTable(title: String, metrics: BenchmarkMetrics) {
+private fun printRankedTable(title: String, metrics: BenchmarkMetrics, payloadBytes: Long) {
     println("\n========================================================")
     println("BENCHMARK: $title")
     println("========================================================")
-    printRankedTableBody(metrics)
+    println(
+        "  Payload: %d bytes → µs/op and decimal GB/s (payload / seconds / 10⁹)".format(payloadBytes)
+    )
+    printRankedTableBody(metrics, payloadBytes)
+}
+
+/**
+ * Cold start measures one-time initialization latency, not sustained throughput.
+ *
+ * Converting a single first parse to GB/s obscures the startup cost and makes the
+ * result payload-size-dependent, so this table intentionally stays in milliseconds.
+ */
+private fun printColdStartTable(title: String, metrics: BenchmarkMetrics) {
+    println("\n========================================================")
+    println("BENCHMARK: $title")
+    println("========================================================")
+
+    val rankings = engineRankings(metrics).sortedBy { it.nanos }
+    println("| RANK | ENGINE   | Latency (ms) |")
+    println("|------|----------|--------------|")
+    rankings.forEachIndexed { index, rank ->
+        println(
+            "| %-4d | %-8s | %12.3f |".format(
+                index + 1,
+                rank.name,
+                rank.nanos / 1_000_000.0,
+            )
+        )
+    }
+
+    val winner = rankings.first()
+    val slowest = rankings.last()
+    val latencyReduction =
+        ((slowest.nanos.toDouble() - winner.nanos.toDouble()) / slowest.nanos.toDouble()) * 100.0
+    println(
+        "   WINNER: ${winner.name} (%.1f%% lower latency than ${slowest.name})".format(
+            latencyReduction
+        )
+    )
 }
 
 /**
@@ -675,8 +727,8 @@ private data class EngineRank(
     val stDevNanos: Long
 )
 
-private fun printRankedTableBody(metrics: BenchmarkMetrics) {
-    val rankings = listOf(
+private fun engineRankings(metrics: BenchmarkMetrics): List<EngineRank> {
+    return listOf(
         EngineRank(
             "GHOST",
             metrics.ghost.nanos,
@@ -691,24 +743,40 @@ private fun printRankedTableBody(metrics: BenchmarkMetrics) {
         ),
         EngineRank("KSER", metrics.kser.nanos, metrics.kser.allocBytes, metrics.kser.stdevNanos),
         EngineRank("GSON", metrics.gson.nanos, metrics.gson.allocBytes, metrics.gson.stdevNanos)
-    ).filter { it.nanos > 0 }
-        .sortedBy { it.nanos }
+    ).filter { it.nanos > 0L }
+}
 
-    println("| RANK | ENGINE   | TOTAL(ms)       | MEM(KB)    |")
-    println("|------|----------|-----------------|------------|")
-
-    rankings.forEachIndexed { index, rank ->
-        val totalMs = rank.nanos / 1_000_000.0
-        val stDevMs = rank.stDevNanos / 1_000_000.0
-        val memKb = rank.mem / 1024.0
-
-        val timeStr = if (stDevMs > 0) {
-            "%7.3f ±%-5.3f".format(totalMs, stDevMs)
-        } else {
-            "%7.3f        ".format(totalMs)
+private fun printRankedTableBody(metrics: BenchmarkMetrics, payloadBytes: Long) {
+    val rankings = engineRankings(metrics)
+        .sortedByDescending {
+            BenchmarkThroughput.nanosToGbPerSec(it.nanos, payloadBytes)
         }
 
-        println("| %-4d | %-8s | %-15s | %10.1f |".format(index + 1, rank.name, timeStr, memKb))
+    println("| RANK | ENGINE   | Throughput (GB/s) | Latency (µs/op)   | Mem (KB/op) |")
+    println("|------|----------|-------------------|-------------------|------------|")
+
+    rankings.forEachIndexed { index, rank ->
+        val meanUs = BenchmarkThroughput.nanosToMicros(rank.nanos)
+        val stdevUs = BenchmarkThroughput.nanosStdevToMicros(rank.stDevNanos)
+        val meanGb = BenchmarkThroughput.nanosToGbPerSec(rank.nanos, payloadBytes)
+        val stdevGb = BenchmarkThroughput.nanosStdevToGbPerSec(
+            rank.nanos,
+            rank.stDevNanos,
+            payloadBytes,
+        )
+        val memKb = rank.mem / 1024.0
+        val latencyStr = BenchmarkThroughput.formatMicrosWithStdev(meanUs, stdevUs)
+        val speedStr = BenchmarkThroughput.formatGbPerSecWithStdev(meanGb, stdevGb)
+
+        println(
+            "| %-4d | %-8s | %-17s | %-17s | %10.1f |".format(
+                index + 1,
+                rank.name,
+                speedStr,
+                latencyStr,
+                memKb,
+            )
+        )
     }
 
     val winner = rankings.first()
