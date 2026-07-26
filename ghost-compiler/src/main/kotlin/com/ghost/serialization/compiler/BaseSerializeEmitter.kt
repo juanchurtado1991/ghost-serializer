@@ -286,14 +286,26 @@ internal abstract class BaseSerializeEmitter(
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
             if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {
-                code.addStatement("val tempFlatWriter = com.ghost.serialization.writer.GhostJsonFlatWriter(com.ghost.serialization.writer.FlatByteArrayWriter())")
+                val flatWriter = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_FLAT_WRITER)
+                val flatBuffer = ClassName(C.PKG_WRITER, C.STR_FLAT_BYTE_ARRAY_WRITER)
+                val bridgeWriterName = C.STR_TEMP_FLAT_WRITER
+                code.add(
+                    CodeBlock.builder()
+                        .add(C.TEMPLATE_TEMP_FLAT_WRITER_DECL, bridgeWriterName, flatWriter)
+                        .indent()
+                        .add(C.TEMPLATE_TEMP_FLAT_WRITER_BUFFER, flatBuffer)
+                        .unindent()
+                        .add(C.TEMPLATE_TEMP_FLAT_WRITER_CLOSE)
+                        .build(),
+                )
                 code.addStatement(
-                    "%T.%L(tempFlatWriter, %L)",
+                    C.TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL,
                     prop.customEncoder.provider,
                     prop.customEncoder.functionName,
+                    bridgeWriterName,
                     accessor
                 )
-                code.addStatement("writer.buffer.writeString(tempFlatWriter.buffer.toStringUtf8())")
+                code.addStatement(C.TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE, bridgeWriterName)
             } else {
                 code.addStatement(
                     C.STR_CUSTOM_ENCODER_CALL,
@@ -555,7 +567,7 @@ internal abstract class BaseSerializeEmitter(
     protected fun getContextualSerializerName(type: KSType): String {
         return contextualSerializers.getOrPut(type) {
             val simpleName = type.declaration.simpleName.asString()
-            val nullableSuffix = if (type.isMarkedNullable) "Nullable" else ""
+            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else ""
             C.STR_CONTEXTUAL_PREFIX +
                 simpleName.replaceFirstChar { it.lowercase() } +
                 nullableSuffix +

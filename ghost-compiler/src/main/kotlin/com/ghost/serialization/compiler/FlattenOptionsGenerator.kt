@@ -1,7 +1,6 @@
 package com.ghost.serialization.compiler
 
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
@@ -105,37 +104,20 @@ internal object FlattenOptionsGenerator {
         val hashConfig = PerfectHashFinder.findPerfectHash(names)
 
         val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
-        val optionsBuilder = CodeBlock.builder()
-        if (hashConfig.extendedKeyHash) {
-            optionsBuilder.add(
-                C.TEMPLATE_OPTIONS_OF_SEEDS_EXTENDED_START,
-                optionsClass,
-                hashConfig.shift,
-                hashConfig.multiplier,
-                hashConfig.tableSize,
-                textChannel,
-                true
-            )
-        } else {
-            optionsBuilder.add(
-                C.TEMPLATE_OPTIONS_OF_SEEDS_START,
-                optionsClass,
-                hashConfig.shift,
-                hashConfig.multiplier,
-                hashConfig.tableSize,
-                textChannel
-            )
-        }
-
-        names.forEach { name ->
-            optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
-        }
-        optionsBuilder.add(C.STR_PAREN_CLOSE)
+        val optionsInitializer = GeneratedCallFormat.jsonReaderOptionsOf(
+            optionsClass = optionsClass,
+            shift = hashConfig.shift,
+            multiplier = hashConfig.multiplier,
+            tableSize = hashConfig.tableSize,
+            textChannel = textChannel,
+            extendedKeyHash = hashConfig.extendedKeyHash,
+            names = names,
+        )
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(optionsName, optionsClass)
                 .addModifiers(KModifier.PRIVATE)
-                .initializer(optionsBuilder.build())
+                .initializer(optionsInitializer)
                 .build()
         )
 

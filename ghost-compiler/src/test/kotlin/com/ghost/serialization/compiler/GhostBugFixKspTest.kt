@@ -133,7 +133,7 @@ class GhostBugFixKspTest {
             .map { it.readText() }.firstOrNull()
         assertTrue(generated != null, "LocationPermissionSerializer.kt not generated")
         assertTrue(
-            Regex("JsonReaderOptions\\.of\\(\\d+,").containsMatchIn(generated!!),
+            Regex("""JsonReaderOptions\.of\(\s*\d+,""").containsMatchIn(generated!!),
             "Expected ENUM_OPTIONS to use computed perfect-hash seeds, got:\n$generated"
         )
     }
