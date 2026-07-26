@@ -555,15 +555,6 @@ class GhostJsonWriter(
     }
 
     /**
-     * Writes the null literal.
-     */
-    @Suppress("unused")
-    @InternalGhostApi
-    fun writeNullValueRaw() {
-        buffer.write(NULL_BS)
-    }
-
-    /**
      * Appends the separator comma if needsComma is true.
      */
     @Suppress("NOTHING_TO_INLINE")

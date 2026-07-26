@@ -34,12 +34,6 @@ class GhostJsonUtf8InputTest {
     }
 
     @Test
-    fun toUtf8JsonBytesReturnsSameReferenceForUtf8() {
-        val bytes = sample.encodeToByteArray()
-        assertSame(bytes, toUtf8JsonBytes(bytes))
-    }
-
-    @Test
     fun emptyInputIsHandled() {
         val empty = ByteArray(0)
         withPreparedUtf8Json(empty, 0) { data, offset, length ->

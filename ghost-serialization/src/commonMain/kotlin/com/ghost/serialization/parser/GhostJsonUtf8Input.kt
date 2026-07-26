@@ -93,21 +93,6 @@ internal fun prepareUtf8JsonSource(source: BufferedSource): BufferedSource {
     )
 }
 
-/**
- * Materializes a contiguous UTF-8 view (copy only when offset/transcode requires it).
- * Prefer [withPreparedUtf8Json] on the Flat reader hot path.
- */
-internal fun toUtf8JsonBytes(bytes: ByteArray, limit: Int = bytes.size): ByteArray {
-    var result: ByteArray = bytes
-    withPreparedUtf8Json(bytes, limit) { data, offset, length ->
-        result = when {
-            offset == 0 && length == data.size -> data
-            else -> data.copyOfRange(offset, offset + length)
-        }
-    }
-    return result
-}
-
 internal enum class JsonEncodingKind {
     UTF8,
     UTF16_LE,

@@ -57,13 +57,6 @@ import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_STR
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_QUOTE
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_BACKSLASH
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_U
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_QUOTE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSLASH
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSPACE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_FORM_FEED
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_NEWLINE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_CARRIAGE_RETURN
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_TAB
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_B_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_F_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_N_INT
@@ -91,14 +84,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         val newScratch = CharArray(WRITER_SCRATCH_SIZE)
         scratch = newScratch
         return newScratch
-    }
-
-    @Suppress("unused")
-    @InternalGhostApi
-    fun release() {
-        scratch = null
-        needsComma = false
-        depth = 0
     }
 
     @InternalGhostApi
@@ -541,12 +526,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         } finally {
             com.ghost.serialization.releaseScratchBuffer(byteScratch)
         }
-    }
-
-    @Suppress("unused")
-    @InternalGhostApi
-    fun writeNullValueRaw() {
-        buffer.writeNull()
     }
 
     @PublishedApi

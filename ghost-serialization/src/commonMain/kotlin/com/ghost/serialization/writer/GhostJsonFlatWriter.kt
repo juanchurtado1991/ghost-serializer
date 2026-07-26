@@ -81,23 +81,6 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     }
 
     /**
-     * Returns the scratch buffer to its pool. Must be called once at the end
-     * of the root encode so subsequent encodes (potentially on other threads)
-     * can reuse the buffer.
-     */
-    @Suppress("unused")
-    @InternalGhostApi
-    fun release() {
-        val currentScratch = scratch
-        if (currentScratch != null) {
-            releaseScratchBuffer(currentScratch)
-            scratch = null
-        }
-        needsComma = false
-        depth = 0
-    }
-
-    /**
      * Resets writer state for reuse from a pool while keeping the scratch
      * buffer warm. Pair with a [FlatByteArrayWriter.reset] on the underlying
      * [buffer] to start a fresh encode without re-allocating either.
@@ -548,15 +531,6 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
         if (bytesWrittenLength > 0) {
             buffer.write(scratchBuf, 0, bytesWrittenLength)
         }
-    }
-
-    /**
-     * Writes the null literal.
-     */
-    @Suppress("unused")
-    @InternalGhostApi
-    fun writeNullValueRaw() {
-        buffer.writeNull()
     }
 
     /**
