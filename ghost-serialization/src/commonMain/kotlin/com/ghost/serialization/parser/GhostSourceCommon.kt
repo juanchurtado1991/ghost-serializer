@@ -5,11 +5,8 @@ import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.BITMASK_UNIT
 import com.ghost.serialization.parser.GhostJsonConstants.BYTE_SHIFT_UNIT
-import com.ghost.serialization.parser.GhostJsonConstants.COLLISION_HASH_MULTIPLIER
 import com.ghost.serialization.parser.GhostJsonConstants.HASH_SHIFT
 import com.ghost.serialization.parser.GhostJsonConstants.MATCH_END
-import com.ghost.serialization.parser.GhostJsonConstants.PACKED_KEY_END_SHIFT
-import com.ghost.serialization.parser.GhostJsonConstants.PACKED_KEY_HASH_MASK
 import com.ghost.serialization.parser.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
 import com.ghost.serialization.parser.GhostJsonConstants.SPACE_INT
@@ -129,82 +126,6 @@ internal inline fun findClosingQuoteImpl(
     }
     return MATCH_END
 }
-
-/**
- * Finds the closing quote and computes the dispatch hash in the same pass.
- *
- * The low 32 bits contain the hash and the high 32 bits contain the closing-quote index.
- * [MATCH_END] is returned when the string is unterminated or needs escape handling.
- *
- * The hash must stay byte-for-byte compatible with the former per-reader `computeKeyHash`
- * helpers: the first four bytes are packed little-endian; only collision-bearing option sets
- * continue with the polynomial hash after byte four.
- *
- * Pack layout: `(endIndex.toLong() shl PACKED_KEY_END_SHIFT) or (hash.toLong() and PACKED_KEY_HASH_MASK)`.
- */
-internal inline fun findClosingQuoteWithKeyHashImpl(
-    start: Int,
-    limit: Int,
-    hasCollisions: Boolean,
-    getByte: (Int) -> Int,
-): Long {
-    var position = start
-    var offset = 0
-    var key = 0
-    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
-
-    while (position < limit && offset < 4) {
-        val byte = getByte(position)
-        if (byte < ASCII_LIMIT &&
-            ((escapeMasks[byte shr BITMASK_SHIFT] shr
-                    (byte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
-        ) {
-            return if (byte == QUOTE_INT) {
-                packClosingQuoteWithKeyHash(position, key)
-            } else {
-                MATCH_END.toLong()
-            }
-        }
-        key = key or (byte shl (offset * Byte.SIZE_BITS))
-        position++
-        offset++
-    }
-
-    if (!hasCollisions) {
-        val end = findClosingQuoteImpl(position, limit, getByte)
-        return if (end == MATCH_END) {
-            MATCH_END.toLong()
-        } else {
-            packClosingQuoteWithKeyHash(end, key)
-        }
-    }
-
-    while (position < limit) {
-        val byte = getByte(position)
-        if (byte < ASCII_LIMIT &&
-            ((escapeMasks[byte shr BITMASK_SHIFT] shr
-                    (byte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
-        ) {
-            return if (byte == QUOTE_INT) {
-                packClosingQuoteWithKeyHash(position, key)
-            } else {
-                MATCH_END.toLong()
-            }
-        }
-        key = key * COLLISION_HASH_MULTIPLIER + byte
-        position++
-    }
-    return MATCH_END.toLong()
-}
-
-internal fun packClosingQuoteWithKeyHash(endIndex: Int, keyHash: Int): Long =
-    (endIndex.toLong() shl PACKED_KEY_END_SHIFT) or (keyHash.toLong() and PACKED_KEY_HASH_MASK)
-
-internal fun unpackClosingQuoteIndex(packed: Long): Int =
-    (packed ushr PACKED_KEY_END_SHIFT).toInt()
-
-internal fun unpackKeyHash(packed: Long): Int =
-    (packed and PACKED_KEY_HASH_MASK).toInt()
 
 internal inline fun scanStringImpl(
     start: Int,

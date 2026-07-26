@@ -583,21 +583,16 @@ open class GhostJsonFlatReader(
         }
         val start = position + 1
         val localData = rawData
-        val scanResult = findClosingQuoteWithKeyHashImpl(
-            start,
-            limit,
-            options.hasCollisions,
-        ) {
+        val end = findClosingQuoteImpl(start, limit) {
             localData[it].toInt() and C.BYTE_MASK
         }
 
-        if (scanResult == C.MATCH_END.toLong()) {
+        if (end == -1) {
             throwError(C.UNTERMINATED_STRING_ERROR)
         }
 
-        val end = unpackClosingQuoteIndex(scanResult)
         val length = end - start
-        val key = unpackKeyHash(scanResult)
+        val key = computeKeyHash(start, length, options.hasCollisions)
 
         val hasIndex = ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)
         val index = options.dispatch[hasIndex]
@@ -624,6 +619,35 @@ open class GhostJsonFlatReader(
         }
 
         return C.MATCH_NONE
+    }
+
+    /**
+     * Computes the 32-bit hash value of the string range.
+     */
+    private fun computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
+        var key = 0
+        if (length >= 4) {
+            val b0 = rawData[start].toInt() and C.BYTE_MASK
+            val b1 = rawData[start + 1].toInt() and C.BYTE_MASK
+            val b2 = rawData[start + 2].toInt() and C.BYTE_MASK
+            val b3 = rawData[start + 3].toInt() and C.BYTE_MASK
+            key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)
+            if (hasCollisions) {
+                var ci = C.UNICODE_HEX_LENGTH
+                while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + (rawData[start + ci].toInt() and C.BYTE_MASK); ci++ }
+            }
+        } else {
+            if (length >= 1) {
+                key = key or (rawData[start].toInt() and C.BYTE_MASK)
+            }
+            if (length >= 2) {
+                key = key or ((rawData[start + 1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)
+            }
+            if (length >= 3) {
+                key = key or ((rawData[start + 2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)
+            }
+        }
+        return key
     }
 
     /**

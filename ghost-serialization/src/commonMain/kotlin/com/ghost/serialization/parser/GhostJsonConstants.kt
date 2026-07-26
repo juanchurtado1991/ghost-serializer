@@ -227,7 +227,7 @@ public object GhostJsonConstants {
     const val DEFAULT_DISPATCH_MULTIPLIER = 31
     /** Default dispatch table size. Must be a power of two. */
     const val DEFAULT_DISPATCH_TABLE_SIZE = 1024
-    /** Polynomial multiplier for collision disambiguation (must match findClosingQuoteWithKeyHashImpl and PerfectHashFinder). */
+    /** Polynomial multiplier for collision disambiguation (must match all reader computeKeyHash and PerfectHashFinder). */
     const val COLLISION_HASH_MULTIPLIER = 31
 
     // --- Pooling & Cache Metrics ---
@@ -383,13 +383,6 @@ public object GhostJsonConstants {
     const val SHIFT_12 = 12
     const val SHIFT_8 = 8
     const val SHIFT_4 = 4
-    /** Shift used when packing a key-select end index into the high half of a Long. */
-    const val PACKED_KEY_END_SHIFT = 32
-    /**
-     * Low-32 mask for [findClosingQuoteWithKeyHashImpl] packed results:
-     * high 32 bits = closing-quote index, low 32 bits = dispatch key hash.
-     */
-    const val PACKED_KEY_HASH_MASK = 0xFFFF_FFFFL
     const val HEX_MASK = 0xF
     const val UNICODE_HEX_LENGTH = 4
     const val SURROGATE_OFFSET = 6
