@@ -2,12 +2,14 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kover)
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "com.ghost.protobuf"
+        compileSdk = 35
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -41,14 +43,4 @@ kotlin {
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
-}
-
-android {
-    namespace = "com.ghost.protobuf"
-    compileSdk = 35
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
 }

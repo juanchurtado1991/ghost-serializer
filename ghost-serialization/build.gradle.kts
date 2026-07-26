@@ -2,18 +2,27 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kover)
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "com.ghost.serialization"
+        compileSdk = 36
+        minSdk = 21
+        optimization {
+            consumerKeepRules.file("consumer-rules.pro")
+        }
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
-        publishLibraryVariants("release")
+        // AGP 9's com.android.kotlin.multiplatform.library disables Android unit tests by
+        // default (single-variant architecture) — opt back in to restore what used to run as
+        // testDebugUnitTest under the old com.android.library plugin.
+        withHostTest {}
     }
     iosArm64()
     iosSimulatorArm64()
@@ -52,20 +61,5 @@ tasks.configureEach {
     val isSourcesJar = name.contains("sourcesJar", ignoreCase = true)
     if ((name.startsWith("compile") || name.startsWith("ksp") || isSourcesJar) && name != "kspCommonMainKotlinMetadata") {
         dependsOn(tasks.matching { it.name == "kspCommonMainKotlinMetadata" })
-    }
-}
-
-android {
-    namespace = "com.ghost.serialization"
-    compileSdk = 36
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    defaultConfig {
-        minSdk = 21
-        consumerProguardFiles("consumer-rules.pro")
     }
 }

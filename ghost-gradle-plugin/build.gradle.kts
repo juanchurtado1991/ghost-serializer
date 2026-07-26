@@ -48,8 +48,11 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
-        apiVersion.set(KotlinVersion.KOTLIN_1_9)
-        languageVersion.set(KotlinVersion.KOTLIN_1_9)
+        // Kotlin 2.4.0's compiler dropped support for emitting language/API version 1.9
+        // (was previously pinned here for max backward-compat with plugin consumers).
+        // 2.2 is the oldest version still accepted as of this bump.
+        apiVersion.set(KotlinVersion.KOTLIN_2_2)
+        languageVersion.set(KotlinVersion.KOTLIN_2_2)
     }
 }
 

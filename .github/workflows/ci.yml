@@ -73,7 +73,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: ghost-serialization Android unit tests
-        run: ./gradlew :ghost-serialization:testDebugUnitTest
+        run: ./gradlew :ghost-serialization:testAndroidHostTest
 
   test-ios:
     name: Tests (iOS)
