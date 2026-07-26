@@ -251,30 +251,16 @@ fun GhostJsonStringReader.consumeNull() {
 
 internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int): Int {
     val bytes = latin1Bytes
-    if (bytes != null) {
-        return findClosingQuoteImpl(start, lim) { bytes[it].toInt() and C.BYTE_MASK }
+    return if (bytes != null) {
+        findClosingQuoteImpl(start, lim) { bytes[it].toInt() and C.BYTE_MASK }
+    } else {
+        val chars = rawChars
+        findClosingQuoteImpl(start, lim) { chars[it].code }
     }
-    // kotlinx.serialization StringJsonLexer pattern: optimistic indexOf (JVM intrinsic /
-    // SIMD) then verify the span has no escapes/controls; otherwise fall to the slow path.
-    val source = rawData
-    val end = source.indexOf('"', startIndex = start)
-    if (end < 0 || end >= lim) return C.MATCH_END
-    val escapeMasks = C.ESCAPE_MASKS
-    var i = start
-    while (i < end) {
-        val code = source[i].code
-        if (code < C.ASCII_LIMIT &&
-            ((escapeMasks[code shr C.BITMASK_SHIFT] shr (code and C.BITMASK_INDEX_MASK)) and
-                    C.BITMASK_UNIT) != C.RESULT_NONE
-        ) {
-            return C.MATCH_END
-        }
-        i++
-    }
-    return end
 }
 
 private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
+    val chars = rawChars
     val lim = limit
     val contentStart = position + 1
     val end = findClosingQuote(contentStart, lim)
@@ -286,7 +272,7 @@ private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
         start = contentStart,
         length = length,
         onError = { throwError(C.ERR_EXPECTED_BOOLEAN) },
-        getByte = { codeAt(it) },
+        getByte = { chars[it].code },
     )
 }
 
@@ -424,29 +410,26 @@ private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int,
         }
         return key
     }
-    val source = rawData
+    val chars = rawChars
     if (length >= 4) {
-        val byte0 = source[start].code
-        val byte1 = source[start + 1].code
-        val byte2 = source[start + 2].code
-        val byte3 = source[start + 3].code
+        val byte0 = chars[start].code
+        val byte1 = chars[start + 1].code
+        val byte2 = chars[start + 2].code
+        val byte3 = chars[start + 3].code
         key = byte0 or (byte1 shl C.SHIFT_8) or (byte2 shl C.SHIFT_16) or (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
             var ci = C.UNICODE_HEX_LENGTH
-            while (ci < length) {
-                key = key * C.COLLISION_HASH_MULTIPLIER + source[start + ci].code
-                ci++
-            }
+            while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + chars[start + ci].code; ci++ }
         }
     } else {
         if (length >= 1) {
-            key = key or source[start].code
+            key = key or chars[start].code
         }
         if (length >= 2) {
-            key = key or (source[start + 1].code shl C.SHIFT_8)
+            key = key or (chars[start + 1].code shl C.SHIFT_8)
         }
         if (length >= 3) {
-            key = key or (source[start + 2].code shl C.SHIFT_16)
+            key = key or (chars[start + 2].code shl C.SHIFT_16)
         }
     }
     return key
@@ -475,16 +458,16 @@ private inline fun GhostJsonStringReader.verifyKeyMatch(
             index++
         }
     } else {
-        val source = rawData
+        val chars = rawChars
         while (index + 3 < length) {
-            if (source[start + index] != expected[index]) return false
-            if (source[start + index + 1] != expected[index + 1]) return false
-            if (source[start + index + 2] != expected[index + 2]) return false
-            if (source[start + index + 3] != expected[index + 3]) return false
+            if (chars[start + index] != expected[index]) return false
+            if (chars[start + index + 1] != expected[index + 1]) return false
+            if (chars[start + index + 2] != expected[index + 2]) return false
+            if (chars[start + index + 3] != expected[index + 3]) return false
             index += 4
         }
         while (index < length) {
-            if (source[start + index] != expected[index]) return false
+            if (chars[start + index] != expected[index]) return false
             index++
         }
     }
@@ -495,7 +478,7 @@ private inline fun GhostJsonStringReader.verifyKeyMatch(
     nextTokenByte = C.RESET_TOKEN_BYTE
     if (consumeSeparator) {
         if (newPos < limit) {
-            val colonToken = codeAt(newPos)
+            val colonToken = if (bytes != null) (bytes[newPos].toInt() and C.BYTE_MASK) else rawChars[newPos].code
             if (colonToken == C.COLON_INT) {
                 position = newPos + C.SINGLE_CHAR_SIZE
             } else {

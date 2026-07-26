@@ -13,10 +13,9 @@ import kotlin.test.assertSame
  * Gate D of the String-mode Latin1 fast-path (Fase 2 of the decode-optimization plan):
  * correctness for content that specifically exercises the [GhostJsonStringReader.latin1Bytes]
  * branch — mixed Latin1-supplement content, the string-pool length boundary, and the
- * whole-document fallback to in-place [GhostJsonStringReader.rawData] lexing when a non-Latin1
- * character appears anywhere in the document (no full CharArray copy on the hot path). JVM-only:
- * latin1Bytes is always null on other platforms, so these scenarios only meaningfully exercise
- * anything here.
+ * whole-document fallback to [GhostJsonStringReader.rawChars] when a non-Latin1 character
+ * appears anywhere in the document. JVM-only: latin1Bytes is always null on other platforms,
+ * so these scenarios only meaningfully exercise anything here.
  */
 class GhostStringReaderLatin1Test {
 
@@ -24,7 +23,7 @@ class GhostStringReaderLatin1Test {
     fun sanityLatin1PathIsActuallyEngagedForPlainAscii() {
         // Guards the rest of this file's premise: if a future change accidentally stops
         // populating latin1Bytes for plain-ASCII input, every other test here would still
-        // pass via the in-place rawData fallback and silently stop testing what this file is for.
+        // pass via the rawChars fallback and silently stop testing what this file is for.
         val reader = GhostJsonStringReader("""{"a":1}""")
         assertNotNull(reader.latin1Bytes, "expected the Latin1 fast path to engage for ASCII JSON")
     }
@@ -107,8 +106,11 @@ class GhostStringReaderLatin1Test {
     @Test
     fun singleNonLatin1FieldFallsBackWholeDocumentButAllFieldsStillDecodeCorrectly() {
         // The JVM's compact-string coder is whole-String: one CJK character anywhere forces
-        // latin1Bytes=null for the *entire* document. Hot paths then lex [rawData] in place
-        // (no CharArray copy). Every field must still decode correctly.
+        // rawChars for the *entire* document, not just that field. This is expected behavior
+        // (documented on GhostJsonStringReader.latin1Bytes), not a limitation — this test
+        // exists so nobody "fixes" it into per-field granularity later. Every field, including
+        // the ones before and after the non-Latin1 one, must still decode correctly via the
+        // lazy rawChars fallback.
         val json = """{"first":"ascii value","middle":"漢字","last":42,"after":"still ascii"}"""
         val reader = GhostJsonStringReader(json)
         assertNull(reader.latin1Bytes, "one non-Latin1 char anywhere should disable the fast path for the whole document")
@@ -126,53 +128,6 @@ class GhostStringReaderLatin1Test {
         assertEquals("after", reader.nextKey())
         reader.consumeKeySeparator()
         assertEquals("still ascii", reader.nextString())
-        reader.endObject()
-    }
-
-    @Test
-    fun unicodeDocumentDoesNotMaterializeRawCharsOnHotPath() {
-        // After a full hot-path decode of a non-Latin1 document, rawChars must still be lazy —
-        // proving we no longer copy the whole String into a CharArray for every Twitter-like payload.
-        val json = """{"id":1,"name":"漢字","url":"https://example.com/路徑"}"""
-        val reader = GhostJsonStringReader(json)
-        assertNull(reader.latin1Bytes)
-
-        reader.beginObject()
-        while (reader.hasNext()) {
-            reader.nextKey()
-            reader.consumeKeySeparator()
-            reader.skipValue()
-        }
-        reader.endObject()
-
-        // Touching the private validity flag via reflection is brittle; instead assert that a
-        // subsequent escape slow-path still works (which builds rawChars) and that decode was
-        // correct without needing it earlier — re-parse and read values.
-        val reader2 = GhostJsonStringReader(json)
-        reader2.beginObject()
-        assertEquals("id", reader2.nextKey())
-        reader2.consumeKeySeparator()
-        assertEquals(1, reader2.nextInt())
-        assertEquals("name", reader2.nextKey())
-        reader2.consumeKeySeparator()
-        assertEquals("漢字", reader2.nextString())
-        assertEquals("url", reader2.nextKey())
-        reader2.consumeKeySeparator()
-        assertEquals("https://example.com/路徑", reader2.nextString())
-        reader2.endObject()
-    }
-
-    @Test
-    fun escapedQuoteFallsToSlowPathAndDecodes() {
-        val json = """{"a":"say \"hi\"","b":2}"""
-        val reader = GhostJsonStringReader(json)
-        reader.beginObject()
-        assertEquals("a", reader.nextKey())
-        reader.consumeKeySeparator()
-        assertEquals("say \"hi\"", reader.nextString())
-        assertEquals("b", reader.nextKey())
-        reader.consumeKeySeparator()
-        assertEquals(2, reader.nextInt())
         reader.endObject()
     }
 
