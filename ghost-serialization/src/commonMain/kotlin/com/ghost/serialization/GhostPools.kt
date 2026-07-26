@@ -27,7 +27,7 @@ internal val SCRATCH_BUFFER_SIZE_INT = SCRATCH_BUFFER_SIZE
  * Tiered strategy handles small, medium, and large payloads efficiently.
  */
 @InternalGhostApi
-fun acquireScratchBuffer(minSize: Int = 48): ByteArray {
+fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
     val pool = getLocalPool()
     return when {
         minSize <= SCRATCH_BUFFER_SIZE_INT -> {

@@ -74,7 +74,7 @@ open class GhostJsonFlatReader(
     /**
      * Optimistic hint for [internalSelect]: the field index expected next, assuming JSON
      * objects list their fields in declaration order (the common case for machine-generated
-     * payloads such as Twitter API responses). When the incoming key matches this candidate,
+     * payloads). When the incoming key matches this candidate,
      * key identification collapses from three byte passes (scan + hash + verify) to a single
      * compare pass. A misprediction transparently falls back to the hashed dispatch, so the
      * hint never affects correctness — only speed. Reset to
@@ -225,7 +225,7 @@ open class GhostJsonFlatReader(
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
         if (position + size > limit || !expected.rangeEquals(0, rawData, position, size)) {
-            throwError("Expected literal ${expected.utf8()}")
+            throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
         position += size
         nextTokenByte = C.RESET_TOKEN_BYTE
@@ -530,7 +530,7 @@ open class GhostJsonFlatReader(
             (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
             (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
         ) {
-            throwError(C.ERR_EXPECTED_LITERAL + "null")
+            throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
         }
         position = p + 4
         nextTokenByte = C.RESET_TOKEN_BYTE

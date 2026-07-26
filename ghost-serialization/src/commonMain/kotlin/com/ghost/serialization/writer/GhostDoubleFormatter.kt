@@ -51,6 +51,15 @@ internal object GhostDoubleFormatter {
     private const val MAX_DECIMALS = 9
 
     /**
+     * Bytes reserved past [pos] for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
+     */
+    private const val LONG_DIRECT_SCRATCH_SPAN = 32
+
+    /** Scale applied to the base-100 remainder when indexing [C.DOUBLE_DIGIT_LUT] (2 ASCII digits). */
+    private const val DIGIT_PAIR_LUT_STRIDE = 2
+    private const val DIGIT_PAIR_WIDTH = 2
+
+    /**
      * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
      *
      * @param value The double value to write.
@@ -85,7 +94,7 @@ internal object GhostDoubleFormatter {
                 localValue.toLong(),
                 scratch,
                 pos,
-                scratchEnd = pos + 32,
+                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
                 writeDecimalZero = true
             ) - offset
         }
@@ -109,7 +118,7 @@ internal object GhostDoubleFormatter {
                 intPart + 1,
                 scratch,
                 pos,
-                scratchEnd = pos + 32,
+                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
                 writeDecimalZero = true
             ) - offset
         }
@@ -118,7 +127,7 @@ internal object GhostDoubleFormatter {
             intPart,
             scratch,
             pos,
-            scratchEnd = pos + 32,
+            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
             writeDecimalZero = false
         )
 
@@ -140,17 +149,17 @@ internal object GhostDoubleFormatter {
         var writePos = pos - 1
 
         while (decimalsToPrint >= 2) {
-            val q = fracInt / 100
-            val r = (fracInt - (q * 100)) * 2
+            val quotient = fracInt / C.BASE_HUNDRED
+            val lutOffset = (fracInt - (quotient * C.BASE_HUNDRED)) * DIGIT_PAIR_LUT_STRIDE
             C.DOUBLE_DIGIT_LUT.copyInto(
                 scratch,
                 writePos - 1,
-                r,
-                r + 2
+                lutOffset,
+                lutOffset + DIGIT_PAIR_WIDTH
             )
-            writePos -= 2
-            fracInt = q
-            decimalsToPrint -= 2
+            writePos -= DIGIT_PAIR_WIDTH
+            fracInt = quotient
+            decimalsToPrint -= DIGIT_PAIR_WIDTH
         }
         if (decimalsToPrint == 1) {
             scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()
@@ -189,7 +198,7 @@ internal object GhostDoubleFormatter {
                 doubleVal.toLong(),
                 scratch,
                 pos,
-                scratchEnd = pos + 32,
+                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
                 writeDecimalZero = true
             ) - offset
         }
@@ -213,7 +222,7 @@ internal object GhostDoubleFormatter {
                 intPart + 1,
                 scratch,
                 pos,
-                scratchEnd = pos + 32,
+                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
                 writeDecimalZero = true
             ) - offset
         }
@@ -222,7 +231,7 @@ internal object GhostDoubleFormatter {
             intPart,
             scratch,
             pos,
-            scratchEnd = pos + 32,
+            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
             writeDecimalZero = false
         )
 
@@ -243,17 +252,17 @@ internal object GhostDoubleFormatter {
         var writePos = pos - 1
 
         while (decimalsToPrint >= 2) {
-            val q = fracInt / 100
-            val r = (fracInt - (q * 100)) * 2
+            val quotient = fracInt / C.BASE_HUNDRED
+            val lutOffset = (fracInt - (quotient * C.BASE_HUNDRED)) * DIGIT_PAIR_LUT_STRIDE
             C.DOUBLE_DIGIT_LUT.copyInto(
                 scratch,
                 writePos - 1,
-                r,
-                r + 2
+                lutOffset,
+                lutOffset + DIGIT_PAIR_WIDTH
             )
-            writePos -= 2
-            fracInt = q
-            decimalsToPrint -= 2
+            writePos -= DIGIT_PAIR_WIDTH
+            fracInt = quotient
+            decimalsToPrint -= DIGIT_PAIR_WIDTH
         }
         if (decimalsToPrint == 1) {
             scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()
@@ -300,16 +309,16 @@ internal object GhostDoubleFormatter {
         var end = scratchEnd
 
         while (localValue >= C.BASE_HUNDRED) {
-            val q = localValue / C.BASE_HUNDRED
-            val r = (localValue - (q * C.BASE_HUNDRED)).toInt()
-            localValue = q
-            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]
-            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]
+            val quotient = localValue / C.BASE_HUNDRED
+            val remainder = (localValue - (quotient * C.BASE_HUNDRED)).toInt()
+            localValue = quotient
+            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]
+            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]
         }
         if (localValue >= C.BASE_TEN) {
-            val r = localValue.toInt()
-            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]
-            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]
+            val remainder = localValue.toInt()
+            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]
+            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]
         } else {
             scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()
         }

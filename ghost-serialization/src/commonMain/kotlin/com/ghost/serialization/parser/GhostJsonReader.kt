@@ -301,7 +301,7 @@ class GhostJsonReader(
             position + size <= limit && expected.rangeEquals(0, rawData, position, size)
         }
         if (!isValid) {
-            throwError("Expected literal ${expected.utf8()}")
+            throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
 
         position += size
@@ -590,7 +590,7 @@ class GhostJsonReader(
         val digitValue3 = hexLookupTable[hexByte3]
 
         if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
-            throwError("Invalid unicode escape at $currentPosition")
+            throwError(C.ERR_INVALID_UNICODE_AT + currentPosition)
         }
 
         return (digitValue0 shl C.SHIFT_12) or

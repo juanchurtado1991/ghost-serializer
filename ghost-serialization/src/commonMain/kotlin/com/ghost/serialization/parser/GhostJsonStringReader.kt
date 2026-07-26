@@ -435,7 +435,7 @@ class GhostJsonStringReader(
         val digitValue3 = hexLookupTable[hexByte3]
 
         if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
-            throwError("Invalid unicode escape at $currentPosition")
+            throwError(C.ERR_INVALID_UNICODE_AT + currentPosition)
         }
 
         return (digitValue0 shl C.SHIFT_12) or
@@ -535,9 +535,9 @@ class GhostJsonStringReader(
     /**
      * Returns UTF-8 bytes for the char range [[charStart], [charEnd]).
      *
-     * When [ensureUtf8Bytes] already materialized the payload, slices the cached array
-     * (used by custom-decoder bridges). Otherwise encodes only the range — avoids a full
-     * document UTF-8 pass for [captureRawJsonBytes] on large envelopes.
+     * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
+     * cached array (used by custom-decoder bridges). Otherwise encodes only the range —
+     * avoids a full document UTF-8 pass for [captureRawJsonBytes] on large envelopes.
      */
     @InternalGhostApi
     fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {

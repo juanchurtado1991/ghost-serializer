@@ -255,7 +255,7 @@ fun GhostJsonStringReader.consumeNull() {
         chars[p + 2].code != C.L_BYTE_INT ||
         chars[p + 3].code != C.L_BYTE_INT
     ) {
-        throwError(C.ERR_EXPECTED_LITERAL + "null")
+        throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
     }
     position = p + 4
     nextTokenByte = C.RESET_TOKEN_BYTE

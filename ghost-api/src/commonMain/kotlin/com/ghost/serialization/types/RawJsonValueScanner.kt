@@ -35,6 +35,36 @@ internal object RawJsonValueScanner {
     private const val CHAR_L = 'l'.code
     private const val CHAR_S = 's'.code
 
+    private const val BYTE_MASK = 0xFF
+    private const val HIGH_SURROGATE_START = 0xD800
+    private const val HIGH_SURROGATE_END = 0xDBFF
+    private const val LOW_SURROGATE_START = 0xDC00
+    private const val UNICODE_BASE = 0x10000
+    private const val SURROGATE_PAIR_SHIFT = 10
+    private const val SURROGATE_PAIR_MASK = 0x3FF
+    private const val BMP_LIMIT = 0xFFFF
+    private const val UNICODE_REPLACEMENT = 0xFFFD
+    private const val UNICODE_HEX_LENGTH = 4
+    private const val HEX_SHIFT = 4
+    private const val HEX_LETTER_OFFSET = 10
+
+    private const val ESCAPE_B = 'b'.code
+    private const val ESCAPE_F = 'f'.code
+    private const val ESCAPE_N = 'n'.code
+    private const val ESCAPE_R = 'r'.code
+    private const val ESCAPE_T = 't'.code
+    private const val ESCAPE_U = 'u'.code
+    private const val HEX_A_LOWER = 'a'.code
+    private const val HEX_F_LOWER = 'f'.code
+    private const val HEX_A_UPPER = 'A'.code
+    private const val HEX_F_UPPER = 'F'.code
+
+    private const val BS_CHAR = '\b'
+    private const val FF_CHAR = '\u000C'
+    private const val LF_CHAR = '\n'
+    private const val CR_CHAR = '\r'
+    private const val TAB_CHAR = '\t'
+
     fun kind(raw: RawJson): RawJsonKind {
         if (raw.storageLength <= 0) return RawJsonKind.INVALID
         return when (val first = raw.byteAt(0)) {
@@ -100,7 +130,7 @@ internal object RawJsonValueScanner {
     }
 
     private fun RawJson.byteAt(relativeIndex: Int): Int =
-        storage[storageOffset + relativeIndex].toInt() and 0xFF
+        storage[storageOffset + relativeIndex].toInt() and BYTE_MASK
 
     private fun RawJson.matchesTrueLiteral(): Boolean =
         storageLength == TRUE_LEN &&
@@ -217,27 +247,31 @@ internal object RawJsonValueScanner {
         val builder = StringBuilder(estimated)
         var index = contentStart
         while (index < contentEnd) {
-            val byte = storage[index++].toInt() and 0xFF
+            val byte = storage[index++].toInt() and BYTE_MASK
             if (byte == BACKSLASH && index < contentEnd) {
-                when (val escaped = storage[index++].toInt() and 0xFF) {
+                when (val escaped = storage[index++].toInt() and BYTE_MASK) {
                     QUOTE -> builder.append('"')
                     BACKSLASH -> builder.append('\\')
-                    'b'.code -> builder.append('\b')
-                    'f'.code -> builder.append('\u000C')
-                    'n'.code -> builder.append('\n')
-                    'r'.code -> builder.append('\r')
-                    't'.code -> builder.append('\t')
-                    'u'.code -> {
+                    ESCAPE_B -> builder.append(BS_CHAR)
+                    ESCAPE_F -> builder.append(FF_CHAR)
+                    ESCAPE_N -> builder.append(LF_CHAR)
+                    ESCAPE_R -> builder.append(CR_CHAR)
+                    ESCAPE_T -> builder.append(TAB_CHAR)
+                    ESCAPE_U -> {
                         if (index + 3 >= contentEnd) return builder.toString()
                         val hex = readHex4(index)
-                        index += 4
-                        if (hex in 0xD800..0xDBFF && index + 5 < contentEnd &&
+                        index += UNICODE_HEX_LENGTH
+                        if (hex in HIGH_SURROGATE_START..HIGH_SURROGATE_END &&
+                            index + 5 < contentEnd &&
                             storage[index] == BACKSLASH.toByte() &&
-                            storage[index + 1] == 'u'.code.toByte()
+                            storage[index + 1] == ESCAPE_U.toByte()
                         ) {
-                            val low = readHex4(index + 2)
+                            val lowSurrogate = readHex4(index + 2)
                             index += 6
-                            appendCodePoint(builder, 0x10000 + ((hex - 0xD800) shl 10) + (low - 0xDC00))
+                            val codePoint = UNICODE_BASE +
+                                ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +
+                                (lowSurrogate - LOW_SURROGATE_START)
+                            appendCodePoint(builder, codePoint)
                         } else {
                             appendCodePoint(builder, hex)
                         }
@@ -252,22 +286,22 @@ internal object RawJsonValueScanner {
     }
 
     private fun appendCodePoint(builder: StringBuilder, codePoint: Int) {
-        if (codePoint <= 0xFFFF) {
+        if (codePoint <= BMP_LIMIT) {
             builder.append(codePoint.toChar())
             return
         }
-        val offset = codePoint - 0x10000
-        builder.append((0xD800 + (offset shr 10)).toChar())
-        builder.append((0xDC00 + (offset and 0x3FF)).toChar())
+        val planeOffset = codePoint - UNICODE_BASE
+        builder.append((HIGH_SURROGATE_START + (planeOffset shr SURROGATE_PAIR_SHIFT)).toChar())
+        builder.append((LOW_SURROGATE_START + (planeOffset and SURROGATE_PAIR_MASK)).toChar())
     }
 
     private fun RawJson.readHex4(start: Int): Int {
         var value = 0
         var shift = 0
-        while (shift < 4) {
-            val nibble = hexValue(storage[start + shift].toInt() and 0xFF)
-            if (nibble < 0) return 0xFFFD
-            value = (value shl 4) or nibble
+        while (shift < UNICODE_HEX_LENGTH) {
+            val nibble = hexValue(storage[start + shift].toInt() and BYTE_MASK)
+            if (nibble < 0) return UNICODE_REPLACEMENT
+            value = (value shl HEX_SHIFT) or nibble
             shift++
         }
         return value
@@ -275,8 +309,8 @@ internal object RawJsonValueScanner {
 
     private fun hexValue(byte: Int): Int = when (byte) {
         in ZERO..NINE -> byte - ZERO
-        in 'a'.code..'f'.code -> byte - 'a'.code + 10
-        in 'A'.code..'F'.code -> byte - 'A'.code + 10
+        in HEX_A_LOWER..HEX_F_LOWER -> byte - HEX_A_LOWER + HEX_LETTER_OFFSET
+        in HEX_A_UPPER..HEX_F_UPPER -> byte - HEX_A_UPPER + HEX_LETTER_OFFSET
         else -> -1
     }
 }

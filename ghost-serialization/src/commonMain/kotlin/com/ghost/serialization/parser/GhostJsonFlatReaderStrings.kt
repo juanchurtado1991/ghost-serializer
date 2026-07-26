@@ -293,7 +293,7 @@ private fun GhostJsonFlatReader.parseUnicodeHex(currentPosition: Int): Int {
     val digitValue3 = hexLookupTable[hexByte3]
 
     if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
-        throwError("Invalid unicode escape at $currentPosition")
+        throwError(C.ERR_INVALID_UNICODE_AT + currentPosition)
     }
 
     return (digitValue0 shl C.SHIFT_12) or

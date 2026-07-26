@@ -148,43 +148,47 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         var readIndex = offset
         val end = offset + length
         while (readIndex < end) {
-            val byte = bytes[readIndex].toInt() and 0xFF
+            val leadByte = bytes[readIndex].toInt() and C.BYTE_MASK
             when {
-                byte <= C.UTF8_1BYTE_MAX -> {
-                    backingArray[writeIndex++] = byte.toChar()
+                leadByte <= C.UTF8_1BYTE_MAX -> {
+                    backingArray[writeIndex++] = leadByte.toChar()
                     readIndex++
                 }
-                (byte shr 5) == 0x6 -> {
-                    val b2 = bytes[readIndex + 1].toInt() and 0xFF
-                    val codePoint = ((byte and 0x1F) shl 6) or (b2 and 0x3F)
+                (leadByte shr C.UTF8_2BYTE_LEAD_SHIFT) == C.UTF8_2BYTE_LEAD_TAG -> {
+                    val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK
+                    val codePoint = ((leadByte and C.UTF8_2BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_6) or
+                        (contByte1 and C.UTF8_CONT_MASK)
                     backingArray[writeIndex++] = codePoint.toChar()
-                    readIndex += 2
+                    readIndex += C.UTF8_2BYTE_SIZE
                 }
-                (byte shr 4) == 0xE -> {
-                    val b2 = bytes[readIndex + 1].toInt() and 0xFF
-                    val b3 = bytes[readIndex + 2].toInt() and 0xFF
-                    val codePoint = ((byte and 0x0F) shl 12) or ((b2 and 0x3F) shl 6) or (b3 and 0x3F)
+                (leadByte shr C.UTF8_3BYTE_LEAD_SHIFT) == C.UTF8_3BYTE_LEAD_TAG -> {
+                    val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK
+                    val contByte2 = bytes[readIndex + 2].toInt() and C.BYTE_MASK
+                    val codePoint = ((leadByte and C.UTF8_3BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_12) or
+                        ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or
+                        (contByte2 and C.UTF8_CONT_MASK)
                     backingArray[writeIndex++] = codePoint.toChar()
-                    readIndex += 3
+                    readIndex += C.UTF8_3BYTE_SIZE
                 }
                 else -> {
-                    val b2 = bytes[readIndex + 1].toInt() and 0xFF
-                    val b3 = bytes[readIndex + 2].toInt() and 0xFF
-                    val b4 = bytes[readIndex + 3].toInt() and 0xFF
-                    val codePoint = ((byte and 0x07) shl 18) or
-                        ((b2 and 0x3F) shl 12) or
-                        ((b3 and 0x3F) shl 6) or
-                        (b4 and 0x3F)
+                    val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK
+                    val contByte2 = bytes[readIndex + 2].toInt() and C.BYTE_MASK
+                    val contByte3 = bytes[readIndex + 3].toInt() and C.BYTE_MASK
+                    val codePoint = ((leadByte and C.UTF8_4BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_18) or
+                        ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_12) or
+                        ((contByte2 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or
+                        (contByte3 and C.UTF8_CONT_MASK)
                     if (writeIndex + 1 >= backingArray.size) {
                         size = writeIndex
-                        ensureCapacity(2)
+                        ensureCapacity(C.UTF8_2BYTE_SIZE)
                     }
                     val updatedArray = array
-                    val high = ((codePoint - 0x10000) shr 10) + 0xD800
-                    val low = ((codePoint - 0x10000) and 0x3FF) + 0xDC00
-                    updatedArray[writeIndex++] = high.toChar()
-                    updatedArray[writeIndex++] = low.toChar()
-                    readIndex += 4
+                    val planeOffset = codePoint - C.UNICODE_BASE
+                    val highSurrogate = (planeOffset shr C.SHIFT_10) + C.HIGH_SURROGATE_START
+                    val lowSurrogate = (planeOffset and C.SURROGATE_PAIR_MASK) + C.LOW_SURROGATE_START
+                    updatedArray[writeIndex++] = highSurrogate.toChar()
+                    updatedArray[writeIndex++] = lowSurrogate.toChar()
+                    readIndex += C.UTF8_4BYTE_SIZE
                 }
             }
         }
