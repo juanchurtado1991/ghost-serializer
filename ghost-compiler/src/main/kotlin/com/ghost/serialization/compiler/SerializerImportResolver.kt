@@ -101,11 +101,53 @@ internal class SerializerImportResolver(
             )
         }
         if (hasNullable) {
-            fileBuilder.addImport(
-                C.PKG_PARSER,
-                C.STR_CONSUME_NULL_NAME,
-                C.STR_IS_NEXT_NULL_VALUE_NAME
-            )
+            val nullableImports = linkedSetOf<String>()
+            fun considerType(type: KSType) {
+                if (!type.isMarkedNullable) {
+                    type.arguments.forEach { arg ->
+                        arg.type?.resolve()?.let { considerType(it) }
+                    }
+                    return
+                }
+                when {
+                    type.isString() -> nullableImports.add(C.STR_NEXT_STRING_OR_NULL_NAME)
+                    type.isPrimitiveInt() -> nullableImports.add(C.STR_NEXT_INT_OR_NULL_NAME)
+                    type.isPrimitiveLong() -> nullableImports.add(C.STR_NEXT_LONG_OR_NULL_NAME)
+                    type.isPrimitiveBoolean() -> nullableImports.add(C.STR_NEXT_BOOLEAN_OR_NULL_NAME)
+                    else -> {
+                        // Nested serializers, collections, floats, etc. still use the classic guard.
+                        nullableImports.add(C.STR_CONSUME_NULL_NAME)
+                        nullableImports.add(C.STR_IS_NEXT_NULL_VALUE_NAME)
+                    }
+                }
+                type.arguments.forEach { arg ->
+                    arg.type?.resolve()?.let { considerType(it) }
+                }
+            }
+            fun considerProperty(prop: GhostPropertyModel) {
+                // Custom decoders emit Provider.fn(reader) only — null handling lives in the provider.
+                if (prop.customDecoder != null) return
+                // Wrapped-keys materialize assigns null in an else branch; no classic null peek.
+                if (prop.wrappedSourceKeys != null) return
+                considerType(prop.type)
+                prop.valueClassProperty?.let { considerType(it.type) }
+            }
+            ctx.properties.forEach { prop ->
+                considerProperty(prop)
+                if (ctx.isInferred) {
+                    prop.inferredSubclasses.forEach { sub ->
+                        sub.properties.forEach { considerProperty(it) }
+                    }
+                }
+            }
+            // Nullable primitive arrays still emit isNextNullValue/consumeNull around the array serializer.
+            if (ctx.properties.any { it.isNullable && it.isPrimitiveArray && it.customDecoder == null }) {
+                nullableImports.add(C.STR_CONSUME_NULL_NAME)
+                nullableImports.add(C.STR_IS_NEXT_NULL_VALUE_NAME)
+            }
+            if (nullableImports.isNotEmpty()) {
+                fileBuilder.addImport(C.PKG_PARSER, *nullableImports.toTypedArray())
+            }
         }
         if (ctx.isSealed && !ctx.isInferred) {
             fileBuilder.addImport(C.PKG_PARSER, C.STR_PEEK_STRING_FIELD)
@@ -125,10 +167,11 @@ internal class SerializerImportResolver(
         }
 
         val allTypeStrings = allTypes.joinToString()
-        if (allTypeStrings.contains(C.STR_INT)) {
+        // OrNull scalars must not pull in the non-null nextX import (`Int?` contains "Int").
+        if (needsNextIntImport()) {
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_INT_NAME)
         }
-        if (allTypeStrings.contains(C.STR_LONG_TYPE)) {
+        if (needsNextLongImport()) {
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_LONG_NAME)
         }
         if (needsNextStringImport()) {
@@ -140,17 +183,12 @@ internal class SerializerImportResolver(
         if (allTypeStrings.contains(C.STR_FLOAT)) {
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_FLOAT_NAME)
         }
-        if (allTypeStrings.contains(C.K_BYTE) || allTypeStrings.contains(C.K_SHORT) ||
-            ctx.properties.any { it.type.isPrimitiveByte() || it.type.isPrimitiveShort() }
-        ) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_INT_NAME)
-        }
         if (allTypeStrings.contains(C.K_CHAR) ||
             ctx.properties.any { it.type.isPrimitiveChar() }
         ) {
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_CHAR_NAME)
         }
-        if (allTypeStrings.contains(C.STR_BOOLEAN)) {
+        if (needsNextBooleanImport()) {
             fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_BOOLEAN_NAME)
         }
 
@@ -224,17 +262,26 @@ internal class SerializerImportResolver(
         return direct + valueClass + inferred
     }
 
-    private fun needsNextStringImport(): Boolean {
-        if (ctx.properties.any { propertyNeedsNextString(it) }) return true
+    private fun needsNextStringImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextString)
+
+    private fun needsNextIntImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextInt)
+
+    private fun needsNextLongImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextLong)
+
+    private fun needsNextBooleanImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextBoolean)
+
+    private fun anyPropertyNeeds(predicate: (GhostPropertyModel) -> Boolean): Boolean {
+        if (ctx.properties.any(predicate)) return true
         if (ctx.isInferred) {
             return ctx.properties.flatMap { it.inferredSubclasses }
                 .flatMap { it.properties }
-                .any { propertyNeedsNextString(it) }
+                .any(predicate)
         }
         return false
     }
 
     private fun propertyNeedsNextString(property: GhostPropertyModel): Boolean {
+        if (property.customDecoder != null) return false
         if (typeNeedsNextString(property.type)) return true
         property.valueClassProperty?.let { underlying ->
             if (typeNeedsNextString(underlying.type)) return true
@@ -242,15 +289,74 @@ internal class SerializerImportResolver(
         return false
     }
 
+    private fun propertyNeedsNextInt(property: GhostPropertyModel): Boolean {
+        if (property.customDecoder != null) return false
+        if (typeNeedsNextInt(property.type)) return true
+        property.valueClassProperty?.let { underlying ->
+            if (typeNeedsNextInt(underlying.type)) return true
+        }
+        return false
+    }
+
+    private fun propertyNeedsNextLong(property: GhostPropertyModel): Boolean {
+        if (property.customDecoder != null) return false
+        if (typeNeedsNextLong(property.type)) return true
+        property.valueClassProperty?.let { underlying ->
+            if (typeNeedsNextLong(underlying.type)) return true
+        }
+        return false
+    }
+
+    private fun propertyNeedsNextBoolean(property: GhostPropertyModel): Boolean {
+        if (property.customDecoder != null) return false
+        if (typeNeedsNextBoolean(property.type)) return true
+        property.valueClassProperty?.let { underlying ->
+            if (typeNeedsNextBoolean(underlying.type)) return true
+        }
+        return false
+    }
+
     private fun typeNeedsNextString(type: KSType): Boolean {
-        if (type.isString()) return true
+        if (type.isString()) {
+            // Nullable String is emitted as nextStringOrNull(); only non-null needs nextString.
+            return !type.isMarkedNullable
+        }
+        return typeNeedsNestedScalar(type, ::typeNeedsNextString)
+    }
+
+    private fun typeNeedsNextInt(type: KSType): Boolean {
+        if (type.isPrimitiveInt()) {
+            return !type.isMarkedNullable
+        }
+        // Byte/Short always emit reader.nextInt().toX() (nullable wraps with classic null guard).
+        if (type.isPrimitiveByte() || type.isPrimitiveShort()) {
+            return true
+        }
+        return typeNeedsNestedScalar(type, ::typeNeedsNextInt)
+    }
+
+    private fun typeNeedsNextLong(type: KSType): Boolean {
+        if (type.isPrimitiveLong()) {
+            return !type.isMarkedNullable
+        }
+        return typeNeedsNestedScalar(type, ::typeNeedsNextLong)
+    }
+
+    private fun typeNeedsNextBoolean(type: KSType): Boolean {
+        if (type.isPrimitiveBoolean()) {
+            return !type.isMarkedNullable
+        }
+        return typeNeedsNestedScalar(type, ::typeNeedsNextBoolean)
+    }
+
+    private fun typeNeedsNestedScalar(type: KSType, leaf: (KSType) -> Boolean): Boolean {
         if (type.isList() || type.isSet()) {
             val element = type.arguments.firstOrNull()?.type?.resolve() ?: return false
-            return typeNeedsNextString(element)
+            return leaf(element)
         }
         if (type.isMap()) {
             val value = type.arguments.getOrNull(1)?.type?.resolve() ?: return false
-            return typeNeedsNextString(value)
+            return leaf(value)
         }
         return false
     }

@@ -96,6 +96,27 @@ class GhostGeneratedCodeHygieneTest {
     }
 
     @Test
+    fun nullableOnlyScalarsImportOrNullNotPlainNextX() {
+        val compilation = compileBatch(NULLABLE_SCALARS_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "OnlyNullableScalars")
+        assertTrue("nextIntOrNull" in generated, generated)
+        assertTrue("nextLongOrNull" in generated, generated)
+        assertTrue("nextBooleanOrNull" in generated, generated)
+        assertTrue("nextStringOrNull" in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextInt\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextLong\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextBoolean\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextString\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.consumeNull\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.isNextNullValue\n" !in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyze(generated, "OnlyNullableScalarsSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
     fun listOnlyModelDoesNotImportReadSet() {
         val compilation = compileBatch(LIST_ONLY_SOURCE, textChannel = true)
         assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
@@ -159,6 +180,20 @@ class GhostGeneratedCodeHygieneTest {
             data class MinimalUser(val id: String, val age: Int)
         """
 
+        const val NULLABLE_SCALARS_SOURCE = """
+            package fixtures
+
+            import com.ghost.serialization.annotations.GhostSerialization
+
+            @GhostSerialization
+            data class OnlyNullableScalars(
+                val i: Int?,
+                val l: Long?,
+                val b: Boolean?,
+                val s: String?,
+            )
+        """
+
         const val LIST_ONLY_SOURCE = """
             package fixtures
 
@@ -219,6 +254,14 @@ class GhostGeneratedCodeHygieneTest {
 
             @GhostSerialization
             data class NullableBox(val label: String?)
+
+            @GhostSerialization
+            data class NullableScalars(
+                val i: Int?,
+                val l: Long?,
+                val b: Boolean?,
+                val s: String?,
+            )
 
             @GhostSerialization
             data class MapHolder(val attrs: Map<String, Int>)

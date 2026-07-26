@@ -183,10 +183,7 @@ internal abstract class BaseDeserializeEmitter(
      * It handles null-safety by wrapping the reader call in a null check template.
      */
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
-        if (prop.customDecoder != null) {
-            return nullGuarded(buildCustomDecoderCall(prop))
-        }
-
+        // customDecoder is handled in [buildCall] before nullability — never reaches here.
         if (prop.isPrimitiveArray) {
             return nullGuarded(
                 CodeBlock.of(
@@ -273,18 +270,24 @@ internal abstract class BaseDeserializeEmitter(
      * @return A [CodeBlock] containing the optimized reader instruction.
      */
     protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {
-        val readerCall = when {
-            type.isRawJson() -> CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)
+        return when {
+            type.isRawJson() -> {
+                val call = CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
 
-            type.isByteArray() -> if (isProto) {
-                CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
-            } else {
-                CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
+            type.isByteArray() -> {
+                val call = if (isProto) {
+                    CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
+                } else {
+                    CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
+                }
+                if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
             isValueClassType(type) -> {
                 val innerType = resolveValueClassInnerType(type)
-                if (innerType != null) {
+                val call = if (innerType != null) {
                     val constructorCall = buildTypeReaderCall(innerType, isProto)
                     val className = type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) } ?: type.toTypeName()
                     CodeBlock.of(C.TEMPLATE_CONSTRUCTOR, className, constructorCall)
@@ -292,45 +295,87 @@ internal abstract class BaseDeserializeEmitter(
                     val name = getContextualSerializerName(type)
                     CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
                 }
+                if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
-            type.isGhost() || type.isEnum() -> CodeBlock.of(
-                C.TEMPLATE_DESERIALIZE_T,
-                type.serializerClassName()
+            type.isGhost() || type.isEnum() -> {
+                val call = CodeBlock.of(
+                    C.TEMPLATE_DESERIALIZE_T,
+                    type.serializerClassName()
+                )
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
+
+            type.isPrimitiveInt() -> scalarReaderCall(
+                C.STR_NEXT_INT,
+                C.STR_NEXT_INT_OR_NULL,
+                type.isMarkedNullable
             )
-
-            type.isPrimitiveInt() -> CodeBlock.of(C.STR_NEXT_INT)
-            type.isPrimitiveBoolean() -> CodeBlock.of(C.STR_NEXT_BOOLEAN)
+            type.isPrimitiveBoolean() -> scalarReaderCall(
+                C.STR_NEXT_BOOLEAN,
+                C.STR_NEXT_BOOLEAN_OR_NULL,
+                type.isMarkedNullable
+            )
             type.isPrimitiveLong() -> if (isProto) {
-                CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+                // Quoted int64 coercion — keep generic null guard around the run block.
+                val call = CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+                if (type.isMarkedNullable) nullGuarded(call) else call
             } else {
-                CodeBlock.of(C.STR_NEXT_LONG)
+                scalarReaderCall(
+                    C.STR_NEXT_LONG,
+                    C.STR_NEXT_LONG_OR_NULL,
+                    type.isMarkedNullable
+                )
             }
-            type.isPrimitiveDouble() -> CodeBlock.of(C.STR_NEXT_DOUBLE)
-            type.isPrimitiveFloat() -> CodeBlock.of(C.STR_NEXT_FLOAT)
-            type.isPrimitiveByte() -> CodeBlock.of(C.STR_NEXT_BYTE)
-            type.isPrimitiveShort() -> CodeBlock.of(C.STR_NEXT_SHORT)
-            type.isPrimitiveChar() -> CodeBlock.of(C.STR_NEXT_CHAR)
+            type.isPrimitiveDouble() -> {
+                val call = CodeBlock.of(C.STR_NEXT_DOUBLE)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
+            type.isPrimitiveFloat() -> {
+                val call = CodeBlock.of(C.STR_NEXT_FLOAT)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
+            type.isPrimitiveByte() -> {
+                val call = CodeBlock.of(C.STR_NEXT_BYTE)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
+            type.isPrimitiveShort() -> {
+                val call = CodeBlock.of(C.STR_NEXT_SHORT)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
+            type.isPrimitiveChar() -> {
+                val call = CodeBlock.of(C.STR_NEXT_CHAR)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            }
 
             type.isSet() -> {
                 val inner = type.arguments.firstOrNull()?.type?.resolve()
-                    ?: return CodeBlock.of(C.STR_NEXT_STRING)
+                    ?: return scalarReaderCall(
+                        C.STR_NEXT_STRING,
+                        C.STR_NEXT_STRING_OR_NULL,
+                        type.isMarkedNullable
+                    )
 
-                CodeBlock.of(
+                val call = CodeBlock.of(
                     C.STR_READ_SET_TEMPLATE,
                     buildTypeReaderCall(inner, isProto)
                 )
+                if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
             type.isList() -> {
                 val inner = type.arguments.firstOrNull()?.type?.resolve()
-                    ?: return CodeBlock.of(C.STR_NEXT_STRING)
+                    ?: return scalarReaderCall(
+                        C.STR_NEXT_STRING,
+                        C.STR_NEXT_STRING_OR_NULL,
+                        type.isMarkedNullable
+                    )
 
-                CodeBlock.of(
+                val call = CodeBlock.of(
                     C.STR_READ_LIST_TEMPLATE,
                     buildTypeReaderCall(inner, isProto)
                 )
-
+                if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
             type.isMap() -> {
@@ -338,30 +383,41 @@ internal abstract class BaseDeserializeEmitter(
                     .arguments
                     .getOrNull(1)
                     ?.type?.resolve()
-                    ?: return CodeBlock.of(C.STR_NEXT_STRING)
+                    ?: return scalarReaderCall(
+                        C.STR_NEXT_STRING,
+                        C.STR_NEXT_STRING_OR_NULL,
+                        type.isMarkedNullable
+                    )
 
-                CodeBlock.of(
+                val call = CodeBlock.of(
                     C.STR_READ_MAP_TEMPLATE,
                     buildTypeReaderCall(valueType, isProto)
                 )
+                if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
             else -> {
                 if (type.isString()) {
-                    CodeBlock.of(C.STR_NEXT_STRING)
+                    scalarReaderCall(
+                        C.STR_NEXT_STRING,
+                        C.STR_NEXT_STRING_OR_NULL,
+                        type.isMarkedNullable
+                    )
                 } else {
                     val name = getContextualSerializerName(type)
-                    CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
+                    val call = CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
+                    if (type.isMarkedNullable) nullGuarded(call) else call
                 }
             }
         }
-
-        return if (type.isMarkedNullable) {
-            nullGuarded(readerCall)
-        } else {
-            readerCall
-        }
     }
+
+    /**
+     * Emits a fused `nextXOrNull()` when [nullable], otherwise the non-null `nextX()` call.
+     * Avoids the generated `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
+     */
+    private fun scalarReaderCall(nonNullCall: String, orNullCall: String, nullable: Boolean): CodeBlock =
+        CodeBlock.of(if (nullable) orNullCall else nonNullCall)
 
     /**
      * Generates a unique variable name for a contextual serializer.
