@@ -21,8 +21,8 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
  * or redundant bounds checks inside Okio's `rangeEquals`.
  *
  * [rawChars] stores the same names as [CharArray] for the String-channel
- * [verifyKeyMatch], avoiding per-character [String.get] / coder checks that
- * dominate Twitter Decode(String) self-time under Kotlin 2.4.0.
+ * [verifyKeyMatch], avoiding per-character [String.get] / coder checks on the
+ * hot key-match path.
  *
  * @property rawBytes Array of field names represented as raw byte arrays (UTF-8).
  * @property shift The bit-shift amount used to normalize key distributions.
@@ -205,7 +205,7 @@ class JsonReaderOptions(
             enableStringDispatch: Boolean,
             vararg names: String
         ): JsonReaderOptions {
-            return of(shift, multiplier, 1024, enableStringDispatch, *names)
+            return of(shift, multiplier, C.DEFAULT_DISPATCH_TABLE_SIZE, enableStringDispatch, *names)
         }
 
         fun of(

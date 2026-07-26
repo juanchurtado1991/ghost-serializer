@@ -547,7 +547,7 @@ Central file: `ghost-serialization/src/commonMain/kotlin/com/ghost/serialization
 | `deserialize<T>(bytes: ByteArray)` | No intermediate String copy |
 | `deserialize<T>(source: BufferedSource)` | Okio streaming |
 | `deserialize(reader)` / `deserialize(flatReader)` | Direct use in generated code |
-| `encodeToString<T>(value)` | Flat writer → String |
+| `encodeToString<T>(value)` | String writer → String |
 | `encodeToBytes<T>(value)` | Flat writer → ByteArray |
 | `encodeAndDiscard<T>(value)` | Warm-up without result alloc |
 | `serialize(sink, value)` | Bulk drain to Okio |
@@ -647,7 +647,7 @@ Generated code implements **all four** functions. Defaults on the interface may 
 
 | Method | Main use |
 |:---|:---|
-| `serialize(GhostJsonFlatWriter, T)` | `encodeToString`, Retrofit request |
+| `serialize(GhostJsonFlatWriter, T)` | `encodeToBytes`, Retrofit request |
 | `serialize(GhostJsonWriter, T)` | `serialize(sink)` |
 | `deserialize(GhostJsonFlatReader)` | `Ghost.deserialize(bytes)` |
 | `deserialize(GhostJsonReader)` | streaming + options |
@@ -707,7 +707,8 @@ value T
 | Type | When | Cost |
 | GhostJsonFlatReader | `Ghost.deserialize`, Retrofit, Spring body | Minimum: contiguous array |
 | GhostJsonReader | Okio stream, `coerceBooleans` options | More flexible |
-| GhostJsonFlatWriter | encodeToString/Bytes | Monomorphic hot path |
+| GhostJsonFlatWriter | encodeToBytes / sink | Monomorphic hot path |
+| GhostJsonStringWriter | encodeToString | Contiguous CharArray path |
 | GhostJsonWriter | serialize(sink) | Single Okio drain at end |
 
 ## 10. GhostJsonFlatReader — Fast parser {#cap-10--ghostjsonflatreader-parser-rpido}
@@ -1541,7 +1542,7 @@ Symptom if it did not exist: compile error on generated serializer for massive m
 
 ## 42. Multi-branch constructors (≤4 properties with default (`MAX_DEFAULT_BRANCH_COUNT = 4`)) {#cap-42--multi-branch-constructors-3-defaults}
 
-If a constructor has up to 3 parameters with default, KSP can generate `when (mask)` branches that call the **primary constructor once** with the correct argument combination, avoiding:
+If a constructor has up to 4 parameters with default, KSP can generate `when (mask)` branches that call the **primary constructor once** with the correct argument combination, avoiding:
 
 ```kotlin
 // Anti-pattern Ghost avoids on hot path
@@ -1847,7 +1848,7 @@ Generated under: `build/generated/ksp/test/kotlin/`
 | Model | Detail |
 |:---|:---|
 | MaliceModel | malicious payloads |
-| LargeStringModel, LargeStringData | huge strings |
+| LargeStringModel | huge strings |
 | StressMetrics | stress metrics |
 | DecimalStress | decimal precision |
 
@@ -2169,7 +2170,7 @@ and serialization/deserialization across all platforms.
 |:---|:---|
 | `serialize(sink, value)` | Encodes `value` and writes the resulting JSON payload into the given Okio `BufferedSink`. Uses `GhostJsonFlatWriter` internally for a single bulk-write with no Okio segment overhead. |
 | `serialize(value)` | Convenience alias for `encodeToString`. |
-| `encodeToString(value)` | Serializes `value` to an in-memory JSON `String`. Writes to a flat contiguous byte buffer and performs a zero-copy string decode at the end. |
+| `encodeToString(value)` | Serializes `value` to an in-memory JSON `String`. Writes through the pooled `GhostJsonStringWriter` (contiguous `CharArray`), avoiding Okio segments and an intermediate UTF-8 byte buffer. |
 | `encodeToBytes(value)` | Serializes `value` to a UTF-8 JSON `ByteArray`. Skips intermediate string encoding/decoding. |
 | `encodeAndDiscard(value)` | Serializes `value` discarding the output. Useful for JIT/ART priming without needing the resulting bytes. |
 | `encodeToSink(sink, value)` | Alias for `serialize(sink, value)`. |

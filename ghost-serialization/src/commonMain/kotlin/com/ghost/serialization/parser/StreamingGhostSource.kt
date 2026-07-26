@@ -17,8 +17,9 @@ import okio.Buffer
  * discriminator peek reads ahead without advancing the reader, and must not discard the
  * prefix the reader still needs.
  *
- * [pin] / [unpin] protect ranges that may still be re-read ([decodeResilient] rollback,
- * [captureRawJson] materialization).
+ * [pin] / [unpin] protect ranges that may still be re-read during resilient decode
+ * rollback or raw-JSON capture materialization on [GhostJsonReader] /
+ * [GhostJsonFlatReader].
  */
 @InternalGhostApi
 class StreamingGhostSource(

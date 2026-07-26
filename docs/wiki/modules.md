@@ -18,8 +18,8 @@ ghost = "1.3.0"
 
 ## Core Modules
 
-### `ghost-api` — Annotations & Public API
-The entry point for every Ghost project. Contains all annotations (`@GhostSerialization`, `@GhostName`, `@GhostFlatten`, `@GhostWrap`, `@GhostProtoSerialization`, etc.) and the `Ghost` object (deserialize / encodeToBytes / encodeToString).
+### `ghost-api` — Annotations & Contracts
+The entry point for every Ghost project. Contains all annotations (`@GhostSerialization`, `@GhostName`, `@GhostFlatten`, `@GhostWrap`, `@GhostProtoSerialization`, etc.) and shared contracts. The runtime `Ghost` object (deserialize / encodeToBytes / encodeToString) lives in `ghost-serialization`.
 
 **Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
@@ -35,7 +35,7 @@ implementation(libs.ghost.api)
 ---
 
 ### `ghost-serialization` — Runtime Engine
-The low-allocation reader/writer engine. Includes `GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader` (streaming), all writer types, platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
+The low-allocation reader/writer engine and the `Ghost` facade. Includes `GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader` (streaming), all writer types, platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
 
 **Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
@@ -186,7 +186,7 @@ val json: String = GhostProtobuf.encodeToString(user)
 
 | Module | Artifact ID | Platform | Purpose |
 |:---|:---|:---:|:---|
-| Core API | `ghost-api` | KMP | Annotations + `Ghost` object |
+| Core API | `ghost-api` | KMP | Annotations & contracts |
 | Runtime | `ghost-serialization` | KMP | Zero-alloc readers/writers/pool |
 | Compiler | `ghost-compiler` | JVM | KSP code generator |
 | Gradle plugin | `com.ghostserializer.ghost` | — | Auto-wires KSP across targets |

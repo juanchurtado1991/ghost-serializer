@@ -72,8 +72,8 @@ expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonR
 /**
  * Encodes via the pooled in-memory [GhostJsonStringWriter] and returns the
  * result as a [String]. The string writer holds a contiguous [CharArray]
- * (no Okio segments), so the returned string is decoded directly from
- * the produced char slice with minimal allocations.
+ * (no Okio segments), so the returned string is built directly from the
+ * produced char slice with minimal allocations.
  */
 @InternalGhostApi
 expect inline fun ghostInternalEncodeToString(crossinline block: (GhostJsonStringWriter) -> Unit): String
@@ -446,10 +446,10 @@ object Ghost {
     }
 
     /**
-     * Serializes [value] to an in-memory JSON string representation.
+     * Serializes [value] to an in-memory JSON string.
      *
-     * Bypasses Okio segment management by writing to a flat, contiguous byte buffer
-     * and performing a zero-copy string decode at the end.
+     * Writes through the pooled [com.ghost.serialization.writer.GhostJsonStringWriter]
+     * (contiguous [CharArray]), avoiding Okio segments and an intermediate UTF-8 byte buffer.
      *
      * @param value The value to serialize.
      * @return The serialized JSON string.
