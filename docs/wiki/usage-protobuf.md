@@ -11,7 +11,7 @@
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation(project(":ghost-protobuf")) // or the published artifact
+    implementation("com.ghostserializer:ghost-protobuf:1.2.7")
 }
 ```
 

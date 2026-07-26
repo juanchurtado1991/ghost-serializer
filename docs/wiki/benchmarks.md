@@ -2,9 +2,9 @@
 
 [![Speed](https://img.shields.io/badge/Speed-red.png?style=flat&logo=speedtest&logoColor=white)](benchmarks.md)
 
-> **Methodology**: Independent Gradle JVM tasks (`benchmarkTwitter`, `benchmarkSynthetic`, …). Engines: **Ghost, KSER, Gson, Jackson**. **10 000-iteration warmup**, **500 sessions × 50 batched samples**. Per session: **Ghost+KSER measured first** (back-to-back), then Gson/Jackson. Regression uses **median** of per-session Ghost÷KSER ratios. LIST / SYNC / WRITING suites isolated with phase GC only.
+> **Methodology**: Independent Gradle JVM tasks (`benchmarkTwitter`, `benchmarkSynthetic`, …). Engines: **Ghost, KSER, Gson, Jackson**. **10 000-iteration warmup**, **500 sessions × 50 batched samples**. Per session: **Ghost+KSER measured first** (back-to-back), then Gson/Jackson. Throughput tables report **decimal GB/s** (`payload_bytes / seconds / 10⁹`, equivalent to `ops/s × payload / 10⁹`). Regression uses **median** of per-session Ghost÷KSER ratios. LIST / SYNC / WRITING suites isolated with phase GC only.
 >
-> **`ghost.textChannel`**: default **false** per model. The default `deserialize(String)` path UTF-8-encodes once and parses via `GhostJsonFlatReader` — faster than native `GhostJsonStringReader` for typical DTOs (see [§ When to enable `textChannel`](advanced-features.md#5-native-string-reader-textchannel)). Opt in with `@GhostSerialization(textChannel = true)` only on **very large** String payloads (e.g. Twitter macro dataset). Legacy module flag `ghost.textChannel=true` still enables the string channel for every model in the module.
+> **`ghost.textChannel`**: default **true** per model. String benchmarks use the generated `GhostJsonStringReader` / string writer; byte and streaming benchmarks use their dedicated readers. Byte-only applications can opt out with `@GhostSerialization(textChannel = false)` or the module flag `ghost.textChannel=false` to reduce generated code size. See [Native String Reader](advanced-features.md#5-native-string-reader-textchannel).
 
 ## Running the Benchmark Yourself
 
@@ -58,106 +58,108 @@ Exit code `1` = regression beyond ±10% tolerance vs baseline (twitter / synthet
 
 ## Twitter Macro Dataset
 
-Results on [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter_macro.json). **🏆** = highest throughput · **💾** = leanest.
+Results on [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter_macro.json) (**631 514 bytes**). Columns always read **throughput → latency → allocation**. Throughput is decimal GB/s (`ops/s × payload / 10⁹`). **🏆** = highest throughput · **⏱️** = lowest latency · **💾** = leanest.
 
-| Operation | Engine |        Throughput (ops/s)        | Mem (KB/op) |
-| :--- | :---: |:--------------------------------:| :---: |
-| **Decode (String)** | **👻 Ghost** | **1384.2** 🏆 *(+27.7% vs KSER)* | **361.2** 💾 *(-73.0% vs KSER)* |
-| | KSER |              1084.3              | 1337.6 |
-| **Decode (Bytes)** | **👻 Ghost** | **1144.5** 🏆 *(+74.0% vs KSER)* | **621.2** 💾 *(-85.5% vs KSER)* |
-| | KSER |              657.8               | 4297.0 |
-| **Decode (Streaming)** | **👻 Ghost** | **686.6** 🏆 *(+132.7% vs KSER)* | **1269.7** 💾 *(-33.3% vs KSER)* |
-| | KSER |              295.1               | 1904.9 |
-| **Encode (String)** | **👻 Ghost** | **4472.5** 🏆 *(+55.8% vs KSER)* | 1074.3 |
-| | KSER |              2869.6              | **972.1** 💾 |
-| **Encode (Bytes)** | **👻 Ghost** | **2341.8** 🏆 *(+90.9% vs KSER)* | **420.2** 💾 *(-81.0% vs KSER)* |
-| | KSER |              1226.5              | 2206.8 |
-| **Encode (Streaming)** | **👻 Ghost** | **2325.2** 🏆 *(+61.9% vs KSER)* | **426.9** 💾 *(-6.2% vs KSER)* |
-| | KSER |              1436.1              | 455.0 |
+| Operation | Engine | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
+|:---|:---:|---:|---:|---:|
+| **Decode (String)** | **👻 Ghost** | **1.219** 🏆 *(+71.0%)* | **518.2** ⏱️ | **361.2** 💾 *(-73.0%)* |
+| | KSER | 0.713 | 886.1 | 1337.6 |
+| **Decode (Bytes)** | **👻 Ghost** | **1.011** 🏆 *(+144.9%)* | **624.4** ⏱️ | **621.2** 💾 *(-85.5%)* |
+| | KSER | 0.413 | 1529.0 | 4297.0 |
+| **Decode (Streaming)** | **👻 Ghost** | **0.525** 🏆 *(+176.8%)* | **1203.7** ⏱️ | **1268.7** 💾 *(-33.4%)* |
+| | KSER | 0.190 | 3331.6 | 1904.9 |
+| **Encode (String)** | **👻 Ghost** | **2.824** 🏆 *(+55.8%)* | **223.6** ⏱️ | 1074.3 |
+| | KSER | 1.812 | 348.5 | **972.1** 💾 |
+| **Encode (Bytes)** | **👻 Ghost** | **1.479** 🏆 *(+90.9%)* | **427.0** ⏱️ | **420.2** 💾 *(-81.0%)* |
+| | KSER | 0.775 | 815.3 | 2206.8 |
+| **Encode (Streaming)** | **👻 Ghost** | **1.468** 🏆 *(+61.9%)* | **430.1** ⏱️ | **426.9** 💾 *(-6.2%)* |
+| | KSER | 0.907 | 696.3 | 455.0 |
 
 ---
 
 ## Multi-engine tables
 
-Fixed row order: **Ghost → KSER → Gson → Jackson**. **🏆** = fastest (lowest ms / highest ops/s) · **💾** = leanest (lowest KB/op).
+Fixed row order: **Ghost → KSER → Gson → Jackson**. Each mode reads **GB/s → µs/op → KB/op**. Throughput is decimal GB/s (`payload_bytes / seconds / 10⁹`). **🏆** = highest GB/s · **⏱️** = lowest latency · **💾** = leanest.
+
+Payload sizes used for the conversion: LIST_MEDIUM **22 022 B**, SYNC_FULL_LARGE **187 822 B**, WRITING **94 822 B**.
 
 ## Deserialization — 200 objects (LIST_MEDIUM)
 
-| Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **👻 Ghost** | **0.080 ±0.003** 🏆 | **157.7** 💾 | **0.045 ±0.001** 🏆 | **24.8** 💾 | **0.046 ±0.001** 🏆 | **24.8** 💾 |
-| KSerialization | 0.096 ±0.004 | 189.7 | 0.095 ±0.002 | 189.7 | 0.163 ±0.005 | 189.7 |
-| Gson | 0.092 ±0.003 | 164.0 | 0.092 ±0.004 | 164.0 | 0.094 ±0.002 | 173.5 |
-| Jackson | 0.143 ±0.004 | 631.7 | 0.136 ±0.003 | 631.8 | 0.137 ±0.004 | 631.9 |
+| Engine | String<br>GB/s · µs · KB/op | Bytes<br>GB/s · µs · KB/op | Streaming<br>GB/s · µs · KB/op |
+|:---|:---:|:---:|:---:|
+| **👻 Ghost** | **0.275** 🏆 · **80.0** ⏱️ · **157.7** 💾 | **0.489** 🏆 · **45.0** ⏱️ · **24.8** 💾 | **0.479** 🏆 · **46.0** ⏱️ · **24.8** 💾 |
+| KSerialization | 0.229 · 96.0 · 189.7 | 0.232 · 95.0 · 189.7 | 0.135 · 163.0 · 189.7 |
+| Gson | 0.239 · 92.0 · 164.0 | 0.239 · 92.0 · 164.0 | 0.234 · 94.0 · 173.5 |
+| Jackson | 0.154 · 143.0 · 631.7 | 0.162 · 136.0 · 631.8 | 0.161 · 137.0 · 631.9 |
 
 ---
 
 ## Deserialization — 2000 objects (SYNC_FULL_LARGE)
 
-| Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **👻 Ghost** | 0.654 ±0.020 | **1173.7** 💾 | **0.370 ±0.005** 🏆 | **213.4** 💾 | **0.382 ±0.004** 🏆 | **334.2** 💾 |
-| KSerialization | 0.767 ±0.009 | 1836.6 | 0.769 ±0.035 | 1836.6 | 1.413 ±0.014 | 1957.5 |
-| Gson | **0.644 ±0.009** 🏆 | 1343.8 | 0.644 ±0.025 | 1343.8 | 0.652 ±0.008 | 1366.7 |
-| Jackson | 1.380 ±0.073 | 6210.0 | 1.209 ±0.011 | 6210.1 | 1.217 ±0.014 | 6210.1 |
+| Engine | String<br>GB/s · µs · KB/op | Bytes<br>GB/s · µs · KB/op | Streaming<br>GB/s · µs · KB/op |
+|:---|:---:|:---:|:---:|
+| **👻 Ghost** | 0.287 · 654.0 · **1173.7** 💾 | **0.508** 🏆 · **370.0** ⏱️ · **213.4** 💾 | **0.492** 🏆 · **382.0** ⏱️ · **334.2** 💾 |
+| KSerialization | 0.245 · 767.0 · 1836.6 | 0.244 · 769.0 · 1836.6 | 0.133 · 1413.0 · 1957.5 |
+| Gson | **0.292** 🏆 · **644.0** ⏱️ · 1343.8 | 0.292 · 644.0 · 1343.8 | 0.288 · 652.0 · 1366.7 |
+| Jackson | 0.136 · 1380.0 · 6210.0 | 0.155 · 1209.0 · 6210.1 | 0.154 · 1217.0 · 6210.1 |
 
 ---
 
 ## Serialization — 1000 objects (WRITING)
 
-| Engine | String (ms) | MEM (KB) | Bytes (ms) | MEM (KB) | Streaming (ms) | MEM (KB) |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **👻 Ghost** | 0.119 ±0.008 | **185.3** 💾 | **0.086 ±0.002** 🏆 | **92.6** 💾 | **0.084 ±0.001** 🏆 | **32.2** 💾 |
-| KSerialization | **0.112 ±0.006** 🏆 | 264.9 | 0.116 ±0.005 | 326.3 | 0.210 ±0.005 | 203.5 |
-| Gson | 0.353 ±0.012 | 731.0 | 0.359 ±0.013 | 823.6 | 0.941 ±0.055 | 3996.8 |
-| Jackson | 0.201 ±0.009 | 458.6 | 0.168 ±0.007 | 312.1 | 0.158 ±0.001 | 123.6 |
+| Engine | String<br>GB/s · µs · KB/op | Bytes<br>GB/s · µs · KB/op | Streaming<br>GB/s · µs · KB/op |
+|:---|:---:|:---:|:---:|
+| **👻 Ghost** | 0.797 · 119.0 · **185.3** 💾 | **1.103** 🏆 · **86.0** ⏱️ · **92.6** 💾 | **1.129** 🏆 · **84.0** ⏱️ · **32.2** 💾 |
+| KSerialization | **0.847** 🏆 · **112.0** ⏱️ · 264.9 | 0.817 · 116.0 · 326.3 | 0.452 · 210.0 · 203.5 |
+| Gson | 0.269 · 353.0 · 731.0 | 0.264 · 359.0 · 823.6 | 0.101 · 941.0 · 3996.8 |
+| Jackson | 0.472 · 201.0 · 458.6 | 0.564 · 168.0 · 312.1 | 0.600 · 158.0 · 123.6 |
 
 ---
 
 ## Stress Tests
 
-Fixed column order: **Ghost → Gson → KSER → Jackson**. **🏆** = fastest.
+Fixed column order: **Ghost → Gson → KSER → Jackson**. Each cell reads **GB/s · µs/op** (Deep Nesting payload **632 B**, Malformed **2 901 B**). **🏆** = highest GB/s · **⏱️** = lowest latency.
 
 | Test | Ghost | Gson | KSer | Jackson |
 |:---|:---:|:---:|:---:|:---:|
-| Deep Nesting — 20 levels (ms) | **0.183** 🏆 | 0.410 | 0.458 | 5.309 |
-| Malformed JSON — resilience (ms) | 0.034 | **0.025** 🏆 | 0.077 | 0.087 |
+| Deep Nesting — 20 levels | **0.0035 · 183.0** 🏆⏱️ | 0.0015 · 410.0 | 0.0014 · 458.0 | 0.0001 · 5309.0 |
+| Malformed JSON — resilience | 0.085 · 34.0 | **0.116 · 25.0** 🏆⏱️ | 0.038 · 77.0 | 0.033 · 87.0 |
 
 ---
 
 ## 👻 Ghost Special Features
 
-| Feature | µs/op | B/op |
-|:---|:---:|:---:|
-| Polymorphism — Sealed Class Dispatch | **1.54** | 300 |
-| Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.34** | 32 |
-| Resilience — `@GhostResilient` (type mismatch recovery) | **1.67** | 824 |
-| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **0.72** | 80 |
-| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.95** | 264 |
-| Opaque JSON — RawJson field capture (slice, bytes) | **0.33** | 48 |
-| Opaque JSON — RawJson.kind() on captured slice | **0.08** | 0 |
-| Opaque JSON — RawJson.decodeAs&lt;T&gt;() second stage | **0.76** | 128 |
-| JsonEnvelope — parsePayload (SSE fat envelope) | **1.80** | 16664 |
-| JsonEnvelope — parseTyped (cached serializer route) | **1.60** | 16671 |
+| Feature | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
+|:---|:---:|:---:|:---:|
+| Polymorphism — Sealed Class Dispatch | **0.090** | 1.27 | 0.293 |
+| Structural Flattening — `@GhostFlatten` (3 levels deep) | **0.191** | 0.40 | 0.031 |
+| Resilience — `@GhostResilient` (type mismatch recovery) | **0.031** | 2.07 | 0.817 |
+| Custom Decoders — `@GhostDecoder` (hex + nullable transform) | **0.121** | 0.34 | 0.078 |
+| Polymorphic Fallback — `@GhostFallback` (unknown discriminator) | **0.273** | 0.34 | 0.258 |
+| Opaque JSON — RawJson field capture (slice, bytes) | **0.081** | 0.69 | 0.047 |
+| Opaque JSON — RawJson.kind() on captured slice | — | **0.08** | 0 |
+| Opaque JSON — RawJson.decodeAs&lt;T&gt;() second stage | — | **1.07** | 0.125 |
+| JsonEnvelope — parsePayload (SSE fat envelope) | **0.008** | 10.08 | 32.242 |
+| JsonEnvelope — parseTyped (cached serializer route) | **0.007** | 11.47 | 32.281 |
 
 ---
 
 ## 👻 RawJson Capture (bytes vs string channels)
 
-| Scenario | µs/op | B/op |
-|:---|:---:|:---:|
-| Decode `RawJson` field (bytes, small, slice capture) | **0.59** | **48** |
-| Decode `RawJson` field (string, small, owned capture) | 0.84 | 536 |
-| Decode `ByteArray` field (bytes, small, copy capture) | 0.70 | 280 |
-| Decode `RawJson` field (bytes, large nested metadata) | **66.02** | **48** |
-| Decode `RawJson` field (string, large nested metadata) | 97.21 | 175640 |
-| Decode `ByteArray` field (bytes, large nested metadata) | 68.78 | 87808 |
-| Encode `RawJson` payload (`encodeToBytes`, slice write) | **0.29** | 56 |
-| Encode `RawJson` payload (`encodeToString`, UTF-8 decode) | 0.34 | 80 |
-| Top-level `RawJson` decode (bytes) | 65.47 | 24 |
-| Top-level `RawJson` decode (string) | 72.93 | 87808 |
-| Top-level `RawJson` round-trip (bytes in/out) | 71.31 | 87808 |
-| Top-level `RawJson` round-trip (string in/out) | 99.81 | 175616 |
+| Scenario | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
+|:---|:---:|:---:|:---:|
+| Decode `RawJson` field (bytes, small, slice capture) | **0.245** | 0.98 | **0.047** |
+| Decode `RawJson` field (string, small, owned capture) | 0.200 | 1.19 | 0.523 |
+| Decode `ByteArray` field (bytes, small, copy capture) | 0.477 | 0.50 | 0.273 |
+| Decode `RawJson` field (bytes, large nested metadata) | **1.341** | 65.46 | **0.047** |
+| Decode `RawJson` field (string, large nested metadata) | 0.892 | 98.46 | 171.523 |
+| Decode `ByteArray` field (bytes, large nested metadata) | 1.229 | 71.45 | 85.750 |
+| Encode `RawJson` payload (`encodeToBytes`, slice write) | **0.077** | 0.50 | 0.055 |
+| Encode `RawJson` payload (`encodeToString`, UTF-8 decode) | 0.062 | 0.63 | 0.078 |
+| Top-level `RawJson` decode (bytes) | 1.273 | 68.96 | 0.023 |
+| Top-level `RawJson` decode (string) | 1.167 | 75.23 | 85.750 |
+| Top-level `RawJson` round-trip (bytes in/out) | 1.221 | 71.87 | 85.750 |
+| Top-level `RawJson` round-trip (string in/out) | 0.827 | 106.06 | 171.500 |
 
 ---
 

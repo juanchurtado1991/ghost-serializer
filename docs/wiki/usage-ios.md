@@ -4,6 +4,8 @@
 
 Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Because Kotlin/Native does not support `ServiceLoader`, manual registry registration is required once at startup.
 
+Start with the shared-module setup in the [Quick Start](quick-start.md), then add the XCFramework export below.
+
 ---
 
 ## 1. Create a KMP Module with XCFramework Export
@@ -12,7 +14,8 @@ Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular 
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.google.devtools.ksp") version "2.1.10-1.0.31"
+    id("com.google.devtools.ksp") version "2.3.10"
+    id("com.ghostserializer.ghost") version "1.2.7"
 }
 
 kotlin {
@@ -21,29 +24,29 @@ kotlin {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.2.2")
+            export("com.ghostserializer:ghost-serialization:1.2.7")
         }
     }
     iosSimulatorArm64 {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.2.2")
+            export("com.ghostserializer:ghost-serialization:1.2.7")
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            api("com.ghostserializer:ghost-api:1.2.2")
-            api("com.ghostserializer:ghost-serialization:1.2.2")
+            api("com.ghostserializer:ghost-api:1.2.7")
+            api("com.ghostserializer:ghost-serialization:1.2.7")
         }
     }
 }
 
 ksp {
     arg("ghost.moduleName", "shared_utils")
-    // Optional: native String parsing (faster for in-memory String inputs)
-    // arg("ghost.textChannel", "true")
+    // Optional for byte-only modules: reduce generated code per DTO.
+    // arg("ghost.textChannel", "false")
 }
 ```
 

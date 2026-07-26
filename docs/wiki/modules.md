@@ -2,9 +2,11 @@
 
 [![Maven Central](https://img.shields.io/badge/Maven_Central-com.ghostserializer-brightgreen.png?style=flat&logo=apache-maven&logoColor=white)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 
-Ghost is structured as a set of focused modules. The **core** is always required; all other modules are optional drop-in integrations for your stack.
+Ghost is structured as a set of focused modules. The **core** is always required; all other modules are optional integrations that let Ghost optimize selected models while your existing JSON serializer remains in place.
 
 All modules share the same version and are published to Maven Central under `com.ghostserializer`.
+
+Start with the [Quick Start](quick-start.md), then add only the framework modules your application uses.
 
 ```toml
 # gradle/libs.versions.toml
@@ -19,7 +21,7 @@ ghost = "1.2.7"
 ### `ghost-api` — Annotations & Public API
 The entry point for every Ghost project. Contains all annotations (`@GhostSerialization`, `@GhostName`, `@GhostFlatten`, `@GhostWrap`, `@GhostProtoSerialization`, etc.) and the `Ghost` object (deserialize / encodeToBytes / encodeToString).
 
-**Targets:** Android · iOS arm64 · iOS Simulator · JVM · KMP metadata
+**Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
 ```toml
 ghost-api = { module = "com.ghostserializer:ghost-api", version.ref = "ghost" }
@@ -35,7 +37,7 @@ implementation(libs.ghost.api)
 ### `ghost-serialization` — Runtime Engine
 The zero-allocation reader/writer engine. Includes `GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader` (streaming), all writer types, the thread-local pool, and the serializer registry.
 
-**Targets:** Android · iOS arm64 · iOS Simulator · JVM · KMP metadata
+**Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
 ```toml
 ghost-serialization = { module = "com.ghostserializer:ghost-serialization", version.ref = "ghost" }
@@ -70,7 +72,7 @@ ksp(libs.ghost.compiler)
 ## Gradle Plugin
 
 ### `com.ghostserializer.ghost` — Auto-Configuration Plugin
-Automatically applies `ghost-compiler` as a KSP dependency to every compilation target (Android, iOS arm64, iOS Simulator, JVM) declared in your module. Eliminates boilerplate KSP wiring in multiplatform builds.
+Automatically adds the core runtime and applies `ghost-compiler` as a KSP dependency to every supported compilation target declared in your module. It also detects Ktor, Retrofit, and protobuf dependencies and can inject the matching Ghost adapter. This eliminates most manual KSP and dependency wiring without changing other serializers.
 
 ```toml
 [plugins]
@@ -89,12 +91,12 @@ plugins {
 ## Framework Integrations
 
 ### `ghost-ktor` — Ktor Client & Server
-Two integration modes for Ktor 2.3.x:
+Two integration modes for Ktor 3.5.x:
 
-- **Mode A — `ContentNegotiation` plugin**: Drop-in JSON engine, handles all `body<T>()` and response serialization automatically.
+- **Mode A — `ContentNegotiation` plugin**: register Ghost beside KotlinX Serialization; types without a Ghost serializer fall through.
 - **Mode B — Direct extensions**: `bodyGhost<T>()` / `respondGhost()` bypass the plugin pipeline entirely for maximum throughput on high-RPS endpoints.
 
-**Targets:** Android · iOS arm64 · iOS Simulator · JVM
+**Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs client; JVM server
 
 ```toml
 ghost-ktor = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" }
@@ -109,12 +111,12 @@ val user: User = client.get("/users/1").bodyGhost()
 call.respondGhost(user)
 ```
 
-→ **[Full Ktor guide →](usage-kmp.md#ktor)**
+→ **[Full Ktor guide →](usage-kmp.md#4-ktor-integration-ghost-ktor)**
 
 ---
 
 ### `ghost-retrofit` — Retrofit Converter
-Drop-in `Converter.Factory` for Retrofit 2.11+. Replaces Gson/Moshi/kotlinx converters with Ghost's zero-allocation reader. Supports `GhostConverterFactory` (standard JSON) and `GhostProtoConverterFactory` (proto3 JSON).
+Incremental `Converter.Factory` for Retrofit 2.11+. Place it before Gson, Moshi, or KotlinX so registered Ghost models use the generated reader and every other type reaches the existing converter. Supports `GhostConverterFactory` (standard JSON) and `GhostProtoConverterFactory` (proto3 JSON).
 
 **Targets:** JVM / Android
 
@@ -126,15 +128,16 @@ ghost-retrofit = { module = "com.ghostserializer:ghost-retrofit", version.ref = 
 val retrofit = Retrofit.Builder()
     .baseUrl("https://api.example.com/")
     .addConverterFactory(GhostConverterFactory.create())
+    .addConverterFactory(GsonConverterFactory.create())
     .build()
 ```
 
-→ **[Full Android / Retrofit guide →](usage-android.md#retrofit)**
+→ **[Full Android / Retrofit guide →](usage-android.md#5-retrofit-integration)**
 
 ---
 
 ### `ghost-spring-boot-starter` — Spring Boot Auto-Configuration
-Auto-configures Ghost as the HTTP message converter for Spring Boot 3.4+ (MVC and WebFlux). Detects `@GhostSerialization` and `@GhostProtoSerialization` at runtime and routes through the appropriate reader automatically — no extra configuration needed.
+Adds Ghost ahead of the standard Spring Boot 3.4+ MVC and WebFlux codecs. DTOs backed by `@GhostSerialization` or `@GhostProtoSerialization` use Ghost; all other controller types continue through Jackson — no extra configuration needed.
 
 **Targets:** JVM
 
@@ -161,7 +164,7 @@ Layers [proto3 JSON mapping rules](https://protobuf.dev/programming-guides/json/
 - `ProtoAnyRegistry` — dynamic `typeUrl` resolution
 - `GhostProtobuf` entry point: `deserialize<T>()`, `encodeToBytes()`, `encodeToString()`
 
-**Targets:** Android · iOS arm64 · iOS Simulator · JVM
+**Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs
 
 ```toml
 ghost-protobuf = { module = "com.ghostserializer:ghost-protobuf", version.ref = "ghost" }
@@ -187,7 +190,7 @@ val json: String = GhostProtobuf.encodeToString(user)
 | Runtime | `ghost-serialization` | KMP | Zero-alloc readers/writers/pool |
 | Compiler | `ghost-compiler` | JVM | KSP code generator |
 | Gradle plugin | `com.ghostserializer.ghost` | — | Auto-wires KSP across targets |
-| Ktor | `ghost-ktor` | KMP | Ktor 2.3.x client + server integration |
+| Ktor | `ghost-ktor` | KMP (+ wasmJs) | Ktor 3.5.x client + JVM server integration |
 | Retrofit | `ghost-retrofit` | Android/JVM | Retrofit 2.11+ converter factory |
 | Spring Boot | `ghost-spring-boot-starter` | JVM | Spring Boot 3.4+ auto-configuration |
 | Proto3 | `ghost-protobuf` | KMP | Proto3 JSON mapping + WKTs |

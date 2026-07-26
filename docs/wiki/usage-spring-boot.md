@@ -2,7 +2,9 @@
 
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](usage-spring-boot.md)
 
-Ghost integrates with Spring Boot via the `ghost-spring-boot-starter`. It auto-configures both **Spring MVC** and **Spring WebFlux** to use Ghost as the JSON engine. No manual bean wiring is needed.
+Ghost integrates with Spring Boot via the `ghost-spring-boot-starter`. It adds generated JSON serialization for annotated hot-path DTOs in **Spring MVC** and **Spring WebFlux** without replacing Jackson: unsupported and unannotated controller types continue through the existing Spring codecs. No manual bean wiring is needed.
+
+For the cross-platform setup flow, see the [Ghost Serializer Quick Start](quick-start.md).
 
 ---
 
@@ -11,13 +13,15 @@ Ghost integrates with Spring Boot via the `ghost-spring-boot-starter`. It auto-c
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.2")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.7")
 }
 ```
 
-The starter auto-configures:
+The starter registers these ahead of the default codecs:
 - `GhostHttpMessageConverter` for Spring MVC (WebMVC)
 - `GhostReactiveEncoder` + `GhostReactiveDecoder` for Spring WebFlux
+
+They accept DTOs backed by a generated Ghost serializer and decline other types, preserving Jackson as the fallback.
 
 Integration tests in this repo run against **Spring Boot 3.4.5** (`@SpringBootTest` + MockMvc with KSP-generated DTOs).
 
