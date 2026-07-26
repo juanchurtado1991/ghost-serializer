@@ -4,6 +4,17 @@
 
 ### Added
 - **Docs: field-order pro tip** — Quick Start, Advanced Features, and Architecture now recommend aligning `data class` property order with the producer’s JSON key order so in-order field prediction stays on the hot path (hash fallback remains correct for shuffled keys).
+- **Generated-serializer hygiene suite** (`ghost-compiler`): static checks and KSP regressions for unused imports, unused `MASK_*` constants, underscored local names, and lines longer than 120 characters (warm-up JSON literals excluded).
+
+### Changed
+- **Leaner KSP output**: strip redundant explicit `public` modifiers; omit unused `MASK_REQUIRED_N` when a model has a single required field; invent camelCase locals (`idInternalValue`, `wrappedCaptureExtras`) instead of underscored names; format long `JsonReaderOptions.of` / `createInstance` / null-check / collection-reader call sites across multiple lines.
+- **Constants-first cleanup**: wire UTF-8 decode, Base64 errors, dispatch-table defaults, perfect-hash table ladders, Gradle `"api"` config, `DefaultExpressionExtractor` whitelist literals, and related hot-path ints/strings through `GhostJsonConstants` / `GhostEmitterConstants` (or file-local named consts in `ghost-api`, which stays dependency-free).
+
+### Fixed
+- **Docs / KDoc drift**: manuals and `modules.md` updated for the real encode path and `MAX_DEFAULT_BRANCH_COUNT`; production KDoc no longer frames buffer sizes around the Twitter fixture.
+
+### Removed
+- **Dead surface area**: unused escape-string constants, `writeNullValueRaw`, orphan `Package.swift`, unused sample/integration fixtures (`LargeStringData`, unused sample models), and other unreferenced helpers that only inflated the bytecode/API surface.
 
 ## [1.3.0] - 2026-07-26
 
