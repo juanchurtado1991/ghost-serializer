@@ -257,6 +257,28 @@ val user: User = Ghost.deserialize(response.body().string())
 
 ¹ `textChannel` is **not** required for `Ghost.deserialize(String)` — the default bridge always works. Enable per model only for multi‑MB String payloads where benchmarks show a win (see [§5 — When to enable `textChannel`](advanced-features.md#when-to-enable-textchannel)).
 
+### Input encoding (RFC 8259 §8.1)
+
+Ghost's parsers operate on **UTF-8** internally, but every byte and streaming entrypoint
+(`Ghost.deserialize(ByteArray)`, `Ghost.deserialize(BufferedSource)`, and the Retrofit / Ktor /
+Spring converters) auto-detects and normalizes the three encodings JSON permits:
+
+| Detected input | Handling | Cost |
+|:---|:---|:---|
+| UTF-8, no BOM (the common case) | Passed through **as-is** | Two byte comparisons, **zero copy / zero alloc** |
+| UTF-8 with BOM (`EF BB BF`) | BOM offset skipped | Offset shift only, **no copy** |
+| UTF-16 LE/BE (BOM or bare) | Transcoded to UTF-8 once | One buffer allocation + transcode |
+| UTF-32 LE/BE (BOM or bare) | Transcoded to UTF-8 once | One buffer allocation + transcode |
+
+Detection uses the leading BOM and the RFC 4627 NUL-byte pattern (e.g. `xx 00` ⇒ UTF-16LE,
+`00 xx` ⇒ UTF-16BE). Malformed input — an odd-length UTF-16 stream, a lone surrogate, or a
+UTF-32 code point above `U+10FFFF` — raises a `GhostJsonException`.
+
+> [!NOTE]
+> The fast path is designed so **99% of payloads (UTF-8 without a BOM) pay nothing** — no
+> slowdown and no allocation. Only the rare non-UTF-8 payload pays for a one-time transcode.
+> For maximum throughput, always send UTF-8 (the JSON default per RFC 8259).
+
 ---
 
 ## 7. Opaque JSON fields (`RawJson`)
