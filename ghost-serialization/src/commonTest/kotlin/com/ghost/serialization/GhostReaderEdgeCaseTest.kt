@@ -320,19 +320,19 @@ class GhostReaderEdgeCaseTest {
     @Test
     fun peeksObjectToken() {
         val reader = readerOf("{}")
-        assertEquals(GhostJsonConstants.OPEN_OBJ.toInt(), reader.peekNextToken())
+        assertEquals(GhostJsonConstants.OPEN_OBJ_INT, reader.peekNextToken())
     }
 
     @Test
     fun peeksArrayToken() {
         val reader = readerOf("[]")
-        assertEquals(GhostJsonConstants.OPEN_ARR.toInt(), reader.peekNextToken())
+        assertEquals(GhostJsonConstants.OPEN_ARR_INT, reader.peekNextToken())
     }
 
     @Test
     fun peeksStringToken() {
         val reader = readerOf("\"hello\"")
-        assertEquals(GhostJsonConstants.QUOTE.toInt(), reader.peekNextToken())
+        assertEquals(GhostJsonConstants.QUOTE_INT, reader.peekNextToken())
     }
 
     @Test
@@ -344,13 +344,13 @@ class GhostReaderEdgeCaseTest {
     @Test
     fun peeksBooleanToken() {
         val reader = readerOf("true")
-        assertEquals(GhostJsonConstants.TRUE_CHAR.toInt(), reader.peekNextToken())
+        assertEquals(GhostJsonConstants.TRUE_CHAR_INT, reader.peekNextToken())
     }
 
     @Test
     fun peeksNullToken() {
         val reader = readerOf("null")
-        assertEquals(GhostJsonConstants.NULL_CHAR.toInt(), reader.peekNextToken())
+        assertEquals(GhostJsonConstants.NULL_CHAR_INT, reader.peekNextToken())
     }
 
     @Test
