@@ -628,6 +628,11 @@ internal object GhostEmitterConstants {
         "val ${STR_WRAPPED_JSON_VAR_PREFIX}%L = %L.materializeWrappedObject(%L, %L, %L)"
     const val TEMPLATE_WRAPPED_JSON_IF_NOT_NULL = "if (${STR_WRAPPED_JSON_VAR_PREFIX}%L != null)"
     const val TEMPLATE_WRAPPED_READER_VAR = "val wrappedReader = %T(${STR_WRAPPED_JSON_VAR_PREFIX}%L)"
+    // materializeWrappedObject always returns ByteArray (the synthetic object is assembled as
+    // UTF-8) — GhostJsonStringReader's constructor takes a String, so this target needs a
+    // decode step the byte/flat reader variants don't.
+    const val TEMPLATE_WRAPPED_STRING_READER_VAR =
+        "val wrappedReader = %T(${STR_WRAPPED_JSON_VAR_PREFIX}%L.decodeToString())"
     const val TEMPLATE_DESERIALIZE_WRAPPED_READER = "%T.deserialize(wrappedReader)"
     const val TEMPLATE_NULL_ASSIGN = "%L = null"
     const val TEMPLATE_ARRAY_OF_OPEN = "arrayOf(\n"

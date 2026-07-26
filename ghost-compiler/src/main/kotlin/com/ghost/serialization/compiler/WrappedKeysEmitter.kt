@@ -81,7 +81,11 @@ internal object WrappedKeysEmitter {
             )
             body.beginControlFlow(C.TEMPLATE_WRAPPED_JSON_IF_NOT_NULL, prop.kotlinName)
             body.addStatement(
-                C.TEMPLATE_WRAPPED_READER_VAR,
+                if (readerClass.simpleName == C.STR_GHOST_JSON_STRING_READER) {
+                    C.TEMPLATE_WRAPPED_STRING_READER_VAR
+                } else {
+                    C.TEMPLATE_WRAPPED_READER_VAR
+                },
                 readerClass,
                 prop.kotlinName,
             )
