@@ -4,13 +4,20 @@
 
 Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate only the hot DTOs, leave everything else alone, and migrate when you want.
 
-![Kotlin 2.4.0 · KSP 2.3.10 · Version 1.2.7 · Android · iOS · KMP · Spring Boot](readme-assets/badges-row.png)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![KSP](https://img.shields.io/badge/KSP-2.3.10-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
+[![Version](https://img.shields.io/badge/version-1.2.7-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
+[![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
+[![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
+[![Wasm](https://img.shields.io/badge/Wasm-654FF0.png?style=flat&logo=webassembly&logoColor=white)](docs/wiki/modules.md)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
 
-[![Quick Start](readme-assets/menu-quick-start.png)](docs/wiki/quick-start.md)
-[![Maven Central 1.2.7](readme-assets/menu-maven.png)](https://central.sonatype.com/search?q=g:com.ghostserializer)
-[![Interactive Demo](readme-assets/menu-demo.png)](https://juanchurtado1991.github.io/ghost-serializer/)
-[![Benchmarks](readme-assets/menu-benchmarks.png)](docs/wiki/benchmarks.md)
-[![Coverage Report](readme-assets/menu-coverage.png)](https://juanchurtado1991.github.io/ghost-serializer/coverage/)
+**[Quick Start](docs/wiki/quick-start.md)** ·
+**[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
+**[Interactive Demo](https://juanchurtado1991.github.io/ghost-serializer/)** ·
+**[Benchmarks](docs/wiki/benchmarks.md)** ·
+**[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
 
 ---
 
