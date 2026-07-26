@@ -861,6 +861,8 @@ inline fun <T> GhostJsonReader.decodeResilient(
     val savedDepth = depth
     val savedNeedsCommaMask = needsCommaMask
     val savedCommaConsumedMask = commaConsumedMask
+    val streaming = source as? StreamingGhostSource
+    streaming?.pin(savedPos)
     try {
         return block()
     } catch (_: GhostJsonException) {
@@ -871,5 +873,7 @@ inline fun <T> GhostJsonReader.decodeResilient(
         commaConsumedMask = savedCommaConsumedMask
         skipValue()
         return null
+    } finally {
+        streaming?.unpin()
     }
 }

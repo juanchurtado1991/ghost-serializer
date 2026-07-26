@@ -164,4 +164,81 @@ class StreamingGhostSourceTest {
         assertEquals(1, reader.nextInt())
         reader.endObject()
     }
+
+    // ── Sliding consume (Okio prefix skip) ─────────────────────────────────────────────
+
+    @Test
+    fun releaseBefore_skipsFullWindowsBehindReader() {
+        val payload = "a".repeat(30_000)
+        val okio = Buffer().writeUtf8(payload)
+        val source = StreamingGhostSource(okio)
+
+        // Touch far into the document so Okio has buffered a large prefix.
+        assertEquals('a'.code, source[25_000])
+        val sizeBefore = okio.size
+
+        // retainFrom = 25000 - 8192 = 16808 → aligned down to 16384; skip 16384 bytes.
+        source.releaseBefore(25_000)
+        assertEquals(16_384, source.discarded)
+        assertTrue(okio.size < sizeBefore, "Okio buffer should shrink after releaseBefore")
+        assertEquals('a'.code, source[25_000], "bytes at/after retain window must stay readable")
+        assertFailsWith<IndexOutOfBoundsException> {
+            source[0]
+        }
+    }
+
+    @Test
+    fun releaseBefore_respectsPin() {
+        val payload = "a".repeat(30_000)
+        val source = StreamingGhostSource(Buffer().writeUtf8(payload))
+        source[20_000]
+        source.pin(100)
+        source.releaseBefore(20_000)
+        // Pin at 100 blocks aligned retainFrom from advancing past 0.
+        assertEquals(0, source.discarded)
+        assertEquals('a'.code, source[100])
+        source.unpin()
+        source.releaseBefore(20_000)
+        assertTrue(source.discarded >= GhostJsonConstants.STREAMING_BUFFER_SIZE)
+    }
+
+    @Test
+    fun reader_slidingConsume_parsesMultiSegmentDocument() {
+        // Many small fields so skipWhitespace fires often and releaseBefore can discard.
+        val fields = (0 until 200).joinToString(",") { i ->
+            val pad = "x".repeat(100)
+            "\"f$i\":\"$pad$i\""
+        }
+        val json = "{$fields}"
+        val reader = GhostJsonReader(Buffer().writeUtf8(json))
+        reader.beginObject()
+        for (i in 0 until 200) {
+            reader.skipWhitespace()
+            assertEquals("f$i", reader.readQuotedString())
+            reader.consumeKeySeparator()
+            assertEquals("x".repeat(100) + "$i", reader.nextString())
+            if (i < 199) reader.consumeArraySeparator()
+        }
+        reader.endObject()
+        val streaming = reader.source as StreamingGhostSource
+        assertTrue(
+            streaming.discarded > 0,
+            "expected sliding consume to discard prefix after parsing ~${json.length} bytes"
+        )
+    }
+
+    @Test
+    fun captureRawJson_streaming_survivesReleaseDuringScan() {
+        val padding = "z".repeat(12_000)
+        val json = "{\"raw\":{\"inner\":\"$padding\"},\"after\":1}"
+        val reader = GhostJsonReader(Buffer().writeUtf8(json))
+        reader.beginObject()
+        reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
+        val raw = reader.captureRawJson()
+        assertTrue(raw.asDisplayString().contains(padding))
+        reader.consumeArraySeparator()
+        reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
+        assertEquals(1, reader.nextInt())
+        reader.endObject()
+    }
 }

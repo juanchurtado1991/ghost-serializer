@@ -211,6 +211,20 @@ class GhostJsonReader(
             position = limit
             nextTokenByte = C.MATCH_END
         }
+        releaseStreamingPrefix()
+    }
+
+    /**
+     * Asks a [StreamingGhostSource] to skip Okio bytes already behind [position].
+     * No-op for flat [ByteArray] sources. Safe to call after any forward-only advance;
+     * ranges that may still be re-read must be [StreamingGhostSource.pin]ned first.
+     */
+    @PublishedApi
+    internal fun releaseStreamingPrefix() {
+        val streaming = source as? StreamingGhostSource ?: return
+        val pos = position
+        if (pos == Int.MAX_VALUE || pos <= 0) return
+        streaming.releaseBefore(pos)
     }
 
     /**

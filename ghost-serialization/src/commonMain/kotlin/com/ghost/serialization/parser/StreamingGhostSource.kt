@@ -8,6 +8,17 @@ import okio.Buffer
 /**
  * Implementation of [GhostSource] for streaming data from an [okio.BufferedSource].
  * Automatically requests data from the source as needed.
+ *
+ * ## Sliding consume
+ *
+ * Absolute indices stay stable for the parser, but bytes already behind the reader's
+ * logical position are [okio.BufferedSource.skip]ped so Okio's buffer does not retain the
+ * entire document. [releaseBefore] is driven by [GhostJsonReader] (not by [get] alone):
+ * discriminator peek reads ahead without advancing the reader, and must not discard the
+ * prefix the reader still needs.
+ *
+ * [pin] / [unpin] protect ranges that may still be re-read ([decodeResilient] rollback,
+ * [captureRawJson] materialization).
  */
 @InternalGhostApi
 class StreamingGhostSource(
@@ -22,8 +33,20 @@ class StreamingGhostSource(
     override val size: Int get() = Int.MAX_VALUE
 
     private val bufferBytes = ByteArray(GhostJsonConstants.STREAMING_BUFFER_SIZE)
+    /** Absolute start index of the bytes currently cached in [bufferBytes]. */
     private var bufferStart = -1
+    /** Absolute end index (exclusive) of the bytes currently cached in [bufferBytes]. */
     private var bufferEnd = -1
+
+    /**
+     * Absolute index corresponding to Okio buffer offset 0.
+     * Bytes in `[0, discarded)` have been skipped and are no longer addressable.
+     */
+    internal var discarded: Int = 0
+        private set
+
+    private var pinStack = IntArray(PIN_STACK_INITIAL_CAPACITY)
+    private var pinCount = 0
 
     override fun get(index: Int): Int {
         if (index in bufferStart..<bufferEnd) {
@@ -32,22 +55,80 @@ class StreamingGhostSource(
         return getSlow(index)
     }
 
+    /**
+     * Keeps bytes at and after [absoluteIndex] available even if [releaseBefore] is called
+     * with a higher reader position (nested pins supported).
+     */
+    fun pin(absoluteIndex: Int) {
+        if (pinCount == pinStack.size) {
+            pinStack = pinStack.copyOf(pinStack.size * 2)
+        }
+        pinStack[pinCount++] = absoluteIndex
+    }
+
+    fun unpin() {
+        if (pinCount > 0) pinCount--
+    }
+
+    /**
+     * Skips Okio prefix bytes that the reader will not need again.
+     *
+     * Retains at least one [GhostJsonConstants.STREAMING_BUFFER_SIZE] window behind
+     * [absoluteIndex], and never discards past any active [pin]. No-ops until at least
+     * one full window can be skipped (avoids thrashing on small advances).
+     */
+    fun releaseBefore(absoluteIndex: Int) {
+        if (absoluteIndex <= discarded || absoluteIndex == Int.MAX_VALUE) return
+
+        var retainFrom = (absoluteIndex - GhostJsonConstants.STREAMING_BUFFER_SIZE).coerceAtLeast(0)
+        var i = 0
+        while (i < pinCount) {
+            retainFrom = minOf(retainFrom, pinStack[i])
+            i++
+        }
+        val aligned = (retainFrom / GhostJsonConstants.STREAMING_BUFFER_SIZE) *
+            GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val toSkip = aligned - discarded
+        if (toSkip < GhostJsonConstants.STREAMING_BUFFER_SIZE) return
+
+        okioSource.skip(toSkip.toLong())
+        discarded += toSkip
+
+        if (bufferEnd <= discarded || bufferStart < discarded) {
+            bufferStart = -1
+            bufferEnd = -1
+        }
+    }
+
     private fun getSlow(index: Int): Int {
-        val requestedIndexL = index.toLong()
-        okioSource.request(requestedIndexL + 1L)
+        if (index < discarded) {
+            throw IndexOutOfBoundsException(
+                "Index $index is below discarded prefix ($discarded)"
+            )
+        }
+        val relativeIndex = (index - discarded).toLong()
+        okioSource.request(relativeIndex + 1L)
         val available = buffer.size
-        if (requestedIndexL >= available) {
-            throw IndexOutOfBoundsException("Index $index is out of bounds (available: $available)")
+        if (relativeIndex >= available) {
+            throw IndexOutOfBoundsException(
+                "Index $index is out of bounds (available absolute end: ${discarded + available})"
+            )
         }
 
-        val alignedStart = (index / GhostJsonConstants.STREAMING_BUFFER_SIZE) * GhostJsonConstants.STREAMING_BUFFER_SIZE
-        val toCopy = minOf(GhostJsonConstants.STREAMING_BUFFER_SIZE.toLong(), available - alignedStart)
+        val alignedStart =
+            (index / GhostJsonConstants.STREAMING_BUFFER_SIZE) * GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val windowStart = maxOf(alignedStart, discarded)
+        val windowStartRel = (windowStart - discarded).toLong()
+        val alignedEnd = alignedStart + GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val absoluteAvailableEnd = discarded + available.toInt()
+        val windowEnd = minOf(alignedEnd, absoluteAvailableEnd)
+        val toCopy = (windowEnd - windowStart).toLong()
 
         if (toCopy <= 0L) {
             throw IndexOutOfBoundsException("Index $index is out of bounds")
         }
 
-        buffer.copyTo(tempBuffer, alignedStart.toLong(), toCopy)
+        buffer.copyTo(tempBuffer, windowStartRel, toCopy)
         // Buffer.read(sink, offset, byteCount) reads only UP TO byteCount bytes per call (same
         // "may return fewer than requested" contract as InputStream.read) -- when [toCopy] spans
         // two of Okio's own internal segments (also 8192 bytes), a single call silently stops at
@@ -64,8 +145,8 @@ class StreamingGhostSource(
             if (bytesReadThisCall == -1) break
             bytesDrained += bytesReadThisCall
         }
-        bufferStart = alignedStart
-        bufferEnd = (alignedStart + toCopy).toInt()
+        bufferStart = windowStart
+        bufferEnd = windowStart + toCopy.toInt()
 
         return bufferBytes[index - bufferStart].toInt() and GhostJsonConstants.BYTE_MASK
     }
@@ -77,16 +158,23 @@ class StreamingGhostSource(
         if (start >= segmentStart && end <= segmentEnd) {
             return bufferBytes.decodeToString(start - segmentStart, end - segmentStart)
         }
-        okioSource.request(end.toLong())
+        if (start < discarded) {
+            throw IndexOutOfBoundsException(
+                "decodeToString start $start is below discarded prefix ($discarded)"
+            )
+        }
+        val relativeEnd = (end - discarded).toLong()
+        okioSource.request(relativeEnd)
         // copyTo fills the reusable tempBuffer with exactly [length] bytes from the live Okio
         // buffer without advancing its read position.  readUtf8 then decodes them in one pass
         // and returns the final String — no intermediate ByteString, no snapshot, no substring.
-        buffer.copyTo(tempBuffer, start.toLong(), length.toLong())
+        buffer.copyTo(tempBuffer, (start - discarded).toLong(), length.toLong())
         return tempBuffer.readUtf8(length.toLong())
     }
 
     override fun contentEquals(start: Int, expected: ByteString): Boolean {
-        return okioSource.rangeEquals(start.toLong(), expected)
+        if (start < discarded) return false
+        return okioSource.rangeEquals((start - discarded).toLong(), expected)
     }
 
     override fun findNextNonWhitespace(position: Int, limit: Int): Int {
@@ -368,5 +456,9 @@ class StreamingGhostSource(
                 if (bufferStart == -1 || currentPosition >= bufferEnd) return false
             }
         }
+    }
+
+    private companion object {
+        const val PIN_STACK_INITIAL_CAPACITY = 8
     }
 }
