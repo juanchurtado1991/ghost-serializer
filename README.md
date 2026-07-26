@@ -93,7 +93,7 @@ Details → **[Modules](docs/wiki/modules.md)**
 | [Spring Boot](docs/wiki/usage-spring-boot.md) | MVC / WebFlux + Jackson |
 | [Proto3 JSON](docs/wiki/usage-protobuf.md) | WKTs and mapping rules |
 | [Advanced Features](docs/wiki/advanced-features.md) | Resilience, flatten, RawJson |
-| [Architecture](docs/wiki/architecture.md) | Readers, pools, codegen |
+| [Architecture](docs/wiki/architecture.md) | Prediction, SWAR, hashed dispatch, pools |
 | [Contributing](docs/wiki/contributing.md) | Tests and PR checklist |
 
 ---
