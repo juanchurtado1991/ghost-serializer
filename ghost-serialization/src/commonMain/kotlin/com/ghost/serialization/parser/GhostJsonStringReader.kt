@@ -4,6 +4,7 @@
 package com.ghost.serialization.parser
 
 import com.ghost.serialization.parser.GhostJsonConstants as C
+import com.ghost.serialization.GhostStringUtil
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.writer.copyRangeToCharArray
@@ -29,8 +30,48 @@ class GhostJsonStringReader(
     var needsCommaMask: Long = 0L
     var commaConsumedMask: Long = 0L
 
-    /** Reused CharArray cache to bypass String.charAt overhead. */
+    /**
+     * Reused CharArray cache to bypass String.charAt overhead. Populated lazily on first
+     * access per [reset] cycle rather than eagerly in [init]/[reset] — when [latin1Bytes] is
+     * available, the hot decode paths (numeric parsing, key/string hashing, whitespace and
+     * closing-quote scanning) read straight from the JVM's own compact-Latin1 backing array
+     * instead and never touch this at all, avoiding the CharArray allocation+copy entirely.
+     * Cold/rare paths (escape decoding, error reporting, discriminator peeking) still read
+     * this directly and transparently trigger the lazy build on first touch — this getter is
+     * the single access point every one of those call sites already goes through, so none of
+     * them need individual adaptation for correctness.
+     */
     var rawChars: CharArray
+        get() {
+            if (!rawCharsValid) {
+                val len = rawData.length
+                var chars = rawCharsBacking
+                if (chars.size < len) {
+                    chars = CharArray(len)
+                    rawCharsBacking = chars
+                }
+                rawData.copyRangeToCharArray(chars, 0, 0, len)
+                rawCharsValid = true
+            }
+            return rawCharsBacking
+        }
+        set(value) {
+            rawCharsBacking = value
+            rawCharsValid = true
+        }
+
+    private var rawCharsBacking: CharArray = CharArray(0)
+    private var rawCharsValid: Boolean = false
+
+    /**
+     * Non-null when [rawData] is JVM-compact-Latin1-encoded (see [GhostStringUtil]) — lets hot
+     * paths read the String's own internal byte array directly instead of building [rawChars].
+     * Whole-string, not per-field: any non-Latin1 character anywhere in the document falls the
+     * *entire* parse back to [rawChars] (this is expected, not a limitation to "fix" later).
+     * Always null on non-JVM targets (no `Unsafe`-equivalent access), so this is purely an
+     * opportunistic JVM fast path — every other platform already takes the [rawChars] path.
+     */
+    var latin1Bytes: ByteArray? = GhostStringUtil.extractLatin1Bytes(rawData)
 
     /** Lazily encoded UTF-8 bytes for bridge paths (one encode per [reset] cycle). */
     private var utf8CacheBytes: ByteArray? = null
@@ -53,15 +94,9 @@ class GhostJsonStringReader(
         return newArray
     }
 
-    init {
-        val len = rawData.length
-        val chars = CharArray(len)
-        rawData.copyRangeToCharArray(chars, 0, 0, len)
-        rawChars = chars
-    }
-
     inline fun getByte(index: Int): Int {
-        return rawChars[index].code
+        val bytes = latin1Bytes
+        return if (bytes != null) (bytes[index].toInt() and C.BYTE_MASK) else rawChars[index].code
     }
 
     fun throwError(message: String): Nothing {
@@ -95,29 +130,20 @@ class GhostJsonStringReader(
     }
 
     fun skipWhitespace() {
-        var scanPosition = position
-        val localLimit = limit
-        val chars = rawChars
-        val localSpaceInt = C.SPACE_INT
-        val localWhitespaceMask = C.WHITESPACE_MASK
-        val localByteShiftUnit = C.BYTE_SHIFT_UNIT
-        val localResultNone = C.RESULT_NONE
-        while (scanPosition < localLimit) {
-            val code = chars[scanPosition].code
-            if (
-                code <= localSpaceInt &&
-                ((localWhitespaceMask shr code) and localByteShiftUnit) !=
-                localResultNone
-            ) {
-                scanPosition++
-            } else {
-                position = scanPosition
-                nextTokenByte = code
-                return
-            }
+        val bytes = latin1Bytes
+        val result = if (bytes != null) {
+            findNextNonWhitespaceImpl(position, limit) { bytes[it].toInt() and C.BYTE_MASK }
+        } else {
+            val chars = rawChars
+            findNextNonWhitespaceImpl(position, limit) { chars[it].code }
         }
-        position = localLimit
-        nextTokenByte = C.MATCH_END
+        if (result == C.MATCH_END) {
+            position = limit
+            nextTokenByte = C.MATCH_END
+        } else {
+            position = result
+            nextTokenByte = if (bytes != null) (bytes[result].toInt() and C.BYTE_MASK) else rawChars[result].code
+        }
     }
 
     fun peekNextToken(): Int {
@@ -174,13 +200,8 @@ class GhostJsonStringReader(
         invalidateUtf8Cache()
 
         if (newData !== oldData) {
-            val len = newData.length
-            var chars = rawChars
-            if (chars.size < len) {
-                chars = CharArray(len)
-                rawChars = chars
-            }
-            newData.copyRangeToCharArray(chars, 0, 0, len)
+            latin1Bytes = GhostStringUtil.extractLatin1Bytes(newData)
+            rawCharsValid = false
         }
     }
 
@@ -461,6 +482,21 @@ class GhostJsonStringReader(
      * Mirrors the hash used in [GhostJsonFlatReader] for byte sources.
      */
     private fun computeStringPoolHash(start: Int, length: Int): Int {
+        val bytes = latin1Bytes
+        if (bytes != null) {
+            return if (length >= 4) {
+                (bytes[start].toInt() and C.BYTE_MASK) or
+                        ((bytes[start + 1].toInt() and C.BYTE_MASK) shl C.SHIFT_8) or
+                        ((bytes[start + 2].toInt() and C.BYTE_MASK) shl C.SHIFT_16) or
+                        ((bytes[start + 3].toInt() and C.BYTE_MASK) shl C.SHIFT_24)
+            } else {
+                var key = 0
+                if (length >= 1) key = key or (bytes[start].toInt() and C.BYTE_MASK)
+                if (length >= 2) key = key or ((bytes[start + 1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)
+                if (length >= 3) key = key or ((bytes[start + 2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)
+                key
+            }
+        }
         val chars = rawChars
         return if (length >= 4) {
             chars[start].code or
@@ -482,6 +518,13 @@ class GhostJsonStringReader(
      */
     private fun poolContentEquals(start: Int, length: Int, cached: String): Boolean {
         if (cached.length != length) return false
+        val bytes = latin1Bytes
+        if (bytes != null) {
+            for (i in 0 until length) {
+                if (cached[i].code != (bytes[start + i].toInt() and C.BYTE_MASK)) return false
+            }
+            return true
+        }
         val chars = rawChars
         for (i in 0 until length) {
             if (cached[i] != chars[start + i]) return false
