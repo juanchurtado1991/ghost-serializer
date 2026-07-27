@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -72,7 +70,7 @@ fun SpeedTestScreen(strings: Strings) {
             SpeedTestEngine.run(json) { s ->
                 sample = s
                 phase = s.phase
-                val peak = maxOf(s.ghostOpsPerSec, s.kserOpsPerSec)
+                val peak = maxOf(s.ghostOpsPerSec, s.kserOpsPerSec, s.moshiOpsPerSec)
                 if (peak * 1.2 > gaugeMax) gaugeMax = peak * 1.2
             }
         } catch (e: Throwable) {
@@ -81,6 +79,11 @@ fun SpeedTestScreen(strings: Strings) {
         }
         running = false
     }
+
+    val isActive = phase == SpeedTestPhase.Warmup ||
+        phase == SpeedTestPhase.RunningKser ||
+        phase == SpeedTestPhase.RunningMoshi ||
+        phase == SpeedTestPhase.RunningGhost
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Card(title = strings.speedTest, accent = Teal, leadingIcon = PlaygroundIconKind.Benchmark) {
@@ -100,8 +103,10 @@ fun SpeedTestScreen(strings: Strings) {
             HeroButton(
                 label = when (phase) {
                     SpeedTestPhase.Loading -> strings.speedTestLoading
-                    SpeedTestPhase.RunningGhost -> strings.speedTestPhaseGhost
+                    SpeedTestPhase.Warmup -> strings.speedTestPhaseWarmup
                     SpeedTestPhase.RunningKser -> strings.speedTestPhaseKser
+                    SpeedTestPhase.RunningMoshi -> strings.speedTestPhaseMoshi
+                    SpeedTestPhase.RunningGhost -> strings.speedTestPhaseGhost
                     else -> strings.speedTestStart
                 },
                 icon = null,
@@ -111,7 +116,7 @@ fun SpeedTestScreen(strings: Strings) {
             )
 
             val localSample = sample
-            if (localSample != null && (phase == SpeedTestPhase.RunningGhost || phase == SpeedTestPhase.RunningKser)) {
+            if (localSample != null && isActive) {
                 Spacer(Modifier.height(2.dp))
                 val progress = (localSample.elapsed.toDouble(DurationUnit.SECONDS) /
                         localSample.totalDuration.toDouble(DurationUnit.SECONDS))
@@ -131,11 +136,11 @@ fun SpeedTestScreen(strings: Strings) {
             }
         }
 
-        Card(title = "Ghost vs kotlinx.serialization", accent = Coral) {
+        Card(title = strings.speedTestEnginesTitle, accent = Coral) {
             val s = sample
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SpeedGauge(
@@ -143,18 +148,21 @@ fun SpeedTestScreen(strings: Strings) {
                     s?.kserOpsPerSec ?: 0.0,
                     gaugeMax,
                     strings.speedTestOpsPerSec,
-                    Coral
+                    Coral,
                 )
-                Spacer(
-                    Modifier.fillMaxHeight()
-                        .width(48.dp)
+                SpeedGauge(
+                    strings.speedTestMoshiLabel,
+                    s?.moshiOpsPerSec ?: 0.0,
+                    gaugeMax,
+                    strings.speedTestOpsPerSec,
+                    Rose,
                 )
                 SpeedGauge(
                     strings.speedTestGhostLabel,
                     s?.ghostOpsPerSec ?: 0.0,
                     gaugeMax,
                     strings.speedTestOpsPerSec,
-                    Teal
+                    Teal,
                 )
             }
 
@@ -163,10 +171,16 @@ fun SpeedTestScreen(strings: Strings) {
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StatColumn(strings.speedTestRoundTrips, "${s?.kserOps ?: 0}", "${s?.ghostOps ?: 0}")
+                StatColumn(
+                    strings.speedTestRoundTrips,
+                    "${s?.kserOps ?: 0}",
+                    "${s?.moshiOps ?: 0}",
+                    "${s?.ghostOps ?: 0}",
+                )
                 StatColumn(
                     strings.speedTestDataProcessed,
                     formatBytes((s?.kserOps ?: 0) * payloadBytes),
+                    formatBytes((s?.moshiOps ?: 0) * payloadBytes),
                     formatBytes((s?.ghostOps ?: 0) * payloadBytes),
                 )
                 Column {
@@ -189,14 +203,14 @@ fun SpeedTestScreen(strings: Strings) {
         AnimatedVisibility(phase == SpeedTestPhase.Done && sample != null) {
             val s = sample
             if (s != null) {
-                val ghostFaster = s.ghostOpsPerSec >= s.kserOpsPerSec
-                val winnerName =
-                    if (ghostFaster) strings.speedTestGhostLabel else strings.speedTestKserLabel
-                val loserName =
-                    if (ghostFaster) strings.speedTestKserLabel else strings.speedTestGhostLabel
-                val winnerOps = if (ghostFaster) s.ghostOpsPerSec else s.kserOpsPerSec
-                val loserOps = if (ghostFaster) s.kserOpsPerSec else s.ghostOpsPerSec
-                val pct = if (loserOps > 0.0) roundTo(winnerOps / loserOps, 1) else "—"
+                val rankings = listOf(
+                    strings.speedTestKserLabel to s.kserOpsPerSec,
+                    strings.speedTestMoshiLabel to s.moshiOpsPerSec,
+                    strings.speedTestGhostLabel to s.ghostOpsPerSec,
+                ).sortedByDescending { it.second }
+                val winner = rankings.first()
+                val slowest = rankings.last()
+                val pct = if (slowest.second > 0.0) roundTo(winner.second / slowest.second, 1) else "—"
 
                 Card(
                     title = strings.speedTestResultTitle,
@@ -205,8 +219,8 @@ fun SpeedTestScreen(strings: Strings) {
                 ) {
                     Text(
                         strings.speedTestWinnerFmt
-                            .replace("{winner}", winnerName)
-                            .replace("{loser}", loserName)
+                            .replace("{winner}", winner.first)
+                            .replace("{loser}", slowest.first)
                             .replace("{pct}", pct),
                         style = MaterialTheme.typography.headlineMedium,
                         color = Ink,
@@ -223,11 +237,13 @@ fun SpeedTestScreen(strings: Strings) {
 }
 
 @Composable
-private fun StatColumn(label: String, kserValue: String, ghostValue: String) {
+private fun StatColumn(label: String, kserValue: String, moshiValue: String, ghostValue: String) {
     Column {
         Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = InkMuted)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(kserValue, fontWeight = FontWeight.SemiBold, color = CoralLight, fontSize = 13.sp)
+            Text("·", color = InkMuted, fontSize = 13.sp)
+            Text(moshiValue, fontWeight = FontWeight.SemiBold, color = Rose, fontSize = 13.sp)
             Text("·", color = InkMuted, fontSize = 13.sp)
             Text(ghostValue, fontWeight = FontWeight.SemiBold, color = TealDark, fontSize = 13.sp)
         }

@@ -20,54 +20,61 @@ class SpeedTestEngineJvmTest {
     }
 
     @Test
-    fun bundledTwitterDatasetRoundTripsThroughBothEngines() = runBlocking {
+    fun bundledTwitterDatasetRoundTripsThroughAllEngines() = runBlocking {
         val payload = SpeedTestEngine.loadPayload()
-        // Trimmed down from the full twitter_macro.json (631KB) so a single decode+encode round
-        // stays fast enough not to freeze the single-threaded Wasm/browser tab mid-test.
         assertTrue(payload.length > 5_000, "expected a non-trivial twitter_macro.json payload, got ${payload.length} chars")
 
         val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload)
         assertTrue(ghostDecoded.statuses.isNotEmpty())
         val ghostEncoded = Ghost.encodeToString(ghostDecoded)
         assertTrue(ghostEncoded.contains("\"statuses\""))
-        // Re-decoding Ghost's own output must reproduce the same tweet count — catches @GhostName
-        // typos or nullability mismatches that a single decode alone wouldn't surface.
         val ghostRoundTripped = Ghost.deserialize<TwitterResponse>(ghostEncoded)
         assertEquals(ghostDecoded.statuses.size, ghostRoundTripped.statuses.size)
 
         val json = Json { ignoreUnknownKeys = true }
         val kserDecoded = json.decodeFromString<TwitterResponse>(payload)
-        assertEquals(ghostDecoded.statuses.size, kserDecoded.statuses.size, "Ghost and kser disagree on tweet count for the same payload")
+        assertEquals(ghostDecoded.statuses.size, kserDecoded.statuses.size, "Ghost and kser disagree on tweet count")
         assertEquals(ghostDecoded.statuses.first().id, kserDecoded.statuses.first().id)
         assertEquals(ghostDecoded.statuses.first().user.screenName, kserDecoded.statuses.first().user.screenName)
+
+        MoshiBench.roundTrip(payload)
     }
 
     @Test
-    fun runProgressesThroughBothPhasesAndReportsPlausibleThroughput() = runBlocking {
+    fun runProgressesThroughWarmupAndThreePhases() = runBlocking {
         val payload = SpeedTestEngine.loadPayload()
         val phases = mutableListOf<SpeedTestPhase>()
         var lastGhostOps = 0L
         var lastKserOps = 0L
+        var lastMoshiOps = 0L
         var sawDone = false
 
-        // A tiny phase duration keeps this test fast while still exercising the full
-        // kser-phase -> Ghost-phase -> Done state machine and the batch/delay loop inside runPhase.
-        SpeedTestEngine.run(payload, phaseDuration = 60.milliseconds) { sample ->
+        SpeedTestEngine.run(
+            payload,
+            warmupDuration = 20.milliseconds,
+            phaseDuration = 60.milliseconds,
+        ) { sample ->
             phases += sample.phase
             lastGhostOps = sample.ghostOps
             lastKserOps = sample.kserOps
+            lastMoshiOps = sample.moshiOps
             if (sample.phase == SpeedTestPhase.Done) sawDone = true
 
-            // kser runs first; once Ghost's phase starts, kser's number must hold steady.
+            if (sample.phase == SpeedTestPhase.RunningMoshi || sample.phase == SpeedTestPhase.RunningGhost || sample.phase == SpeedTestPhase.Done) {
+                assertTrue(sample.kserOpsPerSec > 0.0, "kser rate should hold after its phase")
+            }
             if (sample.phase == SpeedTestPhase.RunningGhost || sample.phase == SpeedTestPhase.Done) {
-                assertTrue(sample.kserOpsPerSec > 0.0, "kser's rate should hold at its final value, not reset")
+                assertTrue(sample.moshiOpsPerSec > 0.0, "moshi rate should hold after its phase")
             }
         }
 
         assertTrue(sawDone, "expected a final Done sample")
-        assertTrue(SpeedTestPhase.RunningGhost in phases, "expected at least one RunningGhost sample")
-        assertTrue(SpeedTestPhase.RunningKser in phases, "expected at least one RunningKser sample")
+        assertTrue(SpeedTestPhase.Warmup in phases, "expected warmup samples")
+        assertTrue(SpeedTestPhase.RunningKser in phases, "expected kser phase samples")
+        assertTrue(SpeedTestPhase.RunningMoshi in phases, "expected moshi phase samples")
+        assertTrue(SpeedTestPhase.RunningGhost in phases, "expected ghost phase samples")
         assertTrue(lastGhostOps > 0, "Ghost should have completed at least one round-trip")
         assertTrue(lastKserOps > 0, "kser should have completed at least one round-trip")
+        assertTrue(lastMoshiOps > 0, "Moshi should have completed at least one round-trip")
     }
 }

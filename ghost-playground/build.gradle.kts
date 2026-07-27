@@ -53,10 +53,12 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.moshi)
         }
 
         jvmTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.moshi)
         }
     }
 }
@@ -68,6 +70,7 @@ ksp {
 
 dependencies {
     add("kspCommonMainMetadata", project(":ghost-compiler"))
+    add("kspJvm", libs.moshi.kotlin.codegen)
 }
 
 tasks.configureEach {
