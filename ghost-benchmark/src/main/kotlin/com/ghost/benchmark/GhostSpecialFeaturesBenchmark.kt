@@ -26,7 +26,7 @@ import java.lang.management.ManagementFactory
  * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
  *
  * These are measured independently because they cannot be compared fairly against
- * Gson, KSer, or Jackson — they simply don't support these capabilities.
+ * Gson, Moshi, KSer, or Jackson — they simply don't support these capabilities.
  *
  * Runs with the same ThreadMXBean methodology as the main benchmark.
  */
@@ -77,7 +77,7 @@ object GhostSpecialFeaturesBenchmark {
         println("\n════════════════════════════════════════════════════════════════")
         println("  👻 GHOST SPECIAL FEATURES — EXCLUSIVE CAPABILITIES BENCHMARK")
         println("════════════════════════════════════════════════════════════════")
-        println("  These features have NO equivalent in Gson, KSer, or Jackson.")
+        println("  These features have NO equivalent in Moshi, KSer, or Jackson.")
 
         benchmarkFeature(
             threadBean,

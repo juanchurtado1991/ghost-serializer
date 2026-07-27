@@ -2,12 +2,10 @@
 
 package com.ghost.benchmark
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.ghost.serialization.integration.model.BenchmarkMetrics
 import com.ghost.serialization.integration.model.ComplexResponse
 import com.ghost.serialization.integration.model.StressMetrics
-import com.google.gson.Gson
+import com.squareup.moshi.Moshi
 import kotlinx.serialization.json.Json
 
 // ============================================================================
@@ -58,9 +56,9 @@ internal data class SyntheticRunResults(
 )
 
 internal class BenchmarkEngines {
-    val gson = Gson()
     val kJson = Json { ignoreUnknownKeys = true }
-    val jackson: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+    val moshi: Moshi = createBenchmarkMoshi()
+    val complexResponseAdapter = moshi.adapter(ComplexResponse::class.java)
 }
 
 internal data class BenchmarkSessionResults(
