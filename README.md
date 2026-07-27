@@ -51,13 +51,13 @@ Twitter macro fixture (**631 KB**). Three views of the same decode run — throu
 
 | | Ghost | KSER | Moshi | Ghost vs slowest |
 |:---|---:|---:|---:|:---|
-| Decode string | **1.2 GB/s** · 518 µs · 361 KB | 0.713 GB/s · 886 µs · 1338 KB | 0.324 GB/s · 1951 µs · 1709 KB | **~3.8× faster** · **79% less memory** |
-| Decode bytes | **0.939 GB/s** · 672 µs · 621 KB | 0.392 GB/s · 1612 µs · 4297 KB | 0.250 GB/s · 2523 µs · 4668 KB | **~3.8× faster** · **87% less memory** |
-| Decode streaming | **0.488 GB/s** · 1294 µs · 1269 KB | 0.178 GB/s · 3539 µs · 1905 KB | 0.383 GB/s · 1647 µs · 1709 KB | **~2.7× faster** · **33% less memory** |
+| Decode string | **1.2 GB/s** · 514 µs · 361 KB | 0.718 GB/s · 879 µs · 1338 KB | 0.374 GB/s · 1688 µs · 1709 KB | **~3.3× faster** · **79% less memory** |
+| Decode bytes | **1.05 GB/s** · 600 µs · 621 KB | 0.424 GB/s · 1489 µs · 4297 KB | 0.275 GB/s · 2297 µs · 4668 KB | **~3.8× faster** · **87% less memory** |
+| Decode streaming | **0.53 GB/s** · 1194 µs · 1269 KB | 0.193 GB/s · 3270 µs · 1905 KB | 0.426 GB/s · 1482 µs · 1709 KB | **~2.7× faster** · **33% less memory** |
 
 Full tables + how to run them → **[Benchmarks](docs/wiki/benchmarks.md)** · also [`ktor-ghost`](https://www.http-arena.com/#sort=rps:-1&q=kotlin) on HTTP Arena (+14% vs plain Ktor).
 
-> Machine- and workload-dependent. Measure your own models before migrating a path.
+> **Host:** `./gradlew :ghost-benchmark:benchmarkTwitter -PskipTests` (full profile, 10 000-iteration warmup) on **Ubuntu 24.04 (Linux x86_64)** · **AMD Ryzen 9 7900X** (12 cores / 24 threads, up to ~5.7 GHz boost) · **64 GB RAM** · **Eclipse Temurin JDK 17** (Gradle `jvmToolchain(17)`) · Kotlin **2.4.0**. Absolute GB/s varies by machine; relative Ghost vs KSER/Moshi rankings are what the regression gate tracks.
 
 
 ---

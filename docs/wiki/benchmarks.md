@@ -2,7 +2,7 @@
 
 [![Speed](https://img.shields.io/badge/Speed-red.png?style=flat&logo=speedtest&logoColor=white)](benchmarks.md)
 
-> **Methodology**: Independent Gradle JVM tasks (`benchmarkTwitter`, `benchmarkSynthetic`, …). Engines: **Ghost, KSER, Moshi (codegen adapters)**. **10 000-iteration warmup**, **500 sessions × 50 batched samples**. Per session: **Ghost+KSER measured first** (back-to-back), then Moshi. Throughput tables report **decimal GB/s** (`payload_bytes / seconds / 10⁹`, equivalent to `ops/s × payload / 10⁹`). Regression uses **median** of per-session Ghost÷KSER ratios. LIST / SYNC / WRITING suites isolated with phase GC only.
+> **Methodology**: Independent Gradle JVM tasks (`benchmarkTwitter`, `benchmarkSynthetic`, …). Engines: **Ghost, KSER, Moshi (codegen adapters)**. **10 000-iteration warmup**, **500 sessions × 50 batched samples** on LIST / SYNC / WRITING. Per session: **Ghost+KSER measured first** (back-to-back), then Moshi. Throughput tables report **decimal GB/s** (`payload_bytes / seconds / 10⁹`, equivalent to `ops/s × payload / 10⁹`). Stress tests report **latency only** (single-shot or 100-iteration avg). Regression uses **median** of per-session Ghost÷KSER ratios. LIST / SYNC / WRITING suites isolated with phase GC only.
 >
 > **`ghost.textChannel`**: default **true** per model. String benchmarks use the generated `GhostJsonStringReader` / string writer; byte and streaming benchmarks use their dedicated readers. Byte-only applications can opt out with `@GhostSerialization(textChannel = false)` or the module flag `ghost.textChannel=false` to reduce generated code size. See [Native String Reader](advanced-features.md#5-native-string-reader-textchannel).
 
@@ -62,24 +62,24 @@ Results on [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter
 
 | Operation | Engine | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
 |:---|:---:|---:|---:|---:|
-| **Decode (String)** | **👻 Ghost** | **1.036** 🏆 *(+57.0% vs KSER)* | **609.3** ⏱️ | **361.2** 💾 *(-73.0%)* |
-| | KSER | 0.660 | 957.2 | 1337.6 |
-| | Moshi | 0.324 | 1951.2 | 1708.9 |
-| **Decode (Bytes)** | **👻 Ghost** | **0.939** 🏆 *(+139.5% vs KSER)* | **672.4** ⏱️ | **621.2** 💾 *(-85.5%)* |
-| | KSER | 0.392 | 1611.8 | 4297.0 |
-| | Moshi | 0.250 | 2522.5 | 4668.4 |
-| **Decode (Streaming)** | **👻 Ghost** | **0.488** 🏆 *(+174.2% vs KSER)* | **1293.6** ⏱️ | **1268.6** 💾 *(-33.4%)* |
-| | KSER | 0.178 | 3539.4 | 1904.9 |
-| | Moshi | 0.383 | 1646.9 | 1708.8 |
-| **Encode (String)** | **👻 Ghost** | **2.413** 🏆 *(+48.6% vs KSER)* | **262.0** ⏱️ | 1074.0 |
-| | KSER | 1.624 | 389.0 | **972.0** 💾 |
-| | Moshi | 0.454 | 1392.0 | 2893.0 |
-| **Encode (Bytes)** | **👻 Ghost** | **1.464** 🏆 *(+101.4% vs KSER)* | **431.0** ⏱️ | **420.0** 💾 *(-81.0%)* |
-| | KSER | 0.727 | 869.0 | 2207.0 |
-| | Moshi | 0.313 | 2019.0 | 4387.0 |
-| **Encode (Streaming)** | **👻 Ghost** | **1.442** 🏆 *(+78.9% vs KSER)* | **438.0** ⏱️ | **427.0** 💾 *(-6.2%)* |
-| | KSER | 0.806 | 784.0 | 455.0 |
-| | Moshi | 0.665 | 949.0 | 561.0 |
+| **Decode (String)** | **👻 Ghost** | **1.229** 🏆 *(+71.2% vs KSER)* | **514.0** ⏱️ | **361.1** 💾 *(-73.0%)* |
+| | KSER | 0.718 | 879.2 | 1337.6 |
+| | Moshi | 0.374 | 1688.2 | 1708.9 |
+| **Decode (Bytes)** | **👻 Ghost** | **1.052** 🏆 *(+148.1% vs KSER)* | **600.2** ⏱️ | **621.2** 💾 *(-85.5%)* |
+| | KSER | 0.424 | 1488.6 | 4297.0 |
+| | Moshi | 0.275 | 2297.4 | 4668.4 |
+| **Decode (Streaming)** | **👻 Ghost** | **0.529** 🏆 *(+174.1% vs KSER)* | **1193.7** ⏱️ | **1268.6** 💾 *(-33.4%)* |
+| | KSER | 0.193 | 3269.5 | 1904.9 |
+| | Moshi | 0.426 | 1481.9 | 1708.8 |
+| **Encode (String)** | **👻 Ghost** | **2.807** 🏆 *(+41.9% vs KSER)* | **225.0** ⏱️ | 1074.3 |
+| | KSER | 1.978 | 319.3 | **981.6** 💾 |
+| | Moshi | 0.515 | 1226.8 | 2893.0 |
+| **Encode (Bytes)** | **👻 Ghost** | **1.514** 🏆 *(+97.1% vs KSER)* | **417.0** ⏱️ | **420.2** 💾 *(-81.0%)* |
+| | KSER | 0.768 | 822.7 | 2216.3 |
+| | Moshi | 0.346 | 1822.7 | 4387.4 |
+| **Encode (Streaming)** | **👻 Ghost** | **1.502** 🏆 *(+46.8% vs KSER)* | **420.5** ⏱️ | **426.9** 💾 *(-8.1%)* |
+| | KSER | 1.023 | 617.3 | 464.5 |
+| | Moshi | 0.798 | 791.1 | 560.5 |
 
 ---
 
@@ -121,12 +121,12 @@ Payload sizes used for the conversion: LIST_MEDIUM **15 622 B**, SYNC_FULL_LAR
 
 ## Stress Tests
 
-Fixed column order: **Ghost → KSER → Moshi**. Each cell reads **GB/s · µs/op** (Deep Nesting payload **632 B**, Malformed **2 581 B**). **🏆** = highest GB/s · **⏱️** = lowest latency.
+Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be misleading at this scale). Deep nesting: **single-shot** parse per engine (**632 B**). Malformed JSON: **average of 100** failed parses per engine (**2 581 B**). Allocation is not measured. **⏱️** = lowest latency.
 
 | Test | Ghost | KSer | Moshi |
 |:---|:---:|:---:|:---:|
-| Deep Nesting — 20 levels | 0.004 · 153.2 | **0.006 · 97.9** 🏆⏱️ | 0.006 · 113.8 |
-| Malformed JSON — resilience | **0.059 · 43.4** 🏆⏱️ | 0.030 · 86.3 | 0.038 · 68.5 |
+| Deep Nesting — 20 levels | 171.7 | 112.2 | **107.8** ⏱️ |
+| Malformed JSON — resilience | **42.1** ⏱️ | 68.5 | 64.6 |
 
 ---
 
