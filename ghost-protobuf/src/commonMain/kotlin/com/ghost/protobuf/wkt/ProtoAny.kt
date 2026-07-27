@@ -33,7 +33,8 @@ data class ProtoAny(val typeUrl: String, val value: ByteArray) {
         return typeUrl == other.typeUrl && value.contentEquals(other.value)
     }
 
-    override fun hashCode(): Int = 31 * typeUrl.hashCode() + value.contentHashCode()
+    override fun hashCode(): Int =
+        C.COLLISION_HASH_MULTIPLIER * typeUrl.hashCode() + value.contentHashCode()
 
     override fun toString(): String =
         "ProtoAny(typeUrl=$typeUrl, value=${value.decodeToString()})"

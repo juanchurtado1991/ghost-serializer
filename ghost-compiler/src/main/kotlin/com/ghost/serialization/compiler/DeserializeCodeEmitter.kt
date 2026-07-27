@@ -534,11 +534,8 @@ internal class DeserializeCodeEmitter(
             }
             body.endControlFlow()
         }
-        body.addStatement(
-            C.STR_ELSE_BRANCH + C.STR_SPACE + C.TEMPLATE_THROW_EXCEPTION,
-            jsonExClass,
-            C.STR_INFERRED_ERROR_MSG
-        )
+        body.add("else -> ")
+        body.addStatement(C.TEMPLATE_THROW_EXCEPTION, jsonExClass, C.STR_INFERRED_ERROR_MSG)
         body.endControlFlow()
         body.addStatement(C.STR_RETURN_RESULT)
     }
@@ -577,10 +574,12 @@ internal class DeserializeCodeEmitter(
             }
 
         body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)
-        val fallbackEntry = properties.firstOrNull()?.enumValues?.entries?.find { it.key.equals("UNKNOWN", ignoreCase = true) }
+        val fallbackEntry = properties.firstOrNull()?.enumValues?.entries?.find {
+            it.key.equals(C.STR_ENUM_UNKNOWN, ignoreCase = true)
+        }
             ?: if (hasFallback) properties.firstOrNull()?.enumValues?.entries?.lastOrNull() else null
         if (fallbackEntry != null) {
-            body.addStatement("else -> %T.%L", originalClassName, fallbackEntry.key)
+            body.addStatement(C.TEMPLATE_ENUM_ELSE_FALLBACK, originalClassName, fallbackEntry.key)
         } else {
             body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)
         }

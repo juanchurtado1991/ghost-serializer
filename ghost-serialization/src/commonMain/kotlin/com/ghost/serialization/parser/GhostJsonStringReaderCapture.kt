@@ -10,12 +10,12 @@ fun GhostJsonStringReader.captureRawJson(): RawJson =
     RawJson.fromUtf8Bytes(captureRawJsonBytes())
 
 /**
- * Captures the next complete JSON value as a raw [ByteArray] without decoding.
+ * Captures the next complete JSON value as a raw [ByteArray] without decoding the value tree.
  *
  * Since [GhostJsonStringReader] operates on a UTF-16 [String], the captured char range is
- * encoded to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes] (slice-only when no UTF-8
- * cache exists; otherwise a zero-copy slice from [GhostJsonStringReader.ensureUtf8Bytes]).
- * Prefer [GhostJsonFlatReader.captureRawJsonBytes] when starting from a [ByteArray] source.
+ * converted to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes]: a range copy of the cached
+ * UTF-8 view when present, otherwise an encode of that range only. Prefer
+ * [GhostJsonFlatReader.captureRawJsonBytes] when starting from a [ByteArray] source.
  */
 fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
     skipWhitespace()

@@ -6,6 +6,8 @@ import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.prepareUtf8JsonSource
+import com.ghost.serialization.parser.withPreparedUtf8Json
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.WriterSinkPair
@@ -92,12 +94,16 @@ actual fun <T> ghostInternalUseReader(
     bytes: ByteArray,
     block: (GhostJsonReader) -> T
 ): T {
-    val reader = cachedReader
-        ?: GhostJsonReader(bytes)
-            .also { cachedReader = it }
+    return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
+        val view = if (offset == 0) data else data.copyOfRange(offset, offset + length)
+        val viewLimit = if (offset == 0) length else view.size
+        val reader = cachedReader
+            ?: GhostJsonReader(view)
+                .also { cachedReader = it }
 
-    reader.reset(bytes)
-    return block(reader)
+        reader.reset(view, viewLimit)
+        block(reader)
+    }
 }
 
 actual fun <T> ghostInternalUseFlatReader(
@@ -105,12 +111,14 @@ actual fun <T> ghostInternalUseFlatReader(
     limit: Int,
     block: (GhostJsonFlatReader) -> T
 ): T {
-    val reader = cachedFlatReader
-        ?: GhostJsonFlatReader(bytes)
-            .also { cachedFlatReader = it }
+    return withPreparedUtf8Json(bytes, limit) { data, offset, length ->
+        val reader = cachedFlatReader
+            ?: GhostJsonFlatReader(data)
+                .also { cachedFlatReader = it }
 
-    reader.reset(bytes, limit)
-    return block(reader)
+        reader.resetSlice(data, offset, length)
+        block(reader)
+    }
 }
 
 actual fun <T> ghostInternalUseSource(
@@ -125,7 +133,7 @@ actual fun <T> ghostInternalUseSource(
 
     // reset(BufferedSource) wraps source in a StreamingGhostSource — Okio pulls
     // data in 8 KB segments on demand instead of loading the entire payload.
-    reader.reset(source)
+    reader.reset(prepareUtf8JsonSource(source))
     return block(reader)
 }
 

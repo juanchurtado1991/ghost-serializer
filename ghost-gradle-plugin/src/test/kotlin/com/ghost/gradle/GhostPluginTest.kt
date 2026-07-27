@@ -5,6 +5,7 @@ import org.gradle.api.Project
 import org.gradle.api.internal.project.DefaultProject
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -22,6 +23,15 @@ class GhostPluginTest {
 
         val extension = project.extensions.findByName("ghost")
         assertNotNull(extension, "Ghost extension should be created")
+    }
+
+    @Test
+    fun `plugin defaults ghost version to 1_3_0`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(GhostPlugin::class.java)
+
+        val extension = project.extensions.getByType(GhostExtension::class.java)
+        assertEquals("1.3.0", extension.version.get())
     }
 
     @Test
@@ -53,7 +63,7 @@ class GhostPluginTest {
         val project = ProjectBuilder.builder().build()
 
         project.pluginManager.apply("org.jetbrains.kotlin.jvm")
-        project.dependencies.add("implementation", "io.ktor:ktor-client-core:2.3.11")
+        project.dependencies.add("implementation", "io.ktor:ktor-client-core:3.5.1")
         project.pluginManager.apply(GhostPlugin::class.java)
 
         evaluated(project)
@@ -70,7 +80,7 @@ class GhostPluginTest {
         val project = ProjectBuilder.builder().build()
 
         project.pluginManager.apply("org.jetbrains.kotlin.jvm")
-        project.dependencies.add("implementation", "io.ktor:ktor-client-core:2.3.11")
+        project.dependencies.add("implementation", "io.ktor:ktor-client-core:3.5.1")
         project.pluginManager.apply(GhostPlugin::class.java)
         project.extensions.getByType(GhostExtension::class.java).autoInjectKtor.set(false)
 
@@ -155,7 +165,7 @@ class GhostPluginTest {
         val project = ProjectBuilder.builder().build()
 
         project.pluginManager.apply("org.jetbrains.kotlin.multiplatform")
-        project.dependencies.add("commonMainImplementation", "io.ktor:ktor-client-core:2.3.11")
+        project.dependencies.add("commonMainImplementation", "io.ktor:ktor-client-core:3.5.1")
         project.pluginManager.apply(GhostPlugin::class.java)
 
         evaluated(project)

@@ -4,10 +4,11 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
 
 /**
- * Pooled, reusable encode-target for in-memory encodes
- * (`Ghost.encodeToString` / `Ghost.encodeToBytes`).
+ * Pooled, reusable encode-target for in-memory byte encodes
+ * (`Ghost.encodeToBytes`, sink drain, discard).
  *
- * Both fields stay warm between calls so the underlying [ByteArray] survives
+ * String encodes use a pooled [GhostJsonStringWriter] / [FlatCharArrayWriter] pair
+ * instead. Both fields stay warm between calls so the underlying [ByteArray] survives
  * across encodes — only its content is reset. The pair is held in a
  * [ThreadLocal] (or `@ThreadLocal` on Kotlin/Native) per platform actual,
  * so concurrent encodes on different threads do not contend on it.

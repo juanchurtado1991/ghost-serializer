@@ -96,6 +96,27 @@ class GhostGeneratedCodeHygieneTest {
     }
 
     @Test
+    fun nullableOnlyScalarsImportOrNullNotPlainNextX() {
+        val compilation = compileBatch(NULLABLE_SCALARS_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "OnlyNullableScalars")
+        assertTrue("nextIntOrNull" in generated, generated)
+        assertTrue("nextLongOrNull" in generated, generated)
+        assertTrue("nextBooleanOrNull" in generated, generated)
+        assertTrue("nextStringOrNull" in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextInt\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextLong\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextBoolean\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.nextString\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.consumeNull\n" !in generated, generated)
+        assertTrue("import com.ghost.serialization.parser.isNextNullValue\n" !in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyze(generated, "OnlyNullableScalarsSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
     fun listOnlyModelDoesNotImportReadSet() {
         val compilation = compileBatch(LIST_ONLY_SOURCE, textChannel = true)
         assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
@@ -113,6 +134,94 @@ class GhostGeneratedCodeHygieneTest {
         val generated = readSerializer(compilation.first, "LabelsHolder")
         assertTrue("readSet" in generated, generated)
         assertTrue("readList" !in generated, generated)
+    }
+
+    @Test
+    fun singleRequiredFieldOmitsMaskRequiredConstant() {
+        val compilation = compileBatch(SINGLE_REQUIRED_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "SingleRequired")
+        assertTrue("MASK_ID" in generated, generated)
+        assertTrue("MASK_REQUIRED" !in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyze(generated, "SingleRequiredSerializer.kt") +
+            GeneratedCodeHygiene.analyzeSourceQuality(generated, "SingleRequiredSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
+    fun multipleRequiredFieldsEmitsAndUsesMaskRequiredConstant() {
+        val compilation = compileBatch(MINIMAL_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "MinimalUser")
+        assertTrue("MASK_REQUIRED_0" in generated, generated)
+        assertTrue("(mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0" in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyzeUnusedMaskConstants(
+            generated,
+            "MinimalUserSerializer.kt",
+        )
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
+    fun nullableOnlyModelOmitsMaskRequiredConstant() {
+        val compilation = compileBatch(NULLABLE_SCALARS_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "OnlyNullableScalars")
+        assertTrue("MASK_REQUIRED" !in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyze(generated, "OnlyNullableScalarsSerializer.kt") +
+            GeneratedCodeHygiene.analyzeSourceQuality(generated, "OnlyNullableScalarsSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
+    fun underscoredPropertyNamesUseCamelCaseLocals() {
+        val compilation = compileBatch(UNDERSCORED_PROP_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "SnakeCaseModel")
+        assertTrue("var idInternalValue:" in generated, generated)
+        assertTrue("id_internal = idInternalValue" in generated, generated)
+        assertTrue("id_internalValue" !in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyzeSourceQuality(generated, "SnakeCaseModelSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
+    fun wrappedKeysLocalsAreCamelCase() {
+        val compilation = compileBatch(WRAPPED_KEYS_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "WrappedExtras")
+        assertTrue("wrappedCaptureExtras" in generated, generated)
+        assertTrue("wrappedJsonExtras" in generated, generated)
+        assertTrue("wrappedCapture_" !in generated, generated)
+        assertTrue("wrappedJson_" !in generated, generated)
+
+        val violations = GeneratedCodeHygiene.analyzeSourceQuality(generated, "WrappedExtrasSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
+    }
+
+    @Test
+    fun generatedCallsAreMultilineFormatted() {
+        val compilation = compileBatch(WIDE_DEFAULTS_SOURCE, textChannel = true)
+        assertEquals(KotlinCompilation.ExitCode.OK, compilation.second.exitCode, compilation.second.messages)
+
+        val generated = readSerializer(compilation.first, "WideDefaults")
+        assertTrue("JsonReaderOptions.of(" in generated, generated)
+        assertTrue("return createInstance(" in generated, generated)
+        // Arguments appear on following lines, not crammed into one mega-call.
+        assertTrue(!Regex("""return createInstance\([^)\n]{120,}""").containsMatchIn(generated), generated)
+        assertTrue(!Regex("""JsonReaderOptions\.of\([^)\n]{120,}""").containsMatchIn(generated), generated)
+
+        val violations = GeneratedCodeHygiene.analyzeLineLength(generated, "WideDefaultsSerializer.kt")
+        assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
     private fun readSerializer(compilation: KotlinCompilation, modelBaseName: String): String {
@@ -140,6 +249,10 @@ class GhostGeneratedCodeHygieneTest {
             )
             languageVersion = "1.9"
             apiVersion = "1.9"
+            // kctfork's embedded kotlinc (2.1.0) can't read metadata from our project's own
+            // jars once they're compiled with a newer Kotlin (2.4.0 as of this bump) via
+            // inheritClassPath — this flag skips that strict metadata-version check.
+            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()
@@ -153,6 +266,70 @@ class GhostGeneratedCodeHygieneTest {
 
             @GhostSerialization
             data class MinimalUser(val id: String, val age: Int)
+        """
+
+        const val SINGLE_REQUIRED_SOURCE = """
+            package fixtures
+
+            import com.ghost.serialization.annotations.GhostSerialization
+
+            @GhostSerialization
+            data class SingleRequired(val id: String, val note: String? = null)
+        """
+
+        const val UNDERSCORED_PROP_SOURCE = """
+            package fixtures
+
+            import com.ghost.serialization.annotations.GhostSerialization
+
+            @GhostSerialization
+            data class SnakeCaseModel(val id_internal: Int)
+        """
+
+        const val WRAPPED_KEYS_SOURCE = """
+            package fixtures
+
+            import com.ghost.serialization.annotations.GhostSerialization
+            import com.ghost.serialization.annotations.GhostWrappedKeys
+
+            @GhostSerialization
+            data class NestedExtras(val a: Int = 0, val b: Int = 0)
+
+            @GhostSerialization
+            data class WrappedExtras(
+                @GhostWrappedKeys(keys = ["a", "b"])
+                val extras: NestedExtras,
+            )
+        """
+
+        const val WIDE_DEFAULTS_SOURCE = """
+            package fixtures
+
+            import com.ghost.serialization.annotations.GhostSerialization
+
+            @GhostSerialization
+            data class WideDefaults(
+                val id: String,
+                val a: String = "",
+                val b: String = "",
+                val c: String = "",
+                val d: String = "",
+                val e: String = "",
+            )
+        """
+
+        const val NULLABLE_SCALARS_SOURCE = """
+            package fixtures
+
+            import com.ghost.serialization.annotations.GhostSerialization
+
+            @GhostSerialization
+            data class OnlyNullableScalars(
+                val i: Int?,
+                val l: Long?,
+                val b: Boolean?,
+                val s: String?,
+            )
         """
 
         const val LIST_ONLY_SOURCE = """
@@ -215,6 +392,14 @@ class GhostGeneratedCodeHygieneTest {
 
             @GhostSerialization
             data class NullableBox(val label: String?)
+
+            @GhostSerialization
+            data class NullableScalars(
+                val i: Int?,
+                val l: Long?,
+                val b: Boolean?,
+                val s: String?,
+            )
 
             @GhostSerialization
             data class MapHolder(val attrs: Map<String, Int>)

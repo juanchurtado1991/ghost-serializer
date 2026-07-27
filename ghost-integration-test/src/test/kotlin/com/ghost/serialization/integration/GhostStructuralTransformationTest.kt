@@ -3,12 +3,18 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.integration.model.*
+import com.ghost.serialization.integration.model.DeepFlattenedModelSerializer
+import com.ghost.serialization.integration.model.FlattenedModel
+import com.ghost.serialization.integration.model.FlattenedModelSerializer
+import com.ghost.serialization.integration.model.MixedStructuralModel
+import com.ghost.serialization.integration.model.MixedStructuralModelSerializer
+import com.ghost.serialization.integration.model.WrappedModel
+import com.ghost.serialization.integration.model.WrappedModelSerializer
 import com.ghost.serialization.parser.GhostJsonReader
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import okio.Buffer
 
 class GhostStructuralTransformationTest {
 

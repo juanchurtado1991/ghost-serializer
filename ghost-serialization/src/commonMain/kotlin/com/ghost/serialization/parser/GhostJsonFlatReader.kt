@@ -34,8 +34,15 @@ open class GhostJsonFlatReader(
     var materializeRawJsonCaptures: Boolean = false,
 ) {
 
+    /**
+     * Platform source used for string materialization ([GhostSource.decodeJsonStringRange]).
+     * Constructed via [createByteArraySource] so JVM/Android use ISO-8859-1 for known 7-bit
+     * spans instead of full UTF-8 [ByteArray.decodeToString]. Typed as [ByteArrayGhostSource]
+     * so [resetSlice] can rebind [ByteArrayGhostSource.data] without reallocating the wrapper.
+     */
     @PublishedApi
-    internal val source = ByteArrayGhostSource(rawData)
+    internal val source: ByteArrayGhostSource =
+        createByteArraySource(rawData) as ByteArrayGhostSource
 
     public var limit: Int = rawData.size
 
@@ -63,6 +70,17 @@ open class GhostJsonFlatReader(
     internal val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
 
     internal var lastScanContentWas7BitOnly: Boolean = false
+
+    /**
+     * Optimistic hint for [internalSelect]: the field index expected next, assuming JSON
+     * objects list their fields in declaration order (the common case for machine-generated
+     * payloads). When the incoming key matches this candidate,
+     * key identification collapses from three byte passes (scan + hash + verify) to a single
+     * compare pass. A misprediction transparently falls back to the hashed dispatch, so the
+     * hint never affects correctness — only speed. Reset to
+     * [GhostJsonConstants.FIELD_PREDICTION_START] on [beginObject].
+     */
+    private var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 
     var depth: Int = 0
     @PublishedApi internal var needsCommaMask: Long = 0L
@@ -119,17 +137,34 @@ open class GhostJsonFlatReader(
      * Advances the position past any whitespace and caches the next non-whitespace token byte.
      */
     fun skipWhitespace() {
-        val localData = rawData
-        val nextPos = findNextNonWhitespaceImpl(position, limit) {
-            localData[it].toInt() and C.BYTE_MASK
-        }
-
-        if (nextPos != -1) {
-            position = nextPos
-            nextTokenByte = localData[position].toInt() and C.BYTE_MASK
-        } else {
-            position = limit
-            nextTokenByte = C.MATCH_END
+        val data = rawData
+        val lim = limit
+        var p = position
+        while (true) {
+            // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
+            // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
+            // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
+            while (p + C.LONG_BYTES <= lim && ghostReadLong8(data, p) == C.SPACE_RUN_LONG) {
+                p += C.LONG_BYTES
+            }
+            if (p >= lim) {
+                position = lim
+                nextTokenByte = C.MATCH_END
+                return
+            }
+            val b = data[p].toInt() and C.BYTE_MASK
+            if (b > C.SPACE_INT) {
+                position = p
+                nextTokenByte = b
+                return
+            }
+            // Non-space whitespace (tab / LF / CR) or a control byte; mirror WHITESPACE_MASK.
+            if (b != C.SPACE_INT && b != C.LF_INT && b != C.CR_INT && b != C.TAB_INT) {
+                position = p
+                nextTokenByte = b
+                return
+            }
+            p++
         }
     }
 
@@ -190,7 +225,7 @@ open class GhostJsonFlatReader(
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
         if (position + size > limit || !expected.rangeEquals(0, rawData, position, size)) {
-            throwError("Expected literal ${expected.utf8()}")
+            throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
         position += size
         nextTokenByte = C.RESET_TOKEN_BYTE
@@ -235,6 +270,7 @@ open class GhostJsonFlatReader(
         if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
             throwError(C.ERR_EXPECTED_BEGIN_OBJ)
         }
+        predictedFieldIndex = C.FIELD_PREDICTION_START
         depth++
         if (depth > maxDepth) {
             throwError(C.ERR_DEPTH_EXCEEDED)
@@ -481,9 +517,59 @@ open class GhostJsonFlatReader(
 
     /**
      * Consumes the null value literal from the stream.
+     *
+     * After [peekNextToken] has already positioned on `'n'`, validates the remaining
+     * `ull` bytes inline — avoids [okio.ByteString.rangeEquals] on the hot nullable path.
      */
     fun consumeNull() {
-        skipAndValidateLiteral(C.NULL_BS)
+        val p = position
+        val data = rawData
+        if (p + 4 > limit ||
+            (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
+            (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
+            (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
+            (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
+        ) {
+            throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
+        }
+        position = p + 4
+        nextTokenByte = C.RESET_TOKEN_BYTE
+    }
+
+    /** Reads a JSON string, or `null` when the next token is the `null` literal. */
+    fun nextStringOrNull(): String? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextString()
+    }
+
+    /** Reads a JSON int, or `null` when the next token is the `null` literal. */
+    fun nextIntOrNull(): Int? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextInt()
+    }
+
+    /** Reads a JSON long, or `null` when the next token is the `null` literal. */
+    fun nextLongOrNull(): Long? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextLong()
+    }
+
+    /** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
+    fun nextBooleanOrNull(): Boolean? {
+        if (peekNextToken() == C.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextBoolean()
     }
 
     /**
@@ -576,7 +662,50 @@ open class GhostJsonFlatReader(
         }
         val start = position + 1
         val localData = rawData
-        val end = findClosingQuoteImpl(start, limit) {
+        val lim = limit
+
+        // Optimistic in-order field match: most objects list fields in declaration order,
+        // so compare the key directly against the predicted candidate in a single pass. On a
+        // hit this avoids the separate closing-quote scan, hash, and verify passes entirely.
+        val predicted = predictedFieldIndex
+        val rawBytes = options.rawBytes
+        if (predicted < rawBytes.size) {
+            val candidate = rawBytes[predicted]
+            val candLen = candidate.size
+            val keyEnd = start + candLen
+            if (candLen > 0 && keyEnd < lim &&
+                (localData[keyEnd].toInt() and C.BYTE_MASK) == C.QUOTE_INT
+            ) {
+                var i = 0
+                // Compare LONG_BYTES at a time for longer field names. Comparing two
+                // ghostReadLong8 results is byte-order independent (equality is symmetric),
+                // so no masking is needed; a trailing byte loop covers the remainder.
+                while (i + C.LONG_BYTES <= candLen &&
+                    ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
+                ) {
+                    i += C.LONG_BYTES
+                }
+                while (i < candLen && localData[start + i] == candidate[i]) {
+                    i++
+                }
+                if (i == candLen) {
+                    predictedFieldIndex = predicted + 1
+                    val newPos = keyEnd + 1
+                    position = newPos
+                    nextTokenByte = C.RESET_TOKEN_BYTE
+                    if (consumeSeparator) {
+                        if (newPos < lim && (localData[newPos].toInt() and C.BYTE_MASK) == C.COLON_INT) {
+                            position = newPos + 1
+                        } else {
+                            consumeKeySeparator()
+                        }
+                    }
+                    return predicted
+                }
+            }
+        }
+
+        val end = findClosingQuoteImpl(start, lim) {
             localData[it].toInt() and C.BYTE_MASK
         }
 
@@ -592,6 +721,7 @@ open class GhostJsonFlatReader(
 
         if (index != C.MATCH_END) {
             if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {
+                predictedFieldIndex = index + 1
                 return index
             }
         }

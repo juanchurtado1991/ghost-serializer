@@ -28,4 +28,26 @@ class GeneratedSourceTrimmerTest {
         assertFalse("import kotlin.OptIn" in trimmed)
         assertTrue("import com.ghost.serialization.InternalGhostApi" in trimmed)
     }
+
+    @Test
+    fun removesRedundantPublicModifiers() {
+        val input = """
+            public object DemoSerializer : GhostSerializer<Demo> {
+              public override val typeName: String = "Demo"
+              public override fun deserialize(reader: GhostJsonReader): Demo {
+                return Demo()
+              }
+              private const val MASK_ID: Long = 1L
+            }
+        """.trimIndent()
+
+        val trimmed = GeneratedSourceTrimmer.trim(input)
+
+        assertFalse("public object" in trimmed)
+        assertFalse("public override" in trimmed)
+        assertTrue("object DemoSerializer" in trimmed)
+        assertTrue("override val typeName" in trimmed)
+        assertTrue("override fun deserialize" in trimmed)
+        assertTrue("private const val MASK_ID" in trimmed)
+    }
 }

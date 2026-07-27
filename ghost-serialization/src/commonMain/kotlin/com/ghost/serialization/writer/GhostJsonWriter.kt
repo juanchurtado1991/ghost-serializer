@@ -555,15 +555,6 @@ class GhostJsonWriter(
     }
 
     /**
-     * Writes the null literal.
-     */
-    @Suppress("unused")
-    @InternalGhostApi
-    fun writeNullValueRaw() {
-        buffer.write(NULL_BS)
-    }
-
-    /**
      * Appends the separator comma if needsComma is true.
      */
     @Suppress("NOTHING_TO_INLINE")
@@ -585,19 +576,20 @@ class GhostJsonWriter(
             return
         }
 
+        var breakIndex = 0
         if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
-            var allPlain = true
-            var index = 0
             val escapeMasks = ESCAPE_MASKS
-            while (index < length) {
-                val code = value[index].code
-                if (code >= ASCII_LIMIT || ((escapeMasks[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT) != 0L) {
-                    allPlain = false
+            while (breakIndex < length) {
+                val code = value[breakIndex].code
+                if (code >= ASCII_LIMIT ||
+                    ((escapeMasks[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and
+                            BITMASK_UNIT) != 0L
+                ) {
                     break
                 }
-                index++
+                breakIndex++
             }
-            if (allPlain) {
+            if (breakIndex == length) {
                 buffer.writeByte(QUOTE_INT)
                 buffer.writeUtf8(value)
                 buffer.writeByte(QUOTE_INT)
@@ -605,20 +597,23 @@ class GhostJsonWriter(
             }
         }
 
-        writeStringValueRawSlow(value, length)
+        writeStringValueRawSlow(value, length, breakIndex)
     }
 
-    private fun writeStringValueRawSlow(value: String, length: Int) {
+    private fun writeStringValueRawSlow(value: String, length: Int, breakIndex: Int) {
         val scratchBuf = acquireScratch()
-        if (length + STRING_QUOTE_PAIR_BYTES > scratchBuf.size) {
-            buffer.writeByte(QUOTE_INT)
-            writeEscaped(value)
-            buffer.writeByte(QUOTE_INT)
+        if (breakIndex == 0 && length + STRING_QUOTE_PAIR_BYTES <= scratchBuf.size) {
+            scratchBuf[0] = QUOTE_BYTE
+            writeEscapedIntoScratch(value, length, scratchBuf)
             return
         }
 
-        scratchBuf[0] = QUOTE_BYTE
-        writeEscapedIntoScratch(value, length, scratchBuf)
+        buffer.writeByte(QUOTE_INT)
+        if (breakIndex > 0) {
+            buffer.writeUtf8(value, 0, breakIndex)
+        }
+        writeEscaped(value, start = breakIndex)
+        buffer.writeByte(QUOTE_INT)
     }
 
     /**

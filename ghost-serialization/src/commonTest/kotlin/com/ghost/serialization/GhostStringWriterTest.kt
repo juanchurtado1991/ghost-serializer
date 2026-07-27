@@ -122,6 +122,32 @@ class GhostStringWriterTest {
     }
 
     @Test
+    fun writesLongUnicodeWithoutEscapesOnFastPath() {
+        // Non-ASCII BMP used to force the escape slow path even though JSON needs no escapes.
+        val value = "漢".repeat(200)
+        val json = writerToString { w ->
+            w.beginObject().name("v").value(value).endObject()
+        }
+        assertEquals("{\"v\":\"$value\"}", json)
+    }
+
+    @Test
+    fun escapesQuoteInsideUnicodeString() {
+        val json = writerToString { w ->
+            w.beginObject().name("v").value("漢\"字").endObject()
+        }
+        assertEquals("{\"v\":\"漢\\\"字\"}", json)
+    }
+
+    @Test
+    fun writesSurrogatePairEmojiDirectly() {
+        val json = writerToString { w ->
+            w.beginObject().name("v").value("😀").endObject()
+        }
+        assertEquals("{\"v\":\"😀\"}", json)
+    }
+
+    @Test
     fun writesEmptyObject() {
         val json = writerToString { w -> w.beginObject().endObject() }
         assertEquals("{}", json)

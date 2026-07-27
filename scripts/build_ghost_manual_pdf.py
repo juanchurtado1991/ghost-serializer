@@ -10,7 +10,7 @@ from fpdf import FPDF
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "GHOST_MANUAL_EN.md"
-OUTPUT = ROOT / "docs" / "Ghost-Serialization-Manual-1.2.4.pdf"
+OUTPUT = ROOT / "docs" / "Ghost-Serialization-Manual-1.3.0.pdf"
 
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -67,7 +67,7 @@ class ManualPDF(FPDF):
         self.set_font("body", "", 6)
         self.set_text_color(130, 130, 130)
         self.set_y(6)
-        self.cell(0, 4, "Ghost Serialization  1.2.4  —  API Manual", align="C")
+        self.cell(0, 4, "Ghost Serialization  1.3.0  —  API Manual", align="C")
         self.set_text_color(0, 0, 0)
         self.set_y(MARGIN_T)
 
@@ -388,6 +388,19 @@ def main() -> None:
     pdf.add_page()
     parse_and_build(md, pdf)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    # fpdf2 creates placeholder destinations (page 0) for forward TOC links; if the
+    # Markdown never defines that {#anchor}, output() raises. Point leftovers at page 1.
+    unresolved = [
+        name
+        for name, dest in pdf.named_destinations.items()
+        if getattr(dest, "page_number", None) == 0
+    ]
+    for name in unresolved:
+        pdf.set_link(name=name, page=1, y=0)
+    if unresolved:
+        print(f"Warning: {len(unresolved)} TOC anchors missing in Markdown; linked to page 1:")
+        for name in unresolved:
+            print(f"  - {name}")
     pdf.output(str(OUTPUT))
     print(f"Generated: {OUTPUT}")
     print(f"Pages: {pdf.page_no()}")

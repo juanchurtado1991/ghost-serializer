@@ -1,13 +1,19 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kover)
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "com.ghost.serialization.api"
+        compileSdk = 36
+        optimization {
+            consumerKeepRules.file("ghost-proguard-rules.pro")
+        }
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -17,6 +23,10 @@ kotlin {
     jvm {
         withSourcesJar()
     }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -25,19 +35,5 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-    }
-}
-
-android {
-    namespace = "com.ghost.serialization.api"
-    compileSdk = 36
-
-    defaultConfig {
-        consumerProguardFiles("ghost-proguard-rules.pro")
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }

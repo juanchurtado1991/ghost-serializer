@@ -6,6 +6,8 @@ import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.GhostJsonReader
 import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.prepareUtf8JsonSource
+import com.ghost.serialization.parser.withPreparedUtf8Json
 import com.ghost.serialization.writer.GhostJsonFlatWriter
 import com.ghost.serialization.writer.GhostJsonStringWriter
 import com.ghost.serialization.writer.WriterSinkPair
@@ -161,12 +163,16 @@ actual fun <T> ghostInternalUseReader(
     bytes: ByteArray,
     block: (GhostJsonReader) -> T
 ): T {
-    val reader = readerPool.get()
-        ?: GhostJsonReader(bytes)
-            .also { readerPool.set(it) }
+    return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
+        val view = if (offset == 0) data else data.copyOfRange(offset, offset + length)
+        val viewLimit = if (offset == 0) length else view.size
+        val reader = readerPool.get()
+            ?: GhostJsonReader(view)
+                .also { readerPool.set(it) }
 
-    reader.reset(bytes)
-    return block(reader)
+        reader.reset(view, viewLimit)
+        block(reader)
+    }
 }
 
 actual fun <T> ghostInternalUseFlatReader(
@@ -174,12 +180,14 @@ actual fun <T> ghostInternalUseFlatReader(
     limit: Int,
     block: (GhostJsonFlatReader) -> T
 ): T {
-    val reader = flatReaderPool.get()
-        ?: GhostJsonFlatReader(bytes)
-            .also { flatReaderPool.set(it) }
+    return withPreparedUtf8Json(bytes, limit) { data, offset, length ->
+        val reader = flatReaderPool.get()
+            ?: GhostJsonFlatReader(data)
+                .also { flatReaderPool.set(it) }
 
-    reader.reset(bytes, limit)
-    return block(reader)
+        reader.resetSlice(data, offset, length)
+        block(reader)
+    }
 }
 
 actual fun <T> ghostInternalUseSource(
@@ -193,7 +201,7 @@ actual fun <T> ghostInternalUseSource(
             .also { sourceReaderPool.set(it) }
 
     // data in 8 KB segments on demand instead of loading the entire payload.
-    reader.reset(source)
+    reader.reset(prepareUtf8JsonSource(source))
     return block(reader)
 }
 

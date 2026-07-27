@@ -110,7 +110,7 @@ class GhostPlugin : Plugin<Project> {
     }
 
     private fun hasKtorDependency(project: Project): Boolean {
-        return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
+        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_KTOR &&
@@ -120,7 +120,7 @@ class GhostPlugin : Plugin<Project> {
     }
 
     private fun hasRetrofitDependency(project: Project): Boolean {
-        return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
+        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_RETROFIT &&
@@ -131,7 +131,7 @@ class GhostPlugin : Plugin<Project> {
 
     private fun hasProtobufDependency(project: Project): Boolean {
         if (project.plugins.hasPlugin(PLUGIN_PROTOBUF)) return true
-        return listOf(CONFIG_IMPL, "api", CONFIG_COMMON_MAIN_IMPL).any { name ->
+        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_PROTOBUF
@@ -155,7 +155,7 @@ class GhostPlugin : Plugin<Project> {
 
     companion object {
         private const val EXTENSION_NAME = "ghost"
-        private const val DEFAULT_VERSION = "1.2.7"
+        private const val DEFAULT_VERSION = "1.3.0"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
         private const val PLUGIN_KMP = "org.jetbrains.kotlin.multiplatform"
@@ -174,6 +174,7 @@ class GhostPlugin : Plugin<Project> {
 
         private const val CONFIG_COMMON_MAIN_IMPL = "commonMainImplementation"
         private const val CONFIG_IMPL = "implementation"
+        private const val CONFIG_API = "api"
         private const val CONFIG_KSP_COMMON = "kspCommonMainMetadata"
         private const val PREFIX_KSP = "ksp"
 

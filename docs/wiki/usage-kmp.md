@@ -2,7 +2,9 @@
 
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](usage-kmp.md)
 
-This guide covers using Ghost in a shared KMP module targeting Android, iOS, and JVM simultaneously.
+This guide covers using Ghost as a drop-in JSON optimization in a shared KMP module targeting Android, iOS, JVM, and browser WebAssembly. Keep KotlinX Serialization or another existing serializer for unannotated models and move hot DTOs to Ghost incrementally.
+
+For the minimal setup, see the [Ghost Serializer Quick Start](quick-start.md).
 
 ---
 
@@ -12,7 +14,8 @@ This guide covers using Ghost in a shared KMP module targeting Android, iOS, and
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.ghostserializer.ghost") version "1.2.2"
+    id("com.google.devtools.ksp") version "2.3.10"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 
 kotlin {
@@ -20,22 +23,18 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
     jvm()
-
-    sourceSets {
-        commonMain.dependencies {
-            implementation(libs.ghost.api)
-            implementation(libs.ghost.serialization)
-        }
+    wasmJs {
+        browser()
     }
 }
 
-// Optional: native String reader for in-memory String inputs
+// Optional for byte-only modules: reduce generated code per DTO.
 ksp {
-    arg("ghost.textChannel", "true")
+    arg("ghost.textChannel", "false")
 }
 ```
 
-The Ghost plugin auto-wires `ghost-compiler` on every KSP configuration (Android, iOS, JVM) for the targets declared.
+The Ghost plugin adds `ghost-api` and `ghost-serialization` to `commonMain`, then auto-wires `ghost-compiler` on every KSP configuration for the declared targets.
 
 ---
 
@@ -56,7 +55,7 @@ data class Product(
 Ghost generates a `ProductSerializer` for **each** platform target. The same API works everywhere:
 
 ```kotlin
-// Works identically on Android, iOS, and JVM
+// Works identically on Android, iOS, JVM, and wasmJs
 val product: Product = Ghost.deserialize(jsonString)
 val json: String = Ghost.encodeToString(product)
 val bytes: ByteArray = Ghost.encodeToBytes(product)
@@ -106,7 +105,7 @@ sealed class SmartEvent {
 ```
 
 > [!IMPORTANT]
-> Ghost generates a **bitwise decision tree at compile time** for inferred polymorphism. It identifies the correct subclass in a single pass — no trial-and-error, O(1) performance.
+> Ghost generates a **compile-time decision tree** for inferred polymorphism. It picks the subclass from field presence in a single pass — no trial-and-error decoding.
 
 ---
 
@@ -115,7 +114,7 @@ sealed class SmartEvent {
 
 `ghost-ktor` ships two integration modes: the standard **`ContentNegotiation` plugin** for transparent request/response handling, and **direct serialization extensions** (`respondGhost` / `bodyGhost`) that bypass the plugin pipeline entirely for maximum throughput.
 
-Tested against **Ktor 2.3.x** (`io.ktor:ktor-client-*:2.3.11`).
+Tested against **Ktor 3.5.x** (`io.ktor:ktor-client-*:3.5.1`), including the `wasmJs` client target.
 
 ### Dependency
 
@@ -136,14 +135,17 @@ ghost-ktor = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" 
 
 ### Mode A — `ContentNegotiation` Plugin (standard)
 
-Registers Ghost as the JSON engine globally. All `body<T>()` calls and response serialization go through Ghost automatically.
+Register Ghost beside your existing converter. Ghost handles generated serializers and returns `null` for unknown types so KotlinX Serialization (or another converter registered after it) remains the fallback.
 
 ```kotlin
 import com.ghost.serialization.ktor.ghost
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 
 val client = HttpClient(OkHttp) {
     install(ContentNegotiation) {
-        ghost() // lenient mode (default) — maximum parse speed
+        ghost() // @GhostSerialization DTOs
+        json(Json { ignoreUnknownKeys = true }) // everything else
     }
 }
 
@@ -195,8 +197,8 @@ val users: List<User> = client.get("https://api.example.com/users").bodyGhost()
 Internally:
 ```
 response.body<ByteArray>()                 // pulls raw bytes from Ktor
-  → Ghost.getSerializer(T::class)          // O(1) cached lookup, no reflection
-  → Ghost.deserialize(serializer, bytes)   // GhostJsonFlatReader — zero alloc hot path
+  → Ghost.getSerializer(T::class)          // O(1) cached lookup
+  → Ghost.deserialize(serializer, bytes)   // GhostJsonFlatReader — low-allocation hot path
 ```
 
 #### Server — `ApplicationCall.respondGhost(value, status?)`

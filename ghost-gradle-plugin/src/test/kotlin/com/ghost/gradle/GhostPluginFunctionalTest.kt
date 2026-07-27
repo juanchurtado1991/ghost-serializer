@@ -15,13 +15,13 @@ class GhostPluginFunctionalTest {
     private val settingsFile by lazy { testProjectDir.resolve("settings.gradle.kts") }
 
     private val kotlinVersion: String
-        get() = System.getProperty("kotlinVersion") ?: "1.9.24"
+        get() = System.getProperty("kotlinVersion") ?: "2.4.0"
 
     private val kspVersion: String
-        get() = System.getProperty("kspVersion") ?: "1.9.24-1.0.20"
+        get() = System.getProperty("kspVersion") ?: "2.3.10"
 
     private val ghostVersion: String
-        get() = System.getProperty("ghostVersion") ?: "1.2.7"
+        get() = System.getProperty("ghostVersion") ?: "1.3.0"
 
     @Test
     fun `plugin supports configuration cache`() {

@@ -62,28 +62,27 @@ object RegressionCalculator {
      * Split Gradle tasks: benchmarkSynthetic / benchmarkTwitter. Twitter stores raw ops/s.
      */
     private val BASELINES: List<Baseline> = listOf(
-        // Twitter macro dataset — throughput (ops/s)
-        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1271.2, 1108.0, 406.8, 1337.4),
-        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1105.8, 634.3, 671.7, 4296.9),
-        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 481.9, 289.0, 1320.1, 1904.7),
-        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4220.4, 3119.0, 1074.3, 972.1),
-        Baseline(TWITTER, ENCODE_BYTES, Metric.THROUGHPUT, 2609.6, 1645.2, 420.2, 2206.8),
-        Baseline(TWITTER, ENCODE_STREAMING, Metric.THROUGHPUT, 2614.9, 1494.2, 426.9, 455.0),
+        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1930.3, 1129.0, 361.2, 1337.6),
 
-        // LIST_MEDIUM — latency advantage (ghost=1.0, kser=median session advantage)
-        Baseline(LIST_MEDIUM, MODE_STRING, Metric.LATENCY, 1.0, 1.189, 157.7, 189.7),
-        Baseline(LIST_MEDIUM, MODE_BYTES, Metric.LATENCY, 1.0, 2.112, 24.8, 189.7),
-        Baseline(LIST_MEDIUM, MODE_STREAMING, Metric.LATENCY, 1.0, 3.648, 24.8, 189.7),
+        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1601.5, 653.8, 621.2, 4297.0),
 
-        // SYNC_FULL_LARGE — latency advantage
-        Baseline(SYNC_FULL, MODE_STRING, Metric.LATENCY, 1.0, 1.169, 1173.7, 1836.6),
-        Baseline(SYNC_FULL, MODE_BYTES, Metric.LATENCY, 1.0, 2.057, 213.4, 1836.6),
-        Baseline(SYNC_FULL, MODE_STREAMING, Metric.LATENCY, 1.0, 3.698, 334.2, 1957.5),
+        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 831.3, 300.9, 1268.7, 1904.9),
 
-        // WRITING — latency advantage
-        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 0.986, 185.3, 264.9),
-        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.412, 92.6, 326.3),
-        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.560, 32.2, 203.5),
+        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4157.3, 2994.8, 1074.3, 972.1),
+        Baseline(TWITTER, ENCODE_BYTES, Metric.THROUGHPUT, 2341.8, 1226.5, 420.2, 2206.8),
+        Baseline(TWITTER, ENCODE_STREAMING, Metric.THROUGHPUT, 2325.2, 1436.1, 426.9, 455.0),
+
+        Baseline(LIST_MEDIUM, MODE_STRING, Metric.LATENCY, 1.0, 2.590, 33.9, 113.9),
+        Baseline(LIST_MEDIUM, MODE_BYTES, Metric.LATENCY, 1.0, 2.296, 24.5, 113.9),
+        Baseline(LIST_MEDIUM, MODE_STREAMING, Metric.LATENCY, 1.0, 3.939, 24.5, 113.9),
+
+        Baseline(SYNC_FULL, MODE_STRING, Metric.LATENCY, 1.0, 2.180, 240.3, 1009.3),
+        Baseline(SYNC_FULL, MODE_BYTES, Metric.LATENCY, 1.0, 2.011, 158.3, 1009.3),
+        Baseline(SYNC_FULL, MODE_STREAMING, Metric.LATENCY, 1.0, 3.749, 222.7, 1073.8),
+
+        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 2.103, 92.7, 202.6),
+        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.736, 92.7, 263.9),
+        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.635, 32.3, 141.2),
     )
 
     private data class Row(

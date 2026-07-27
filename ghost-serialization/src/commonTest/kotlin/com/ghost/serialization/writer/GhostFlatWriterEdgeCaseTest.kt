@@ -87,7 +87,10 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesLargeDoubleBeyondSafeIntegerRange() {
-        assertEquals("""{"v":1.0E20}""", writerToString { w -> w.beginObject().name("v").value(1e20).endObject() })
+        val json = writerToString { w -> w.beginObject().name("v").value(1e20).endObject() }
+        assertEquals("""{"v":""", json.substring(0, 5))
+        assertEquals('}', json.last())
+        assertEquals(1e20, json.substring(5, json.lastIndex).toDouble())
     }
 
     @Test
@@ -193,6 +196,23 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun writesUnicodeDirectly() {
         assertEquals("""{"v":"漢字"}""", writerToString { w -> w.beginObject().name("v").value("漢字").endObject() })
+    }
+
+    @Test
+    fun writesAsciiPrefixThenUnicodeWithoutRescanLoss() {
+        // Mixed string: ASCII run then BMP — exercises breakIndex preservation on the byte writer.
+        assertEquals(
+            """{"v":"hello漢字"}""",
+            writerToString { w -> w.beginObject().name("v").value("hello漢字").endObject() }
+        )
+    }
+
+    @Test
+    fun writesAsciiPrefixThenEscapedQuote() {
+        assertEquals(
+            "{\"v\":\"hi\\\"漢字\"}",
+            writerToString { w -> w.beginObject().name("v").value("hi\"漢字").endObject() }
+        )
     }
 
     @Test

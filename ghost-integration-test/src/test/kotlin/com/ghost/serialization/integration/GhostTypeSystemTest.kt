@@ -1,8 +1,13 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.integration.model.*
-import kotlin.test.*
+import com.ghost.serialization.integration.model.CollectionOfNulls
+import com.ghost.serialization.integration.model.EvolutionModel
+import com.ghost.serialization.integration.model.NestedGenericModel
+import com.ghost.serialization.integration.model.NullablePrimitives
+import com.ghost.serialization.integration.model.RecursiveGraphNode
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class GhostTypeSystemTest {
 

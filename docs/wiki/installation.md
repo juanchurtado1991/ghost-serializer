@@ -1,9 +1,11 @@
-# Installation
+# Ghost Serializer Installation
 
 [![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat&logo=gradle&logoColor=white)](installation.md)
 
 
-Ghost is published to **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** under the `com.ghostserializer` group.
+Ghost is published to **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** under the `com.ghostserializer` group. For the shortest path from an empty project to your first generated serializer, use the **[Quick Start](quick-start.md)**.
+
+The recommended Gradle plugin setup is designed for incremental adoption: it adds Ghost's runtime and KSP compiler without removing or reconfiguring `kotlinx.serialization`, Jackson, Gson, or Moshi.
 
 ---
 
@@ -11,17 +13,17 @@ Ghost is published to **[Maven Central](https://central.sonatype.com/search?q=g:
 
 | Requirement | Version |
 |:---|:---|
-| Kotlin | **2.1.10+** |
-| KSP | **2.1.10-1.0.31** |
+| Kotlin | **2.4.0** |
+| KSP | **2.3.10** |
 | JDK | **17+** |
 | Android SDK | **API 21+** (minSdk) |
-| Ktor (optional) | **2.3.x** |
-| Retrofit (optional) | **2.11** |
+| Ktor (optional) | **3.5.x** |
+| Retrofit (optional) | **2.11+** |
 | Spring Boot (optional) | **3.4+** |
 
 ---
 
-## Maven Central (`1.2.7+`)
+## Maven Central (`1.3.0+`)
 
 Ghost is published to `mavenCentral()`. Ensure it is declared in your repositories:
 
@@ -39,8 +41,8 @@ dependencyResolutionManagement {
 
 ```toml
 [versions]
-ghost = "1.2.7"
-ksp = "2.1.10-1.0.31"
+ghost = "1.3.0"
+ksp = "2.3.10"
 
 [libraries]
 ghost-api            = { module = "com.ghostserializer:ghost-api", version.ref = "ghost" }
@@ -49,6 +51,7 @@ ghost-compiler       = { module = "com.ghostserializer:ghost-compiler", version.
 ghost-ktor           = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" }
 ghost-retrofit       = { module = "com.ghostserializer:ghost-retrofit", version.ref = "ghost" }
 ghost-spring-boot-starter = { module = "com.ghostserializer:ghost-spring-boot-starter", version.ref = "ghost" }
+ghost-protobuf       = { module = "com.ghostserializer:ghost-protobuf", version.ref = "ghost" }
 
 [plugins]
 ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
@@ -57,19 +60,21 @@ ksp   = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 
 
-## Native String Reader (optional)
+## Generated string channel
 
-To enable `GhostJsonStringReader` — which parses `String` inputs without `encodeToByteArray` overhead — add the KSP option to modules that call `Ghost.deserialize(json: String)`:
+Ghost generates the native `GhostJsonStringReader` channel by default. It parses `String` inputs without an `encodeToByteArray` bridge and is useful for large in-memory JSON strings.
+
+Projects focused exclusively on byte/network input can opt out to reduce generated code size:
 
 ```kotlin
 // build.gradle.kts
 ksp {
-    arg("ghost.textChannel", "true")
+    arg("ghost.textChannel", "false")
 }
 ```
 
 > [!NOTE]
-> `ghost.textChannel=true` is **opt-in**. With the default `false`, `Ghost.deserialize(json: String)` UTF-8-encodes once and parses via `GhostJsonFlatReader` — **faster than native `GhostJsonStringReader` on typical DTOs** in `benchmarkSynthetic`. The compiler saves **≈4 KB of binary size per DTO** by not pre-generating the String dispatch table. Enable `textChannel` only on models with **very large** in-memory `String` inputs where you have measured a benefit (e.g. Twitter macro-scale JSON). See [advanced-features §5](advanced-features.md#5-native-string-reader-textchannel).
+> With `ghost.textChannel=false`, `Ghost.deserialize(json: String)` UTF-8-encodes once and parses through the byte reader. This saves approximately 4 KB of generated code per DTO. Prefer the default string channel when large `String` payloads are common; opt out when network bytes are the dominant input and binary size matters. See [Advanced Features §5](advanced-features.md#5-native-string-reader-textchannel).
 
 ---
 
@@ -77,13 +82,14 @@ ksp {
 
 | Platform | Minimum configuration |
 |:---|:---|
+| **First project** | Apply KSP + Ghost plugin → [Quick Start →](quick-start.md) |
 | **Android** | Apply `com.ghostserializer.ghost` Gradle plugin → [Android Guide →](usage-android.md) |
 | **Kotlin Multiplatform** | Apply plugin in shared module → [KMP Guide →](usage-kmp.md) |
 | **iOS / Swift** | Export XCFramework + manual registry → [iOS Guide →](usage-ios.md) |
 | **Spring Boot** | Add `ghost-spring-boot-starter` → [Spring Boot Guide →](usage-spring-boot.md) |
-| **Ktor** | Add `ghost-ktor` + `install(ContentNegotiation) { ghost() }` → [KMP Guide →](usage-kmp.md#ktor) |
-| **Retrofit** | Add `ghost-retrofit` + `GhostConverterFactory.create()` → [Android Guide →](usage-android.md#retrofit) |
+| **Ktor** | Add `ghost-ktor` + `install(ContentNegotiation) { ghost() }` → [KMP Guide →](usage-kmp.md#4-ktor-integration-ghost-ktor) |
+| **Retrofit** | Add `ghost-retrofit` + `GhostConverterFactory.create()` → [Android Guide →](usage-android.md#5-retrofit-integration) |
 
 ---
 
-← [Back to README](../../README.md)
+← [Back to README](../../README.md) | [Quick Start →](quick-start.md)

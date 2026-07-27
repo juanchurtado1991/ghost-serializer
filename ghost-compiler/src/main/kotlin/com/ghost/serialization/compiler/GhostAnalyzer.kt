@@ -355,6 +355,9 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             listInnerIsGhost = innerType?.let { isGhostType(it) } ?: false,
             listInnerIsEnum = innerType?.let { isEnumType(it) } ?: false,
             hasDefaultValue = param?.hasDefault ?: false,
+            defaultExpression = param
+                ?.takeIf { it.hasDefault }
+                ?.let { DefaultExpressionExtractor.extract(it) },
             isInConstructor = param != null,
             isMap = isMap,
             mapValueType = mapValueType,

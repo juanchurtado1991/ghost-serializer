@@ -125,7 +125,11 @@ class GhostSerializationProcessor(
 
         val textChannelByClass = TextChannelPlanner.plan(
             analyzed = analyzed,
-            moduleTextChannelEnabled = options[C.OPTION_TEXT_CHANNEL] == C.STR_TRUE,
+            moduleTextChannelOverride = when (options[C.OPTION_TEXT_CHANNEL]) {
+                C.STR_TRUE -> true
+                C.STR_FALSE -> false
+                else -> null
+            },
         )
 
         analyzed.forEach { entry ->

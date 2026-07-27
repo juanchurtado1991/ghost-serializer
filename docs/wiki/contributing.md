@@ -12,7 +12,7 @@ Thank you for helping improve Ghost!
 |:---|:---|
 | **JDK** | **17** — required for all modules |
 | **Gradle wrapper** | `./gradlew` — do not rely on a system Gradle installation |
-| **Android SDK** | Needed for `:ghost-serialization:testDebugUnitTest` (compile SDK 36) |
+| **Android SDK** | Needed for `:ghost-serialization:testAndroidHostTest` (compile SDK 36) |
 | **Xcode** *(macOS only)* | Needed for `iosSimulatorArm64Test` |
 
 ```bash
@@ -30,6 +30,10 @@ cd ghost-serializer
 |:---|:---|
 | `./gradlew allTests` | **All tests** — alias of `ciTest` (JVM + Android + iOS on macOS) |
 | `./gradlew ciTestJvm` | JVM test modules only (CI job **Tests (JVM)** on Ubuntu) |
+| `./gradlew :ghost-serialization:wasmJsBrowserTest` | Wasm browser tests for the core runtime |
+| `./gradlew :ghost-playground:jvmTest` | Ghost Playground unit tests (Studio presets, dispatch preview, Speed Test engine) |
+| `./gradlew :ghost-playground:wasmJsBrowserDevelopmentRun` | Local Compose wasm playground |
+| `./gradlew :ghost-playground:publishToDocs` | Build production wasm site into `docs/` for GitHub Pages (preserves `wiki/`, `coverage/`, manuals) |
 | `./gradlew ciTest` | Same as `allTests` |
 | `./gradlew verifyAndBenchmarkFast` | `allTests` then fast regression gate |
 | `./gradlew verifyAndBenchmark` | `allTests` then full regression gate |
@@ -41,10 +45,9 @@ cd ghost-serializer
 | `./gradlew koverHtmlReport` | Merged JVM/Android line/branch coverage across all Kover-enabled modules — `build/reports/kover/html/index.html` |
 | `./gradlew koverXmlReport` | Same, machine-readable — `build/reports/kover/report.xml` |
 
-Kover only measures JVM bytecode — it does not cover Kotlin/Native (`iosSimulatorArm64Test`) or the `expect`/`actual` bodies that only exist on the `iosMain`/`nativeMain` source sets.
+Kover only measures JVM bytecode — it does not cover Kotlin/Native (`iosSimulatorArm64Test`), Wasm (`wasmJsBrowserTest`), or the `expect`/`actual` bodies that only exist on non-JVM source sets.
 
-On **Linux/Windows**, `ciTest` logs that iOS tests are skipped and runs **642** tests.
-On **macOS** with Xcode, the full suite is **~874** (642 + `iosSimulatorArm64Test`).
+On **Linux/Windows**, `ciTest` skips iOS. On **macOS** with Xcode it also runs `iosSimulatorArm64Test`. Wasm coverage is exercised separately by the CI `test-wasm` job (`wasmJsBrowserTest` on the KMP modules).
 
 ---
 
@@ -97,7 +100,7 @@ See `ghost-spring-boot-starter` or `ghost-integration-test` for reference.
 ## Changing Runtime (`ghost-serialization`) or Adapters
 
 - **Retrofit / Ktor / Spring:** add adapter-specific tests in the corresponding module; register `:module:test` in `ciTestJvmModules` if not already listed.
-- **Platform heuristics** (`GhostHeuristics`): update defaults in [Advanced Features → Platform Limits](advanced-features.md#7-platform-limits--memory) when values change.
+- **Platform heuristics** (`GhostHeuristics`): update defaults in [Advanced Features → Platform Limits](advanced-features.md#9-platform-limits--memory) when values change.
 - **HTTP body size:** enforce limits in OkHttp, Ktor, Spring codec, or reverse proxy — never in the core parser.
 
 ---
@@ -132,14 +135,15 @@ We do not require a CLA for Apache 2.0 contributions. You retain copyright and l
 | Android | `ghost-serialization` (AAR) | KSP on `commonMain` / variant metadata |
 | iOS | `ghost-serialization` (KMP) | XCFramework via consumer project |
 | JVM | `ghost-serialization`, adapters | Server, desktop |
-| Wasm | — | **Not published** in 1.2.x — do not document until the target ships |
+| Wasm | `ghost-api`, `ghost-serialization`, `ghost-protobuf`, `ghost-ktor` | Browser `wasmJs`; common and platform tests run via `wasmJsBrowserTest` in CI |
 
 ---
 
 ## Getting Help
 
 - [GitHub Issues](https://github.com/juanchurtado1991/ghost-serializer/issues) — bugs, features, questions
-- [README](../../README.md) — landing page, Quick Start, all wiki links
+- [Quick Start](quick-start.md) — installation and first generated serializer
+- [README](../../README.md) — project overview and all wiki links
 
 ---
 

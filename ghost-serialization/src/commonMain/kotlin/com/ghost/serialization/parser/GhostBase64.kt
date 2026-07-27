@@ -34,7 +34,7 @@ fun decodeBase64String(value: String): ByteArray {
             val value2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1
             val value3 = if (chunk[3] < lut.size) lut[chunk[3]] else -1
             if (value0 < 0 || value1 < 0 || value2 == -1 || value3 == -1) {
-                throw IllegalArgumentException("Invalid base64 character")
+                throw IllegalArgumentException(C.ERR_INVALID_BASE64)
             }
             output[outputPosition++] = ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()
             if (value2 != -2) {

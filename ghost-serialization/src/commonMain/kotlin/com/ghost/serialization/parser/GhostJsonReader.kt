@@ -75,6 +75,13 @@ class GhostJsonReader(
      */
     internal var lastScanContentWas7BitOnly: Boolean = false
 
+    /**
+     * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
+     * fields in declaration order. Reset to 0 on [beginObject]; mispredictions fall back to
+     * hashed dispatch, so this never affects correctness.
+     */
+    internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
+
     /** Current nesting depth (object/array).
      * Incremented on begin*, decremented on end*. */
     var depth: Int = 0
@@ -211,6 +218,20 @@ class GhostJsonReader(
             position = limit
             nextTokenByte = C.MATCH_END
         }
+        releaseStreamingPrefix()
+    }
+
+    /**
+     * Asks a [StreamingGhostSource] to skip Okio bytes already behind [position].
+     * No-op for flat [ByteArray] sources. Safe to call after any forward-only advance;
+     * ranges that may still be re-read must be [StreamingGhostSource.pin]ned first.
+     */
+    @PublishedApi
+    internal fun releaseStreamingPrefix() {
+        val streaming = source as? StreamingGhostSource ?: return
+        val pos = position
+        if (pos == Int.MAX_VALUE || pos <= 0) return
+        streaming.releaseBefore(pos)
     }
 
     /**
@@ -280,7 +301,7 @@ class GhostJsonReader(
             position + size <= limit && expected.rangeEquals(0, rawData, position, size)
         }
         if (!isValid) {
-            throwError("Expected literal ${expected.utf8()}")
+            throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
 
         position += size
@@ -569,7 +590,7 @@ class GhostJsonReader(
         val digitValue3 = hexLookupTable[hexByte3]
 
         if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
-            throwError("Invalid unicode escape at $currentPosition")
+            throwError(C.ERR_INVALID_UNICODE_AT + currentPosition)
         }
 
         return (digitValue0 shl C.SHIFT_12) or
@@ -627,5 +648,6 @@ class GhostJsonReader(
         this.maxDepth = C.MAX_DEPTH
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
+        this.predictedFieldIndex = C.FIELD_PREDICTION_START
     }
 }

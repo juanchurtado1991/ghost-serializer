@@ -23,11 +23,13 @@ fun GhostJsonFlatReader.readQuotedString(): String {
 
     val start = position
     val localData = rawData
-    val scanResult = scanStringImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }
+    // SWAR scan without the pool hash; long values (the bulk of the byte volume) are never
+    // pooled, so hashing them during the scan is wasted. The hash is recomputed below only for
+    // short, pool-eligible values.
+    val scanResult = scanStringSwarNoHash(localData, start, limit)
 
-    if (scanResult != -1L) {
+    if (scanResult != C.MATCH_END.toLong()) {
         val length = ((scanResult and C.SCAN_LENGTH_MASK) ushr C.SCAN_LENGTH_SHIFT).toInt()
-        val rollingHash = scanResult.toInt()
         val only7Bit = (scanResult and C.SCAN_7BIT_BIT) != 0L
         lastScanContentWas7BitOnly = only7Bit
         val end = start + length
@@ -43,6 +45,7 @@ fun GhostJsonFlatReader.readQuotedString(): String {
             return result
         }
 
+        val rollingHash = rollingHashImpl(localData, start, length)
         val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
         if (stringPoolHashes[poolBucketIndex] == rollingHash) {
             val cachedString = stringPool[poolBucketIndex]
@@ -290,7 +293,7 @@ private fun GhostJsonFlatReader.parseUnicodeHex(currentPosition: Int): Int {
     val digitValue3 = hexLookupTable[hexByte3]
 
     if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
-        throwError("Invalid unicode escape at $currentPosition")
+        throwError(C.ERR_INVALID_UNICODE_AT + currentPosition)
     }
 
     return (digitValue0 shl C.SHIFT_12) or

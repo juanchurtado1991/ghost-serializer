@@ -1,151 +1,140 @@
-# Architecture Guide
+# Ghost Serializer Architecture
 
-[![Design](https://img.shields.io/badge/Design-blueviolet.png?style=flat&logo=diagrams.net&logoColor=white)](architecture.md)
+How Ghost turns annotated Kotlin models into low-allocation JSON readers and writers — and how the decode hot path actually spends its cycles.
 
-This document describes the design philosophy, compilation pipelines, and execution mechanics that allow Ghost Serializer to achieve up to **32× heap reduction** and **2× throughput** compared to standard reflection-based or compiler-plugin serializers.
+For setup, start with the [Quick Start](quick-start.md). For measured numbers, see [Benchmarks](benchmarks.md).
 
 ---
 
-## 1. Compilation Phase (KSP2)
+## 1. Compilation phase (KSP)
 
-Ghost leverages Google's **Symbol Processing API (KSP2)** to inspect Kotlin source code and generate high-performance serialization classes at compile time.
+Ghost uses **KSP** to inspect `@GhostSerialization` models and emit monomorphic serializers at compile time.
 
 ```text
-Kotlin Source Files
-   └──► KSP2 AST Scan
-         └──► [Has @GhostSerialization?]
-                ├──► (Yes) ──► GhostCompilerProcessor
-                │                ├──► Generate Serializers ──► Monomorphic Serializer Classes
-                │                └──► Generate Registry ────► GhostModuleRegistry_[module]
-                └──► (No) ───► (Skipped)
+Kotlin sources
+  └──► KSP symbol scan
+         └──► [@GhostSerialization?]
+                ├── Yes ──► GhostCompilerProcessor
+                │            ├── *Serializer  (per model)
+                │            └── GhostModuleRegistry_[module]
+                └── No  ───► skipped
 ```
 
-### What is the KSP2 AST Scan?
+For each annotated model the compiler emits:
 
-During compilation, **KSP2 (Symbol Processing API v2)** performs a fast scan of the Kotlin **Abstract Syntax Tree (AST)** before code generation or IR compilation occurs:
-- **Fast Syntax Analysis**: It scans only the structure and metadata of source files (annotations, classes, property names, types) without analyzing method bodies, making it up to **2× faster** than legacy KAPT/KSP1 processors.
-- **Blueprint Extraction**: It identifies symbols annotated with `@GhostSerialization` and extracts structural constraints, such as nullability, custom naming annotations (`@GhostName`), and target paths (`@GhostFlatten` / `@GhostWrap`).
-- **Codegen Input**: This syntax tree provides the structured layout metadata that `GhostCompilerProcessor` reads to emit optimized Kotlin serialization code.
+1. **`*Serializer`** — a concrete `GhostSerializer<T>` with hardcoded field names, dispatch options, and read/write paths (bytes, and optionally string).
+2. **`GhostModuleRegistry_[module]`** — registers those serializers for lookup.
 
-### Generated Artifacts
-For each data class annotated with `@GhostSerialization`, the compiler generates:
-1. **`*Serializer` Class**: A monomorphic serializer implementing `GhostSerializer<T>`. It contains hardcoded field offsets and matching trees.
-2. **`GhostModuleRegistry_[module]`**: A registry class registering all generated serializers.
-
-### O(1) Bitwise Trie Field Matching
-Rather than parsing a JSON key into a `String` object, hashing it, and performing a hashmap lookup, Ghost's generated reader matches fields **byte-by-byte** via a compile-time prefix tree (trie).
-- Keys are matched directly from the input stream.
-- Zero string allocations occur during key matching.
-- Worst-case field lookup complexity is $O(L)$ where $L$ is the length of the longest key, compiling down to efficient conditional jump assembly.
+`PerfectHashFinder` (compiler-side) picks shift / multiplier / table size so every field name maps to a unique slot in `JsonReaderOptions.dispatch`. That table is the **fallback** path when optimistic prediction misses — not the only lookup strategy.
 
 ---
 
-## 2. The Multi-Engine Reader Pipeline
+## 2. Multi-engine reader pipeline
 
-Ghost generates target-specific readers for different input channels, avoiding intermediate byte-to-string allocations:
+Ghost keeps a dedicated reader per input shape so hot paths avoid format bridges:
 
 ```text
-                       ┌───────────────────────┐
-                       │      JSON Input       │
-                       └───────────┬───────────┘
-                                   │
-            ┌──────────────────────┴──────────────────────┐
-            ▼                      ▼                      ▼
-       [ByteArray]              [String]           [BufferedSource]
-            │                      │                      │
-            ▼                      ▼                      ▼
-┌───────────────────────┐ ┌───────────────────────┐ ┌───────────────────────┐
-│  GhostJsonFlatReader  │ │ GhostJsonStringReader │ │    GhostJsonReader    │
-└───────────┬───────────┘ └───────────┬───────────┘ └───────────┬───────────┘
-            │                      │                      │
-            └──────────────────────┼──────────────────────┘
-                                   ▼
-                         [Parsed Kotlin Object]
+                 JSON input
+                     │
+     ┌───────────────┼───────────────┐
+     ▼               ▼               ▼
+ ByteArray        String      BufferedSource
+     │               │               │
+     ▼               ▼               ▼
+GhostJsonFlatReader  GhostJsonStringReader  GhostJsonReader
+                                            (StreamingGhostSource)
 ```
 
-1. **`GhostJsonFlatReader` (Byte-first)**: Processes raw `ByteArray` inputs. Reads bytes directly via bitwise operations. This is the fastest path.
-2. **`GhostJsonStringReader` (Text-first)**: Parses string inputs natively using `CharArray` scans. Opt-in via `@GhostSerialization(textChannel = true)` — only for very large in-memory `String` payloads; default `deserialize(String)` bridges to `GhostJsonFlatReader` instead.
-3. **`GhostJsonReader` (Streaming)**: Operates directly over Okio `BufferedSource` stream inputs, using $O(1)$ memory regardless of total payload size.
+| Reader | Input | Role |
+|:---|:---|:---|
+| **`GhostJsonFlatReader`** | `ByteArray` | Fastest network path — direct UTF-8 bytes |
+| **`GhostJsonStringReader`** | `String` / `CharArray` | Default for in-memory strings (`textChannel = true`) |
+| **`GhostJsonReader`** | Okio `BufferedSource` | Streaming; windowed buffer, O(1) retained memory |
+
+Byte-only apps can opt out of the string channel with `textChannel = false` (UTF-8-encodes once and reuses the flat reader). See [Advanced Features §5](advanced-features.md#5-native-string-reader-textchannel).
 
 ---
 
-## 3. Zero-Allocation & Pool Mechanics
+## 3. Decode hot path (what the profiler actually sees)
 
-Standard serializers put high pressure on the JVM Garbage Collector (GC) by allocating reader configurations, stream buffers, and intermediate strings. Ghost uses a zero-allocation hot path:
+On large machine-generated JSON (for example the Twitter macro fixture), CPU time is dominated by **key identification** and **value-string scanning**, not by allocating DTOs. Three layered shortcuts sit on top of the hashed dispatch:
 
-### Scratch Buffer Recycling
-To read streams efficiently, Ghost uses a pool of scratch buffers. The buffers are rented at the start of deserialization and released immediately after:
+### 3.1 In-order field prediction
 
-```kotlin
-// Internal allocation logic
-var scratch = acquireScratchBuffer(BUFFER_SIZE)
-try {
-    // Read bytes from stream/channel into scratch
-    val parsed = serializer.deserialize(reader)
-} finally {
-    releaseScratchBuffer(scratch) // Recycled back to the pool
-}
-```
+Generated JSON almost always lists object fields in declaration order. Each reader keeps a `predictedFieldIndex` hint:
 
-### ThreadLocal Serialization Pools
-To ensure thread safety without lock contention, writers and string builders are cached using JVM `ThreadLocal` storage. Steady-state serialization runs with **zero** writer allocations.
+1. Compare the incoming key against the **predicted next** field name in one pass.
+2. On a hit, skip closing-quote scan + hash + verify entirely.
+3. On a miss, fall through to the perfect-hash dispatch (correctness unchanged).
 
----
+Wide compares use `ghostReadLong8` (8 bytes at a time) on byte/streaming paths. The string channel compares `CharArray` candidates the same way, without a portable wide-load API.
 
-## 4. Perfect Hashing & O(1) Field Lookup Subsystem
+> [!TIP]
+> **Pro tip:** align DTO property order with the JSON key order from your producer so prediction hits on every field. Correctness does not depend on order; throughput does. See [Advanced Features § Align DTO property order](advanced-features.md#align-dto-property-order-with-json-pro-tip).
 
-Traditional JSON parsers deserialize a field name into a temporary `String` object, calculate its hash, and query a map of field handlers. This creates major garbage collection pressure and CPU instruction overhead.
+### 3.2 SWAR whitespace and string scanning
 
-Ghost resolves fields in **$O(1)$ time with zero allocations** using a compile-time configured Perfect Hashing algorithm implemented in `JsonReaderOptions` and `selectNameAndConsume`.
+Pretty-printed payloads are often ~25% ASCII spaces. Readers swallow **8-byte space runs** with a single `Long` compare (`SPACE_RUN_LONG`).
+
+Value strings use **SWAR gates** over quote / backslash / control / non-ASCII bits (`scanStringSwarNoHash` on bytes; the same idea inside each streaming window). The small-string **pool hash is deferred**: long values are never pooled, so hashing them was pure waste. Short, pool-eligible spans recompute the rolling hash once the closing quote is known.
+
+### 3.3 Perfect-hash fallback
+
+When prediction declines (unknown field, out-of-order keys, length mismatch), `selectNameAndConsume` packs the first four key bytes, indexes `options.dispatch`, and verifies the candidate with an unrolled byte/`Char` compare. This is the path architecture historically described as “O(1) field lookup”; it remains the safety net, not the common case on in-order objects.
 
 ```text
-JSON Key Stream  ──►  Extract first 4 bytes  ──►  Pack into Int (key)  ──► Apply Perfect Hash
-                                                                              │
-                                                                              ▼
-Verify expected bytes ◄── Match index ◄── Get candidate ◄── Index dispatch [ perfectHashKey ]
+incoming key
+    │
+    ▼
+predict next field? ──yes──► wide compare ──match──► done
+    │                              │
+    no                           miss
+    ▼                              ▼
+pack 4 bytes → perfect hash → dispatch[slot] → verify → done / unknown
 ```
 
-### 1. Key Packaging (Init / Compile-Time)
-When a serializer is initialized, `JsonReaderOptions` packs the first four bytes of each property key along with its length into a unique hash index.
-- **Bit-wise packing**:
-  ```kotlin
-  key = byte0 or (byte1 shl 8) or (byte2 shl 16) or (byte3 shl 24)
-  ```
-- **Collision Resolution**: If keys share the same prefix (e.g., `user_id` vs `user_ip`), Ghost mixes in entropy by XORing the middle and trailing bytes:
-  ```kotlin
-  key = key xor bytes[bytes.size - 1] xor bytes[bytes.size / 2]
-  ```
-- **Perfect Hash Function**: The candidate dispatch index is computed by multiplying the packed key by a prime multiplier, adding the key length, shifting the results, and masking it to fit a 1024-element dispatch table:
-  ```kotlin
-  perfectHashKey = ((key * multiplier + length) shr shift) and HASH_MASK
-  dispatch[perfectHashKey] = fieldIndex
-  ```
-
-### 2. Fast Unpacking & Lookup (Runtime)
-When reading an object, `selectNameAndConsume` reads bytes directly from the raw buffer without allocating a `String`:
-1. **Direct Hash Extraction**: It extracts the first 4 bytes from the stream position, packing them into an `Int` using the same bitwise shifts.
-2. **Dispatch Resolution**: It calculates `perfectHashKey` and fetches the candidate field index from `options.dispatch[perfectHashKey]` in a single memory lookup.
-3. **Monomorphic Match Verification**: `verifyKeyMatch` validates the candidate index against the expected bytes in blocks of 4 using loop unrolling:
-   ```kotlin
-   if (getByte(start + i) != expected[i]) return false
-   ```
-   If verified, the reader automatically consumes the trailing colon `:` separator and advances the parser cursor.
+Streaming prediction uses `GhostSource.byteOrEof` for speculative reads because the stream’s `limit` is unknown (`Int.MAX_VALUE`); array readers keep inlined bounds checks against the real document length.
 
 ---
 
-## 5. JIT-Friendly Monomorphic Design
+## 4. Pools and allocation
 
-Traditional serialization engines (such as Gson, Moshi, or Jackson) rely on **reflection** to inspect classes at runtime, or **polymorphic dispatch** (virtual method tables) to dynamically find the correct type adapters at runtime. 
+Ghost aims for a **low-allocation** steady state, not a literal zero-allocation runtime. DTO graphs, decoded strings outside the pool, and one-time buffers still allocate.
 
-When code is heavily polymorphic, the Just-In-Time (JIT) compiler (like JVM HotSpot or Android ART) must perform dynamic checks on every call to determine which method to execute. This prevents the compiler from performing critical optimizations like method inlining and branch prediction.
+| Platform | Pooling |
+|:---|:---|
+| **JVM / Android** | `ThreadLocal` reader, writer, and scratch pools |
+| **Kotlin/Native (iOS)** | `@ThreadLocal` equivalents |
+| **Wasm (`wasmJs`)** | Single-threaded process-local pools (no threads) |
 
-Ghost bypasses these performance bottlenecks with a strict **monomorphic design**:
-
-- **Monomorphic Callsites (Easy Inlining)**: Ghost generates a dedicated, concrete serializer class for each specific DTO. Because each callsite has only one concrete class implementing the serialization execution path, the JIT compiler easily identifies these paths as *monomorphic*. This enables the JIT to inline the serializer's serialization/deserialization code directly into your code, removing the overhead of method call stacks completely.
-- **Zero Reflection**: Every field mapping, type conversion, and sub-object deserialization is hardcoded at compile time. There are no calls to `java.lang.reflect` or runtime metadata lookups, which avoids security checks and heap overhead.
-- **Direct Conditional Jumps**: Instead of looping over JSON keys and comparing strings using `String.equals()`, Ghost emits direct, unrolled byte-level comparison checks. If a byte sequence does not match the expected key, the execution immediately jumps to the next candidate field using low-level, JIT-predictable conditional jump assembly instructions.
-- **Hardware Alignment**: By eliminating virtual dispatch tables and branch mispredictions, and reading sequentially from pooled scratch buffers, the generated bytecode maps directly onto modern CPU cache architectures for near-native CPU throughput.
+Writers recycle scratch buffers after `reset()` within platform warm-capacity caps. Streaming retains about one 8 KB window behind the reader and `skip`s consumed Okio prefix bytes (`StreamingGhostSource`), with `pin` / `unpin` protecting rollback and raw-capture ranges.
 
 ---
 
-← [Back to README](../../README.md) | [Installation Guide](installation.md) | [Advanced Features](advanced-features.md)
+## 5. Perfect hashing (fallback details)
+
+`JsonReaderOptions` stores field names as `rawBytes` (and `rawChars` for the string channel) and a power-of-two `dispatch` table sized by `PerfectHashFinder`:
+
+1. Pack up to four key bytes into an `Int`.
+2. Optional extended polynomial hash when prefixes collide.
+3. `((key * multiplier + length) shr shift) and (tableSize - 1)` → candidate index.
+4. Verify full key equality before accepting the match.
+
+Generated serializers call `selectNameAndConsume(OPTIONS)` in a `when (index)` loop — monomorphic, easy for the JIT / ART to inline after warmup.
+
+---
+
+## 6. Why generated code stays fast after warmup
+
+Ghost does not market itself as “no reflection” (kotlinx.serialization already generates code). The differentiating runtime shape is:
+
+- **Monomorphic serializers** — one concrete class per DTO; hot callsites stay inlinable.
+- **Byte-first networking** — parse `ByteArray` / Okio without UTF-8↔String thrash.
+- **Prediction + SWAR** — fewer passes over keys and pretty-print whitespace on real payloads.
+- **Pooled readers/writers** — steady-state encode/decode reuses buffers across calls.
+
+Absolute “N× faster / leaner” numbers depend on the fixture. On the Twitter macro and synthetic suites used in this repo, Ghost often shows large memory advantages versus Jackson and multi-GB/s decode throughput versus KotlinX on the same machine — always re-measure with [your own harness](benchmarks.md).
+
+---
+
+← [Back to README](../../README.md) · [Quick Start](quick-start.md) · [Advanced Features](advanced-features.md) · [Benchmarks](benchmarks.md)

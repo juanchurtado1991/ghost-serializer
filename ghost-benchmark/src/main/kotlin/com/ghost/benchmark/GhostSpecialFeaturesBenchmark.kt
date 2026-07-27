@@ -26,7 +26,7 @@ import java.lang.management.ManagementFactory
  * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
  *
  * These are measured independently because they cannot be compared fairly against
- * Gson, KSer, or Jackson — they simply don't support these capabilities.
+ * Gson, Moshi, KSer, or Jackson — they simply don't support these capabilities.
  *
  * Runs with the same ThreadMXBean methodology as the main benchmark.
  */
@@ -77,7 +77,7 @@ object GhostSpecialFeaturesBenchmark {
         println("\n════════════════════════════════════════════════════════════════")
         println("  👻 GHOST SPECIAL FEATURES — EXCLUSIVE CAPABILITIES BENCHMARK")
         println("════════════════════════════════════════════════════════════════")
-        println("  These features have NO equivalent in Gson, KSer, or Jackson.")
+        println("  These features have NO equivalent in Moshi, KSer, or Jackson.")
 
         benchmarkFeature(
             threadBean,
@@ -262,7 +262,17 @@ object GhostSpecialFeaturesBenchmark {
             }
         }
 
-        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong() * samplesPerRun)
+        printResult(
+            label,
+            totalTimeNanos,
+            totalAllocBytes,
+            BenchmarkStandard.MEASUREMENT_RUNS.toLong() * samplesPerRun,
+            payloadBytes = jsonSamples
+                .map { it.encodeToByteArray().size.toLong() }
+                .average()
+                .toLong()
+                .coerceAtLeast(0L),
+        )
     }
 
     private inline fun benchmarkBytesFeature(
@@ -295,7 +305,13 @@ object GhostSpecialFeaturesBenchmark {
             }
         }
 
-        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong() * samplesPerRun)
+        printResult(
+            label,
+            totalTimeNanos,
+            totalAllocBytes,
+            BenchmarkStandard.MEASUREMENT_RUNS.toLong() * samplesPerRun,
+            payloadBytes = payloads.map { it.size.toLong() }.average().toLong().coerceAtLeast(0L),
+        )
     }
 
     private inline fun benchmarkAllocOnlyFeature(
@@ -315,20 +331,40 @@ object GhostSpecialFeaturesBenchmark {
             totalTimeNanos += System.nanoTime() - timeBefore
             totalAllocBytes += threadBean.getThreadAllocatedBytes(threadId) - allocBefore
         }
-        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong())
+        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong(), payloadBytes = 0L)
     }
 
-    private fun printResult(label: String, totalTimeNanos: Long, totalAllocBytes: Long, totalOps: Long) {
+    private fun printResult(
+        label: String,
+        totalTimeNanos: Long,
+        totalAllocBytes: Long,
+        totalOps: Long,
+        payloadBytes: Long,
+    ) {
         val avgTimeUs = totalTimeNanos / (totalOps * 1000.0)
-        val avgAllocBytes = totalAllocBytes / totalOps
-        val totalAllocKb = totalAllocBytes / 1024.0
-        println(
-            "  %-58s │ %6.2f µs/op │ %5d B/op │ %8.1f KB total".format(
-                label,
-                avgTimeUs,
-                avgAllocBytes,
-                totalAllocKb
+        val avgAllocKb = (totalAllocBytes.toDouble() / totalOps) / 1024.0
+        val gbPerSec = if (payloadBytes > 0L) {
+            BenchmarkThroughput.microsToGbPerSec(avgTimeUs, payloadBytes)
+        } else {
+            0.0
+        }
+        if (payloadBytes > 0L) {
+            println(
+                "  %-58s │ %6.3f GB/s │ %7.2f µs/op │ %8.3f KB/op".format(
+                    label,
+                    gbPerSec,
+                    avgTimeUs,
+                    avgAllocKb,
+                )
             )
-        )
+        } else {
+            println(
+                "  %-58s │      — GB/s │ %7.2f µs/op │ %8.3f KB/op".format(
+                    label,
+                    avgTimeUs,
+                    avgAllocKb,
+                )
+            )
+        }
     }
 }

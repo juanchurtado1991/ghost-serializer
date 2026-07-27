@@ -11,6 +11,7 @@ fun GhostJsonStringReader.beginObject() {
     if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
         throwError(C.ERR_EXPECTED_BEGIN_OBJ)
     }
+    predictedFieldIndex = C.FIELD_PREDICTION_START
     depth++
     if (depth > maxDepth) {
         throwError(C.ERR_DEPTH_EXCEEDED)
@@ -246,7 +247,54 @@ fun GhostJsonStringReader.nextChar(): Char {
 fun GhostJsonStringReader.isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
 fun GhostJsonStringReader.consumeNull() {
-    skipAndValidateLiteral(C.NULL_BS)
+    val p = position
+    val chars = rawChars
+    if (p + 4 > limit ||
+        chars[p].code != C.NULL_CHAR_INT ||
+        chars[p + 1].code != C.U_BYTE_INT ||
+        chars[p + 2].code != C.L_BYTE_INT ||
+        chars[p + 3].code != C.L_BYTE_INT
+    ) {
+        throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
+    }
+    position = p + 4
+    nextTokenByte = C.RESET_TOKEN_BYTE
+}
+
+/** Reads a JSON string, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextStringOrNull(): String? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextString()
+}
+
+/** Reads a JSON int, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextIntOrNull(): Int? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextInt()
+}
+
+/** Reads a JSON long, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextLongOrNull(): Long? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextLong()
+}
+
+/** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextBooleanOrNull(): Boolean? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextBoolean()
 }
 
 internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int): Int {
@@ -353,7 +401,48 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
-    val end = findClosingQuote(start, limit)
+    val lim = limit
+    val chars = rawChars
+
+    // Optimistic in-order field match: compare the key against the predicted candidate in one
+    // pass, skipping findClosingQuote + hash + verify on a hit.
+    val predicted = predictedFieldIndex
+    val candidates = options.rawChars
+    if (predicted < candidates.size) {
+        val candidate = candidates[predicted]
+        val candLen = candidate.size
+        val keyEnd = start + candLen
+        if (candLen > 0 && keyEnd < lim && chars[keyEnd].code == C.QUOTE_INT) {
+            var i = 0
+            while (i + 3 < candLen &&
+                chars[start + i] == candidate[i] &&
+                chars[start + i + 1] == candidate[i + 1] &&
+                chars[start + i + 2] == candidate[i + 2] &&
+                chars[start + i + 3] == candidate[i + 3]
+            ) {
+                i += 4
+            }
+            while (i < candLen && chars[start + i] == candidate[i]) {
+                i++
+            }
+            if (i == candLen) {
+                predictedFieldIndex = predicted + 1
+                val newPos = keyEnd + 1
+                position = newPos
+                nextTokenByte = C.RESET_TOKEN_BYTE
+                if (consumeSeparator) {
+                    if (newPos < lim && chars[newPos].code == C.COLON_INT) {
+                        position = newPos + 1
+                    } else {
+                        consumeKeySeparator()
+                    }
+                }
+                return predicted
+            }
+        }
+    }
+
+    val end = findClosingQuote(start, lim)
 
     if (end == -1) {
         throwUnterminatedStringError()
@@ -367,7 +456,8 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
     val index = dispatchTable[hasIndex]
 
     if (index != C.MATCH_END) {
-        if (verifyKeyMatch(start, length, options.rawStrings[index], consumeSeparator)) {
+        if (verifyKeyMatch(start, length, options.rawChars[index], consumeSeparator)) {
+            predictedFieldIndex = index + 1
             return index
         }
     }
@@ -469,10 +559,10 @@ private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int,
 private inline fun GhostJsonStringReader.verifyKeyMatch(
     start: Int,
     length: Int,
-    expected: String,
+    expected: CharArray,
     consumeSeparator: Boolean
 ): Boolean {
-    if (expected.length == length) {
+    if (expected.size == length) {
         val chars = rawChars
         var index = 0
         while (index + 3 < length) {

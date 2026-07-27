@@ -20,6 +20,10 @@ import com.ghost.serialization.parser.GhostJsonConstants as C
  * so that [verifyKeyMatch] can compare bytes directly without virtual dispatch
  * or redundant bounds checks inside Okio's `rangeEquals`.
  *
+ * [rawChars] stores the same names as [CharArray] for the String-channel
+ * [verifyKeyMatch], avoiding per-character [String.get] / coder checks on the
+ * hot key-match path.
+ *
  * @property rawBytes Array of field names represented as raw byte arrays (UTF-8).
  * @property shift The bit-shift amount used to normalize key distributions.
  * @property multiplier The prime multiplier used to spread key entropy across the address space.
@@ -34,6 +38,14 @@ class JsonReaderOptions(
     @PublishedApi internal val enableStringDispatch: Boolean = false,
     @PublishedApi internal val extendedKeyHash: Boolean? = null
 ) {
+    /**
+     * Field names as [CharArray], built once from [rawStrings].
+     * Used exclusively by the String-channel key matcher.
+     */
+    @PublishedApi
+    internal val rawChars: Array<CharArray> = Array(rawStrings.size) { i ->
+        rawStrings[i].toCharArray()
+    }
     @PublishedApi
     internal val dispatch = IntArray(tableSize) { -1 }
 
@@ -193,7 +205,7 @@ class JsonReaderOptions(
             enableStringDispatch: Boolean,
             vararg names: String
         ): JsonReaderOptions {
-            return of(shift, multiplier, 1024, enableStringDispatch, *names)
+            return of(shift, multiplier, C.DEFAULT_DISPATCH_TABLE_SIZE, enableStringDispatch, *names)
         }
 
         fun of(

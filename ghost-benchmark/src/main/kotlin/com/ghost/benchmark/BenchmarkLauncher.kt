@@ -64,7 +64,7 @@ private fun runFullSuite(threadBean: ThreadMXBean, engines: BenchmarkEngines): B
     )
     performPhaseGc()
     val synthetic = runSyntheticBenchmarks(threadBean, engines, payloads)
-    printFinalResults(synthetic.aggregated)
+    printFinalResults(synthetic.aggregated, payloads)
 
     BenchmarkProgress.logPhase(4, 5, "Ghost special features + RawJson capture")
     performPhaseGc()
@@ -100,7 +100,7 @@ private fun runSyntheticSuite(
     )
     performPhaseGc()
     val synthetic = runSyntheticBenchmarks(threadBean, engines, payloads)
-    printFinalResults(synthetic.aggregated)
+    printFinalResults(synthetic.aggregated, payloads)
 
     return if (regressionGate) {
         RegressionCalculator.report(
@@ -145,6 +145,8 @@ internal data class BenchmarkPayloads(
     val listMediumBytes: okio.ByteString,
     val syncLargeBytes: okio.ByteString,
     val writingComplex: ComplexResponse,
+    /** Pre-encoded size of [writingComplex] — used for encode GB/s reporting. */
+    val writingBytes: okio.ByteString,
     val stressTreeBytes: okio.ByteString,
     val failureMalformed: String,
     val failureBytes: okio.ByteString,
@@ -156,6 +158,7 @@ internal data class BenchmarkPayloads(
             val listMediumBytes = generateNeutralJson(generateComplexData(200)).encodeUtf8()
             val syncLargeBytes = generateNeutralJson(generateComplexData(2000)).encodeUtf8()
             val writingComplex = generateComplexData(1000)
+            val writingBytes = generateNeutralJson(writingComplex).encodeUtf8()
             val stressTreeBytes = generateNeutralJson(createTree(20)).encodeUtf8()
             val failureMalformed = smallBytes.utf8().substring(0, smallBytes.size / 2)
             return BenchmarkPayloads(
@@ -164,6 +167,7 @@ internal data class BenchmarkPayloads(
                 listMediumBytes = listMediumBytes,
                 syncLargeBytes = syncLargeBytes,
                 writingComplex = writingComplex,
+                writingBytes = writingBytes,
                 stressTreeBytes = stressTreeBytes,
                 failureMalformed = failureMalformed,
                 failureBytes = failureMalformed.encodeUtf8(),

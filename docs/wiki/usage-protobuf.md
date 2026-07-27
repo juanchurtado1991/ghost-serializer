@@ -11,7 +11,7 @@
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation(project(":ghost-protobuf")) // or the published artifact
+    implementation("com.ghostserializer:ghost-protobuf:1.3.0")
 }
 ```
 
@@ -94,7 +94,7 @@ Both directions work: deserialize picks the right subclass from whichever key is
 
 ## 4. Well-Known Types
 
-Hand-written, zero-allocation `GhostSerializer` implementations in `com.ghost.protobuf.wkt`:
+Hand-written `GhostSerializer` implementations in `com.ghost.protobuf.wkt`:
 
 | Type | Kotlin shape | Wire format |
 |:---|:---|:---|

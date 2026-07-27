@@ -8,12 +8,12 @@ import com.ghost.serialization.integration.model.UserRole
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Verifies per-model `textChannel` codegen in this module: Twitter macro roots opt in;
- * synthetic benchmark models stay on the bytes/string-bridge path.
+ * Verifies per-model `textChannel` codegen in this module: every plain `@GhostSerialization`
+ * model (Twitter macro roots and the synthetic benchmark models alike) defaults to the native
+ * string channel unless it opts out explicitly.
  */
 class GhostTextChannelPerModelIntegrationTest {
 
@@ -31,13 +31,13 @@ class GhostTextChannelPerModelIntegrationTest {
     }
 
     @Test
-    fun syntheticBenchmarkModels_omitNativeStringDeserialize() {
-        assertGeneratedSourceOmitsStringDeserialize(COMPLEX_RESPONSE_SERIALIZER)
-        assertGeneratedSourceOmitsStringDeserialize(BENCH_USER_SERIALIZER)
+    fun syntheticBenchmarkModels_useNativeStringDeserialize() {
+        assertGeneratedSourceDeclaresStringDeserialize(COMPLEX_RESPONSE_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(BENCH_USER_SERIALIZER)
     }
 
     @Test
-    fun complexResponse_deserializeString_stillWorksViaInterfaceBridge() {
+    fun complexResponse_deserializeString_roundTripsIncludingIntArrayField() {
         val original = ComplexResponse(
             status = "ok",
             data = emptyList(),
@@ -72,14 +72,6 @@ class GhostTextChannelPerModelIntegrationTest {
         assertTrue(
             NATIVE_STRING_DESERIALIZE_SIGNATURE in source,
             "$serializerFileName must override deserialize(GhostJsonStringReader)",
-        )
-    }
-
-    private fun assertGeneratedSourceOmitsStringDeserialize(serializerFileName: String) {
-        val source = readGeneratedSerializerSource(serializerFileName)
-        assertFalse(
-            NATIVE_STRING_DESERIALIZE_SIGNATURE in source,
-            "$serializerFileName must not declare deserialize(GhostJsonStringReader)",
         )
     }
 
