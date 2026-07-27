@@ -31,6 +31,9 @@ cd ghost-serializer
 | `./gradlew allTests` | **All tests** — alias of `ciTest` (JVM + Android + iOS on macOS) |
 | `./gradlew ciTestJvm` | JVM test modules only (CI job **Tests (JVM)** on Ubuntu) |
 | `./gradlew :ghost-serialization:wasmJsBrowserTest` | Wasm browser tests for the core runtime |
+| `./gradlew :ghost-playground:jvmTest` | Ghost Playground unit tests (Studio presets, dispatch preview, Speed Test engine) |
+| `./gradlew :ghost-playground:wasmJsBrowserDevelopmentRun` | Local Compose wasm playground |
+| `./gradlew :ghost-playground:publishToDocs` | Build production wasm site into `docs/` for GitHub Pages (preserves `wiki/`, `coverage/`, manuals) |
 | `./gradlew ciTest` | Same as `allTests` |
 | `./gradlew verifyAndBenchmarkFast` | `allTests` then fast regression gate |
 | `./gradlew verifyAndBenchmark` | `allTests` then full regression gate |

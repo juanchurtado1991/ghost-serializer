@@ -1,4 +1,4 @@
-# 👻 Ghost Serializer
+# <img src="readme-assets/ghost-mascot.svg" width="36" height="36" alt="" align="center"/> Ghost Serializer
 
 **Drop-in JSON speed for Kotlin — keep your current serializer.**
 
@@ -15,7 +15,7 @@ Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate onl
 
 **[Quick Start](docs/wiki/quick-start.md)** ·
 **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
-**[Interactive Demo](https://juanchurtado1991.github.io/ghost-serializer/)** ·
+**[Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/)** ·
 **[Benchmarks](docs/wiki/benchmarks.md)** ·
 **[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
 

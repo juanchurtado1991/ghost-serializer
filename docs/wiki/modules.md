@@ -194,6 +194,7 @@ val json: String = GhostProtobuf.encodeToString(user)
 | Retrofit | `ghost-retrofit` | Android/JVM | Retrofit 2.11+ converter factory |
 | Spring Boot | `ghost-spring-boot-starter` | JVM | Spring Boot 3.4+ auto-configuration |
 | Proto3 | `ghost-protobuf` | KMP | Proto3 JSON mapping + WKTs |
+| Playground | _(not published)_ | wasmJs | [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/) — browser DTO studio + feature demos |
 
 ---
 
