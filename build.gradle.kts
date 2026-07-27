@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.vanniktech:gradle-maven-publish-plugin:0.30.0")
+        classpath("com.vanniktech:gradle-maven-publish-plugin:0.37.0")
     }
 }
 
@@ -35,7 +35,6 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.kotlin.compose) apply false
-    alias(libs.plugins.nexus.publish)
     alias(libs.plugins.dokka)
     alias(libs.plugins.vanniktech.publish) apply false
     alias(libs.plugins.kover)
@@ -105,18 +104,6 @@ subprojects {
     apply(from = "$rootDir/publish.gradle")
 }
 
-nexusPublishing {
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
-            username.set(project.findProperty("sonatypeUsername") as String?)
-            password.set(project.findProperty("sonatypePassword") as String?)
-            packageGroup.set(libs.versions.publish.group.get())
-        }
-    }
-}
-
 val isMacOsHost = OperatingSystem.current().isMacOsX
 
 tasks.register("publishToGitHubPackages") {
@@ -125,9 +112,9 @@ tasks.register("publishToGitHubPackages") {
         "Publish all Ghost modules to GitHub Packages (requires gpr.user and gpr.key in local.properties)"
 
     subprojects.forEach { subproject ->
-        val isPublishable = subproject.name.startsWith("ghost") && 
-                           !subproject.name.contains("sample") && 
-                           !subproject.name.contains("benchmark") && 
+        val isPublishable = subproject.name.startsWith("ghost") &&
+                           !subproject.name.contains("sample") &&
+                           !subproject.name.contains("benchmark") &&
                            !subproject.name.contains("integration-test")
         if (isPublishable) {
             dependsOn(subproject.tasks.matching { it.name == "publishAllPublicationsToGitHubPackagesRepository" })
