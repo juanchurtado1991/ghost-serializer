@@ -15,7 +15,7 @@ Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate onl
 
 **[Quick Start](docs/wiki/quick-start.md)** ·
 **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
-**[Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/)** ·
+**[Live Ghost Speedtest · Playground](https://juanchurtado1991.github.io/ghost-serializer/)** ·
 **[Benchmarks](docs/wiki/benchmarks.md)** ·
 **[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
 
