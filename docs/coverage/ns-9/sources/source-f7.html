@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UserRole</title>
+  <title>GhostSerialization Coverage Report > UniCodeModel</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UserRole (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: UniCodeModel (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,44 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UserRole</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (2/2)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (31/31)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">UserRole$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
+  <td class="name">UniCodeModel</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -97,18 +63,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (5/5)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
+    (1/1)
   </span>
 </td>
     <td class="coverageStat"/>
@@ -125,10 +80,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (36/36)
+    (17/17)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -139,14 +95,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
 <b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;@Serializable
-&nbsp;enum class UserRole { 
-<b class="fc">&nbsp;    EDITOR, </b>
-<b class="fc">&nbsp;    VIEWER </b>
-&nbsp;}
+&nbsp;data class UniCodeModel(
+<b class="fc">&nbsp;    val text: String,</b>
+<b class="fc">&nbsp;    val emoji: String,</b>
+<b class="fc">&nbsp;    val escaped: String</b>
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -170,7 +125,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

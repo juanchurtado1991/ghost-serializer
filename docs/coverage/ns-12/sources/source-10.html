@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostResilient</title>
+  <title>GhostSerialization Coverage Report > GhostFlatten</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostResilient (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostFlatten (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostResilient</td>
+  <td class="name">GhostFlatten</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,14 +47,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Applies resilient parsing to a property.
-&nbsp; * If a type mismatch occurs, or an unknown enum value is received,
-&nbsp; * Ghost will catch the error, assign `null` to the field (if nullable),
-&nbsp; * and continue parsing instead of throwing an exception.
+&nbsp; * Maps a nested JSON property directly to a field in the annotated class.
+&nbsp; *
+&nbsp; * Example:
+&nbsp; * ```kotlin
+&nbsp; * @GhostSerialization
+&nbsp; * data class Device(
+&nbsp; *     @GhostFlatten(&quot;attributes.value.level&quot;)
+&nbsp; *     val level: Int
+&nbsp; * )
+&nbsp; * ```
+&nbsp; * JSON: `{&quot;attributes&quot;: {&quot;value&quot;: {&quot;level&quot;: 42}}}`
+&nbsp; *
+&nbsp; * This avoids creating intermediate wrapper classes and significantly reduces memory allocation
+&nbsp; * by parsing nested values directly into the target field.
+&nbsp; *
+&nbsp; * @param path The dot-separated path to the JSON property.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
+&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostResilient
+&nbsp;annotation class GhostFlatten(val path: String)
 </code>
 </pre>
 </div>
@@ -78,7 +90,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

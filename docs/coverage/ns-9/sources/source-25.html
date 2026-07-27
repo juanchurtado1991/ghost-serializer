@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > CustomAction</title>
+  <title>GhostSerialization Coverage Report > ComplexResponse</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: CustomAction (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: ComplexResponse (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,7 +46,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">CustomAction</td>
+  <td class="name">ComplexResponse</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -58,6 +55,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     (1/1)
   </span>
 </td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.4%
+  </span>
+  <span class="absValue">
+    (85/148)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ComplexResponse$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -80,11 +104,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (8/8)
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.6%
+  </span>
+  <span class="absValue">
+    (89/152)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -95,18 +153,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.squareup.moshi.JsonClass
+&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
+<b class="pc">&nbsp;@Serializable</b>
+&nbsp;@JsonClass(generateAdapter = true)
 &nbsp;@GhostSerialization
-&nbsp;sealed class ApiEventDefault {
-&nbsp;    @GhostSerialization
-&nbsp;    data class Login(val userId: String) : ApiEventDefault()
-&nbsp;
-&nbsp;    @GhostSerialization
-&nbsp;    data class Logout(val sessionId: String) : ApiEventDefault()
-&nbsp;}
-&nbsp;
-&nbsp;@GhostSerialization
-<b class="fc">&nbsp;data class CustomAction(val actionName: String) : ApiEventDefault()</b>
+&nbsp;data class ComplexResponse(
+<b class="fc">&nbsp;    val status: String = &quot;ok&quot;,</b>
+<b class="fc">&nbsp;    val data: List&lt;BenchUser&gt;,</b>
+<b class="fc">&nbsp;    val meta: ExtremeMetadata,</b>
+<b class="fc">&nbsp;    val extras: String = &quot;&quot;</b>
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -130,7 +188,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

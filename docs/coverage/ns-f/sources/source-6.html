@@ -65,10 +65,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.4%
+    97.5%
   </span>
   <span class="absValue">
-    (150/154)
+    (154/158)
   </span>
 </td>
 <td class="coverageStat">
@@ -76,7 +76,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     92.9%
   </span>
   <span class="absValue">
-    (973/1047)
+    (975/1049)
   </span>
 </td>
 </tr>
@@ -104,10 +104,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.4%
+    97.5%
   </span>
   <span class="absValue">
-    (150/154)
+    (154/158)
   </span>
 </td>
 <td class="coverageStat">
@@ -115,7 +115,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     92.9%
   </span>
   <span class="absValue">
-    (973/1047)
+    (975/1049)
   </span>
 </td>
 </tr>
@@ -162,6 +162,36 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private const val CHAR_A = &#39;a&#39;.code
 &nbsp;    private const val CHAR_L = &#39;l&#39;.code
 &nbsp;    private const val CHAR_S = &#39;s&#39;.code
+&nbsp;
+&nbsp;    private const val BYTE_MASK = 0xFF
+&nbsp;    private const val HIGH_SURROGATE_START = 0xD800
+&nbsp;    private const val HIGH_SURROGATE_END = 0xDBFF
+&nbsp;    private const val LOW_SURROGATE_START = 0xDC00
+&nbsp;    private const val UNICODE_BASE = 0x10000
+&nbsp;    private const val SURROGATE_PAIR_SHIFT = 10
+&nbsp;    private const val SURROGATE_PAIR_MASK = 0x3FF
+&nbsp;    private const val BMP_LIMIT = 0xFFFF
+&nbsp;    private const val UNICODE_REPLACEMENT = 0xFFFD
+&nbsp;    private const val UNICODE_HEX_LENGTH = 4
+&nbsp;    private const val HEX_SHIFT = 4
+&nbsp;    private const val HEX_LETTER_OFFSET = 10
+&nbsp;
+&nbsp;    private const val ESCAPE_B = &#39;b&#39;.code
+&nbsp;    private const val ESCAPE_F = &#39;f&#39;.code
+&nbsp;    private const val ESCAPE_N = &#39;n&#39;.code
+&nbsp;    private const val ESCAPE_R = &#39;r&#39;.code
+&nbsp;    private const val ESCAPE_T = &#39;t&#39;.code
+&nbsp;    private const val ESCAPE_U = &#39;u&#39;.code
+&nbsp;    private const val HEX_A_LOWER = &#39;a&#39;.code
+&nbsp;    private const val HEX_F_LOWER = &#39;f&#39;.code
+&nbsp;    private const val HEX_A_UPPER = &#39;A&#39;.code
+&nbsp;    private const val HEX_F_UPPER = &#39;F&#39;.code
+&nbsp;
+&nbsp;    private const val BS_CHAR = &#39;\b&#39;
+&nbsp;    private const val FF_CHAR = &#39;\u000C&#39;
+&nbsp;    private const val LF_CHAR = &#39;\n&#39;
+&nbsp;    private const val CR_CHAR = &#39;\r&#39;
+&nbsp;    private const val TAB_CHAR = &#39;\t&#39;
 &nbsp;
 &nbsp;    fun kind(raw: RawJson): RawJsonKind {
 <b class="fc">&nbsp;        if (raw.storageLength &lt;= 0) return RawJsonKind.INVALID</b>
@@ -228,7 +258,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun RawJson.byteAt(relativeIndex: Int): Int =
-<b class="fc">&nbsp;        storage[storageOffset + relativeIndex].toInt() and 0xFF</b>
+<b class="fc">&nbsp;        storage[storageOffset + relativeIndex].toInt() and BYTE_MASK</b>
 &nbsp;
 &nbsp;    private fun RawJson.matchesTrueLiteral(): Boolean =
 <b class="pc">&nbsp;        storageLength == TRUE_LEN &amp;&amp;</b>
@@ -345,27 +375,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val builder = StringBuilder(estimated)</b>
 <b class="fc">&nbsp;        var index = contentStart</b>
 <b class="fc">&nbsp;        while (index &lt; contentEnd) {</b>
-<b class="fc">&nbsp;            val byte = storage[index++].toInt() and 0xFF</b>
+<b class="fc">&nbsp;            val byte = storage[index++].toInt() and BYTE_MASK</b>
 <b class="pc">&nbsp;            if (byte == BACKSLASH &amp;&amp; index &lt; contentEnd) {</b>
-<b class="fc">&nbsp;                when (val escaped = storage[index++].toInt() and 0xFF) {</b>
+<b class="fc">&nbsp;                when (val escaped = storage[index++].toInt() and BYTE_MASK) {</b>
 <b class="fc">&nbsp;                    QUOTE -&gt; builder.append(&#39;&quot;&#39;)</b>
 <b class="fc">&nbsp;                    BACKSLASH -&gt; builder.append(&#39;\\&#39;)</b>
-<b class="fc">&nbsp;                    &#39;b&#39;.code -&gt; builder.append(&#39;\b&#39;)</b>
-<b class="fc">&nbsp;                    &#39;f&#39;.code -&gt; builder.append(&#39;\u000C&#39;)</b>
-<b class="fc">&nbsp;                    &#39;n&#39;.code -&gt; builder.append(&#39;\n&#39;)</b>
-<b class="fc">&nbsp;                    &#39;r&#39;.code -&gt; builder.append(&#39;\r&#39;)</b>
-<b class="fc">&nbsp;                    &#39;t&#39;.code -&gt; builder.append(&#39;\t&#39;)</b>
-&nbsp;                    &#39;u&#39;.code -&gt; {
+<b class="fc">&nbsp;                    ESCAPE_B -&gt; builder.append(BS_CHAR)</b>
+<b class="fc">&nbsp;                    ESCAPE_F -&gt; builder.append(FF_CHAR)</b>
+<b class="fc">&nbsp;                    ESCAPE_N -&gt; builder.append(LF_CHAR)</b>
+<b class="fc">&nbsp;                    ESCAPE_R -&gt; builder.append(CR_CHAR)</b>
+<b class="fc">&nbsp;                    ESCAPE_T -&gt; builder.append(TAB_CHAR)</b>
+&nbsp;                    ESCAPE_U -&gt; {
 <b class="fc">&nbsp;                        if (index + 3 &gt;= contentEnd) return builder.toString()</b>
 <b class="fc">&nbsp;                        val hex = readHex4(index)</b>
-<b class="fc">&nbsp;                        index += 4</b>
-<b class="pc">&nbsp;                        if (hex in 0xD800..0xDBFF &amp;&amp; index + 5 &lt; contentEnd &amp;&amp;</b>
+<b class="fc">&nbsp;                        index += UNICODE_HEX_LENGTH</b>
+<b class="fc">&nbsp;                        if (hex in HIGH_SURROGATE_START..HIGH_SURROGATE_END &amp;&amp;</b>
+<b class="pc">&nbsp;                            index + 5 &lt; contentEnd &amp;&amp;</b>
 <b class="pc">&nbsp;                            storage[index] == BACKSLASH.toByte() &amp;&amp;</b>
-<b class="pc">&nbsp;                            storage[index + 1] == &#39;u&#39;.code.toByte()</b>
+<b class="pc">&nbsp;                            storage[index + 1] == ESCAPE_U.toByte()</b>
 &nbsp;                        ) {
-<b class="fc">&nbsp;                            val low = readHex4(index + 2)</b>
+<b class="fc">&nbsp;                            val lowSurrogate = readHex4(index + 2)</b>
 <b class="fc">&nbsp;                            index += 6</b>
-<b class="fc">&nbsp;                            appendCodePoint(builder, 0x10000 + ((hex - 0xD800) shl 10) + (low - 0xDC00))</b>
+<b class="fc">&nbsp;                            val codePoint = UNICODE_BASE +</b>
+<b class="fc">&nbsp;                                ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +</b>
+<b class="fc">&nbsp;                                (lowSurrogate - LOW_SURROGATE_START)</b>
+<b class="fc">&nbsp;                            appendCodePoint(builder, codePoint)</b>
 &nbsp;                        } else {
 <b class="fc">&nbsp;                            appendCodePoint(builder, hex)</b>
 &nbsp;                        }
@@ -380,22 +414,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun appendCodePoint(builder: StringBuilder, codePoint: Int) {
-<b class="fc">&nbsp;        if (codePoint &lt;= 0xFFFF) {</b>
+<b class="fc">&nbsp;        if (codePoint &lt;= BMP_LIMIT) {</b>
 <b class="fc">&nbsp;            builder.append(codePoint.toChar())</b>
 &nbsp;            return
 &nbsp;        }
-<b class="fc">&nbsp;        val offset = codePoint - 0x10000</b>
-<b class="fc">&nbsp;        builder.append((0xD800 + (offset shr 10)).toChar())</b>
-<b class="fc">&nbsp;        builder.append((0xDC00 + (offset and 0x3FF)).toChar())</b>
+<b class="fc">&nbsp;        val planeOffset = codePoint - UNICODE_BASE</b>
+<b class="fc">&nbsp;        builder.append((HIGH_SURROGATE_START + (planeOffset shr SURROGATE_PAIR_SHIFT)).toChar())</b>
+<b class="fc">&nbsp;        builder.append((LOW_SURROGATE_START + (planeOffset and SURROGATE_PAIR_MASK)).toChar())</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun RawJson.readHex4(start: Int): Int {
 <b class="fc">&nbsp;        var value = 0</b>
 <b class="fc">&nbsp;        var shift = 0</b>
-<b class="fc">&nbsp;        while (shift &lt; 4) {</b>
-<b class="fc">&nbsp;            val nibble = hexValue(storage[start + shift].toInt() and 0xFF)</b>
-<b class="fc">&nbsp;            if (nibble &lt; 0) return 0xFFFD</b>
-<b class="fc">&nbsp;            value = (value shl 4) or nibble</b>
+<b class="fc">&nbsp;        while (shift &lt; UNICODE_HEX_LENGTH) {</b>
+<b class="fc">&nbsp;            val nibble = hexValue(storage[start + shift].toInt() and BYTE_MASK)</b>
+<b class="fc">&nbsp;            if (nibble &lt; 0) return UNICODE_REPLACEMENT</b>
+<b class="fc">&nbsp;            value = (value shl HEX_SHIFT) or nibble</b>
 <b class="fc">&nbsp;            shift++</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return value</b>
@@ -403,8 +437,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;    private fun hexValue(byte: Int): Int = when (byte) {</b>
 <b class="pc">&nbsp;        in ZERO..NINE -&gt; byte - ZERO</b>
-<b class="pc">&nbsp;        in &#39;a&#39;.code..&#39;f&#39;.code -&gt; byte - &#39;a&#39;.code + 10</b>
-<b class="pc">&nbsp;        in &#39;A&#39;.code..&#39;F&#39;.code -&gt; byte - &#39;A&#39;.code + 10</b>
+<b class="pc">&nbsp;        in HEX_A_LOWER..HEX_F_LOWER -&gt; byte - HEX_A_LOWER + HEX_LETTER_OFFSET</b>
+<b class="pc">&nbsp;        in HEX_A_UPPER..HEX_F_UPPER -&gt; byte - HEX_A_UPPER + HEX_LETTER_OFFSET</b>
 <b class="fc">&nbsp;        else -&gt; -1</b>
 &nbsp;    }
 &nbsp;}
@@ -431,7 +465,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

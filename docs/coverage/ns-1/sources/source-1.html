@@ -73,10 +73,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.6%
+    92.3%
   </span>
   <span class="absValue">
-    (410/443)
+    (397/430)
   </span>
 </td>
 </tr>
@@ -202,7 +202,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (77/77)
+    (68/68)
   </span>
 </td>
   </tr>
@@ -413,10 +413,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.6%
+    94.4%
   </span>
   <span class="absValue">
-    (610/645)
+    (588/623)
   </span>
 </td>
 </tr>
@@ -539,7 +539,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun hasKtorDependency(project: Project): Boolean {
-<b class="fc">&nbsp;        return listOf(CONFIG_IMPL, &quot;api&quot;, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
+<b class="fc">&nbsp;        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
 <b class="fc">&nbsp;            val config = project.configurations.findByName(name)</b>
 <b class="pc">&nbsp;            config?.dependencies?.any {</b>
 <b class="fc">&nbsp;                it.group == GROUP_KTOR &amp;&amp;</b>
@@ -549,7 +549,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun hasRetrofitDependency(project: Project): Boolean {
-<b class="fc">&nbsp;        return listOf(CONFIG_IMPL, &quot;api&quot;, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
+<b class="fc">&nbsp;        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
 <b class="fc">&nbsp;            val config = project.configurations.findByName(name)</b>
 <b class="pc">&nbsp;            config?.dependencies?.any {</b>
 <b class="fc">&nbsp;                it.group == GROUP_RETROFIT &amp;&amp;</b>
@@ -560,7 +560,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    private fun hasProtobufDependency(project: Project): Boolean {
 <b class="pc">&nbsp;        if (project.plugins.hasPlugin(PLUGIN_PROTOBUF)) return true</b>
-<b class="fc">&nbsp;        return listOf(CONFIG_IMPL, &quot;api&quot;, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
+<b class="fc">&nbsp;        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
 <b class="fc">&nbsp;            val config = project.configurations.findByName(name)</b>
 <b class="pc">&nbsp;            config?.dependencies?.any {</b>
 <b class="fc">&nbsp;                it.group == GROUP_PROTOBUF</b>
@@ -603,6 +603,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;        private const val CONFIG_COMMON_MAIN_IMPL = &quot;commonMainImplementation&quot;
 &nbsp;        private const val CONFIG_IMPL = &quot;implementation&quot;
+&nbsp;        private const val CONFIG_API = &quot;api&quot;
 &nbsp;        private const val CONFIG_KSP_COMMON = &quot;kspCommonMainMetadata&quot;
 &nbsp;        private const val PREFIX_KSP = &quot;ksp&quot;
 &nbsp;
@@ -638,7 +639,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

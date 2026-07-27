@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostEnumWrapper</title>
+  <title>GhostSerialization Coverage Report > FlattenedModel</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostEnumWrapper (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: FlattenedModel (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostEnumWrapper</td>
+  <td class="name">FlattenedModel</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,7 +63,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (3/3)
   </span>
 </td>
     <td class="coverageStat"/>
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (24/24)
   </span>
 </td>
 </tr>
@@ -94,12 +94,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostFlatten
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class GhostEnumWrapper(
-<b class="fc">&nbsp;    val status: GhostStandardsEnum,</b>
-<b class="fc">&nbsp;    val optionalStatus: GhostStandardsEnum? = null</b>
+<b class="fc">&nbsp;@GhostSerialization</b>
+&nbsp;data class FlattenedModel(
+<b class="fc">&nbsp;    val id: Int,</b>
+<b class="fc">&nbsp;    @GhostFlatten(&quot;attributes.value.level&quot;)</b>
+<b class="fc">&nbsp;    val level: Int,</b>
+<b class="fc">&nbsp;    @GhostFlatten(&quot;attributes.status&quot;)</b>
+<b class="fc">&nbsp;    val status: String,</b>
+<b class="fc">&nbsp;    @GhostFlatten(&quot;metadata.author&quot;)</b>
+<b class="fc">&nbsp;    val author: String? = null</b>
 &nbsp;)
 </code>
 </pre>
@@ -124,7 +130,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

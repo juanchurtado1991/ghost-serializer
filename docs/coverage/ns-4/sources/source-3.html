@@ -60,10 +60,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (3/4)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.2%
+    92%
   </span>
   <span class="absValue">
-    (46/51)
+    (46/50)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.2%
+    88.6%
   </span>
   <span class="absValue">
-    (146/160)
+    (147/166)
   </span>
 </td>
 </tr>
@@ -120,7 +120,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;internal expect fun getLocalPool(): GhostPool
 &nbsp;
-<b class="nc">&nbsp;@PublishedApi</b>
+&nbsp;@PublishedApi
 <b class="fc">&nbsp;internal val SCRATCH_BUFFER_SIZE_INT = SCRATCH_BUFFER_SIZE</b>
 &nbsp;
 &nbsp;/**
@@ -128,7 +128,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Tiered strategy handles small, medium, and large payloads efficiently.
 &nbsp; */
 &nbsp;@InternalGhostApi
-<b class="nc">&nbsp;fun acquireScratchBuffer(minSize: Int = 48): ByteArray {</b>
+<b class="nc">&nbsp;fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {</b>
 <b class="fc">&nbsp;    val pool = getLocalPool()</b>
 <b class="fc">&nbsp;    return when {</b>
 <b class="fc">&nbsp;        minSize &lt;= SCRATCH_BUFFER_SIZE_INT -&gt; {</b>
@@ -234,7 +234,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > DeserializeCodeEmitter</title>
+  <title>GhostSerialization Coverage Report > DefaultExpressionExtractor</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.compiler</a>
 </div>
 
-<h1>Coverage Summary for Class: DeserializeCodeEmitter (com.ghost.serialization.compiler)</h1>
+<h1>Coverage Summary for Class: DefaultExpressionExtractor (com.ghost.serialization.compiler)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,42 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">DeserializeCodeEmitter</td>
-<td class="coverageStat">
-  <span class="percent">
-    83.3%
-  </span>
-  <span class="absValue">
-    (15/18)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    63%
-  </span>
-  <span class="absValue">
-    (68/108)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    84.3%
-  </span>
-  <span class="absValue">
-    (253/300)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    83.6%
-  </span>
-  <span class="absValue">
-    (1291/1544)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">DeserializeCodeEmitter$InferredSealedContext</td>
+  <td class="name">DefaultExpressionExtractor</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -90,59 +58,40 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     (1/1)
   </span>
 </td>
-    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    88.9%
   </span>
   <span class="absValue">
-    (6/6)
+    (16/18)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    39%
   </span>
   <span class="absValue">
-    (27/27)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    84.2%
-  </span>
-  <span class="absValue">
-    (16/19)
+    (139/356)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63%
+    64.5%
   </span>
   <span class="absValue">
-    (68/108)
+    (140/217)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.6%
+    59.5%
   </span>
   <span class="absValue">
-    (259/306)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    83.9%
-  </span>
-  <span class="absValue">
-    (1318/1571)
+    (825/1387)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -152,592 +101,482 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
 &nbsp;
-&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants.PROPERTY_MAX_SIZE
-&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
-&nbsp;import com.squareup.kotlinpoet.BOOLEAN
-&nbsp;import com.squareup.kotlinpoet.ClassName
-&nbsp;import com.squareup.kotlinpoet.CodeBlock
-&nbsp;import com.squareup.kotlinpoet.FunSpec
-&nbsp;import com.squareup.kotlinpoet.KModifier
-&nbsp;import com.squareup.kotlinpoet.PropertySpec
-&nbsp;import com.squareup.kotlinpoet.TypeSpec
-&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.google.devtools.ksp.symbol.FileLocation
+&nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
+&nbsp;import java.io.File
 &nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Main coordinator (Orchestrator) for the deserialization code generation process.
+&nbsp; * Extracts constructor-parameter default expressions from Kotlin source text.
 &nbsp; *
-&nbsp; * This class implements the Strategy Pattern to select the most efficient deserialization
-&nbsp; * logic for a given DTO. It acts as the central hub that inspects the DTO&#39;s metadata
-&nbsp; * (sealed hierarchy, enum, size, or structural complexity) and delegates the generation
-&nbsp; * task to specialized emitters.
-&nbsp; *
-&nbsp; * ### Orchestration Strategy:
-&nbsp; * - **Polymorphic Types:** Direct delegation for Sealed or [Enum] types.
-&nbsp; * - **Large DTOs (&gt; [PROPERTY_MAX_SIZE]):** Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
-&nbsp; * - **Standard DTOs:** Delegates to [StandardEmitter] for highly-optimized, inlinable code.
-&nbsp; *
-&nbsp; * @property properties The list of property metadata to be deserialized.
-&nbsp; * @property originalClassName The canonical name of the class being generated.
-&nbsp; * @property readerClass The specific reader implementation (e.g., GhostJsonFlatReader).
-&nbsp; * @property isSealed Identifies if the class is part of a sealed hierarchy.
-&nbsp; * @property isValue Identifies if the class is a Kotlin Value Class (inline class).
-&nbsp; * @property isEnum Identifies if the class is an Enum.
-&nbsp; * @property isInferred Handles polymorphic types where the discriminator is absent,
-&nbsp; * relying on property presence to identify the subclass.
+&nbsp; * KSP only exposes [KSValueParameter.hasDefault], never the expression itself. When the
+&nbsp; * declaring file is available via [FileLocation], this extractor reads the source, isolates
+&nbsp; * the parameter&#39;s RHS, and accepts it only when it matches a strict literal whitelist.
+&nbsp; * Anything unrecognized returns `null` so callers can fall back to `.copy()`.
 &nbsp; */
-&nbsp;internal class DeserializeCodeEmitter(
-&nbsp;    properties: List&lt;GhostPropertyModel&gt;,
-&nbsp;    originalClassName: ClassName,
-&nbsp;    readerClass: ClassName,
-<b class="fc">&nbsp;    private val isSealed: Boolean,</b>
-<b class="fc">&nbsp;    private val isValue: Boolean,</b>
-<b class="fc">&nbsp;    private val isEnum: Boolean,</b>
-<b class="fc">&nbsp;    private val sealedSubclasses: List&lt;KSClassDeclaration&gt;,</b>
-<b class="fc">&nbsp;    private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY,</b>
-<b class="fc">&nbsp;    private val isResilientClass: Boolean = false,</b>
-<b class="fc">&nbsp;    private val isInferred: Boolean = false,</b>
-<b class="fc">&nbsp;    private val isObject: Boolean = false,</b>
-<b class="fc">&nbsp;    private val hasFallback: Boolean = false</b>
-<b class="fc">&nbsp;) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {</b>
+&nbsp;internal object DefaultExpressionExtractor {
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Entry point for the code generation pipeline.
-&nbsp;     *
-&nbsp;     * Evaluates the DTO structure to determine the optimal generation strategy.
-&nbsp;     * It manages the injection of contextual serializers and ensures [isResilientClass]
-&nbsp;     * metadata is correctly propagated to the generated serializer.
-&nbsp;     *
-&nbsp;     * @param typeSpecBuilder The builder for the serializer object/class.
-&nbsp;     * @param isFlatPath Whether the code is generating for a flat reader vs standard.
+&nbsp;     * Returns a whitelisted default expression for [param], or `null` when the source is
+&nbsp;     * unavailable or the expression is not a safe literal.
 &nbsp;     */
-&nbsp;    fun build(
-&nbsp;        typeSpecBuilder: TypeSpec.Builder,
-<b class="nc">&nbsp;        isFlatPath: Boolean = false</b>
-&nbsp;    ) {
-<b class="fc">&nbsp;        val body = CodeBlock.builder()</b>
-&nbsp;
-<b class="fc">&nbsp;        when {</b>
-<b class="pc">&nbsp;            isObject -&gt; {</b>
-<b class="nc">&nbsp;                emitObjectReturn(body)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            isSealed &amp;&amp; isInferred -&gt; {</b>
-<b class="fc">&nbsp;                emitInferredSealed(body)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            isSealed -&gt; {</b>
-<b class="fc">&nbsp;                emitSealed(body)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            isValue -&gt; {</b>
-<b class="fc">&nbsp;                emitValue(body)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            isEnum -&gt; {</b>
-<b class="fc">&nbsp;                emitEnum(body)</b>
-&nbsp;            }
-<b class="pc">&nbsp;            properties.size &gt; PROPERTY_MAX_SIZE -&gt; {</b>
-<b class="nc">&nbsp;                emitFragmented(body, typeSpecBuilder, isFlatPath)</b>
-&nbsp;            }
-&nbsp;            else -&gt; {
-<b class="fc">&nbsp;                emitStandard(body, typeSpecBuilder, isFlatPath)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        addDeserializeFunction(typeSpecBuilder, body.build())</b>
-<b class="fc">&nbsp;        injectResilienceProperty(typeSpecBuilder, isFlatPath)</b>
+&nbsp;    fun extract(param: KSValueParameter): String? {
+<b class="pc">&nbsp;        if (!param.hasDefault) return null</b>
+<b class="pc">&nbsp;        val name = param.name?.asString() ?: return null</b>
+<b class="pc">&nbsp;        val location = param.location as? FileLocation ?: return null</b>
+<b class="fc">&nbsp;        val file = File(location.filePath)</b>
+<b class="pc">&nbsp;        if (!file.isFile) return null</b>
+<b class="pc">&nbsp;        val source = runCatching { file.readText() }.getOrNull() ?: return null</b>
+<b class="pc">&nbsp;        val raw = extractRawDefault(source, name, location.lineNumber) ?: return null</b>
+<b class="fc">&nbsp;        return whitelist(raw)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Instantiates and delegates code generation to [FragmentedEmitter].
+&nbsp;     * Isolates the raw default RHS for [paramName] near [lineNumber] (1-based) without
+&nbsp;     * whitelist filtering. Visible for unit tests.
 &nbsp;     */
-&nbsp;    private fun emitFragmented(
-&nbsp;        body: CodeBlock.Builder,
-&nbsp;        typeSpecBuilder: TypeSpec.Builder,
-&nbsp;        isFlatPath: Boolean
-&nbsp;    ) {
-<b class="nc">&nbsp;        val emitter = FragmentedEmitter(</b>
-<b class="nc">&nbsp;            properties,</b>
-<b class="nc">&nbsp;            originalClassName,</b>
-<b class="nc">&nbsp;            readerClass</b>
-&nbsp;        )
-<b class="nc">&nbsp;        emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)</b>
-<b class="nc">&nbsp;        if (!isFlatPath) {</b>
-<b class="nc">&nbsp;            emitter.injectContextualSerializers(typeSpecBuilder)</b>
+&nbsp;    internal fun extractRawDefault(source: String, paramName: String, lineNumber: Int): String? {
+<b class="pc">&nbsp;        val startOffset = offsetOfLine(source, lineNumber) ?: return null</b>
+<b class="pc">&nbsp;        val paramStart = findParameterName(source, paramName, startOffset) ?: return null</b>
+<b class="pc">&nbsp;        val eqIndex = findDefaultEquals(source, paramStart + paramName.length) ?: return null</b>
+<b class="pc">&nbsp;        return readExpression(source, eqIndex + 1)?.trim()?.takeIf { it.isNotEmpty() }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns [expr] unchanged when it is a whitelisted literal; otherwise `null`.
+&nbsp;     */
+&nbsp;    internal fun whitelist(expr: String): String? {
+<b class="fc">&nbsp;        val trimmed = expr.trim()</b>
+<b class="fc">&nbsp;        if (trimmed.isEmpty()) return null</b>
+<b class="fc">&nbsp;        return when {</b>
+<b class="fc">&nbsp;            trimmed in C.DEFAULT_EXPR_SCALAR_KEYWORDS -&gt; trimmed</b>
+<b class="fc">&nbsp;            isNumericLiteral(trimmed) -&gt; trimmed</b>
+<b class="fc">&nbsp;            isCharLiteral(trimmed) -&gt; trimmed</b>
+<b class="fc">&nbsp;            isStringLiteral(trimmed) -&gt; trimmed</b>
+<b class="fc">&nbsp;            isEmptyCollectionCall(trimmed) -&gt; trimmed</b>
+<b class="fc">&nbsp;            isEnumOrConstRef(trimmed) -&gt; trimmed</b>
+<b class="fc">&nbsp;            else -&gt; null</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Instantiates and delegates code generation to [StandardEmitter].
-&nbsp;     */
-&nbsp;    private fun emitStandard(
-&nbsp;        body: CodeBlock.Builder,
-&nbsp;        typeSpecBuilder: TypeSpec.Builder,
-&nbsp;        isFlatPath: Boolean
-&nbsp;    ) {
-<b class="fc">&nbsp;        val emitter = StandardEmitter(</b>
-<b class="fc">&nbsp;            properties,</b>
-<b class="fc">&nbsp;            originalClassName,</b>
-<b class="fc">&nbsp;            readerClass</b>
-&nbsp;        )
-<b class="fc">&nbsp;        emitter.emit(body, typeSpecBuilder)</b>
-<b class="fc">&nbsp;        if (!isFlatPath) {</b>
-<b class="fc">&nbsp;            emitter.injectContextualSerializers(typeSpecBuilder)</b>
+&nbsp;    private fun offsetOfLine(source: String, lineNumber: Int): Int? {
+<b class="pc">&nbsp;        if (lineNumber &lt; 1) return null</b>
+<b class="fc">&nbsp;        var line = 1</b>
+<b class="fc">&nbsp;        var index = 0</b>
+<b class="pc">&nbsp;        while (index &lt; source.length &amp;&amp; line &lt; lineNumber) {</b>
+<b class="fc">&nbsp;            if (source[index] == CHAR_NEWLINE) line++</b>
+<b class="fc">&nbsp;            index++</b>
 &nbsp;        }
+<b class="pc">&nbsp;        return if (line == lineNumber) index else null</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Emits deserialization logic for object types (singletons). Consumes the JSON object
-&nbsp;     * body and returns the singleton instance.
+&nbsp;     * Finds [paramName] as a constructor parameter identifier at or after [from],
+&nbsp;     * skipping string/char literals and comments.
 &nbsp;     */
-&nbsp;    private fun emitObjectReturn(body: CodeBlock.Builder) {
-<b class="nc">&nbsp;        body.addStatement(C.STR_BEGIN_OBJECT)</b>
-<b class="nc">&nbsp;        body.beginControlFlow(C.STR_WHILE_TRUE)</b>
-<b class="nc">&nbsp;        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)</b>
-<b class="nc">&nbsp;        body.beginControlFlow(C.STR_WHEN_INDEX)</b>
-<b class="nc">&nbsp;        body.addStatement(C.STR_MINUS_ONE_BREAK)</b>
-<b class="nc">&nbsp;        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)</b>
-<b class="nc">&nbsp;        body.addStatement(C.STR_SKIP_VALUE)</b>
-<b class="nc">&nbsp;        body.endControlFlow()</b>
-<b class="nc">&nbsp;        body.endControlFlow()</b>
-<b class="nc">&nbsp;        body.endControlFlow()</b>
-<b class="nc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
-<b class="nc">&nbsp;        body.addStatement(&quot;return %T&quot;, originalClassName)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Reads @GhostSerialization(name) from a class declaration, falling back to simple class name.
-&nbsp;     */
-&nbsp;    private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
-<b class="pc">&nbsp;        val customName = subclass.annotations</b>
-<b class="pc">&nbsp;            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }</b>
-<b class="pc">&nbsp;            ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String</b>
-<b class="pc">&nbsp;        return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Conditionally injects the `isResilient` property
-&nbsp;     * if the class is resilient and not flat.
-&nbsp;     */
-&nbsp;    private fun injectResilienceProperty(
-&nbsp;        typeSpecBuilder: TypeSpec.Builder,
-&nbsp;        isFlatPath: Boolean
-&nbsp;    ) {
-<b class="fc">&nbsp;        if (isResilientClass &amp;&amp; !isFlatPath) {</b>
-<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
-<b class="fc">&nbsp;                PropertySpec.builder(</b>
-<b class="fc">&nbsp;                    C.STR_IS_RESILIENT,</b>
-<b class="fc">&nbsp;                    BOOLEAN</b>
-&nbsp;                )
-<b class="fc">&nbsp;                    .addModifiers(KModifier.OVERRIDE)</b>
-<b class="fc">&nbsp;                    .initializer(C.STR_TRUE)</b>
-<b class="fc">&nbsp;                    .build()</b>
-&nbsp;            )
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Adds the final deserialize function to the generated serializer.
-&nbsp;     * This method fulfills the contract of GhostSerializer.
-&nbsp;     */
-&nbsp;    private fun addDeserializeFunction(
-&nbsp;        typeSpecBuilder: TypeSpec.Builder,
-&nbsp;        body: CodeBlock
-&nbsp;    ) {
-<b class="fc">&nbsp;        typeSpecBuilder.addFunction(</b>
-<b class="fc">&nbsp;            FunSpec.builder(C.STR_DESERIALIZE)</b>
-<b class="fc">&nbsp;                .addKdoc(C.STR_KDOC_DESERIALIZE, originalClassName)</b>
-<b class="fc">&nbsp;                .addModifiers(KModifier.OVERRIDE)</b>
-<b class="fc">&nbsp;                .addParameter(C.STR_READER, readerClass)</b>
-<b class="fc">&nbsp;                .returns(originalClassName)</b>
-<b class="fc">&nbsp;                .addCode(body)</b>
-<b class="fc">&nbsp;                .build()</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits deserialization logic for sealed hierarchies via discriminator key checks.
-&nbsp;     * It generates a `when` expression that inspects the JSON discriminator field to
-&nbsp;     * decide which specialized serializer to invoke. Includes support for fallback
-&nbsp;     * subclasses when a discriminator value doesn&#39;t match known types.
-&nbsp;     */
-&nbsp;    private fun emitSealed(body: CodeBlock.Builder) {
-<b class="fc">&nbsp;        val fallbackSubclass = sealedSubclasses.find { subclass -&gt;</b>
-<b class="fc">&nbsp;            subclass.annotations.any {</b>
-<b class="fc">&nbsp;                it.shortName.asString() == C.STR_FALLBACK_ANNOTATION</b>
-<b class="fc">&nbsp;            }</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val regularSubclasses = sealedSubclasses.filter {</b>
-<b class="fc">&nbsp;            it != fallbackSubclass</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        if (fallbackSubclass != null) {</b>
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_PEEK_STRING_FIELD,</b>
-<b class="fc">&nbsp;                sealedDiscriminatorKey</b>
-&nbsp;            )
-&nbsp;        } else {
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_PEEK_TYPE,</b>
-<b class="fc">&nbsp;                sealedDiscriminatorKey,</b>
-<b class="fc">&nbsp;                C.STR_MISSING_TYPE</b>
-&nbsp;            )
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHEN_TYPENAME)</b>
-&nbsp;
-<b class="fc">&nbsp;        regularSubclasses.forEach { subclass -&gt;</b>
-<b class="fc">&nbsp;            val subClassName = subclass.toClassName()</b>
-<b class="fc">&nbsp;            val serializerName = subClassName.serializerClassName()</b>
-<b class="fc">&nbsp;            val discriminatorValue = getSubclassDiscriminator(subclass)</b>
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_DESERIALIZE_BRANCH,</b>
-<b class="fc">&nbsp;                discriminatorValue,</b>
-<b class="fc">&nbsp;                serializerName</b>
-&nbsp;            )
-<b class="fc">&nbsp;        }</b>
-<b class="fc">&nbsp;        if (fallbackSubclass != null) {</b>
-<b class="fc">&nbsp;            val fallbackClassName = fallbackSubclass.toClassName()</b>
-<b class="fc">&nbsp;            val fallbackSerializerName = fallbackClassName.serializerClassName()</b>
-<b class="fc">&nbsp;            body.beginControlFlow(C.STR_ELSE_BRANCH)</b>
-<b class="fc">&nbsp;            body.addStatement(C.TEMPLATE_DESERIALIZE_T, fallbackSerializerName)</b>
-<b class="fc">&nbsp;            body.endControlFlow()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            body.addStatement(C.STR_UNKNOWN_TYPE)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        body.endControlFlow()</b>
-<b class="fc">&nbsp;        body.addStatement(C.STR_RETURN_RESULT)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits deserialization logic for Inferred Polymorphism.
-&nbsp;     *
-&nbsp;     * This is an advanced strategy where the subclass is determined by the presence
-&nbsp;     * of specific fields in the JSON. It uses a **Property-to-Class bitmask** to identify
-&nbsp;     * candidate subclasses and resolves them using a voting-like logic on the eligibility bitmask.
-&nbsp;     */
-&nbsp;    private fun emitInferredSealed(body: CodeBlock.Builder) {
-<b class="fc">&nbsp;        val context = createInferredSealedContext(properties)</b>
-<b class="pc">&nbsp;        if (context == null) {</b>
-<b class="nc">&nbsp;            body.addStatement(C.TEMPLATE_THROW_S, C.STR_ERR_NO_SUBCLASSES)</b>
-&nbsp;            return
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        emitInferredSealedLocalVariables(body, context)</b>
-<b class="fc">&nbsp;        emitInferredSealedMainLoop(body, context)</b>
-<b class="fc">&nbsp;        emitInferredSealedRequiredMasks(body, context)</b>
-<b class="fc">&nbsp;        emitInferredSealedDecisionBlock(body, context)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Context data holder containing all analyzed property and subclass metadata
-&nbsp;     * needed for inferred sealed class deserialization code generation.
-&nbsp;     */
-<b class="fc">&nbsp;    private class InferredSealedContext(</b>
-<b class="fc">&nbsp;        val inferredInfo: List&lt;InferredSubclassModel&gt;,</b>
-<b class="fc">&nbsp;        val names: List&lt;String&gt;,</b>
-<b class="fc">&nbsp;        val allProps: List&lt;GhostPropertyModel&gt;,</b>
-<b class="fc">&nbsp;        val nameToIndex: Map&lt;String, Int&gt;,</b>
-<b class="fc">&nbsp;        val propertyToClassMask: Map&lt;String, Long&gt;</b>
-&nbsp;    )
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Resolves and builds the [InferredSealedContext] from the property models.
-&nbsp;     * Returns null if no inferred subclasses are declared.
-&nbsp;     */
-&nbsp;    private fun createInferredSealedContext(properties: List&lt;GhostPropertyModel&gt;): InferredSealedContext? {
-<b class="pc">&nbsp;        val inferredInfo = properties.firstOrNull()?.inferredSubclasses ?: emptyList()</b>
-<b class="pc">&nbsp;        if (inferredInfo.isEmpty()) {</b>
-<b class="nc">&nbsp;            return null</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val names = inferredInfo.flatMap { it.properties }.map { it.jsonName }.distinct()</b>
-<b class="fc">&nbsp;        val allProps = names.map { name -&gt;</b>
-<b class="pc">&nbsp;            inferredInfo.flatMap { it.properties }.find { it.jsonName == name }!!</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val nameToIndex = names.mapIndexed { index, name -&gt; name to index }.toMap()</b>
-&nbsp;
-<b class="fc">&nbsp;        val propertyToClassMask = names.associateWith { name -&gt;</b>
-<b class="fc">&nbsp;            var mask = C.VAL_ZERO_L</b>
-<b class="fc">&nbsp;            inferredInfo.forEachIndexed { index, subclass -&gt;</b>
-<b class="fc">&nbsp;                if (subclass.properties.any { it.jsonName == name }) {</b>
-<b class="fc">&nbsp;                    mask = mask or (C.VAL_ONE_L shl index)</b>
-&nbsp;                }
-<b class="fc">&nbsp;            }</b>
-<b class="fc">&nbsp;            mask</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return InferredSealedContext(</b>
-<b class="fc">&nbsp;            inferredInfo = inferredInfo,</b>
-<b class="fc">&nbsp;            names = names,</b>
-<b class="fc">&nbsp;            allProps = allProps,</b>
-<b class="fc">&nbsp;            nameToIndex = nameToIndex,</b>
-<b class="fc">&nbsp;            propertyToClassMask = propertyToClassMask</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits the local variable declarations for tracking property values and
-&nbsp;     * managing the seen and eligibility bitmasks.
-&nbsp;     */
-&nbsp;    private fun emitInferredSealedLocalVariables(
-&nbsp;        body: CodeBlock.Builder,
-&nbsp;        context: InferredSealedContext
-&nbsp;    ) {
-<b class="fc">&nbsp;        body.addStatement(C.STR_BEGIN_OBJECT)</b>
-<b class="fc">&nbsp;        context.allProps.forEachIndexed { index, prop -&gt;</b>
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_VAR_NULL_DECL,</b>
-<b class="fc">&nbsp;                C.STR_V_VAR_PREFIX,</b>
-<b class="fc">&nbsp;                index,</b>
-<b class="fc">&nbsp;                prop.typeName.copy(nullable = true),</b>
-<b class="fc">&nbsp;                C.STR_NULL</b>
-&nbsp;            )
-<b class="fc">&nbsp;        }</b>
-&nbsp;
-<b class="fc">&nbsp;        body.addStatement(</b>
-<b class="fc">&nbsp;            C.TEMPLATE_VAR_LONG_INIT,</b>
-<b class="fc">&nbsp;            C.STR_ELIGIBILITY_MASK,</b>
-<b class="fc">&nbsp;            (C.VAL_ONE_L shl context.inferredInfo.size) - C.VAL_ONE,</b>
-<b class="fc">&nbsp;            C.STR_L_SUFFIX</b>
-&nbsp;        )
-&nbsp;
-<b class="fc">&nbsp;        body.addStatement(</b>
-<b class="fc">&nbsp;            C.TEMPLATE_VAR_INIT,</b>
-<b class="fc">&nbsp;            C.STR_SEEN_MASK,</b>
-<b class="fc">&nbsp;            C.STR_ZERO_L</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits the main loops for parsing and consuming JSON field names.
-&nbsp;     * When a field matches a known subclass signature, its value is parsed,
-&nbsp;     * the eligibility mask is updated, and the seen mask is updated.
-&nbsp;     */
-&nbsp;    private fun emitInferredSealedMainLoop(
-&nbsp;        body: CodeBlock.Builder,
-&nbsp;        context: InferredSealedContext
-&nbsp;    ) {
-<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHILE_TRUE)</b>
-<b class="fc">&nbsp;        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)</b>
-<b class="fc">&nbsp;        body.beginControlFlow(C.STR_WHEN_INDEX)</b>
-&nbsp;
-<b class="fc">&nbsp;        context.names.forEachIndexed { index, name -&gt;</b>
-<b class="fc">&nbsp;            val prop = context.allProps[index]</b>
-<b class="pc">&nbsp;            val classMask = context.propertyToClassMask[name] ?: C.VAL_ZERO_L</b>
-&nbsp;
-<b class="fc">&nbsp;            body.beginControlFlow(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_WHEN_BRANCH,</b>
-<b class="fc">&nbsp;                index</b>
-&nbsp;            )
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_VAR_ASSIGN,</b>
-<b class="fc">&nbsp;                C.STR_V_VAR_PREFIX,</b>
-<b class="fc">&nbsp;                index,</b>
-<b class="fc">&nbsp;                buildCall(prop)</b>
-&nbsp;            )
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_MASK_AND_ASSIGN,</b>
-<b class="fc">&nbsp;                C.STR_ELIGIBILITY_MASK,</b>
-<b class="fc">&nbsp;                C.STR_ELIGIBILITY_MASK,</b>
-<b class="fc">&nbsp;                classMask,</b>
-<b class="fc">&nbsp;                C.STR_L_SUFFIX</b>
-&nbsp;            )
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_MASK_OR_SHL_ASSIGN,</b>
-<b class="fc">&nbsp;                C.STR_SEEN_MASK,</b>
-<b class="fc">&nbsp;                C.STR_SEEN_MASK,</b>
-<b class="fc">&nbsp;                C.STR_ONE_L,</b>
-<b class="fc">&nbsp;                C.STR_SHL,</b>
-<b class="fc">&nbsp;                index</b>
-&nbsp;            )
-<b class="fc">&nbsp;            body.endControlFlow()</b>
-<b class="fc">&nbsp;        }</b>
-&nbsp;
-<b class="fc">&nbsp;        body.addStatement(C.STR_MINUS_ONE_BREAK)</b>
-<b class="fc">&nbsp;        body.addStatement(</b>
-<b class="fc">&nbsp;            C.STR_ELSE_BRANCH +</b>
-&nbsp;                    C.STR_SPACE +
-&nbsp;                    C.STR_SKIP_VALUE
-&nbsp;        )
-<b class="fc">&nbsp;        body.endControlFlow()</b>
-<b class="fc">&nbsp;        body.endControlFlow()</b>
-<b class="fc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Precomputes and emits the required property masks
-&nbsp;     * for each subclass candidate.
-&nbsp;     */
-&nbsp;    private fun emitInferredSealedRequiredMasks(
-&nbsp;        body: CodeBlock.Builder,
-&nbsp;        context: InferredSealedContext
-&nbsp;    ) {
-<b class="fc">&nbsp;        context.inferredInfo.forEachIndexed { index, subclass -&gt;</b>
-<b class="fc">&nbsp;            var reqMask = C.VAL_ZERO_L</b>
-<b class="fc">&nbsp;            subclass.properties.forEach { prop -&gt;</b>
-<b class="pc">&nbsp;                if (!prop.isNullable &amp;&amp; !prop.hasDefaultValue) {</b>
-<b class="fc">&nbsp;                    val pIdx = context.nameToIndex[prop.jsonName]!!</b>
-<b class="fc">&nbsp;                    reqMask = reqMask or (C.VAL_ONE_L shl pIdx)</b>
-&nbsp;                }
-<b class="fc">&nbsp;            }</b>
-<b class="fc">&nbsp;            body.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_VAL_LONG_INIT,</b>
-<b class="fc">&nbsp;                C.STR_REQ_MASK_PREFIX,</b>
-<b class="fc">&nbsp;                index,</b>
-<b class="fc">&nbsp;                reqMask,</b>
-<b class="fc">&nbsp;                C.STR_L_SUFFIX</b>
-&nbsp;            )
-<b class="fc">&nbsp;        }</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits the decision block logic to determine the matched subclass and
-&nbsp;     * instantiate it using the parsed arguments. Throws a GhostJsonException if no
-&nbsp;     * unique matching subclass can be resolved.
-&nbsp;     */
-&nbsp;    private fun emitInferredSealedDecisionBlock(
-&nbsp;        body: CodeBlock.Builder,
-&nbsp;        context: InferredSealedContext
-&nbsp;    ) {
-<b class="fc">&nbsp;        val jsonExClass = ClassName(</b>
-<b class="fc">&nbsp;            C.PKG_EXCEPTION,</b>
-<b class="fc">&nbsp;            C.STR_GHOST_JSON_EXCEPTION</b>
-&nbsp;        )
-&nbsp;
-<b class="fc">&nbsp;        body.beginControlFlow(C.TEMPLATE_RESULT_WHEN)</b>
-<b class="fc">&nbsp;        context.inferredInfo.forEachIndexed { subclassIndex, subclass -&gt;</b>
-<b class="fc">&nbsp;            val subclassClassName = subclass.declaration.toClassName()</b>
-<b class="fc">&nbsp;            val maskBit = C.VAL_ONE_L shl subclassIndex</b>
-<b class="fc">&nbsp;            val reqMaskVar = &quot;${C.STR_REQ_MASK_PREFIX}$subclassIndex&quot;</b>
-&nbsp;
-<b class="fc">&nbsp;            body.beginControlFlow(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_INFERRED_DECISION_BRANCH,</b>
-<b class="fc">&nbsp;                C.STR_ELIGIBILITY_MASK,</b>
-<b class="fc">&nbsp;                maskBit,</b>
-<b class="fc">&nbsp;                C.STR_L_SUFFIX,</b>
-<b class="fc">&nbsp;                C.STR_ZERO_L,</b>
-<b class="fc">&nbsp;                C.STR_SEEN_MASK,</b>
-<b class="fc">&nbsp;                reqMaskVar,</b>
-<b class="fc">&nbsp;                reqMaskVar</b>
-&nbsp;            )
-&nbsp;
-<b class="fc">&nbsp;            val requiredProps = subclass.properties.filter { !it.hasDefaultValue }</b>
-<b class="fc">&nbsp;            val defaultProps = subclass.properties.filter { it.hasDefaultValue }</b>
-&nbsp;
-<b class="fc">&nbsp;            val requiredArgs = CodeBlock.builder()</b>
-<b class="fc">&nbsp;            requiredProps.forEachIndexed { i, prop -&gt;</b>
-<b class="fc">&nbsp;                val pIdx = context.nameToIndex[prop.jsonName]!!</b>
-<b class="fc">&nbsp;                val vVar = &quot;${C.STR_V_VAR_PREFIX}$pIdx&quot;</b>
-<b class="pc">&nbsp;                if (!prop.isNullable) {</b>
-<b class="fc">&nbsp;                    val msg = C.STR_REQUIRED_FIELD_MISSING.format(</b>
-<b class="fc">&nbsp;                        prop.jsonName,</b>
-<b class="fc">&nbsp;                        subclassClassName.simpleName</b>
-&nbsp;                    )
-<b class="fc">&nbsp;                    requiredArgs.add(</b>
-<b class="fc">&nbsp;                        C.TEMPLATE_REQUIRED_ARG,</b>
-<b class="fc">&nbsp;                        prop.kotlinName,</b>
-<b class="fc">&nbsp;                        vVar,</b>
-<b class="fc">&nbsp;                        jsonExClass,</b>
-<b class="fc">&nbsp;                        msg</b>
-&nbsp;                    )
-&nbsp;                } else {
-<b class="fc">&nbsp;                    requiredArgs.add(</b>
-<b class="nc">&nbsp;                        C.TEMPLATE_OPTIONAL_ARG,</b>
-<b class="nc">&nbsp;                        prop.kotlinName,</b>
-<b class="nc">&nbsp;                        vVar</b>
-&nbsp;                    )
+&nbsp;    private fun findParameterName(source: String, paramName: String, from: Int): Int? {
+<b class="fc">&nbsp;        var index = from.coerceAtLeast(0)</b>
+&nbsp;        // Search a bounded window: parameter declarations rarely span far past location.
+<b class="fc">&nbsp;        val end = (from + C.DEFAULT_EXPR_MAX_PARAM_SEARCH_CHARS).coerceAtMost(source.length)</b>
+<b class="pc">&nbsp;        while (index &lt; end) {</b>
+<b class="fc">&nbsp;            index = skipTrivia(source, index)</b>
+<b class="pc">&nbsp;            if (index &gt;= end) break</b>
+<b class="pc">&nbsp;            when (val ch = source[index]) {</b>
+<b class="fc">&nbsp;                CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -&gt; index = skipLiteral(source, index)</b>
+&nbsp;                CHAR_SLASH -&gt; {
+<b class="nc">&nbsp;                    val next = skipTrivia(source, index)</b>
+<b class="nc">&nbsp;                    if (next == index) index++ else index = next</b>
 &nbsp;                }
 &nbsp;
-<b class="pc">&nbsp;                if (i &lt; requiredProps.size - C.VAL_ONE) {</b>
-<b class="nc">&nbsp;                    requiredArgs.add(C.STR_COMMA_SPACE)</b>
+&nbsp;                else -&gt; {
+<b class="fc">&nbsp;                    if (ch.isJavaIdentifierStart() &amp;&amp; matchesIdentifier(source, index, paramName)) {</b>
+<b class="fc">&nbsp;                        val after = index + paramName.length</b>
+&nbsp;                        // Must look like a parameter binder: name followed by &#39;:&#39; or annotation-free type start.
+&nbsp;                        // Reject when the identifier is a receiver/qualifier (name.) or call (name().
+<b class="pc">&nbsp;                        if (after &lt; source.length) {</b>
+<b class="fc">&nbsp;                            val nextSignificant = skipTrivia(source, after)</b>
+<b class="pc">&nbsp;                            if (nextSignificant &lt; source.length) {</b>
+<b class="fc">&nbsp;                                val nextChar = source[nextSignificant]</b>
+&nbsp;                                // Parameter form: `name:` or `name /* */ :` — also allow `@Ann name:`
+&nbsp;                                // after we already landed on the name.
+<b class="pc">&nbsp;                                if (nextChar == CHAR_COLON) return index</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                    // Advance one identifier or one char.
+<b class="fc">&nbsp;                    if (ch.isJavaIdentifierStart()) {</b>
+<b class="fc">&nbsp;                        index++</b>
+<b class="pc">&nbsp;                        while (index &lt; end &amp;&amp; source[index].isJavaIdentifierPart()) index++</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        index++</b>
+&nbsp;                    }
 &nbsp;                }
-<b class="fc">&nbsp;            }</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        // Fallback: scan from file start near the same line window if the location pointed
+&nbsp;        // at an annotation above the parameter.
+<b class="nc">&nbsp;        if (from &gt; 0) {</b>
+<b class="nc">&nbsp;            val back = (from - C.DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS).coerceAtLeast(0)</b>
+<b class="nc">&nbsp;            return findParameterName(source, paramName, back)?.takeIf { it &gt;= back }</b>
+<b class="nc">&nbsp;                ?: findParameterNameFromConstructor(source, paramName)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return findParameterNameFromConstructor(source, paramName)</b>
+&nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;            if (defaultProps.isEmpty()) {</b>
-<b class="fc">&nbsp;                body.addStatement(</b>
-<b class="fc">&nbsp;                    C.TEMPLATE_CONSTRUCTOR,</b>
-<b class="fc">&nbsp;                    subclassClassName,</b>
-<b class="fc">&nbsp;                    requiredArgs.build()</b>
-&nbsp;                )
+&nbsp;    private fun findParameterNameFromConstructor(source: String, paramName: String): Int? {
+&nbsp;        // Last-resort scan: any `paramName:` that precedes an `=` before the next top-level comma/&#39;)&#39;.
+<b class="nc">&nbsp;        var index = 0</b>
+<b class="nc">&nbsp;        while (index &lt; source.length) {</b>
+<b class="nc">&nbsp;            index = skipTrivia(source, index)</b>
+<b class="nc">&nbsp;            if (index &gt;= source.length) break</b>
+<b class="nc">&nbsp;            if (source[index].isJavaIdentifierStart() &amp;&amp; matchesIdentifier(source, index, paramName)) {</b>
+<b class="nc">&nbsp;                val afterName = skipTrivia(source, index + paramName.length)</b>
+<b class="nc">&nbsp;                if (afterName &lt; source.length &amp;&amp; source[afterName] == CHAR_COLON) {</b>
+<b class="nc">&nbsp;                    val eq = findDefaultEquals(source, afterName + 1)</b>
+<b class="nc">&nbsp;                    if (eq != null) return index</b>
+&nbsp;                }
+<b class="nc">&nbsp;                index += paramName.length</b>
+<b class="nc">&nbsp;            } else if (source[index] == CHAR_DOUBLE_QUOTE || source[index] == CHAR_SINGLE_QUOTE) {</b>
+<b class="nc">&nbsp;                index = skipLiteral(source, index)</b>
 &nbsp;            } else {
-<b class="nc">&nbsp;                body.addStatement(</b>
-<b class="nc">&nbsp;                    C.TEMPLATE_DATA_CLASS_COPY_INIT,</b>
-<b class="nc">&nbsp;                    C.STR_INSTANCE_VAR,</b>
-<b class="nc">&nbsp;                    subclassClassName,</b>
-<b class="nc">&nbsp;                    requiredArgs.build()</b>
-&nbsp;                )
-<b class="nc">&nbsp;                defaultProps.forEach { prop -&gt;</b>
-<b class="nc">&nbsp;                    val pIdx = context.nameToIndex[prop.jsonName]!!</b>
-<b class="nc">&nbsp;                    val vVar = &quot;${C.STR_V_VAR_PREFIX}$pIdx&quot;</b>
-<b class="nc">&nbsp;                    body.addStatement(</b>
-<b class="nc">&nbsp;                        C.TEMPLATE_IF_NOT_NULL_COPY,</b>
-<b class="nc">&nbsp;                        vVar,</b>
-<b class="nc">&nbsp;                        C.STR_INSTANCE_VAR,</b>
-<b class="nc">&nbsp;                        C.STR_INSTANCE_VAR,</b>
-<b class="nc">&nbsp;                        C.STR_COPY,</b>
-<b class="nc">&nbsp;                        prop.kotlinName,</b>
-<b class="nc">&nbsp;                        vVar</b>
-&nbsp;                    )
-<b class="nc">&nbsp;                }</b>
-<b class="fc">&nbsp;                body.addStatement(</b>
-<b class="nc">&nbsp;                    C.TEMPLATE_VARIABLE,</b>
-<b class="nc">&nbsp;                    C.STR_INSTANCE_VAR</b>
-&nbsp;                )
+<b class="nc">&nbsp;                index++</b>
 &nbsp;            }
-<b class="fc">&nbsp;            body.endControlFlow()</b>
-<b class="fc">&nbsp;        }</b>
-<b class="fc">&nbsp;        body.addStatement(</b>
-<b class="fc">&nbsp;            C.STR_ELSE_BRANCH + C.STR_SPACE + C.TEMPLATE_THROW_EXCEPTION,</b>
-<b class="fc">&nbsp;            jsonExClass,</b>
-<b class="fc">&nbsp;            C.STR_INFERRED_ERROR_MSG</b>
-&nbsp;        )
-<b class="fc">&nbsp;        body.endControlFlow()</b>
-<b class="fc">&nbsp;        body.addStatement(C.STR_RETURN_RESULT)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits deserialization logic for value class types.
-&nbsp;     */
-&nbsp;    private fun emitValue(body: CodeBlock.Builder) {
-<b class="pc">&nbsp;        val prop = properties.firstOrNull() ?: return</b>
-<b class="fc">&nbsp;        val call = buildCall(prop)</b>
-<b class="fc">&nbsp;        body.addStatement(</b>
-<b class="fc">&nbsp;            C.TEMPLATE_RETURN_CONSTRUCTOR,</b>
-<b class="fc">&nbsp;            originalClassName,</b>
-<b class="fc">&nbsp;            call</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits deserialization logic for enum types using integer lookups.
-&nbsp;     */
-&nbsp;    private fun emitEnum(body: CodeBlock.Builder) {
-<b class="fc">&nbsp;        body.addStatement(C.STR_ENUM_SELECT_OPTIONS)</b>
-<b class="fc">&nbsp;        body.beginControlFlow(C.STR_ENUM_WHEN)</b>
-&nbsp;
-<b class="fc">&nbsp;        properties</b>
-<b class="fc">&nbsp;            .firstOrNull()</b>
-<b class="pc">&nbsp;            ?.enumValues</b>
-<b class="pc">&nbsp;            ?.entries</b>
-<b class="pc">&nbsp;            ?.forEachIndexed { index, entry -&gt;</b>
-<b class="fc">&nbsp;                body.addStatement(</b>
-<b class="fc">&nbsp;                    C.TEMPLATE_ENUM_BRANCH,</b>
-<b class="fc">&nbsp;                    index,</b>
-<b class="fc">&nbsp;                    originalClassName,</b>
-<b class="fc">&nbsp;                    entry.key</b>
-&nbsp;                )
-<b class="fc">&nbsp;            }</b>
-&nbsp;
-<b class="fc">&nbsp;        body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)</b>
-<b class="pc">&nbsp;        val fallbackEntry = properties.firstOrNull()?.enumValues?.entries?.find { it.key.equals(&quot;UNKNOWN&quot;, ignoreCase = true) }</b>
-<b class="pc">&nbsp;            ?: if (hasFallback) properties.firstOrNull()?.enumValues?.entries?.lastOrNull() else null</b>
-<b class="fc">&nbsp;        if (fallbackEntry != null) {</b>
-<b class="fc">&nbsp;            body.addStatement(&quot;else -&gt; %T.%L&quot;, originalClassName, fallbackEntry.key)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)</b>
 &nbsp;        }
-<b class="fc">&nbsp;        body.endControlFlow()</b>
+<b class="nc">&nbsp;        return null</b>
 &nbsp;    }
+&nbsp;
+&nbsp;    private fun matchesIdentifier(source: String, index: Int, name: String): Boolean {
+<b class="pc">&nbsp;        if (index + name.length &gt; source.length) return false</b>
+<b class="fc">&nbsp;        if (!source.regionMatches(index, name, 0, name.length)) return false</b>
+<b class="pc">&nbsp;        val beforeOk = index == 0 || !source[index - 1].isJavaIdentifierPart()</b>
+<b class="fc">&nbsp;        val after = index + name.length</b>
+<b class="pc">&nbsp;        val afterOk = after &gt;= source.length || !source[after].isJavaIdentifierPart()</b>
+<b class="pc">&nbsp;        return beforeOk &amp;&amp; afterOk</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * After the parameter name, skip the type (and annotations) until the default `=` at depth 0.
+&nbsp;     */
+&nbsp;    private fun findDefaultEquals(source: String, from: Int): Int? {
+<b class="fc">&nbsp;        var index = from</b>
+<b class="fc">&nbsp;        var angle = 0</b>
+<b class="fc">&nbsp;        var paren = 0</b>
+<b class="fc">&nbsp;        var bracket = 0</b>
+<b class="fc">&nbsp;        var brace = 0</b>
+<b class="pc">&nbsp;        while (index &lt; source.length) {</b>
+<b class="fc">&nbsp;            index = skipTrivia(source, index)</b>
+<b class="pc">&nbsp;            if (index &gt;= source.length) return null</b>
+<b class="pc">&nbsp;            when (val ch = source[index]) {</b>
+<b class="nc">&nbsp;                CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -&gt; index = skipLiteral(source, index)</b>
+&nbsp;                CHAR_ANGLE_OPEN -&gt; {
+<b class="fc">&nbsp;                    angle++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_ANGLE_CLOSE -&gt; {
+<b class="fc">&nbsp;                    angle = (angle - 1).coerceAtLeast(0); index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_PAREN_OPEN -&gt; {
+<b class="nc">&nbsp;                    paren++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_PAREN_CLOSE -&gt; {
+<b class="nc">&nbsp;                    if (paren == 0 &amp;&amp; angle == 0 &amp;&amp; bracket == 0 &amp;&amp; brace == 0) return null</b>
+<b class="nc">&nbsp;                    paren = (paren - 1).coerceAtLeast(0)</b>
+<b class="nc">&nbsp;                    index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACKET_OPEN -&gt; {
+<b class="nc">&nbsp;                    bracket++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACKET_CLOSE -&gt; {
+<b class="nc">&nbsp;                    bracket = (bracket - 1).coerceAtLeast(0); index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACE_OPEN -&gt; {
+<b class="nc">&nbsp;                    brace++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACE_CLOSE -&gt; {
+<b class="nc">&nbsp;                    brace = (brace - 1).coerceAtLeast(0); index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_EQUALS -&gt; {
+<b class="pc">&nbsp;                    if (angle == 0 &amp;&amp; paren == 0 &amp;&amp; bracket == 0 &amp;&amp; brace == 0) {</b>
+&nbsp;                        // Reject `==` / `!=` / `*=` etc. — default uses a single `=`.
+<b class="fc">&nbsp;                        val prev = source.getOrNull(index - 1)</b>
+<b class="fc">&nbsp;                        val next = source.getOrNull(index + 1)</b>
+<b class="pc">&nbsp;                        if (next != CHAR_EQUALS &amp;&amp; prev != CHAR_BANG &amp;&amp; prev != CHAR_ANGLE_OPEN &amp;&amp;</b>
+<b class="pc">&nbsp;                            prev != CHAR_ANGLE_CLOSE &amp;&amp;</b>
+<b class="pc">&nbsp;                            prev != CHAR_COLON // not relevant but keep `=` only</b>
+&nbsp;                        ) {
+<b class="fc">&nbsp;                            return index</b>
+&nbsp;                        }
+&nbsp;                    }
+<b class="nc">&nbsp;                    index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_COMMA -&gt; {
+<b class="pc">&nbsp;                    if (angle == 0 &amp;&amp; paren == 0 &amp;&amp; bracket == 0 &amp;&amp; brace == 0) return null</b>
+<b class="fc">&nbsp;                    index++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                else -&gt; index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun readExpression(source: String, from: Int): String? {
+<b class="fc">&nbsp;        var index = skipTrivia(source, from)</b>
+<b class="pc">&nbsp;        if (index &gt;= source.length) return null</b>
+<b class="fc">&nbsp;        val start = index</b>
+<b class="fc">&nbsp;        var angle = 0</b>
+<b class="fc">&nbsp;        var paren = 0</b>
+<b class="fc">&nbsp;        var bracket = 0</b>
+<b class="fc">&nbsp;        var brace = 0</b>
+<b class="pc">&nbsp;        while (index &lt; source.length) {</b>
+<b class="pc">&nbsp;            when (val ch = source[index]) {</b>
+<b class="fc">&nbsp;                CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -&gt; index = skipLiteral(source, index)</b>
+&nbsp;                CHAR_SLASH -&gt; {
+&nbsp;                    // End expression before a line comment that isn&#39;t inside nesting.
+<b class="nc">&nbsp;                    if (angle == 0 &amp;&amp; paren == 0 &amp;&amp; bracket == 0 &amp;&amp; brace == 0 &amp;&amp;</b>
+<b class="nc">&nbsp;                        index + 1 &lt; source.length &amp;&amp; source[index + 1] == CHAR_SLASH</b>
+&nbsp;                    ) {
+&nbsp;                        break
+&nbsp;                    }
+<b class="nc">&nbsp;                    if (index + 1 &lt; source.length &amp;&amp;</b>
+<b class="nc">&nbsp;                        (source[index + 1] == CHAR_SLASH || source[index + 1] == CHAR_STAR)</b>
+&nbsp;                    ) {
+<b class="nc">&nbsp;                        index = skipTrivia(source, index)</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        index++</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_ANGLE_OPEN -&gt; {
+<b class="nc">&nbsp;                    angle++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_ANGLE_CLOSE -&gt; {
+<b class="nc">&nbsp;                    angle = (angle - 1).coerceAtLeast(0); index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_PAREN_OPEN -&gt; {
+<b class="fc">&nbsp;                    paren++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_PAREN_CLOSE -&gt; {
+<b class="pc">&nbsp;                    if (paren == 0 &amp;&amp; angle == 0 &amp;&amp; bracket == 0 &amp;&amp; brace == 0) break</b>
+<b class="fc">&nbsp;                    paren = (paren - 1).coerceAtLeast(0)</b>
+<b class="fc">&nbsp;                    index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACKET_OPEN -&gt; {
+<b class="nc">&nbsp;                    bracket++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACKET_CLOSE -&gt; {
+<b class="nc">&nbsp;                    bracket = (bracket - 1).coerceAtLeast(0); index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACE_OPEN -&gt; {
+<b class="nc">&nbsp;                    brace++; index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_BRACE_CLOSE -&gt; {
+<b class="nc">&nbsp;                    brace = (brace - 1).coerceAtLeast(0); index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_COMMA -&gt; {
+<b class="pc">&nbsp;                    if (angle == 0 &amp;&amp; paren == 0 &amp;&amp; bracket == 0 &amp;&amp; brace == 0) break</b>
+<b class="nc">&nbsp;                    index++</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                CHAR_NEWLINE -&gt; {
+&nbsp;                    // Allow multiline defaults while nested; at depth 0 keep going until `,` / `)`.
+<b class="fc">&nbsp;                    index++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                else -&gt; index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        if (index &lt;= start) return null</b>
+<b class="fc">&nbsp;        return source.substring(start, index).trim().trimEnd(CHAR_COMMA)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun skipTrivia(source: String, from: Int): Int {
+<b class="fc">&nbsp;        var index = from</b>
+<b class="pc">&nbsp;        while (index &lt; source.length) {</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                source[index].isWhitespace() -&gt; index++</b>
+<b class="pc">&nbsp;                index + 1 &lt; source.length &amp;&amp;</b>
+<b class="pc">&nbsp;                    source[index] == CHAR_SLASH &amp;&amp; source[index + 1] == CHAR_SLASH -&gt; {</b>
+<b class="nc">&nbsp;                    index += 2</b>
+<b class="nc">&nbsp;                    while (index &lt; source.length &amp;&amp; source[index] != CHAR_NEWLINE) index++</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                index + 1 &lt; source.length &amp;&amp;</b>
+<b class="pc">&nbsp;                    source[index] == CHAR_SLASH &amp;&amp; source[index + 1] == CHAR_STAR -&gt; {</b>
+<b class="nc">&nbsp;                    index += 2</b>
+<b class="nc">&nbsp;                    while (index + 1 &lt; source.length &amp;&amp;</b>
+<b class="nc">&nbsp;                        !(source[index] == CHAR_STAR &amp;&amp; source[index + 1] == CHAR_SLASH)</b>
+&nbsp;                    ) {
+<b class="nc">&nbsp;                        index++</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    index = (index + 2).coerceAtMost(source.length)</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                else -&gt; return index</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return index</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun skipLiteral(source: String, from: Int): Int {
+<b class="pc">&nbsp;        if (from &gt;= source.length) return from</b>
+<b class="fc">&nbsp;        val quote = source[from]</b>
+<b class="pc">&nbsp;        if (quote != CHAR_DOUBLE_QUOTE &amp;&amp; quote != CHAR_SINGLE_QUOTE) return from + 1</b>
+&nbsp;        // Triple-quoted string.
+<b class="pc">&nbsp;        if (quote == CHAR_DOUBLE_QUOTE &amp;&amp; from + 2 &lt; source.length &amp;&amp;</b>
+<b class="pc">&nbsp;            source[from + 1] == CHAR_DOUBLE_QUOTE &amp;&amp; source[from + 2] == CHAR_DOUBLE_QUOTE</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            var index = from + 3</b>
+<b class="nc">&nbsp;            while (index + 2 &lt; source.length) {</b>
+<b class="nc">&nbsp;                if (source[index] == CHAR_DOUBLE_QUOTE &amp;&amp;</b>
+<b class="nc">&nbsp;                    source[index + 1] == CHAR_DOUBLE_QUOTE &amp;&amp;</b>
+<b class="nc">&nbsp;                    source[index + 2] == CHAR_DOUBLE_QUOTE</b>
+&nbsp;                ) {
+<b class="nc">&nbsp;                    return index + 3</b>
+&nbsp;                }
+<b class="nc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return source.length</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var index = from + 1</b>
+<b class="pc">&nbsp;        while (index &lt; source.length) {</b>
+<b class="fc">&nbsp;            when (source[index]) {</b>
+<b class="pc">&nbsp;                CHAR_BACKSLASH -&gt; index += 2</b>
+<b class="fc">&nbsp;                quote -&gt; return index + 1</b>
+<b class="fc">&nbsp;                else -&gt; index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return source.length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isNumericLiteral(value: String): Boolean {
+&nbsp;        // Int/Long/Float/Double with optional sign and suffix; hex/bin rejected (not needed).
+<b class="fc">&nbsp;        return NUMERIC_REGEX.matches(value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isCharLiteral(value: String): Boolean {
+<b class="fc">&nbsp;        if (value.length &lt; C.DEFAULT_EXPR_MIN_CHAR_LITERAL_LEN ||</b>
+<b class="fc">&nbsp;            value.first() != CHAR_SINGLE_QUOTE ||</b>
+<b class="pc">&nbsp;            value.last() != CHAR_SINGLE_QUOTE</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val inner = value.substring(1, value.length - 1)</b>
+<b class="fc">&nbsp;        return when {</b>
+<b class="pc">&nbsp;            inner.length == 1 &amp;&amp; inner[0] != CHAR_BACKSLASH &amp;&amp; inner[0] != CHAR_SINGLE_QUOTE -&gt; true</b>
+<b class="pc">&nbsp;            inner in C.DEFAULT_EXPR_CHAR_ESCAPES -&gt; true</b>
+<b class="nc">&nbsp;            inner.startsWith(C.STR_UNICODE_ESC_PREFIX) &amp;&amp;</b>
+<b class="nc">&nbsp;                inner.length == C.DEFAULT_EXPR_UNICODE_ESC_LEN &amp;&amp;</b>
+<b class="nc">&nbsp;                isHexDigits(inner.substring(2)) -&gt; true</b>
+&nbsp;
+<b class="nc">&nbsp;            else -&gt; false</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isStringLiteral(value: String): Boolean {
+<b class="pc">&nbsp;        if (value.length &lt; C.DEFAULT_EXPR_MIN_STRING_LITERAL_LEN) return false</b>
+&nbsp;        // Reject templates and triple quotes (keep whitelist tight).
+<b class="fc">&nbsp;        if (value.startsWith(C.STR_TRIPLE_QUOTE)) return false</b>
+<b class="pc">&nbsp;        if (!value.startsWith(C.STR_DOUBLE_QUOTE) || !value.endsWith(C.STR_DOUBLE_QUOTE)) return false</b>
+<b class="fc">&nbsp;        var index = 1</b>
+<b class="fc">&nbsp;        val end = value.length - 1</b>
+<b class="fc">&nbsp;        while (index &lt; end) {</b>
+<b class="pc">&nbsp;            when (val ch = value[index]) {</b>
+<b class="fc">&nbsp;                CHAR_DOLLAR -&gt; return false // string template</b>
+&nbsp;                CHAR_BACKSLASH -&gt; {
+<b class="nc">&nbsp;                    if (index + 1 &gt;= end) return false</b>
+<b class="nc">&nbsp;                    when (value[index + 1]) {</b>
+&nbsp;                        CHAR_BACKSLASH, CHAR_DOUBLE_QUOTE, CHAR_N, CHAR_T, CHAR_R, CHAR_B,
+&nbsp;                        CHAR_DOLLAR, CHAR_SINGLE_QUOTE,
+<b class="nc">&nbsp;                        -&gt; index += 2</b>
+&nbsp;
+&nbsp;                        CHAR_U -&gt; {
+<b class="nc">&nbsp;                            if (index + 5 &gt;= end) return false</b>
+<b class="nc">&nbsp;                            val hex = value.substring(index + 2, index + 6)</b>
+<b class="nc">&nbsp;                            if (!isHexDigits(hex)) return false</b>
+<b class="nc">&nbsp;                            index += 6</b>
+&nbsp;                        }
+&nbsp;
+<b class="nc">&nbsp;                        else -&gt; return false</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                CHAR_DOUBLE_QUOTE -&gt; return false // premature end</b>
+<b class="fc">&nbsp;                else -&gt; index++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isEmptyCollectionCall(value: String): Boolean {
+<b class="fc">&nbsp;        return value in C.DEFAULT_EXPR_EMPTY_COLLECTION_CALLS</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isEnumOrConstRef(value: String): Boolean {
+&nbsp;        // Qual.Name or Name — identifiers joined by dots, no calls/generics.
+<b class="fc">&nbsp;        if (!ENUM_REF_REGEX.matches(value)) return false</b>
+&nbsp;        // Reject lowercase-only single identifiers that look like variables (a, foo).
+&nbsp;        // Allow ALL_CAPS consts and Capitalized enum entries / class refs.
+<b class="fc">&nbsp;        val parts = value.split(CHAR_DOT)</b>
+<b class="fc">&nbsp;        return parts.all { part -&gt;</b>
+<b class="fc">&nbsp;            part.first().isUpperCase() ||</b>
+<b class="pc">&nbsp;                part.all { it == CHAR_UNDERSCORE || it.isDigit() || it.isUpperCase() }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isHexDigits(value: String): Boolean =
+<b class="nc">&nbsp;        value.length == C.DEFAULT_EXPR_UNICODE_HEX_LEN &amp;&amp;</b>
+<b class="nc">&nbsp;            value.all { it.isDigit() || it in HEX_LOWER_A..HEX_LOWER_F || it in HEX_UPPER_A..HEX_UPPER_F }</b>
+&nbsp;
+<b class="fc">&nbsp;    private val NUMERIC_REGEX = Regex(C.REGEX_DEFAULT_EXPR_NUMERIC)</b>
+<b class="fc">&nbsp;    private val ENUM_REF_REGEX = Regex(C.REGEX_DEFAULT_EXPR_ENUM_REF)</b>
+&nbsp;
+&nbsp;    private const val CHAR_NEWLINE = &#39;\n&#39;
+&nbsp;    private const val CHAR_DOUBLE_QUOTE = &#39;&quot;&#39;
+&nbsp;    private const val CHAR_SINGLE_QUOTE = &#39;\&#39;&#39;
+&nbsp;    private const val CHAR_SLASH = &#39;/&#39;
+&nbsp;    private const val CHAR_STAR = &#39;*&#39;
+&nbsp;    private const val CHAR_COLON = &#39;:&#39;
+&nbsp;    private const val CHAR_EQUALS = &#39;=&#39;
+&nbsp;    private const val CHAR_BANG = &#39;!&#39;
+&nbsp;    private const val CHAR_COMMA = &#39;,&#39;
+&nbsp;    private const val CHAR_ANGLE_OPEN = &#39;&lt;&#39;
+&nbsp;    private const val CHAR_ANGLE_CLOSE = &#39;&gt;&#39;
+&nbsp;    private const val CHAR_PAREN_OPEN = &#39;(&#39;
+&nbsp;    private const val CHAR_PAREN_CLOSE = &#39;)&#39;
+&nbsp;    private const val CHAR_BRACKET_OPEN = &#39;[&#39;
+&nbsp;    private const val CHAR_BRACKET_CLOSE = &#39;]&#39;
+&nbsp;    private const val CHAR_BRACE_OPEN = &#39;{&#39;
+&nbsp;    private const val CHAR_BRACE_CLOSE = &#39;}&#39;
+&nbsp;    private const val CHAR_BACKSLASH = &#39;\\&#39;
+&nbsp;    private const val CHAR_DOLLAR = &#39;$&#39;
+&nbsp;    private const val CHAR_DOT = &#39;.&#39;
+&nbsp;    private const val CHAR_UNDERSCORE = &#39;_&#39;
+&nbsp;    private const val CHAR_N = &#39;n&#39;
+&nbsp;    private const val CHAR_T = &#39;t&#39;
+&nbsp;    private const val CHAR_R = &#39;r&#39;
+&nbsp;    private const val CHAR_B = &#39;b&#39;
+&nbsp;    private const val CHAR_U = &#39;u&#39;
+&nbsp;    private const val HEX_LOWER_A = &#39;a&#39;
+&nbsp;    private const val HEX_LOWER_F = &#39;f&#39;
+&nbsp;    private const val HEX_UPPER_A = &#39;A&#39;
+&nbsp;    private const val HEX_UPPER_F = &#39;F&#39;
 &nbsp;}
 </code>
 </pre>
@@ -762,7 +601,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

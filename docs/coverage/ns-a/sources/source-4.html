@@ -49,10 +49,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">GhostProtoContentConverter</td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (3/4)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.3%
+    92.9%
   </span>
   <span class="absValue">
-    (25/28)
+    (26/28)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    89.4%
   </span>
   <span class="absValue">
-    (156/182)
+    (161/180)
   </span>
 </td>
 </tr>
@@ -92,10 +92,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (3/4)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -108,18 +108,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.3%
+    92.9%
   </span>
   <span class="absValue">
-    (25/28)
+    (26/28)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    89.4%
   </span>
   <span class="absValue">
-    (156/182)
+    (161/180)
   </span>
 </td>
 </tr>
@@ -144,6 +144,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import io.ktor.util.reflect.TypeInfo
 &nbsp;import io.ktor.utils.io.ByteReadChannel
 &nbsp;import io.ktor.utils.io.charsets.Charset
+&nbsp;import io.ktor.utils.io.readAvailable
 &nbsp;import kotlin.reflect.KClass
 &nbsp;
 &nbsp;/**
@@ -152,7 +153,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Differs from [GhostContentConverter] only on the read path: request/response bodies are
 &nbsp; * parsed through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare
 &nbsp; * int64/uint64, lenient int32 (rejects fractional values), and quoted `&quot;NaN&quot;`/`&quot;Infinity&quot;`
-&nbsp; * literals per proto3 JSON rules. `serializeNullable` reuses [Ghost.encodeToBytes] since wire
+&nbsp; * literals per proto3 JSON rules. `serialize` reuses [Ghost.encodeToBytes] since wire
 &nbsp; * correctness on write is already generated into the `@GhostProtoSerialization` serializer&#39;s
 &nbsp; * own `serialize()` method.
 &nbsp; *
@@ -160,13 +161,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * install(ContentNegotiation) { ghostProto() }
 &nbsp; * ```
 &nbsp; */
-<b class="nc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
 &nbsp;class GhostProtoContentConverter(
 <b class="fc">&nbsp;    private val configurer: ((GhostProtoJsonFlatReader) -&gt; Unit)? = null</b>
 &nbsp;) : ContentConverter {
 &nbsp;
 &nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
-&nbsp;    override suspend fun serializeNullable(
+&nbsp;    override suspend fun serialize(
 &nbsp;        contentType: ContentType,
 &nbsp;        charset: Charset,
 &nbsp;        typeInfo: TypeInfo,
@@ -248,7 +249,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.9%
+    85.7%
   </span>
   <span class="absValue">
-    (15/19)
+    (18/21)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66%
+    62.5%
   </span>
   <span class="absValue">
-    (103/156)
+    (115/184)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69.7%
+    75.2%
   </span>
   <span class="absValue">
-    (154/221)
+    (197/262)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    68%
+    72%
   </span>
   <span class="absValue">
-    (922/1356)
+    (1065/1479)
   </span>
 </td>
 </tr>
@@ -186,7 +186,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    protected val requiredMasks: LongArray by lazy {</b>
 <b class="fc">&nbsp;        val masks = LongArray(maskCount)</b>
 <b class="fc">&nbsp;        properties.forEachIndexed { index, prop -&gt;</b>
-<b class="fc">&nbsp;            if (!prop.isNullable &amp;&amp; !prop.hasDefaultValue) {</b>
+<b class="pc">&nbsp;            if (!prop.isNullable &amp;&amp; !prop.hasDefaultValue) {</b>
 <b class="fc">&nbsp;                val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
 <b class="fc">&nbsp;                val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
 <b class="fc">&nbsp;                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)</b>
@@ -212,15 +212,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * default value, assisting in optimal constructor selection and object instantiation.
 &nbsp;     */
 <b class="fc">&nbsp;    protected val defaultMasks: LongArray by lazy {</b>
-<b class="nc">&nbsp;        val masks = LongArray(maskCount)</b>
-<b class="nc">&nbsp;        properties.forEachIndexed { index, prop -&gt;</b>
-<b class="nc">&nbsp;            if (prop.hasDefaultValue) {</b>
-<b class="nc">&nbsp;                val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
-<b class="nc">&nbsp;                val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
-<b class="nc">&nbsp;                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)</b>
+<b class="fc">&nbsp;        val masks = LongArray(maskCount)</b>
+<b class="fc">&nbsp;        properties.forEachIndexed { index, prop -&gt;</b>
+<b class="pc">&nbsp;            if (prop.hasDefaultValue) {</b>
+<b class="fc">&nbsp;                val maskIdx = index / C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;                val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
+<b class="fc">&nbsp;                masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)</b>
 &nbsp;            }
-<b class="nc">&nbsp;        }</b>
-<b class="nc">&nbsp;        masks</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        masks</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -284,10 +284,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * It handles null-safety by wrapping the reader call in a null check template.
 &nbsp;     */
 &nbsp;    protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
-<b class="pc">&nbsp;        if (prop.customDecoder != null) {</b>
-<b class="nc">&nbsp;            return nullGuarded(buildCustomDecoderCall(prop))</b>
-&nbsp;        }
-&nbsp;
+&nbsp;        // customDecoder is handled in [buildCall] before nullability — never reaches here.
 <b class="pc">&nbsp;        if (prop.isPrimitiveArray) {</b>
 <b class="nc">&nbsp;            return nullGuarded(</b>
 <b class="nc">&nbsp;                CodeBlock.of(</b>
@@ -374,18 +371,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * @return A [CodeBlock] containing the optimized reader instruction.
 &nbsp;     */
 <b class="nc">&nbsp;    protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {</b>
-<b class="fc">&nbsp;        val readerCall = when {</b>
-<b class="fc">&nbsp;            type.isRawJson() -&gt; CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)</b>
+<b class="fc">&nbsp;        return when {</b>
+<b class="fc">&nbsp;            type.isRawJson() -&gt; {</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)</b>
+<b class="fc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
 &nbsp;
-<b class="fc">&nbsp;            type.isByteArray() -&gt; if (isProto) {</b>
-<b class="fc">&nbsp;                CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)</b>
+<b class="fc">&nbsp;            type.isByteArray() -&gt; {</b>
+<b class="fc">&nbsp;                val call = if (isProto) {</b>
+<b class="fc">&nbsp;                    CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)</b>
+&nbsp;                }
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            isValueClassType(type) -&gt; {</b>
 <b class="fc">&nbsp;                val innerType = resolveValueClassInnerType(type)</b>
-<b class="pc">&nbsp;                if (innerType != null) {</b>
+<b class="pc">&nbsp;                val call = if (innerType != null) {</b>
 <b class="fc">&nbsp;                    val constructorCall = buildTypeReaderCall(innerType, isProto)</b>
 <b class="pc">&nbsp;                    val className = type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) } ?: type.toTypeName()</b>
 <b class="fc">&nbsp;                    CodeBlock.of(C.TEMPLATE_CONSTRUCTOR, className, constructorCall)</b>
@@ -393,45 +396,87 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                    val name = getContextualSerializerName(type)</b>
 <b class="nc">&nbsp;                    CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)</b>
 &nbsp;                }
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;            }
 &nbsp;
-<b class="pc">&nbsp;            type.isGhost() || type.isEnum() -&gt; CodeBlock.of(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_DESERIALIZE_T,</b>
-<b class="fc">&nbsp;                type.serializerClassName()</b>
+<b class="pc">&nbsp;            type.isGhost() || type.isEnum() -&gt; {</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(</b>
+<b class="fc">&nbsp;                    C.TEMPLATE_DESERIALIZE_T,</b>
+<b class="fc">&nbsp;                    type.serializerClassName()</b>
+&nbsp;                )
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            type.isPrimitiveInt() -&gt; scalarReaderCall(</b>
+<b class="fc">&nbsp;                C.STR_NEXT_INT,</b>
+<b class="fc">&nbsp;                C.STR_NEXT_INT_OR_NULL,</b>
+<b class="fc">&nbsp;                type.isMarkedNullable</b>
 &nbsp;            )
-&nbsp;
-<b class="fc">&nbsp;            type.isPrimitiveInt() -&gt; CodeBlock.of(C.STR_NEXT_INT)</b>
-<b class="fc">&nbsp;            type.isPrimitiveBoolean() -&gt; CodeBlock.of(C.STR_NEXT_BOOLEAN)</b>
+<b class="fc">&nbsp;            type.isPrimitiveBoolean() -&gt; scalarReaderCall(</b>
+<b class="fc">&nbsp;                C.STR_NEXT_BOOLEAN,</b>
+<b class="fc">&nbsp;                C.STR_NEXT_BOOLEAN_OR_NULL,</b>
+<b class="fc">&nbsp;                type.isMarkedNullable</b>
+&nbsp;            )
 <b class="fc">&nbsp;            type.isPrimitiveLong() -&gt; if (isProto) {</b>
-<b class="fc">&nbsp;                CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)</b>
+&nbsp;                // Quoted int64 coercion — keep generic null guard around the run block.
+<b class="fc">&nbsp;                val call = CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)</b>
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;            } else {
-<b class="fc">&nbsp;                CodeBlock.of(C.STR_NEXT_LONG)</b>
+<b class="fc">&nbsp;                scalarReaderCall(</b>
+<b class="fc">&nbsp;                    C.STR_NEXT_LONG,</b>
+<b class="fc">&nbsp;                    C.STR_NEXT_LONG_OR_NULL,</b>
+<b class="fc">&nbsp;                    type.isMarkedNullable</b>
+&nbsp;                )
 &nbsp;            }
-<b class="fc">&nbsp;            type.isPrimitiveDouble() -&gt; CodeBlock.of(C.STR_NEXT_DOUBLE)</b>
-<b class="pc">&nbsp;            type.isPrimitiveFloat() -&gt; CodeBlock.of(C.STR_NEXT_FLOAT)</b>
-<b class="pc">&nbsp;            type.isPrimitiveByte() -&gt; CodeBlock.of(C.STR_NEXT_BYTE)</b>
-<b class="pc">&nbsp;            type.isPrimitiveShort() -&gt; CodeBlock.of(C.STR_NEXT_SHORT)</b>
-<b class="fc">&nbsp;            type.isPrimitiveChar() -&gt; CodeBlock.of(C.STR_NEXT_CHAR)</b>
+<b class="fc">&nbsp;            type.isPrimitiveDouble() -&gt; {</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(C.STR_NEXT_DOUBLE)</b>
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
+<b class="pc">&nbsp;            type.isPrimitiveFloat() -&gt; {</b>
+<b class="nc">&nbsp;                val call = CodeBlock.of(C.STR_NEXT_FLOAT)</b>
+<b class="nc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
+<b class="pc">&nbsp;            type.isPrimitiveByte() -&gt; {</b>
+<b class="nc">&nbsp;                val call = CodeBlock.of(C.STR_NEXT_BYTE)</b>
+<b class="nc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
+<b class="pc">&nbsp;            type.isPrimitiveShort() -&gt; {</b>
+<b class="nc">&nbsp;                val call = CodeBlock.of(C.STR_NEXT_SHORT)</b>
+<b class="nc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
+<b class="fc">&nbsp;            type.isPrimitiveChar() -&gt; {</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(C.STR_NEXT_CHAR)</b>
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
+&nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            type.isSet() -&gt; {</b>
 <b class="pc">&nbsp;                val inner = type.arguments.firstOrNull()?.type?.resolve()</b>
-<b class="nc">&nbsp;                    ?: return CodeBlock.of(C.STR_NEXT_STRING)</b>
+<b class="nc">&nbsp;                    ?: return scalarReaderCall(</b>
+<b class="nc">&nbsp;                        C.STR_NEXT_STRING,</b>
+<b class="nc">&nbsp;                        C.STR_NEXT_STRING_OR_NULL,</b>
+<b class="nc">&nbsp;                        type.isMarkedNullable</b>
+&nbsp;                    )
 &nbsp;
-<b class="fc">&nbsp;                CodeBlock.of(</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(</b>
 <b class="fc">&nbsp;                    C.STR_READ_SET_TEMPLATE,</b>
 <b class="fc">&nbsp;                    buildTypeReaderCall(inner, isProto)</b>
 &nbsp;                )
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            type.isList() -&gt; {</b>
 <b class="pc">&nbsp;                val inner = type.arguments.firstOrNull()?.type?.resolve()</b>
-<b class="nc">&nbsp;                    ?: return CodeBlock.of(C.STR_NEXT_STRING)</b>
+<b class="nc">&nbsp;                    ?: return scalarReaderCall(</b>
+<b class="nc">&nbsp;                        C.STR_NEXT_STRING,</b>
+<b class="nc">&nbsp;                        C.STR_NEXT_STRING_OR_NULL,</b>
+<b class="nc">&nbsp;                        type.isMarkedNullable</b>
+&nbsp;                    )
 &nbsp;
-<b class="fc">&nbsp;                CodeBlock.of(</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(</b>
 <b class="fc">&nbsp;                    C.STR_READ_LIST_TEMPLATE,</b>
 <b class="fc">&nbsp;                    buildTypeReaderCall(inner, isProto)</b>
 &nbsp;                )
-&nbsp;
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            type.isMap() -&gt; {</b>
@@ -439,30 +484,41 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    .arguments</b>
 <b class="fc">&nbsp;                    .getOrNull(1)</b>
 <b class="pc">&nbsp;                    ?.type?.resolve()</b>
-<b class="nc">&nbsp;                    ?: return CodeBlock.of(C.STR_NEXT_STRING)</b>
+<b class="nc">&nbsp;                    ?: return scalarReaderCall(</b>
+<b class="nc">&nbsp;                        C.STR_NEXT_STRING,</b>
+<b class="nc">&nbsp;                        C.STR_NEXT_STRING_OR_NULL,</b>
+<b class="nc">&nbsp;                        type.isMarkedNullable</b>
+&nbsp;                    )
 &nbsp;
-<b class="fc">&nbsp;                CodeBlock.of(</b>
+<b class="fc">&nbsp;                val call = CodeBlock.of(</b>
 <b class="fc">&nbsp;                    C.STR_READ_MAP_TEMPLATE,</b>
 <b class="fc">&nbsp;                    buildTypeReaderCall(valueType, isProto)</b>
 &nbsp;                )
+<b class="pc">&nbsp;                if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;            }
 &nbsp;
 &nbsp;            else -&gt; {
 <b class="pc">&nbsp;                if (type.isString()) {</b>
-<b class="fc">&nbsp;                    CodeBlock.of(C.STR_NEXT_STRING)</b>
+<b class="fc">&nbsp;                    scalarReaderCall(</b>
+<b class="fc">&nbsp;                        C.STR_NEXT_STRING,</b>
+<b class="fc">&nbsp;                        C.STR_NEXT_STRING_OR_NULL,</b>
+<b class="fc">&nbsp;                        type.isMarkedNullable</b>
+&nbsp;                    )
 &nbsp;                } else {
 <b class="nc">&nbsp;                    val name = getContextualSerializerName(type)</b>
-<b class="nc">&nbsp;                    CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)</b>
+<b class="nc">&nbsp;                    val call = CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)</b>
+<b class="nc">&nbsp;                    if (type.isMarkedNullable) nullGuarded(call) else call</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return if (type.isMarkedNullable) {</b>
-<b class="fc">&nbsp;            nullGuarded(readerCall)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            readerCall</b>
-&nbsp;        }
 &nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits a fused `nextXOrNull()` when [nullable], otherwise the non-null `nextX()` call.
+&nbsp;     * Avoids the generated `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
+&nbsp;     */
+&nbsp;    private fun scalarReaderCall(nonNullCall: String, orNullCall: String, nullable: Boolean): CodeBlock =
+<b class="fc">&nbsp;        CodeBlock.of(if (nullable) orNullCall else nonNullCall)</b>
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Generates a unique variable name for a contextual serializer.
@@ -471,7 +527,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun getContextualSerializerName(type: KSType): String {
 <b class="nc">&nbsp;        return contextualSerializers.getOrPut(type) {</b>
 <b class="nc">&nbsp;            val simpleName = type.declaration.simpleName.asString()</b>
-<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) &quot;Nullable&quot; else &quot;&quot;</b>
+<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else &quot;&quot;</b>
 &nbsp;            C.STR_CONTEXTUAL_PREFIX +
 <b class="nc">&nbsp;                    simpleName.replaceFirstChar { it.lowercase() } +</b>
 <b class="nc">&nbsp;                    nullableSuffix +</b>
@@ -484,14 +540,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * for every property and all validation/defaults masks, completely eliminating magic numbers.
 &nbsp;     *
 &nbsp;     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
+&nbsp;     * @param emitRequiredAggregateMasks When false, skip [MASK_REQUIRED_N] (e.g. StandardEmitter
+&nbsp;     * with a single required field validates via the property mask only).
 &nbsp;     */
-&nbsp;    protected fun emitPropertyMaskConstants(typeSpecBuilder: TypeSpec.Builder) {
+&nbsp;    protected fun emitPropertyMaskConstants(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+<b class="nc">&nbsp;        emitRequiredAggregateMasks: Boolean = true,</b>
+&nbsp;    ) {
 <b class="fc">&nbsp;        properties.forEach { prop -&gt;</b>
 <b class="fc">&nbsp;            val index = propertyIndices[prop]!!</b>
 <b class="fc">&nbsp;            val bitIdx = index % C.MASK_SIZE_BITS.toInt()</b>
 <b class="fc">&nbsp;            val bitMask = C.VAL_ONE_L shl bitIdx</b>
 <b class="fc">&nbsp;            val bitMaskStr = formatMaskString(bitMask)</b>
-<b class="fc">&nbsp;            val name = &quot;MASK_&quot; + prop.kotlinName.uppercase()</b>
+<b class="fc">&nbsp;            val name = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
 <b class="fc">&nbsp;            if (typeSpecBuilder.propertySpecs.none { it.name == name }) {</b>
 <b class="fc">&nbsp;                typeSpecBuilder.addProperty(</b>
 <b class="fc">&nbsp;                    PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)</b>
@@ -502,11 +563,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 <b class="fc">&nbsp;        }</b>
 &nbsp;
+<b class="fc">&nbsp;        if (!emitRequiredAggregateMasks) {</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
 <b class="fc">&nbsp;        for (i in requiredMasks.indices) {</b>
 <b class="fc">&nbsp;            val reqMask = requiredMasks[i]</b>
-<b class="fc">&nbsp;            if (reqMask != C.VAL_ZERO_L) {</b>
+<b class="pc">&nbsp;            if (reqMask != C.VAL_ZERO_L) {</b>
 <b class="fc">&nbsp;                val reqMaskStr = formatMaskString(reqMask)</b>
-<b class="fc">&nbsp;                val name = &quot;MASK_REQUIRED_$i&quot;</b>
+<b class="fc">&nbsp;                val name = C.STR_MASK_REQUIRED_PREFIX + i</b>
 <b class="fc">&nbsp;                if (typeSpecBuilder.propertySpecs.none { it.name == name }) {</b>
 <b class="fc">&nbsp;                    typeSpecBuilder.addProperty(</b>
 <b class="fc">&nbsp;                        PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)</b>
@@ -526,19 +591,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
 &nbsp;        maskIndex: Int,
 &nbsp;    ): String {
-<b class="nc">&nbsp;        val defMask = defaultMasks[maskIndex]</b>
-<b class="nc">&nbsp;        val constName = &quot;${C.STR_MASK_DEFAULTS_PREFIX}$maskIndex&quot;</b>
-<b class="nc">&nbsp;        if (defMask != C.VAL_ZERO_L &amp;&amp;</b>
-<b class="nc">&nbsp;            typeSpecBuilder.propertySpecs.none { it.name == constName }</b>
+<b class="fc">&nbsp;        val defMask = defaultMasks[maskIndex]</b>
+<b class="fc">&nbsp;        val constName = &quot;${C.STR_MASK_DEFAULTS_PREFIX}$maskIndex&quot;</b>
+<b class="pc">&nbsp;        if (defMask != C.VAL_ZERO_L &amp;&amp;</b>
+<b class="pc">&nbsp;            typeSpecBuilder.propertySpecs.none { it.name == constName }</b>
 &nbsp;        ) {
-<b class="nc">&nbsp;            typeSpecBuilder.addProperty(</b>
-<b class="nc">&nbsp;                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)</b>
-<b class="nc">&nbsp;                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)</b>
-<b class="nc">&nbsp;                    .initializer(&quot;%L&quot;, formatMaskString(defMask))</b>
-<b class="nc">&nbsp;                    .build()</b>
+<b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
+<b class="fc">&nbsp;                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)</b>
+<b class="fc">&nbsp;                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)</b>
+<b class="fc">&nbsp;                    .initializer(&quot;%L&quot;, formatMaskString(defMask))</b>
+<b class="fc">&nbsp;                    .build()</b>
 &nbsp;            )
 &nbsp;        }
-<b class="nc">&nbsp;        return constName</b>
+<b class="fc">&nbsp;        return constName</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -623,7 +688,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

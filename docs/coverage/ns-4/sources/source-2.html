@@ -121,7 +121,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Tiered strategy handles small, medium, and large payloads efficiently.
 &nbsp; */
 &nbsp;@InternalGhostApi
-&nbsp;fun acquireScratchBuffer(minSize: Int = 48): ByteArray {
+&nbsp;fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
 &nbsp;    val pool = getLocalPool()
 &nbsp;    return when {
 &nbsp;        minSize &lt;= SCRATCH_BUFFER_SIZE_INT -&gt; {
@@ -227,7 +227,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostProtoSerialization</title>
+  <title>GhostSerialization Coverage Report > GhostFallback</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostProtoSerialization (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostFallback (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostProtoSerialization</td>
+  <td class="name">GhostFallback</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,21 +47,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Triggers the automatic generation of high-performance serializers for the annotated class,
-&nbsp; * adhering strictly to the proto3 JSON mapping rules.
+&nbsp; * Indicates that this subclass should be used as the fallback when deserializing
+&nbsp; * a sealed class and the discriminator value in the JSON does not match any known subclass.
 &nbsp; *
-&nbsp; * Differences from standard `@GhostSerialization`:
-&nbsp; * - Fields are serialized using `lowerCamelCase` names.
-&nbsp; * - Fields with default/empty values are omitted by default.
-&nbsp; * - 64-bit integers (`int64`, `uint64`) are serialized as quoted string values.
-&nbsp; * - Enums are serialized as strings by default.
-&nbsp; * - Byte arrays are serialized as Base64 strings.
+&nbsp; * Only one subclass per sealed class hierarchy can be annotated with this annotation.
 &nbsp; */
 &nbsp;@Target(AnnotationTarget.CLASS)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostProtoSerialization(
-&nbsp;    val name: String = &quot;&quot;,
-&nbsp;)
+&nbsp;annotation class GhostFallback
 </code>
 </pre>
 </div>
@@ -85,7 +78,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

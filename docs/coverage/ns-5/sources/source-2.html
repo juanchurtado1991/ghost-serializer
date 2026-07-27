@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.1%
+    68.1%
   </span>
   <span class="absValue">
-    (139/207)
+    (141/207)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.4%
+    69.5%
   </span>
   <span class="absValue">
-    (205/287)
+    (207/298)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    68.7%
+    67.7%
   </span>
   <span class="absValue">
-    (1473/2143)
+    (1492/2205)
   </span>
 </td>
 </tr>
@@ -255,8 +255,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
 <b class="fc">&nbsp;        val accessorRoot = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)</b>
 <b class="fc">&nbsp;        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER</b>
-<b class="pc">&nbsp;        val prefix = if (isStringWriter) {</b>
-<b class="nc">&nbsp;            C.STR_HS_PREFIX</b>
+<b class="fc">&nbsp;        val prefix = if (isStringWriter) {</b>
+<b class="fc">&nbsp;            C.STR_HS_PREFIX</b>
 &nbsp;        } else {
 <b class="fc">&nbsp;            C.STR_H_VAL_PREFIX</b>
 &nbsp;        }
@@ -333,8 +333,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val canUseFused = isFusedType(prop) &amp;&amp; !prop.isContextual</b>
 <b class="fc">&nbsp;        if (prop.hasDefaultValue) {</b>
 <b class="fc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)</b>
-<b class="pc">&nbsp;            if (canUseFused) {</b>
-<b class="nc">&nbsp;                code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)</b>
+<b class="fc">&nbsp;            if (canUseFused) {</b>
+<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)</b>
 &nbsp;            } else {
 <b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
 <b class="fc">&nbsp;                emitValue(code, prop, accessor)</b>
@@ -387,14 +387,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
 <b class="pc">&nbsp;        if (prop.customEncoder != null) {</b>
 <b class="nc">&nbsp;            if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {</b>
-<b class="nc">&nbsp;                code.addStatement(&quot;val tempFlatWriter = com.ghost.serialization.writer.GhostJsonFlatWriter(com.ghost.serialization.writer.FlatByteArrayWriter())&quot;)</b>
+<b class="nc">&nbsp;                val flatWriter = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_FLAT_WRITER)</b>
+<b class="nc">&nbsp;                val flatBuffer = ClassName(C.PKG_WRITER, C.STR_FLAT_BYTE_ARRAY_WRITER)</b>
+<b class="nc">&nbsp;                val bridgeWriterName = C.STR_TEMP_FLAT_WRITER</b>
+<b class="nc">&nbsp;                code.add(</b>
+<b class="nc">&nbsp;                    CodeBlock.builder()</b>
+<b class="nc">&nbsp;                        .add(C.TEMPLATE_TEMP_FLAT_WRITER_DECL, bridgeWriterName, flatWriter)</b>
+<b class="nc">&nbsp;                        .indent()</b>
+<b class="nc">&nbsp;                        .add(C.TEMPLATE_TEMP_FLAT_WRITER_BUFFER, flatBuffer)</b>
+<b class="nc">&nbsp;                        .unindent()</b>
+<b class="nc">&nbsp;                        .add(C.TEMPLATE_TEMP_FLAT_WRITER_CLOSE)</b>
+<b class="nc">&nbsp;                        .build(),</b>
+&nbsp;                )
 <b class="nc">&nbsp;                code.addStatement(</b>
-<b class="nc">&nbsp;                    &quot;%T.%L(tempFlatWriter, %L)&quot;,</b>
+<b class="nc">&nbsp;                    C.TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL,</b>
 <b class="nc">&nbsp;                    prop.customEncoder.provider,</b>
 <b class="nc">&nbsp;                    prop.customEncoder.functionName,</b>
+<b class="nc">&nbsp;                    bridgeWriterName,</b>
 <b class="nc">&nbsp;                    accessor</b>
 &nbsp;                )
-<b class="nc">&nbsp;                code.addStatement(&quot;writer.buffer.writeString(tempFlatWriter.buffer.toStringUtf8())&quot;)</b>
+<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE, bridgeWriterName)</b>
 &nbsp;            } else {
 <b class="nc">&nbsp;                code.addStatement(</b>
 <b class="nc">&nbsp;                    C.STR_CUSTOM_ENCODER_CALL,</b>
@@ -656,7 +668,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    protected fun getContextualSerializerName(type: KSType): String {
 <b class="nc">&nbsp;        return contextualSerializers.getOrPut(type) {</b>
 <b class="nc">&nbsp;            val simpleName = type.declaration.simpleName.asString()</b>
-<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) &quot;Nullable&quot; else &quot;&quot;</b>
+<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else &quot;&quot;</b>
 &nbsp;            C.STR_CONTEXTUAL_PREFIX +
 <b class="nc">&nbsp;                simpleName.replaceFirstChar { it.lowercase() } +</b>
 <b class="nc">&nbsp;                nullableSuffix +</b>
@@ -727,7 +739,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>
