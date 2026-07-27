@@ -104,7 +104,7 @@ fun SpeedTestScreen(strings: Strings) {
                     SpeedTestPhase.RunningKser -> strings.speedTestPhaseKser
                     else -> strings.speedTestStart
                 },
-                icon = PlaygroundIconKind.Ghost,
+                icon = null,
                 colors = listOf(Teal, TealDark),
                 enabled = !running,
                 onClick = { running = true },

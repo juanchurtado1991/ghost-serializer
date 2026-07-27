@@ -109,7 +109,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
 
         HeroButton(
             label = if (running) strings.running else strings.runPipeline,
-            icon = if (running) PlaygroundIconKind.Ghost else null,
+            icon = null,
             colors = listOf(Teal, TealDark),
             enabled = !running,
         ) { running = true }

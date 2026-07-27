@@ -1,6 +1,6 @@
-# <img src="readme-assets/ghost-mascot.svg" width="36" height="36" alt="" align="center"/> Ghost Serializer
+# 👻 Ghost Serializer
 
-**Drop-in JSON speed for Kotlin — keep your current serializer.**
+**Parse and hydrate Kotlin models at up to 1.2 GB/s — drop in beside the serializer you already use.**
 
 Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate only the hot DTOs, leave everything else alone, and migrate when you want.
 

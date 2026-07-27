@@ -8,7 +8,7 @@ import com.ghost.serialization.generated.GhostModuleRegistry_playground
 
 fun main() = application {
     Ghost.addRegistry(GhostModuleRegistry_playground.INSTANCE)
-    Window(onCloseRequest = ::exitApplication, title = "Ghost Playground") {
+    Window(onCloseRequest = ::exitApplication, title = "Ghost Serializer Playground") {
         GhostPlaygroundApp()
     }
 }

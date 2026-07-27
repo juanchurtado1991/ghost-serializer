@@ -63,7 +63,7 @@ data class Strings(
 object I18n {
     fun of(lang: Lang): Strings = when (lang) {
         Lang.EN -> Strings(
-            brand = "Ghost Playground",
+            brand = "Ghost Serializer Playground",
             tagline = "Watch Ghost parse your JSON — step by step, for real.",
             studio = "Playground",
             underHood = "Why it's fast",
@@ -120,7 +120,7 @@ object I18n {
             speedTestResultTitle = "Result",
         )
         Lang.ES -> Strings(
-            brand = "Ghost Playground",
+            brand = "Ghost Serializer Playground",
             tagline = "Mira cómo Ghost parsea tu JSON — paso a paso, de verdad.",
             studio = "Playground",
             underHood = "Por qué es rápido",
