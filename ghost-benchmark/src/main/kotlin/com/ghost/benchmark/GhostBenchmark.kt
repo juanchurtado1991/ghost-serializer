@@ -495,15 +495,15 @@ internal fun printFinalResults(finalResults: BenchmarkSessionResults, payloads: 
         finalResults.writing,
         payloadBytes = payloads.writingBytes.size.toLong(),
     )
-    printRankedTable(
-        "STRESS TEST: DEEP NESTING (20 Levels)$titleSuffix",
-        finalResults.stress.nesting,
-        payloadBytes = payloads.stressTreeBytes.size.toLong(),
+    printMicroLatencyTable(
+        title = "STRESS TEST: DEEP NESTING (20 Levels)",
+        subtitle = "Single-shot parse per engine after synthetic suite (632 B payload)",
+        metrics = finalResults.stress.nesting,
     )
-    printRankedTable(
-        "FAILURE RESILIENCE (Malformed JSON)$titleSuffix",
-        finalResults.failure,
-        payloadBytes = payloads.failureBytes.size.toLong(),
+    printMicroLatencyTable(
+        title = "FAILURE RESILIENCE (Malformed JSON)",
+        subtitle = "Average of 100 failed parses per engine (2 581 B payload)",
+        metrics = finalResults.failure,
     )
 }
 
@@ -567,6 +567,47 @@ private fun printColdStartTable(title: String, metrics: BenchmarkMetrics) {
             latencyReduction
         )
     )
+}
+
+/**
+ * Micro-benchmarks (deep nesting, malformed JSON) measure per-op latency on tiny payloads.
+ * GB/s would be misleading at this scale (same rationale as [printColdStartTable]); allocation
+ * is not measured here either.
+ */
+private fun printMicroLatencyTable(
+    title: String,
+    subtitle: String,
+    metrics: BenchmarkMetrics,
+) {
+    println("\n========================================================")
+    println("BENCHMARK: $title")
+    println("========================================================")
+    println("  $subtitle → latency only (µs/op)")
+
+    val rankings = engineRankings(metrics).sortedBy { it.nanos }
+    println("| RANK | ENGINE   | Latency (µs/op) |")
+    println("|------|----------|-----------------|")
+    rankings.forEachIndexed { index, rank ->
+        println(
+            "| %-4d | %-8s | %15.1f |".format(
+                index + 1,
+                rank.name,
+                BenchmarkThroughput.nanosToMicros(rank.nanos),
+            )
+        )
+    }
+
+    val winner = rankings.first()
+    val slowest = rankings.last()
+    if (winner.nanos > 0 && slowest.nanos > 0) {
+        val latencyReduction =
+            ((slowest.nanos.toDouble() - winner.nanos.toDouble()) / slowest.nanos.toDouble()) * 100.0
+        println(
+            "   WINNER: ${winner.name} (%.1f%% lower latency than ${slowest.name})".format(
+                latencyReduction
+            )
+        )
+    }
 }
 
 /**
