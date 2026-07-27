@@ -114,6 +114,10 @@ class GhostAnalyzerValidationKspTest {
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
+            // kctfork's embedded kotlinc (2.1.0) can't read metadata from our project's own
+            // jars once they're compiled with a newer Kotlin (2.4.0 as of this bump) via
+            // inheritClassPath — this flag skips that strict metadata-version check.
+            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

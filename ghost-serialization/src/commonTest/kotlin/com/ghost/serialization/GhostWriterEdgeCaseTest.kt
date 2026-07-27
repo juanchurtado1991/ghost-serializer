@@ -135,6 +135,14 @@ class GhostWriterEdgeCaseTest {
     }
 
     @Test
+    fun writesAsciiPrefixThenUnicode() {
+        val json = writerToString { w ->
+            w.beginObject().name("v").value("hello漢字").endObject()
+        }
+        assertEquals("{\"v\":\"hello漢字\"}", json)
+    }
+
+    @Test
     fun writesEmojiDirectly() {
         val json = writerToString { w ->
             w.beginObject().name("v").value("🚀🔥").endObject()

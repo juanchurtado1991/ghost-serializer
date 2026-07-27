@@ -155,7 +155,7 @@ object RawJsonCaptureBenchmark {
         val payload = json.encodeToByteArray()
         repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(payload) }
         BenchmarkProgress.logStep("Measure: $label")
-        report(threadBean, label, block = { block(payload) })
+        report(threadBean, label, payloadBytes = payload.size.toLong(), block = { block(payload) })
     }
 
     private inline fun measureString(
@@ -166,12 +166,18 @@ object RawJsonCaptureBenchmark {
     ) {
         repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(json) }
         BenchmarkProgress.logStep("Measure: $label")
-        report(threadBean, label, block = { block(json) })
+        report(
+            threadBean,
+            label,
+            payloadBytes = json.encodeToByteArray().size.toLong(),
+            block = { block(json) },
+        )
     }
 
     private inline fun report(
         threadBean: ThreadMXBean,
         label: String,
+        payloadBytes: Long,
         crossinline block: () -> Any?
     ) {
         val threadId = Thread.currentThread().id
@@ -187,12 +193,14 @@ object RawJsonCaptureBenchmark {
         }
 
         val avgMicros = totalNanos / BenchmarkStandard.MEASUREMENT_RUNS / 1_000.0
-        val avgBytes = totalAlloc / BenchmarkStandard.MEASUREMENT_RUNS
+        val avgKb = (totalAlloc.toDouble() / BenchmarkStandard.MEASUREMENT_RUNS) / 1024.0
+        val gbPerSec = BenchmarkThroughput.microsToGbPerSec(avgMicros, payloadBytes)
         println(
-            "  %-58s  %8.2f µs/op   %8d B/op".format(
+            "  %-58s │ %6.3f GB/s │ %8.2f µs/op │ %8.3f KB/op".format(
                 label,
+                gbPerSec,
                 avgMicros,
-                avgBytes
+                avgKb,
             )
         )
     }

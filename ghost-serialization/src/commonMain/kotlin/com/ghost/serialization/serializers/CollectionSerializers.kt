@@ -458,6 +458,28 @@ object IntArraySerializer : GhostSerializer<IntArray> {
         reader.endArray()
         return list.toArray()
     }
+
+    override fun deserialize(
+        reader: GhostJsonStringReader
+    ): IntArray {
+        reader.beginArray()
+
+        if (reader.peekByte() == CLOSE_ARR) {
+            reader.endArray()
+            return IntArray(0)
+        }
+
+        val list = GhostIntList()
+        while (reader.hasNext()) {
+            if (!list.isEmpty()) {
+                reader.consumeArraySeparator()
+            }
+            list.add(reader.nextInt())
+        }
+
+        reader.endArray()
+        return list.toArray()
+    }
 }
 
 /**
@@ -527,6 +549,28 @@ object LongArraySerializer : GhostSerializer<LongArray> {
 
     override fun deserialize(
         reader: GhostJsonFlatReader
+    ): LongArray {
+        reader.beginArray()
+
+        if (reader.peekByte() == CLOSE_ARR) {
+            reader.endArray()
+            return LongArray(0)
+        }
+
+        val list = GhostLongList()
+        while (reader.hasNext()) {
+            if (!list.isEmpty()) {
+                reader.consumeArraySeparator()
+            }
+            list.add(reader.nextLong())
+        }
+
+        reader.endArray()
+        return list.toArray()
+    }
+
+    override fun deserialize(
+        reader: GhostJsonStringReader
     ): LongArray {
         reader.beginArray()
 

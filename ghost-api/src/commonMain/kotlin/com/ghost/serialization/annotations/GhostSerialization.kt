@@ -13,10 +13,16 @@ package com.ghost.serialization.annotations
  *   convention (e.g. `"kind"`, `"object"`, `"@type"`).
  *   Has no effect on non-sealed classes.
  * @param inferred Whether the type should be inferred automatically.
- * @param textChannel When `true`, generates native [com.ghost.serialization.parser.GhostJsonStringReader]
- *   deserialize/serialize overloads for this model and any nested `@GhostSerialization` types
- *   reachable from its property graph. Defaults to `false`. Module-wide `ghost.textChannel=true`
- *   still enables the string channel for every model in the module (legacy).
+ * @param textChannel When `true` (the default), generates native
+ *   [com.ghost.serialization.parser.GhostJsonStringReader] deserialize/serialize overloads for
+ *   this model and any nested `@GhostSerialization` types reachable from its property graph.
+ *   Without a native string-channel overload, decoding from a `String` (e.g.
+ *   `Ghost.deserialize<T>(json: String)`) falls back to re-encoding the whole document to UTF-8
+ *   and delegating to the byte-mode reader — correct, but not zero-allocation. Set to `false`
+ *   only to trade that String-mode performance for smaller generated code (roughly a third less
+ *   per model) on types that are only ever decoded from bytes/streams. Module-wide
+ *   `ghost.textChannel=false` forces the bridging behavior for every model in the module
+ *   regardless of this per-class value, for projects that want to opt out everywhere at once.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
@@ -24,5 +30,5 @@ annotation class GhostSerialization(
     val name: String = "",
     val discriminator: String = "type",
     val inferred: Boolean = false,
-    val textChannel: Boolean = false,
+    val textChannel: Boolean = true,
 )

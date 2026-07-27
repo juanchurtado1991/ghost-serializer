@@ -14,6 +14,7 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
+import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
 
 @OptIn(InternalGhostApi::class)
@@ -22,7 +23,7 @@ class GhostContentConverter(
 ) : ContentConverter {
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun serializeNullable(
+    override suspend fun serialize(
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,

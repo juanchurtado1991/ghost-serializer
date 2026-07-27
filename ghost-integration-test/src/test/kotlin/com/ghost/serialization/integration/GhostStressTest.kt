@@ -1,7 +1,10 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.integration.model.*
+import com.ghost.serialization.integration.model.DeepGenericModel
+import com.ghost.serialization.integration.model.RecursiveNode
+import com.ghost.serialization.integration.model.ReservedWordModel
+import com.ghost.serialization.integration.model.WideModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

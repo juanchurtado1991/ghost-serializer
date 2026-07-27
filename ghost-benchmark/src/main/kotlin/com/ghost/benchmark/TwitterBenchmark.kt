@@ -5,6 +5,8 @@ package com.ghost.benchmark
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.TwitterResponse
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
@@ -15,9 +17,10 @@ import kotlinx.serialization.json.okio.encodeToBufferedSink
 import okio.Buffer
 
 /**
- * Twitter macro-dataset benchmark comparing Ghost vs KotlinX Serialization.
+ * Twitter macro-dataset benchmark comparing Ghost vs Moshi (codegen) vs KotlinX Serialization.
  *
- * Measures throughput (ops/s) and memory allocation (KB/op) across 6 categories:
+ * Measures throughput (µs/op + GB/s of JSON bytes) and memory allocation (KB/op)
+ * across 6 categories:
  * String / Bytes / Streaming × Decode / Encode
  *
  * JIT is warmed globally in [warmupGlobal] (phase 2); [run] only runs a short local warmup
@@ -32,23 +35,34 @@ object TwitterBenchmark {
         val rawBytes: ByteArray,
         val stringFromBytes: String,
         val kJson: Json,
+        val moshiAdapter: com.squareup.moshi.JsonAdapter<TwitterResponse>,
         val decodedObj: TwitterResponse,
     ) {
         fun runWarmupIteration() {
             Ghost.deserialize<TwitterResponse>(jsonString)
             kJson.decodeFromString<TwitterResponse>(jsonString)
+            moshiAdapter.fromJson(jsonString)
             Ghost.encodeToString(decodedObj)
             kJson.encodeToString(decodedObj)
+            moshiAdapter.toJson(decodedObj)
 
             Ghost.deserialize<TwitterResponse>(rawBytes)
             kJson.decodeFromString<TwitterResponse>(stringFromBytes)
+            moshiAdapter.fromJson(stringFromBytes)
             Ghost.encodeToBytes(decodedObj)
             kJson.encodeToString(decodedObj).toByteArray()
+            moshiAdapter.toJson(decodedObj).encodeToByteArray()
 
             Ghost.decodeFromSource(Buffer().write(rawBytes), TwitterResponse::class)
             kJson.decodeFromBufferedSource<TwitterResponse>(Buffer().write(rawBytes))
+            moshiAdapter.fromJson(JsonReader.of(Buffer().write(rawBytes)))
             Buffer().also { Ghost.serialize(it, decodedObj) }
             Buffer().also { kJson.encodeToBufferedSink(decodedObj, it) }
+            Buffer().also { buf ->
+                JsonWriter.of(buf).use { writer ->
+                    moshiAdapter.toJson(writer, decodedObj)
+                }
+            }
         }
     }
 
@@ -57,7 +71,7 @@ object TwitterBenchmark {
      */
     fun warmupGlobal(iterations: Int) {
         val ctx = loadWarmupContext() ?: return
-        BenchmarkProgress.logStep("Twitter macro (string / bytes / streaming × Ghost + KSER)")
+        BenchmarkProgress.logStep("Twitter macro (string / bytes / streaming × Ghost + Moshi + KSER)")
         BenchmarkProgress.repeatWithProgress("Global Twitter", iterations) {
             ctx.runWarmupIteration()
         }
@@ -81,6 +95,7 @@ object TwitterBenchmark {
 
         val ghostSerializer = Ghost.getSerializer(TwitterResponse::class)!!
         val kserSerializer = ctx.kJson.serializersModule.serializer<TwitterResponse>()
+        val moshiAdapter = ctx.moshiAdapter
         val jsonString = ctx.jsonString
         val rawBytes = ctx.rawBytes
         val decodedObj = ctx.decodedObj
@@ -96,6 +111,10 @@ object TwitterBenchmark {
         val kserDecodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.decodeFromString(kserSerializer, jsonString)
         }
+        cleanHeap()
+        val moshiDecodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            moshiAdapter.fromJson(jsonString)
+        }
 
         cleanHeap()
         BenchmarkProgress.logStep("Decode (Bytes)")
@@ -105,6 +124,10 @@ object TwitterBenchmark {
         cleanHeap()
         val kserDecodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.decodeFromString(kserSerializer, String(rawBytes, Charsets.UTF_8))
+        }
+        cleanHeap()
+        val moshiDecodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            moshiAdapter.fromJson(String(rawBytes, Charsets.UTF_8))
         }
 
         cleanHeap()
@@ -116,6 +139,10 @@ object TwitterBenchmark {
         val kserDecodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.decodeFromBufferedSource(kserSerializer, Buffer().write(rawBytes))
         }
+        cleanHeap()
+        val moshiDecodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            moshiAdapter.fromJson(JsonReader.of(Buffer().write(rawBytes)))
+        }
 
         cleanHeap()
         BenchmarkProgress.logStep("Encode (String)")
@@ -126,6 +153,10 @@ object TwitterBenchmark {
         val kserEncodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.encodeToString(kserSerializer, decodedObj)
         }
+        cleanHeap()
+        val moshiEncodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            moshiAdapter.toJson(decodedObj)
+        }
 
         cleanHeap()
         BenchmarkProgress.logStep("Encode (Bytes)")
@@ -135,6 +166,10 @@ object TwitterBenchmark {
         cleanHeap()
         val kserEncodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.encodeToString(kserSerializer, decodedObj).toByteArray()
+        }
+        cleanHeap()
+        val moshiEncodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            moshiAdapter.toJson(decodedObj).encodeToByteArray()
         }
 
         cleanHeap()
@@ -150,15 +185,47 @@ object TwitterBenchmark {
             ctx.kJson.encodeToBufferedSink(kserSerializer, decodedObj, buf)
             buf
         }
+        cleanHeap()
+        val moshiEncodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            val buf = Buffer()
+            JsonWriter.of(buf).use { writer ->
+                moshiAdapter.toJson(writer, decodedObj)
+            }
+            buf
+        }
 
         printResults(
             listOf(
-                "Decode (String)" to (ghostDecodeStr to kserDecodeStr),
-                "Decode (Bytes)" to (ghostDecodeBytes to kserDecodeBytes),
-                "Decode (Streaming)" to (ghostDecodeStream to kserDecodeStream),
-                "Encode (String)" to (ghostEncodeStr to kserEncodeStr),
-                "Encode (Bytes)" to (ghostEncodeBytes to kserEncodeBytes),
-                "Encode (Streaming)" to (ghostEncodeStream to kserEncodeStream)
+                "Decode (String)" to listOf(
+                    "GHOST" to ghostDecodeStr,
+                    "KSER" to kserDecodeStr,
+                    "MOSHI" to moshiDecodeStr,
+                ),
+                "Decode (Bytes)" to listOf(
+                    "GHOST" to ghostDecodeBytes,
+                    "KSER" to kserDecodeBytes,
+                    "MOSHI" to moshiDecodeBytes,
+                ),
+                "Decode (Streaming)" to listOf(
+                    "GHOST" to ghostDecodeStream,
+                    "KSER" to kserDecodeStream,
+                    "MOSHI" to moshiDecodeStream,
+                ),
+                "Encode (String)" to listOf(
+                    "GHOST" to ghostEncodeStr,
+                    "KSER" to kserEncodeStr,
+                    "MOSHI" to moshiEncodeStr,
+                ),
+                "Encode (Bytes)" to listOf(
+                    "GHOST" to ghostEncodeBytes,
+                    "KSER" to kserEncodeBytes,
+                    "MOSHI" to moshiEncodeBytes,
+                ),
+                "Encode (Streaming)" to listOf(
+                    "GHOST" to ghostEncodeStream,
+                    "KSER" to kserEncodeStream,
+                    "MOSHI" to moshiEncodeStream,
+                ),
             )
         )
 
@@ -181,11 +248,13 @@ object TwitterBenchmark {
         val jsonString = resource.readText()
         val rawBytes = jsonString.encodeToByteArray()
         val kJson = Json { ignoreUnknownKeys = true }
+        val moshi = createBenchmarkMoshi()
         return WarmupContext(
             jsonString = jsonString,
             rawBytes = rawBytes,
             stringFromBytes = String(rawBytes, Charsets.UTF_8),
             kJson = kJson,
+            moshiAdapter = moshi.adapter(TwitterResponse::class.java),
             decodedObj = Ghost.deserialize<TwitterResponse>(jsonString),
         )
     }
@@ -208,26 +277,42 @@ object TwitterBenchmark {
     }
 
     private fun printResults(
-        categories: List<Pair<String, Pair<Triple<Double, Double, Double>, Triple<Double, Double, Double>>>>
+        categories: List<Pair<String, List<Pair<String, Triple<Double, Double, Double>>>>>
     ) {
+        val payloadBytes = BenchmarkThroughput.TWITTER_PAYLOAD_BYTES
         println("\n--- Twitter Dataset Performance Summary (Fastest First) ---")
-        println("| Operation          | Engine | Throughput (ops/s) |  StDev (ops/s) | Mem (KB/op) |")
-        println("|--------------------|--------|---------------------|----------------|-------------|")
+        println(
+            "  Payload: %d bytes → µs/op and decimal GB/s (ops/s × payload / 10⁹)".format(payloadBytes)
+        )
+        println(
+            "| Operation          | Engine | Throughput (GB/s) | Latency (µs/op) | Mem (KB/op) |"
+        )
+        println(
+            "|--------------------|--------|-------------------|-----------------|-------------|"
+        )
         for ((label, scores) in categories) {
-            val sorted = listOf(
-                "GHOST" to scores.first,
-                "KSER" to scores.second
-            ).sortedByDescending { it.second.first }
+            val sorted = scores.sortedByDescending { it.second.first }
             for (res in sorted) {
-                println("| %-18s | %-6s | %19.3f | %14.3f | %11.1f |".format(
-                    label, res.first, res.second.first, res.second.second, res.second.third
-                ))
+                val ops = res.second.first
+                val opsStdev = res.second.second
+                val micros = BenchmarkThroughput.opsPerSecToMicros(ops)
+                val microsStdev = if (ops <= 0.0) {
+                    0.0
+                } else {
+                    micros * (opsStdev / ops)
+                }
+                val gb = BenchmarkThroughput.opsPerSecToGbPerSec(ops, payloadBytes)
+                println(
+                    "| %-18s | %-6s | %17.3f | %7.1f ±%-5.1f | %11.1f |".format(
+                        label, res.first, gb, micros, microsStdev, res.second.third
+                    )
+                )
             }
             val winner = sorted[0]
-            val loser = sorted[1]
-            val pct = ((winner.second.first - loser.second.first) / loser.second.first) * 100.0
-            val memPct = if (loser.second.third > 0) {
-                ((loser.second.third - winner.second.third) / loser.second.third) * 100.0
+            val slowest = sorted.last()
+            val pct = ((winner.second.first - slowest.second.first) / slowest.second.first) * 100.0
+            val memPct = if (slowest.second.third > 0) {
+                ((slowest.second.third - winner.second.third) / slowest.second.third) * 100.0
             } else {
                 0.0
             }
@@ -238,10 +323,12 @@ object TwitterBenchmark {
             }
             println(
                 "   👉 WINNER for %s: %s (%.1f%% faster, %s than %s)".format(
-                    label, winner.first, pct, memString, loser.first
+                    label, winner.first, pct, memString, slowest.first
                 )
             )
-            println("|--------------------|--------|---------------------|----------------|-------------|")
+            println(
+                "|--------------------|--------|-------------------|-----------------|-------------|"
+            )
         }
     }
 

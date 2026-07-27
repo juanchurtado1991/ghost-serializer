@@ -12,13 +12,21 @@ import com.ghost.serialization.types.RawJson
 fun GhostJsonReader.captureRawJson(): RawJson {
     skipWhitespace()
     val start = position
-    captureReaderValueBytes()
-    nextTokenByte = -1
-    val length = position - start
-    return if (isStreaming) {
-        RawJson.fromUtf8Bytes(captureReaderRangeBytes(start, length))
-    } else {
-        RawJson.fromBufferSlice(rawData, start, length)
+    val streaming = source as? StreamingGhostSource
+    // Pin the value start: scanning advances [position] and may releaseStreamingPrefix,
+    // but we re-read [start, start+length) when materializing the owned byte copy.
+    streaming?.pin(start)
+    try {
+        captureReaderValueBytes()
+        nextTokenByte = -1
+        val length = position - start
+        return if (streaming != null) {
+            RawJson.fromUtf8Bytes(captureReaderRangeBytes(start, length))
+        } else {
+            RawJson.fromBufferSlice(rawData, start, length)
+        }
+    } finally {
+        streaming?.unpin()
     }
 }
 

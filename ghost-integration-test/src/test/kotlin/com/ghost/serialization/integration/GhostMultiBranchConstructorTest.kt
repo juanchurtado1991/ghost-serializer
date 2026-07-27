@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 /**
  * Validates the multi-branch constructor optimization (zero .copy() allocations).
  *
- * For N default-valued properties (N ≤ 3), Ghost generates 2^N explicit constructor
+ * For N default-valued properties (N ≤ 4), Ghost generates 2^N explicit constructor
  * branches instead of a `val _result + .copy(...)` pattern. Each branch calls the
  * primary constructor exactly once — no transient objects are allocated.
  *
@@ -68,7 +68,7 @@ class GhostMultiBranchConstructorTest {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ApiUserEvent — N=3 default props → 8 constructor branches (maximum threshold)
+    // ApiUserEvent — N=3 default props → 8 constructor branches
     // Properties: userId (req), eventType (req),
     //             version (default=1), retryCount (default=0), isProcessed (default=false)
     // ══════════════════════════════════════════════════════════════════════════

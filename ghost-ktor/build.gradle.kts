@@ -1,14 +1,17 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kover)
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "com.ghost.serialization.ktor"
+        compileSdk = 36
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -18,6 +21,10 @@ kotlin {
     jvm {
         withSourcesJar()
     }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -25,6 +32,9 @@ kotlin {
             implementation(project(":ghost-protobuf"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
+        }
+        jvmMain.dependencies {
+            // Server ApplicationCall extensions live in jvmMain — Ktor server is JVM-only.
             compileOnly(libs.ktor.server.core)
         }
         commonTest.dependencies {
@@ -38,16 +48,6 @@ kotlin {
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.test.host)
         }
-    }
-}
-
-android {
-    namespace = "com.ghost.serialization.ktor"
-    compileSdk = 35
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

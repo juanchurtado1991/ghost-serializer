@@ -66,7 +66,7 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         val targetClass = clazz as Class<Any>
         var serializer = serializerCache[targetClass]
         if (serializer == null) {
-            serializer = Ghost.getSerializer(targetClass.kotlin as KClass<Any>) as GhostSerializer<Any>?
+            serializer = Ghost.getSerializer(targetClass.kotlin)
                 ?: Ghost.throwError("${Ghost.NOT_FOUND} ${targetClass.simpleName}")
             serializerCache[targetClass] = serializer
         }

@@ -1,8 +1,8 @@
-# Ghost Serialization 1.2.4 {#titulo}
+# Ghost Serialization 1.3.0 {#titulo}
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
-> Monorepo ghost-serializer · version 1.2.4 · Maven `com.ghostserializer` · compile-time KSP + reflection-free runtime.
+> Monorepo ghost-serializer · version 1.3.0 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
 
 ### How to read this manual
 
@@ -33,7 +33,7 @@ In the PDF: tap blue entries to jump between sections. In the PDF reader also us
 - [IV.3 GhostJsonReader streaming](#cap-11--ghostjsonreader-parser-streaming)
 - [IV.4 Writers and warm buffer](#cap-12--writers-flatbytearraywriter)
 - [IV.5 Pools and heuristics](#cap-13--ghostpools-y-scratch-buffers)
-- [IV.6 JVM vs iOS](#cap-35--ghost-jvm-kt-pools-y-descubrimiento)
+- [IV.6 JVM vs iOS](#cap-7--registry-y-descubrimiento)
 
 **PART V — HTTP adapters**
 - [V.1 Gradle plugin](#cap-17--ghost-gradle-plugin)
@@ -359,7 +359,7 @@ KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost reg
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.2.4"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 
 // Optional but recommended with several modules containing models:
@@ -547,7 +547,7 @@ Central file: `ghost-serialization/src/commonMain/kotlin/com/ghost/serialization
 | `deserialize<T>(bytes: ByteArray)` | No intermediate String copy |
 | `deserialize<T>(source: BufferedSource)` | Okio streaming |
 | `deserialize(reader)` / `deserialize(flatReader)` | Direct use in generated code |
-| `encodeToString<T>(value)` | Flat writer → String |
+| `encodeToString<T>(value)` | String writer → String |
 | `encodeToBytes<T>(value)` | Flat writer → ByteArray |
 | `encodeAndDiscard<T>(value)` | Warm-up without result alloc |
 | `serialize(sink, value)` | Bulk drain to Okio |
@@ -647,7 +647,7 @@ Generated code implements **all four** functions. Defaults on the interface may 
 
 | Method | Main use |
 |:---|:---|
-| `serialize(GhostJsonFlatWriter, T)` | `encodeToString`, Retrofit request |
+| `serialize(GhostJsonFlatWriter, T)` | `encodeToBytes`, Retrofit request |
 | `serialize(GhostJsonWriter, T)` | `serialize(sink)` |
 | `deserialize(GhostJsonFlatReader)` | `Ghost.deserialize(bytes)` |
 | `deserialize(GhostJsonReader)` | streaming + options |
@@ -707,7 +707,8 @@ value T
 | Type | When | Cost |
 | GhostJsonFlatReader | `Ghost.deserialize`, Retrofit, Spring body | Minimum: contiguous array |
 | GhostJsonReader | Okio stream, `coerceBooleans` options | More flexible |
-| GhostJsonFlatWriter | encodeToString/Bytes | Monomorphic hot path |
+| GhostJsonFlatWriter | encodeToBytes / sink | Monomorphic hot path |
+| GhostJsonStringWriter | encodeToString | Contiguous CharArray path |
 | GhostJsonWriter | serialize(sink) | Single Okio drain at end |
 
 ## 10. GhostJsonFlatReader — Fast parser {#cap-10--ghostjsonflatreader-parser-rpido}
@@ -779,7 +780,7 @@ Pools: `ThreadLocal` JVM/Android, `@ThreadLocal` iOS in `Ghost.*.kt`.
 
 - Growing flat buffer
 - `reset()` after each encode — releases capacity above `maxWarmWriteBufferCapacity`
-- JVM: 8 MB warm cap; Android/Native: 4 MB; (Wasm sources not published)
+- JVM: 8 MB warm cap; Android/Native/Wasm: 4 MB
 
 ```kotlin
 // After encode, reset keeps buffer up to cap
@@ -891,13 +892,13 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 ```kotlin
 ghost {
-    version.set("1.2.4")
+    version.set("1.3.0")
     autoInjectKtor.set(true)
     autoInjectRetrofit.set(true)
 }
 ```
 
-Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.2.4.
+Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.0.
 
 ---
 
@@ -907,7 +908,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.2.4.
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-retrofit:1.2.4")
+    implementation("com.ghostserializer:ghost-retrofit:1.3.0")
 }
 
 interface ApiService {
@@ -948,7 +949,7 @@ If you add `GhostConverterFactory` **before** `GsonConverterFactory`, Retrofit t
 ```kotlin
 val client = HttpClient {
     install(ContentNegotiation) {
-        ghost() // Ktor 2.3.x
+        ghost() // Ktor 3.5.x
     }
 }
 ```
@@ -963,10 +964,10 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.2.4"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.2.4")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.0")
 }
 ```
 
@@ -1047,7 +1048,7 @@ Publishable (publish.gradle.kts): ghost-* except sample, benchmark, integration-
 ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
 ```
 
-Coordinates: `com.ghostserializer:*:1.2.4`
+Coordinates: `com.ghostserializer:*:1.3.0`
 
 From Linux: iOS variants may be missing on Central.
 
@@ -1109,7 +1110,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 | ghost-spring-boot-test-app | Jackson vs Ghost WebFlux, benchmark.py |
 | ghost-ios-test-app | XCFramework + GhostBridge + Codable |
 
-All use **1.2.4 Maven Central** (no mavenLocal in final config).
+All use **1.3.0 Maven Central** (no mavenLocal in final config).
 
 ---
 
@@ -1118,7 +1119,7 @@ All use **1.2.4 Maven Central** (no mavenLocal in final config).
 ### Step by step (from scratch)
 
 1. **settings.gradle.kts** — `pluginManagement { gradlePluginPortal() }`
-2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.2.4"`
+2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.0"`
 3. Create `data class` with `@GhostSerialization` in the network package
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
@@ -1215,7 +1216,7 @@ List or map in JSON exceeded platform limit (50k on Android). May be legitimate 
 
 ### Plugin com.ghostserializer.ghost not found
 
-Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.2.4 on Maven Central, and sync again.
+Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.0 on Maven Central, and sync again.
 
 ### iOS: works in debug, fails in release
 
@@ -1257,7 +1258,19 @@ Ghost.getSerializer(MyClass::class)
 
 ---
 
-## 31. Version 1.2.4 — relevant changes {#cap-31--version-1.2.4-cambios-relevantes}
+## 31. Version 1.3.0 — relevant changes {#cap-31--version-1.3.0-cambios-relevantes}
+
+Highlights since 1.2.7 (see `CHANGELOG.md` for the full list):
+
+- **Kotlin 2.4.0 / KSP 2.3.10 / Ktor 3.5.1** toolchain.
+- **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-protobuf`, `ghost-ktor`, and `ghost-sample`.
+- **Decode hot path**: in-order field prediction, SWAR whitespace/string scanning, deferred pool hash — string/bytes/streaming.
+- **`textChannel = true` by default** (native string reader/writer overloads).
+- **RFC 8259** UTF-8/UTF-16/UTF-32 input normalization on byte/streaming entrypoints.
+- Twitter macro decode (this machine): String **1.219 GB/s**, Bytes **1.011 GB/s**, Streaming **0.525 GB/s**.
+
+Earlier 1.2.x notes retained below for historical context:
+
 
 - **Collision Resolution for Overlapping Field Names (Issue #10)**: Fixed perfect hash table collisions for classes containing fields with identical sizes and overlapping prefixes/suffixes (e.g., `modelCode` vs `modelName`, `dateCreated` vs `dateUpdated`). Refactored compiler (`PerfectHashFinder.kt`) and runtime (`JsonReaderOptions.kt`) to utilize a zero-allocation `while` loop with polynomial accumulation (multiplier 31) over all remaining bytes of the field name when a collision is detected. This guarantees correct field dispatch and prevents compile-time KSP failures or runtime parsing/deserialization exceptions.
 
@@ -1265,7 +1278,7 @@ Ghost.getSerializer(MyClass::class)
 
 ## 31.1. Version 1.2.3 — changes {#cap-31-1--version-1.2.3-cambios}
 
-- **KSP2 AST Scan & Compiler Optimizations**: Integrated full KSP2 compatibility (aligned with Kotlin 2.1.10-1.0.31) for faster incremental builds and improved compile-time AST inspection.
+- **KSP2 AST Scan & Compiler Optimizations**: Integrated full KSP2 compatibility (aligned with Kotlin 2.4.0 / KSP 2.3.10) for faster incremental builds and improved compile-time AST inspection.
 - **Perfect Hashing & O(1) Field Lookup**: Optimized key dispatch tables utilizing precomputations of 4-byte hash slots inside `JsonReaderOptions` to minimize collisions during field lookup.
 - **Streaming Key-Match Optimization**: Specialized `verifyKeyMatch` loop inside `GhostJsonReader` to branch on `isStreaming` once at loop start, enabling direct `ByteArray` or `BufferedSource` reads, yielding a 2x throughput boost on binary payloads.
 - **Zero-Allocation Coercion**: Handled string-to-boolean/number coercions natively at byte level, bypassing intermediary string allocations.
@@ -1529,7 +1542,7 @@ Symptom if it did not exist: compile error on generated serializer for massive m
 
 ## 42. Multi-branch constructors (≤4 properties with default (`MAX_DEFAULT_BRANCH_COUNT = 4`)) {#cap-42--multi-branch-constructors-3-defaults}
 
-If a constructor has up to 3 parameters with default, KSP can generate `when (mask)` branches that call the **primary constructor once** with the correct argument combination, avoiding:
+If a constructor has up to 4 parameters with default, KSP can generate `when (mask)` branches that call the **primary constructor once** with the correct argument combination, avoiding:
 
 ```kotlin
 // Anti-pattern Ghost avoids on hot path
@@ -1615,7 +1628,7 @@ All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
 
 ```kotlin
 ghost {
-    version.set("1.2.4") // or omit if plugin brings DEFAULT_VERSION
+    version.set("1.3.0") // or omit if plugin brings DEFAULT_VERSION
 }
 ```
 
@@ -1656,7 +1669,7 @@ Without this: `NOT_FOUND` in release even if debug works.
 .venv-pdf/bin/python scripts/build_ghost_manual_pdf.py
 ```
 
-PDF output: `docs/Ghost-Serialization-Manual-1.2.4.pdf` (A5 format).
+PDF output: `docs/Ghost-Serialization-Manual-1.3.0.pdf` (A5 format).
 
 ---
 
@@ -1835,7 +1848,7 @@ Generated under: `build/generated/ksp/test/kotlin/`
 | Model | Detail |
 |:---|:---|
 | MaliceModel | malicious payloads |
-| LargeStringModel, LargeStringData | huge strings |
+| LargeStringModel | huge strings |
 | StressMetrics | stress metrics |
 | DecimalStress | decimal precision |
 
@@ -2093,7 +2106,7 @@ ls ghost-integration-test/build/generated/ksp/main/kotlin/com/ghost/serializatio
 
 ---
 
-## 51. Maven artifacts table 1.2.4 {#cap-51--tabla-de-artefactos-maven-1-1-17}
+## 51. Maven artifacts table 1.3.0 {#cap-51--tabla-de-artefactos-maven-1-1-17}
 
 ```
 com.ghostserializer:ghost-api
@@ -2109,7 +2122,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.2.4) {#verificacion-factual}
+## Factual verification (aligned with code 1.3.0) {#verificacion-factual}
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2125,7 +2138,7 @@ This manual was cross-checked against the `ghost-serializer` repository on the l
 | 642 tests `./gradlew ciTest` on Linux | 416 + 226 Android `testDebugUnitTest` |
 | ~874 with iOS on macOS | README: 642 + `iosSimulatorArm64Test` (~232) |
 | Spring Boot 3.4.5 in tests | `gradle/libs.versions.toml` `spring-boot = "3.4.5"` |
-| Ktor 2.3.11 | `gradle/libs.versions.toml` `ktor = "2.3.11"` |
+| Ktor 3.5.1 | `gradle/libs.versions.toml` `ktor = "3.5.1"` |
 | iOS without ServiceLoader | `Ghost.ios.kt` → `discoverRegistries() = emptyList()` |
 | JVM registry fast-path | `Ghost.jvm.kt` → `Class.forName` + `ServiceLoader` |
 | List/Map at runtime | `Ghost.kt` → `ListSerializer`, `MapSerializer` |
@@ -2140,7 +2153,7 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 # Appendix: API Reference {#appendix-api}
 
 This section documents the public API of Ghost Serialization, derived from the
-KDoc comments in the source code (version 1.2.4).
+KDoc comments in the source code (version 1.3.0).
 
 ---
 
@@ -2157,7 +2170,7 @@ and serialization/deserialization across all platforms.
 |:---|:---|
 | `serialize(sink, value)` | Encodes `value` and writes the resulting JSON payload into the given Okio `BufferedSink`. Uses `GhostJsonFlatWriter` internally for a single bulk-write with no Okio segment overhead. |
 | `serialize(value)` | Convenience alias for `encodeToString`. |
-| `encodeToString(value)` | Serializes `value` to an in-memory JSON `String`. Writes to a flat contiguous byte buffer and performs a zero-copy string decode at the end. |
+| `encodeToString(value)` | Serializes `value` to an in-memory JSON `String`. Writes through the pooled `GhostJsonStringWriter` (contiguous `CharArray`), avoiding Okio segments and an intermediate UTF-8 byte buffer. |
 | `encodeToBytes(value)` | Serializes `value` to a UTF-8 JSON `ByteArray`. Skips intermediate string encoding/decoding. |
 | `encodeAndDiscard(value)` | Serializes `value` discarding the output. Useful for JIT/ART priming without needing the resulting bytes. |
 | `encodeToSink(sink, value)` | Alias for `serialize(sink, value)`. |

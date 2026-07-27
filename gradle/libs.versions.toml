@@ -1,26 +1,24 @@
 [versions]
 # Core Ecosystem
-kotlin-sdk                      = "2.1.10"
+kotlin-sdk                      = "2.4.0"
 #noinspection AndroidGradlePluginVersion
-agp                             = "8.4.2"
-ksp                             = "2.1.10-1.0.31"
+agp                             = "9.1.1"
+ksp                             = "2.3.10"
 kover                           = "0.9.9"
-compose-plugin                  = "1.8.2"
-publish-version                 = "1.2.7"
+compose-plugin                  = "1.11.1"
+publish-version                 = "1.3.0"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization
-ktor                            = "2.3.11"
+ktor                            = "3.5.1"
 kotlinx-serialization           = "1.8.1"
 okio                            = "3.9.0"
 okhttp                          = "4.12.0"
 mockwebserver                   = "4.12.0"
-retrofit                        = "2.11.0"
+retrofit                        = "2.12.0"
 
-# Serialization Engines (Benchmark)
-gson                            = "2.14.0"
+# Serialization Engines (benchmark + sample)
 moshi                           = "1.15.2"
-jackson                         = "2.18.8"
 
 # Tooling & Generation
 kotlinpoet                      = "2.1.0"
@@ -34,9 +32,9 @@ androidx-metrics                = "1.0.0-alpha04"
 androidx-lifecycle              = "2.8.2"
 
 # Testing
-kotlin-compile-testing          = "0.7.0"
+kotlin-compile-testing          = "0.7.1"
 junit-jupiter                   = "5.10.2"
-kotlinx-coroutines-test         = "1.8.1"
+kotlinx-coroutines-test         = "1.10.2"
 spring-boot                     = "3.4.5"
 reactor                         = "3.7.5"
 protobuf-java                   = "3.25.3"
@@ -68,14 +66,12 @@ ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serializatio
 ktor-server-core                = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
 ktor-server-test-host           = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
 
-# Serialization Engines (Benchmarks)
-gson                            = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+# Serialization Engines
 moshi                           = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
 moshi-kotlin                    = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+moshi-kotlin-codegen            = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
 kotlinx-serialization-json      = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json-okio = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json-okio", version.ref = "kotlinx-serialization" }
-jackson-databind                = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
-jackson-module-kotlin           = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 
 # UI Components
 androidx-activity-compose               = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
@@ -107,7 +103,7 @@ protobuf-java-util              = { group = "com.google.protobuf", name = "proto
 jazzer-junit                    = { group = "com.code-intelligence", name = "jazzer-junit", version.ref = "jazzer" }
 
 [bundles]
-serialization-engines           = ["gson", "moshi", "moshi-kotlin", "kotlinx-serialization-json", "jackson-databind", "jackson-module-kotlin"]
+serialization-engines           = ["moshi", "moshi-kotlin", "kotlinx-serialization-json"]
 
 [plugins]
 kotlin-multiplatform            = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin-sdk" }
@@ -117,6 +113,7 @@ kotlin-serialization            = { id = "org.jetbrains.kotlin.plugin.serializat
 kotlin-compose                  = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin-sdk" }
 android-application             = { id = "com.android.application", version.ref = "agp" }
 android-library                 = { id = "com.android.library", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kover                           = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

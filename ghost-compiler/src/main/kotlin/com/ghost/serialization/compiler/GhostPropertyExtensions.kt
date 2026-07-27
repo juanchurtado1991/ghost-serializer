@@ -67,7 +67,7 @@ internal fun GhostPropertyModel.getInitialValue(): String {
 internal fun GhostPropertyModel.getReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)
+    val varName = localValueName()
 
     return when {
         isPrimitive -> varName
@@ -106,7 +106,7 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
 
     val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
-    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)
+    val varName = localValueName()
     val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)
 
     return when {
@@ -140,13 +140,78 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
 }
 
 /**
+ * True when this list of default properties is non-empty and every entry has a whitelisted
+ * [GhostPropertyModel.defaultExpression]. Used to choose the single-ctor path over `.copy()`.
+ */
+internal fun List<GhostPropertyModel>.allDefaultsHaveExpressions(): Boolean =
+    isNotEmpty() && all { it.defaultExpression != null }
+
+/**
+ * True when the whitelisted ctor default equals the local placeholder init
+ * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed`.
+ *
+ * Safe because absent fields leave the local at its init value, which is already the
+ * Kotlin default (`null` / `false` / `0` / `0L` / …).
+ */
+internal fun GhostPropertyModel.defaultMatchesLocalInit(): Boolean {
+    val expr = defaultExpression ?: return false
+    return expr == getInitialValue()
+}
+
+/**
+ * Single-ctor arg for a default property: parsed value when the mask bit is set, otherwise the
+ * whitelisted source default expression.
+ *
+ * When [defaultMatchesLocalInit] is true, emits only the parsed local — the mask ternary is
+ * redundant because an absent field already left the local at the Kotlin default.
+ */
+internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
+    maskIdx: Int,
+    bitMaskStr: String
+): String {
+    if (defaultMatchesLocalInit()) {
+        return getReturnExpression()
+    }
+    val expression = defaultExpression
+        ?: error(C.STR_ERR_SINGLE_SHOT_DEFAULT_1 + kotlinName)
+    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)
+    return C.TEMPLATE_IF_MASK_RETURN.format(
+        maskName,
+        bitMaskStr,
+        getReturnExpression(),
+        expression
+    )
+}
+
+/**
+ * Fragmented (ctx.*) variant of [getSingleShotDefaultArgExpression].
+ */
+internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
+    maskIdx: Int,
+    bitMaskStr: String
+): String {
+    if (defaultMatchesLocalInit()) {
+        return getFragmentedReturnExpression()
+    }
+    val expression = defaultExpression
+        ?: error(C.STR_ERR_SINGLE_SHOT_DEFAULT_1 + kotlinName)
+    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
+    return C.TEMPLATE_IF_MASK_RETURN.format(
+        maskName,
+        bitMaskStr,
+        getFragmentedReturnExpression(),
+        expression
+    )
+}
+
+/**
  * Generates the return expression string pointing to the generated `DecodingContext`
  * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
  */
 internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
-    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)
+    val ctxVar = C.TEMPLATE_CTX_VAR.format(localTrackingName())
 
     return when {
         isPrimitive -> ctxVar
@@ -187,7 +252,7 @@ internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
     val isUnboxedValueClass = isValueClass && valueClassProperty != null && !isNullable
 
     val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)
-    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)
+    val ctxVar = C.TEMPLATE_CTX_VAR.format(localTrackingName())
     val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)
 
     return when {

@@ -89,8 +89,11 @@ Typed structure you own?
 Third-party or JDK type (UUID, Instant)?
   → @GhostEncoder / @GhostDecoder or GhostRegistry
 
-Need Set or non-String map keys?
+Need non-String map keys?
   → Not supported — reshape the model or custom serializer
+
+Need `Set<T>`?
+  → Supported (`Set` wire format is a JSON array). Prefer `Set` over `MutableSet` as the declared field type.
 
 Migrating from Gson JsonElement?
   → RawJson — see §7 in advanced-features.md

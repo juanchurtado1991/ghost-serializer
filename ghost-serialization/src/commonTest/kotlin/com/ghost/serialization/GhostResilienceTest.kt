@@ -1,17 +1,20 @@
 @file:OptIn(InternalGhostApi::class)
 
 package com.ghost.serialization
-import com.ghost.serialization.parser.*
-import kotlin.test.assertTrue
-import com.ghost.serialization.parser.JsonReaderOptions
 
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.nextInt
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.JsonReaderOptions
+import com.ghost.serialization.parser.beginObject
+import com.ghost.serialization.parser.consumeKeySeparator
+import com.ghost.serialization.parser.hasNext
+import com.ghost.serialization.parser.nextInt
+import com.ghost.serialization.parser.nextString
+import com.ghost.serialization.parser.selectString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class GhostResilienceTest {
 

@@ -12,6 +12,7 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
+import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
 
 /**
@@ -20,7 +21,7 @@ import kotlin.reflect.KClass
  * Differs from [GhostContentConverter] only on the read path: request/response bodies are
  * parsed through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare
  * int64/uint64, lenient int32 (rejects fractional values), and quoted `"NaN"`/`"Infinity"`
- * literals per proto3 JSON rules. `serializeNullable` reuses [Ghost.encodeToBytes] since wire
+ * literals per proto3 JSON rules. `serialize` reuses [Ghost.encodeToBytes] since wire
  * correctness on write is already generated into the `@GhostProtoSerialization` serializer's
  * own `serialize()` method.
  *
@@ -34,7 +35,7 @@ class GhostProtoContentConverter(
 ) : ContentConverter {
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun serializeNullable(
+    override suspend fun serialize(
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,

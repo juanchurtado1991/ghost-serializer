@@ -10,10 +10,15 @@ import com.ghost.serialization.compiler.GhostEmitterConstants as C
  * string reader/writer overloads.
  *
  * Priority:
- * 1. `ghost.textChannel=true` KSP option → every model in the module.
- * 2. Otherwise `@GhostSerialization(textChannel = true)` on a model, plus transitive
- *    `@GhostSerialization` types reachable from its property graph (lists, maps, sealed
- *    subclasses, inferred variants).
+ * 1. `ghost.textChannel=true`/`false` KSP option → forces every model in the module,
+ *    overriding any per-class value.
+ * 2. Otherwise, each `@GhostSerialization` model's own `textChannel` value (defaults to
+ *    `true` on the annotation itself), **plus transitive propagation to any dependency**
+ *    reachable from an enabled model's property graph (lists, maps, sealed subclasses,
+ *    inferred variants) — a model referenced by an enabled model must also generate the
+ *    string-reader overload, since the enabled model's generated code calls it directly;
+ *    an explicit `textChannel = false` on a class only "sticks" when nothing reachable
+ *    from an enabled model needs it.
  */
 internal object TextChannelPlanner {
 
@@ -24,20 +29,20 @@ internal object TextChannelPlanner {
 
     fun plan(
         analyzed: List<AnalyzedClass>,
-        moduleTextChannelEnabled: Boolean,
+        moduleTextChannelOverride: Boolean?,
     ): Map<KSClassDeclaration, Boolean> {
         if (analyzed.isEmpty()) {
             return emptyMap()
         }
 
         val byDeclaration = analyzed.associate { it.declaration to it.properties }
-        if (moduleTextChannelEnabled) {
-            return byDeclaration.keys.associateWith { true }
+        if (moduleTextChannelOverride != null) {
+            return byDeclaration.keys.associateWith { moduleTextChannelOverride }
         }
 
         val enabled = mutableSetOf<KSClassDeclaration>()
         analyzed.forEach { entry ->
-            if (entry.declaration.declaresTextChannel()) {
+            if (entry.declaration.effectiveOwnTextChannelValue()) {
                 enabled.add(entry.declaration)
             }
         }
@@ -56,13 +61,22 @@ internal object TextChannelPlanner {
         return byDeclaration.keys.associateWith { it in enabled }
     }
 
-    private fun KSClassDeclaration.declaresTextChannel(): Boolean {
+    /**
+     * A class's own stated preference, ignoring transitive requirements from callers.
+     * Only `@GhostSerialization`-annotated classes have an opinion here (defaults to `true`,
+     * matching the annotation's default) — classes annotated with something else (e.g.
+     * `@GhostProtoSerialization`, which has no `textChannel` concept) return `false`, same as
+     * before this default flipped; they still get pulled in via transitive propagation if an
+     * enabled model depends on them.
+     */
+    private fun KSClassDeclaration.effectiveOwnTextChannelValue(): Boolean {
         val annotation = annotations.firstOrNull {
             it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION
         } ?: return false
-        return annotation.arguments.any { arg ->
-            arg.name?.asString() == C.ARG_TEXT_CHANNEL && arg.value == true
-        }
+        val explicit = annotation.arguments
+            .firstOrNull { arg -> arg.name?.asString() == C.ARG_TEXT_CHANNEL }
+            ?.value as? Boolean
+        return explicit ?: true
     }
 
     private fun ghostDependencies(

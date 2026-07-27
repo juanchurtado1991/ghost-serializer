@@ -24,6 +24,7 @@ fun GhostJsonReader.beginObject() {
     if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
         throwError(C.ERR_EXPECTED_BEGIN_OBJ)
     }
+    predictedFieldIndex = C.FIELD_PREDICTION_START
     depth++
     if (depth > maxDepth) {
         throwError(C.ERR_DEPTH_EXCEEDED)
@@ -372,7 +373,58 @@ fun GhostJsonReader.isNextNullValue(): Boolean =
  * @throws GhostJsonException if the token sequence does not match `null`.
  */
 fun GhostJsonReader.consumeNull() {
-    skipAndValidateLiteral(C.NULL_BS)
+    if (isStreaming) {
+        skipAndValidateLiteral(C.NULL_BS)
+        return
+    }
+    val p = position
+    val data = rawData
+    if (p + 4 > limit ||
+        (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
+        (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
+        (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
+        (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
+    ) {
+        throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
+    }
+    position = p + 4
+    nextTokenByte = -1
+}
+
+/** Reads a JSON string, or `null` when the next token is the `null` literal. */
+fun GhostJsonReader.nextStringOrNull(): String? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextString()
+}
+
+/** Reads a JSON int, or `null` when the next token is the `null` literal. */
+fun GhostJsonReader.nextIntOrNull(): Int? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextInt()
+}
+
+/** Reads a JSON long, or `null` when the next token is the `null` literal. */
+fun GhostJsonReader.nextLongOrNull(): Long? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextLong()
+}
+
+/** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
+fun GhostJsonReader.nextBooleanOrNull(): Boolean? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextBoolean()
 }
 
 /**
@@ -452,11 +504,73 @@ private fun GhostJsonReader.internalSelect(
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
+    val lim = limit
+
+    // Optimistic in-order field match: most objects list fields in declaration order,
+    // so compare the key directly against the predicted candidate in a single pass.
+    val predicted = predictedFieldIndex
+    val rawBytes = options.rawBytes
+    if (predicted < rawBytes.size) {
+        val candidate = rawBytes[predicted]
+        val candLen = candidate.size
+        val keyEnd = start + candLen
+        if (candLen > 0 && keyEnd < lim) {
+            val matched = if (!isStreaming) {
+                val localData = rawData
+                if ((localData[keyEnd].toInt() and C.BYTE_MASK) != C.QUOTE_INT) {
+                    false
+                } else {
+                    var i = 0
+                    while (i + C.LONG_BYTES <= candLen &&
+                        ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
+                    ) {
+                        i += C.LONG_BYTES
+                    }
+                    while (i < candLen && localData[start + i] == candidate[i]) {
+                        i++
+                    }
+                    i == candLen
+                }
+            } else {
+                // The stream's limit is unknown (Int.MAX_VALUE), so the bounds check above
+                // cannot rule out a candidate longer than the remaining document.
+                if (source.byteOrEof(keyEnd) != C.QUOTE_INT) {
+                    false
+                } else {
+                    var i = 0
+                    while (i < candLen && getByte(start + i) == (candidate[i].toInt() and C.BYTE_MASK)) {
+                        i++
+                    }
+                    i == candLen
+                }
+            }
+            if (matched) {
+                predictedFieldIndex = predicted + 1
+                val newPos = keyEnd + 1
+                position = newPos
+                nextTokenByte = -1
+                if (consumeSeparator) {
+                    val separator = when {
+                        newPos >= lim -> C.MATCH_END
+                        isStreaming -> source.byteOrEof(newPos)
+                        else -> getByte(newPos)
+                    }
+                    if (separator == C.COLON_INT) {
+                        position = newPos + 1
+                    } else {
+                        consumeKeySeparator()
+                    }
+                }
+                return predicted
+            }
+        }
+    }
+
     val end = if (isStreaming) {
-        source.findClosingQuote(start, limit)
+        source.findClosingQuote(start, lim)
     } else {
         val localData = rawData
-        findClosingQuoteImpl(start, limit) {
+        findClosingQuoteImpl(start, lim) {
             localData[it].toInt() and C.BYTE_MASK
         }
     }
@@ -473,6 +587,7 @@ private fun GhostJsonReader.internalSelect(
 
     if (index != C.MATCH_END) {
         if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {
+            predictedFieldIndex = index + 1
             return index
         }
     }
@@ -861,6 +976,8 @@ inline fun <T> GhostJsonReader.decodeResilient(
     val savedDepth = depth
     val savedNeedsCommaMask = needsCommaMask
     val savedCommaConsumedMask = commaConsumedMask
+    val streaming = source as? StreamingGhostSource
+    streaming?.pin(savedPos)
     try {
         return block()
     } catch (_: GhostJsonException) {
@@ -871,5 +988,7 @@ inline fun <T> GhostJsonReader.decodeResilient(
         commaConsumedMask = savedCommaConsumedMask
         skipValue()
         return null
+    } finally {
+        streaming?.unpin()
     }
 }

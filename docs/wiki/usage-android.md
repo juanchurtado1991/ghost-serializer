@@ -2,7 +2,9 @@
 
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](usage-android.md)
 
-This guide covers integrating Ghost Serializer in an Android project (app module or library module).
+This guide covers integrating Ghost Serializer in an Android app or library as an incremental optimization. Existing Gson, Moshi, or KotlinX Serialization models can remain unchanged while selected `@GhostSerialization` DTOs use generated Ghost code.
+
+New project? Start with the [Ghost Serializer Quick Start](quick-start.md).
 
 ---
 
@@ -14,13 +16,13 @@ The Ghost Gradle plugin automatically adds runtime dependencies and wires the KS
 // build.gradle.kts (app module)
 plugins {
     id("com.android.application")
-    id("com.google.devtools.ksp") version "2.1.10-1.0.31"
-    id("com.ghostserializer.ghost") version "1.2.2"
+    id("com.google.devtools.ksp") version "2.3.10"
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 
-// Optional: enable native String parsing (faster for Room/SharedPreferences inputs)
+// Optional for byte-only apps: omit native String reader/writer generation.
 ksp {
-    arg("ghost.textChannel", "true")
+    arg("ghost.textChannel", "false")
 }
 ```
 
@@ -107,7 +109,10 @@ dependencies {
 ```kotlin
 val retrofit = Retrofit.Builder()
     .baseUrl("https://api.example.com/")
+    // Ghost handles registered @GhostSerialization DTOs.
     .addConverterFactory(GhostConverterFactory.create())
+    // Your existing converter remains the fallback for every other type.
+    .addConverterFactory(GsonConverterFactory.create())
     .build()
 
 val api = retrofit.create(UserApi::class.java)

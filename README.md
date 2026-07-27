@@ -1,250 +1,118 @@
 # 👻 Ghost Serializer
 
-**Speed up your high-traffic paths by 66% using 50% less memory — without touching your legacy APIs.**
+**Parse and hydrate Kotlin models at up to 1.2 GB/s — drop in beside the serializer you already use.**
 
-Ghost is a byte-first, compile-time JSON serializer designed for Kotlin Multiplatform (Android, iOS, and JVM) that acts as a **drop-in optimization**. It coexists seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson), allowing you to adopt it incrementally in native mobile apps and high-traffic backends (Ktor, Retrofit, Spring Boot).
+Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate only the hot DTOs, leave everything else alone, and migrate when you want.
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
-[![KSP](https://img.shields.io/badge/KSP-2.1.10--1.0.31-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
-[![Tests](https://img.shields.io/badge/tests-1158%20%2F%201158%20passed-brightgreen.png?style=flat)](#)
-[![Version](https://img.shields.io/badge/version-1.2.7-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![KSP](https://img.shields.io/badge/KSP-2.3.10-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
+[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
+[![Wasm](https://img.shields.io/badge/Wasm-654FF0.png?style=flat&logo=webassembly&logoColor=white)](docs/wiki/modules.md)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
 
-👉 **[Try the Interactive Demo →](https://juanchurtado1991.github.io/ghost-serializer/)**
-&nbsp;&nbsp;|&nbsp;&nbsp;
-📦 **[Maven Central →](https://central.sonatype.com/search?q=g:com.ghostserializer)** · `1.2.7`
-&nbsp;&nbsp;|&nbsp;&nbsp;
-📊 **[Coverage Report →](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
+**[Quick Start](docs/wiki/quick-start.md)** ·
+**[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
+**[Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/)** ·
+**[Benchmarks](docs/wiki/benchmarks.md)** ·
+**[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
 
 ---
 
-## What makes Ghost different
+## Why teams reach for Ghost
 
-Ghost generates all serialization code at **compile time** via KSP — and then goes several steps further:
+You already have a JSON stack. Ghost is the **optimization layer** for the endpoints and models that show up in profiles:
 
-| Technique | What it means |
-|:---|:---|
-| **Bitwise O(1) trie field matching** | No string comparison, no heap allocation per field |
-| **`Long` bitmask for required fields** | Checking all required fields = one CPU instruction |
-| **Dedicated reader per input format** | `ByteArray`, Okio stream, `String` — no cross-format conversion |
-| **Thread-local reader/writer pools** | Zero GC pressure in steady state |
-| **KSP2 + Kotlin 2.1.10** | Fastest incremental builds, strict compile-time safety |
-
----
-
-**Result on [HTTP Arena](https://www.http-arena.com/#sort=rps:-1&q=kotlin) Kotlin frameworks** (3-framework comparison, composite score). Ghost replaces Ktor's default JSON codec with compile-time serializers and zero-copy parsing — higher throughput on real API workloads with lower memory pressure.
-
-| Framework | Composite | vs plain Ktor | Highlights |
-|:---|:---:|:---:|:---|
-| **ktor-ghost** | **831** | **+14%** composite | JSON TLS **+67%** RPS · Static **+55%** · API-16 **+9%** · Pipelined **+3%** |
-| ktor | 728 | baseline | Default `ContentNegotiation` + kotlinx.serialization |
-| fishcake | 1134 | +56% composite | Different stack (not Ktor); shown for arena context |
-
-| Workload | ktor-ghost RPS | ktor RPS | Δ |
-|:---|:---:|:---:|:---:|
-| JSON TLS | 658k | 395k | **+67%** |
-| Static | 608k | 392k | **+55%** |
-| Short-lived | 622k | 602k | **+3%** |
-| API-16 | 188k | 173k | **+9%** |
-| API-4 | 114k | 104k | **+10%** |
-| Pipelined | 3.48M | 3.15M | **+10%** |
-
-*Source: [http-arena.com](https://www.http-arena.com/#sort=rps:-1&q=kotlin) — Kotlin filter, `ktor-ghost` vs `ktor` vs `fishcake`. Wire Ghost via `install(ContentNegotiation) { ghost() }` and `bodyGhost<T>()` / `respondGhost()` to bypass generic negotiation on hot paths.*
-
----
-
-## Demo
-
-▶️ **[Watch the Demo Video (docs/ghost.mp4) →](https://github.com/juanchurtado1991/ghost-serializer/raw/main/docs/ghost.mp4)**
-
-> Real benchmark on Android vs KotlinX Serialization — running in the `ghost-sample` Compose Multiplatform app.
-
----
-
-## Full Benchmark Results
-
-* 📊 **[HTTP Arena Benchmarks →](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** — `ktor-ghost` composite **831** vs plain **ktor** **728** (+14%); see table above for per-workload RPS.
-* 📈 **[benchmarks.md](docs/wiki/benchmarks.md)** — Full multi-engine tables (Ghost, KSER, Gson, Jackson), stress tests, special-feature benchmarks, run instructions.
-
----
-
-## 📦 Quick Start
-
-```toml
-# gradle/libs.versions.toml
-[versions]
-ghost = "1.2.7"
-ksp   = "2.1.10-1.0.31"
-
-[libraries]
-ghost-api           = { module = "com.ghostserializer:ghost-api", version.ref = "ghost" }
-ghost-serialization = { module = "com.ghostserializer:ghost-serialization", version.ref = "ghost" }
-ghost-compiler      = { module = "com.ghostserializer:ghost-compiler", version.ref = "ghost" }
-```
-
-```kotlin
-// build.gradle.kts
-plugins {
-    id("com.google.devtools.ksp") version "2.1.10-1.0.31"
-    id("com.ghostserializer.ghost") version "1.2.7"
-}
-```
+- **Byte-first networking** — parse `ByteArray` and Okio streams without String round-trips
+- **Low allocation** — pooled readers/writers and precomputed field dispatch
+- **Incremental adoption** — Ghost and your current serializer coexist in the same app
+- **Kotlin Multiplatform** — Android, iOS, JVM, plus Wasm in this repo
+- **Ready adapters** — Ktor, Retrofit, Spring MVC / WebFlux
 
 ```kotlin
 @GhostSerialization
 data class User(val id: Long, val name: String, val email: String)
 
-val user: User = Ghost.deserialize(responseBytes)  // ByteArray — fastest path
+val user: User = Ghost.deserialize(responseBytes)   // hot path
 val json: String = Ghost.encodeToString(user)
 ```
 
----
-
-## 🤝 Zero-Risk: Full Coexistence with your current Serializer
-
-You don't need to rewrite your entire project. Ghost can coexist seamlessly with your existing setup (like `kotlinx.serialization`, Jackson, or Gson). 
-
-If a class does not have the `@GhostSerialization` annotation, request/response negotiation automatically falls back to your standard serializer. This means you can adopt Ghost incrementally, using it only on your highest-traffic endpoints!
-
-### Ktor Setup:
-```kotlin
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
-import com.ghost.serialization.ktor.ghost
-import kotlinx.serialization.json.Json
-
-fun Application.module() {
-    install(ContentNegotiation) {
-        // 1. Kotlinx.serialization (or Jackson/Gson) handles the standard endpoints
-        json(Json { ignoreUnknownKeys = true })
-        // 2. Ghost handles high-performance @GhostSerialization endpoints as fallback
-        ghost() 
-    }
-}
-```
-
-### Retrofit Setup:
-```kotlin
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import com.ghost.serialization.retrofit.GhostConverterFactory
-
-val retrofit = Retrofit.Builder()
-    .baseUrl("https://api.example.com")
-    // 1. GhostConverterFactory handles @GhostSerialization endpoints
-    .addConverterFactory(GhostConverterFactory.create()) 
-    // 2. GsonConverterFactory (or Moshi / Kotlinx.serialization) handles the rest as fallback
-    .addConverterFactory(GsonConverterFactory.create())
-    .build()
-```
-
-### Spring Boot Setup:
-With the `ghost-spring-boot-starter` dependency added, coexistence is **fully automatic**. The starter automatically registers `GhostHttpMessageConverter` (for Spring MVC) and `GhostReactiveEncoder`/`GhostReactiveDecoder` (for Spring WebFlux) at the beginning of the message converter/codec chain:
-
-- Request and response bodies using classes annotated with `@GhostSerialization` are processed by **Ghost** for maximum performance.
-- Any other types automatically fall through and are processed by your standard serializer (like **Jackson**).
-
-No manual configuration is required!
+Your other models keep using KotlinX, Jackson, Gson, or Moshi — unchanged.
 
 ---
 
-## 📦 Modules at a Glance
+## Decode at a glance
 
-| Module | Artifact | For |
-|:---|:---|:---|
-| **Core** | `ghost-api` + `ghost-serialization` | Every project — annotations + runtime engine |
-| **Compiler** | `ghost-compiler` | KSP code generator (auto-wired by the Gradle plugin) |
-| **Gradle plugin** | `com.ghostserializer.ghost` | Auto-configures KSP across all targets |
-| **Ktor** | `ghost-ktor` | Ktor 2.3.x client + server |
-| **Retrofit** | `ghost-retrofit` | Retrofit 2.11+ Android/JVM |
-| **Spring Boot** | `ghost-spring-boot-starter` | Spring Boot 3.4+ auto-config |
-| **Proto3** | `ghost-protobuf` | Proto3 JSON mapping + Well-Known Types |
+Twitter macro fixture (**631 KB**). Three views of the same decode run — throughput ↑, latency ↓, memory ↓:
 
-→ **[Full modules guide →](docs/wiki/modules.md)**
+![Twitter macro decode: Ghost vs KSER vs Moshi — throughput GB/s, latency µs/op, memory KB/op for string, bytes, and streaming](readme-assets/twitter-throughput.png)
 
----
+| | Ghost | KSER | Moshi | Ghost vs slowest |
+|:---|---:|---:|---:|:---|
+| Decode string | **1.2 GB/s** · 518 µs · 361 KB | 0.713 GB/s · 886 µs · 1338 KB | 0.324 GB/s · 1951 µs · 1709 KB | **~3.8× faster** · **79% less memory** |
+| Decode bytes | **0.939 GB/s** · 672 µs · 621 KB | 0.392 GB/s · 1612 µs · 4297 KB | 0.250 GB/s · 2523 µs · 4668 KB | **~3.8× faster** · **87% less memory** |
+| Decode streaming | **0.488 GB/s** · 1294 µs · 1269 KB | 0.178 GB/s · 3539 µs · 1905 KB | 0.383 GB/s · 1647 µs · 1709 KB | **~2.7× faster** · **33% less memory** |
 
-## 📚 Documentation
+Full tables + how to run them → **[Benchmarks](docs/wiki/benchmarks.md)** · also [`ktor-ghost`](https://www.http-arena.com/#sort=rps:-1&q=kotlin) on HTTP Arena (+14% vs plain Ktor).
 
-| Guide                                                 | Platform / Category | Description |
-|:------------------------------------------------------|:---:|:---|
-| [Modules & Integrations](docs/wiki/modules.md)        | ![Modules](https://img.shields.io/badge/Modules-blueviolet.png?style=flat-square&logo=kotlin&logoColor=white) | All artifacts, framework integrations, and platform targets |
-| [Installation](docs/wiki/installation.md)             | ![Setup](https://img.shields.io/badge/Setup-orange.png?style=flat-square&logo=gradle&logoColor=white) | Version catalog, KSP setup, `ghost.textChannel` opt-in |
-| [Usage — Android](docs/wiki/usage-android.md)         | ![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat-square&logo=android&logoColor=white) | Gradle plugin, Retrofit, Resilience, Custom Decoders |
-| [Usage — KMP](docs/wiki/usage-kmp.md)                 | ![Kotlin](https://img.shields.io/badge/KMP-7F52FF.png?style=flat-square&logo=kotlin&logoColor=white) | Shared module, Ktor, Sealed classes, Structural Transformations |
-| [Usage — iOS / Swift](docs/wiki/usage-ios.md)         | ![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat-square&logo=apple&logoColor=white) | XCFramework export, Bridge setup, Alamofire integration |
-| [Usage — Spring Boot](docs/wiki/usage-spring-boot.md) | ![Spring](https://img.shields.io/badge/Spring-6DB33F.png?style=flat-square&logo=spring&logoColor=white) | Auto-config, MVC + WebFlux, `@GhostStrict`, `@GhostCoerce` |
-| [Usage — Protobuf](docs/wiki/usage-protobuf.md)       | ![Core](https://img.shields.io/badge/Core-gray.png?style=flat-square&logo=googleprotobuf&logoColor=white) | `@GhostProtoSerialization`, proto3 JSON mapping, Well-Known Types, known limitations |
-| [Advanced Features](docs/wiki/advanced-features.md)   | ![Core](https://img.shields.io/badge/Core-gray.png?style=flat-square&logo=cpu-z&logoColor=white) | Byte-first, `@GhostFlatten`, `@GhostWrap`, Contextual Serializers, Platform limits |
-| [Type System](docs/wiki/type-system.md)               | ![Types](https://img.shields.io/badge/Types-blue.png?style=flat-square&logo=typescript&logoColor=white) | Supported field types, opaque JSON, collections, unsupported patterns |
-| [Architecture](docs/wiki/architecture.md)             | ![Design](https://img.shields.io/badge/Design-blueviolet.png?style=flat-square&logo=diagrams.net&logoColor=white) | Compiler pipeline, buffer pool mechanics, O(1) bitwise field matching |
-| [Benchmarks](docs/wiki/benchmarks.md)                 | ![Speed](https://img.shields.io/badge/Speed-red.png?style=flat-square&logo=speedtest&logoColor=white) | Full results, run instructions, JIT log analysis |
-| [Contributing](docs/wiki/contributing.md)           | ![Community](https://img.shields.io/badge/Community-blue.png?style=flat-square&logo=git&logoColor=white) | Dev environment, test modules, PR checklist, supported platforms |
+> Machine- and workload-dependent. Measure your own models before migrating a path.
+
 
 ---
 
-## Related Projects
+## Coexist, don't rewrite
 
-| Project | Description |
+| Stack | How Ghost fits |
 |:---|:---|
-| **ghost-sample** *(this repo)* | KMP Compose benchmark app — Android, Desktop JVM, iOS |
-| [ghost-android-test-app](https://github.com/juanchurtado1991/ghost-android-test-app) | Standalone Android app — on-device benchmark |
-| [ghost-ios-test-app](https://github.com/juanchurtado1991/ghost-ios-test-app) | Standalone iOS app — Xcode + XCFramework |
-| [ghost-spring-boot-test-app](https://github.com/juanchurtado1991/ghost-spring-boot-test-app) | Spring Boot WebFlux dashboard + `benchmark.py` |
+| **Ktor** | `ghost()` beside `json()` — Ghost DTOs first, KotlinX for the rest |
+| **Retrofit** | `GhostConverterFactory` before Gson / Moshi / KotlinX |
+| **Spring Boot** | starter routes `@GhostSerialization` DTOs; Jackson keeps everything else |
+| **Direct calls** | only the call sites you profile |
+
+Step-by-step → **[Quick Start](docs/wiki/quick-start.md)**
 
 ---
 
-## 🏗️ Architecture
+## Platforms
 
-Ghost uses three reader types and two writer types, all generated by KSP:
+| | Targets |
+|:---|:---|
+| **Published (Maven Central 1.3.0)** | Android · iOS · JVM · Wasm (`wasmJs`) |
+| **Toolchain** | Kotlin **2.4.0** · KSP **2.3.10** · Ktor **3.5.x** |
 
-```
-Ghost.deserialize<User>(bytes: ByteArray)
-  └─ GhostJsonFlatReader          ← zero alloc, bitwise trie field match
-Ghost.deserialize<User>(json: String)
-  └─ GhostJsonStringReader        ← native char[] scan, no encodeToByteArray
-Ghost.deserializeStreaming<User>(source: BufferedSource)
-  └─ GhostJsonReader              ← O(1) memory regardless of payload size
+Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), Proto3 JSON mapping.
 
-Ghost.encodeToBytes(user)         → GhostJsonFlatWriter (pre-encoded headers, thread-local pool)
-Ghost.encodeToString(user)        → FlatCharArrayWriter (pooled, platform-tuned warm capacity)
-```
-
-All paths are fully monomorphic — the JIT compiles them to near-native throughput after warmup.
-
-For a deep dive into the compiler plugin, thread-local buffer pool mechanics, and fast parsing architecture, see the **[Architecture Guide →](docs/wiki/architecture.md)**.
+Details → **[Modules](docs/wiki/modules.md)**
 
 ---
 
-## 🤝 Contributing
+## Docs
+
+| Guide | What you'll find |
+|:---|:---|
+| [Quick Start](docs/wiki/quick-start.md) | First DTO in minutes |
+| [Installation](docs/wiki/installation.md) | Catalog, KSP, opt-outs |
+| [Android & Retrofit](docs/wiki/usage-android.md) | Apps, OkHttp, converters |
+| [KMP & Ktor](docs/wiki/usage-kmp.md) | Shared module + client/server |
+| [iOS & Swift](docs/wiki/usage-ios.md) | XCFramework bridge |
+| [Spring Boot](docs/wiki/usage-spring-boot.md) | MVC / WebFlux + Jackson |
+| [Proto3 JSON](docs/wiki/usage-protobuf.md) | WKTs and mapping rules |
+| [Advanced Features](docs/wiki/advanced-features.md) | Resilience, flatten, RawJson |
+| [Architecture](docs/wiki/architecture.md) | Prediction, SWAR, hashed dispatch, pools |
+| [Contributing](docs/wiki/contributing.md) | Tests and PR checklist |
+
+---
+
+## Contributing
 
 ```bash
 git clone https://github.com/juanchurtado1991/ghost-serializer.git
-./gradlew ciTestJvm          # JVM modules (Linux / macOS / Windows)
-./gradlew ciTest             # + Android unit tests; + iOS on macOS
+cd ghost-serializer
+./gradlew ciTestJvm
 ```
 
-| Requirement | Version |
-|:---|:---|
-| JDK | **17** |
-| Kotlin / KSP | **2.1.10** / **2.1.10-1.0.31** |
-| Android SDK | API 36 (for unit tests) |
+## License
 
-→ **[Full contributing guide →](docs/wiki/contributing.md)** — dev environment, adding test modules, benchmarks, PR checklist.
-
-See [CHANGELOG.md](./CHANGELOG.md) for version history.
-
-
----
-
-## 📄 License
-
-[Apache 2.0](./LICENSE)
-
----
-
-*Developed with ❤️ by the Ghost Serializer team.* 👻
+[Apache 2.0](LICENSE)

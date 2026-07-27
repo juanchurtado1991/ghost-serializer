@@ -7,7 +7,7 @@ import kotlin.math.pow
  * Central repository for all constants used by the Ghost JSON parser and writer.
  * Constants are organized by their role in the serialization lifecycle.
  */
-public object GhostJsonConstants {
+object GhostJsonConstants {
 
     // --- Error Messages ---
     const val UNTERMINATED_STRING_ERROR = "Unterminated string"
@@ -49,9 +49,11 @@ public object GhostJsonConstants {
     const val ERR_HIGH_SURROGATE = "Lone high surrogate"
     const val EXPONENT_CLAMP_THRESHOLD = 1000
     const val ERR_EXPECTED_LITERAL = "Expected literal "
+    const val LITERAL_NULL = "null"
+    const val LITERAL_TRUE = "true"
+    const val LITERAL_FALSE = "false"
+    const val ERR_INVALID_UNICODE_AT = "Invalid unicode escape at "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
-    const val ERR_TEXT_CHANNEL_DISABLED = "String deserialization is disabled. Please configure arg(\"ghost.textChannel\", \"true\") in your KSP options to use the String parser."
-
     // --- Digit & Limit Constants ---
     const val MIN_SINGLE_DIGIT = 0
     const val MAX_SINGLE_DIGIT = 9
@@ -63,15 +65,6 @@ public object GhostJsonConstants {
     const val MAX_SINGLE_DIGIT_NEG_L = -1L
     const val MIN_INT_STR = "-2147483648"
     const val MIN_LONG_STR = "-9223372036854775808"
-
-    // --- Escape String Constants ---
-    const val ESCAPE_QUOTE = "\\\""
-    const val ESCAPE_BACKSLASH = "\\\\"
-    const val ESCAPE_BACKSPACE = "\\b"
-    const val ESCAPE_FORM_FEED = "\\f"
-    const val ESCAPE_NEWLINE = "\\n"
-    const val ESCAPE_CARRIAGE_RETURN = "\\r"
-    const val ESCAPE_TAB = "\\t"
 
     // --- Character Constants ---
     const val CHAR_QUOTE = '"'
@@ -87,7 +80,6 @@ public object GhostJsonConstants {
     const val CHAR_DOT = '.'
     const val CHAR_ZERO = '0'
     const val CHAR_BACKSLASH = '\\'
-    const val CHAR_B = 'b'
     const val CHAR_HYPHEN = '-'
     const val CHAR_PLUS = '+'
     const val CHAR_COLON = ':'
@@ -207,13 +199,8 @@ public object GhostJsonConstants {
     const val EXP_UPPER_INT = 'E'.code
 
     // --- ASCII Token Codes (Bytes) ---
-    const val QUOTE = '"'.code.toByte()
-    const val OPEN_OBJ = '{'.code.toByte()
     const val CLOSE_OBJ = '}'.code.toByte()
-    const val OPEN_ARR = '['.code.toByte()
     const val CLOSE_ARR = ']'.code.toByte()
-    const val NULL_CHAR = 'n'.code.toByte()
-    const val TRUE_CHAR = 't'.code.toByte()
     const val MINUS = '-'.code.toByte()
     const val DOT = '.'.code.toByte()
     const val ZERO = '0'.code.toByte()
@@ -232,7 +219,7 @@ public object GhostJsonConstants {
 
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
-    const val STR_POOL_SIZE = 2048
+    const val STR_POOL_SIZE = 4096
     /** Multiplier for string pool hashing. */
     const val STR_POOL_HASH_MULTIPLIER = 31
 
@@ -277,7 +264,23 @@ public object GhostJsonConstants {
     /** Size of the hot-path writer scratch buffer. */
     const val WRITER_SCRATCH_SIZE = 512
 
+    /**
+     * Initial capacity of [com.ghost.serialization.parser.GhostJsonStringReader.slowPathChars]
+     * for decoding escaped JSON strings. Grows on demand; kept as a constant (not a heuristic)
+     * because escape decode is rare and the size only amortizes the first few escapes.
+     */
+    const val STRING_ESCAPE_SCRATCH_SIZE = 256
+
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
+
+    /**
+     * Streaming window size (bytes) copied out of the Okio buffer per
+     * [StreamingGhostSource] slow-path refill, and the sliding-consume retain margin
+     * (see [StreamingGhostSource.releaseBefore]).
+     * Kept at one Okio segment (8 KB): larger windows did not improve Decode(Streaming)
+     * throughput and raised both allocated KB/op and peak retained Okio prefix
+     * (retain = 1× window behind the reader).
+     */
     const val STREAMING_BUFFER_SIZE = 8192
 
     const val DEFAULT_DISCRIMINATOR_KEY = "type"
@@ -367,10 +370,13 @@ public object GhostJsonConstants {
     const val INT_OVERFLOW_LIMIT = 214748364
     const val INT_MIN_LAST_DIGIT = 8
     const val INT_MAX_LAST_DIGIT = 7
-    const val HASH_MASK = 1023
     const val MATCH_END = -1
     const val RESET_TOKEN_BYTE = -1
     const val MATCH_NONE = -2
+    const val SHIFT_56 = 56
+    const val SHIFT_48 = 48
+    const val SHIFT_40 = 40
+    const val SHIFT_32 = 32
     const val SHIFT_24 = 24
     const val SHIFT_16 = 16
     const val SHIFT_12 = 12
@@ -388,6 +394,48 @@ public object GhostJsonConstants {
     const val BMP_LIMIT = 0xFFFF
 
     // --- Scanning & Escape Identifiers ---
+    /** Number of bytes packed into a Long by [ghostReadLong8] for SWAR scanning. */
+    const val LONG_BYTES = 8
+
+    /** A Long whose 8 bytes are all ASCII space (0x20); byte-order-independent (symmetric). */
+    const val SPACE_RUN_LONG = 0x2020202020202020L
+
+    /**
+     * SWAR "broadcast 1" mask: each of the 8 bytes is 0x01.
+     * Used by McIlroy zero-byte detection (`(v - ONES) & ~v & HIGHS`).
+     */
+    const val SWAR_ONES = 0x0101010101010101L
+
+    /**
+     * SWAR high-bit mask: each of the 8 bytes is 0x80 (`0x8080808080808080`).
+     * Written as a signed Long literal because bit 63 is set.
+     */
+    const val SWAR_HIGHS = -0x7f7f7f7f7f7f7f80L
+
+    /** SWAR broadcast of [QUOTE_INT] (`'"' * SWAR_ONES`); XOR then zero-byte detect finds quotes. */
+    const val SWAR_QUOTES = 0x2222222222222222L
+
+    /** SWAR broadcast of [BACKSLASH_INT] (`'\\' * SWAR_ONES`); XOR then zero-byte detect finds escapes. */
+    const val SWAR_BACKSLASHES = 0x5C5C5C5C5C5C5C5CL
+
+    /** Byte offsets within an 8-byte [ghostReadLong8] window (scalar platform assembly). */
+    const val LONG_BYTE_OFFSET_1 = 1
+    const val LONG_BYTE_OFFSET_2 = 2
+    const val LONG_BYTE_OFFSET_3 = 3
+    const val LONG_BYTE_OFFSET_4 = 4
+    const val LONG_BYTE_OFFSET_5 = 5
+    const val LONG_BYTE_OFFSET_6 = 6
+    const val LONG_BYTE_OFFSET_7 = 7
+
+    /**
+     * Initial / reset value for optimistic in-order field prediction
+     * ([GhostJsonFlatReader] `predictedFieldIndex`).
+     */
+    const val FIELD_PREDICTION_START = 0
+
+    /** Hash bits written by [packScanResult] when the SWAR scan skips rolling-hash accumulation. */
+    const val SCAN_HASH_NONE = 0
+
     const val SPACE_INT = 32
     const val QUOTE_BYTE: Byte = 34
     const val CONTROL_CHAR_START_INT = 0
@@ -405,8 +453,6 @@ public object GhostJsonConstants {
 
     // --- ProtoJSON Constants ---
     const val I_BYTE_INT = 73 // 'I'.code
-    const val PROTO_AT_BYTE = 64 // '@'.code
-    const val PROTO_S_BYTE = 115 // 's'.code
     const val ERR_PROTO_UINT32_OVERFLOW = "uint32 value exceeds 4294967295"
     const val ERR_PROTO_FRACTIONAL_INT = "Fractional value not allowed for integer type"
 
@@ -434,7 +480,6 @@ public object GhostJsonConstants {
     const val TS_MIN_END = 16
     const val TS_SEC_START = 17
     const val TS_SEC_END = 19
-    const val TS_FRAC_START = 20
     const val TS_MIN_LENGTH = 20
     const val TS_TZ_OFFSET_LEN = 6
     const val NANOS_DIGITS = 9
@@ -520,8 +565,6 @@ public object GhostJsonConstants {
         this['='.code] = -2 // Padding sentinel
     }
 
-    val EMPTY_OBJECT_BS = okio.ByteString.of(123.toByte(), 125.toByte()) // "{}"
-
     /**
      * Maximum string length for the plain-ASCII writeQuotedAscii fast-path.
      * Strings longer than this still fall through to the scratch-buffer escape path.
@@ -583,6 +626,29 @@ public object GhostJsonConstants {
 
     /** Right-shift by 18 bits when packing the leading byte of a 4-byte UTF-8 sequence. */
     const val UTF8_SHIFT_18 = 18
+
+    /** `byte shr 5` tag for a 2-byte UTF-8 lead (`110xxxxx` → tag `0x6`). */
+    const val UTF8_2BYTE_LEAD_SHIFT = 5
+    const val UTF8_2BYTE_LEAD_TAG = 0x6
+
+    /** `byte shr 4` tag for a 3-byte UTF-8 lead (`1110xxxx` → tag `0xE`). */
+    const val UTF8_3BYTE_LEAD_SHIFT = 4
+    const val UTF8_3BYTE_LEAD_TAG = 0xE
+
+    /** Payload bit mask for a 2-byte UTF-8 lead byte (`xxxxx` in `110xxxxx`). */
+    const val UTF8_2BYTE_PAYLOAD_MASK = 0x1F
+
+    /** Payload bit mask for a 3-byte UTF-8 lead byte (`xxxx` in `1110xxxx`). */
+    const val UTF8_3BYTE_PAYLOAD_MASK = 0x0F
+
+    /** Payload bit mask for a 4-byte UTF-8 lead byte (`xxx` in `11110xxx`). */
+    const val UTF8_4BYTE_PAYLOAD_MASK = 0x07
+
+    /** Low 10 bits of a supplementary-plane offset when forming a UTF-16 surrogate pair. */
+    const val SURROGATE_PAIR_MASK = 0x3FF
+
+    /** Unicode replacement character `U+FFFD`. */
+    const val UNICODE_REPLACEMENT = 0xFFFD
 
     /** Worst-case number of UTF-8 bytes for any BMP code point (3 + 1 trailing surrogate). */
     const val UTF8_MAX_BMP_BYTES = 4

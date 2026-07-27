@@ -57,13 +57,6 @@ import com.ghost.serialization.parser.GhostJsonConstants.MIN_LONG_STR
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_QUOTE
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_BACKSLASH
 import com.ghost.serialization.parser.GhostJsonConstants.CHAR_U
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_QUOTE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSLASH
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSPACE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_FORM_FEED
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_NEWLINE
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_CARRIAGE_RETURN
-import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_TAB
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_B_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_F_INT
 import com.ghost.serialization.parser.GhostJsonConstants.ESC_N_INT
@@ -91,14 +84,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         val newScratch = CharArray(WRITER_SCRATCH_SIZE)
         scratch = newScratch
         return newScratch
-    }
-
-    @Suppress("unused")
-    @InternalGhostApi
-    fun release() {
-        scratch = null
-        needsComma = false
-        depth = 0
     }
 
     @InternalGhostApi
@@ -543,12 +528,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         }
     }
 
-    @Suppress("unused")
-    @InternalGhostApi
-    fun writeNullValueRaw() {
-        buffer.writeNull()
-    }
-
     @PublishedApi
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun appendSeparator() {
@@ -576,7 +555,9 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         var index = 0
         while (index < length) {
             val code = value[index].code
-            if (!isPlainAscii(
+            // Char-channel: BMP/supplementary code units (>= 128) need no JSON escape and can
+            // ride the bulk copy path. Byte writers must keep the stricter ASCII gate (UTF-8).
+            if (!isSafeUnescaped(
                     code,
                     localAsciiLimit,
                     localEscapeMasks,
@@ -644,7 +625,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             while (charIndex < length) {
                 val charCode = text[charIndex].code
 
-                if (isPlainAscii(
+                if (isSafeUnescaped(
                         charCode,
                         localAsciiLimit,
                         localEscapeMasks,
@@ -664,15 +645,12 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                     scratchIndex = 0
                 }
 
-                if (charCode < localAsciiLimit) {
-                    val esc = getEscapeSecondChar(charCode)
-                    if (esc != 0) {
-                        buffer.write2Chars(BACKSLASH_INT, esc)
-                    } else {
-                        writeUnicodeEscape(charCode, scratchBuf)
-                    }
+                // Not safe-unescaped ⇒ ASCII control / quote / backslash (see ESCAPE_MASKS).
+                val esc = getEscapeSecondChar(charCode)
+                if (esc != 0) {
+                    buffer.write2Chars(BACKSLASH_INT, esc)
                 } else {
-                    buffer.writeChar(charCode)
+                    writeUnicodeEscape(charCode, scratchBuf)
                 }
                 charIndex++
             }
@@ -688,7 +666,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         while (charIndex < length) {
             val charCode = text[charIndex].code
 
-            if (isPlainAscii(
+            if (isSafeUnescaped(
                     charCode,
                     localAsciiLimit,
                     localEscapeMasks,
@@ -712,15 +690,11 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 scratchIndex = 0
             }
 
-            if (charCode < localAsciiLimit) {
-                val esc = getEscapeSecondChar(charCode)
-                if (esc != 0) {
-                    buffer.write2Chars(BACKSLASH_INT, esc)
-                } else {
-                    writeUnicodeEscape(charCode, scratchBuf)
-                }
+            val esc = getEscapeSecondChar(charCode)
+            if (esc != 0) {
+                buffer.write2Chars(BACKSLASH_INT, esc)
             } else {
-                buffer.writeChar(charCode)
+                writeUnicodeEscape(charCode, scratchBuf)
             }
             charIndex++
         }
@@ -743,7 +717,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         while (charIndex < length) {
             val charCode = text[charIndex].code
 
-            if (isPlainAscii(
+            if (isSafeUnescaped(
                     charCode,
                     localAsciiLimit,
                     localEscapeMasks,
@@ -763,15 +737,11 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 scratchIndex = 0
             }
 
-            if (charCode < localAsciiLimit) {
-                val esc = getEscapeSecondChar(charCode)
-                if (esc != 0) {
-                    buffer.write2Chars(BACKSLASH_INT, esc)
-                } else {
-                    writeUnicodeEscape(charCode, scratchBuf)
-                }
+            val esc = getEscapeSecondChar(charCode)
+            if (esc != 0) {
+                buffer.write2Chars(BACKSLASH_INT, esc)
             } else {
-                buffer.writeChar(charCode)
+                writeUnicodeEscape(charCode, scratchBuf)
             }
             charIndex++
         }
@@ -804,7 +774,12 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         buffer.write(scratchBuf, 0, 6)
     }
 
-    private inline fun isPlainAscii(
+    /**
+     * True when [charCode] can be emitted verbatim inside a JSON string on the char channel.
+     * Code units ≥ [asciiLimit] never need escaping (unlike the byte writers, which must UTF-8
+     * encode them). Below that, [escapeMasks] rejects controls, `"` and `\`.
+     */
+    private inline fun isSafeUnescaped(
         charCode: Int,
         asciiLimit: Int,
         escapeMasks: LongArray,
@@ -813,7 +788,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         unit: Long,
         resultNone: Long
     ): Boolean {
-        return charCode < asciiLimit &&
+        return charCode >= asciiLimit ||
                 ((escapeMasks[charCode shr shift] shr (charCode and indexMask)) and unit) == resultNone
     }
 }

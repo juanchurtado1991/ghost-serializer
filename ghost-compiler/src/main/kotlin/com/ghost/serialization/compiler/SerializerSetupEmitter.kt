@@ -129,32 +129,15 @@ internal class SerializerSetupEmitter(
         hashConfig: PerfectHashConfig,
         names: List<String>,
     ): CodeBlock {
-        val optionsBuilder = CodeBlock.builder()
-        if (hashConfig.extendedKeyHash) {
-            optionsBuilder.add(
-                C.TEMPLATE_OPTIONS_OF_SEEDS_EXTENDED_START,
-                optionsClass,
-                hashConfig.shift,
-                hashConfig.multiplier,
-                hashConfig.tableSize,
-                ctx.textChannel,
-                true
-            )
-        } else {
-            optionsBuilder.add(
-                C.TEMPLATE_OPTIONS_OF_SEEDS_START,
-                optionsClass,
-                hashConfig.shift,
-                hashConfig.multiplier,
-                hashConfig.tableSize,
-                ctx.textChannel
-            )
-        }
-        names.forEach { name ->
-            optionsBuilder.add(C.TEMPLATE_COMMA_FORMAT_S, name)
-        }
-        optionsBuilder.add(C.STR_PAREN_CLOSE)
-        return optionsBuilder.build()
+        return GeneratedCallFormat.jsonReaderOptionsOf(
+            optionsClass = optionsClass,
+            shift = hashConfig.shift,
+            multiplier = hashConfig.multiplier,
+            tableSize = hashConfig.tableSize,
+            textChannel = ctx.textChannel,
+            extendedKeyHash = hashConfig.extendedKeyHash,
+            names = names,
+        )
     }
 
     private fun generateMinimalJson(): String {

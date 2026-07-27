@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ghost.serialization.sample.api.OpenLibraryRepository
 import com.ghost.serialization.sample.ui.model.ProtoLabUiState
+import com.ghost.serialization.sample.util.format
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

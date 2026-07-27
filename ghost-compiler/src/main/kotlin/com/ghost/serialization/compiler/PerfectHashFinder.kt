@@ -45,7 +45,12 @@ internal object PerfectHashFinder {
      */
     fun findPerfectHash(names: List<String>): PerfectHashConfig {
         if (names.isEmpty()) {
-            return PerfectHashConfig(0, C.HASH_MULTIPLIER_START, 128, extendedKeyHash = false)
+            return PerfectHashConfig(
+                C.VAL_ZERO,
+                C.HASH_MULTIPLIER_START,
+                C.PERFECT_HASH_EMPTY_TABLE_SIZE,
+                extendedKeyHash = false,
+            )
         }
         findPerfectHashInternal(names, useExtendedKeyHash = false)?.let { (shift, multiplier, tableSize) ->
             return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = false)
@@ -69,11 +74,11 @@ internal object PerfectHashFinder {
             detectPrefixLengthCollisions(rawBytes)
         }
 
-        val tableSizes = listOf(128, 256, 512, 1024, 2048, 4096, 8192)
+        val tableSizes = C.PERFECT_HASH_TABLE_SIZES
         for (tableSize in tableSizes) {
-            val tableMask = tableSize - 1
+            val tableMask = tableSize - C.VAL_ONE
             for (multiplier in C.HASH_MULTIPLIER_START..C.HASH_MULTIPLIER_LIMIT step C.HASH_MULTIPLIER_STEP) {
-                for (shift in 0..C.HASH_SHIFT_LIMIT) {
+                for (shift in C.VAL_ZERO..C.HASH_SHIFT_LIMIT) {
                     val dispatch = IntArray(tableSize) { -1 }
                     var collision = false
                     for (index in rawBytes.indices) {

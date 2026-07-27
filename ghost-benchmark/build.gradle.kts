@@ -60,7 +60,7 @@ fun registerBenchmarkTask(
 registerBenchmarkTask(
     "benchmarkTwitter",
     "twitter",
-    "Twitter macro Ghost vs KSER + regression gate (~3 min full)",
+    "Twitter macro Ghost vs Moshi vs KSER + regression gate (~3 min full)",
 )
 registerBenchmarkTask(
     "benchmarkSynthetic",
@@ -119,11 +119,9 @@ dependencies {
     implementation(project(":ghost-serialization"))
     implementation(project(":ghost-integration-test"))
     implementation(project(":ghost-protobuf"))
-    implementation(libs.gson)
+    implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.module.kotlin)
     implementation(libs.okio)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.test)

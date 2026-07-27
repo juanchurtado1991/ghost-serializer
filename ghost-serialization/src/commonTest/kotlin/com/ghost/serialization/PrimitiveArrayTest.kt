@@ -2,7 +2,9 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.parser.GhostJsonFlatReader
 import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.GhostJsonStringReader
 import com.ghost.serialization.serializers.IntArraySerializer
 import com.ghost.serialization.serializers.LongArraySerializer
 import okio.Buffer
@@ -27,6 +29,12 @@ class PrimitiveArrayTest {
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = IntArraySerializer.deserialize(reader)
         assertContentEquals(original, result)
+
+        val flatResult = IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        assertContentEquals(original, flatResult)
+
+        val stringResult = IntArraySerializer.deserialize(GhostJsonStringReader(json))
+        assertContentEquals(original, stringResult)
     }
 
     @Test
@@ -43,6 +51,12 @@ class PrimitiveArrayTest {
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = LongArraySerializer.deserialize(reader)
         assertContentEquals(original, result)
+
+        val flatResult = LongArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        assertContentEquals(original, flatResult)
+
+        val stringResult = LongArraySerializer.deserialize(GhostJsonStringReader(json))
+        assertContentEquals(original, stringResult)
     }
 
     @Test
@@ -55,5 +69,7 @@ class PrimitiveArrayTest {
 
         val reader = GhostJsonReader("[]".encodeToByteArray())
         assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(reader))
+        assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(GhostJsonFlatReader("[]".encodeToByteArray())))
+        assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(GhostJsonStringReader("[]")))
     }
 }

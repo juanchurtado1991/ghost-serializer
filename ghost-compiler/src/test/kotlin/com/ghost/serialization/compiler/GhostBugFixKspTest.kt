@@ -133,7 +133,7 @@ class GhostBugFixKspTest {
             .map { it.readText() }.firstOrNull()
         assertTrue(generated != null, "LocationPermissionSerializer.kt not generated")
         assertTrue(
-            Regex("JsonReaderOptions\\.of\\(\\d+,").containsMatchIn(generated!!),
+            Regex("""JsonReaderOptions\.of\(\s*\d+,""").containsMatchIn(generated!!),
             "Expected ENUM_OPTIONS to use computed perfect-hash seeds, got:\n$generated"
         )
     }
@@ -202,6 +202,10 @@ class GhostBugFixKspTest {
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
+            // kctfork's embedded kotlinc (2.1.0) can't read metadata from our project's own
+            // jars once they're compiled with a newer Kotlin (2.4.0 as of this bump) via
+            // inheritClassPath — this flag skips that strict metadata-version check.
+            kotlincArguments = listOf("-Xskip-metadata-version-check")
         }
         return compilation to compilation.compile()
     }
