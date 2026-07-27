@@ -1,0 +1,107 @@
+# Public Roadmap
+
+[![Roadmap](https://img.shields.io/badge/Roadmap-purple.png?style=flat&logo=target&logoColor=white)](roadmap.md)
+
+This page tracks **planned work** for Ghost Serializer. It is not a release commitment — priorities may shift based on community feedback and real-world adoption.
+
+**Product principle:** Ghost is an **optimization layer** for hot DTOs. It coexists with kotlinx.serialization, Moshi, Gson, and Jackson — it does not aim to replace them app-wide.
+
+Track progress in [GitHub Issues](https://github.com/juanchurtado1991/ghost-serializer/issues) and [Pull Requests](https://github.com/juanchurtado1991/ghost-serializer/pulls).
+
+---
+
+## Shipped in 1.3.0 (baseline)
+
+- Kotlin Multiplatform: Android, iOS, JVM, **wasmJs**
+- Framework adapters: Ktor, Retrofit, Spring Boot, Proto3 JSON
+- Maven Central, reproducible benchmarks, [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/), wiki docs
+- `textChannel = true` by default; CI regression gates for benchmarks
+
+---
+
+## 1. OpenAPI → Ghost DTO codegen
+
+**Goal:** Lower the cost of adopting Ghost in teams that already maintain an API contract (OpenAPI / Swagger), without replacing manual tuning for advanced Ghost features.
+
+### Scope
+
+| Phase | Deliverable | Status |
+|:---|:---|:---:|
+| **1a — Plain stubs** | Gradle task or CLI: OpenAPI (YAML/JSON) → Kotlin `data class` + `@GhostSerialization`, `@GhostName` when wire names differ | Planned |
+| **1b — Schema mapping** | Map OpenAPI types to Ghost-supported types (`List`, `Map<String, V>`, sealed + `discriminator`, nullable/required) | Planned |
+| **1c — Ghost extensions** | Optional `x-ghost-*` OpenAPI extensions for features that cannot be inferred (e.g. `x-ghost-resilient`, `x-ghost-flatten`) — documented convention | Planned |
+| **1d — Sample JSON shortcut** | Paste example JSON → stub DTO (same output as 1a, for quick prototyping without a full OpenAPI file) | Planned |
+
+### What codegen will **not** auto-decide
+
+These stay **manual** (or opt-in via `x-ghost-*` extensions):
+
+- `@GhostResilient`, `@GhostFallback`, `@GhostFlatten`, `@GhostWrap`
+- `RawJson`, `@GhostJsonEnvelope`, custom `@GhostEncoder` / `@GhostDecoder`
+- `@GhostProtoSerialization` vs plain `@GhostSerialization`
+- Which DTOs are “hot path” vs left on kotlinx.serialization / Moshi
+
+### Success criteria
+
+- Generate a multi-model OpenAPI spec into compilable `commonMain` stubs in one command.
+- Generated code passes `./gradlew ciTestJvm` when wired to existing integration tests.
+- Wiki guide: *OpenAPI adoption* — workflow, extension reference, coexistence with other serializers.
+
+---
+
+## 2. Stronger tests + README badges
+
+**Goal:** Make quality visible at a glance and close coverage gaps on adapters and edge paths.
+
+### Badges (README)
+
+| Badge | Purpose | Status |
+|:---|:---|:---:|
+| **CI** | Link to [GitHub Actions](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml) — green/red signal on every push | Planned |
+| **Coverage** | Link to the [published Kover report](https://juanchurtado1991.github.io/ghost-serializer/coverage/) with line/branch % from the latest `main` build | Planned |
+
+Example targets (to add at the top of `README.md` once wired):
+
+```markdown
+[![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-see_report-blue.png?style=flat)](https://juanchurtado1991.github.io/ghost-serializer/coverage/)
+```
+
+*(Coverage % badge may use shields.io dynamic endpoint or a committed `coverage-badge.svg` updated by CI — TBD.)*
+
+### Test improvements
+
+| Area | Work | Status |
+|:---|:---|:---:|
+| **Adapter gaps** | Retrofit/Ktor proto converters: `List<T>` / `Map` body unwrapping (matches [known proto gaps](usage-protobuf.md#7-known-gaps-not-yet-implemented)) | Planned |
+| **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)) | Planned |
+| **Regression visibility** | Optional CI artifact or docs page for benchmark regression JSON (Twitter + synthetic gates) | Planned |
+| **Fuzz / malformed JSON** | Extend stress-suite coverage beyond deep nesting and single malformed payloads | Planned |
+| **Playground** | Keep Speed Test + Studio presets aligned with real generated serializers on JVM | Ongoing |
+
+### Success criteria
+
+- README shows **CI** and **Coverage** badges above the fold.
+- No module in `ciTestJvmModules` without a clear owner and at least smoke-level tests for public API.
+- Coverage report on Pages updates automatically on every `main` push (already in CI; badge makes it discoverable).
+
+---
+
+## Non-goals
+
+- Replacing kotlinx.serialization (or Moshi/Jackson) across an entire codebase
+- Full parity with every Jackson/Gson feature
+- Untyped `Map<String, Any>` trees — use `RawJson` or typed models
+- Non-`String` map keys — reshape the model or use a custom serializer
+
+---
+
+## How to influence the roadmap
+
+1. **+1 or comment** on an existing GitHub issue for the item you care about.
+2. Open a **feature request** with your use case (OpenAPI sample, adapter, platform).
+3. Send a **PR** — see [Contributing](contributing.md).
+
+---
+
+← [Back to README](../../README.md) | [Modules](modules.md) | [Benchmarks](benchmarks.md)

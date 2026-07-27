@@ -3,9 +3,65 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Ghost Serializer Playground — try Kotlin JSON serialization in the browser</title>
-    <meta name="description" content="Watch Ghost Serializer parse your JSON step by step, then race it live against Moshi and kotlinx.serialization. DTO lab, feature demos, and a real-time speed test for Kotlin Multiplatform."/>
+    <title>Ghost Serializer — Kotlin JSON playground &amp; live speed test</title>
+    <meta name="description" content="Interactive Ghost Serializer playground for Kotlin Multiplatform: step-by-step JSON parsing, DTO lab, feature demos, and a live browser speed test vs kotlinx.serialization and Moshi (14.6K vs 4.6K ops/sec)."/>
+    <meta name="keywords" content="Ghost Serializer, Kotlin JSON, kotlinx.serialization, Moshi, Kotlin Multiplatform, KSP, JSON serialization, benchmark, speed test, WASM"/>
+    <meta name="author" content="Juan Churtado"/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="theme-color" content="#7C3AED"/>
+    <link rel="canonical" href="https://juanchurtado1991.github.io/ghost-serializer/"/>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="Ghost Serializer"/>
+    <meta property="og:title" content="Ghost Serializer — Kotlin JSON playground &amp; live speed test"/>
+    <meta property="og:description" content="Try Ghost Serializer in the browser: interactive JSON parsing, DTO lab, and a live speed test showing ~3× higher throughput than kotlinx.serialization and Moshi."/>
+    <meta property="og:url" content="https://juanchurtado1991.github.io/ghost-serializer/"/>
+    <meta property="og:image" content="https://juanchurtado1991.github.io/ghost-serializer/og-image.png"/>
+    <meta property="og:image:secure_url" content="https://juanchurtado1991.github.io/ghost-serializer/og-image.png"/>
+    <meta property="og:image:type" content="image/png"/>
+    <meta property="og:image:width" content="949"/>
+    <meta property="og:image:height" content="310"/>
+    <meta property="og:image:alt" content="Ghost Serializer speed test: 14.6K ops/sec vs 4.6K (kotlinx.serialization) and 4.3K (Moshi), with round-trip and data-processed metrics."/>
+    <meta property="og:locale" content="en_US"/>
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="Ghost Serializer — Kotlin JSON playground &amp; live speed test"/>
+    <meta name="twitter:description" content="Live browser benchmark: Ghost hits 14.6K ops/sec vs ~4.5K for kotlinx.serialization and Moshi. Try the playground and speed test."/>
+    <meta name="twitter:image" content="https://juanchurtado1991.github.io/ghost-serializer/og-image.png"/>
+    <meta name="twitter:image:alt" content="Speed test gauges comparing Ghost, kotlinx.serialization, and Moshi throughput."/>
+
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%237C3AED' d='M50 8C82 8 92 38 88 58L88 78L72 68L58 78L44 68L28 78L12 68L12 58C8 38 18 8 50 8Z'/%3E%3Ccircle cx='36' cy='38' r='7' fill='%23fff'/%3E%3Ccircle cx='64' cy='38' r='7' fill='%23fff'/%3E%3Ccircle cx='37' cy='39' r='3.5' fill='%237C3AED'/%3E%3Ccircle cx='65' cy='39' r='3.5' fill='%237C3AED'/%3E%3C/svg%3E"/>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Ghost Serializer Playground",
+      "url": "https://juanchurtado1991.github.io/ghost-serializer/",
+      "description": "Interactive Kotlin Multiplatform JSON serialization playground with live benchmarks against kotlinx.serialization and Moshi.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web",
+      "image": "https://juanchurtado1991.github.io/ghost-serializer/og-image.png",
+      "author": {
+        "@type": "Person",
+        "name": "Juan Churtado"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "isPartOf": {
+        "@type": "SoftwareSourceCode",
+        "name": "Ghost Serializer",
+        "codeRepository": "https://github.com/juanchurtado1991/ghost-serializer",
+        "programmingLanguage": "Kotlin"
+      }
+    }
+    </script>
+
     <style>
         html, body {
             margin: 0;
