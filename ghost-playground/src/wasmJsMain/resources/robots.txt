@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://juanchurtado1991.github.io/ghost-serializer/sitemap.xml
