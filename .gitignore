@@ -17,6 +17,8 @@ local.properties
 # Captures and Logs
 /captures
 *.txt
+!docs/robots.txt
+!ghost-playground/src/wasmJsMain/resources/robots.txt
 *.log
 audit_log.txt
 benchmark_output.txt

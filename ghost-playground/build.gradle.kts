@@ -118,11 +118,14 @@ tasks.register("publishToDocs") {
         // Keep Pages lean — source maps are for local debugging only.
         docs.walkTopDown().filter { it.isFile && it.name.endsWith(".map") }.forEach { it.delete() }
 
-        val indexSrc = project.file("src/wasmJsMain/resources/index.html")
-        if (indexSrc.exists()) {
-            indexSrc.copyTo(docs.resolve("index.html"), overwrite = true)
-        } else if (!docs.resolve("index.html").exists()) {
-            error("Missing index.html for Ghost Playground Pages site")
+        val resourceDir = project.file("src/wasmJsMain/resources")
+        listOf("index.html", "sitemap.xml", "robots.txt").forEach { name ->
+            val src = resourceDir.resolve(name)
+            if (src.exists()) {
+                src.copyTo(docs.resolve(name), overwrite = true)
+            } else if (name == "index.html" && !docs.resolve("index.html").exists()) {
+                error("Missing index.html for Ghost Playground Pages site")
+            }
         }
 
         docs.resolve(".nojekyll").writeText("")
