@@ -17,7 +17,8 @@ Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate onl
 **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
 **[Live Ghost Speedtest · Playground](https://juanchurtado1991.github.io/ghost-serializer/)** ·
 **[Benchmarks](docs/wiki/benchmarks.md)** ·
-**[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)**
+**[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)** ·
+**[Roadmap](docs/wiki/roadmap.md)**
 
 ---
 
@@ -101,6 +102,7 @@ Details → **[Modules](docs/wiki/modules.md)**
 | [Proto3 JSON](docs/wiki/usage-protobuf.md) | WKTs and mapping rules |
 | [Advanced Features](docs/wiki/advanced-features.md) | Resilience, flatten, RawJson |
 | [Architecture](docs/wiki/architecture.md) | Prediction, SWAR, hashed dispatch, pools |
+| [Roadmap](docs/wiki/roadmap.md) | OpenAPI codegen, tests, badges |
 | [Contributing](docs/wiki/contributing.md) | Tests and PR checklist |
 
 ---
