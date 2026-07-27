@@ -115,7 +115,8 @@ tasks.register("publishToGitHubPackages") {
         val isPublishable = subproject.name.startsWith("ghost") &&
                            !subproject.name.contains("sample") &&
                            !subproject.name.contains("benchmark") &&
-                           !subproject.name.contains("integration-test")
+                           !subproject.name.contains("integration-test") &&
+                           !subproject.name.contains("playground")
         if (isPublishable) {
             dependsOn(subproject.tasks.matching { it.name == "publishAllPublicationsToGitHubPackagesRepository" })
         }

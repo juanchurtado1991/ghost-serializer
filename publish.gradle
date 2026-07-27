@@ -4,9 +4,10 @@ def githubRepoScmGit = 'scm:git:git://github.com/juanchurtado1991/ghost-serializ
 def githubRepoScmSsh = 'scm:git:ssh://github.com/juanchurtado1991/ghost-serializer.git'
 
 def isPublishable = name.startsWith("ghost") &&
-                   !name.contains("sample") && 
-                   !name.contains("benchmark") && 
-                   !name.contains("integration-test")
+                   !name.contains("sample") &&
+                   !name.contains("benchmark") &&
+                   !name.contains("integration-test") &&
+                   !name.contains("playground")
 
 if (isPublishable) {
     apply plugin: 'com.vanniktech.maven.publish'
