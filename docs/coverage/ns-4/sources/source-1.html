@@ -57,26 +57,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.7%
+    69.2%
   </span>
   <span class="absValue">
-    (88/130)
+    (90/130)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69.4%
+    69.9%
   </span>
   <span class="absValue">
-    (145/209)
+    (146/209)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.5%
+    70.9%
   </span>
   <span class="absValue">
-    (736/1044)
+    (740/1044)
   </span>
 </td>
 </tr>
@@ -508,26 +508,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.7%
+    69.2%
   </span>
   <span class="absValue">
-    (88/130)
+    (90/130)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69.1%
+    69.5%
   </span>
   <span class="absValue">
-    (152/220)
+    (153/220)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70%
+    70.4%
   </span>
   <span class="absValue">
-    (774/1105)
+    (778/1105)
   </span>
 </td>
 </tr>
@@ -786,9 +786,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        return runSynchronized(lock) {</b>
-<b class="pc">&nbsp;            val doubleCheck = serializerCache[clazz] as? GhostSerializer&lt;T&gt;</b>
-<b class="pc">&nbsp;            if (doubleCheck != null) {</b>
-<b class="nc">&nbsp;                return@runSynchronized doubleCheck</b>
+<b class="fc">&nbsp;            val doubleCheck = serializerCache[clazz] as? GhostSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;            if (doubleCheck != null) {</b>
+<b class="fc">&nbsp;                return@runSynchronized doubleCheck</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            val found = getSerializerFromRegistries(clazz)</b>
@@ -1443,7 +1443,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:01</div>
+    <div style="float:right;">generated on 2026-07-27 23:42</div>
 </div>
 </body>
 </html>

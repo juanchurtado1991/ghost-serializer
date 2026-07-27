@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostWrappedKeys</title>
+  <title>GhostSerialization Coverage Report > GhostSerialization</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostWrappedKeys (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostSerialization (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostWrappedKeys</td>
+  <td class="name">GhostSerialization</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,45 +47,36 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Collapses sibling JSON keys at the current object level into a single Kotlin property.
+&nbsp; * Triggers the automatic generation of high-performance serializers for the annotated class.
 &nbsp; *
-&nbsp; * This is the inverse of [GhostWrap]: wire payloads expose flat keys (`extra1`, `type`, `dth`, …)
-&nbsp; * while the model groups them under one property (`extras`, `integration`, …).
+&nbsp; * When applied, the Ghost KSP compiler plugin generates a specialized Serializer
+&nbsp; * implementation that avoids reflection and is optimized for peak throughput in
+&nbsp; * Kotlin Multiplatform environments.
 &nbsp; *
-&nbsp; * Example — API wire vs Kotlin model:
-&nbsp; * ```kotlin
-&nbsp; * // Wire:  { &quot;deviceId&quot;: &quot;x&quot;, &quot;type&quot;: &quot;DTH&quot;, &quot;dth&quot;: { ... } }
-&nbsp; * // Model: Device(deviceId, integration = Integration.Dth(...))
-&nbsp; *
-&nbsp; * @GhostSerialization
-&nbsp; * data class Device(
-&nbsp; *     val deviceId: String,
-&nbsp; *     @GhostWrappedKeys(keys = [&quot;type&quot;, &quot;dth&quot;])
-&nbsp; *     @GhostName(&quot;integration&quot;)
-&nbsp; *     val integration: Integration,
-&nbsp; * )
-&nbsp; * ```
-&nbsp; *
-&nbsp; * During **deserialization**, each listed [keys] entry is captured from the parent object
-&nbsp; * (zero-copy [com.ghost.serialization.types.RawJson] slices) and assembled into a synthetic
-&nbsp; * wrapper object `{ &quot;type&quot;: &quot;...&quot;, &quot;dth&quot;: { ... } }` before the property type is parsed.
-&nbsp; *
-&nbsp; * During **serialization**, the wrapper property is **unwrapped**: inner fields are written as
-&nbsp; * sibling keys at the same JSON depth (matching the wire format above).
-&nbsp; *
-&nbsp; * @param keys JSON field names at the current object level that belong to the wrapper property.
-&nbsp; * @param omitIfEmpty When `true`, if every captured key is absent or JSON `null`, the wrapper
-&nbsp; *   property is set to `null` instead of an object with all-null fields. The property must be
-&nbsp; *   nullable.
-&nbsp; * @param omitIfAbsent When any listed key is absent or JSON `null`, the wrapper property is set
-&nbsp; *   to `null` instead of being deserialized. Use for optional integration blocks.
+&nbsp; * @param name Optional custom name for the model to avoid registry collisions.
+&nbsp; * @param discriminator The JSON field name used to identify the concrete type of `sealed class`.
+&nbsp; *   Defaults to `&quot;type&quot;`. Override this when consuming third-party APIs that use a different
+&nbsp; *   convention (e.g. `&quot;kind&quot;`, `&quot;object&quot;`, `&quot;@type&quot;`).
+&nbsp; *   Has no effect on non-sealed classes.
+&nbsp; * @param inferred Whether the type should be inferred automatically.
+&nbsp; * @param textChannel When `true` (the default), generates native
+&nbsp; *   [com.ghost.serialization.parser.GhostJsonStringReader] deserialize/serialize overloads for
+&nbsp; *   this model and any nested `@GhostSerialization` types reachable from its property graph.
+&nbsp; *   Without a native string-channel overload, decoding from a `String` (e.g.
+&nbsp; *   `Ghost.deserialize&lt;T&gt;(json: String)`) falls back to re-encoding the whole document to UTF-8
+&nbsp; *   and delegating to the byte-mode reader — correct, but not zero-allocation. Set to `false`
+&nbsp; *   only to trade that String-mode performance for smaller generated code (roughly a third less
+&nbsp; *   per model) on types that are only ever decoded from bytes/streams. Module-wide
+&nbsp; *   `ghost.textChannel=false` forces the bridging behavior for every model in the module
+&nbsp; *   regardless of this per-class value, for projects that want to opt out everywhere at once.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
+&nbsp;@Target(AnnotationTarget.CLASS)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostWrappedKeys(
-&nbsp;    val keys: Array&lt;String&gt;,
-&nbsp;    val omitIfEmpty: Boolean = false,
-&nbsp;    val omitIfAbsent: Array&lt;String&gt; = [],
+&nbsp;annotation class GhostSerialization(
+&nbsp;    val name: String = &quot;&quot;,
+&nbsp;    val discriminator: String = &quot;type&quot;,
+&nbsp;    val inferred: Boolean = false,
+&nbsp;    val textChannel: Boolean = true,
 &nbsp;)
 </code>
 </pre>
@@ -110,7 +101,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:01</div>
+    <div style="float:right;">generated on 2026-07-27 23:42</div>
 </div>
 </body>
 </html>

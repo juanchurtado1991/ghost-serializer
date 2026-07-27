@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostResilient</title>
+  <title>GhostSerialization Coverage Report > GhostEncoder</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostResilient (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEncoder (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostResilient</td>
+  <td class="name">GhostEncoder</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,15 +46,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
 &nbsp;/**
-&nbsp; * Applies resilient parsing to a property.
-&nbsp; * If a type mismatch occurs, or an unknown enum value is received,
-&nbsp; * Ghost will catch the error, assign `null` to the field (if nullable),
-&nbsp; * and continue parsing instead of throwing an exception.
+&nbsp; * Delegated field encoding.
+&nbsp; *
+&nbsp; * @param provider The class/object containing the encoding function.
+&nbsp; * @param functionName The name of the static function: `fun(GhostJsonFlatWriter, T)`
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
+&nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostResilient
+&nbsp;annotation class GhostEncoder(
+&nbsp;    val provider: KClass&lt;*&gt;,
+&nbsp;    val functionName: String
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -78,7 +83,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:01</div>
+    <div style="float:right;">generated on 2026-07-27 23:42</div>
 </div>
 </body>
 </html>
