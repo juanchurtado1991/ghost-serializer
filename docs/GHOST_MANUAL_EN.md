@@ -1045,8 +1045,10 @@ Publishable (publish.gradle.kts): ghost-* except sample, benchmark, integration-
 **From Mac** for full KMP (iosArm64 + iosSimulatorArm64 + JVM + Android AAR).
 
 ```bash
-./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+./gradlew publishToMavenCentral
 ```
+
+Uploads a deployment bundle to Central Portal in `USER_MANAGED` mode (staged, not released). Review and publish it manually at [central.sonatype.com](https://central.sonatype.com/publishing/deployments). To publish and release automatically instead, run `./gradlew publishAndReleaseToMavenCentral`.
 
 Coordinates: `com.ghostserializer:*:1.3.0`
 
@@ -1096,7 +1098,8 @@ GitHub jobs: JVM, Android testDebugUnitTest, iOS macos-14.
 | Benchmark without tests | `./gradlew :ghost-benchmark:run -PskipTests` |
 | Sample Android | `./gradlew :ghost-sample:assembleDebug` |
 | Publish local | `./gradlew publishToMavenLocal -PskipTests` |
-| Maven Central | `./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository` |
+| Maven Central (staging, manual review) | `./gradlew publishToMavenCentral` |
+| Maven Central (publish + auto-release) | `./gradlew publishAndReleaseToMavenCentral` |
 | Regenerate manual PDF | `.venv-pdf/bin/python scripts/build_ghost_manual_pdf.py` |
 
 Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.

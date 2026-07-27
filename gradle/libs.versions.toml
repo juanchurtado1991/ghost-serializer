@@ -23,7 +23,6 @@ moshi                           = "1.15.2"
 # Tooling & Generation
 kotlinpoet                      = "2.1.0"
 dokka                           = "2.2.0"
-nexus-publish                   = "2.0.0"
 
 # UI & Sample App
 coil                            = "3.0.0-alpha06"
@@ -118,5 +117,4 @@ jetbrains-compose               = { id = "org.jetbrains.compose", version.ref = 
 ksp                             = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kover                           = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 dokka                           = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-nexus-publish                   = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
-vanniktech-publish              = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
+vanniktech-publish              = { id = "com.vanniktech.maven.publish", version = "0.37.0" }
