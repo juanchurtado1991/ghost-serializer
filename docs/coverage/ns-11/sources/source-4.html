@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    81%
+    85.7%
   </span>
   <span class="absValue">
-    (17/21)
+    (18/21)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.3%
+    60%
   </span>
   <span class="absValue">
-    (22/30)
+    (18/30)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.7%
+    69.9%
   </span>
   <span class="absValue">
-    (111/141)
+    (102/146)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78%
+    64.5%
   </span>
   <span class="absValue">
-    (520/667)
+    (430/667)
   </span>
 </td>
 </tr>
@@ -128,7 +128,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * [GhostJsonStringWriter]. Concrete final class with no interface or superclass
 &nbsp; * to allow direct JIT/AOT inlining.
 &nbsp; */
-&nbsp;@InternalGhostApi
+<b class="fc">&nbsp;@InternalGhostApi</b>
 <b class="fc">&nbsp;class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {</b>
 &nbsp;
 <b class="fc">&nbsp;    var array: CharArray = CharArray(initialCapacity)</b>
@@ -183,20 +183,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    fun write2Chars(firstChar: Int, secondChar: Int) {
 <b class="fc">&nbsp;        val currentSize = size</b>
 <b class="fc">&nbsp;        val backingArray = array</b>
-<b class="pc">&nbsp;        if (currentSize + 1 &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;        if (currentSize + 1 &lt; backingArray.size) {</b>
 <b class="fc">&nbsp;            backingArray[currentSize] = firstChar.toChar()</b>
 <b class="fc">&nbsp;            backingArray[currentSize + 1] = secondChar.toChar()</b>
 <b class="fc">&nbsp;            size = currentSize + 2</b>
 &nbsp;        } else {
-<b class="nc">&nbsp;            ensureCapacity(2)</b>
-<b class="nc">&nbsp;            val updatedArray = array</b>
-<b class="nc">&nbsp;            updatedArray[currentSize] = firstChar.toChar()</b>
-<b class="nc">&nbsp;            updatedArray[currentSize + 1] = secondChar.toChar()</b>
-<b class="nc">&nbsp;            size = currentSize + 2</b>
+<b class="fc">&nbsp;            ensureCapacity(2)</b>
+<b class="fc">&nbsp;            val updatedArray = array</b>
+<b class="fc">&nbsp;            updatedArray[currentSize] = firstChar.toChar()</b>
+<b class="fc">&nbsp;            updatedArray[currentSize + 1] = secondChar.toChar()</b>
+<b class="fc">&nbsp;            size = currentSize + 2</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /** Writes a plain-ASCII string directly with minimal checks. */
+&nbsp;    /**
+&nbsp;     * Writes `&quot;…&quot;` for a string the caller already verified needs no JSON escapes.
+&nbsp;     * On the char channel that includes BMP/non-ASCII content (copied as UTF-16 code units).
+&nbsp;     */
 &nbsp;    fun writeQuotedAscii(text: String, length: Int) {
 <b class="fc">&nbsp;        ensureCapacity(length + STRING_QUOTE_PAIR_BYTES)</b>
 <b class="fc">&nbsp;        val backingArray = array</b>
@@ -246,43 +249,47 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var readIndex = offset</b>
 <b class="fc">&nbsp;        val end = offset + length</b>
 <b class="fc">&nbsp;        while (readIndex &lt; end) {</b>
-<b class="fc">&nbsp;            val byte = bytes[readIndex].toInt() and 0xFF</b>
+<b class="fc">&nbsp;            val leadByte = bytes[readIndex].toInt() and C.BYTE_MASK</b>
 <b class="fc">&nbsp;            when {</b>
-<b class="fc">&nbsp;                byte &lt;= C.UTF8_1BYTE_MAX -&gt; {</b>
-<b class="fc">&nbsp;                    backingArray[writeIndex++] = byte.toChar()</b>
+<b class="pc">&nbsp;                leadByte &lt;= C.UTF8_1BYTE_MAX -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] = leadByte.toChar()</b>
 <b class="fc">&nbsp;                    readIndex++</b>
 &nbsp;                }
-<b class="pc">&nbsp;                (byte shr 5) == 0x6 -&gt; {</b>
-<b class="nc">&nbsp;                    val b2 = bytes[readIndex + 1].toInt() and 0xFF</b>
-<b class="nc">&nbsp;                    val codePoint = ((byte and 0x1F) shl 6) or (b2 and 0x3F)</b>
+<b class="nc">&nbsp;                (leadByte shr C.UTF8_2BYTE_LEAD_SHIFT) == C.UTF8_2BYTE_LEAD_TAG -&gt; {</b>
+<b class="nc">&nbsp;                    val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                    val codePoint = ((leadByte and C.UTF8_2BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_6) or</b>
+<b class="nc">&nbsp;                        (contByte1 and C.UTF8_CONT_MASK)</b>
 <b class="nc">&nbsp;                    backingArray[writeIndex++] = codePoint.toChar()</b>
-<b class="nc">&nbsp;                    readIndex += 2</b>
+<b class="nc">&nbsp;                    readIndex += C.UTF8_2BYTE_SIZE</b>
 &nbsp;                }
-<b class="fc">&nbsp;                (byte shr 4) == 0xE -&gt; {</b>
-<b class="fc">&nbsp;                    val b2 = bytes[readIndex + 1].toInt() and 0xFF</b>
-<b class="fc">&nbsp;                    val b3 = bytes[readIndex + 2].toInt() and 0xFF</b>
-<b class="fc">&nbsp;                    val codePoint = ((byte and 0x0F) shl 12) or ((b2 and 0x3F) shl 6) or (b3 and 0x3F)</b>
-<b class="fc">&nbsp;                    backingArray[writeIndex++] = codePoint.toChar()</b>
-<b class="fc">&nbsp;                    readIndex += 3</b>
+<b class="nc">&nbsp;                (leadByte shr C.UTF8_3BYTE_LEAD_SHIFT) == C.UTF8_3BYTE_LEAD_TAG -&gt; {</b>
+<b class="nc">&nbsp;                    val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                    val contByte2 = bytes[readIndex + 2].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                    val codePoint = ((leadByte and C.UTF8_3BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_12) or</b>
+<b class="nc">&nbsp;                        ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or</b>
+<b class="nc">&nbsp;                        (contByte2 and C.UTF8_CONT_MASK)</b>
+<b class="nc">&nbsp;                    backingArray[writeIndex++] = codePoint.toChar()</b>
+<b class="nc">&nbsp;                    readIndex += C.UTF8_3BYTE_SIZE</b>
 &nbsp;                }
 &nbsp;                else -&gt; {
-<b class="fc">&nbsp;                    val b2 = bytes[readIndex + 1].toInt() and 0xFF</b>
-<b class="fc">&nbsp;                    val b3 = bytes[readIndex + 2].toInt() and 0xFF</b>
-<b class="fc">&nbsp;                    val b4 = bytes[readIndex + 3].toInt() and 0xFF</b>
-<b class="fc">&nbsp;                    val codePoint = ((byte and 0x07) shl 18) or</b>
-<b class="fc">&nbsp;                        ((b2 and 0x3F) shl 12) or</b>
-<b class="fc">&nbsp;                        ((b3 and 0x3F) shl 6) or</b>
-<b class="fc">&nbsp;                        (b4 and 0x3F)</b>
-<b class="pc">&nbsp;                    if (writeIndex + 1 &gt;= backingArray.size) {</b>
+<b class="nc">&nbsp;                    val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                    val contByte2 = bytes[readIndex + 2].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                    val contByte3 = bytes[readIndex + 3].toInt() and C.BYTE_MASK</b>
+<b class="nc">&nbsp;                    val codePoint = ((leadByte and C.UTF8_4BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_18) or</b>
+<b class="nc">&nbsp;                        ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_12) or</b>
+<b class="nc">&nbsp;                        ((contByte2 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or</b>
+<b class="nc">&nbsp;                        (contByte3 and C.UTF8_CONT_MASK)</b>
+<b class="nc">&nbsp;                    if (writeIndex + 1 &gt;= backingArray.size) {</b>
 <b class="nc">&nbsp;                        size = writeIndex</b>
-<b class="nc">&nbsp;                        ensureCapacity(2)</b>
+<b class="nc">&nbsp;                        ensureCapacity(C.UTF8_2BYTE_SIZE)</b>
 &nbsp;                    }
-<b class="fc">&nbsp;                    val updatedArray = array</b>
-<b class="fc">&nbsp;                    val high = ((codePoint - 0x10000) shr 10) + 0xD800</b>
-<b class="fc">&nbsp;                    val low = ((codePoint - 0x10000) and 0x3FF) + 0xDC00</b>
-<b class="fc">&nbsp;                    updatedArray[writeIndex++] = high.toChar()</b>
-<b class="fc">&nbsp;                    updatedArray[writeIndex++] = low.toChar()</b>
-<b class="fc">&nbsp;                    readIndex += 4</b>
+<b class="nc">&nbsp;                    val updatedArray = array</b>
+<b class="nc">&nbsp;                    val planeOffset = codePoint - C.UNICODE_BASE</b>
+<b class="nc">&nbsp;                    val highSurrogate = (planeOffset shr C.SHIFT_10) + C.HIGH_SURROGATE_START</b>
+<b class="nc">&nbsp;                    val lowSurrogate = (planeOffset and C.SURROGATE_PAIR_MASK) + C.LOW_SURROGATE_START</b>
+<b class="nc">&nbsp;                    updatedArray[writeIndex++] = highSurrogate.toChar()</b>
+<b class="nc">&nbsp;                    updatedArray[writeIndex++] = lowSurrogate.toChar()</b>
+<b class="nc">&nbsp;                    readIndex += C.UTF8_4BYTE_SIZE</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
@@ -337,12 +344,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /** Writes the literal &quot;.0&quot;. */
 &nbsp;    fun writeDotZero() {
-<b class="nc">&nbsp;        ensureCapacity(2)</b>
-<b class="nc">&nbsp;        val backingArray = array</b>
-<b class="nc">&nbsp;        var writeIndex = size</b>
-<b class="nc">&nbsp;        backingArray[writeIndex++] = CHAR_DOT</b>
-<b class="nc">&nbsp;        backingArray[writeIndex++] = CHAR_ZERO</b>
-<b class="nc">&nbsp;        size = writeIndex</b>
+<b class="fc">&nbsp;        ensureCapacity(2)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_DOT</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = CHAR_ZERO</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    fun reset() {
@@ -385,7 +392,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

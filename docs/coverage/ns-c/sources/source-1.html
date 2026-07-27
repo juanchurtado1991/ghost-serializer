@@ -176,8 +176,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Retrofit Converter Factory for Ghost Serialization.
 &nbsp; */
-&nbsp;@OptIn(InternalGhostApi::class)
-<b class="fc">&nbsp;class GhostConverterFactory private constructor() : Converter.Factory() {</b>
+<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+&nbsp;class GhostConverterFactory private constructor() : Converter.Factory() {
 &nbsp;
 &nbsp;    private val serializerCache =
 <b class="fc">&nbsp;        ConcurrentHashMap&lt;Type, GhostSerializer&lt;Any&gt;&gt;()</b>
@@ -339,7 +339,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostPropertyExtensionsKt</title>
+  <title>GhostSerialization Coverage Report > GhostEmitterConstants</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.compiler</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostPropertyExtensionsKt (com.ghost.serialization.compiler)</h1>
+<h1>Coverage Summary for Class: GhostEmitterConstants (com.ghost.serialization.compiler)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostPropertyExtensionsKt</td>
+  <td class="name">GhostEmitterConstants</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    100%
   </span>
   <span class="absValue">
-    (3/6)
+    (6/6)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45.7%
+    100%
   </span>
   <span class="absValue">
-    (42/92)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    35.1%
-  </span>
-  <span class="absValue">
-    (34/97)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    26.5%
-  </span>
-  <span class="absValue">
-    (205/773)
+    (133/133)
   </span>
 </td>
 </tr>
@@ -101,228 +94,742 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
 &nbsp;
-&nbsp;import com.squareup.kotlinpoet.TypeName
-&nbsp;import com.ghost.serialization.compiler.GhostEmitterConstants as C
+&nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;
 &nbsp;/**
-&nbsp; * Extension methods for [GhostPropertyModel] to facilitate code generation.
+&nbsp; * Centralized constants for the deserialization code emitters and generators.
 &nbsp; *
-&nbsp; * These helpers encapsulate the logic for determining variable types, initial values,
-&nbsp; * and return expressions based on the property&#39;s metadata (e.g., nullability,
-&nbsp; * primitive types, value classes).
+&nbsp; * Contains all string literals, templates, and identifiers used during code generation
+&nbsp; * to ensure consistency and eliminate magic strings across the emitter modules.
 &nbsp; */
+&nbsp;internal object GhostEmitterConstants {
+&nbsp;    const val STR_DESERIALIZE = &quot;deserialize&quot;
+&nbsp;    const val STR_KDOC_DESERIALIZE = &quot;Robust deserialization for [%T].\n&quot;
+&nbsp;    const val DEFAULT_CHUNK_SIZE = 40
+&nbsp;    const val STR_READER = &quot;reader&quot;
+&nbsp;    const val TEMPLATE_PEEK_TYPE =
+&nbsp;        &quot;val typeName = reader.peekStringField(%S)\n  ?: reader.throwError(%S)&quot;
+&nbsp;    const val STR_MISSING_TYPE = &quot;Missing discriminator field for sealed class&quot;
+&nbsp;    const val STR_WHEN_TYPENAME = &quot;val result = when (typeName)&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_BRANCH = &quot;%S -&gt; %T.deserialize(reader)&quot;
+&nbsp;    const val STR_UNKNOWN_TYPE = &quot;else -&gt; reader.throwError(\&quot;Unknown type discriminator: \$typeName\&quot;)&quot;
+&nbsp;    const val STR_RETURN_RESULT = &quot;return result&quot;
+&nbsp;    const val TEMPLATE_RETURN_CONSTRUCTOR = &quot;return %T(%L)&quot;
+&nbsp;    const val TEMPLATE_CONSTRUCTOR = &quot;%T(%L)&quot;
+&nbsp;    const val STR_NULL = &quot;null&quot;
+&nbsp;    const val STR_ZERO = &quot;0&quot;
+&nbsp;    const val STR_ZERO_L = &quot;0L&quot;
+&nbsp;    const val STR_ZERO_D = &quot;0.0&quot;
+&nbsp;    const val STR_ZERO_F = &quot;0.0f&quot;
+&nbsp;    const val STR_CHAR_NULL_LITERAL = &quot;&#39;\\u0000&#39;&quot;
+&nbsp;    const val STR_JSON_CHAR_NULL = &quot;\&quot;\\u0000\&quot;&quot;
+&nbsp;    const val VAL_ZERO = 0
+&nbsp;    const val VAL_ONE = 1
+&nbsp;    const val VAL_TWO = 2
+&nbsp;    const val VAL_THREE = 3
+&nbsp;    const val VAL_FOUR = 4
+&nbsp;    const val VAL_ZERO_L = 0L
+&nbsp;    const val VAL_ONE_L = 1L
+&nbsp;    const val BIT_SHIFT_32 = 32
+&nbsp;    const val LONG_BYTE_MASK = 0xFFL
+&nbsp;    const val STR_FALSE = &quot;false&quot;
+&nbsp;    const val STR_CURLY_OPEN = &quot;{&quot;
+&nbsp;    const val STR_CURLY_CLOSE = &quot;}&quot;
+&nbsp;    const val STR_COLON = &quot;:&quot;
+&nbsp;    const val STR_EMPTY_JSON = &quot;{}&quot;
+&nbsp;    const val STR_EMPTY_ARRAY = &quot;[]&quot;
+&nbsp;    const val STR_EMPTY_STRING = &quot;\&quot;\&quot;&quot;
+&nbsp;    const val STR_DOUBLE_QUOTE = &quot;\&quot;&quot;
+&nbsp;    const val STR_BEGIN_OBJECT = &quot;reader.beginObject()&quot;
+&nbsp;    const val STR_WHILE_TRUE = &quot;while (true)&quot;
+&nbsp;    const val STR_SELECT_NAME_AND_CONSUME = &quot;val index = reader.selectNameAndConsume(OPTIONS)&quot;
+&nbsp;    const val STR_SELECT_SUB_NAME = &quot;val %L = reader.selectNameAndConsume(%L)&quot;
+&nbsp;    const val STR_WHEN_INDEX = &quot;when (index)&quot;
+&nbsp;    const val STR_WHEN_SUB_INDEX = &quot;when (%L)&quot;
+&nbsp;    const val STR_ARROW = &quot; -&gt;&quot;
+&nbsp;    const val STR_UNDERSCORE = &quot;_&quot;
+&nbsp;    const val TEMPLATE_ASSIGN_L = &quot; = %L&quot;
+&nbsp;    const val STR_MINUS_ONE_BREAK = &quot;-1 -&gt; break&quot;
+&nbsp;    const val STR_MINUS_TWO_ARROW = &quot;-2 -&gt;&quot;
+&nbsp;    const val STR_SKIP_VALUE = &quot;reader.skipValue()&quot;
+&nbsp;    const val STR_END_OBJECT = &quot;reader.endObject()&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_T = &quot;%T.deserialize(reader)&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_L = &quot;%L.deserialize(reader)&quot;
+&nbsp;    const val STR_NEXT_INT = &quot;reader.nextInt()&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN = &quot;reader.nextBoolean()&quot;
+&nbsp;    const val STR_NEXT_LONG = &quot;reader.nextLong()&quot;
 &nbsp;
-&nbsp;/**
-&nbsp; * Resolves the appropriate KotlinPoet [TypeName] to declare the local tracking variable
-&nbsp; * for this property. Handled cases include:
-&nbsp; * - Non-nullable primitives: mapped directly to their unboxed Kotlin/JVM types.
-&nbsp; * - Non-nullable inline/value classes: mapped to the underlying unboxed primitive type.
-&nbsp; * - Nullable/Object types: coerced to a nullable KotlinPoet type representation.
-&nbsp; */
-&nbsp;internal fun GhostPropertyModel.getVariableType(): TypeName {
-<b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
-<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;    /**
+&nbsp;     * proto3 JSON mapping: int64/uint64 fields accept both bare numbers and quoted decimal
+&nbsp;     * strings on read. Temporarily flips `coerceStringsToNumbers` around the read — this works
+&nbsp;     * on every reader flavor (streaming, flat, string), not just GhostProtoJsonFlatReader.
+&nbsp;     */
+&nbsp;    const val STR_NEXT_LONG_PROTO_COERCED =
+&nbsp;        &quot;run {\n&quot; +
+&nbsp;            &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
+&nbsp;            &quot;  reader.coerceStringsToNumbers = true\n&quot; +
+&nbsp;            &quot;  val parsed = reader.nextLong()\n&quot; +
+&nbsp;            &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
+&nbsp;            &quot;  parsed\n&quot; +
+&nbsp;            &quot;}&quot;
+&nbsp;    const val STR_NEXT_DOUBLE = &quot;reader.nextDouble()&quot;
+&nbsp;    const val STR_NEXT_FLOAT = &quot;reader.nextFloat()&quot;
+&nbsp;    const val STR_NEXT_BYTE = &quot;reader.nextInt().toByte()&quot;
+&nbsp;    const val STR_NEXT_SHORT = &quot;reader.nextInt().toShort()&quot;
+&nbsp;    const val STR_NEXT_CHAR = &quot;reader.nextChar()&quot;
+&nbsp;    const val STR_SERIALIZERS_PKG = &quot;com.ghost.serialization.serializers&quot;
+&nbsp;    const val STR_NEXT_STRING = &quot;reader.nextString()&quot;
+&nbsp;    const val STR_NEXT_INT_OR_NULL = &quot;reader.nextIntOrNull()&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN_OR_NULL = &quot;reader.nextBooleanOrNull()&quot;
+&nbsp;    const val STR_NEXT_LONG_OR_NULL = &quot;reader.nextLongOrNull()&quot;
+&nbsp;    const val STR_NEXT_STRING_OR_NULL = &quot;reader.nextStringOrNull()&quot;
+&nbsp;    const val TEMPLATE_L_READER = &quot;%T.%L(reader)&quot;
+&nbsp;    const val TEMPLATE_NULL_CHECK_L =
+&nbsp;        &quot;if (reader.isNextNullValue()) {\n  reader.consumeNull()\n  null\n} else {\n  %L\n}&quot;
+&nbsp;    const val TEMPLATE_THROW_S = &quot;reader.throwError(%S)&quot;
+&nbsp;    const val STR_REQ_FIELD_1 = &quot;Required field &#39;&quot;
+&nbsp;    const val STR_REQ_FIELD_2 = &quot;&#39; missing in JSON&quot;
+&nbsp;    const val STR_COMMA_SPACE = &quot;, &quot;
+&nbsp;    const val STR_BANG_BANG = &quot;!!&quot;
+&nbsp;    const val TEMPLATE_RETURN_T_PAREN = &quot;return %T(&quot;
+&nbsp;    const val STR_PAREN = &quot;)&quot;
+&nbsp;        const val TEMPLATE_VAL_RESULT = &quot;val result = %T(&quot;
+&nbsp;    const val STR_OR = &quot; || &quot;
+&nbsp;    const val STR_RETURN_RESULT_COPY = &quot;return result.copy(&quot;
+&nbsp;    const val STR_COMMA = &quot;,&quot;
+&nbsp;    const val STR_EMPTY = &quot;&quot;
+&nbsp;    const val STR_ELSE = &quot;else&quot;
+&nbsp;    const val STR_RETURN_RESULT_FINAL = &quot;return result&quot;
+&nbsp;    const val STR_ERR_INVALID_ENUM_INDEX = &quot;-1 -&gt; reader.throwError(\&quot;Invalid enum value\&quot;)&quot;
+&nbsp;    const val STR_ERR_UNEXPECTED_INDEX = &quot;else -&gt; throw GhostJsonException(\&quot;Unexpected index: \$index\&quot;)&quot;
+&nbsp;    const val STR_FALLBACK_ANNOTATION = &quot;GhostFallback&quot;
+&nbsp;    const val STR_ELSE_BRANCH = &quot;else -&gt;&quot;
+&nbsp;    const val STR_ENUM_SELECT_OPTIONS = &quot;val index = reader.selectString(ENUM_OPTIONS)&quot;
+&nbsp;    const val STR_ENUM_WHEN = &quot;return when (index)&quot;
+&nbsp;    const val TEMPLATE_ENUM_BRANCH = &quot;%L -&gt; %T.%L&quot;
+&nbsp;    const val STR_MASK_INIT = &quot;var mask%L = 0L&quot;
+&nbsp;    const val STR_CTX_CLASS = &quot;DecodingContext&quot;
+&nbsp;    const val STR_DECODE_CHUNK_PREFIX = &quot;decodeChunk&quot;
+&nbsp;    const val STR_SERIALIZE_CHUNK_PREFIX = &quot;serializeChunk&quot;
+&nbsp;    const val STR_READER_VAR = &quot;reader&quot;
+&nbsp;    const val STR_CTX_VAR = &quot;ctx&quot;
+&nbsp;    const val STR_INDEX_VAR = &quot;index&quot;
+&nbsp;    const val STR_WHEN_INDEX_PLAIN = &quot;when (index)&quot;
+&nbsp;    const val STR_BIT_MASK_MIN_LONG = &quot;Long.MIN_VALUE&quot;
+&nbsp;    const val TEMPLATE_DECODE_RESILIENT = &quot;reader.decodeResilient { %L }?.let&quot;
+&nbsp;    const val TEMPLATE_CTX_FIELD_ASSIGN = &quot;ctx.%L = %L&quot;
+&nbsp;    const val TEMPLATE_CTX_FIELD_SET_IT = &quot;ctx.%L = it&quot;
+&nbsp;    const val TEMPLATE_CTX_MASK_OR = &quot;ctx.mask%L = ctx.mask%L or %L&quot;
+&nbsp;    const val STR_CTX_INIT = &quot;val ctx = DecodingContext()&quot;
+&nbsp;    const val TEMPLATE_CHUNK_CALL = &quot;in %L..%L -&gt; %L(reader, ctx, index)&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_MISSING = &quot;if ((ctx.mask%L and %L) == 0L)&quot;
+&nbsp;    const val TEMPLATE_ELSE_IF_MASK_MISSING = &quot;else if ((ctx.mask%L and %L) == 0L)&quot;
+&nbsp;    const val STR_READ_LIST_TEMPLATE = &quot;reader.readList {\n  %L\n}&quot;
+&nbsp;    const val STR_READ_SET_TEMPLATE = &quot;reader.readSet {\n  %L\n}&quot;
+&nbsp;    const val STR_READ_MAP_TEMPLATE = &quot;reader.readMap({ reader.nextKey()!! }) {\n  %L\n}&quot;
+&nbsp;    const val STR_MASK_BITWISE_OR = &quot;mask%L = mask%L or %L&quot;
+&nbsp;    const val STR_IF_OPEN = &quot;if (&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_MATCH_BIT_F = &quot;(ctx.mask%s and %s) != 0L&quot;
+&nbsp;    const val STR_CLOSE_PAREN_FLOW = &quot;)&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_NOT_MET = &quot;if ((ctx.mask%L and %L) != %L)&quot;
+&nbsp;    const val TEMPLATE_MASK_CHECK_MATCH = &quot;(mask%s and %s) != 0L&quot;
+&nbsp;    const val TEMPLATE_MASK_ALL_MET_SIMPLE = &quot;(mask%s and %s) == %s&quot;
+&nbsp;    const val STR_GHOST_PKG = &quot;com.ghost.serialization&quot;
+&nbsp;    const val STR_CONTRACT_PKG = &quot;com.ghost.serialization.contract&quot;
+&nbsp;    const val STR_GHOST_OBJ = &quot;Ghost&quot;
+&nbsp;    const val STR_GHOST_SERIALIZER = &quot;GhostSerializer&quot;
+&nbsp;    const val TEMPLATE_RESOLVE_SERIALIZER = &quot;%T.getSerializer(%T::class)!!&quot;
+<b class="fc">&nbsp;    val BYTE_STRING_CLASS = ClassName(&quot;okio&quot;, &quot;ByteString&quot;)</b>
+&nbsp;    const val DEFAULT_DISCRIMINATOR_KEY = &quot;key&quot;
+&nbsp; 
+&nbsp;    const val STR_WRITER_BEGIN_OBJ = &quot;writer.beginObject()&quot;
+&nbsp;    const val STR_WRITER_NAME_TYPE_VAL = &quot;writer.name(%S).value(%S)&quot;
+&nbsp;    const val STR_WRITER_WRITE_NAME_VAL = &quot;writer.writeNameRaw(%L)&quot;
+&nbsp;    const val STR_WRITER_END_OBJ = &quot;writer.endObject()&quot;
+&nbsp;    const val STR_WRITER_BEGIN_ARR = &quot;writer.beginArray()&quot;
+&nbsp;    const val STR_WRITER_END_ARR = &quot;writer.endArray()&quot;
+&nbsp;    const val STR_PARAM_WRITER = &quot;writer&quot;
+&nbsp;    const val STR_PARAM_VALUE = &quot;value&quot;
+&nbsp;    const val TEMPLATE_CHUNK_CALL_WRITER = &quot;%N(writer, value)&quot;
+&nbsp;    const val STR_FUN_SERIALIZE = &quot;serialize&quot;
+&nbsp;    const val STR_WHEN_VALUE = &quot;when (value)&quot;
+&nbsp;    const val STR_SERIALIZER_SUFFIX = &quot;Serializer&quot;
+&nbsp;    const val TEMPLATE_CHUNK_FUN_NAME = &quot;%s%s_%s&quot;
+&nbsp;    const val TEMPLATE_DECODE_CHUNK_NAME = &quot;%s%s&quot;
+&nbsp;    const val STR_IS_T_ARROW_T_SERIALIZE = &quot;is %T -&gt; %T.serialize(writer, value)&quot;
+&nbsp;    const val TEMPLATE_VAR_NAME = &quot;%sValue&quot;
+&nbsp;    const val TEMPLATE_RESULT_VAR = &quot;result.%s&quot;
+&nbsp;    const val TEMPLATE_MASK_VAR = &quot;mask%s&quot;
+&nbsp;    const val TEMPLATE_CTX_VAR = &quot;ctx.%s&quot;
+&nbsp;    const val TEMPLATE_CTX_MASK_VAR = &quot;ctx.mask%s&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_RETURN = &quot;if ((%s and %s) != 0L) %s else %s&quot;
+&nbsp;    const val TEMPLATE_WRAP_TYPE = &quot;%s(%s)&quot;
+&nbsp;    const val STR_ANNOTATION_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostSerialization&quot;
+&nbsp;    const val STR_ANNOTATION_PROTO_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostProtoSerialization&quot;
+&nbsp;    const val STR_GENERATED_PKG = &quot;com.ghost.serialization.generated&quot;
+&nbsp;    const val STR_REGISTRY_PREFIX = &quot;GhostModuleRegistry&quot;
+&nbsp;    const val STR_LOG_PREFIX = &quot;&gt;&gt;&gt; [GhostSerialization]&quot;
+&nbsp;    const val OPTION_MODULE_NAME = &quot;ghost.moduleName&quot;
+&nbsp;    const val STR_DEFAULT_NAME = &quot;Default&quot;
+&nbsp;    const val STR_DASH = &quot;-&quot;
+&nbsp;    const val STR_LOG_OPTIMIZED = &quot; Successfully optimized: &quot;
+&nbsp;    const val STR_LOG_CRITICAL = &quot; Critical error processing &quot;
+&nbsp;    const val STR_COLON_SPACE = &quot;: &quot;
+&nbsp;    const val STR_REFLECT_PKG = &quot;kotlin.reflect&quot;
+&nbsp;    const val STR_KCLASS = &quot;KClass&quot;
+&nbsp;    const val STR_TYPE_T = &quot;T&quot;
+&nbsp;    const val STR_COLLECTIONS_PKG = &quot;kotlin.collections&quot;
+&nbsp;    const val STR_MAP = &quot;Map&quot;
+&nbsp;    const val STR_FORMAT_S = &quot;%S&quot;
+&nbsp;    const val STR_MAP_OF = &quot;mapOf(\n&quot;
+&nbsp;    const val STR_MAP_ENTRY = &quot;    %T::class to %T&quot;
+&nbsp;    const val STR_COMMA_NEWLINE = &quot;,\n&quot;
+&nbsp;    const val STR_PAREN_CLOSE = &quot;)&quot;
+&nbsp;    const val STR_PROP_SERIALIZERS_MAP = &quot;serializersByClass&quot;
+&nbsp;    const val STR_FUN_GET_SERIALIZER = &quot;getSerializer&quot;
+&nbsp;    const val STR_PARAM_CLAZZ = &quot;clazz&quot;
+&nbsp;    const val STR_UNCHECKED_CAST = &quot;UNCHECKED_CAST&quot;
+&nbsp;    const val STR_GHOST_REGISTRY = &quot;GhostRegistry&quot;
+&nbsp;    const val STR_FUN_PREWARM = &quot;prewarm&quot;
+&nbsp;    const val STR_SERIALIZERS_SIZE = &quot;serializersByClass.size&quot;
+&nbsp;    const val STR_FUN_REG_COUNT = &quot;registeredCount&quot;
+&nbsp;    const val STR_FUN_GET_ALL_SERIALIZERS = &quot;getAllSerializers&quot;
+&nbsp;    const val STR_RETURN_SERIALIZERS = &quot;return serializersByClass&quot;
+&nbsp;    const val STR_KDOC_REGISTRY = &quot;Generated Registry for GhostSerialization.\nUses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.&quot;
+&nbsp;    const val STR_INSTANCE = &quot;INSTANCE&quot;
+&nbsp;    const val STR_INIT_INSTANCE = &quot;%T()&quot;
+&nbsp;    const val STR_META_INF_PROGUARD = &quot;META-INF.proguard&quot;
+&nbsp;    const val STR_GHOST_SERIALIZATION_FILE = &quot;ghost-serialization&quot;
+&nbsp;    const val STR_EXT_PRO = &quot;pro&quot;
+&nbsp;    const val STR_LOG_PROGUARD_WARN = &quot; Could not generate ProGuard rules: &quot;
+&nbsp;    const val STR_SERVICE_REGISTRY = &quot;com.ghost.serialization.contract.GhostRegistry&quot;
+&nbsp;    const val STR_META_INF_SERVICES = &quot;META-INF.services&quot;
+&nbsp;    const val STR_LOG_SERVICE_WARN = &quot; Could not generate ServiceLoader file: &quot;
+&nbsp;    const val STR_LAZY_START = &quot;lazy {\n&quot;
+&nbsp;    const val STR_WHEN_CLAZZ_START = &quot;return when (clazz) {\n&quot;
+&nbsp;    const val STR_WHEN_ENTRY = &quot;    %T::class -&gt; %T\n&quot;
+&nbsp;    const val STR_WHEN_ELSE_NULL = &quot;    else -&gt; null\n&quot;
+&nbsp;    const val STR_WHEN_CLOSE_CAST = &quot;} as %T\n&quot;
+&nbsp;    const val PKG_PARSER = &quot;com.ghost.serialization.parser&quot;
+&nbsp;    const val STR_RETURN_L = &quot;return %L&quot;
+&nbsp;    
+&nbsp;    const val REGISTRY_CHUNK_SIZE = 500
+&nbsp;    const val TEMPLATE_GET_SHARD_MAP_CALL = &quot;getShardMap%L()&quot;
+&nbsp;    const val STR_PLUS_SPACED = &quot; + &quot;
+&nbsp;    const val STR_NEWLINE_CLOSE_CURLY = &quot;\n}&quot;
+&nbsp;    const val TEMPLATE_GET_SHARD_CALL = &quot;getShard%L(clazz)?.let { return it as %T }&quot;
+&nbsp;    const val STR_RETURN_NULL = &quot;return null&quot;
+&nbsp;    const val TEMPLATE_SHARD_MAP_NAME = &quot;getShardMap%d&quot;
+&nbsp;    const val TEMPLATE_SHARD_NAME = &quot;getShard%d&quot;
+&nbsp;    
+&nbsp;    const val STR_LIST = &quot;List&quot;
+&nbsp;    const val STR_SET = &quot;Set&quot;
+&nbsp;    const val STR_DOUBLE = &quot;Double&quot;
+&nbsp;    const val STR_FLOAT = &quot;Float&quot;
 &nbsp;
-<b class="fc">&nbsp;    return when {</b>
-<b class="fc">&nbsp;        isPrimitive -&gt; typeName</b>
-<b class="fc">&nbsp;        isUnboxedValueClass -&gt; {</b>
-<b class="fc">&nbsp;            val underlying = valueClassProperty!!</b>
-<b class="pc">&nbsp;            if (underlying.type.isPrimitive()) {</b>
-<b class="fc">&nbsp;                underlying.typeName</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                underlying.typeName.copy(nullable = true)</b>
-&nbsp;            }
+&nbsp;    const val TEMPLATE_PROGUARD_KEEP = &quot;&quot;&quot;
+&nbsp;        # GhostSerialization Robust Keep Rules
+&nbsp;        -keep class %s.%s {
+&nbsp;            public static ** INSTANCE;
+&nbsp;            public *** getSerializer(...);
 &nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        else -&gt; typeName.copy(nullable = true)</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Resolves the initial placeholder value literal representation for the tracking variable.
-&nbsp; * For example: `null` for objects, `0` for Int, `0L` for Long, `false` for Boolean.
-&nbsp; */
-&nbsp;internal fun GhostPropertyModel.getInitialValue(): String {
-<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
-<b class="fc">&nbsp;    val targetProp = if (isUnboxedValueClass) valueClassProperty!! else this</b>
-&nbsp;
-<b class="fc">&nbsp;    return when {</b>
-<b class="fc">&nbsp;        isNullable -&gt; C.STR_NULL</b>
-<b class="fc">&nbsp;        targetProp.type.isPrimitiveInt() -&gt; C.STR_ZERO</b>
-<b class="fc">&nbsp;        targetProp.type.isPrimitiveLong() -&gt; C.STR_ZERO_L</b>
-<b class="fc">&nbsp;        targetProp.type.isPrimitiveDouble() -&gt; C.STR_ZERO_D</b>
-<b class="pc">&nbsp;        targetProp.type.isPrimitiveFloat() -&gt; C.STR_ZERO_F</b>
-<b class="pc">&nbsp;        targetProp.type.isPrimitiveByte() -&gt; C.STR_ZERO</b>
-<b class="pc">&nbsp;        targetProp.type.isPrimitiveShort() -&gt; C.STR_ZERO</b>
-<b class="fc">&nbsp;        targetProp.type.isPrimitiveChar() -&gt; C.STR_CHAR_NULL_LITERAL</b>
-<b class="fc">&nbsp;        targetProp.type.isPrimitiveBoolean() -&gt; C.STR_FALSE</b>
-<b class="fc">&nbsp;        else -&gt; C.STR_NULL</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Generates the expression string used to pass this property to the constructor
-&nbsp; * in the standard deserializer return statement. Appends a null-assertion operator `!!`
-&nbsp; * if the parameter is non-nullable but tracked as a nullable local variable.
-&nbsp; */
-&nbsp;internal fun GhostPropertyModel.getReturnExpression(): String {
-<b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
-<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
-<b class="fc">&nbsp;    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)</b>
-&nbsp;
-<b class="fc">&nbsp;    return when {</b>
-<b class="fc">&nbsp;        isPrimitive -&gt; varName</b>
-<b class="fc">&nbsp;        isUnboxedValueClass -&gt; {</b>
-<b class="pc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
-<b class="fc">&nbsp;                C.STR_EMPTY</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
-&nbsp;            }
-<b class="fc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$varName$bang&quot;)</b>
+&nbsp;        -keep class * implements com.ghost.serialization.contract.GhostSerializer {
+&nbsp;            *;
 &nbsp;        }
+&nbsp;    &quot;&quot;&quot;
+&nbsp;    const val STR_DOT = &quot;.&quot;
+&nbsp;    const val STR_T_SERIALIZE_WRITER_ACC = &quot;%T.serialize(writer, %L)&quot;
+&nbsp;    const val STR_ENUM_MEMBER_VAL = &quot;%T.%L -&gt; writer.value(%S)&quot;
+&nbsp;    const val STR_WRITER_VAL_ENUM_NAME = &quot;writer.value(value.name)&quot;
+&nbsp;    const val K_INT = &quot;kotlin.Int&quot;
+&nbsp;    const val K_LONG = &quot;kotlin.Long&quot;
+&nbsp;    const val K_STRING = &quot;kotlin.String&quot;
+&nbsp;    const val K_BOOLEAN = &quot;kotlin.Boolean&quot;
+&nbsp;    const val K_DOUBLE = &quot;kotlin.Double&quot;
+&nbsp;    const val K_FLOAT = &quot;kotlin.Float&quot;
+&nbsp;    const val K_BYTE = &quot;kotlin.Byte&quot;
+&nbsp;    const val K_SHORT = &quot;kotlin.Short&quot;
+&nbsp;    const val K_CHAR = &quot;kotlin.Char&quot;
+&nbsp;    const val K_UNIT = &quot;kotlin.Unit&quot;
+&nbsp;    const val K_NOTHING = &quot;kotlin.Nothing&quot;
+&nbsp;    const val K_ANY = &quot;kotlin.Any&quot;
+&nbsp;    const val K_BYTE_ARRAY = &quot;kotlin.ByteArray&quot;
+&nbsp;    const val K_RAW_JSON = &quot;com.ghost.serialization.types.RawJson&quot;
+&nbsp;    const val PKG_TYPES = &quot;com.ghost.serialization.types&quot;
+&nbsp;    const val STR_RAW_JSON_TYPE = &quot;RawJson&quot;
+&nbsp;    const val STR_RAW_JSON_FROM_CAPTURE = &quot;reader.captureRawJson()&quot;
+&nbsp;    const val STR_WRITER_RAW_VALUE_SLICE = &quot;writer.rawValue(%L.storage, %L.storageOffset, %L.storageLength)&quot;
+&nbsp;    const val STR_CAPTURE_RAW_JSON_BYTES = &quot;reader.captureRawJsonBytes()&quot;
+&nbsp;    const val STR_WRITER_RAW_VALUE_L = &quot;writer.rawValue(%L)&quot;
+&nbsp;    const val STR_KOTLIN_PREFIX = &quot;kotlin.&quot;
+&nbsp;    const val STR_JAVA_PREFIX = &quot;java.&quot;
+&nbsp;    const val STR_H_VAL_PREFIX = &quot;H_&quot;
+&nbsp;    const val STR_SERIALIZE_CALL = &quot;%L.serialize(writer, %L)&quot;
+&nbsp;    const val STR_WRITER_VAL_L = &quot;writer.value(%L)&quot;
+&nbsp;    const val STR_WRITER_VAL_FLOAT = &quot;writer.value(%L)&quot;
 &nbsp;
-&nbsp;        else -&gt; {
-<b class="fc">&nbsp;            if (isNullable) {</b>
-<b class="fc">&nbsp;                varName</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                &quot;$varName${C.STR_BANG_BANG}&quot;</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-&nbsp;}
+&nbsp;    /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
+&nbsp;    const val STR_WRITER_VAL_LONG_AS_STRING = &quot;writer.value(%L.toString())&quot;
 &nbsp;
-&nbsp;/**
-&nbsp; * Generates the conditional fallback return expression when standard deserialization
-&nbsp; * supports default arguments. If the property mask bit is set, it resolves to the parsed variable,
-&nbsp; * otherwise it resolves to the copy-based result field value.
-&nbsp; *
-&nbsp; * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
-&nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
-&nbsp; */
-&nbsp;internal fun GhostPropertyModel.getDefaultValueReturnExpression(
-&nbsp;    maskIdx: Int,
-&nbsp;    bitMaskStr: String
-&nbsp;): String {
-<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
-<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;    /** proto3 JSON mapping: `bytes` fields are Base64 strings on the wire, not inline raw JSON. */
+&nbsp;    const val STR_WRITER_VAL_BYTES_AS_BASE64 = &quot;writer.value(encodeBase64String(%L))&quot;
+&nbsp;    const val STR_DECODE_BASE64_STRING_CALL = &quot;decodeBase64String(reader.nextString())&quot;
+&nbsp;    const val STR_WRITE_FIELD = &quot;writer.writeField(%L, %L)&quot;
+&nbsp;    const val STR_WRITE_NAME_RAW = &quot;writer.writeNameRaw(%L)&quot;
+&nbsp;    const val STR_WRITE_NAME_RAW_NULL = &quot;writer.writeNameRaw(%L).nullValue()&quot;
+&nbsp;    const val STR_CUSTOM_ENCODER_CALL = &quot;%T.%L(writer, %L)&quot;
+&nbsp;    const val STR_CONTEXTUAL_PREFIX = &quot;contextual_&quot;
+&nbsp;    
+&nbsp;    const val TEMPLATE_ENCODE_UTF8 = &quot;%S.encodeUtf8()&quot;
+&nbsp;    const val FMT_JSON_FIELD = &quot;\&quot;%s\&quot;:&quot;
+&nbsp;    
+&nbsp;    // Analyzer Constants
+&nbsp;    const val STR_ERR_CLASS_1 = &quot;GhostSerialization: @GhostSerialization can only be applied to &#39;data class&#39;, &#39;sealed class&#39;, &#39;value class&#39; or &#39;enum class&#39;. &quot;
+&nbsp;    const val STR_ERR_CLASS_2 = &quot;Class &#39;&quot;
+&nbsp;    const val STR_ERR_CLASS_3 = &quot;&#39; is not supported.&quot;
+&nbsp;    const val STR_ERR_PRIV_1 = &quot;GhostSerialization: Properties in @GhostSerialization classes cannot be private. &quot;
+&nbsp;    const val STR_ERR_PRIV_2 = &quot;Please remove &#39;private&#39; modifier from properties in &#39;&quot;
+&nbsp;    const val STR_ERR_PRIV_3 = &quot;&#39;.&quot;
+&nbsp;    const val STR_ERR_DUP_1 = &quot;GhostSerialization: Duplicate JSON name &#39;&quot;
+&nbsp;    const val STR_ERR_DUP_2 = &quot;&#39; found in class &#39;&quot;
+&nbsp;    const val STR_ERR_DUP_3 = &quot;&#39;. &quot;
+&nbsp;    const val STR_ERR_DUP_4 = &quot;Problematic properties: &quot;
+&nbsp;    const val STR_ERR_MAP_1 = &quot;GhostSerialization: Map key must be a String in property &#39;&quot;
+&nbsp;    const val STR_ERR_MAP_2 = &quot;&#39;. &quot;
+&nbsp;    const val STR_ERR_MAP_3 = &quot;JSON only supports string-keyed objects.&quot;
+&nbsp;    const val STR_KOTLIN_DOT = &quot;kotlin.&quot;
+&nbsp;    const val STR_TYPE_INT_ARRAY = &quot;kotlin.IntArray&quot;
+&nbsp;    const val STR_TYPE_LONG_ARRAY = &quot;kotlin.LongArray&quot;
+&nbsp;    const val STR_TYPE_FLOAT_ARRAY = &quot;kotlin.FloatArray&quot;
+&nbsp;    const val STR_TYPE_DOUBLE_ARRAY = &quot;kotlin.DoubleArray&quot;
+&nbsp;    const val STR_TYPE_BOOLEAN_ARRAY = &quot;kotlin.BooleanArray&quot;
+&nbsp;    const val GHOST_IGNORE = &quot;GhostIgnore&quot;
+&nbsp;    const val GHOST_NAME = &quot;GhostName&quot;
+&nbsp;    const val SERIAL_NAME = &quot;SerialName&quot;
+&nbsp;    const val GHOST_SERIALIZATION = &quot;GhostSerialization&quot;
+&nbsp;    const val NAME_ARG = &quot;name&quot;
+&nbsp;    const val LIST_QUALIFIED = &quot;kotlin.collections.List&quot;
+&nbsp;    const val SET_QUALIFIED = &quot;kotlin.collections.Set&quot;
+&nbsp;    const val MAP_QUALIFIED = &quot;kotlin.collections.Map&quot;
+&nbsp;    const val STRING_QUALIFIED = &quot;kotlin.String&quot;
+&nbsp;    const val STR_VALUE_ARG = &quot;value&quot;
+&nbsp;    const val STR_SERIAL_NAME_SUFFIX = &quot;SerialName&quot;
+&nbsp;    const val GHOST_RESILIENT = &quot;GhostResilient&quot;
+&nbsp;    const val GHOST_DECODER = &quot;GhostDecoder&quot;
+&nbsp;    const val GHOST_ENCODER = &quot;GhostEncoder&quot;
+&nbsp;    const val PROVIDER_ARG = &quot;provider&quot;
+&nbsp;    const val FUNCTION_NAME_ARG = &quot;functionName&quot;
+&nbsp;    const val GHOST_FLATTEN = &quot;GhostFlatten&quot;
+&nbsp;    const val GHOST_WRAP = &quot;GhostWrap&quot;
+&nbsp;    const val GHOST_WRAPPED_KEYS = &quot;GhostWrappedKeys&quot;
+&nbsp;    const val KEYS_ARG = &quot;keys&quot;
+&nbsp;    const val OMIT_IF_EMPTY_ARG = &quot;omitIfEmpty&quot;
+&nbsp;    const val OMIT_IF_ABSENT_ARG = &quot;omitIfAbsent&quot;
+&nbsp;    const val PATH_ARG = &quot;path&quot;
+&nbsp;    const val NAME = &quot;name&quot;
 &nbsp;
-<b class="nc">&nbsp;    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)</b>
-<b class="nc">&nbsp;    val varName = C.TEMPLATE_VAR_NAME.format(kotlinName)</b>
-<b class="nc">&nbsp;    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)</b>
+&nbsp;    // Generator-specific
+&nbsp;    const val PKG_WRITER = &quot;com.ghost.serialization.writer&quot;
+&nbsp;    const val PKG_CONTRACT = &quot;com.ghost.serialization.contract&quot;
+&nbsp;    const val PKG_EXCEPTION = &quot;com.ghost.serialization.exception&quot;
+&nbsp;    const val PKG_GHOST = &quot;com.ghost.serialization&quot;
+&nbsp;    const val OKIO_PACKAGE = &quot;okio&quot;
+&nbsp;    const val DECODE_RESILIENT = &quot;decodeResilient&quot;
+&nbsp;    const val STR_GHOST_JSON_WRITER = &quot;GhostJsonWriter&quot;
+&nbsp;    const val STR_GHOST_JSON_FLAT_WRITER = &quot;GhostJsonFlatWriter&quot;
+&nbsp;    const val STR_FLAT_BYTE_ARRAY_WRITER = &quot;FlatByteArrayWriter&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_WRITER = &quot;GhostJsonStringWriter&quot;
+&nbsp;    const val STR_GHOST_JSON_READER = &quot;GhostJsonReader&quot;
+&nbsp;    const val STR_GHOST_JSON_FLAT_READER = &quot;GhostJsonFlatReader&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_READER = &quot;GhostJsonStringReader&quot;
+&nbsp;    const val STR_GHOST_JSON_READER_QUALIFIED = &quot;$PKG_PARSER.$STR_GHOST_JSON_READER&quot;
+&nbsp;    const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = &quot;$PKG_PARSER.$STR_GHOST_JSON_FLAT_READER&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_READER_QUALIFIED = &quot;$PKG_PARSER.$STR_GHOST_JSON_STRING_READER&quot;
+&nbsp;    const val STR_RESET_TOKEN_BYTE = &quot;RESET_TOKEN_BYTE&quot;
+&nbsp;    const val STR_ENSURE_UTF8_BYTES = &quot;reader.ensureUtf8Bytes()&quot;
+&nbsp;    const val STR_CHAR_POSITION_TO_BYTE_POSITION = &quot;reader.charPositionToBytePosition&quot;
+&nbsp;    const val STR_BYTE_POSITION_TO_CHAR_POSITION = &quot;reader.bytePositionToCharPosition&quot;
+&nbsp;    const val STR_OVERRIDE_DESERIALIZE_STRING_READER = &quot;override fun deserialize(reader: GhostJsonStringReader)&quot;
+&nbsp;    const val STR_OVERRIDE_SERIALIZE_FN = &quot;override fun serialize&quot;
+&nbsp;    const val STR_KT_SERIALIZER_FILE_SUFFIX = &quot;Serializer.kt&quot;
+&nbsp;    const val STR_TEST_CUSTOM_DECODER_FN = &quot;decodeHex&quot;
+&nbsp;    const val STR_TEST_DECODER_UTILS = &quot;DecoderUtils&quot;
+&nbsp;    const val STR_TEST_CUSTOM_FIELD_MODEL = &quot;CustomFieldModel&quot;
+&nbsp;    const val STR_TEST_BYTES_RESULT = &quot;bytes&quot;
+&nbsp;    const val STR_TEST_NATIVE_RESULT = &quot;native&quot;
+&nbsp;    const val OPTION_TEXT_CHANNEL = &quot;ghost.textChannel&quot;
+&nbsp;    const val STR_BEGIN_ARRAY = &quot;beginArray&quot;
+&nbsp;    const val STR_END_ARRAY = &quot;endArray&quot;
+&nbsp;    const val STR_READ_LIST = &quot;readList&quot;
+&nbsp;    const val STR_READ_SET = &quot;readSet&quot;
+&nbsp;    const val STR_READ_MAP = &quot;readMap&quot;
+&nbsp;    const val STR_NEXT_KEY = &quot;nextKey&quot;
+&nbsp;    const val STR_SELECT_STRING = &quot;selectString&quot;
+&nbsp;    const val STR_PEEK_STRING_FIELD = &quot;peekStringField&quot;
+&nbsp;    const val STR_GHOST_JSON_EXCEPTION = &quot;GhostJsonException&quot;
+&nbsp;    const val STR_BYTESTRING_IMPORT = &quot;ByteString.Companion.encodeUtf8&quot;
+&nbsp;    const val STR_KDOC_HIGH_PERF = &quot;High-performance serializer for [%T].\n&quot;
+&nbsp;    const val STR_KDOC_GENERATED = &quot;Generated by GhostSerialization. Do not modify manually.\n&quot;
+&nbsp;    const val STR_OPTIONS = &quot;OPTIONS&quot;
+&nbsp;    const val STR_OPTIONS_PREFIX = &quot;OPTIONS_&quot;
+&nbsp;    const val STR_OPTIONS_CLASS = &quot;JsonReaderOptions&quot;
+&nbsp;    const val STR_RESET_TOKEN_BYTE_CALL =
+&nbsp;        &quot;    reader._setNextTokenByte($STR_GHOST_JSON_FLAT_READER_QUALIFIED.$STR_RESET_TOKEN_BYTE)\n&quot;
+&nbsp;    const val STR_RUN_OPEN = &quot;run {\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_TEMP_READER =
+&nbsp;        &quot;    val temp = $STR_GHOST_JSON_READER_QUALIFIED(reader._getRawData())\n    temp._setPosition(reader._getPosition())\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_TEMP_READER_STRING =
+&nbsp;        &quot;    val temp = $STR_GHOST_JSON_READER_QUALIFIED($STR_ENSURE_UTF8_BYTES)\n    temp._setPosition($STR_CHAR_POSITION_TO_BYTE_POSITION(reader.position))\n&quot;
+&nbsp;    const val TEMPLATE_CUSTOM_DECODER_TEMP_CALL = &quot;    val res = %T.%L(temp)\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_UPDATE_POS = &quot;    reader._setPosition(temp._getPosition())\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_UPDATE_POS_STRING =
+&nbsp;        &quot;    reader.position = $STR_BYTE_POSITION_TO_CHAR_POSITION(temp._getPosition())\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_RETURN_RES = &quot;    res\n&quot;
+&nbsp;    const val STR_RUN_CLOSE = &quot;}&quot;
+&nbsp;    const val STR_TRY = &quot;try&quot;
+&nbsp;    const val STR_CATCH_EXCEPTION = &quot;catch (_: Exception)&quot;
+&nbsp;    const val TEMPLATE_WARM_UP_READER_INIT = &quot;val %L = %T(\n  %S.encodeToByteArray()\n)&quot;
+&nbsp;    const val TEMPLATE_WARM_UP_STRING_READER_INIT = &quot;val %L = %T(\n  %S\n)&quot;
+&nbsp;    const val TEMPLATE_WARM_UP_DESERIALIZE = &quot;deserialize(%L)&quot;
+&nbsp;    const val STR_READER1 = &quot;reader1&quot;
+&nbsp;    const val STR_READER2 = &quot;reader2&quot;
+&nbsp;    const val STR_READER3 = &quot;reader3&quot;
+&nbsp;    
+&nbsp;    // Import names (raw function names)
+&nbsp;    const val STR_BEGIN_OBJECT_NAME = &quot;beginObject&quot;
+&nbsp;    const val STR_END_OBJECT_NAME = &quot;endObject&quot;
+&nbsp;    const val STR_SELECT_NAME_AND_CONSUME_NAME = &quot;selectNameAndConsume&quot;
+&nbsp;    const val STR_SKIP_VALUE_NAME = &quot;skipValue&quot;
+&nbsp;    const val STR_NEXT_INT_NAME = &quot;nextInt&quot;
+&nbsp;    const val STR_NEXT_LONG_NAME = &quot;nextLong&quot;
+&nbsp;    const val STR_NEXT_STRING_NAME = &quot;nextString&quot;
+&nbsp;    const val STR_NEXT_DOUBLE_NAME = &quot;nextDouble&quot;
+&nbsp;    const val STR_NEXT_FLOAT_NAME = &quot;nextFloat&quot;
+&nbsp;    const val STR_NEXT_CHAR_NAME = &quot;nextChar&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN_NAME = &quot;nextBoolean&quot;
+&nbsp;    const val STR_NEXT_INT_OR_NULL_NAME = &quot;nextIntOrNull&quot;
+&nbsp;    const val STR_NEXT_LONG_OR_NULL_NAME = &quot;nextLongOrNull&quot;
+&nbsp;    const val STR_NEXT_STRING_OR_NULL_NAME = &quot;nextStringOrNull&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN_OR_NULL_NAME = &quot;nextBooleanOrNull&quot;
+&nbsp;    const val STR_CAPTURE_RAW_JSON_BYTES_NAME = &quot;captureRawJsonBytes&quot;
+&nbsp;    const val STR_CAPTURE_RAW_JSON_NAME = &quot;captureRawJson&quot;
+&nbsp;    const val STR_DECODE_BASE64_STRING_NAME = &quot;decodeBase64String&quot;
+&nbsp;    const val STR_ENCODE_BASE64_STRING_NAME = &quot;encodeBase64String&quot;
+&nbsp;    const val STR_BYTE_ARRAY_TYPE = &quot;ByteArray&quot;
+&nbsp;    const val STR_CONSUME_NULL_NAME = &quot;consumeNull&quot;
+&nbsp;    const val STR_IS_NEXT_NULL_VALUE_NAME = &quot;isNextNullValue&quot;
+&nbsp;    const val STR_ENUM_OPTIONS = &quot;ENUM_OPTIONS&quot;
+&nbsp;    const val STR_WARM_UP = &quot;warmUp&quot;
+&nbsp;    const val MARKER = &quot;%S&quot;
+&nbsp;    const val ANNOTATION_GHOST_SERIALIZATION = &quot;GhostSerialization&quot;
+&nbsp;    const val ANNOTATION_GHOST_PROTO_SERIALIZATION = &quot;GhostProtoSerialization&quot;
 &nbsp;
-<b class="nc">&nbsp;    return when {</b>
-<b class="nc">&nbsp;        isNullable || isPrimitive -&gt;</b>
-<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)</b>
+&nbsp;    /** `@GhostSerialization(textChannel = …)` argument name. */
+&nbsp;    const val ARG_TEXT_CHANNEL = &quot;textChannel&quot;
+&nbsp;    const val ARG_DISCRIMINATOR = &quot;discriminator&quot;
+&nbsp;    const val ARG_INFERRED = &quot;inferred&quot;
+&nbsp;    const val STR_DEFAULT_DISCRIMINATOR = &quot;type&quot;
+&nbsp;    const val ARG_NAME = &quot;name&quot;
+&nbsp;    const val PKG_KOTLIN = &quot;kotlin&quot;
+&nbsp;    const val STR_OPT_IN = &quot;OptIn&quot;
+&nbsp;    const val STR_INTERNAL_GHOST_API = &quot;InternalGhostApi&quot;
+&nbsp;    const val STR_TYPE_NAME_PROP = &quot;typeName&quot;
+&nbsp;    const val HASH_MULTIPLIER_START = 31
+&nbsp;    const val HASH_MULTIPLIER_LIMIT = 15000
+&nbsp;    const val HASH_MULTIPLIER_STEP = 2
+&nbsp;    /** Polynomial multiplier for collision disambiguation. Must match COLLISION_HASH_MULTIPLIER in GhostJsonConstants. */
+&nbsp;    const val COLLISION_HASH_MULTIPLIER = 31
+&nbsp;    const val HASH_SHIFT_LIMIT = 16
+&nbsp;    /** Table size used when the field-name set is empty (no dispatch needed). */
+&nbsp;    const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
+&nbsp;    /** Candidate dispatch table sizes tried by [PerfectHashFinder], ascending. */
+<b class="fc">&nbsp;    val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)</b>
+&nbsp;    const val BYTE_MASK = 0xFF
+&nbsp;    const val BIT_SHIFT_8 = 8
+&nbsp;    const val BIT_SHIFT_16 = 16
+&nbsp;    const val BIT_SHIFT_24 = 24
+&nbsp;    const val MARKER_CLASS = &quot;%T::class&quot;
+&nbsp;    const val STR_WRITER_NULL_VAL = &quot;writer.nullValue()&quot;
+&nbsp;    const val STR_ELIGIBILITY_MASK = &quot;eligibilityMask&quot;
+&nbsp;    const val STR_SEEN_MASK = &quot;seenMask&quot;
+&nbsp;    const val STR_REQ_MASK_PREFIX = &quot;reqMask&quot;
+&nbsp;    const val STR_INSTANCE_VAR = &quot;instance&quot;
+&nbsp;    const val STR_V_VAR_PREFIX = &quot;v&quot;
+&nbsp;    const val STR_INFERRED_ERROR_MSG =
+&nbsp;        &quot;Could not infer subclass (\$eligibilityMask/\$seenMask)&quot;
+&nbsp;    const val STR_REQUIRED_FIELD_MISSING = &quot;Required field &#39;%s&#39; missing for %s&quot;
+&nbsp;    const val STR_ERR_NO_SUBCLASSES = &quot;Inferred polymorphism requested but no subclasses found.&quot;
+&nbsp;    const val STR_COPY = &quot;copy&quot;
+&nbsp;    const val STR_ONE_L = &quot;1L&quot;
+&nbsp;    const val STR_SHL = &quot;shl&quot;
+&nbsp;    const val STR_SPACE = &quot; &quot;
+&nbsp;    const val STR_L_SUFFIX = &quot;L&quot;
+&nbsp;    const val STR_IS_RESILIENT = &quot;isResilient&quot;
+&nbsp;    const val STR_IS_PROTO = &quot;isProto&quot;
+&nbsp;    const val STR_TRUE = &quot;true&quot;
+&nbsp;    
+&nbsp;    // Templates
+&nbsp;    const val TEMPLATE_VAR_NULL_DECL = &quot;var %L%L: %T = %L&quot;
+&nbsp;    const val TEMPLATE_VAR_LONG_INIT = &quot;var %L = %L%L&quot;
+&nbsp;    const val TEMPLATE_VAR_INIT = &quot;var %L = %L&quot;
+&nbsp;    const val TEMPLATE_WHEN_BRANCH = &quot;%L -&gt;&quot;
+&nbsp;    const val TEMPLATE_VAR_ASSIGN = &quot;%L%L = %L&quot;
+&nbsp;    const val TEMPLATE_MASK_AND_ASSIGN = &quot;%L = %L and %L%L&quot;
+&nbsp;    const val TEMPLATE_MASK_OR_SHL_ASSIGN = &quot;%L = %L or (%L %L %L)&quot;
+&nbsp;    const val TEMPLATE_VAL_LONG_INIT = &quot;val %L%L = %L%L&quot;
+&nbsp;    const val TEMPLATE_RESULT_WHEN = &quot;val result = when&quot;
+&nbsp;    const val TEMPLATE_INFERRED_DECISION_BRANCH = &quot;(%L and %L%L) != %L &amp;&amp; (%L and %L) == %L -&gt;&quot;
+&nbsp;    const val TEMPLATE_REQUIRED_ARG = &quot;%L = %L ?: throw %T(%S)&quot;
+&nbsp;    const val TEMPLATE_OPTIONAL_ARG = &quot;%L = %L&quot;
+&nbsp;    const val TEMPLATE_DATA_CLASS_COPY_INIT = &quot;var %L = %T(%L)&quot;
+&nbsp;    const val TEMPLATE_IF_NOT_NULL_COPY = &quot;if (%L != null) %L = %L.%L(%L = %L)&quot;
+&nbsp;    const val TEMPLATE_THROW_EXCEPTION = &quot;throw %T(%S)&quot;
+&nbsp;    const val TEMPLATE_PEEK_STRING_FIELD = &quot;val typeName = reader.peekStringField(%S)&quot;
+&nbsp;    const val STR_IT = &quot;it&quot;
+&nbsp;    const val FMT_LONG_LITERAL = &quot;%dL&quot;
+&nbsp;    const val MASK_SIZE_BITS = 64L
+&nbsp;    const val MASK_SIZE_BITS_MINUS_ONE = 63
+&nbsp;    const val STR_NULL_VAL_CALL = &quot;writer.nullValue()&quot;
+&nbsp;    
+&nbsp;    // Control Flow Templates
+&nbsp;    const val TEMPLATE_IF_NULL = &quot;if (%L == null)&quot;
+&nbsp;    const val TEMPLATE_IF_NOT_NULL = &quot;if (%L != null)&quot;
+&nbsp;    const val TEMPLATE_IF_L = &quot;if (%L)&quot;
+&nbsp;    const val TEMPLATE_IS_INSTANCE = &quot;%L is %T&quot;
+&nbsp;    const val TEMPLATE_CAST = &quot;(%L as %T)&quot;
+&nbsp;    const val TEMPLATE_FOR_MAP = &quot;for ((%L, %L) in %L)&quot;
 &nbsp;
-<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
-<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
-<b class="nc">&nbsp;                C.STR_EMPTY</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
-&nbsp;            }
-<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
-<b class="nc">&nbsp;                maskName,</b>
-<b class="nc">&nbsp;                bitMaskStr,</b>
-<b class="nc">&nbsp;                C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$varName$bang&quot;),</b>
-<b class="nc">&nbsp;                resultVar</b>
-&nbsp;            )
-&nbsp;        }
+&nbsp;    // proto3 default-value-omission conditions (guards a field write with &quot;is not the zero value&quot;)
+&nbsp;    const val TEMPLATE_NEQ_ZERO_INT = &quot;%L != 0&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_LONG = &quot;%L != 0L&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_DOUBLE = &quot;%L != 0.0&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_FLOAT = &quot;%L != 0.0f&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_SHORT = &quot;%L != 0.toShort()&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_BYTE = &quot;%L != 0.toByte()&quot;
+&nbsp;    const val TEMPLATE_IS_NOT_EMPTY = &quot;%L.isNotEmpty()&quot;
+&nbsp;    const val TEMPLATE_ACCESSOR_L = &quot;%L&quot;
+&nbsp;    
+&nbsp;    // Writer Templates
+&nbsp;    const val TEMPLATE_WRITER_VALUE = &quot;writer.value(%L)&quot;
+&nbsp;    const val TEMPLATE_WRITER_NAME = &quot;writer.name(%L)&quot;
+&nbsp;    
+&nbsp;    // Misc
+&nbsp;    const val STR_ITEM_PREFIX = &quot;item&quot;
+&nbsp;    const val STR_MAP_KEY_PREFIX = &quot;mapKey&quot;
+&nbsp;    const val STR_MAP_VAL_PREFIX = &quot;mapVal&quot;
+&nbsp;    const val GHOST_SIGNATURE = &quot;GhostSignature&quot;
+&nbsp;    const val STR_WARN_CUSTOM_CODER = &quot;Detected custom coder for %s: D=%s, E=%s&quot;
+&nbsp;    const val TEMPLATE_NAMED_ARG = &quot;  %N = %L,&quot;
+&nbsp;    const val TEMPLATE_ACCESSOR = &quot;%L.%N&quot;
+&nbsp;    const val TEMPLATE_VARIABLE = &quot;%L&quot;
 &nbsp;
-&nbsp;        else -&gt; {
-<b class="nc">&nbsp;            val value = &quot;$varName${C.STR_BANG_BANG}&quot;</b>
-<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
-<b class="nc">&nbsp;                maskName,</b>
-<b class="nc">&nbsp;                bitMaskStr,</b>
-<b class="nc">&nbsp;                value,</b>
-<b class="nc">&nbsp;                resultVar</b>
-&nbsp;            )
-&nbsp;        }
-&nbsp;    }
-&nbsp;}
+&nbsp;    const val PROPERTY_MAX_SIZE = 40
 &nbsp;
-&nbsp;/**
-&nbsp; * Generates the return expression string pointing to the generated `DecodingContext`
-&nbsp; * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
-&nbsp; */
-&nbsp;internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
-<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
-<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
-<b class="nc">&nbsp;    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)</b>
+&nbsp;    /**
+&nbsp;     * Maximum number of default-valued properties for which the compiler
+&nbsp;     * generates 2^N explicit constructor branches (zero `.copy()` allocations).
+&nbsp;     * 4 → up to 16 branches. More defaults fall back to `createInstance`
+&nbsp;     * (single-shot or required-ctor + `.copy()`).
+&nbsp;     */
+&nbsp;    const val MAX_DEFAULT_BRANCH_COUNT = 4
 &nbsp;
-<b class="nc">&nbsp;    return when {</b>
-<b class="nc">&nbsp;        isPrimitive -&gt; ctxVar</b>
-<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
-<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
-<b class="nc">&nbsp;                C.STR_EMPTY</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
-&nbsp;            }
+&nbsp;    const val STR_SRC_TEST = &quot;/src/test/&quot;
+&nbsp;    const val STR_SRC_ANDROID_TEST = &quot;/src/androidTest/&quot;
+&nbsp;    const val STR_SRC_TEST_KSP = &quot;/src/testKsp/&quot;
+&nbsp;    const val STR_TEST_SUFFIX = &quot;_Test&quot;
 &nbsp;
-<b class="nc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$ctxVar$bang&quot;)</b>
-&nbsp;        }
+&nbsp;    const val STR_FUN_VALIDATE_FIELDS = &quot;validateRequiredFields&quot;
+&nbsp;    const val STR_PARAM_MASK0 = &quot;mask0&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_ZERO_STMT = &quot;if ((mask0 and %L) == 0L)&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_NOT_MET_STMT = &quot;if ((mask0 and %L) != %L)&quot;
+&nbsp;    const val TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW = &quot;else if ((mask0 and %L) == 0L)&quot;
+&nbsp;    const val TEMPLATE_VAR_VALUE_DECL = &quot;var %LValue: %T = %L&quot;
+&nbsp;    const val STR_MASK_INDEX_FMT = &quot;mask%d&quot;
+&nbsp;    const val STR_HS_PREFIX = &quot;HS_&quot;
+&nbsp;    const val TEMPLATE_CALL_VALIDATION = &quot;%L(%L, %L)&quot;
+&nbsp;    const val STR_MASK_PREFIX = &quot;MASK_&quot;
+&nbsp;    const val STR_MASK_REQUIRED_PREFIX = &quot;MASK_REQUIRED_&quot;
+&nbsp;    const val STR_MASK_REQUIRED_0 = &quot;MASK_REQUIRED_0&quot;
+&nbsp;    const val STR_MASK_OPTS_PREFIX = &quot;MASK_OPTS_&quot;
+&nbsp;    const val STR_MASK_DEFAULTS_PREFIX = &quot;MASK_DEFAULTS_&quot;
+&nbsp;    const val STR_FUN_CREATE_INSTANCE = &quot;createInstance&quot;
+&nbsp;    const val STR_NULLABLE_SUFFIX = &quot;Nullable&quot;
+&nbsp;    const val STR_ENUM_UNKNOWN = &quot;UNKNOWN&quot;
+&nbsp;    const val STR_TEMP_FLAT_WRITER = &quot;bridgeFlatWriter&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = &quot;val %L = %T(\n&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_BUFFER = &quot;%T()\n&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_CLOSE = &quot;)\n&quot;
+&nbsp;    const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = &quot;%T.%L(%L, %L)&quot;
+&nbsp;    const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
+&nbsp;        &quot;writer.buffer.writeString(%L.buffer.toStringUtf8())&quot;
+&nbsp;    const val TEMPLATE_ENUM_ELSE_FALLBACK = &quot;else -&gt; %T.%L&quot;
+&nbsp;    const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
+&nbsp;        &quot;Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class &quot;
+&nbsp;    const val STR_ERR_FLATTEN_INFINITE_LOOP_2 = &quot;: &quot;
+&nbsp;    const val STR_ERR_SINGLE_SHOT_DEFAULT_1 = &quot;single-shot requires defaultExpression for &quot;
+&nbsp;    const val COMPACT_CALL_MAX_INLINE_LENGTH = 80
+&nbsp;    const val STR_SUB_INDEX_PREFIX = &quot;subIndex&quot;
+&nbsp;    const val TEMPLATE_L = &quot;%L&quot;
+&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_1 = &quot;Could not find a collision-free perfect hash configuration for fields: &quot;
+&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_2 = &quot;. Please ensure there are no duplicate JSON names or conflicting field names.&quot;
 &nbsp;
-&nbsp;        else -&gt; {
-<b class="nc">&nbsp;            if (isNullable) {</b>
-<b class="nc">&nbsp;                ctxVar</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                &quot;$ctxVar${C.STR_BANG_BANG}&quot;</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-&nbsp;}
+&nbsp;    // GhostJsonEnvelope
+&nbsp;    const val STR_GHOST_JSON_ENVELOPE = &quot;GhostJsonEnvelope&quot;
+&nbsp;    const val STR_GHOST_ENVELOPE_PAYLOAD = &quot;GhostEnvelopePayload&quot;
+&nbsp;    const val STR_GHOST_ENVELOPE_FALLBACK = &quot;GhostEnvelopeFallback&quot;
+&nbsp;    const val ARG_ENVELOPE_DISCRIMINATOR = &quot;discriminator&quot;
+&nbsp;    const val ARG_ENVELOPE_TIME_FIELD = &quot;timeField&quot;
+&nbsp;    const val ARG_ENVELOPE_DATA_FIELD = &quot;dataField&quot;
+&nbsp;    const val ARG_ENVELOPE_TARGET = &quot;target&quot;
+&nbsp;    const val STR_FUN_ROUTE_PAYLOAD = &quot;routePayload&quot;
+&nbsp;    const val STR_FUN_PARSE_PAYLOAD = &quot;parsePayload&quot;
+&nbsp;    const val STR_FUN_ROUTE_TYPED = &quot;routeTyped&quot;
+&nbsp;    const val STR_FUN_PARSE_TYPED = &quot;parseTyped&quot;
+&nbsp;    const val STR_PARAM_ENVELOPE = &quot;envelope&quot;
+&nbsp;    const val STR_PARAM_BYTES = &quot;bytes&quot;
+&nbsp;    const val STR_RAW_JSON_DECODE = &quot;RawJsonDecode&quot;
+&nbsp;    const val STR_GHOST = &quot;Ghost&quot;
+&nbsp;    const val STR_TYPE_ANY = &quot;Any&quot;
+&nbsp;    const val STR_ENVELOPE_RETURN_FIELD = &quot;return envelope.%L&quot;
+&nbsp;    const val STR_ENVELOPE_ROUTE_WHEN_OPEN = &quot;return when (envelope.%L) {\n&quot;
+&nbsp;    const val STR_ENVELOPE_ROUTE_CLOSE = &quot;}&quot;
+&nbsp;    const val STR_ENVELOPE_BRANCH = &quot;%S -&gt; %L\n&quot;
+&nbsp;    const val STR_ENVELOPE_ELSE_NULL = &quot;else -&gt; null\n&quot;
+&nbsp;    const val STR_ENVELOPE_ELSE_FALLBACK = &quot;else -&gt; envelope.%L\n&quot;
+&nbsp;    const val STR_ENVELOPE_ELSE_GENERIC = &quot;else -&gt; envelope.%L\n&quot;
+&nbsp;    const val STR_ENVELOPE_PARSE_BYTES_ROUTE = &quot;val envelope = deserialize(%T(%L))\nreturn %L(envelope)&quot;
+&nbsp;    const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = &quot;TargetSerializer&quot;
+&nbsp;    const val TEMPLATE_ENVELOPE_FIELD_ACCESS = &quot;envelope.%L&quot;
+&nbsp;    const val TEMPLATE_ENVELOPE_CACHED_SERIALIZER = &quot;%T.getSerializer(%T::class)!!&quot;
+&nbsp;    const val STR_KDOC_ROUTE_PAYLOAD = &quot;Routes [%T] to its matching opaque JSON payload without re-parsing.\n&quot;
+&nbsp;    const val STR_KDOC_PARSE_PAYLOAD = &quot;Deserializes [%T] from bytes and routes to payload (zero-copy RawJson slice on flat reader).\n&quot;
+&nbsp;    const val STR_KDOC_ROUTE_TYPED = &quot;Routes [%T] and decodes annotated payload targets.\n&quot;
+&nbsp;    const val STR_KDOC_PARSE_TYPED = &quot;Deserializes [%T] from bytes and returns typed payload when configured.\n&quot;
+&nbsp;    const val TEMPLATE_ENVELOPE_TYPED_SERIALIZER = &quot;envelope.%L?.let { %T.decode(it, %L) }&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_1 = &quot;GhostJsonEnvelope: discriminator field &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_2 = &quot;&#39; not found on &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_3 = &quot;&#39;.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_TYPE_1 = &quot;GhostJsonEnvelope: discriminator property &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_TYPE_2 = &quot;&#39; must be String.&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_TIME_1 = &quot;GhostJsonEnvelope: timeField &#39;&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_TIME_2 = &quot;&#39; not found; ignoring.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_MULTI_FALLBACK = &quot;GhostJsonEnvelope: at most one @GhostEnvelopeFallback property is allowed.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DATA_1 = &quot;GhostJsonEnvelope: dataField &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DATA_2 = &quot;&#39; not found on envelope class.&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_1 = &quot;GhostJsonEnvelope: opaque field &#39;&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_2 = &quot;&#39; has no @GhostEnvelopePayload and will not be routed.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_NO_PAYLOADS = &quot;GhostJsonEnvelope: no @GhostEnvelopePayload properties found (fat envelope mode).&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DUP_VALUE_1 = &quot;GhostJsonEnvelope: duplicate discriminator value &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DUP_VALUE_2 = &quot;&#39; on properties: &quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_1 = &quot;GhostJsonEnvelope: payload property &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_2 = &quot;&#39; must be nullable RawJson.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_VALUE = &quot;GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value.&quot;
 &nbsp;
-&nbsp;/**
-&nbsp; * Generates the conditional fallback return expression when fragmented deserialization
-&nbsp; * supports default arguments. It maps tracking mask checks directly to the fields on
-&nbsp; * the `DecodingContext` instance.
-&nbsp; *
-&nbsp; * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
-&nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
-&nbsp; */
-&nbsp;internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
-&nbsp;    maskIdx: Int,
-&nbsp;    bitMaskStr: String
-&nbsp;): String {
+&nbsp;    // @GhostWrappedKeys
+&nbsp;    const val STR_GHOST_WRAPPED_KEYS_CAPTURE = &quot;GhostWrappedKeysCapture&quot;
+&nbsp;    const val STR_CAPTURE_WRAPPED_KEY_NAME = &quot;captureWrappedKey&quot;
+&nbsp;    const val STR_WRAPPED_CAPTURE_PREFIX = &quot;wrappedCapture&quot;
+&nbsp;    const val STR_WRAPPED_KEY_LITERALS_PREFIX = &quot;WRAPPED_KEY_LITERALS_&quot;
+&nbsp;    const val STR_WRAPPED_OMIT_ABSENT_PREFIX = &quot;WRAPPED_OMIT_ABSENT_&quot;
+&nbsp;    const val STR_WRAPPED_JSON_VAR_PREFIX = &quot;wrappedJson&quot;
+&nbsp;    const val STR_JSON_KEY_QUOTE = &quot;\&quot;&quot;
+&nbsp;    const val STR_JSON_KEY_COLON_SUFFIX = &quot;\&quot;:&quot;
+&nbsp;    const val TEMPLATE_CHAINED_MEMBER = &quot;%L.%L&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_CAPTURE_VAR = &quot;val %L = %T(%L)&quot;
+&nbsp;    const val TEMPLATE_CAPTURE_WRAPPED_KEY = &quot;reader.captureWrappedKey(%L, %L)&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_JSON_MATERIALIZE =
+&nbsp;        &quot;val %L = %L.materializeWrappedObject(\n  %L,\n  %L,\n  %L,\n)&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_JSON_IF_NOT_NULL = &quot;if (%L != null)&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_READER_VAR = &quot;val wrappedReader = %T(%L)&quot;
+&nbsp;    // materializeWrappedObject always returns ByteArray (the synthetic object is assembled as
+&nbsp;    // UTF-8) — GhostJsonStringReader&#39;s constructor takes a String, so this target needs a
+&nbsp;    // decode step the byte/flat reader variants don&#39;t.
+&nbsp;    const val TEMPLATE_WRAPPED_STRING_READER_VAR =
+&nbsp;        &quot;val wrappedReader = %T(%L.decodeToString())&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_WRAPPED_READER = &quot;%T.deserialize(wrappedReader)&quot;
+&nbsp;    const val TEMPLATE_NULL_ASSIGN = &quot;%L = null&quot;
+&nbsp;    const val TEMPLATE_ARRAY_OF_OPEN = &quot;arrayOf(\n&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_KEY_LITERAL_BYTE = &quot;    %S.encodeToByteArray()&quot;
+&nbsp;    const val TEMPLATE_INT_ARRAY_OF = &quot;intArrayOf(%L)&quot;
+&nbsp;    const val STR_NEWLINE_CLOSE_PAREN = &quot;\n)&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_1 = &quot;GhostWrappedKeys: duplicate wire key &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_2 = &quot;&#39; on &quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_3 = &quot; (properties &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_4 = &quot;&#39; and &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_5 = &quot;&#39;).&quot;
+&nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 = &quot;GhostWrappedKeys: omitIfEmpty = true requires nullable property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_2 = &quot;&#39;.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_COMBINE_1 = &quot;GhostWrappedKeys: property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_COMBINE_2 = &quot;&#39; cannot combine @GhostWrappedKeys with @GhostFlatten or @GhostWrap.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_1 = &quot;GhostWrappedKeys: wire key &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_2 = &quot;&#39; is both a wrapped source and a regular JSON property on &quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_3 = &quot;.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_1 = &quot;GhostWrappedKeys: keys must not be empty on property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_2 = &quot;&#39;.&quot;
+&nbsp;    const val STR_WARN_WRAPPED_UNMAPPED_1 = &quot;GhostWrappedKeys: wire key &#39;&quot;
+&nbsp;    const val STR_WARN_WRAPPED_UNMAPPED_2 = &quot;&#39; does not map to a field on &quot;
 &nbsp;
-<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
-<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;    // GeneratedSourceTrimmer
+&nbsp;    const val STR_NEWLINE = &quot;\n&quot;
+&nbsp;    const val STR_EXT_KT = &quot;kt&quot;
+&nbsp;    const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
+&nbsp;        &quot;&quot;&quot;^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$&quot;&quot;&quot;
+&nbsp;    /** KotlinPoet emits explicit `public` for Explicit API mode; serializers don&#39;t need it. */
+&nbsp;    const val REGEX_TRIM_REDUNDANT_PUBLIC =
+&nbsp;        &quot;&quot;&quot;^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )&quot;&quot;&quot;
 &nbsp;
-<b class="nc">&nbsp;    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)</b>
-<b class="nc">&nbsp;    val ctxVar = C.TEMPLATE_CTX_VAR.format(kotlinName)</b>
-<b class="nc">&nbsp;    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)</b>
+&nbsp;    // DefaultExpressionExtractor — whitelisted ctor-default literals / escapes
+&nbsp;    const val STR_EMPTY_LIST_CALL = &quot;emptyList()&quot;
+&nbsp;    const val STR_EMPTY_SET_CALL = &quot;emptySet()&quot;
+&nbsp;    const val STR_EMPTY_MAP_CALL = &quot;emptyMap()&quot;
+&nbsp;    const val STR_LIST_OF_EMPTY_CALL = &quot;listOf()&quot;
+&nbsp;    const val STR_SET_OF_EMPTY_CALL = &quot;setOf()&quot;
+&nbsp;    const val STR_MAP_OF_EMPTY_CALL = &quot;mapOf()&quot;
+&nbsp;    const val STR_CHAR_ESC_QUOTE = &quot;\\&#39;&quot;
+&nbsp;    const val STR_CHAR_ESC_BACKSLASH = &quot;\\\\&quot;
+&nbsp;    const val STR_CHAR_ESC_N = &quot;\\n&quot;
+&nbsp;    const val STR_CHAR_ESC_T = &quot;\\t&quot;
+&nbsp;    const val STR_CHAR_ESC_R = &quot;\\r&quot;
+&nbsp;    const val STR_CHAR_ESC_B = &quot;\\b&quot;
+&nbsp;    const val STR_CHAR_ESC_DOLLAR = &quot;\\\$&quot;
+&nbsp;    const val STR_UNICODE_ESC_PREFIX = &quot;\\u&quot;
+&nbsp;    const val STR_TRIPLE_QUOTE = &quot;\&quot;\&quot;\&quot;&quot;
+&nbsp;    const val DEFAULT_EXPR_MAX_PARAM_SEARCH_CHARS = 8_192
+&nbsp;    const val DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS = 512
+&nbsp;    const val DEFAULT_EXPR_UNICODE_ESC_LEN = 6
+&nbsp;    const val DEFAULT_EXPR_UNICODE_HEX_LEN = 4
+&nbsp;    const val DEFAULT_EXPR_MIN_CHAR_LITERAL_LEN = 3
+&nbsp;    const val DEFAULT_EXPR_MIN_STRING_LITERAL_LEN = 2
+&nbsp;    const val REGEX_DEFAULT_EXPR_NUMERIC =
+&nbsp;        &quot;&quot;&quot;^-?(?:&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)(?:L|l)?|&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?[fFdD]?|&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)(?:[eE][+-]?\d+)[fFdD]?|&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)[fFdD]&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;)$&quot;&quot;&quot;
+&nbsp;    const val REGEX_DEFAULT_EXPR_ENUM_REF =
+&nbsp;        &quot;&quot;&quot;^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$&quot;&quot;&quot;
 &nbsp;
-<b class="nc">&nbsp;    return when {</b>
-<b class="nc">&nbsp;        isNullable || isPrimitive -&gt;</b>
-<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)</b>
+<b class="fc">&nbsp;    val DEFAULT_EXPR_EMPTY_COLLECTION_CALLS = setOf(</b>
+<b class="fc">&nbsp;        STR_EMPTY_LIST_CALL,</b>
+<b class="fc">&nbsp;        STR_EMPTY_SET_CALL,</b>
+<b class="fc">&nbsp;        STR_EMPTY_MAP_CALL,</b>
+<b class="fc">&nbsp;        STR_LIST_OF_EMPTY_CALL,</b>
+<b class="fc">&nbsp;        STR_SET_OF_EMPTY_CALL,</b>
+<b class="fc">&nbsp;        STR_MAP_OF_EMPTY_CALL,</b>
+&nbsp;    )
 &nbsp;
-<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
-<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
-<b class="nc">&nbsp;                C.STR_EMPTY</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
-&nbsp;            }
-<b class="nc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(</b>
-<b class="nc">&nbsp;                typeName,</b>
-<b class="nc">&nbsp;                C.TEMPLATE_IF_MASK_RETURN.format(</b>
-<b class="nc">&nbsp;                    maskName,</b>
-<b class="nc">&nbsp;                    bitMaskStr,</b>
-<b class="nc">&nbsp;                    &quot;$ctxVar$bang&quot;,</b>
-<b class="nc">&nbsp;                    resultVar</b>
-&nbsp;                )
+<b class="fc">&nbsp;    val DEFAULT_EXPR_CHAR_ESCAPES = setOf(</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_QUOTE,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_BACKSLASH,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_N,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_T,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_R,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_B,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_DOLLAR,</b>
+&nbsp;    )
 &nbsp;
-&nbsp;            )
-&nbsp;        }
-&nbsp;
-&nbsp;        else -&gt; {
-<b class="nc">&nbsp;            val value = &quot;$ctxVar${C.STR_BANG_BANG}&quot;</b>
-<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
-<b class="nc">&nbsp;                maskName,</b>
-<b class="nc">&nbsp;                bitMaskStr,</b>
-<b class="nc">&nbsp;                value,</b>
-<b class="nc">&nbsp;                resultVar</b>
-&nbsp;            )
-&nbsp;        }
-&nbsp;    }
+<b class="fc">&nbsp;    val DEFAULT_EXPR_SCALAR_KEYWORDS = setOf(STR_NULL, STR_TRUE, STR_FALSE)</b>
 &nbsp;}
 </code>
 </pre>
@@ -347,7 +854,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

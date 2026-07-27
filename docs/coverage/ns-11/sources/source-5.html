@@ -152,6 +152,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private const val MAX_DECIMALS = 9
 &nbsp;
 &nbsp;    /**
+&nbsp;     * Bytes reserved past [pos] for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
+&nbsp;     */
+&nbsp;    private const val LONG_DIRECT_SCRATCH_SPAN = 32
+&nbsp;
+&nbsp;    /** Scale applied to the base-100 remainder when indexing [C.DOUBLE_DIGIT_LUT] (2 ASCII digits). */
+&nbsp;    private const val DIGIT_PAIR_LUT_STRIDE = 2
+&nbsp;    private const val DIGIT_PAIR_WIDTH = 2
+&nbsp;
+&nbsp;    /**
 &nbsp;     * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
 &nbsp;     *
 &nbsp;     * @param value The double value to write.
@@ -186,7 +195,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                localValue.toLong(),</b>
 <b class="fc">&nbsp;                scratch,</b>
 <b class="fc">&nbsp;                pos,</b>
-<b class="fc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="fc">&nbsp;                writeDecimalZero = true</b>
 <b class="fc">&nbsp;            ) - offset</b>
 &nbsp;        }
@@ -210,7 +219,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                intPart + 1,</b>
 <b class="nc">&nbsp;                scratch,</b>
 <b class="nc">&nbsp;                pos,</b>
-<b class="nc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="nc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="nc">&nbsp;                writeDecimalZero = true</b>
 <b class="nc">&nbsp;            ) - offset</b>
 &nbsp;        }
@@ -219,7 +228,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            intPart,</b>
 <b class="fc">&nbsp;            scratch,</b>
 <b class="fc">&nbsp;            pos,</b>
-<b class="fc">&nbsp;            scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="fc">&nbsp;            writeDecimalZero = false</b>
 &nbsp;        )
 &nbsp;
@@ -241,17 +250,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var writePos = pos - 1</b>
 &nbsp;
 <b class="fc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
-<b class="fc">&nbsp;            val q = fracInt / 100</b>
-<b class="fc">&nbsp;            val r = (fracInt - (q * 100)) * 2</b>
+<b class="fc">&nbsp;            val quotient = fracInt / C.BASE_HUNDRED</b>
+<b class="fc">&nbsp;            val lutOffset = (fracInt - (quotient * C.BASE_HUNDRED)) * DIGIT_PAIR_LUT_STRIDE</b>
 <b class="fc">&nbsp;            C.DOUBLE_DIGIT_LUT.copyInto(</b>
 <b class="fc">&nbsp;                scratch,</b>
 <b class="fc">&nbsp;                writePos - 1,</b>
-<b class="fc">&nbsp;                r,</b>
-<b class="fc">&nbsp;                r + 2</b>
+<b class="fc">&nbsp;                lutOffset,</b>
+<b class="fc">&nbsp;                lutOffset + DIGIT_PAIR_WIDTH</b>
 &nbsp;            )
-<b class="fc">&nbsp;            writePos -= 2</b>
-<b class="fc">&nbsp;            fracInt = q</b>
-<b class="fc">&nbsp;            decimalsToPrint -= 2</b>
+<b class="fc">&nbsp;            writePos -= DIGIT_PAIR_WIDTH</b>
+<b class="fc">&nbsp;            fracInt = quotient</b>
+<b class="fc">&nbsp;            decimalsToPrint -= DIGIT_PAIR_WIDTH</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (decimalsToPrint == 1) {</b>
 <b class="fc">&nbsp;            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()</b>
@@ -290,7 +299,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                doubleVal.toLong(),</b>
 <b class="fc">&nbsp;                scratch,</b>
 <b class="fc">&nbsp;                pos,</b>
-<b class="fc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="fc">&nbsp;                writeDecimalZero = true</b>
 <b class="fc">&nbsp;            ) - offset</b>
 &nbsp;        }
@@ -314,7 +323,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                intPart + 1,</b>
 <b class="nc">&nbsp;                scratch,</b>
 <b class="nc">&nbsp;                pos,</b>
-<b class="nc">&nbsp;                scratchEnd = pos + 32,</b>
+<b class="nc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="nc">&nbsp;                writeDecimalZero = true</b>
 <b class="nc">&nbsp;            ) - offset</b>
 &nbsp;        }
@@ -323,7 +332,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            intPart,</b>
 <b class="fc">&nbsp;            scratch,</b>
 <b class="fc">&nbsp;            pos,</b>
-<b class="fc">&nbsp;            scratchEnd = pos + 32,</b>
+<b class="fc">&nbsp;            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="fc">&nbsp;            writeDecimalZero = false</b>
 &nbsp;        )
 &nbsp;
@@ -344,17 +353,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var writePos = pos - 1</b>
 &nbsp;
 <b class="fc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
-<b class="fc">&nbsp;            val q = fracInt / 100</b>
-<b class="fc">&nbsp;            val r = (fracInt - (q * 100)) * 2</b>
+<b class="fc">&nbsp;            val quotient = fracInt / C.BASE_HUNDRED</b>
+<b class="fc">&nbsp;            val lutOffset = (fracInt - (quotient * C.BASE_HUNDRED)) * DIGIT_PAIR_LUT_STRIDE</b>
 <b class="fc">&nbsp;            C.DOUBLE_DIGIT_LUT.copyInto(</b>
 <b class="fc">&nbsp;                scratch,</b>
 <b class="fc">&nbsp;                writePos - 1,</b>
-<b class="fc">&nbsp;                r,</b>
-<b class="fc">&nbsp;                r + 2</b>
+<b class="fc">&nbsp;                lutOffset,</b>
+<b class="fc">&nbsp;                lutOffset + DIGIT_PAIR_WIDTH</b>
 &nbsp;            )
-<b class="fc">&nbsp;            writePos -= 2</b>
-<b class="fc">&nbsp;            fracInt = q</b>
-<b class="fc">&nbsp;            decimalsToPrint -= 2</b>
+<b class="fc">&nbsp;            writePos -= DIGIT_PAIR_WIDTH</b>
+<b class="fc">&nbsp;            fracInt = quotient</b>
+<b class="fc">&nbsp;            decimalsToPrint -= DIGIT_PAIR_WIDTH</b>
 &nbsp;        }
 <b class="pc">&nbsp;        if (decimalsToPrint == 1) {</b>
 <b class="fc">&nbsp;            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()</b>
@@ -401,16 +410,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var end = scratchEnd</b>
 &nbsp;
 <b class="fc">&nbsp;        while (localValue &gt;= C.BASE_HUNDRED) {</b>
-<b class="fc">&nbsp;            val q = localValue / C.BASE_HUNDRED</b>
-<b class="fc">&nbsp;            val r = (localValue - (q * C.BASE_HUNDRED)).toInt()</b>
-<b class="fc">&nbsp;            localValue = q</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]</b>
+<b class="fc">&nbsp;            val quotient = localValue / C.BASE_HUNDRED</b>
+<b class="fc">&nbsp;            val remainder = (localValue - (quotient * C.BASE_HUNDRED)).toInt()</b>
+<b class="fc">&nbsp;            localValue = quotient</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (localValue &gt;= C.BASE_TEN) {</b>
-<b class="fc">&nbsp;            val r = localValue.toInt()</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[r]</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[r]</b>
+<b class="fc">&nbsp;            val remainder = localValue.toInt()</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]</b>
 &nbsp;        } else {
 <b class="fc">&nbsp;            scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()</b>
 &nbsp;        }
@@ -456,7 +465,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

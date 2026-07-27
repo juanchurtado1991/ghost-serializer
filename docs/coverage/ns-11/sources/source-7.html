@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    57.9%
+    74.5%
   </span>
   <span class="absValue">
-    (33/57)
+    (41/55)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    59%
+    68.4%
   </span>
   <span class="absValue">
-    (95/161)
+    (106/155)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    60%
+    73.8%
   </span>
   <span class="absValue">
-    (225/375)
+    (290/393)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    60.6%
+    72.6%
   </span>
   <span class="absValue">
-    (876/1446)
+    (1073/1478)
   </span>
 </td>
 </tr>
@@ -158,13 +158,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_QUOTE
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_BACKSLASH
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.CHAR_U
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_QUOTE
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSLASH
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_BACKSPACE
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_FORM_FEED
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_NEWLINE
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_CARRIAGE_RETURN
-&nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESCAPE_TAB
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESC_B_INT
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESC_F_INT
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.ESC_N_INT
@@ -173,13 +166,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.RESULT_NONE
 &nbsp;import okio.ByteString
 &nbsp;
-&nbsp;@Suppress(&quot;SameParameterValue&quot;, &quot;NOTHING_TO_INLINE&quot;)
-<b class="fc">&nbsp;class GhostJsonStringWriter @InternalGhostApi constructor(</b>
+<b class="fc">&nbsp;@Suppress(&quot;SameParameterValue&quot;, &quot;NOTHING_TO_INLINE&quot;)</b>
+&nbsp;class GhostJsonStringWriter @InternalGhostApi constructor(
 <b class="fc">&nbsp;    @InternalGhostApi val buffer: FlatCharArrayWriter</b>
 &nbsp;) {
 &nbsp;
-<b class="fc">&nbsp;    @PublishedApi</b>
-&nbsp;    internal var needsComma: Boolean = false
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal var needsComma: Boolean = false</b>
 &nbsp;
 &nbsp;    private var depth: Int = 0
 &nbsp;
@@ -192,14 +185,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val newScratch = CharArray(WRITER_SCRATCH_SIZE)</b>
 <b class="fc">&nbsp;        scratch = newScratch</b>
 <b class="fc">&nbsp;        return newScratch</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    @Suppress(&quot;unused&quot;)
-&nbsp;    @InternalGhostApi
-&nbsp;    fun release() {
-<b class="nc">&nbsp;        scratch = null</b>
-<b class="nc">&nbsp;        needsComma = false</b>
-<b class="nc">&nbsp;        depth = 0</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
@@ -237,8 +222,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    fun beginArray(): GhostJsonStringWriter {
 <b class="fc">&nbsp;        val currentDepth = depth</b>
-<b class="pc">&nbsp;        if (currentDepth &gt;= MAX_DEPTH) {</b>
-<b class="nc">&nbsp;            throwDepthError()</b>
+<b class="fc">&nbsp;        if (currentDepth &gt;= MAX_DEPTH) {</b>
+<b class="fc">&nbsp;            throwDepthError()</b>
 &nbsp;        }
 <b class="fc">&nbsp;        appendSeparator()</b>
 <b class="fc">&nbsp;        buffer.writeChar(OPEN_ARR_INT)</b>
@@ -331,64 +316,64 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeNameRaw(header: String): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        needsComma = false</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        needsComma = false</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeField(header: String, value: Int): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        writeIntValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        writeIntValueRaw(value)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeField(header: String, value: Long): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        writeLongValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        writeLongValueRaw(value)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeField(header: String, value: String): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        writeStringValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        writeStringValueRaw(value)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeField(header: String, value: Boolean): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        writeBooleanValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        writeBooleanValueRaw(value)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeField(header: String, value: Double): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        writeDoubleValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        writeDoubleValueRaw(value)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeField(header: String, value: Float): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeString(header)</b>
-<b class="nc">&nbsp;        writeFloatValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeString(header)</b>
+<b class="fc">&nbsp;        writeFloatValueRaw(value)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    // ── value() public API ────────────────────────────────────────────────────
@@ -443,12 +428,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
 &nbsp;     */
 &nbsp;    fun value(char: Char): GhostJsonStringWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.writeChar(QUOTE_INT)</b>
-<b class="nc">&nbsp;        buffer.writeChar(char.code)</b>
-<b class="nc">&nbsp;        buffer.writeChar(QUOTE_INT)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
+<b class="fc">&nbsp;        appendSeparator()</b>
+<b class="fc">&nbsp;        buffer.writeChar(QUOTE_INT)</b>
+<b class="fc">&nbsp;        buffer.writeChar(char.code)</b>
+<b class="fc">&nbsp;        buffer.writeChar(QUOTE_INT)</b>
+<b class="fc">&nbsp;        needsComma = true</b>
+<b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    fun nullValue(): GhostJsonStringWriter {
@@ -483,10 +468,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeBooleanValueRaw(value: Boolean) {
-<b class="nc">&nbsp;        if (value) {</b>
-<b class="nc">&nbsp;            buffer.writeTrue()</b>
+<b class="fc">&nbsp;        if (value) {</b>
+<b class="fc">&nbsp;            buffer.writeTrue()</b>
 &nbsp;        } else {
-<b class="nc">&nbsp;            buffer.writeFalse()</b>
+<b class="fc">&nbsp;            buffer.writeFalse()</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
@@ -496,8 +481,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            buffer.writeChar(ZERO_INT + value)</b>
 &nbsp;            return
 &nbsp;        }
-<b class="pc">&nbsp;        if (value in MIN_SINGLE_DIGIT_NEG..MAX_SINGLE_DIGIT_NEG) {</b>
-<b class="nc">&nbsp;            buffer.write2Chars(MINUS_INT, ZERO_INT - value)</b>
+<b class="fc">&nbsp;        if (value in MIN_SINGLE_DIGIT_NEG..MAX_SINGLE_DIGIT_NEG) {</b>
+<b class="fc">&nbsp;            buffer.write2Chars(MINUS_INT, ZERO_INT - value)</b>
 &nbsp;            return
 &nbsp;        }
 <b class="pc">&nbsp;        if (value == Int.MIN_VALUE) {</b>
@@ -509,9 +494,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeLongValueRaw(value: Long) {
-<b class="pc">&nbsp;        if (value in MIN_SINGLE_DIGIT_L..MAX_SINGLE_DIGIT_L) {</b>
-<b class="nc">&nbsp;            val intVal = value.toInt()</b>
-<b class="nc">&nbsp;            buffer.writeChar(ZERO_INT + intVal)</b>
+<b class="fc">&nbsp;        if (value in MIN_SINGLE_DIGIT_L..MAX_SINGLE_DIGIT_L) {</b>
+<b class="fc">&nbsp;            val intVal = value.toInt()</b>
+<b class="fc">&nbsp;            buffer.writeChar(ZERO_INT + intVal)</b>
 &nbsp;            return
 &nbsp;        }
 <b class="pc">&nbsp;        if (value in MIN_SINGLE_DIGIT_NEG_L..MAX_SINGLE_DIGIT_NEG_L) {</b>
@@ -569,11 +554,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeDoubleValueRaw(number: Double) {
 <b class="pc">&nbsp;        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &amp;&amp;</b>
-<b class="pc">&nbsp;            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &amp;&amp;</b>
-<b class="nc">&nbsp;            !(number == 0.0 &amp;&amp; number.toRawBits() &lt; 0)</b>
+<b class="fc">&nbsp;            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &amp;&amp;</b>
+<b class="pc">&nbsp;            !(number == 0.0 &amp;&amp; number.toRawBits() &lt; 0)</b>
 &nbsp;        ) {
-<b class="nc">&nbsp;            writeLongValueRawInternal(number.toLong())</b>
-<b class="nc">&nbsp;            buffer.writeDotZero()</b>
+<b class="fc">&nbsp;            writeLongValueRawInternal(number.toLong())</b>
+<b class="fc">&nbsp;            buffer.writeDotZero()</b>
 &nbsp;            return
 &nbsp;        }
 &nbsp;
@@ -644,12 +629,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    @Suppress(&quot;unused&quot;)
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeNullValueRaw() {
-<b class="nc">&nbsp;        buffer.writeNull()</b>
-&nbsp;    }
-&nbsp;
 &nbsp;    @PublishedApi
 &nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
 &nbsp;    internal inline fun appendSeparator() {
@@ -677,14 +656,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var index = 0</b>
 <b class="fc">&nbsp;        while (index &lt; length) {</b>
 <b class="fc">&nbsp;            val code = value[index].code</b>
-<b class="fc">&nbsp;            if (!isPlainAscii(</b>
-&nbsp;                    code,
-&nbsp;                    localAsciiLimit,
-&nbsp;                    localEscapeMasks,
-&nbsp;                    localShift,
-&nbsp;                    localIndexMask,
-&nbsp;                    localUnit,
-&nbsp;                    resultNone
+&nbsp;            // Char-channel: BMP/supplementary code units (&gt;= 128) need no JSON escape and can
+&nbsp;            // ride the bulk copy path. Byte writers must keep the stricter ASCII gate (UTF-8).
+<b class="fc">&nbsp;            if (!isSafeUnescaped(</b>
+<b class="fc">&nbsp;                    code,</b>
+<b class="fc">&nbsp;                    localAsciiLimit,</b>
+<b class="fc">&nbsp;                    localEscapeMasks,</b>
+<b class="fc">&nbsp;                    localShift,</b>
+<b class="fc">&nbsp;                    localIndexMask,</b>
+<b class="fc">&nbsp;                    localUnit,</b>
+<b class="fc">&nbsp;                    resultNone</b>
 &nbsp;                )
 &nbsp;            ) {
 <b class="fc">&nbsp;                writeStringValueRawSlow(value, length, index)</b>
@@ -698,8 +679,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun writeStringValueRawSlow(value: String, length: Int, breakIndex: Int) {
 <b class="fc">&nbsp;        val scratchBuf = acquireScratch()</b>
 <b class="pc">&nbsp;        if (breakIndex == 0 &amp;&amp; length + STRING_QUOTE_PAIR_BYTES &lt;= scratchBuf.size) {</b>
-<b class="fc">&nbsp;            scratchBuf[0] = CHAR_QUOTE</b>
-<b class="fc">&nbsp;            writeEscapedIntoScratch(value, length, scratchBuf)</b>
+<b class="nc">&nbsp;            scratchBuf[0] = CHAR_QUOTE</b>
+<b class="nc">&nbsp;            writeEscapedIntoScratch(value, length, scratchBuf)</b>
 &nbsp;            return
 &nbsp;        }
 <b class="fc">&nbsp;        buffer.writeChar(QUOTE_INT)</b>
@@ -739,20 +720,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val localUnit = BITMASK_UNIT</b>
 <b class="fc">&nbsp;        val resultNone = RESULT_NONE</b>
 &nbsp;
-<b class="pc">&nbsp;        if (remaining &lt;= scratchSize) {</b>
+<b class="fc">&nbsp;        if (remaining &lt;= scratchSize) {</b>
 <b class="fc">&nbsp;            var scratchIndex = 0</b>
 <b class="fc">&nbsp;            var charIndex = start</b>
 <b class="fc">&nbsp;            while (charIndex &lt; length) {</b>
 <b class="fc">&nbsp;                val charCode = text[charIndex].code</b>
 &nbsp;
-<b class="fc">&nbsp;                if (isPlainAscii(</b>
-&nbsp;                        charCode,
-&nbsp;                        localAsciiLimit,
-&nbsp;                        localEscapeMasks,
-&nbsp;                        localShift,
-&nbsp;                        localIndexMask,
-&nbsp;                        localUnit,
-&nbsp;                        resultNone
+<b class="fc">&nbsp;                if (isSafeUnescaped(</b>
+<b class="fc">&nbsp;                        charCode,</b>
+<b class="fc">&nbsp;                        localAsciiLimit,</b>
+<b class="fc">&nbsp;                        localEscapeMasks,</b>
+<b class="fc">&nbsp;                        localShift,</b>
+<b class="fc">&nbsp;                        localIndexMask,</b>
+<b class="fc">&nbsp;                        localUnit,</b>
+<b class="fc">&nbsp;                        resultNone</b>
 &nbsp;                    )
 &nbsp;                ) {
 <b class="fc">&nbsp;                    scratchBuf[scratchIndex++] = charCode.toChar()</b>
@@ -765,15 +746,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    scratchIndex = 0</b>
 &nbsp;                }
 &nbsp;
-<b class="pc">&nbsp;                if (charCode &lt; localAsciiLimit) {</b>
-<b class="fc">&nbsp;                    val esc = getEscapeSecondChar(charCode)</b>
-<b class="pc">&nbsp;                    if (esc != 0) {</b>
-<b class="fc">&nbsp;                        buffer.write2Chars(BACKSLASH_INT, esc)</b>
-&nbsp;                    } else {
-<b class="nc">&nbsp;                        writeUnicodeEscape(charCode, scratchBuf)</b>
-&nbsp;                    }
+&nbsp;                // Not safe-unescaped ⇒ ASCII control / quote / backslash (see ESCAPE_MASKS).
+<b class="fc">&nbsp;                val esc = getEscapeSecondChar(charCode)</b>
+<b class="pc">&nbsp;                if (esc != 0) {</b>
+<b class="fc">&nbsp;                    buffer.write2Chars(BACKSLASH_INT, esc)</b>
 &nbsp;                } else {
-<b class="nc">&nbsp;                    buffer.writeChar(charCode)</b>
+<b class="nc">&nbsp;                    writeUnicodeEscape(charCode, scratchBuf)</b>
 &nbsp;                }
 <b class="fc">&nbsp;                charIndex++</b>
 &nbsp;            }
@@ -783,27 +761,74 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            return
 &nbsp;        }
 &nbsp;
-<b class="nc">&nbsp;        var scratchIndex = 0</b>
-<b class="nc">&nbsp;        var charIndex = start</b>
+<b class="fc">&nbsp;        var scratchIndex = 0</b>
+<b class="fc">&nbsp;        var charIndex = start</b>
+&nbsp;
+<b class="fc">&nbsp;        while (charIndex &lt; length) {</b>
+<b class="fc">&nbsp;            val charCode = text[charIndex].code</b>
+&nbsp;
+<b class="fc">&nbsp;            if (isSafeUnescaped(</b>
+<b class="fc">&nbsp;                    charCode,</b>
+<b class="fc">&nbsp;                    localAsciiLimit,</b>
+<b class="fc">&nbsp;                    localEscapeMasks,</b>
+<b class="fc">&nbsp;                    localShift,</b>
+<b class="fc">&nbsp;                    localIndexMask,</b>
+<b class="fc">&nbsp;                    localUnit,</b>
+<b class="fc">&nbsp;                    resultNone</b>
+&nbsp;                )
+&nbsp;            ) {
+<b class="fc">&nbsp;                scratchBuf[scratchIndex++] = charCode.toChar()</b>
+<b class="pc">&nbsp;                if (scratchIndex == scratchSize) {</b>
+<b class="nc">&nbsp;                    buffer.write(scratchBuf, 0, scratchIndex)</b>
+<b class="nc">&nbsp;                    scratchIndex = 0</b>
+&nbsp;                }
+<b class="fc">&nbsp;                charIndex++</b>
+&nbsp;                continue
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (scratchIndex &gt; 0) {</b>
+<b class="fc">&nbsp;                buffer.write(scratchBuf, 0, scratchIndex)</b>
+<b class="fc">&nbsp;                scratchIndex = 0</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val esc = getEscapeSecondChar(charCode)</b>
+<b class="pc">&nbsp;            if (esc != 0) {</b>
+<b class="fc">&nbsp;                buffer.write2Chars(BACKSLASH_INT, esc)</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                writeUnicodeEscape(charCode, scratchBuf)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            charIndex++</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (scratchIndex &gt; 0) {</b>
+<b class="fc">&nbsp;            buffer.write(scratchBuf, 0, scratchIndex)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: CharArray) {
+<b class="nc">&nbsp;        var scratchIndex = 1</b>
+<b class="nc">&nbsp;        var charIndex = 0</b>
+<b class="nc">&nbsp;        val localAsciiLimit = ASCII_LIMIT</b>
+<b class="nc">&nbsp;        val localEscapeMasks = ESCAPE_MASKS</b>
+<b class="nc">&nbsp;        val localShift = BITMASK_SHIFT</b>
+<b class="nc">&nbsp;        val localIndexMask = BITMASK_INDEX_MASK</b>
+<b class="nc">&nbsp;        val localUnit = BITMASK_UNIT</b>
+<b class="nc">&nbsp;        val resultNone = RESULT_NONE</b>
 &nbsp;
 <b class="nc">&nbsp;        while (charIndex &lt; length) {</b>
 <b class="nc">&nbsp;            val charCode = text[charIndex].code</b>
 &nbsp;
-<b class="nc">&nbsp;            if (isPlainAscii(</b>
-&nbsp;                    charCode,
-&nbsp;                    localAsciiLimit,
-&nbsp;                    localEscapeMasks,
-&nbsp;                    localShift,
-&nbsp;                    localIndexMask,
-&nbsp;                    localUnit,
-&nbsp;                    resultNone
+<b class="nc">&nbsp;            if (isSafeUnescaped(</b>
+<b class="nc">&nbsp;                    charCode,</b>
+<b class="nc">&nbsp;                    localAsciiLimit,</b>
+<b class="nc">&nbsp;                    localEscapeMasks,</b>
+<b class="nc">&nbsp;                    localShift,</b>
+<b class="nc">&nbsp;                    localIndexMask,</b>
+<b class="nc">&nbsp;                    localUnit,</b>
+<b class="nc">&nbsp;                    resultNone</b>
 &nbsp;                )
 &nbsp;            ) {
 <b class="nc">&nbsp;                scratchBuf[scratchIndex++] = charCode.toChar()</b>
-<b class="nc">&nbsp;                if (scratchIndex == scratchSize) {</b>
-<b class="nc">&nbsp;                    buffer.write(scratchBuf, 0, scratchIndex)</b>
-<b class="nc">&nbsp;                    scratchIndex = 0</b>
-&nbsp;                }
 <b class="nc">&nbsp;                charIndex++</b>
 &nbsp;                continue
 &nbsp;            }
@@ -813,78 +838,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                scratchIndex = 0</b>
 &nbsp;            }
 &nbsp;
-<b class="nc">&nbsp;            if (charCode &lt; localAsciiLimit) {</b>
-<b class="nc">&nbsp;                val esc = getEscapeSecondChar(charCode)</b>
-<b class="nc">&nbsp;                if (esc != 0) {</b>
-<b class="nc">&nbsp;                    buffer.write2Chars(BACKSLASH_INT, esc)</b>
-&nbsp;                } else {
-<b class="nc">&nbsp;                    writeUnicodeEscape(charCode, scratchBuf)</b>
-&nbsp;                }
+<b class="nc">&nbsp;            val esc = getEscapeSecondChar(charCode)</b>
+<b class="nc">&nbsp;            if (esc != 0) {</b>
+<b class="nc">&nbsp;                buffer.write2Chars(BACKSLASH_INT, esc)</b>
 &nbsp;            } else {
-<b class="nc">&nbsp;                buffer.writeChar(charCode)</b>
+<b class="nc">&nbsp;                writeUnicodeEscape(charCode, scratchBuf)</b>
 &nbsp;            }
 <b class="nc">&nbsp;            charIndex++</b>
 &nbsp;        }
 &nbsp;
-<b class="nc">&nbsp;        if (scratchIndex &gt; 0) {</b>
-<b class="nc">&nbsp;            buffer.write(scratchBuf, 0, scratchIndex)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: CharArray) {
-<b class="fc">&nbsp;        var scratchIndex = 1</b>
-<b class="fc">&nbsp;        var charIndex = 0</b>
-<b class="fc">&nbsp;        val localAsciiLimit = ASCII_LIMIT</b>
-<b class="fc">&nbsp;        val localEscapeMasks = ESCAPE_MASKS</b>
-<b class="fc">&nbsp;        val localShift = BITMASK_SHIFT</b>
-<b class="fc">&nbsp;        val localIndexMask = BITMASK_INDEX_MASK</b>
-<b class="fc">&nbsp;        val localUnit = BITMASK_UNIT</b>
-<b class="fc">&nbsp;        val resultNone = RESULT_NONE</b>
-&nbsp;
-<b class="fc">&nbsp;        while (charIndex &lt; length) {</b>
-<b class="fc">&nbsp;            val charCode = text[charIndex].code</b>
-&nbsp;
-<b class="pc">&nbsp;            if (isPlainAscii(</b>
-&nbsp;                    charCode,
-&nbsp;                    localAsciiLimit,
-&nbsp;                    localEscapeMasks,
-&nbsp;                    localShift,
-&nbsp;                    localIndexMask,
-&nbsp;                    localUnit,
-&nbsp;                    resultNone
-&nbsp;                )
-&nbsp;            ) {
-<b class="nc">&nbsp;                scratchBuf[scratchIndex++] = charCode.toChar()</b>
-<b class="nc">&nbsp;                charIndex++</b>
-&nbsp;                continue
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            if (scratchIndex &gt; 0) {</b>
-<b class="fc">&nbsp;                buffer.write(scratchBuf, 0, scratchIndex)</b>
-<b class="fc">&nbsp;                scratchIndex = 0</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            if (charCode &lt; localAsciiLimit) {</b>
-<b class="nc">&nbsp;                val esc = getEscapeSecondChar(charCode)</b>
-<b class="nc">&nbsp;                if (esc != 0) {</b>
-<b class="nc">&nbsp;                    buffer.write2Chars(BACKSLASH_INT, esc)</b>
-&nbsp;                } else {
-<b class="nc">&nbsp;                    writeUnicodeEscape(charCode, scratchBuf)</b>
-&nbsp;                }
-&nbsp;            } else {
-<b class="fc">&nbsp;                buffer.writeChar(charCode)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            charIndex++</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (scratchIndex + 1 &gt; scratchBuf.size) {</b>
+<b class="nc">&nbsp;        if (scratchIndex + 1 &gt; scratchBuf.size) {</b>
 <b class="nc">&nbsp;            if (scratchIndex &gt; 0) {</b>
 <b class="nc">&nbsp;                buffer.write(scratchBuf, 0, scratchIndex)</b>
 &nbsp;            }
 <b class="nc">&nbsp;            buffer.writeChar(QUOTE_INT)</b>
 &nbsp;        } else {
-<b class="fc">&nbsp;            scratchBuf[scratchIndex++] = CHAR_QUOTE</b>
-<b class="fc">&nbsp;            buffer.write(scratchBuf, 0, scratchIndex)</b>
+<b class="nc">&nbsp;            scratchBuf[scratchIndex++] = CHAR_QUOTE</b>
+<b class="nc">&nbsp;            buffer.write(scratchBuf, 0, scratchIndex)</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
@@ -905,7 +875,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        buffer.write(scratchBuf, 0, 6)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    private inline fun isPlainAscii(
+&nbsp;    /**
+&nbsp;     * True when [charCode] can be emitted verbatim inside a JSON string on the char channel.
+&nbsp;     * Code units ≥ [asciiLimit] never need escaping (unlike the byte writers, which must UTF-8
+&nbsp;     * encode them). Below that, [escapeMasks] rejects controls, `&quot;` and `\`.
+&nbsp;     */
+&nbsp;    private inline fun isSafeUnescaped(
 &nbsp;        charCode: Int,
 &nbsp;        asciiLimit: Int,
 &nbsp;        escapeMasks: LongArray,
@@ -914,7 +889,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        unit: Long,
 &nbsp;        resultNone: Long
 &nbsp;    ): Boolean {
-<b class="fc">&nbsp;        return charCode &lt; asciiLimit &amp;&amp;</b>
+<b class="fc">&nbsp;        return charCode &gt;= asciiLimit ||</b>
 <b class="fc">&nbsp;                ((escapeMasks[charCode shr shift] shr (charCode and indexMask)) and unit) == resultNone</b>
 &nbsp;    }
 &nbsp;}
@@ -941,7 +916,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

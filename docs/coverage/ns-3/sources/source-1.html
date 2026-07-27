@@ -134,7 +134,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        return typeUrl == other.typeUrl &amp;&amp; value.contentEquals(other.value)</b>
 &nbsp;    }
 &nbsp;
-<b class="nc">&nbsp;    override fun hashCode(): Int = 31 * typeUrl.hashCode() + value.contentHashCode()</b>
+&nbsp;    override fun hashCode(): Int =
+<b class="nc">&nbsp;        C.COLLISION_HASH_MULTIPLIER * typeUrl.hashCode() + value.contentHashCode()</b>
 &nbsp;
 &nbsp;    override fun toString(): String =
 <b class="nc">&nbsp;        &quot;ProtoAny(typeUrl=$typeUrl, value=${value.decodeToString()})&quot;</b>
@@ -229,7 +230,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

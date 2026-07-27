@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UrlContainer</title>
+  <title>GhostSerialization Coverage Report > TweetMetadataSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UrlContainer (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: TweetMetadataSerializer (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,103 +49,49 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UrlContainer</td>
+  <td class="name">TweetMetadataSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    25%
+    83.3%
   </span>
   <span class="absValue">
-    (2/8)
+    (10/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    60%
   </span>
   <span class="absValue">
-    (2/2)
+    (18/30)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.1%
+    82.8%
   </span>
   <span class="absValue">
-    (47/67)
+    (82/99)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.7%
+  </span>
+  <span class="absValue">
+    (304/391)
   </span>
 </td>
 </tr>
-  <tr>
-    <td class="name">UrlContainer$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/1)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/2)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    66.7%
-  </span>
-  <span class="absValue">
-    (2/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    25%
-  </span>
-  <span class="absValue">
-    (2/8)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    66.7%
-  </span>
-  <span class="absValue">
-    (2/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    68.1%
-  </span>
-  <span class="absValue">
-    (47/69)
-  </span>
-</td>
-</tr>
+
 </table>
 
 <br/>
@@ -150,232 +99,231 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostName
-&nbsp;import com.ghost.serialization.annotations.GhostFlatten
-&nbsp;import com.ghost.serialization.annotations.GhostWrap
-&nbsp;import com.ghost.serialization.annotations.GhostIgnore
-&nbsp;import com.ghost.serialization.annotations.GhostResilient
-&nbsp;import kotlinx.serialization.Serializable
-&nbsp;import kotlinx.serialization.SerialName
+&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization(textChannel = true)
-&nbsp;data class TwitterResponse(
-&nbsp;    val statuses: List&lt;Tweet&gt;
-&nbsp;)
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.JsonReaderOptions
+&nbsp;import com.ghost.serialization.parser.beginObject
+&nbsp;import com.ghost.serialization.parser.endObject
+&nbsp;import com.ghost.serialization.parser.nextString
+&nbsp;import com.ghost.serialization.parser.selectNameAndConsume
+&nbsp;import com.ghost.serialization.parser.skipValue
+&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.writer.GhostJsonWriter
+&nbsp;import okio.ByteString
+&nbsp;import okio.ByteString.Companion.encodeUtf8
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class Tweet(
-&nbsp;    val metadata: TweetMetadata,
-&nbsp;    @SerialName(&quot;created_at&quot;) @GhostName(&quot;created_at&quot;)
-&nbsp;    val createdAt: String,
-&nbsp;    val id: Long,
-&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
-&nbsp;    val text: String,
-&nbsp;    val source: String,
-&nbsp;    val truncated: Boolean,
-&nbsp;    @SerialName(&quot;in_reply_to_status_id&quot;) @GhostName(&quot;in_reply_to_status_id&quot;) val inReplyToStatusId: Long? = null,
-&nbsp;    @SerialName(&quot;in_reply_to_status_id_str&quot;) @GhostName(&quot;in_reply_to_status_id_str&quot;) val inReplyToStatusIdStr: String? = null,
-&nbsp;    @SerialName(&quot;in_reply_to_user_id&quot;) @GhostName(&quot;in_reply_to_user_id&quot;) val inReplyToUserId: Long? = null,
-&nbsp;    @SerialName(&quot;in_reply_to_user_id_str&quot;) @GhostName(&quot;in_reply_to_user_id_str&quot;) val inReplyToUserIdStr: String? = null,
-&nbsp;    @SerialName(&quot;in_reply_to_screen_name&quot;) @GhostName(&quot;in_reply_to_screen_name&quot;) val inReplyToScreenName: String? = null,
-&nbsp;    val user: User,
-&nbsp;    val geo: String? = null,
-&nbsp;    val coordinates: String? = null,
-&nbsp;    val place: String? = null,
-&nbsp;    val contributors: String? = null,
-&nbsp;    @SerialName(&quot;retweet_count&quot;) @GhostName(&quot;retweet_count&quot;) val retweetCount: Int,
-&nbsp;    @SerialName(&quot;favorite_count&quot;) @GhostName(&quot;favorite_count&quot;) val favoriteCount: Int,
-&nbsp;    val entities: TweetEntities,
-&nbsp;    val favorited: Boolean,
-&nbsp;    val retweeted: Boolean,
-&nbsp;    @SerialName(&quot;possibly_sensitive&quot;) @GhostName(&quot;possibly_sensitive&quot;) val possiblySensitive: Boolean = false,
-&nbsp;    val lang: String? = null,
-&nbsp;    @SerialName(&quot;retweeted_status&quot;) @GhostName(&quot;retweeted_status&quot;) val retweetedStatus: Tweet? = null
-&nbsp;)
+&nbsp;/**
+&nbsp; * High-performance serializer for [TweetMetadata].
+&nbsp; * Generated by GhostSerialization. Do not modify manually.
+&nbsp; */
+&nbsp;object TweetMetadataSerializer : GhostSerializer&lt;TweetMetadata&gt; {
+<b class="fc">&nbsp;  override val typeName: String = &quot;TweetMetadata&quot;</b>
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class TweetMetadata(
-&nbsp;    @SerialName(&quot;result_type&quot;) @GhostName(&quot;result_type&quot;) val resultType: String,
-&nbsp;    @SerialName(&quot;iso_language_code&quot;) @GhostName(&quot;iso_language_code&quot;) val isoLanguageCode: String
-&nbsp;)
+<b class="fc">&nbsp;  private val OPTIONS: JsonReaderOptions = JsonReaderOptions.of(</b>
+<b class="fc">&nbsp;        0,</b>
+<b class="fc">&nbsp;        31,</b>
+<b class="fc">&nbsp;        128,</b>
+<b class="fc">&nbsp;        true,</b>
+<b class="fc">&nbsp;        &quot;result_type&quot;,</b>
+<b class="fc">&nbsp;        &quot;iso_language_code&quot;,</b>
+&nbsp;      )
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class User(
-&nbsp;    val id: Long,
-&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
-&nbsp;    val name: String? = null,
-&nbsp;    @SerialName(&quot;screen_name&quot;) @GhostName(&quot;screen_name&quot;) val screenName: String,
-&nbsp;    val location: String? = null,
-&nbsp;    val description: String? = null,
-&nbsp;    val url: String? = null,
-&nbsp;    val entities: UserEntities,
-&nbsp;    val protected: Boolean = false,
-&nbsp;    @SerialName(&quot;followers_count&quot;) @GhostName(&quot;followers_count&quot;) val followersCount: Int = 0,
-&nbsp;    @SerialName(&quot;friends_count&quot;) @GhostName(&quot;friends_count&quot;) val friendsCount: Int = 0,
-&nbsp;    @SerialName(&quot;listed_count&quot;) @GhostName(&quot;listed_count&quot;) val listedCount: Int = 0,
-&nbsp;    @SerialName(&quot;created_at&quot;) @GhostName(&quot;created_at&quot;) val createdAt: String,
-&nbsp;    @SerialName(&quot;favourites_count&quot;) @GhostName(&quot;favourites_count&quot;) val favouritesCount: Int = 0,
-&nbsp;    @SerialName(&quot;utc_offset&quot;) @GhostName(&quot;utc_offset&quot;) val utcOffset: Int? = null,
-&nbsp;    @SerialName(&quot;time_zone&quot;) @GhostName(&quot;time_zone&quot;) val timeZone: String? = null,
-&nbsp;    @SerialName(&quot;geo_enabled&quot;) @GhostName(&quot;geo_enabled&quot;) val geoEnabled: Boolean = false,
-&nbsp;    val verified: Boolean = false,
-&nbsp;    @SerialName(&quot;statuses_count&quot;) @GhostName(&quot;statuses_count&quot;) val statusesCount: Int = 0,
-&nbsp;    val lang: String? = null,
-&nbsp;    @SerialName(&quot;contributors_enabled&quot;) @GhostName(&quot;contributors_enabled&quot;) val contributorsEnabled: Boolean = false,
-&nbsp;    @SerialName(&quot;is_translator&quot;) @GhostName(&quot;is_translator&quot;) val isTranslator: Boolean = false,
-&nbsp;    @SerialName(&quot;is_translation_enabled&quot;) @GhostName(&quot;is_translation_enabled&quot;) val isTranslationEnabled: Boolean = false,
-&nbsp;    @SerialName(&quot;profile_background_color&quot;) @GhostName(&quot;profile_background_color&quot;) val profileBackgroundColor: String,
-&nbsp;    @SerialName(&quot;profile_background_image_url&quot;) @GhostName(&quot;profile_background_image_url&quot;) val profileBackgroundImageUrl: String,
-&nbsp;    @SerialName(&quot;profile_background_image_url_https&quot;) @GhostName(&quot;profile_background_image_url_https&quot;) val profileBackgroundImageUrlHttps: String,
-&nbsp;    @SerialName(&quot;profile_background_tile&quot;) @GhostName(&quot;profile_background_tile&quot;) val profileBackgroundTile: Boolean = false,
-&nbsp;    @SerialName(&quot;profile_image_url&quot;) @GhostName(&quot;profile_image_url&quot;) val profileImageUrl: String,
-&nbsp;    @SerialName(&quot;profile_image_url_https&quot;) @GhostName(&quot;profile_image_url_https&quot;) val profileImageUrlHttps: String,
-&nbsp;    @SerialName(&quot;profile_banner_url&quot;) @GhostName(&quot;profile_banner_url&quot;) val profileBannerUrl: String? = null,
-&nbsp;    @SerialName(&quot;profile_link_color&quot;) @GhostName(&quot;profile_link_color&quot;) val profileLinkColor: String,
-&nbsp;    @SerialName(&quot;profile_sidebar_border_color&quot;) @GhostName(&quot;profile_sidebar_border_color&quot;) val profileSidebarBorderColor: String,
-&nbsp;    @SerialName(&quot;profile_sidebar_fill_color&quot;) @GhostName(&quot;profile_sidebar_fill_color&quot;) val profileSidebarFillColor: String,
-&nbsp;    @SerialName(&quot;profile_text_color&quot;) @GhostName(&quot;profile_text_color&quot;) val profileTextColor: String? = null,
-&nbsp;    @SerialName(&quot;profile_use_background_image&quot;) @GhostName(&quot;profile_use_background_image&quot;) val profileUseBackgroundImage: Boolean = false,
-&nbsp;    @SerialName(&quot;default_profile&quot;) @GhostName(&quot;default_profile&quot;) val defaultProfile: Boolean = false,
-&nbsp;    @SerialName(&quot;default_profile_image&quot;) @GhostName(&quot;default_profile_image&quot;) val defaultProfileImage: Boolean = false,
-&nbsp;    val following: Boolean = false,
-&nbsp;    @SerialName(&quot;follow_request_sent&quot;) @GhostName(&quot;follow_request_sent&quot;) val followRequestSent: Boolean = false,
-&nbsp;    val notifications: Boolean = false
-&nbsp;)
+<b class="fc">&nbsp;  private val H_ISO_LANGUAGE_CODE: ByteString = &quot;\&quot;iso_language_code\&quot;:&quot;.encodeUtf8()</b>
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class UserEntities(
-&nbsp;    val url: UrlContainer? = null,
-&nbsp;    val description: UrlContainer
-&nbsp;)
+<b class="fc">&nbsp;  private val HS_ISO_LANGUAGE_CODE: String = &quot;\&quot;iso_language_code\&quot;:&quot;</b>
 &nbsp;
-<b class="pc">&nbsp;@Serializable</b>
-&nbsp;@GhostSerialization
-&nbsp;data class UrlContainer(
-<b class="fc">&nbsp;    val urls: List&lt;UrlItem&gt; = emptyList()</b>
-&nbsp;)
+<b class="fc">&nbsp;  private val H_RESULT_TYPE: ByteString = &quot;\&quot;result_type\&quot;:&quot;.encodeUtf8()</b>
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class UrlItem(
-&nbsp;    val url: String,
-&nbsp;    @SerialName(&quot;expanded_url&quot;) @GhostName(&quot;expanded_url&quot;) val expandedUrl: String? = null,
-&nbsp;    @SerialName(&quot;display_url&quot;) @GhostName(&quot;display_url&quot;) val displayUrl: String? = null,
-&nbsp;    val indices: List&lt;Int&gt;
-&nbsp;)
+<b class="fc">&nbsp;  private val HS_RESULT_TYPE: String = &quot;\&quot;result_type\&quot;:&quot;</b>
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class TweetEntities(
-&nbsp;    val hashtags: List&lt;HashtagItem&gt; = emptyList(),
-&nbsp;    val symbols: List&lt;SymbolItem&gt; = emptyList(),
-&nbsp;    val urls: List&lt;UrlItem&gt; = emptyList(),
-&nbsp;    @SerialName(&quot;user_mentions&quot;) @GhostName(&quot;user_mentions&quot;) val userMentions: List&lt;UserMention&gt; = emptyList(),
-&nbsp;    val media: List&lt;MediaItem&gt; = emptyList()
-&nbsp;)
+&nbsp;  private const val MASK_RESULTTYPE: Long = 1L
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class HashtagItem(
-&nbsp;    val text: String,
-&nbsp;    val indices: List&lt;Int&gt;
-&nbsp;)
+&nbsp;  private const val MASK_ISOLANGUAGECODE: Long = 2L
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class SymbolItem(
-&nbsp;    val text: String = &quot;&quot;,
-&nbsp;    val indices: List&lt;Int&gt; = emptyList()
-&nbsp;)
+&nbsp;  private const val MASK_REQUIRED_0: Long = 3L
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class UserMention(
-&nbsp;    @SerialName(&quot;screen_name&quot;) @GhostName(&quot;screen_name&quot;) val screenName: String,
-&nbsp;    val name: String,
-&nbsp;    val id: Long,
-&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
-&nbsp;    val indices: List&lt;Int&gt;
-&nbsp;)
+&nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
+<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="pc">&nbsp;      if ((mask0 and MASK_RESULTTYPE) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;result_type&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;      } else if ((mask0 and MASK_ISOLANGUAGECODE) == 0L) {</b>
+<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;iso_language_code&#39; missing in JSON&quot;)</b>
+&nbsp;      }
+&nbsp;    }
+&nbsp;  }
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class MediaItem(
-&nbsp;    val id: Long,
-&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,
-&nbsp;    val indices: List&lt;Int&gt;,
-&nbsp;    @SerialName(&quot;media_url&quot;) @GhostName(&quot;media_url&quot;) val mediaUrl: String,
-&nbsp;    @SerialName(&quot;media_url_https&quot;) @GhostName(&quot;media_url_https&quot;) val mediaUrlHttps: String,
-&nbsp;    val url: String,
-&nbsp;    @SerialName(&quot;display_url&quot;) @GhostName(&quot;display_url&quot;) val displayUrl: String,
-&nbsp;    @SerialName(&quot;expanded_url&quot;) @GhostName(&quot;expanded_url&quot;) val expandedUrl: String,
-&nbsp;    val type: String,
-&nbsp;    val sizes: MediaSizes,
-&nbsp;    @SerialName(&quot;source_status_id&quot;) @GhostName(&quot;source_status_id&quot;) val sourceStatusId: Long? = null,
-&nbsp;    @SerialName(&quot;source_status_id_str&quot;) @GhostName(&quot;source_status_id_str&quot;) val sourceStatusIdStr: String? = null
-&nbsp;)
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [TweetMetadata].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonReader): TweetMetadata {
+<b class="fc">&nbsp;    var resultTypeValue: String? = null</b>
+<b class="fc">&nbsp;    var isoLanguageCodeValue: String? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="fc">&nbsp;          resultTypeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_RESULTTYPE</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          isoLanguageCodeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_ISOLANGUAGECODE</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    return TweetMetadata(</b>
+<b class="fc">&nbsp;      resultType = resultTypeValue!!,</b>
+<b class="fc">&nbsp;      isoLanguageCode = isoLanguageCodeValue!!,</b>
+&nbsp;    )
+&nbsp;  }
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class MediaSizes(
-&nbsp;    val medium: MediaSize,
-&nbsp;    val small: MediaSize,
-&nbsp;    val thumb: MediaSize,
-&nbsp;    val large: MediaSize
-&nbsp;)
+&nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
+<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="pc">&nbsp;      if ((mask0 and MASK_RESULTTYPE) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;result_type&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;      } else if ((mask0 and MASK_ISOLANGUAGECODE) == 0L) {</b>
+<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;iso_language_code&#39; missing in JSON&quot;)</b>
+&nbsp;      }
+&nbsp;    }
+&nbsp;  }
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class MediaSize(
-&nbsp;    val w: Int,
-&nbsp;    val h: Int,
-&nbsp;    val resize: String
-&nbsp;)
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [TweetMetadata].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonFlatReader): TweetMetadata {
+<b class="fc">&nbsp;    var resultTypeValue: String? = null</b>
+<b class="fc">&nbsp;    var isoLanguageCodeValue: String? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="fc">&nbsp;          resultTypeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_RESULTTYPE</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          isoLanguageCodeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_ISOLANGUAGECODE</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    return TweetMetadata(</b>
+<b class="fc">&nbsp;      resultType = resultTypeValue!!,</b>
+<b class="fc">&nbsp;      isoLanguageCode = isoLanguageCodeValue!!,</b>
+&nbsp;    )
+&nbsp;  }
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class TwitterSpecialTweet(
-&nbsp;    val id: Long,
-&nbsp;    
-&nbsp;    // 1. Flattening: extracts user screen_name directly from nested user object
-&nbsp;    @GhostFlatten(&quot;user.screen_name&quot;)
-&nbsp;    val screenName: String,
-&nbsp;    
-&nbsp;    // 2. Flattening 2 levels: extracts metadata result_type
-&nbsp;    @GhostFlatten(&quot;metadata.result_type&quot;)
-&nbsp;    val resultType: String,
-&nbsp;    
-&nbsp;    // 3. Regular text field (no GhostWrap so we can parse from original JSON)
-&nbsp;    val text: String,
-&nbsp;    
-&nbsp;    // 4. Ignored field: ignored during serialization
-&nbsp;    @GhostIgnore
-&nbsp;    val source: String = &quot;&quot;
-&nbsp;)
+&nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
+<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="pc">&nbsp;      if ((mask0 and MASK_RESULTTYPE) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;result_type&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;      } else if ((mask0 and MASK_ISOLANGUAGECODE) == 0L) {</b>
+<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;iso_language_code&#39; missing in JSON&quot;)</b>
+&nbsp;      }
+&nbsp;    }
+&nbsp;  }
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization(textChannel = true)
-&nbsp;data class TwitterSpecialResponse(
-&nbsp;    val statuses: List&lt;TwitterSpecialTweet&gt;
-&nbsp;)
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [TweetMetadata].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonStringReader): TweetMetadata {
+<b class="fc">&nbsp;    var resultTypeValue: String? = null</b>
+<b class="fc">&nbsp;    var isoLanguageCodeValue: String? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="fc">&nbsp;          resultTypeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_RESULTTYPE</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          isoLanguageCodeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_ISOLANGUAGECODE</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    return TweetMetadata(</b>
+<b class="fc">&nbsp;      resultType = resultTypeValue!!,</b>
+<b class="fc">&nbsp;      isoLanguageCode = isoLanguageCodeValue!!,</b>
+&nbsp;    )
+&nbsp;  }
 &nbsp;
-&nbsp;@Serializable
-&nbsp;@GhostSerialization(textChannel = true)
-&nbsp;data class TwitterWrappedTweet(
-&nbsp;    val id: Long,
-&nbsp;    @GhostWrap(&quot;details&quot;)
-&nbsp;    val text: String
-&nbsp;)
+&nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: TweetMetadata) {
+<b class="nc">&nbsp;    writer.beginObject()</b>
+<b class="nc">&nbsp;    writer.writeField(H_RESULT_TYPE, value.resultType)</b>
+<b class="nc">&nbsp;    writer.writeField(H_ISO_LANGUAGE_CODE, value.isoLanguageCode)</b>
+<b class="nc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
 &nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: TweetMetadata) {
+<b class="fc">&nbsp;    writer.beginObject()</b>
+<b class="fc">&nbsp;    writer.writeField(H_RESULT_TYPE, value.resultType)</b>
+<b class="fc">&nbsp;    writer.writeField(H_ISO_LANGUAGE_CODE, value.isoLanguageCode)</b>
+<b class="fc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
 &nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: TweetMetadata) {
+<b class="nc">&nbsp;    writer.beginObject()</b>
+<b class="nc">&nbsp;    writer.writeField(HS_RESULT_TYPE, value.resultType)</b>
+<b class="nc">&nbsp;    writer.writeField(HS_ISO_LANGUAGE_CODE, value.isoLanguageCode)</b>
+<b class="nc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun warmUp() {
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader1 = GhostJsonReader(</b>
+<b class="fc">&nbsp;            &quot;{\&quot;result_type\&quot;:\&quot;\&quot;,\&quot;iso_language_code\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader1)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
+<b class="fc">&nbsp;            &quot;{\&quot;result_type\&quot;:\&quot;\&quot;,\&quot;iso_language_code\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader2)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
+<b class="fc">&nbsp;            &quot;{\&quot;result_type\&quot;:\&quot;\&quot;,\&quot;iso_language_code\&quot;:\&quot;\&quot;}&quot;</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader3)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;  }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -399,7 +347,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

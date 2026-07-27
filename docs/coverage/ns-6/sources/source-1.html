@@ -45,8 +45,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   Instruction, %
 </th>
 </tr>
-  <tr>
-    <td class="name">GhostRegistry$DefaultImpls</td>
+<tr>
+  <td class="name">GhostRegistry</td>
 <td class="coverageStat">
   <span class="percent">
     66.7%
@@ -70,6 +70,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   </span>
   <span class="absValue">
     (2/3)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostRegistry$DefaultImpls</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
   </span>
 </td>
   </tr>
@@ -77,27 +105,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    33.3%
   </span>
   <span class="absValue">
-    (2/3)
+    (2/6)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    33.3%
   </span>
   <span class="absValue">
-    (2/3)
+    (2/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    22.2%
   </span>
   <span class="absValue">
-    (2/3)
+    (2/9)
   </span>
 </td>
 </tr>
@@ -134,13 +162,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     *
 &nbsp;     * @return A map of [KClass] to its corresponding [GhostSerializer].
 &nbsp;     */
-<b class="fc">&nbsp;    fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = emptyMap()</b>
+<b class="pc">&nbsp;    fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = emptyMap()</b>
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Eagerly initializes registry entries and prepares internal components to avoid
 &nbsp;     * first-use JIT/warm-up latency on critical paths.
 &nbsp;     */
-&nbsp;    fun prewarm() {
+<b class="nc">&nbsp;    fun prewarm() {</b>
 &nbsp;        // Default no-op.
 <b class="fc">&nbsp;    }</b>
 &nbsp;
@@ -174,7 +202,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

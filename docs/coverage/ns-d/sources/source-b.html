@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    71.4%
   </span>
   <span class="absValue">
-    (3/6)
+    (5/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    38.9%
+    70.8%
   </span>
   <span class="absValue">
-    (7/18)
+    (17/24)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    39.5%
+    67.3%
   </span>
   <span class="absValue">
-    (15/38)
+    (33/49)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    40.1%
+    67.3%
   </span>
   <span class="absValue">
-    (55/137)
+    (115/171)
   </span>
 </td>
 </tr>
@@ -559,6 +559,28 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        reader.endArray()
 &nbsp;        return list.toArray()
 &nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): IntArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return IntArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostIntList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextInt())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -629,23 +651,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    override fun deserialize(
 &nbsp;        reader: GhostJsonFlatReader
 &nbsp;    ): LongArray {
-<b class="nc">&nbsp;        reader.beginArray()</b>
+<b class="fc">&nbsp;        reader.beginArray()</b>
 &nbsp;
-<b class="nc">&nbsp;        if (reader.peekByte() == CLOSE_ARR) {</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == CLOSE_ARR) {</b>
 <b class="nc">&nbsp;            reader.endArray()</b>
 <b class="nc">&nbsp;            return LongArray(0)</b>
 &nbsp;        }
 &nbsp;
-<b class="nc">&nbsp;        val list = GhostLongList()</b>
-<b class="nc">&nbsp;        while (reader.hasNext()) {</b>
-<b class="nc">&nbsp;            if (!list.isEmpty()) {</b>
-<b class="nc">&nbsp;                reader.consumeArraySeparator()</b>
+<b class="fc">&nbsp;        val list = GhostLongList()</b>
+<b class="fc">&nbsp;        while (reader.hasNext()) {</b>
+<b class="fc">&nbsp;            if (!list.isEmpty()) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
 &nbsp;            }
-<b class="nc">&nbsp;            list.add(reader.nextLong())</b>
+<b class="fc">&nbsp;            list.add(reader.nextLong())</b>
 &nbsp;        }
 &nbsp;
-<b class="nc">&nbsp;        reader.endArray()</b>
-<b class="nc">&nbsp;        return list.toArray()</b>
+<b class="fc">&nbsp;        reader.endArray()</b>
+<b class="fc">&nbsp;        return list.toArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): LongArray {
+<b class="fc">&nbsp;        reader.beginArray()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (reader.peekByte() == CLOSE_ARR) {</b>
+<b class="nc">&nbsp;            reader.endArray()</b>
+<b class="nc">&nbsp;            return LongArray(0)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val list = GhostLongList()</b>
+<b class="fc">&nbsp;        while (reader.hasNext()) {</b>
+<b class="fc">&nbsp;            if (!list.isEmpty()) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            list.add(reader.nextLong())</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        reader.endArray()</b>
+<b class="fc">&nbsp;        return list.toArray()</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -671,7 +715,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > EvolutionModel</title>
+  <title>GhostSerialization Coverage Report > EmojiKeyModel</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: EvolutionModel (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: EmojiKeyModel (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">EvolutionModel</td>
+  <td class="name">EmojiKeyModel</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (4/4)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (19/19)
   </span>
 </td>
 </tr>
@@ -96,10 +96,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class EvolutionModel(
-<b class="fc">&nbsp;    val required: String,</b>
-<b class="fc">&nbsp;    val optional: String = &quot;default&quot;</b>
+<b class="fc">&nbsp;@GhostSerialization</b>
+&nbsp;data class EmojiKeyModel(
+<b class="fc">&nbsp;    val familyName: String,</b>
+<b class="fc">&nbsp;    val rocketCount: Int,</b>
+<b class="fc">&nbsp;    val emojiMap: Map&lt;String, String&gt; = emptyMap()</b>
 &nbsp;)
 </code>
 </pre>
@@ -124,7 +125,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

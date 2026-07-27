@@ -98,10 +98,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
 &nbsp;
 &nbsp;/**
-&nbsp; * Pooled, reusable encode-target for in-memory encodes
-&nbsp; * (`Ghost.encodeToString` / `Ghost.encodeToBytes`).
+&nbsp; * Pooled, reusable encode-target for in-memory byte encodes
+&nbsp; * (`Ghost.encodeToBytes`, sink drain, discard).
 &nbsp; *
-&nbsp; * Both fields stay warm between calls so the underlying [ByteArray] survives
+&nbsp; * String encodes use a pooled [GhostJsonStringWriter] / [FlatCharArrayWriter] pair
+&nbsp; * instead. Both fields stay warm between calls so the underlying [ByteArray] survives
 &nbsp; * across encodes — only its content is reset. The pair is held in a
 &nbsp; * [ThreadLocal] (or `@ThreadLocal` on Kotlin/Native) per platform actual,
 &nbsp; * so concurrent encodes on different threads do not contend on it.
@@ -140,7 +141,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

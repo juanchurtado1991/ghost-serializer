@@ -158,6 +158,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
 &nbsp; * @property listInnerIsEnum True if the list inner type is an enum.
 &nbsp; * @property hasDefaultValue True if the property has a parameter default value in the constructor.
+&nbsp; * @property defaultExpression Whitelisted Kotlin source of the ctor default (`&quot;viewer&quot;`, `1`,
+&nbsp; *   `emptyList()`, …), or `null` when unavailable / unsafe — callers must fall back to `.copy()`.
 &nbsp; * @property isMap True if the property type is a [Map].
 &nbsp; * @property mapValueType The resolved [KSType] of the map&#39;s value parameter, if applicable.
 &nbsp; * @property mapValueIsGhost True if the map&#39;s value type is annotated with @GhostSerialization.
@@ -198,6 +200,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    val listInnerIsGhost: Boolean = false,
 &nbsp;    val listInnerIsEnum: Boolean = false,
 &nbsp;    val hasDefaultValue: Boolean = false,
+&nbsp;    val defaultExpression: String? = null,
 &nbsp;    val isInConstructor: Boolean = true,
 &nbsp;    val isMap: Boolean = false,
 &nbsp;    val mapValueType: KSType? = null,
@@ -269,7 +272,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

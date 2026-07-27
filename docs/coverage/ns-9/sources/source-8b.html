@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > NestedDeviceStub</title>
+  <title>GhostSerialization Coverage Report > ModeEventPayload</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: NestedDeviceStub (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: ModeEventPayload (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">NestedDeviceStub</td>
+  <td class="name">ModeEventPayload</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -94,25 +94,41 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostEnvelopeFallback
+&nbsp;import com.ghost.serialization.annotations.GhostEnvelopePayload
+&nbsp;import com.ghost.serialization.annotations.GhostJsonEnvelope
 &nbsp;import com.ghost.serialization.annotations.GhostName
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;
-&nbsp;/**
-&nbsp; * Minimal sealed hierarchy mirroring SmartThings ViperPage wire shape:
-&nbsp; * nested `devices` array before custom `pageType` discriminator.
-&nbsp; */
-&nbsp;@GhostSerialization(discriminator = &quot;pageType&quot;)
-&nbsp;sealed class PageWithNestedDevices {
-&nbsp;    @GhostSerialization
-&nbsp;    data class LoggedIn(
-&nbsp;        val devices: List&lt;NestedDeviceStub&gt; = emptyList(),
-&nbsp;        val name: String = &quot;&quot;,
-&nbsp;    ) : PageWithNestedDevices()
-&nbsp;}
+&nbsp;import com.ghost.serialization.types.RawJson
 &nbsp;
 &nbsp;@GhostSerialization
-<b class="fc">&nbsp;data class NestedDeviceStub(</b>
-<b class="fc">&nbsp;    val id: String,</b>
+&nbsp;data class DeviceEventPayload(val deviceId: String)
+&nbsp;
+<b class="fc">&nbsp;@GhostSerialization</b>
+<b class="fc">&nbsp;data class ModeEventPayload(val mode: String)</b>
+&nbsp;
+&nbsp;@GhostJsonEnvelope(discriminator = &quot;eventType&quot;, timeField = &quot;eventTime&quot;)
+&nbsp;@GhostSerialization
+&nbsp;data class SseEventEnvelope(
+&nbsp;    @GhostName(&quot;eventType&quot;) val eventType: String = &quot;&quot;,
+&nbsp;    @GhostName(&quot;eventTime&quot;) val timeMillis: Long = 0L,
+&nbsp;    @GhostEnvelopePayload(&quot;DEVICE_EVENT&quot;, target = DeviceEventPayload::class)
+&nbsp;    @GhostName(&quot;deviceEvent&quot;) val deviceEvent: RawJson? = null,
+&nbsp;    @GhostEnvelopePayload(&quot;MODE_EVENT&quot;, target = ModeEventPayload::class)
+&nbsp;    @GhostName(&quot;modeEvent&quot;) val modeEvent: RawJson? = null,
+&nbsp;    @GhostEnvelopeFallback
+&nbsp;    val unknownEvent: RawJson? = null,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class InvoicePaidPayload(val amount: Long)
+&nbsp;
+&nbsp;@GhostJsonEnvelope(discriminator = &quot;type&quot;, dataField = &quot;data&quot;)
+&nbsp;@GhostSerialization
+&nbsp;data class WebhookEnvelope(
+&nbsp;    val type: String = &quot;&quot;,
+&nbsp;    @GhostEnvelopePayload(&quot;invoice.paid&quot;, target = InvoicePaidPayload::class)
+&nbsp;    val data: RawJson? = null,
 &nbsp;)
 </code>
 </pre>
@@ -137,7 +153,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>

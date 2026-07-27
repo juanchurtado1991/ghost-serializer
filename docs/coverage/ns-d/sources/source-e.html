@@ -60,10 +60,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    44.4%
+    50%
   </span>
   <span class="absValue">
-    (4/9)
+    (4/8)
   </span>
 </td>
 <td class="coverageStat">
@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    23.9%
+    24.4%
   </span>
   <span class="absValue">
-    (11/46)
+    (11/45)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    23.2%
+    24.9%
   </span>
   <span class="absValue">
-    (47/203)
+    (47/189)
   </span>
 </td>
 </tr>
@@ -258,8 +258,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Serializer implementation for standard Kotlin [Set] collections.
 &nbsp; * Wire format is a JSON array; decode builds [HashSet] directly without a [List] intermediate.
 &nbsp; */
-<b class="nc">&nbsp;@OptIn(InternalGhostApi::class)</b>
-<b class="fc">&nbsp;class SetSerializer&lt;T&gt;(</b>
+<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+&nbsp;class SetSerializer&lt;T&gt;(
 <b class="fc">&nbsp;    private val itemSerializer: GhostSerializer&lt;T&gt;</b>
 &nbsp;) : GhostSerializer&lt;Set&lt;T&gt;&gt; {
 &nbsp;
@@ -559,6 +559,28 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        reader.endArray()
 &nbsp;        return list.toArray()
 &nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): IntArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return IntArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostIntList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextInt())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -647,6 +669,28 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        reader.endArray()
 &nbsp;        return list.toArray()
 &nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): LongArray {
+&nbsp;        reader.beginArray()
+&nbsp;
+&nbsp;        if (reader.peekByte() == CLOSE_ARR) {
+&nbsp;            reader.endArray()
+&nbsp;            return LongArray(0)
+&nbsp;        }
+&nbsp;
+&nbsp;        val list = GhostLongList()
+&nbsp;        while (reader.hasNext()) {
+&nbsp;            if (!list.isEmpty()) {
+&nbsp;                reader.consumeArraySeparator()
+&nbsp;            }
+&nbsp;            list.add(reader.nextLong())
+&nbsp;        }
+&nbsp;
+&nbsp;        reader.endArray()
+&nbsp;        return list.toArray()
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -671,7 +715,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-23 03:08</div>
+    <div style="float:right;">generated on 2026-07-27 22:01</div>
 </div>
 </body>
 </html>
