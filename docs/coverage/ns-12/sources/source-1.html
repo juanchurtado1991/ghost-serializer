@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostName</title>
+  <title>GhostSerialization Coverage Report > GhostSignature</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostName (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostSignature (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostName</td>
+  <td class="name">GhostSignature</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,16 +47,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Customizes the key name used for the annotated property during serialization and deserialization.
+&nbsp; * Marks a property as a &quot;Signature Key&quot; for inferred polymorphism.
 &nbsp; *
-&nbsp; * By default, the serializer uses the property&#39;s name in Kotlin. When this annotation is applied,
-&nbsp; * the serializer will use the provided [name] instead.
+&nbsp; * When a `sealed class` is annotated with `@GhostSerialization(inferred = true)`,
+&nbsp; * Ghost uses the presence of specific keys to decide which concrete subclass to instantiate.
 &nbsp; *
-&nbsp; * @property name The custom key name to use in the serialized JSON representation.
+&nbsp; * By default, all non-nullable fields that are unique to a subclass are treated as signatures.
+&nbsp; * Use this annotation to explicitly mark a field as an identifier, even if it&#39;s shared
+&nbsp; * with other classes (as long as the combination of signatures is unique).
 &nbsp; */
 &nbsp;@Target(AnnotationTarget.PROPERTY)
-&nbsp;@Retention(AnnotationRetention.SOURCE)
-&nbsp;annotation class GhostName(val name: String)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostSignature
 </code>
 </pre>
 </div>
@@ -80,7 +82,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:01</div>
+    <div style="float:right;">generated on 2026-07-27 23:51</div>
 </div>
 </body>
 </html>
