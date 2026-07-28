@@ -55,12 +55,13 @@ internal abstract class BaseSerializeEmitter(
         // Proto3 JSON mapping requires int64 fields on the wire as quoted decimal strings —
         // route Long through emitValue()'s dedicated proto branch instead of the fused
         // writer.writeField(header, Long) fast path, which always writes a bare number.
-        if (prop.isProto && type == C.K_LONG) {
+        if (prop.isProto && (type == C.K_LONG || type == C.K_ULONG)) {
             return false
         }
         return when (type) {
             C.K_INT,
             C.K_LONG,
+            C.K_ULONG,
             C.K_STRING,
             C.K_BOOLEAN,
             C.K_DOUBLE,
@@ -87,20 +88,30 @@ internal abstract class BaseSerializeEmitter(
         if (!prop.isProto || prop.customEncoder != null) {
             return null
         }
-        if (prop.isList || prop.isSet || prop.isMap) {
-            return CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, accessor)
+
+        val effective = if (prop.isValueClass && prop.valueClassProperty != null) {
+            val inner = prop.valueClassProperty
+            inner to CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, accessor, inner.kotlinName)
+        } else {
+            prop to accessor
         }
-        val typeName = prop.type.declaration.qualifiedName?.asString()
+        val (targetProp, targetAccessor) = effective
+
+        if (targetProp.isList || targetProp.isSet || targetProp.isMap) {
+            return CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)
+        }
+        val typeName = targetProp.type.declaration.qualifiedName?.asString()
         return when (typeName) {
-            C.K_INT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_INT, accessor)
-            C.K_LONG -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_LONG, accessor)
-            C.K_DOUBLE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_DOUBLE, accessor)
-            C.K_FLOAT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, accessor)
-            C.K_SHORT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, accessor)
-            C.K_BYTE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, accessor)
-            C.K_BOOLEAN -> CodeBlock.of(C.TEMPLATE_ACCESSOR_L, accessor)
-            C.K_STRING -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, accessor)
-            C.K_BYTE_ARRAY -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, accessor)
+            C.K_INT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_INT, targetAccessor)
+            C.K_LONG -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_LONG, targetAccessor)
+            C.K_ULONG -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_ULONG, targetAccessor)
+            C.K_DOUBLE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_DOUBLE, targetAccessor)
+            C.K_FLOAT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, targetAccessor)
+            C.K_SHORT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, targetAccessor)
+            C.K_BYTE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, targetAccessor)
+            C.K_BOOLEAN -> CodeBlock.of(C.TEMPLATE_ACCESSOR_L, targetAccessor)
+            C.K_STRING -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)
+            C.K_BYTE_ARRAY -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)
             else -> null
         }
     }
@@ -365,6 +376,10 @@ internal abstract class BaseSerializeEmitter(
                 code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
             }
 
+            prop.isProto && prop.type.declaration.qualifiedName?.asString() == C.K_ULONG -> {
+                code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
+            }
+
             prop.isProto && prop.type.declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY -> {
                 code.addStatement(C.STR_WRITER_VAL_BYTES_AS_BASE64, accessor)
             }
@@ -400,7 +415,7 @@ internal abstract class BaseSerializeEmitter(
             code.nextControlFlow(C.STR_ELSE)
         }
 
-        if (isValueClassType(type)) {
+        if (isValueClassType(type) && !type.isKotlinUnsignedPrimitive()) {
             val innerType = resolveValueClassInnerType(type)
             if (innerType != null) {
                 val valueClassProperty = (type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration)
@@ -447,6 +462,13 @@ internal abstract class BaseSerializeEmitter(
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
             typeName == C.K_LONG -> {
+                if (isProto) {
+                    code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
+                } else {
+                    code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                }
+            }
+            typeName == C.K_ULONG -> {
                 if (isProto) {
                     code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
                 } else {

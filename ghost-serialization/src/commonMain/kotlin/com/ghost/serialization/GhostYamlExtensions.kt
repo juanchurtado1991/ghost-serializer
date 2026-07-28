@@ -40,6 +40,38 @@ inline fun <reified T : Any> Ghost.decodeFromYaml(bytes: ByteArray): T {
 }
 
 /**
+ * Decodes every YAML document in [yaml] (separated by `---`) into instances of [T].
+ */
+inline fun <reified T : Any> Ghost.decodeAllFromYaml(yaml: String): List<T> {
+    val serializer = Ghost.getSerializer(T::class)
+        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+    if (serializer !is GhostYamlSerializer<*>) {
+        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+    }
+    @Suppress("UNCHECKED_CAST")
+    val yamlSerializer = serializer as GhostYamlSerializer<T>
+    return ghostYamlInternalUseFlatReader(yaml.encodeToByteArray()) { reader ->
+        reader.readAllDocuments { docReader -> yamlSerializer.deserialize(docReader) }
+    }
+}
+
+/**
+ * Decodes every YAML document in [bytes] (separated by `---`) into instances of [T].
+ */
+inline fun <reified T : Any> Ghost.decodeAllFromYaml(bytes: ByteArray): List<T> {
+    val serializer = Ghost.getSerializer(T::class)
+        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+    if (serializer !is GhostYamlSerializer<*>) {
+        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+    }
+    @Suppress("UNCHECKED_CAST")
+    val yamlSerializer = serializer as GhostYamlSerializer<T>
+    return ghostYamlInternalUseFlatReader(bytes) { reader ->
+        reader.readAllDocuments { docReader -> yamlSerializer.deserialize(docReader) }
+    }
+}
+
+/**
  * Serializes [value] into a YAML string representation.
  */
 inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
@@ -71,4 +103,31 @@ inline fun <reified T : Any> Ghost.encodeToYamlBytes(value: T): ByteArray {
         yamlSerializer.serialize(writer, value)
         writer.buffer.toByteArray()
     }
+}
+
+/**
+ * Serializes [values] as a multi-document YAML stream (`---` between documents).
+ */
+inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
+    if (values.isEmpty()) return ""
+    val serializer = Ghost.getSerializer(T::class)
+        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+    if (serializer !is GhostYamlSerializer<*>) {
+        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+    }
+    @Suppress("UNCHECKED_CAST")
+    val yamlSerializer = serializer as GhostYamlSerializer<T>
+    return values.joinToString(separator = "\n---\n") { value ->
+        ghostYamlInternalUseFlatWriter { writer ->
+            yamlSerializer.serialize(writer, value)
+            writer.buffer.toStringUtf8()
+        }
+    }
+}
+
+/**
+ * Serializes [values] as a multi-document YAML UTF-8 byte stream (`---` between documents).
+ */
+inline fun <reified T : Any> Ghost.encodeAllToYamlBytes(values: List<T>): ByteArray {
+    return encodeAllToYaml(values).encodeToByteArray()
 }

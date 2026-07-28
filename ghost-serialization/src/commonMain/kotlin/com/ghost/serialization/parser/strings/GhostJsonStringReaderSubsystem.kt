@@ -293,6 +293,15 @@ fun GhostJsonStringReader.nextLongOrNull(): Long? {
     return nextLong()
 }
 
+/** Reads a JSON unsigned long, or `null` when the next token is the `null` literal. */
+fun GhostJsonStringReader.nextULongOrNull(): ULong? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextULong()
+}
+
 /** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
 fun GhostJsonStringReader.nextBooleanOrNull(): Boolean? {
     if (peekNextToken() == C.NULL_CHAR_INT) {

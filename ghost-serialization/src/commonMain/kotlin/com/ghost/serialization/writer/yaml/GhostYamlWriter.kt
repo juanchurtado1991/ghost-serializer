@@ -196,6 +196,18 @@ class GhostYamlWriter(
         return this
     }
 
+    fun value(number: ULong): GhostYamlWriter {
+        prepareValue(isStructural = false)
+        if (number > Long.MAX_VALUE.toULong()) {
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            buffer.writeUtf8(number.toString())
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        } else {
+            buffer.writeUtf8(number.toString())
+        }
+        return this
+    }
+
     fun value(number: Double): GhostYamlWriter {
         prepareValue(isStructural = false)
         buffer.writeUtf8(number.toString())
@@ -391,6 +403,13 @@ class GhostYamlWriter(
     }
 
     fun writeField(header: ByteString, value: Long): GhostYamlWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: ULong): GhostYamlWriter {
         val key = extractKey(header)
         name(key)
         value(value)

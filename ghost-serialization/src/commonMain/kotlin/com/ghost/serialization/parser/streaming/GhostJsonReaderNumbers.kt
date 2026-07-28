@@ -279,6 +279,17 @@ fun GhostJsonReader.nextLong(): Long {
     return finalLongResult
 }
 
+/** Reads a JSON/YAML unsigned long scalar (quoted decimal string for full `uint64` range). */
+fun GhostJsonReader.nextULong(): ULong {
+    if (nextTokenByte == C.RESET_TOKEN_BYTE) {
+        skipWhitespace()
+    }
+    if (position < limit && getByte(position) == C.QUOTE_INT) {
+        return nextString().toULong()
+    }
+    return nextLong().toULong()
+}
+
 /**
  * Prepares the numeric header by checking the negative sign and checking string coercion quote.
  */

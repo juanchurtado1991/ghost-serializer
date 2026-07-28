@@ -12,6 +12,8 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.serializers.ListSerializer
+import com.ghost.serialization.serializers.MapSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -33,8 +35,9 @@ import kotlin.reflect.KClass
  * correctness (int64 quoting, Base64 `bytes`, default-value omission) is generated directly
  * into the `@GhostProtoSerialization` serializer's own `serialize()` method.
  *
- * Scope: direct (non-generic) types only — unlike [GhostConverterFactory], this does not
- * unwrap `List<T>`/`Map<K, V>` response/request bodies.
+ * Also unwraps `List<T>`/`Map<String, V>` request/response bodies when the element/value
+ * serializer is registered — same pattern as [GhostConverterFactory], still using
+ * [GhostProtoJsonFlatReader] on the read path.
  *
  * ```kotlin
  * Retrofit.Builder()
@@ -110,12 +113,32 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
         if (cached != null) {
             return cached
         }
-        if (type !is Class<*>) {
-            return null
-        }
-        val serializer = Ghost.getSerializer(type.kotlin as KClass<Any>) ?: return null
+        val serializer = getSerializerForType(type) ?: return null
         val existing = serializerCache.putIfAbsent(type, serializer)
         return existing ?: serializer
+    }
+
+    private fun getSerializerForType(type: Type): GhostSerializer<Any>? {
+        if (type is Class<*>) {
+            return Ghost.getSerializer(type.kotlin as KClass<Any>)
+        }
+
+        if (type is java.lang.reflect.ParameterizedType) {
+            val rawType = type.rawType as? Class<*> ?: return null
+
+            if (List::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull() ?: return null
+                val itemSerializer = getSerializerWithCache(arg) ?: return null
+                return ListSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
+            if (Map::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.getOrNull(1) ?: return null
+                val valueSerializer = getSerializerWithCache(arg) ?: return null
+                return MapSerializer(valueSerializer) as GhostSerializer<Any>
+            }
+        }
+        return null
     }
 
     companion object {

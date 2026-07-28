@@ -47,6 +47,13 @@ fun GhostJsonStringReader.nextLong(): Long {
     return if (isNegativeValue) -accumulatedValue else accumulatedValue
 }
 
+fun GhostJsonStringReader.nextULong(): ULong {
+    if (peekNextToken() == C.QUOTE_INT) {
+        return nextString().toULong()
+    }
+    return nextLong().toULong()
+}
+
 fun GhostJsonStringReader.nextFloat(): Float {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0

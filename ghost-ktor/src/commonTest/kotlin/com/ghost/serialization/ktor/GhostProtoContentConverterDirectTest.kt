@@ -82,4 +82,34 @@ class GhostProtoContentConverterDirectTest {
 
         assertEquals(ProtoKtorEvent(42L, longLabel), result)
     }
+
+    @Test
+    fun deserialize_parsesListBodyViaKotlinType() = runTest {
+        val converter = GhostProtoContentConverter()
+        val json = """[{"deviceId":"5","label":"batch"}]"""
+        val channel = ByteReadChannel(json.encodeToByteArray())
+
+        val result = converter.deserialize(
+            Charsets.UTF_8,
+            typeInfo<List<ProtoKtorEvent>>(),
+            channel,
+        ) as List<ProtoKtorEvent>
+
+        assertEquals(listOf(ProtoKtorEvent(5L, "batch")), result)
+    }
+
+    @Test
+    fun deserialize_parsesBareInt64InsideListElements() = runTest {
+        val converter = GhostProtoContentConverter()
+        val json = """[{"deviceId":9223372036854775807,"label":"max"}]"""
+        val channel = ByteReadChannel(json.encodeToByteArray())
+
+        val result = converter.deserialize(
+            Charsets.UTF_8,
+            typeInfo<List<ProtoKtorEvent>>(),
+            channel,
+        ) as List<ProtoKtorEvent>
+
+        assertEquals(Long.MAX_VALUE, result.single().deviceId)
+    }
 }

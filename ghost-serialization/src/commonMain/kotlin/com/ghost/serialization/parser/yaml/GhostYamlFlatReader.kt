@@ -106,6 +106,29 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         return results
     }
 
+    /**
+     * Reads every YAML document and deserializes each with [deserializeDocument].
+     * Resets traversal state between documents so generated `GhostYamlSerializer` paths work.
+     */
+    fun <T> readAllDocuments(deserializeDocument: (GhostYamlFlatReader) -> T): List<T> {
+        val results = mutableListOf<T>()
+        val localLimit = limit
+        while (position < localLimit) {
+            anchorTable.clear()
+            tagDirectives.clear()
+            skipWhitespaceAndComments()
+            if (position >= localLimit) break
+            skipDocumentStart()
+            skipWhitespaceAndComments()
+            if (position >= localLimit) break
+            prepareRootForCurrentDocument()
+            results.add(deserializeDocument(this))
+            clearAfterDocument()
+            skipDocumentEnd()
+        }
+        return results
+    }
+
     // ── Core state machine ─────────────────────────────────────────────────────
 
     /**
@@ -1141,6 +1164,31 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         }
     }
 
+    private fun prepareRootForCurrentDocument() {
+        traversalStack.clear()
+        currentMap = null
+        mapIterator = null
+        currentEntry = null
+        currentList = null
+        listIterator = null
+        nextValue = null
+        rootObject = readValue(indent = C.INDENT_UNSET, inFlow = false)
+        nextValue = rootObject
+        rootParsed = true
+    }
+
+    private fun clearAfterDocument() {
+        traversalStack.clear()
+        currentMap = null
+        mapIterator = null
+        currentEntry = null
+        currentList = null
+        listIterator = null
+        nextValue = null
+        rootParsed = false
+        rootObject = null
+    }
+
     fun beginObject() {
         ensureRootParsed()
         val map =
@@ -1285,6 +1333,40 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             return value.toLong()
         }
         throw GhostYamlException("Expected Long but found $value")
+    }
+
+    open fun nextProtoUInt64(): ULong {
+        val previous = coerceStringsToNumbers
+        coerceStringsToNumbers = true
+        return try {
+            nextString().toULong()
+        } finally {
+            coerceStringsToNumbers = previous
+        }
+    }
+
+    /** Plain YAML scalar `ULong` — accepts numeric or string scalars (full range via decimal string). */
+    open fun nextULong(): ULong {
+        val value = nextValue
+        nextValue = null
+        when (value) {
+            is Number -> return value.toLong().toULong()
+            is String -> {
+                if (coerceStringsToNumbers) {
+                    return value.toULongOrNull() ?: 0uL
+                }
+                return value.toULong()
+            }
+        }
+        throw GhostYamlException("Expected ULong but found $value")
+    }
+
+    open fun nextULongOrNull(): ULong? {
+        if (isNextNullValue()) {
+            consumeNull()
+            return null
+        }
+        return nextULong()
     }
 
     fun nextDouble(): Double {

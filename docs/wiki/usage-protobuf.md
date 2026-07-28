@@ -68,10 +68,10 @@ Full matrix → **[Advanced Features — Format compatibility](advanced-features
 | Enums as strings | ✅ | Already Ghost's default enum wire format |
 | Default/empty values omitted on serialize | ✅ | `Int`/`Long`/`Double`/`Float`/`Short`/`Byte` `!= 0`, `Boolean` only when `true`, `String`/`ByteArray`/`List`/`Set`/`Map` only when non-empty |
 | `oneof` | ✅ | Via `@GhostWrappedKeys` + `@GhostSerialization(inferred = true)` — see [§4](#4-oneof-mapping) |
-| Full `uint64` range | ✅ | `ProtoUInt64Value` is `ULong`-backed (see [§5](#5-well-known-types)); hand-roll a `ULong` property with a `@GhostEncoder`/`@GhostDecoder` for your own messages — core Ghost doesn't have first-class `ULong` field support outside the WKT wrappers in `com.ghost.serialization.proto.wkt` |
+| Full `uint64` range | ✅ | Direct `ULong` properties on `@GhostProtoSerialization` messages, plus `ProtoUInt64Value` WKT ([§5](#5-well-known-types)) |
 | `google.protobuf.Any` pack/unpack by type registry | ✅ | `ProtoAnyRegistry.pack()`/`.unpack<T>()`/`.unpackDynamic()` — see [§5](#5-well-known-types) |
 
-**Scope note:** `Long`/`ByteArray` conversion covers direct properties, properties wrapped in exactly one `@JvmInline value class`, elements of `List<T>`/`Set<T>`/`Map<String, V>` (including combinations, e.g. `List<Long>`), and collections of value-class-wrapped `Long`/`ByteArray` elements (e.g. `List<AccountId>` where `AccountId` wraps a `Long`). It does **not** yet cover a value class wrapping a collection (e.g., `value class AccountIds(val value: List<Long>)` — those fall back to plain handling).
+**Scope note:** `Long`/`ByteArray`/`ULong` conversion covers direct properties, properties wrapped in exactly one `@JvmInline value class`, elements of `List<T>`/`Set<T>`/`Map<String, V>` (including combinations, e.g. `List<Long>`), collections of value-class-wrapped `Long`/`ByteArray` elements (e.g. `List<AccountId>` where `AccountId` wraps a `Long`), and value classes that wrap a collection (e.g. `value class AccountIds(val value: List<Long>)`).
 
 ## 4. `oneof` mapping
 
@@ -156,8 +156,8 @@ Proto3-JSON-flavored counterparts to the plain Ghost adapters, for APIs backed b
 
 | Framework | Type | Notes |
 |:---|:---|:---|
-| Retrofit | `GhostProtoConverterFactory` | `Retrofit.Builder().addConverterFactory(GhostProtoConverterFactory.create())`. Direct (non-generic) types only — no `List<T>`/`Map<K,V>` body unwrapping yet. |
-| Ktor | `Configuration.ghostProto()`, `bodyGhostProto<T>()`, `respondGhostProto<T>()` | `install(ContentNegotiation) { ghostProto() }`, or bypass content negotiation with the `bodyGhostProto`/`respondGhostProto` extensions. |
+| Retrofit | `GhostProtoConverterFactory` | `Retrofit.Builder().addConverterFactory(GhostProtoConverterFactory.create())`. Unwraps direct types and `List<T>`/`Map<String, V>` bodies when element/value serializers are registered. |
+| Ktor | `Configuration.ghostProto()`, `bodyGhostProto<T>()`, `respondGhostProto<T>()` | `install(ContentNegotiation) { ghostProto() }`, or bypass content negotiation with the `bodyGhostProto`/`respondGhostProto` extensions. Resolves `List<T>`/`Map<String, V>` via `Ghost.getSerializer(KType)` when `TypeInfo.kotlinType` is available. |
 | Spring Boot | *(none needed)* | `GhostHttpMessageConverter` auto-detects `@GhostProtoSerialization` per-request via the resolved serializer's `isProto` flag — plain and proto3 DTOs coexist on the same globally-registered converter with no extra configuration. |
 
 All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, lenient int32, quoted `NaN`/`Infinity`) instead of the plain flat reader. Encoding is unchanged in every case — proto3 wire correctness on write is generated into the `@GhostProtoSerialization` serializer's own `serialize()` method, not a separate writer, so there's nothing framework-specific needed there.
@@ -170,9 +170,10 @@ All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, 
 
 ## 8. Known gaps (not yet implemented)
 
-- `List<T>`/`Map<K,V>` request/response body unwrapping in the Retrofit/Ktor proto converters (direct types only today).
-- A value class that wraps a *collection* (e.g., `value class AccountIds(val value: List<Long>)` — see the scope note in [§3](#3-what-ghostprotoserialization-actually-does-today)).
-- No first-class `ULong` field type for your *own* `@GhostProtoSerialization` messages — only `ProtoUInt64Value` has full-range `uint64` support. Model your own `uint64` fields as `ProtoUInt64Value` or a custom `@GhostEncoder`/`@GhostDecoder`.
+Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
+
+- `Set<T>` top-level request/response bodies in Retrofit/Ktor proto converters (`List<T>` and `Map<String, V>` are supported)
+- Binary protobuf wire format (varint encoding) — Ghost only implements proto3 **JSON** mapping
 
 ## 9. Proto models in YAML
 

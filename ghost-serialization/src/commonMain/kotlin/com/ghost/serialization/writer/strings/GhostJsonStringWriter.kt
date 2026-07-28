@@ -179,6 +179,15 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     }
 
     @InternalGhostApi
+    fun writeField(header: ByteString, value: ULong): GhostJsonStringWriter {
+        appendSeparator()
+        buffer.writeAscii(header)
+        writeULongValueRaw(value)
+        needsComma = true
+        return this
+    }
+
+    @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonStringWriter {
         appendSeparator()
         buffer.writeAscii(header)
@@ -241,6 +250,15 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     }
 
     @InternalGhostApi
+    fun writeField(header: String, value: ULong): GhostJsonStringWriter {
+        appendSeparator()
+        buffer.writeString(header)
+        writeULongValueRaw(value)
+        needsComma = true
+        return this
+    }
+
+    @InternalGhostApi
     fun writeField(header: String, value: String): GhostJsonStringWriter {
         appendSeparator()
         buffer.writeString(header)
@@ -295,6 +313,13 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     fun value(number: Long): GhostJsonStringWriter {
         appendSeparator()
         writeLongValueRaw(number)
+        needsComma = true
+        return this
+    }
+
+    fun value(number: ULong): GhostJsonStringWriter {
+        appendSeparator()
+        writeULongValueRaw(number)
         needsComma = true
         return this
     }
@@ -413,6 +438,15 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             return
         }
         writeLongValueRawInternal(value)
+    }
+
+    @InternalGhostApi
+    fun writeULongValueRaw(value: ULong) {
+        if (value <= Long.MAX_VALUE.toULong()) {
+            writeLongValueRaw(value.toLong())
+        } else {
+            writeStringValueRaw(value.toString())
+        }
     }
 
     private fun writeLongValueRawInternal(value: Long) {

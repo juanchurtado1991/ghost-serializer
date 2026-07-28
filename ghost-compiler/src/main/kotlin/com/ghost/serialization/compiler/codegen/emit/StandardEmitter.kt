@@ -350,7 +350,7 @@ internal class StandardEmitter(
 
     /**
      * Emits a private `createInstance` helper when default-property count exceeds
-     * [GhostEmitterConstants.MAX_DEFAULT_BRANCH_COUNT]. The body is single-shot or
+     * GhostEmitterConstants.MAX_DEFAULT_BRANCH_COUNT. The body is single-shot or
      * required-ctor + `.copy(...)` via [emitCopyReturn].
      *
      * @param typeSpecBuilder The serializer class builder.

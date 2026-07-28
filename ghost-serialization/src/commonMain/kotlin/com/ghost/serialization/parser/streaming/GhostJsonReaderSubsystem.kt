@@ -322,6 +322,17 @@ fun GhostJsonReader.nextBoolean(): Boolean {
  */
 fun GhostJsonReader.nextString(): String = readQuotedString()
 
+/** proto3 `uint64` on the streaming reader channel — quoted decimal string on the wire. */
+fun GhostJsonReader.nextProtoUInt64(): ULong {
+    val saved = coerceStringsToNumbers
+    coerceStringsToNumbers = true
+    return try {
+        nextString().toULong()
+    } finally {
+        coerceStringsToNumbers = saved
+    }
+}
+
 /**
  * Reads a JSON string value that must contain exactly one [Char].
  * Fast path avoids [String] allocation for a single unescaped ASCII/Latin-1 code unit.
@@ -419,6 +430,15 @@ fun GhostJsonReader.nextLongOrNull(): Long? {
         return null
     }
     return nextLong()
+}
+
+/** Reads a JSON unsigned long, or `null` when the next token is the `null` literal. */
+fun GhostJsonReader.nextULongOrNull(): ULong? {
+    if (peekNextToken() == C.NULL_CHAR_INT) {
+        consumeNull()
+        return null
+    }
+    return nextULong()
 }
 
 /** Reads a JSON boolean, or `null` when the next token is the `null` literal. */

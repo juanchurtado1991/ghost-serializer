@@ -175,14 +175,16 @@ internal abstract class BaseDeserializeEmitter(
                 }
             )
 
+            prop.isProto && prop.type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+
+            prop.isProto && prop.type.isPrimitiveULong() -> CodeBlock.of(C.STR_NEXT_ULONG_PROTO_COERCED)
+
+            prop.isProto && prop.type.isByteArray() -> CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
+
             prop.isContextual -> {
                 val name = getContextualSerializerName(prop.type)
                 CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
             }
-
-            prop.isProto && prop.type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
-
-            prop.isProto && prop.type.isByteArray() -> CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
 
             else -> buildTypeReaderCall(prop.type, prop.isProto)
         }
@@ -216,6 +218,10 @@ internal abstract class BaseDeserializeEmitter(
 
         if (prop.isProto && prop.type.isPrimitiveLong()) {
             return CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
+        }
+
+        if (prop.isProto && prop.type.isPrimitiveULong()) {
+            return CodeBlock.of(C.STR_NEXT_ULONG_PROTO_COERCED)
         }
 
         if (prop.isProto && prop.type.isByteArray()) {
@@ -303,7 +309,7 @@ internal abstract class BaseDeserializeEmitter(
                 if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
-            isValueClassType(type) -> {
+            isValueClassType(type) && !type.isKotlinUnsignedPrimitive() -> {
                 val innerType = resolveValueClassInnerType(type)
                 val call = if (innerType != null) {
                     val constructorCall = buildTypeReaderCall(innerType, isProto)
@@ -342,6 +348,16 @@ internal abstract class BaseDeserializeEmitter(
                 scalarReaderCall(
                     C.STR_NEXT_LONG,
                     C.STR_NEXT_LONG_OR_NULL,
+                    type.isMarkedNullable
+                )
+            }
+            type.isPrimitiveULong() -> if (isProto) {
+                val call = CodeBlock.of(C.STR_NEXT_ULONG_PROTO_COERCED)
+                if (type.isMarkedNullable) nullGuarded(call) else call
+            } else {
+                scalarReaderCall(
+                    C.STR_NEXT_ULONG,
+                    C.STR_NEXT_ULONG_OR_NULL,
                     type.isMarkedNullable
                 )
             }

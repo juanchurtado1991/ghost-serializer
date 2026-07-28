@@ -72,7 +72,7 @@ Proto3 mapping rules (quoted int64, Base64 `bytes`, omit defaults) apply inside 
 |:---|:---|:---|
 | Ktor client | `Configuration.ghostYaml()`, `bodyGhostYaml<T>()` | `application/yaml` |
 | Ktor server (JVM) | `respondGhostYaml(value)` | `application/yaml` |
-| Retrofit | `GhostYamlConverterFactory.create()` | `application/yaml` |
+| Retrofit | `GhostYamlConverterFactory.create()` | `application/yaml` — unwraps `List<T>`/`Map<String, V>` when value serializers implement `GhostYamlSerializer` |
 | Spring MVC / WebFlux | auto-registered YAML converters | `application/yaml` |
 
 See framework guides for setup; converters only bind types whose serializer implements `GhostYamlSerializer`.
@@ -82,6 +82,19 @@ See framework guides for setup; converters only bind types whose serializer impl
 ## 5. Parser features
 
 Block/flow mappings, block scalars, anchors, and quoted/plain scalars — see `GhostYamlGroup*` tests under `ghost-serialization`.
+
+### Multi-document streams
+
+`Ghost.decodeFromYaml` reads a **single** document. For payloads with `---` separators, use:
+
+```kotlin
+val items: List<Config> = Ghost.decodeAllFromYaml(multiDocYaml)
+val restored: String = Ghost.encodeAllToYaml(items)
+```
+
+### Plain `ULong` scalars
+
+Direct `ULong` properties on `@GhostSerialization` + `@GhostYamlSerialization` models use generated scalar codecs (`reader.nextULong()`). Quoted decimal strings support the full `uint64` range; bare YAML numbers are accepted when they fit in `Long`.
 
 ---
 
@@ -94,6 +107,17 @@ Replace separate artifacts with `ghost-serialization` + `@GhostYamlSerialization
 @GhostYamlSerialization
 data class ConfigDto(val id: Long, val name: String)
 ```
+
+---
+
+## 7. Known gaps (not yet implemented)
+
+Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
+
+- `Set<T>` top-level HTTP request/response bodies in Retrofit/Ktor YAML converters (parity with [Proto §8](usage-protobuf.md#8-known-gaps-not-yet-implemented))
+- Binary protobuf wire format (varint encoding) — YAML/JSON paths are for config/API documents, not gRPC binary
+
+Structural JSON-only features (`@GhostResilient`, `@GhostFlatten`, sealed polymorphism, etc.) remain blocked at compile time with `@GhostYamlSerialization` — see [§2](#2-supported-annotations-on-yaml-paths).
 
 ---
 

@@ -12,6 +12,7 @@ import okio.ByteString
 /**
  * Contiguous in-memory specialized YAML writer backed by FlatByteArrayWriter.
  */
+@OptIn(InternalGhostApi::class)
 @Suppress("CascadeIf")
 class GhostYamlFlatWriter @InternalGhostApi constructor(
     @InternalGhostApi val buffer: FlatByteArrayWriter
@@ -187,6 +188,18 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     fun value(number: Long): GhostYamlFlatWriter {
         prepareValue(isStructural = false)
         writeLong(number)
+        return this
+    }
+
+    fun value(number: ULong): GhostYamlFlatWriter {
+        prepareValue(isStructural = false)
+        if (number > Long.MAX_VALUE.toULong()) {
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            buffer.writeUtf8(number.toString())
+            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        } else {
+            buffer.writeUtf8(number.toString())
+        }
         return this
     }
 
@@ -384,6 +397,13 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     }
 
     fun writeField(header: ByteString, value: Long): GhostYamlFlatWriter {
+        val key = extractKey(header)
+        name(key)
+        value(value)
+        return this
+    }
+
+    fun writeField(header: ByteString, value: ULong): GhostYamlFlatWriter {
         val key = extractKey(header)
         name(key)
         value(value)
