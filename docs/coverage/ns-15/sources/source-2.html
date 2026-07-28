@@ -1,0 +1,204 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlAnchorSubsystemKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlAnchorSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlAnchorSubsystemKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.4%
+  </span>
+  <span class="absValue">
+    (38/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (43/43)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (245/259)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Subsystem for parsing and managing YAML Anchors (&amp;anchor), Aliases (*alias), and Merge Keys (&lt;&lt;).
+&nbsp; */
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean): Any? {
+<b class="fc">&nbsp;    position++ // consume &#39;&amp;&#39;</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;    
+<b class="fc">&nbsp;    val start = position</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currByte = localRawData[position]</b>
+<b class="pc">&nbsp;        if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;            currByte == C.COMMA_BYTE || currByte == C.RIGHT_BRACE_BYTE || currByte == C.RIGHT_BRACKET_BYTE) break</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+&nbsp;    
+<b class="fc">&nbsp;    val anchorName = localRawData.decodeToString(start, position)</b>
+&nbsp;    
+&nbsp;    // Skip whitespace after anchor name
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="pc">&nbsp;    val valueIndent = if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {</b>
+<b class="fc">&nbsp;        advanceLine()</b>
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        currentIndent</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        indent</b>
+&nbsp;    }
+&nbsp;    
+<b class="fc">&nbsp;    val value = readValue(valueIndent, inFlow)</b>
+<b class="fc">&nbsp;    anchorTable[anchorName] = value</b>
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readAlias(): Any? {
+<b class="fc">&nbsp;    position++ // consume &#39;*&#39;</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;    
+<b class="fc">&nbsp;    val start = position</b>
+<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currByte = localRawData[position]</b>
+<b class="pc">&nbsp;        if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;            currByte == C.COMMA_BYTE || currByte == C.RIGHT_BRACE_BYTE || currByte == C.RIGHT_BRACKET_BYTE) break</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+&nbsp;    
+<b class="fc">&nbsp;    val aliasName = localRawData.decodeToString(start, position)</b>
+<b class="pc">&nbsp;    val value = anchorTable[aliasName] ?: yamlError(&quot;Anchor &#39;$aliasName&#39; not found&quot;)</b>
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.mergeInto(target: MutableMap&lt;String, Any?&gt;, value: Any?) {
+<b class="fc">&nbsp;    when (value) {</b>
+<b class="fc">&nbsp;        is Map&lt;*, *&gt; -&gt; {</b>
+<b class="fc">&nbsp;            for ((k, v) in value) {</b>
+<b class="pc">&nbsp;                val keyStr = k as? String ?: continue</b>
+<b class="fc">&nbsp;                if (!target.containsKey(keyStr)) {</b>
+<b class="fc">&nbsp;                    target[keyStr] = v</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        is List&lt;*&gt; -&gt; {</b>
+<b class="fc">&nbsp;            var idx = 0</b>
+<b class="fc">&nbsp;            val size = value.size</b>
+<b class="fc">&nbsp;            while (idx &lt; size) {</b>
+<b class="fc">&nbsp;                mergeInto(target, value[idx])</b>
+<b class="fc">&nbsp;                idx++</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 22:17</div>
+</div>
+</body>
+</html>

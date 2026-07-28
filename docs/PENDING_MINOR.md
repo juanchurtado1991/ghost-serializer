@@ -4,7 +4,7 @@ Lista de detalles no bloqueantes para revisar cuando convenga.
 
 ## Docs / artefactos generados
 
-- [ ] **`docs/coverage/`** — HTML de Kover aún referencia paquetes `com.ghost.protobuf.*` de 1.2.x. Se regenera en push a `main` (`./gradlew koverHtmlReport` → CI commit). Tras el primer push post-release debería quedar limpio.
+- [x] **`docs/coverage/`** — Regenerado localmente (`./gradlew ciTest koverHtmlReport` → `docs/coverage/`). Agregado 2026-07-27: merged **67.5% line / 49.2% branch**; sin refs a `com.ghost.protobuf.*`.
 
 - [ ] **`docs/GHOST_MANUAL_EN.md` §23 (CI)** — drift menor vs `.github/workflows/ci.yml`:
   - Manual dice `testDebugUnitTest`; CI usa `:ghost-serialization:testAndroidHostTest`.

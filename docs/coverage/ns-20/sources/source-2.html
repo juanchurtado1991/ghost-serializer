@@ -1,0 +1,567 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlWriter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.writer.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlWriter (com.ghost.serialization.writer.yaml)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlWriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/37)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/98)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/248)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1017)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;import okio.BufferedSink
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/**
+&nbsp; * A highly optimized, low-allocation YAML writer for Kotlin Multiplatform.
+&nbsp; */
+<b class="nc">&nbsp;class GhostYamlWriter(</b>
+<b class="nc">&nbsp;    internal val sink: BufferedSink</b>
+&nbsp;) {
+&nbsp;    @PublishedApi
+<b class="nc">&nbsp;    internal val buffer = sink.buffer</b>
+&nbsp;
+<b class="nc">&nbsp;    internal var depth = 0</b>
+<b class="nc">&nbsp;    internal var scratch: ByteArray? = null</b>
+&nbsp;
+<b class="nc">&nbsp;    private val contexts = IntArray(C.MAX_DEPTH)</b>
+<b class="nc">&nbsp;    private val itemCounts = IntArray(C.MAX_DEPTH)</b>
+&nbsp;    private var pendingSpace = false
+&nbsp;    private var justWroteDash = false
+&nbsp;
+&nbsp;    internal fun acquireScratch(): ByteArray {
+<b class="nc">&nbsp;        val currentScratch = scratch</b>
+<b class="nc">&nbsp;        if (currentScratch != null) return currentScratch</b>
+<b class="nc">&nbsp;        val newScratch = acquireScratchBuffer(256)</b>
+<b class="nc">&nbsp;        scratch = newScratch</b>
+<b class="nc">&nbsp;        return newScratch</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun release() {
+<b class="nc">&nbsp;        val currentScratch = scratch</b>
+<b class="nc">&nbsp;        if (currentScratch != null) {</b>
+<b class="nc">&nbsp;            releaseScratchBuffer(currentScratch)</b>
+<b class="nc">&nbsp;            scratch = null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        depth = 0</b>
+<b class="nc">&nbsp;        pendingSpace = false</b>
+<b class="nc">&nbsp;        justWroteDash = false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun reset() {
+<b class="nc">&nbsp;        depth = 0</b>
+<b class="nc">&nbsp;        pendingSpace = false</b>
+<b class="nc">&nbsp;        justWroteDash = false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun flush() {
+<b class="nc">&nbsp;        sink.emit()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeIndentation(level: Int) {
+<b class="nc">&nbsp;        val spacesCount = level * C.SPACES_PER_LEVEL</b>
+<b class="nc">&nbsp;        var count = 0</b>
+<b class="nc">&nbsp;        while (count &lt; spacesCount) {</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.SPACE_INT)</b>
+<b class="nc">&nbsp;            count++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun prepareValue(isStructural: Boolean) {
+<b class="nc">&nbsp;        val currentDepth = depth</b>
+<b class="nc">&nbsp;        if (currentDepth &gt; 0 &amp;&amp; contexts[currentDepth] == C.TYPE_ARRAY) {</b>
+<b class="nc">&nbsp;            if (justWroteDash) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.DASH_INT)</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.SPACE_INT)</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                buffer.writeByte(C.NEWLINE_INT)</b>
+<b class="nc">&nbsp;                writeIndentation(currentDepth - 1)</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.DASH_INT)</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.SPACE_INT)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            itemCounts[currentDepth]++</b>
+<b class="nc">&nbsp;            justWroteDash = isStructural</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            if (isStructural) {</b>
+<b class="nc">&nbsp;                pendingSpace = false</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                if (pendingSpace) {</b>
+<b class="nc">&nbsp;                    buffer.writeByte(C.SPACE_INT)</b>
+<b class="nc">&nbsp;                    pendingSpace = false</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun beginObject(): GhostYamlWriter {
+<b class="nc">&nbsp;        val currentDepth = depth</b>
+<b class="nc">&nbsp;        if (currentDepth &gt;= C.MAX_DEPTH) {</b>
+<b class="nc">&nbsp;            throw GhostYamlException(&quot;Max depth exceeded&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        prepareValue(isStructural = true)</b>
+<b class="nc">&nbsp;        val nextDepth = currentDepth + 1</b>
+<b class="nc">&nbsp;        contexts[nextDepth] = C.TYPE_OBJECT</b>
+<b class="nc">&nbsp;        itemCounts[nextDepth] = 0</b>
+<b class="nc">&nbsp;        depth = nextDepth</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun endObject(): GhostYamlWriter {
+<b class="nc">&nbsp;        depth--</b>
+<b class="nc">&nbsp;        justWroteDash = false</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun beginArray(): GhostYamlWriter {
+<b class="nc">&nbsp;        val currentDepth = depth</b>
+<b class="nc">&nbsp;        if (currentDepth &gt;= C.MAX_DEPTH) {</b>
+<b class="nc">&nbsp;            throw GhostYamlException(&quot;Max depth exceeded&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        prepareValue(isStructural = true)</b>
+<b class="nc">&nbsp;        val nextDepth = currentDepth + 1</b>
+<b class="nc">&nbsp;        contexts[nextDepth] = C.TYPE_ARRAY</b>
+<b class="nc">&nbsp;        itemCounts[nextDepth] = 0</b>
+<b class="nc">&nbsp;        depth = nextDepth</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun endArray(): GhostYamlWriter {
+<b class="nc">&nbsp;        depth--</b>
+<b class="nc">&nbsp;        justWroteDash = false</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun name(key: String): GhostYamlWriter {
+<b class="nc">&nbsp;        val currentDepth = depth</b>
+<b class="nc">&nbsp;        if (currentDepth &lt;= 0) {</b>
+<b class="nc">&nbsp;            throw GhostYamlException(&quot;Cannot write name outside of object scope&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (justWroteDash) {</b>
+<b class="nc">&nbsp;            justWroteDash = false</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            val count = itemCounts[currentDepth]</b>
+<b class="nc">&nbsp;            if (count &gt; 0) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.NEWLINE_INT)</b>
+<b class="nc">&nbsp;                writeIndentation(currentDepth - 1)</b>
+<b class="nc">&nbsp;            } else if (currentDepth &gt; 1) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.NEWLINE_INT)</b>
+<b class="nc">&nbsp;                writeIndentation(currentDepth - 1)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        buffer.writeUtf8(key)</b>
+<b class="nc">&nbsp;        buffer.writeByte(C.COLON_INT)</b>
+<b class="nc">&nbsp;        itemCounts[currentDepth]++</b>
+<b class="nc">&nbsp;        pendingSpace = true</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun name(key: ByteString): GhostYamlWriter {
+<b class="nc">&nbsp;        val currentDepth = depth</b>
+<b class="nc">&nbsp;        if (currentDepth &lt;= 0) {</b>
+<b class="nc">&nbsp;            throw GhostYamlException(&quot;Cannot write name outside of object scope&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (justWroteDash) {</b>
+<b class="nc">&nbsp;            justWroteDash = false</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            val count = itemCounts[currentDepth]</b>
+<b class="nc">&nbsp;            if (count &gt; 0) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.NEWLINE_INT)</b>
+<b class="nc">&nbsp;                writeIndentation(currentDepth - 1)</b>
+<b class="nc">&nbsp;            } else if (currentDepth &gt; 1) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.NEWLINE_INT)</b>
+<b class="nc">&nbsp;                writeIndentation(currentDepth - 1)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        buffer.write(key)</b>
+<b class="nc">&nbsp;        itemCounts[currentDepth]++</b>
+<b class="nc">&nbsp;        pendingSpace = false</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(text: String): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        writeStringValueRaw(text)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(number: Int): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        writeLong(number.toLong())</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(number: Long): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        writeLong(number)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(number: ULong): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        if (number &gt; Long.MAX_VALUE.toULong()) {</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="nc">&nbsp;            buffer.writeUtf8(number.toString())</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            buffer.writeUtf8(number.toString())</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(number: Double): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        buffer.writeUtf8(number.toString())</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(number: Float): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        buffer.writeUtf8(number.toString())</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(value: Boolean): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        if (value) {</b>
+<b class="nc">&nbsp;            buffer.writeUtf8(C.STR_TRUE)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            buffer.writeUtf8(C.STR_FALSE)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun value(value: Char): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="nc">&nbsp;        buffer.writeUtf8(value.toString())</b>
+<b class="nc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nullValue(): GhostYamlWriter {
+<b class="nc">&nbsp;        prepareValue(isStructural = false)</b>
+<b class="nc">&nbsp;        buffer.writeUtf8(C.STR_NULL)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun writeStringValueRaw(value: String) {
+<b class="nc">&nbsp;        val length = value.length</b>
+<b class="nc">&nbsp;        if (length == 0) {</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (length &lt;= C.PLAIN_ASCII_LIMIT) {</b>
+<b class="nc">&nbsp;            var allPlain = true</b>
+<b class="nc">&nbsp;            var index = 0</b>
+<b class="nc">&nbsp;            while (index &lt; length) {</b>
+<b class="nc">&nbsp;                val code = value[index].code</b>
+<b class="nc">&nbsp;                if (code !in C.SPACE_INT..C.TILDE_INT ||</b>
+<b class="nc">&nbsp;                    code == C.DOUBLE_QUOTE_INT ||</b>
+<b class="nc">&nbsp;                    code == C.BACKSLASH_INT</b>
+&nbsp;                ) {
+<b class="nc">&nbsp;                    allPlain = false</b>
+&nbsp;                    break
+&nbsp;                }
+<b class="nc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (allPlain) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="nc">&nbsp;                buffer.writeUtf8(value)</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+&nbsp;                return
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="nc">&nbsp;        writeEscaped(value)</b>
+<b class="nc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeEscaped(text: String) {
+<b class="nc">&nbsp;        val length = text.length</b>
+<b class="nc">&nbsp;        var index = 0</b>
+&nbsp;
+<b class="nc">&nbsp;        while (index &lt; length) {</b>
+<b class="nc">&nbsp;            val charCode = text[index].code</b>
+<b class="nc">&nbsp;            if (charCode == C.DOUBLE_QUOTE_INT) {</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+&nbsp;            } else if (charCode == C.BACKSLASH_INT) {
+<b class="nc">&nbsp;                buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                buffer.writeByte(C.BACKSLASH_INT)</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                when (charCode) {</b>
+&nbsp;                    C.CHAR_LF_INT -&gt; {
+<b class="nc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                        buffer.writeByte(C.CHAR_N_INT)</b>
+&nbsp;                    }
+&nbsp;                    C.CHAR_CR_INT -&gt; {
+<b class="nc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                        buffer.writeByte(C.CHAR_R_INT)</b>
+&nbsp;                    }
+&nbsp;                    C.CHAR_TAB_INT -&gt; {
+<b class="nc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                        buffer.writeByte(C.CHAR_T_INT)</b>
+&nbsp;                    }
+&nbsp;                    C.CHAR_BS_INT -&gt; {
+<b class="nc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                        buffer.writeByte(C.CHAR_B_INT)</b>
+&nbsp;                    }
+&nbsp;                    C.CHAR_FF_INT -&gt; {
+<b class="nc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                        buffer.writeByte(C.CHAR_F_INT)</b>
+&nbsp;                    }
+&nbsp;                    else -&gt; {
+<b class="nc">&nbsp;                        if (charCode &lt; C.CHAR_SPACE_INT) {</b>
+<b class="nc">&nbsp;                            buffer.writeByte(C.BACKSLASH_INT)</b>
+<b class="nc">&nbsp;                            buffer.writeByte(C.CHAR_U_INT)</b>
+<b class="nc">&nbsp;                            writeUnicodeHex(charCode)</b>
+<b class="nc">&nbsp;                        } else if (charCode &lt; C.ASCII_LIMIT) {</b>
+<b class="nc">&nbsp;                            buffer.writeByte(charCode)</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                            val charVal = text[index]</b>
+<b class="nc">&nbsp;                            if (charVal.isHighSurrogate() &amp;&amp; index + 1 &lt; length &amp;&amp; text[index + 1].isLowSurrogate()) {</b>
+<b class="nc">&nbsp;                                buffer.writeUtf8(text, index, index + 2)</b>
+<b class="nc">&nbsp;                                index++</b>
+&nbsp;                            } else {
+<b class="nc">&nbsp;                                buffer.writeUtf8(text, index, index + 1)</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            index++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeUnicodeHex(code: Int) {
+<b class="nc">&nbsp;        val hexChars = C.HEX_CHARS_ARR</b>
+<b class="nc">&nbsp;        buffer.writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())</b>
+<b class="nc">&nbsp;        buffer.writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())</b>
+<b class="nc">&nbsp;        buffer.writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())</b>
+<b class="nc">&nbsp;        buffer.writeByte(hexChars[code and C.HEX_MASK].toInt())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeLong(value: Long) {
+<b class="nc">&nbsp;        if (value == 0L) {</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.ZERO_INT)</b>
+&nbsp;            return
+&nbsp;        }
+<b class="nc">&nbsp;        var temp = value</b>
+<b class="nc">&nbsp;        val isNegative = temp &lt; 0</b>
+<b class="nc">&nbsp;        if (isNegative) {</b>
+<b class="nc">&nbsp;            buffer.writeByte(C.DASH_INT)</b>
+<b class="nc">&nbsp;            if (temp == Long.MIN_VALUE) {</b>
+<b class="nc">&nbsp;                buffer.writeUtf8(C.STR_MIN_LONG_ABS)</b>
+&nbsp;                return
+&nbsp;            }
+<b class="nc">&nbsp;            temp = -temp</b>
+&nbsp;        }
+<b class="nc">&nbsp;        val scratchBuf = scratch ?: acquireScratch()</b>
+<b class="nc">&nbsp;        var pos = scratchBuf.size</b>
+<b class="nc">&nbsp;        while (temp &gt; 0L) {</b>
+<b class="nc">&nbsp;            val digit = (temp % C.TEN_LONG).toInt()</b>
+<b class="nc">&nbsp;            scratchBuf[--pos] = (C.ZERO_INT + digit).toByte()</b>
+<b class="nc">&nbsp;            temp /= C.TEN_LONG</b>
+&nbsp;        }
+<b class="nc">&nbsp;        buffer.write(scratchBuf, pos, scratchBuf.size - pos)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun extractKey(header: ByteString): String {
+<b class="nc">&nbsp;        val size = header.size</b>
+<b class="nc">&nbsp;        if (size &gt;= C.HEADER_MIN_SIZE &amp;&amp;</b>
+<b class="nc">&nbsp;            header[C.HEADER_QUOTE_START_OFFSET] == C.DOUBLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="nc">&nbsp;            header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="nc">&nbsp;            header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB).utf8()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return header.utf8()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeNameRaw(header: ByteString): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: String): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: Int): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: Long): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: ULong): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: Double): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: Float): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: Boolean): GhostYamlWriter {
+<b class="nc">&nbsp;        val key = extractKey(header)</b>
+<b class="nc">&nbsp;        name(key)</b>
+<b class="nc">&nbsp;        value(value)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 22:17</div>
+</div>
+</body>
+</html>

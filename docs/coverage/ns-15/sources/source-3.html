@@ -1,0 +1,350 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlBlockScalarSubsystemKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlBlockScalarSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlBlockScalarSubsystemKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.8%
+  </span>
+  <span class="absValue">
+    (76/125)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (88/99)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.3%
+  </span>
+  <span class="absValue">
+    (486/613)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostYamlBlockScalarSubsystemKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.8%
+  </span>
+  <span class="absValue">
+    (76/125)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (88/99)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.3%
+  </span>
+  <span class="absValue">
+    (486/613)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Subsystem for parsing YAML Block Scalars (Literal | and Folded &gt; styles).
+&nbsp; */
+&nbsp;
+&nbsp;/** Group B — Block scalar (| and &gt;). */
+&nbsp;internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
+&nbsp;    // Skip the indicator and any chomp/indent modifiers on the same line
+<b class="fc">&nbsp;    position++ // consume &#39;|&#39; or &#39;&gt;&#39;</b>
+<b class="fc">&nbsp;    val isFolded = indicator == C.GT_BYTE</b>
+&nbsp;
+&nbsp;    // Read optional chomp indicator and indentation indicator
+<b class="fc">&nbsp;    var chomp = GhostYamlFlatReader.ChompStyle.CLIP</b>
+<b class="fc">&nbsp;    var explicitIndent = -1</b>
+&nbsp;
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currByte = localRawData[position]</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            currByte == C.PLUS_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                chomp = GhostYamlFlatReader.ChompStyle.KEEP; position++</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            currByte == C.DASH_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                chomp = GhostYamlFlatReader.ChompStyle.STRIP; position++</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            isDigit(currByte) -&gt; {</b>
+<b class="fc">&nbsp;                explicitIndent = (currByte - C.ZERO_BYTE); position++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE -&gt; position++</b>
+<b class="pc">&nbsp;            currByte == C.HASH_BYTE -&gt; {</b>
+<b class="nc">&nbsp;                skipToEndOfLine(); break</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; break
+&nbsp;        }
+&nbsp;    }
+&nbsp;    // Skip to next line
+<b class="fc">&nbsp;    skipToEndOfLine()</b>
+<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+<b class="nc">&nbsp;    else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.CR_BYTE) {</b>
+<b class="nc">&nbsp;        position++</b>
+<b class="nc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Determine block indentation from first non-empty line
+<b class="fc">&nbsp;    val blockIndent = if (explicitIndent &gt;= 0) {</b>
+<b class="fc">&nbsp;        explicitIndent</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        detectBlockScalarIndent(currentIndent)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return readBlockScalarContent(blockIndent, isFolded, chomp)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int): Int {
+<b class="fc">&nbsp;    var scannerPos = position</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="pc">&nbsp;    while (scannerPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currByte = localRawData[scannerPos]</b>
+<b class="pc">&nbsp;        if (currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) {</b>
+<b class="fc">&nbsp;            scannerPos++</b>
+&nbsp;            continue
+&nbsp;        }
+&nbsp;        // Count leading spaces
+<b class="fc">&nbsp;        var spaces = 0</b>
+<b class="fc">&nbsp;        var peekPos = scannerPos</b>
+<b class="pc">&nbsp;        while (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] == C.SPACE_BYTE) {</b>
+<b class="fc">&nbsp;            spaces++; peekPos++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] != C.NEWLINE_BYTE &amp;&amp; localRawData[peekPos] != C.CR_BYTE) {</b>
+<b class="fc">&nbsp;            if (spaces &lt;= parentIndent) {</b>
+<b class="fc">&nbsp;                return parentIndent + 2</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return spaces</b>
+&nbsp;        }
+<b class="nc">&nbsp;        scannerPos = peekPos</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return parentIndent + 2</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readBlockScalarContent(
+&nbsp;    blockIndent: Int,
+&nbsp;    isFolded: Boolean,
+&nbsp;    chomp: GhostYamlFlatReader.ChompStyle
+&nbsp;): String {
+<b class="fc">&nbsp;    val sb = StringBuilder()</b>
+<b class="fc">&nbsp;    var trailingNewlines = 0</b>
+<b class="fc">&nbsp;    var isFirstLine = true</b>
+<b class="fc">&nbsp;    var lastLineWasIndented = false</b>
+&nbsp;
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;
+<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
+&nbsp;        // Count indentation
+<b class="fc">&nbsp;        var spaces = 0</b>
+<b class="fc">&nbsp;        val lineStart = position</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; localRawData[position] == C.SPACE_BYTE) {</b>
+<b class="fc">&nbsp;            spaces++; position++</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (position &gt;= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {</b>
+&nbsp;            // Empty line
+<b class="fc">&nbsp;            trailingNewlines++</b>
+<b class="fc">&nbsp;            skipToEndOfLine()</b>
+<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+<b class="nc">&nbsp;            else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.CR_BYTE) {</b>
+<b class="nc">&nbsp;                position++</b>
+<b class="nc">&nbsp;                if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+&nbsp;            }
+&nbsp;            continue
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (spaces &lt; blockIndent) {</b>
+&nbsp;            // De-indented content — end of block scalar
+<b class="fc">&nbsp;            position = lineStart</b>
+&nbsp;            break
+&nbsp;        }
+&nbsp;
+&nbsp;        // We have skipped spaces when counting them. Position is currently at lineStart + spaces.
+<b class="fc">&nbsp;        val effectiveSpaces = spaces - blockIndent</b>
+<b class="fc">&nbsp;        val isIndented = effectiveSpaces &gt; 0</b>
+&nbsp;
+&nbsp;        // If we have accumulated trailing newlines, append them
+<b class="fc">&nbsp;        if (trailingNewlines &gt; 0) {</b>
+<b class="pc">&nbsp;            if (!isFirstLine) {</b>
+<b class="fc">&nbsp;                if (trailingNewlines == 1) {</b>
+<b class="pc">&nbsp;                    if (isFolded &amp;&amp; !isIndented &amp;&amp; !lastLineWasIndented) {</b>
+<b class="fc">&nbsp;                        sb.append(&#39; &#39;)</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        sb.append(&#39;\n&#39;)</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="pc">&nbsp;                    val toAppend = if (isFolded) trailingNewlines - 1 else trailingNewlines</b>
+<b class="fc">&nbsp;                    repeat(toAppend) { sb.append(&#39;\n&#39;) }</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            trailingNewlines = 0</b>
+&nbsp;        }
+<b class="fc">&nbsp;        isFirstLine = false</b>
+<b class="fc">&nbsp;        lastLineWasIndented = isIndented</b>
+&nbsp;
+&nbsp;        // Append remaining spaces (effectiveSpaces)
+<b class="fc">&nbsp;        repeat(effectiveSpaces) { sb.append(&#39; &#39;) }</b>
+&nbsp;
+&nbsp;        // Append line content
+<b class="fc">&nbsp;        val contentStart = position</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE) {</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        sb.append(localRawData.decodeToString(contentStart, position))</b>
+&nbsp;
+&nbsp;        // Consume the newline
+<b class="fc">&nbsp;        skipToEndOfLine()</b>
+<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) {</b>
+<b class="fc">&nbsp;            position++</b>
+<b class="pc">&nbsp;        } else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.CR_BYTE) {</b>
+<b class="nc">&nbsp;            position++</b>
+<b class="nc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        trailingNewlines = 1 // Count the newline ending this content line</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Apply chomping style on the final string
+<b class="fc">&nbsp;    val content = sb.toString()</b>
+<b class="fc">&nbsp;    return when (chomp) {</b>
+&nbsp;        GhostYamlFlatReader.ChompStyle.STRIP -&gt; {
+&nbsp;            // Strip all trailing newlines
+<b class="fc">&nbsp;            var end = content.length</b>
+<b class="pc">&nbsp;            while (end &gt; 0 &amp;&amp; content[end - 1] == &#39;\n&#39;) end--</b>
+<b class="fc">&nbsp;            content.substring(0, end)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        GhostYamlFlatReader.ChompStyle.CLIP -&gt; {
+&nbsp;            // Keep exactly one newline if content is not empty
+<b class="fc">&nbsp;            var end = content.length</b>
+<b class="pc">&nbsp;            while (end &gt; 0 &amp;&amp; content[end - 1] == &#39;\n&#39;) end--</b>
+<b class="fc">&nbsp;            if (end &gt; 0) content.substring(0, end) + &quot;\n&quot; else &quot;&quot;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        GhostYamlFlatReader.ChompStyle.KEEP -&gt; {
+<b class="fc">&nbsp;            val trailing = if (trailingNewlines &gt; 0) &quot;\n&quot;.repeat(trailingNewlines) else &quot;&quot;</b>
+<b class="fc">&nbsp;            content + trailing</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 22:17</div>
+</div>
+</body>
+</html>
