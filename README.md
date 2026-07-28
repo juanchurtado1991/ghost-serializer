@@ -12,6 +12,8 @@ Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate onl
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
 [![Wasm](https://img.shields.io/badge/Wasm-654FF0.png?style=flat&logo=webassembly&logoColor=white)](docs/wiki/modules.md)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
+[![Downloads](https://img.shields.io/badge/downloads-70K%2B%2F3mo-blue)](https://central.sonatype.com)
+[![Companies](https://img.shields.io/badge/used%20by-600%2B%20companies-brightgreen)](https://central.sonatype.com)
 
 **[Quick Start](docs/wiki/quick-start.md)** ·
 **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
