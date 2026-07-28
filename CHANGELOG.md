@@ -4,7 +4,7 @@
 
 ### Added
 - **Unified runtime (JSON + YAML + Proto3 JSON)** in `ghost-serialization`: YAML parser/writer (`GhostYamlFlatReader`/`GhostYamlFlatWriter`), `Ghost.decodeFromYaml` / `encodeToYaml`, Proto3 JSON (`GhostProto`, WKTs under `com.ghost.serialization.proto.wkt`) — replaces separate `ghost-yaml`, `ghost-yaml-ktor`, and `ghost-protobuf` artifacts.
-- **KSP YAML codegen**: `GhostYamlSerializer` generation for eligible `@GhostSerialization` models; `ghost.generateYaml` KSP option and Gradle plugin `generateYaml` property (default `true`).
+- **KSP YAML codegen**: `@GhostYamlSerialization` opt-in marker; emits `GhostYamlSerializer` only when present beside `@GhostSerialization` or `@GhostProtoSerialization`.
 - **Framework YAML adapters**: `ghostYaml()` / `bodyGhostYaml()` / `respondGhostYaml()` (Ktor), `GhostYamlConverterFactory` (Retrofit), `GhostYamlHttpMessageConverter` + reactive YAML codecs (Spring Boot).
 - **Benchmark**: `benchmarkYaml` / `benchmarkYamlRegression(Fast)` tasks for Ghost-only YAML round-trip on `BenchUser`.
 - **Docs**: new [Usage — YAML](docs/wiki/usage-yaml.md); wiki/README/CHANGELOG migration guide for 1.2.x → 1.3.0 unified runtime.
@@ -20,7 +20,7 @@
 ### Changed
 - **Breaking — Maven artifacts**: `ghost-yaml`, `ghost-yaml-ktor`, and `ghost-protobuf` removed; depend on `com.ghostserializer:ghost-serialization:1.3.0` only. Framework adapters remain `ghost-ktor`, `ghost-retrofit`, `ghost-spring-boot-starter`.
 - **Breaking — public API rename**: `GhostProtobuf` → `GhostProto`; package `com.ghost.protobuf.*` → `com.ghost.serialization.proto.*` (no typealiases).
-- **Gradle plugin**: removed `autoInjectProtobuf` / `autoInjectYaml`; Proto and YAML ship in the core runtime. Added `generateYaml` (default `true`) wired to KSP `ghost.generateYaml`.
+- **Gradle plugin**: removed `autoInjectProtobuf` / `autoInjectYaml` and module-wide `generateYaml`; YAML codegen is per-class via `@GhostYamlSerialization`.
 - **Spring MVC content negotiation**: JSON converter ordered ahead of YAML so mixed endpoints prefer `application/json` when both converters are registered.
 - **Leaner KSP output**: strip redundant explicit `public` modifiers; omit unused `MASK_REQUIRED_N` when a model has a single required field; invent camelCase locals (`idInternalValue`, `wrappedCaptureExtras`) instead of underscored names; format long `JsonReaderOptions.of` / `createInstance` / null-check / collection-reader call sites across multiple lines.
 - **Constants-first cleanup**: wire UTF-8 decode, Base64 errors, dispatch-table defaults, perfect-hash table ladders, Gradle `"api"` config, `DefaultExpressionExtractor` whitelist literals, and related hot-path ints/strings through `GhostJsonConstants` / `GhostEmitterConstants` (or file-local named consts in `ghost-api`, which stays dependency-free).
@@ -59,7 +59,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 | `com.ghost.protobuf.wkt.*` | `com.ghost.serialization.proto.wkt.*` |
 | `ghost-yaml-ktor` → `ghostYaml()` | `ghost-ktor` → `ghostYaml()` |
 | `autoInjectYaml` / `autoInjectProtobuf` | removed — core runtime always includes YAML + Proto |
-| opt-out YAML codegen | `ghost { generateYaml.set(false) }` or `ksp { arg("ghost.generateYaml", "false") }` |
+| opt-out YAML codegen | `@GhostYamlSerialization` on each YAML DTO (no module flag) |
 
 ## [1.3.0] - 2026-07-26
 

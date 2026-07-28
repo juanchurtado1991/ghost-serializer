@@ -28,7 +28,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 internal class StandardEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
-    readerClass: ClassName
+    readerClass: ClassName,
+    private val supportsResilience: Boolean = true,
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
@@ -270,7 +271,7 @@ internal class StandardEmitter(
         val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
         val varName = prop.localValueName()
-        if (prop.isResilient) {
+        if (prop.isResilient && supportsResilience) {
             body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
             body.addStatement(varName + C.TEMPLATE_ASSIGN_L, C.STR_IT)
             body.addStatement(C.STR_MASK_BITWISE_OR, maskIdx, maskIdx, constName)

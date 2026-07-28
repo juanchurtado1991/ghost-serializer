@@ -92,7 +92,7 @@ registerBenchmarkTask(
 registerBenchmarkTask(
     "benchmarkYaml",
     "yaml",
-    "Ghost-only YAML round-trip (BenchUser GhostYamlSerializer)",
+    "Ghost-only YAML round-trip (YamlBenchUser GhostYamlSerializer)",
 )
 registerBenchmarkTask(
     "benchmarkYamlFast",

@@ -19,12 +19,6 @@ interface GhostExtension {
     val autoInjectRetrofit: Property<Boolean>
 
     /**
-     * Whether KSP should emit [com.ghost.serialization.yaml.contract.GhostYamlSerializer] companions.
-     * Defaults to true; opt out with `ghost { generateYaml.set(false) }` or `ksp { arg("ghost.generateYaml", "false") }`.
-     */
-    val generateYaml: Property<Boolean>
-
-    /**
      * Override the version of Ghost Serialization to use.
      * By default, this uses the version that matches the plugin version.
      */

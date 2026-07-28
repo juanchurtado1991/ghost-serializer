@@ -47,25 +47,8 @@ class GhostPlugin : Plugin<Project> {
             }
         }
 
-        fun configureKspOptions() {
-            if (!project.plugins.hasPlugin(PLUGIN_KSP)) return
-            val kspExtension = project.extensions.findByName("ksp") ?: return
-            val argMethod = kspExtension.javaClass.methods.first { method ->
-                method.name == "arg" &&
-                    method.parameterCount == 2 &&
-                    method.parameterTypes[0] == String::class.java &&
-                    Provider::class.java.isAssignableFrom(method.parameterTypes[1])
-            }
-            argMethod.invoke(
-                kspExtension,
-                OPTION_GENERATE_YAML,
-                extension.generateYaml.map { it.toString() },
-            )
-        }
-
         project.plugins.withId(PLUGIN_KSP) {
             configureKspDependencies()
-            configureKspOptions()
         }
         project.plugins.withId(PLUGIN_KMP) {
             setupKmp(project, ghostVersion)
@@ -99,7 +82,6 @@ class GhostPlugin : Plugin<Project> {
         return project.extensions.create(EXTENSION_NAME, GhostExtension::class.java).apply {
             autoInjectKtor.convention(true)
             autoInjectRetrofit.convention(true)
-            generateYaml.convention(true)
             version.convention(DEFAULT_VERSION)
         }
     }
@@ -160,7 +142,6 @@ class GhostPlugin : Plugin<Project> {
     companion object {
         private const val EXTENSION_NAME = "ghost"
         private const val DEFAULT_VERSION = "1.3.0"
-        private const val OPTION_GENERATE_YAML = "ghost.generateYaml"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
         private const val PLUGIN_KMP = "org.jetbrains.kotlin.multiplatform"

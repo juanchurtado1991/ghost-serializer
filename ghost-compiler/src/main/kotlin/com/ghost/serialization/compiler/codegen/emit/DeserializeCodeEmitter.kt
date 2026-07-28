@@ -49,7 +49,8 @@ internal class DeserializeCodeEmitter(
     private val isResilientClass: Boolean = false,
     private val isInferred: Boolean = false,
     private val isObject: Boolean = false,
-    private val hasFallback: Boolean = false
+    private val hasFallback: Boolean = false,
+    private val supportsResilience: Boolean = true,
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
@@ -107,7 +108,8 @@ internal class DeserializeCodeEmitter(
         val emitter = FragmentedEmitter(
             properties,
             originalClassName,
-            readerClass
+            readerClass,
+            supportsResilience = supportsResilience,
         )
         emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)
         if (!isFlatPath) {
@@ -126,7 +128,8 @@ internal class DeserializeCodeEmitter(
         val emitter = StandardEmitter(
             properties,
             originalClassName,
-            readerClass
+            readerClass,
+            supportsResilience = supportsResilience,
         )
         emitter.emit(body, typeSpecBuilder)
         if (!isFlatPath) {
@@ -171,7 +174,7 @@ internal class DeserializeCodeEmitter(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean
     ) {
-        if (isResilientClass && !isFlatPath) {
+        if (isResilientClass && !isFlatPath && supportsResilience) {
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     C.STR_IS_RESILIENT,

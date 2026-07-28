@@ -77,25 +77,16 @@ ksp {
 
 ---
 
-## YAML serializer generation
+## Annotation reference
 
-KSP generates a `GhostYamlSerializer` for each eligible `@GhostSerialization` model by default. YAML entry points (`Ghost.decodeFromYaml`, `encodeToYaml`) and framework YAML adapters require these generated serializers.
+Cross-format wire annotations:
 
-Disable YAML codegen module-wide when you only need JSON:
+- `@GhostName` — custom key on JSON, proto3 JSON, and YAML paths
+- `@GhostIgnore` — property omitted on all generated paths
 
-```kotlin
-// build.gradle.kts
-ghost {
-    generateYaml.set(false)
-}
+YAML is **opt-in**: add `@GhostYamlSerialization` beside `@GhostSerialization` or `@GhostProtoSerialization`. JSON-only features (`@GhostResilient`, `@GhostFlatten`, envelopes, sealed/inferred polymorphism, custom codecs, `RawJson`, etc.) cannot be combined with `@GhostYamlSerialization` — KSP fails at compile time.
 
-// equivalent KSP flag
-ksp {
-    arg("ghost.generateYaml", "false")
-}
-```
-
-Proto3 JSON and YAML for `@GhostProtoSerialization` models follow separate KSP rules — see [YAML guide](usage-yaml.md) and [Protobuf guide](usage-protobuf.md).
+See [Advanced Features — Format compatibility](advanced-features.md#format-compatibility).
 
 ---
 
