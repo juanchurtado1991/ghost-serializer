@@ -6,9 +6,15 @@ import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlDoubleArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlFloatArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlIntArraySerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlLongArraySerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -146,5 +152,58 @@ class GhostYamlCollectionSerializersTest {
         )
         val parsed = serializer.deserialize(GhostYamlFlatReader(yaml.encodeToByteArray()))
         assertEquals(expected, parsed)
+    }
+
+    @Test
+    fun primitiveArraySerializers_roundTripAllScalarKinds() {
+        val intYaml = """
+            [1, 2, 3]
+        """.trimIndent()
+        assertContentEquals(
+            intArrayOf(1, 2, 3),
+            GhostYamlIntArraySerializer.deserialize(GhostYamlFlatReader(intYaml.encodeToByteArray())),
+        )
+
+        val longYaml = """
+            [100, 200]
+        """.trimIndent()
+        assertContentEquals(
+            longArrayOf(100L, 200L),
+            GhostYamlLongArraySerializer.deserialize(GhostYamlFlatReader(longYaml.encodeToByteArray())),
+        )
+
+        val floatYaml = """
+            [1.5, 2.25]
+        """.trimIndent()
+        assertContentEquals(
+            floatArrayOf(1.5f, 2.25f),
+            GhostYamlFloatArraySerializer.deserialize(GhostYamlFlatReader(floatYaml.encodeToByteArray())),
+        )
+
+        val doubleYaml = """
+            [3.14, 2.718]
+        """.trimIndent()
+        assertContentEquals(
+            doubleArrayOf(3.14, 2.718),
+            GhostYamlDoubleArraySerializer.deserialize(GhostYamlFlatReader(doubleYaml.encodeToByteArray())),
+        )
+
+        val booleanYaml = """
+            [true, false, true]
+        """.trimIndent()
+        assertContentEquals(
+            booleanArrayOf(true, false, true),
+            GhostYamlBooleanArraySerializer.deserialize(GhostYamlFlatReader(booleanYaml.encodeToByteArray())),
+        )
+
+        val source = intArrayOf(7, 8, 9)
+        val bytes = ghostYamlInternalUseFlatWriter { writer ->
+            GhostYamlIntArraySerializer.serialize(writer, source)
+            writer.buffer.toByteArray()
+        }
+        assertContentEquals(
+            source,
+            GhostYamlIntArraySerializer.deserialize(GhostYamlFlatReader(bytes)),
+        )
     }
 }

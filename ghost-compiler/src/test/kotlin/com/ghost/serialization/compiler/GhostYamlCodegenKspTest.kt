@@ -192,6 +192,122 @@ class GhostYamlCodegenKspTest {
     }
 
     @Test
+    fun primitiveLongArrayUsesGhostYamlLongArraySerializer() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "YamlLongScores.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class YamlLongScores(val values: LongArray)
+                """.trimIndent()
+            ),
+            serializerFileName = "YamlLongScoresSerializer.kt"
+        )
+
+        assertTrue(
+            "GhostYamlLongArraySerializer.serialize(writer, value.values)" in generated,
+            "Expected YAML LongArray serializer on write path:\n$generated"
+        )
+        assertTrue(
+            "GhostYamlLongArraySerializer.deserialize(reader)" in generated,
+            "Expected YAML LongArray serializer on read path:\n$generated"
+        )
+    }
+
+    @Test
+    fun primitiveFloatArrayUsesGhostYamlFloatArraySerializer() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "YamlFloatScores.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class YamlFloatScores(val values: FloatArray)
+                """.trimIndent()
+            ),
+            serializerFileName = "YamlFloatScoresSerializer.kt"
+        )
+
+        assertTrue(
+            "GhostYamlFloatArraySerializer.serialize(writer, value.values)" in generated,
+            "Expected YAML FloatArray serializer on write path:\n$generated"
+        )
+        assertTrue(
+            "GhostYamlFloatArraySerializer.deserialize(reader)" in generated,
+            "Expected YAML FloatArray serializer on read path:\n$generated"
+        )
+    }
+
+    @Test
+    fun primitiveDoubleArrayUsesGhostYamlDoubleArraySerializer() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "YamlDoubleScores.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class YamlDoubleScores(val values: DoubleArray)
+                """.trimIndent()
+            ),
+            serializerFileName = "YamlDoubleScoresSerializer.kt"
+        )
+
+        assertTrue(
+            "GhostYamlDoubleArraySerializer.serialize(writer, value.values)" in generated,
+            "Expected YAML DoubleArray serializer on write path:\n$generated"
+        )
+        assertTrue(
+            "GhostYamlDoubleArraySerializer.deserialize(reader)" in generated,
+            "Expected YAML DoubleArray serializer on read path:\n$generated"
+        )
+    }
+
+    @Test
+    fun primitiveBooleanArrayUsesGhostYamlBooleanArraySerializer() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "YamlFlags.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class YamlFlags(val values: BooleanArray)
+                """.trimIndent()
+            ),
+            serializerFileName = "YamlFlagsSerializer.kt"
+        )
+
+        assertTrue(
+            "GhostYamlBooleanArraySerializer.serialize(writer, value.values)" in generated,
+            "Expected YAML BooleanArray serializer on write path:\n$generated"
+        )
+        assertTrue(
+            "GhostYamlBooleanArraySerializer.deserialize(reader)" in generated,
+            "Expected YAML BooleanArray serializer on read path:\n$generated"
+        )
+    }
+
+    @Test
     fun plainULongFieldUsesNextULongOnYamlDeserialize() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(

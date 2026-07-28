@@ -62,7 +62,7 @@ Full matrix → **[Advanced Features — Format compatibility](advanced-features
 data class DeviceStatus(val device_id: Long, val retry_count: Int)
 ```
 
-Proto3 mapping rules (quoted int64, Base64 `bytes`, omit defaults) apply inside YAML via `GhostProtoYamlFlatReader`.
+Proto3 mapping rules (quoted int64, Base64 `bytes`, omit defaults) apply inside YAML via `GhostYamlFlatReader` with proto-aware coercion on generated deserialize paths.
 
 ---
 

@@ -177,7 +177,7 @@ Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapte
 
 ## 9. Proto models in YAML
 
-When a `@GhostProtoSerialization` model is eligible for YAML codegen, KSP can emit serializers that read through `GhostProtoYamlFlatReader` — applying proto3 int64-as-string and bytes-as-Base64 rules inside YAML documents. Use the same `Ghost.decodeFromYaml` / `encodeToYaml` entry points as plain JSON models. See [YAML guide §3](usage-yaml.md#3-what-ksp-generates-and-what-it-skips).
+When a `@GhostProtoSerialization` model is eligible for YAML codegen, KSP emits serializers that read through `GhostYamlFlatReader` — applying proto3 int64-as-string and bytes-as-Base64 rules inside YAML documents. Use the same `Ghost.decodeFromYaml` / `encodeToYaml` entry points as plain JSON models. See [YAML guide §3](usage-yaml.md#3-proto-models-in-yaml).
 
 ## 10. Benchmarks
 
