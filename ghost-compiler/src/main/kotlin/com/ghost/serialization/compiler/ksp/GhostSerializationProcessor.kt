@@ -261,6 +261,15 @@ class GhostSerializationProcessor(
         if (envelopeModel != null) {
             return false
         }
+        val isInferred = classDeclaration.annotations
+            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+            ?.arguments
+            ?.find { it.name?.asString() == C.ARG_INFERRED }
+            ?.value as? Boolean
+            ?: false
+        if (isInferred) {
+            return false
+        }
         return propertiesModel.none { propertyDisablesYamlCodegen(it) }
     }
 
@@ -271,10 +280,22 @@ class GhostSerializationProcessor(
         if (prop.wrappedSourceKeys != null || prop.flattenPath != null || prop.wrapPath != null) {
             return true
         }
-        if (prop.type.isRawJson()) {
+        if (prop.isSealedClass) {
             return true
         }
-        if (!prop.isProto && prop.type.isByteArray()) {
+        if (prop.isGhost && !prop.isEnum) {
+            return true
+        }
+        if (prop.listInnerIsGhost || prop.mapValueIsGhost) {
+            return true
+        }
+        if (prop.type.containsYamlIncompatibleType(prop.isProto)) {
+            return true
+        }
+        val valueClassProperty = prop.valueClassProperty
+        if (valueClassProperty != null &&
+            valueClassProperty.type.containsYamlIncompatibleType(prop.isProto)
+        ) {
             return true
         }
         return false

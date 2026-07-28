@@ -218,6 +218,14 @@ class GhostYamlWriter(
         return this
     }
 
+    fun value(value: Char): GhostYamlWriter {
+        prepareValue(isStructural = false)
+        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        buffer.writeUtf8(value.toString())
+        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        return this
+    }
+
     fun nullValue(): GhostYamlWriter {
         prepareValue(isStructural = false)
         buffer.writeUtf8(C.STR_NULL)

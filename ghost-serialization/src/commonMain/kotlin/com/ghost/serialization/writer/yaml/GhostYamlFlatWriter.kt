@@ -212,6 +212,14 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
+    fun value(value: Char): GhostYamlFlatWriter {
+        prepareValue(isStructural = false)
+        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        buffer.writeUtf8(value.toString())
+        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        return this
+    }
+
     fun nullValue(): GhostYamlFlatWriter {
         prepareValue(isStructural = false)
         buffer.writeUtf8(C.STR_NULL)
