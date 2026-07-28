@@ -1360,6 +1360,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         throw GhostYamlException("Expected Boolean but found $value")
     }
 
+    /** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
+    fun nextChar(): Char {
+        val text = nextString()
+        if (text.length != 1) {
+            throw GhostYamlException("Expected single-character string but found length ${text.length}")
+        }
+        return text[0]
+    }
+
     fun nextString(): String {
         val value = nextValue
         nextValue = null

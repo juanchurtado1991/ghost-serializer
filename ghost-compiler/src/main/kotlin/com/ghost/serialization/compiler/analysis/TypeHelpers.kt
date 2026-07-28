@@ -3,6 +3,7 @@ import com.ghost.serialization.compiler.model.*
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
@@ -163,6 +164,31 @@ internal fun KSType.isRawJson(): Boolean {
  * Checks whether this type captures opaque JSON inline (ByteArray or RawJson).
  */
 internal fun KSType.isOpaqueJson(): Boolean = isByteArray() || isRawJson()
+
+/**
+ * True when this type (recursively) uses JSON-only codegen features unsupported on YAML paths.
+ */
+internal fun KSType.containsYamlIncompatibleType(isProto: Boolean): Boolean {
+    if (isRawJson()) return true
+    if (!isProto && isByteArray()) return true
+    val declaration = this.declaration as? KSClassDeclaration ?: return false
+    if (declaration.modifiers.contains(Modifier.SEALED)) return true
+    if (declaration.modifiers.contains(Modifier.VALUE) ||
+        declaration.modifiers.contains(Modifier.INLINE)
+    ) {
+        val inner = declaration.primaryConstructor?.parameters?.firstOrNull()?.type?.resolve()
+        if (inner != null && inner.containsYamlIncompatibleType(isProto)) return true
+    }
+    if (isList() || isSet()) {
+        val inner = arguments.firstOrNull()?.type?.resolve()
+        if (inner != null && inner.containsYamlIncompatibleType(isProto)) return true
+    }
+    if (isMap()) {
+        val value = arguments.getOrNull(1)?.type?.resolve()
+        if (value != null && value.containsYamlIncompatibleType(isProto)) return true
+    }
+    return false
+}
 
 /**
  * Converts a Kotlin property name into a generated local-identifier base without underscores.
