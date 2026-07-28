@@ -1,6 +1,6 @@
 package com.ghost.serialization.integration
 
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.integration.model.OneofPayload
 import com.ghost.serialization.integration.model.ProtoOneofEvent
@@ -9,10 +9,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * End-to-end proof that `@GhostWrappedKeys` + `@GhostSerialization(inferred = true)` compose to
- * implement proto3 `oneof` JSON mapping — real KSP-generated code, not a hand-written stand-in
- * or a source-text assertion. See [com.ghost.serialization.integration.model.ProtoOneofEvent]
- * for why this composition works.
+ * Integration coverage for proto3 `oneof` JSON mapping via `@GhostWrappedKeys` and
+ * `@GhostSerialization(inferred = true)`. See [OneofPayload] for the composition pattern.
  */
 class GhostProtoOneofIntegrationTest {
 
@@ -45,7 +43,7 @@ class GhostProtoOneofIntegrationTest {
 
     @Test
     fun worksThroughTheDedicatedProtobufEntryPointToo() {
-        val result = GhostProtobuf.deserialize<ProtoOneofEvent>("""{"id":"e3","code":9}""")
+        val result = GhostProto.deserialize<ProtoOneofEvent>("""{"id":"e3","code":9}""")
         assertEquals(ProtoOneofEvent(id = "e3", payload = OneofPayload.Code(9)), result)
     }
 

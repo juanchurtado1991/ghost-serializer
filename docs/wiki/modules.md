@@ -34,8 +34,8 @@ implementation(libs.ghost.api)
 
 ---
 
-### `ghost-serialization` — Runtime Engine
-The low-allocation reader/writer engine and the `Ghost` facade. Includes `GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader` (streaming), all writer types, platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
+### `ghost-serialization` — Runtime Engine (JSON + YAML + Proto3 JSON)
+The low-allocation reader/writer engine and the `Ghost` facade. Includes JSON readers/writers (`GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader`), YAML (`GhostYamlFlatReader` / `GhostYamlFlatWriter`, `decodeFromYaml` / `encodeToYaml`), Proto3 JSON (`GhostProto`, `GhostProtoJsonFlatReader`, WKT serializers under `com.ghost.serialization.proto.wkt`), platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
 
 **Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
@@ -72,7 +72,7 @@ ksp(libs.ghost.compiler)
 ## Gradle Plugin
 
 ### `com.ghostserializer.ghost` — Auto-Configuration Plugin
-Automatically adds the core runtime and applies `ghost-compiler` as a KSP dependency to every supported compilation target declared in your module. It also detects Ktor, Retrofit, and protobuf dependencies and can inject the matching Ghost adapter. This eliminates most manual KSP and dependency wiring without changing other serializers.
+Automatically adds the core runtime and applies `ghost-compiler` as a KSP dependency to every supported compilation target declared in your module. It also detects Ktor and Retrofit dependencies and can inject the matching Ghost adapter. YAML codegen is opt-in per class via `@GhostYamlSerialization`. This eliminates most manual KSP and dependency wiring without changing other serializers.
 
 ```toml
 [plugins]
@@ -91,10 +91,10 @@ plugins {
 ## Framework Integrations
 
 ### `ghost-ktor` — Ktor Client & Server
-Two integration modes for Ktor 3.5.x:
+Two integration modes for Ktor 3.5.x, with JSON, YAML, and Proto3 JSON variants:
 
-- **Mode A — `ContentNegotiation` plugin**: register Ghost beside KotlinX Serialization; types without a Ghost serializer fall through.
-- **Mode B — Direct extensions**: `bodyGhost<T>()` / `respondGhost()` bypass the plugin pipeline entirely for maximum throughput on high-RPS endpoints.
+- **Mode A — `ContentNegotiation` plugin**: `ghost()`, `ghostYaml()`, `ghostProto()` beside KotlinX Serialization; types without a Ghost serializer fall through.
+- **Mode B — Direct extensions**: `bodyGhost<T>()` / `respondGhost()` (and YAML/Proto counterparts) bypass the plugin pipeline entirely for maximum throughput on high-RPS endpoints.
 
 **Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs client; JVM server
 
@@ -116,7 +116,7 @@ call.respondGhost(user)
 ---
 
 ### `ghost-retrofit` — Retrofit Converter
-Incremental `Converter.Factory` for Retrofit 2.11+. Place it before Gson, Moshi, or KotlinX so registered Ghost models use the generated reader and every other type reaches the existing converter. Supports `GhostConverterFactory` (standard JSON) and `GhostProtoConverterFactory` (proto3 JSON).
+Incremental `Converter.Factory` for Retrofit 2.11+. Place it before Gson, Moshi, or KotlinX so registered Ghost models use the generated reader and every other type reaches the existing converter. Supports `GhostConverterFactory` (JSON), `GhostYamlConverterFactory` (YAML), and `GhostProtoConverterFactory` (proto3 JSON).
 
 **Targets:** JVM / Android
 
@@ -137,7 +137,7 @@ val retrofit = Retrofit.Builder()
 ---
 
 ### `ghost-spring-boot-starter` — Spring Boot Auto-Configuration
-Adds Ghost ahead of the standard Spring Boot 3.4+ MVC and WebFlux codecs. DTOs backed by `@GhostSerialization` or `@GhostProtoSerialization` use Ghost; all other controller types continue through Jackson — no extra configuration needed.
+Adds Ghost ahead of the standard Spring Boot 3.4+ MVC and WebFlux codecs. JSON, YAML (`application/yaml`), and Proto3 JSON converters are registered automatically. DTOs backed by `@GhostSerialization` or `@GhostProtoSerialization` use Ghost; all other controller types continue through Jackson — no extra configuration needed.
 
 **Targets:** JVM
 
@@ -154,31 +154,32 @@ implementation(libs.ghost.spring.boot.starter)
 
 ---
 
-## Proto3 Extension
+## YAML & Proto3 (inside `ghost-serialization`)
 
-### `ghost-protobuf` — Proto3 JSON Mapping
-Layers [proto3 JSON mapping rules](https://protobuf.dev/programming-guides/json/) on top of Ghost's engine. Includes:
+Proto3 JSON mapping and YAML are **not** separate Maven artifacts in 1.3.0+. Both live in `ghost-serialization`:
 
-- `GhostProtoJsonFlatReader` — overrides numeric parsing for proto3 rules (int64 as quoted strings, uint64 via `ULong`, etc.)
-- **Well-Known Types (WKTs)**: hand-rolled serializers for `ProtoDuration`, `ProtoTimestamp`, `ProtoStruct`, `ProtoValue`, `ProtoAny`, `ProtoFieldMask`, and all scalar wrapper types (`ProtoBoolValue`, `ProtoStringValue`, `ProtoBytesValue`, etc.)
-- `ProtoAnyRegistry` — dynamic `typeUrl` resolution
-- `GhostProtobuf` entry point: `deserialize<T>()`, `encodeToBytes()`, `encodeToString()`
+| Format | Entry points | KSP |
+|:---|:---|:---|
+| **YAML** | `Ghost.decodeFromYaml` / `encodeToYaml` | `@GhostYamlSerialization` on the class |
+| **Proto3 JSON** | `GhostProto.deserialize` / `encodeToString` | `@GhostProtoSerialization` |
 
-**Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs
-
-```toml
-ghost-protobuf = { module = "com.ghostserializer:ghost-protobuf", version.ref = "ghost" }
-```
+Proto3 includes `GhostProtoJsonFlatReader`, WKT serializers (`ProtoDuration`, `ProtoTimestamp`, `ProtoAny`, …), and `ProtoAnyRegistry`.
 
 ```kotlin
+import com.ghost.serialization.proto.GhostProto
+import com.ghost.serialization.decodeFromYaml
+
+@GhostSerialization
+data class Config(val id: Long, val name: String)
+
 @GhostProtoSerialization
 data class UserProto(val user_id: Long, val email: String)
 
-val user: UserProto = GhostProtobuf.deserialize(responseBytes)
-val json: String = GhostProtobuf.encodeToString(user)
+val fromYaml: Config = Ghost.decodeFromYaml<Config>(yamlText)
+val fromProto: UserProto = GhostProto.deserialize(jsonBytes)
 ```
 
-→ **[Full Protobuf guide →](usage-protobuf.md)**
+→ **[YAML guide →](usage-yaml.md)** · **[Protobuf guide →](usage-protobuf.md)**
 
 ---
 
@@ -187,13 +188,12 @@ val json: String = GhostProtobuf.encodeToString(user)
 | Module | Artifact ID | Platform | Purpose |
 |:---|:---|:---:|:---|
 | Core API | `ghost-api` | KMP | Annotations & contracts |
-| Runtime | `ghost-serialization` | KMP | Zero-alloc readers/writers/pool |
+| Runtime | `ghost-serialization` | KMP | JSON + YAML + Proto3 JSON engine |
 | Compiler | `ghost-compiler` | JVM | KSP code generator |
 | Gradle plugin | `com.ghostserializer.ghost` | — | Auto-wires KSP across targets |
 | Ktor | `ghost-ktor` | KMP (+ wasmJs) | Ktor 3.5.x client + JVM server integration |
 | Retrofit | `ghost-retrofit` | Android/JVM | Retrofit 2.11+ converter factory |
 | Spring Boot | `ghost-spring-boot-starter` | JVM | Spring Boot 3.4+ auto-configuration |
-| Proto3 | `ghost-protobuf` | KMP | Proto3 JSON mapping + WKTs |
 | Playground | _(not published)_ | wasmJs | [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/) — browser DTO studio + feature demos |
 
 ---

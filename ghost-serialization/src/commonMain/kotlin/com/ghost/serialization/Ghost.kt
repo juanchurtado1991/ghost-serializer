@@ -5,9 +5,9 @@ package com.ghost.serialization
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.ByteSerializer
 import com.ghost.serialization.serializers.CharSerializer
@@ -22,13 +22,14 @@ import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
-import okio.BufferedSink
-import okio.BufferedSource
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
+import okio.BufferedSink
+import okio.BufferedSource
+
 
 /**
  * Platform synchronization primitive.
@@ -333,7 +334,11 @@ object Ghost {
                         val itemSerializer = getSerializer(itemType)
                             ?: return@runSynchronized null
 
-                        ListSerializer(itemSerializer)
+                        if (itemSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
+                            com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(itemSerializer)
+                        } else {
+                            ListSerializer(itemSerializer)
+                        }
                     }
 
                     Set::class -> {
@@ -353,7 +358,11 @@ object Ghost {
                         val valueSerializer = getSerializer(valueType)
                             ?: return@runSynchronized null
 
-                        MapSerializer(valueSerializer)
+                        if (valueSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
+                            com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(valueSerializer)
+                        } else {
+                            MapSerializer(valueSerializer)
+                        }
                     }
 
                     else -> {
@@ -448,7 +457,7 @@ object Ghost {
     /**
      * Serializes [value] to an in-memory JSON string.
      *
-     * Writes through the pooled [com.ghost.serialization.writer.GhostJsonStringWriter]
+     * Writes through the pooled [com.ghost.serialization.writer.strings.GhostJsonStringWriter]
      * (contiguous [CharArray]), avoiding Okio segments and an intermediate UTF-8 byte buffer.
      *
      * @param value The value to serialize.

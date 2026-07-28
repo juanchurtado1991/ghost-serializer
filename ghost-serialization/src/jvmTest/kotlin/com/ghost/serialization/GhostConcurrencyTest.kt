@@ -4,9 +4,17 @@ package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.writer.GhostJsonWriter
-import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.reflect.KClass
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -14,14 +22,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.reflect.KClass
-import kotlin.test.Test
-import kotlin.test.AfterTest
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+
 
 class GhostConcurrencyTest {
 

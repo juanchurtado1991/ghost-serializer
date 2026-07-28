@@ -74,13 +74,6 @@ replay_pid*.log
 .env.local
 .env.*.local
 
-# Next.js / Frontend Lab
-ghost-compiler-lab/.next/
-ghost-compiler-lab/node_modules/
-ghost-compiler-lab/out/
-ghost-compiler-lab/build/
-ghost-compiler-lab/.turbo/
-
 # AI agent instruction files (local dev aid only, not shipped project docs)
 AGENTS.md
 CLAUDE.md

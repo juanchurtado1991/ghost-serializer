@@ -51,7 +51,6 @@ ghost-compiler       = { module = "com.ghostserializer:ghost-compiler", version.
 ghost-ktor           = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" }
 ghost-retrofit       = { module = "com.ghostserializer:ghost-retrofit", version.ref = "ghost" }
 ghost-spring-boot-starter = { module = "com.ghostserializer:ghost-spring-boot-starter", version.ref = "ghost" }
-ghost-protobuf       = { module = "com.ghostserializer:ghost-protobuf", version.ref = "ghost" }
 
 [plugins]
 ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
@@ -78,6 +77,19 @@ ksp {
 
 ---
 
+## Annotation reference
+
+Cross-format wire annotations:
+
+- `@GhostName` — custom key on JSON, proto3 JSON, and YAML paths
+- `@GhostIgnore` — property omitted on all generated paths
+
+YAML is **opt-in**: add `@GhostYamlSerialization` beside `@GhostSerialization` or `@GhostProtoSerialization`. JSON-only features (`@GhostResilient`, `@GhostFlatten`, envelopes, sealed/inferred polymorphism, custom codecs, `RawJson`, etc.) cannot be combined with `@GhostYamlSerialization` — KSP fails at compile time.
+
+See [Advanced Features — Format compatibility](advanced-features.md#format-compatibility).
+
+---
+
 ## Quick Reference by Platform
 
 | Platform | Minimum configuration |
@@ -89,6 +101,7 @@ ksp {
 | **Spring Boot** | Add `ghost-spring-boot-starter` → [Spring Boot Guide →](usage-spring-boot.md) |
 | **Ktor** | Add `ghost-ktor` + `install(ContentNegotiation) { ghost() }` → [KMP Guide →](usage-kmp.md#4-ktor-integration-ghost-ktor) |
 | **Retrofit** | Add `ghost-retrofit` + `GhostConverterFactory.create()` → [Android Guide →](usage-android.md#5-retrofit-integration) |
+| **YAML APIs** | `Ghost.decodeFromYaml` / `encodeToYaml` (generated) → [YAML Guide →](usage-yaml.md) |
 
 ---
 

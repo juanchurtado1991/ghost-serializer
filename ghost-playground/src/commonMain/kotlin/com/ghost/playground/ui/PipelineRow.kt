@@ -35,7 +35,7 @@ private const val StepErrorBgAlpha = 0.12f
 private const val StepLitBgAlpha = 0.35f
 private const val StepDoneBgAlpha = 0.08f
 
-/** One numbered row inside the "What Ghost just did" pipeline card, lighting up as [activeStep] advances. */
+/** One numbered row in the pipeline card; lights up when [lit] is true. */
 @Composable
 internal fun PipelineRow(num: Int, title: String, detail: String, status: StepStatus, lit: Boolean) {
     val bg = when {

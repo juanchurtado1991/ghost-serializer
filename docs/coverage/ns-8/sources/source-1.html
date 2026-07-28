@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostModuleRegistry_Default</title>
+  <title>GhostSerialization Coverage Report > GhostEmitterConstants</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,15 +19,18 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.generated</a>
+    <a href="../index.html">com.ghost.serialization.compiler.internal</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostModuleRegistry_Default (com.ghost.serialization.generated)</h1>
+<h1>Coverage Summary for Class: GhostEmitterConstants (com.ghost.serialization.compiler.internal)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,79 +49,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostModuleRegistry_Default</td>
+  <td class="name">GhostEmitterConstants</td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    100%
   </span>
   <span class="absValue">
-    (6/7)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.2%
+    100%
   </span>
   <span class="absValue">
-    (184/274)
+    (6/6)
   </span>
 </td>
-<td class="coverageStat">
-  <span class="percent">
-    99.6%
-  </span>
-  <span class="absValue">
-    (282/283)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    87%
-  </span>
-  <span class="absValue">
-    (1815/2086)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">GhostModuleRegistry_Default$Companion</td>
     <td class="coverageStat"/>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    100%
   </span>
   <span class="absValue">
-    (6/7)
+    (18/18)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.2%
+    100%
   </span>
   <span class="absValue">
-    (184/274)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    99.6%
-  </span>
-  <span class="absValue">
-    (282/283)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    87%
-  </span>
-  <span class="absValue">
-    (1815/2086)
+    (133/133)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -126,569 +92,808 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.generated
-&nbsp;
-&nbsp;import com.ghost.serialization.contract.GhostRegistry
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.integration.model.Address
-&nbsp;import com.ghost.serialization.integration.model.AddressSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiEventDefault
-&nbsp;import com.ghost.serialization.integration.model.ApiEventDefaultSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiEventDefault_LoginSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiEventDefault_LogoutSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitType
-&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitTypeSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitType_LoginSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiEventExplicitType_LogoutSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiProductConfig
-&nbsp;import com.ghost.serialization.integration.model.ApiProductConfigSerializer
-&nbsp;import com.ghost.serialization.integration.model.ApiUserEvent
-&nbsp;import com.ghost.serialization.integration.model.ApiUserEventSerializer
-&nbsp;import com.ghost.serialization.integration.model.BenchUser
-&nbsp;import com.ghost.serialization.integration.model.BenchUserSerializer
-&nbsp;import com.ghost.serialization.integration.model.BooleanCoercionModel
-&nbsp;import com.ghost.serialization.integration.model.BooleanCoercionModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.Category
-&nbsp;import com.ghost.serialization.integration.model.CategorySerializer
-&nbsp;import com.ghost.serialization.integration.model.CoercionStressModel
-&nbsp;import com.ghost.serialization.integration.model.CoercionStressModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.CollectionOfNulls
-&nbsp;import com.ghost.serialization.integration.model.CollectionOfNullsSerializer
-&nbsp;import com.ghost.serialization.integration.model.CollisionChild
-&nbsp;import com.ghost.serialization.integration.model.CollisionChildSerializer
-&nbsp;import com.ghost.serialization.integration.model.CollisionModel
-&nbsp;import com.ghost.serialization.integration.model.CollisionModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.ComplexObject
-&nbsp;import com.ghost.serialization.integration.model.ComplexObjectSerializer
-&nbsp;import com.ghost.serialization.integration.model.ComplexResponse
-&nbsp;import com.ghost.serialization.integration.model.ComplexResponseSerializer
-&nbsp;import com.ghost.serialization.integration.model.ContextualModel
-&nbsp;import com.ghost.serialization.integration.model.ContextualModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.CustomAction
-&nbsp;import com.ghost.serialization.integration.model.CustomActionSerializer
-&nbsp;import com.ghost.serialization.integration.model.CustomCoderStressModel
-&nbsp;import com.ghost.serialization.integration.model.CustomCoderStressModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.CustomDateUser
-&nbsp;import com.ghost.serialization.integration.model.CustomDateUserSerializer
-&nbsp;import com.ghost.serialization.integration.model.DecimalStress
-&nbsp;import com.ghost.serialization.integration.model.DecimalStressSerializer
-&nbsp;import com.ghost.serialization.integration.model.DeepFlattenedModel
-&nbsp;import com.ghost.serialization.integration.model.DeepFlattenedModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.DeepGenericModel
-&nbsp;import com.ghost.serialization.integration.model.DeepGenericModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.DeepResilientModel
-&nbsp;import com.ghost.serialization.integration.model.DeepResilientModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.DefaultValueNullModel
-&nbsp;import com.ghost.serialization.integration.model.DefaultValueNullModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.DeviceEventPayload
-&nbsp;import com.ghost.serialization.integration.model.DeviceEventPayloadSerializer
-&nbsp;import com.ghost.serialization.integration.model.DeviceState
-&nbsp;import com.ghost.serialization.integration.model.DeviceStateSerializer
-&nbsp;import com.ghost.serialization.integration.model.DeviceStateWrapper
-&nbsp;import com.ghost.serialization.integration.model.DeviceStateWrapperSerializer
-&nbsp;import com.ghost.serialization.integration.model.EmojiKeyModel
-&nbsp;import com.ghost.serialization.integration.model.EmojiKeyModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.EvolutionModel
-&nbsp;import com.ghost.serialization.integration.model.EvolutionModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.ExtendedScalarsModel
-&nbsp;import com.ghost.serialization.integration.model.ExtendedScalarsModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.ExtremeMetadata
-&nbsp;import com.ghost.serialization.integration.model.ExtremeMetadataSerializer
-&nbsp;import com.ghost.serialization.integration.model.FlattenedModel
-&nbsp;import com.ghost.serialization.integration.model.FlattenedModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostAdvancedProfile
-&nbsp;import com.ghost.serialization.integration.model.GhostAdvancedProfileSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostDiscriminatorTestPayload
-&nbsp;import com.ghost.serialization.integration.model.GhostDiscriminatorTestPayloadSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostEnumWrapper
-&nbsp;import com.ghost.serialization.integration.model.GhostEnumWrapperSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent
-&nbsp;import com.ghost.serialization.integration.model.GhostKindEventSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent_CreatedSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent_DeletedSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostKindEvent_UpdatedSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostShape
-&nbsp;import com.ghost.serialization.integration.model.GhostShapeSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostShape_CircleSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostShape_SquareSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostStandardsEnum
-&nbsp;import com.ghost.serialization.integration.model.GhostStandardsEnumSerializer
-&nbsp;import com.ghost.serialization.integration.model.GhostUserToken
-&nbsp;import com.ghost.serialization.integration.model.GhostUserTokenSerializer
-&nbsp;import com.ghost.serialization.integration.model.GodObject
-&nbsp;import com.ghost.serialization.integration.model.GodObjectSerializer
-&nbsp;import com.ghost.serialization.integration.model.HashtagItem
-&nbsp;import com.ghost.serialization.integration.model.HashtagItemSerializer
-&nbsp;import com.ghost.serialization.integration.model.HierarchyWrappedKeysFixture
-&nbsp;import com.ghost.serialization.integration.model.HierarchyWrappedKeysFixtureSerializer
-&nbsp;import com.ghost.serialization.integration.model.HomeConfig
-&nbsp;import com.ghost.serialization.integration.model.HomeConfigSerializer
-&nbsp;import com.ghost.serialization.integration.model.HomeStatus
-&nbsp;import com.ghost.serialization.integration.model.HomeStatusSerializer
-&nbsp;import com.ghost.serialization.integration.model.IgnoreModel
-&nbsp;import com.ghost.serialization.integration.model.IgnoreModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.InvoicePaidPayload
-&nbsp;import com.ghost.serialization.integration.model.InvoicePaidPayloadSerializer
-&nbsp;import com.ghost.serialization.integration.model.JsonLdNode
-&nbsp;import com.ghost.serialization.integration.model.JsonLdNodeSerializer
-&nbsp;import com.ghost.serialization.integration.model.JsonLdNode_OrganizationSerializer
-&nbsp;import com.ghost.serialization.integration.model.JsonLdNode_PersonSerializer
-&nbsp;import com.ghost.serialization.integration.model.LargeStringModel
-&nbsp;import com.ghost.serialization.integration.model.LargeStringModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.LegacyUser
-&nbsp;import com.ghost.serialization.integration.model.LegacyUserSerializer
-&nbsp;import com.ghost.serialization.integration.model.MaliceModel
-&nbsp;import com.ghost.serialization.integration.model.MaliceModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.MapEdgeCaseModel
-&nbsp;import com.ghost.serialization.integration.model.MapEdgeCaseModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.MediaItem
-&nbsp;import com.ghost.serialization.integration.model.MediaItemSerializer
-&nbsp;import com.ghost.serialization.integration.model.MediaSize
-&nbsp;import com.ghost.serialization.integration.model.MediaSizeSerializer
-&nbsp;import com.ghost.serialization.integration.model.MediaSizes
-&nbsp;import com.ghost.serialization.integration.model.MediaSizesSerializer
-&nbsp;import com.ghost.serialization.integration.model.MixedStructuralModel
-&nbsp;import com.ghost.serialization.integration.model.MixedStructuralModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.ModeEventPayload
-&nbsp;import com.ghost.serialization.integration.model.ModeEventPayloadSerializer
-&nbsp;import com.ghost.serialization.integration.model.ModelWithExternal
-&nbsp;import com.ghost.serialization.integration.model.ModelWithExternalSerializer
-&nbsp;import com.ghost.serialization.integration.model.NamingModel
-&nbsp;import com.ghost.serialization.integration.model.NamingModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.NestedContainer
-&nbsp;import com.ghost.serialization.integration.model.NestedContainerSerializer
-&nbsp;import com.ghost.serialization.integration.model.NestedDeviceStub
-&nbsp;import com.ghost.serialization.integration.model.NestedDeviceStubSerializer
-&nbsp;import com.ghost.serialization.integration.model.NestedGenericModel
-&nbsp;import com.ghost.serialization.integration.model.NestedGenericModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.NullabilityStressModel
-&nbsp;import com.ghost.serialization.integration.model.NullabilityStressModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.NullablePrimitives
-&nbsp;import com.ghost.serialization.integration.model.NullablePrimitivesSerializer
-&nbsp;import com.ghost.serialization.integration.model.Object40
-&nbsp;import com.ghost.serialization.integration.model.Object40Serializer
-&nbsp;import com.ghost.serialization.integration.model.Object41
-&nbsp;import com.ghost.serialization.integration.model.Object41Serializer
-&nbsp;import com.ghost.serialization.integration.model.OmitIfAbsentWrappedKeysFixture
-&nbsp;import com.ghost.serialization.integration.model.OmitIfAbsentWrappedKeysFixtureSerializer
-&nbsp;import com.ghost.serialization.integration.model.OmitIfEmptyWrappedKeysFixture
-&nbsp;import com.ghost.serialization.integration.model.OmitIfEmptyWrappedKeysFixtureSerializer
-&nbsp;import com.ghost.serialization.integration.model.OneofPayload
-&nbsp;import com.ghost.serialization.integration.model.OneofPayloadSerializer
-&nbsp;import com.ghost.serialization.integration.model.OneofPayload_CodeSerializer
-&nbsp;import com.ghost.serialization.integration.model.OneofPayload_TextSerializer
-&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataByteEnvelope
-&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataByteEnvelopeSerializer
-&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataEnvelope
-&nbsp;import com.ghost.serialization.integration.model.OpaqueMetadataEnvelopeSerializer
-&nbsp;import com.ghost.serialization.integration.model.OverlappingKeyModel
-&nbsp;import com.ghost.serialization.integration.model.OverlappingKeyModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevices
-&nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevicesSerializer
-&nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevices_LoggedInSerializer
-&nbsp;import com.ghost.serialization.integration.model.Priority
-&nbsp;import com.ghost.serialization.integration.model.PrioritySerializer
-&nbsp;import com.ghost.serialization.integration.model.ProtoAccountId
-&nbsp;import com.ghost.serialization.integration.model.ProtoAccountIdSerializer
-&nbsp;import com.ghost.serialization.integration.model.ProtoOneofEvent
-&nbsp;import com.ghost.serialization.integration.model.ProtoOneofEventSerializer
-&nbsp;import com.ghost.serialization.integration.model.ProtoValueClassCollectionFixture
-&nbsp;import com.ghost.serialization.integration.model.ProtoValueClassCollectionFixtureSerializer
-&nbsp;import com.ghost.serialization.integration.model.RawJsonAttributeState
-&nbsp;import com.ghost.serialization.integration.model.RawJsonAttributeStateSerializer
-&nbsp;import com.ghost.serialization.integration.model.RawJsonListModel
-&nbsp;import com.ghost.serialization.integration.model.RawJsonListModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.RawJsonPayloadModel
-&nbsp;import com.ghost.serialization.integration.model.RawJsonPayloadModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.RawPayloadModel
-&nbsp;import com.ghost.serialization.integration.model.RawPayloadModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.RecursiveGraphNode
-&nbsp;import com.ghost.serialization.integration.model.RecursiveGraphNodeSerializer
-&nbsp;import com.ghost.serialization.integration.model.RecursiveNode
-&nbsp;import com.ghost.serialization.integration.model.RecursiveNodeSerializer
-&nbsp;import com.ghost.serialization.integration.model.RepeatedWrappedKeysFixture
-&nbsp;import com.ghost.serialization.integration.model.RepeatedWrappedKeysFixtureSerializer
-&nbsp;import com.ghost.serialization.integration.model.ReservedWordModel
-&nbsp;import com.ghost.serialization.integration.model.ReservedWordModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.ResilientEnumModel
-&nbsp;import com.ghost.serialization.integration.model.ResilientEnumModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.ResilientItem
-&nbsp;import com.ghost.serialization.integration.model.ResilientItemSerializer
-&nbsp;import com.ghost.serialization.integration.model.SmartDevice
-&nbsp;import com.ghost.serialization.integration.model.SmartDeviceSerializer
-&nbsp;import com.ghost.serialization.integration.model.SmartDevice_LightSerializer
-&nbsp;import com.ghost.serialization.integration.model.SmartDevice_ThermostatSerializer
-&nbsp;import com.ghost.serialization.integration.model.SmartDevice_UnknownDeviceSerializer
-&nbsp;import com.ghost.serialization.integration.model.SmartHome
-&nbsp;import com.ghost.serialization.integration.model.SmartHomeSerializer
-&nbsp;import com.ghost.serialization.integration.model.SseEventEnvelope
-&nbsp;import com.ghost.serialization.integration.model.SseEventEnvelopeSerializer
-&nbsp;import com.ghost.serialization.integration.model.StripeObject
-&nbsp;import com.ghost.serialization.integration.model.StripeObjectSerializer
-&nbsp;import com.ghost.serialization.integration.model.StripeObject_ChargeSerializer
-&nbsp;import com.ghost.serialization.integration.model.StripeObject_RefundSerializer
-&nbsp;import com.ghost.serialization.integration.model.StructuralCollisionModel
-&nbsp;import com.ghost.serialization.integration.model.StructuralCollisionModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.SymbolItem
-&nbsp;import com.ghost.serialization.integration.model.SymbolItemSerializer
-&nbsp;import com.ghost.serialization.integration.model.SyncStatus
-&nbsp;import com.ghost.serialization.integration.model.SyncStatusSerializer
-&nbsp;import com.ghost.serialization.integration.model.Tag
-&nbsp;import com.ghost.serialization.integration.model.TagSerializer
-&nbsp;import com.ghost.serialization.integration.model.TagsProbe
-&nbsp;import com.ghost.serialization.integration.model.TagsProbeSerializer
-&nbsp;import com.ghost.serialization.integration.model.Tweet
-&nbsp;import com.ghost.serialization.integration.model.TweetEntities
-&nbsp;import com.ghost.serialization.integration.model.TweetEntitiesSerializer
-&nbsp;import com.ghost.serialization.integration.model.TweetMetadata
-&nbsp;import com.ghost.serialization.integration.model.TweetMetadataSerializer
-&nbsp;import com.ghost.serialization.integration.model.TweetSerializer
-&nbsp;import com.ghost.serialization.integration.model.TwitterResponse
-&nbsp;import com.ghost.serialization.integration.model.TwitterResponseSerializer
-&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialResponse
-&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialResponseSerializer
-&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialTweet
-&nbsp;import com.ghost.serialization.integration.model.TwitterSpecialTweetSerializer
-&nbsp;import com.ghost.serialization.integration.model.TwitterWrappedTweet
-&nbsp;import com.ghost.serialization.integration.model.TwitterWrappedTweetSerializer
-&nbsp;import com.ghost.serialization.integration.model.UniCodeModel
-&nbsp;import com.ghost.serialization.integration.model.UniCodeModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.UrlContainer
-&nbsp;import com.ghost.serialization.integration.model.UrlContainerSerializer
-&nbsp;import com.ghost.serialization.integration.model.UrlItem
-&nbsp;import com.ghost.serialization.integration.model.UrlItemSerializer
-&nbsp;import com.ghost.serialization.integration.model.User
-&nbsp;import com.ghost.serialization.integration.model.UserEntities
-&nbsp;import com.ghost.serialization.integration.model.UserEntitiesSerializer
-&nbsp;import com.ghost.serialization.integration.model.UserId
-&nbsp;import com.ghost.serialization.integration.model.UserIdSerializer
-&nbsp;import com.ghost.serialization.integration.model.UserMention
-&nbsp;import com.ghost.serialization.integration.model.UserMentionSerializer
-&nbsp;import com.ghost.serialization.integration.model.UserRole
-&nbsp;import com.ghost.serialization.integration.model.UserRoleSerializer
-&nbsp;import com.ghost.serialization.integration.model.UserSerializer
-&nbsp;import com.ghost.serialization.integration.model.UserWithValueClass
-&nbsp;import com.ghost.serialization.integration.model.UserWithValueClassSerializer
-&nbsp;import com.ghost.serialization.integration.model.WebhookEnvelope
-&nbsp;import com.ghost.serialization.integration.model.WebhookEnvelopeSerializer
-&nbsp;import com.ghost.serialization.integration.model.WideModel
-&nbsp;import com.ghost.serialization.integration.model.WideModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.WireExtras
-&nbsp;import com.ghost.serialization.integration.model.WireExtras12
-&nbsp;import com.ghost.serialization.integration.model.WireExtras12Serializer
-&nbsp;import com.ghost.serialization.integration.model.WireExtras34
-&nbsp;import com.ghost.serialization.integration.model.WireExtras34Serializer
-&nbsp;import com.ghost.serialization.integration.model.WireExtrasSerializer
-&nbsp;import com.ghost.serialization.integration.model.WrapSharedPathModel
-&nbsp;import com.ghost.serialization.integration.model.WrapSharedPathModelSerializer
-&nbsp;import com.ghost.serialization.integration.model.WrappedKeysFixture
-&nbsp;import com.ghost.serialization.integration.model.WrappedKeysFixtureSerializer
-&nbsp;import com.ghost.serialization.integration.model.WrappedModel
-&nbsp;import com.ghost.serialization.integration.model.WrappedModelSerializer
-&nbsp;import kotlin.collections.Map
-&nbsp;import kotlin.jvm.JvmField
-&nbsp;import kotlin.reflect.KClass
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.internal
+&nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;
 &nbsp;/**
-&nbsp; * Generated Registry for GhostSerialization.
-&nbsp; * Uses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.
+&nbsp; * Centralized constants for the deserialization code emitters and generators.
+&nbsp; *
+&nbsp; * Contains all string literals, templates, and identifiers used during code generation
+&nbsp; * to ensure consistency and eliminate magic strings across the emitter modules.
 &nbsp; */
-<b class="fc">&nbsp;class GhostModuleRegistry_Default : GhostRegistry {</b>
-<b class="fc">&nbsp;  private val serializersByClass: Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; by lazy {</b>
-<b class="fc">&nbsp;        mapOf(</b>
-<b class="fc">&nbsp;            Address::class to AddressSerializer,</b>
-<b class="fc">&nbsp;            ApiEventDefault::class to ApiEventDefaultSerializer,</b>
-<b class="fc">&nbsp;            ApiEventDefault.Login::class to ApiEventDefault_LoginSerializer,</b>
-<b class="fc">&nbsp;            ApiEventDefault.Logout::class to ApiEventDefault_LogoutSerializer,</b>
-<b class="fc">&nbsp;            ApiEventExplicitType::class to ApiEventExplicitTypeSerializer,</b>
-<b class="fc">&nbsp;            ApiEventExplicitType.Login::class to ApiEventExplicitType_LoginSerializer,</b>
-<b class="fc">&nbsp;            ApiEventExplicitType.Logout::class to ApiEventExplicitType_LogoutSerializer,</b>
-<b class="fc">&nbsp;            ApiProductConfig::class to ApiProductConfigSerializer,</b>
-<b class="fc">&nbsp;            ApiUserEvent::class to ApiUserEventSerializer,</b>
-<b class="fc">&nbsp;            BenchUser::class to BenchUserSerializer,</b>
-<b class="fc">&nbsp;            BooleanCoercionModel::class to BooleanCoercionModelSerializer,</b>
-<b class="fc">&nbsp;            Category::class to CategorySerializer,</b>
-<b class="fc">&nbsp;            CoercionStressModel::class to CoercionStressModelSerializer,</b>
-<b class="fc">&nbsp;            CollectionOfNulls::class to CollectionOfNullsSerializer,</b>
-<b class="fc">&nbsp;            CollisionChild::class to CollisionChildSerializer,</b>
-<b class="fc">&nbsp;            CollisionModel::class to CollisionModelSerializer,</b>
-<b class="fc">&nbsp;            ComplexObject::class to ComplexObjectSerializer,</b>
-<b class="fc">&nbsp;            ComplexResponse::class to ComplexResponseSerializer,</b>
-<b class="fc">&nbsp;            ContextualModel::class to ContextualModelSerializer,</b>
-<b class="fc">&nbsp;            CustomAction::class to CustomActionSerializer,</b>
-<b class="fc">&nbsp;            CustomCoderStressModel::class to CustomCoderStressModelSerializer,</b>
-<b class="fc">&nbsp;            CustomDateUser::class to CustomDateUserSerializer,</b>
-<b class="fc">&nbsp;            DecimalStress::class to DecimalStressSerializer,</b>
-<b class="fc">&nbsp;            DeepFlattenedModel::class to DeepFlattenedModelSerializer,</b>
-<b class="fc">&nbsp;            DeepGenericModel::class to DeepGenericModelSerializer,</b>
-<b class="fc">&nbsp;            DeepResilientModel::class to DeepResilientModelSerializer,</b>
-<b class="fc">&nbsp;            DefaultValueNullModel::class to DefaultValueNullModelSerializer,</b>
-<b class="fc">&nbsp;            DeviceEventPayload::class to DeviceEventPayloadSerializer,</b>
-<b class="fc">&nbsp;            DeviceState::class to DeviceStateSerializer,</b>
-<b class="fc">&nbsp;            DeviceStateWrapper::class to DeviceStateWrapperSerializer,</b>
-<b class="fc">&nbsp;            EmojiKeyModel::class to EmojiKeyModelSerializer,</b>
-<b class="fc">&nbsp;            EvolutionModel::class to EvolutionModelSerializer,</b>
-<b class="fc">&nbsp;            ExtendedScalarsModel::class to ExtendedScalarsModelSerializer,</b>
-<b class="fc">&nbsp;            ExtremeMetadata::class to ExtremeMetadataSerializer,</b>
-<b class="fc">&nbsp;            FlattenedModel::class to FlattenedModelSerializer,</b>
-<b class="fc">&nbsp;            GhostAdvancedProfile::class to GhostAdvancedProfileSerializer,</b>
-<b class="fc">&nbsp;            GhostDiscriminatorTestPayload::class to GhostDiscriminatorTestPayloadSerializer,</b>
-<b class="fc">&nbsp;            GhostEnumWrapper::class to GhostEnumWrapperSerializer,</b>
-<b class="fc">&nbsp;            GhostKindEvent::class to GhostKindEventSerializer,</b>
-<b class="fc">&nbsp;            GhostKindEvent.Created::class to GhostKindEvent_CreatedSerializer,</b>
-<b class="fc">&nbsp;            GhostKindEvent.Deleted::class to GhostKindEvent_DeletedSerializer,</b>
-<b class="fc">&nbsp;            GhostKindEvent.Updated::class to GhostKindEvent_UpdatedSerializer,</b>
-<b class="fc">&nbsp;            GhostShape::class to GhostShapeSerializer,</b>
-<b class="fc">&nbsp;            GhostShape.Circle::class to GhostShape_CircleSerializer,</b>
-<b class="fc">&nbsp;            GhostShape.Square::class to GhostShape_SquareSerializer,</b>
-<b class="fc">&nbsp;            GhostStandardsEnum::class to GhostStandardsEnumSerializer,</b>
-<b class="fc">&nbsp;            GhostUserToken::class to GhostUserTokenSerializer,</b>
-<b class="fc">&nbsp;            GodObject::class to GodObjectSerializer,</b>
-<b class="fc">&nbsp;            HashtagItem::class to HashtagItemSerializer,</b>
-<b class="fc">&nbsp;            HierarchyWrappedKeysFixture::class to HierarchyWrappedKeysFixtureSerializer,</b>
-<b class="fc">&nbsp;            HomeConfig::class to HomeConfigSerializer,</b>
-<b class="fc">&nbsp;            HomeStatus::class to HomeStatusSerializer,</b>
-<b class="fc">&nbsp;            IgnoreModel::class to IgnoreModelSerializer,</b>
-<b class="fc">&nbsp;            InvoicePaidPayload::class to InvoicePaidPayloadSerializer,</b>
-<b class="fc">&nbsp;            JsonLdNode::class to JsonLdNodeSerializer,</b>
-<b class="fc">&nbsp;            JsonLdNode.Organization::class to JsonLdNode_OrganizationSerializer,</b>
-<b class="fc">&nbsp;            JsonLdNode.Person::class to JsonLdNode_PersonSerializer,</b>
-<b class="fc">&nbsp;            LargeStringModel::class to LargeStringModelSerializer,</b>
-<b class="fc">&nbsp;            LegacyUser::class to LegacyUserSerializer,</b>
-<b class="fc">&nbsp;            MaliceModel::class to MaliceModelSerializer,</b>
-<b class="fc">&nbsp;            MapEdgeCaseModel::class to MapEdgeCaseModelSerializer,</b>
-<b class="fc">&nbsp;            MediaItem::class to MediaItemSerializer,</b>
-<b class="fc">&nbsp;            MediaSize::class to MediaSizeSerializer,</b>
-<b class="fc">&nbsp;            MediaSizes::class to MediaSizesSerializer,</b>
-<b class="fc">&nbsp;            MixedStructuralModel::class to MixedStructuralModelSerializer,</b>
-<b class="fc">&nbsp;            ModeEventPayload::class to ModeEventPayloadSerializer,</b>
-<b class="fc">&nbsp;            ModelWithExternal::class to ModelWithExternalSerializer,</b>
-<b class="fc">&nbsp;            NamingModel::class to NamingModelSerializer,</b>
-<b class="fc">&nbsp;            NestedContainer::class to NestedContainerSerializer,</b>
-<b class="fc">&nbsp;            NestedDeviceStub::class to NestedDeviceStubSerializer,</b>
-<b class="fc">&nbsp;            NestedGenericModel::class to NestedGenericModelSerializer,</b>
-<b class="fc">&nbsp;            NullabilityStressModel::class to NullabilityStressModelSerializer,</b>
-<b class="fc">&nbsp;            NullablePrimitives::class to NullablePrimitivesSerializer,</b>
-<b class="fc">&nbsp;            Object40::class to Object40Serializer,</b>
-<b class="fc">&nbsp;            Object41::class to Object41Serializer,</b>
-<b class="fc">&nbsp;            OmitIfAbsentWrappedKeysFixture::class to OmitIfAbsentWrappedKeysFixtureSerializer,</b>
-<b class="fc">&nbsp;            OmitIfEmptyWrappedKeysFixture::class to OmitIfEmptyWrappedKeysFixtureSerializer,</b>
-<b class="fc">&nbsp;            OneofPayload::class to OneofPayloadSerializer,</b>
-<b class="fc">&nbsp;            OneofPayload.Code::class to OneofPayload_CodeSerializer,</b>
-<b class="fc">&nbsp;            OneofPayload.Text::class to OneofPayload_TextSerializer,</b>
-<b class="fc">&nbsp;            OpaqueMetadataByteEnvelope::class to OpaqueMetadataByteEnvelopeSerializer,</b>
-<b class="fc">&nbsp;            OpaqueMetadataEnvelope::class to OpaqueMetadataEnvelopeSerializer,</b>
-<b class="fc">&nbsp;            OverlappingKeyModel::class to OverlappingKeyModelSerializer,</b>
-<b class="fc">&nbsp;            PageWithNestedDevices::class to PageWithNestedDevicesSerializer,</b>
-<b class="fc">&nbsp;            PageWithNestedDevices.LoggedIn::class to PageWithNestedDevices_LoggedInSerializer,</b>
-<b class="fc">&nbsp;            Priority::class to PrioritySerializer,</b>
-<b class="fc">&nbsp;            ProtoAccountId::class to ProtoAccountIdSerializer,</b>
-<b class="fc">&nbsp;            ProtoOneofEvent::class to ProtoOneofEventSerializer,</b>
-<b class="fc">&nbsp;            ProtoValueClassCollectionFixture::class to ProtoValueClassCollectionFixtureSerializer,</b>
-<b class="fc">&nbsp;            RawJsonAttributeState::class to RawJsonAttributeStateSerializer,</b>
-<b class="fc">&nbsp;            RawJsonListModel::class to RawJsonListModelSerializer,</b>
-<b class="fc">&nbsp;            RawJsonPayloadModel::class to RawJsonPayloadModelSerializer,</b>
-<b class="fc">&nbsp;            RawPayloadModel::class to RawPayloadModelSerializer,</b>
-<b class="fc">&nbsp;            RecursiveGraphNode::class to RecursiveGraphNodeSerializer,</b>
-<b class="fc">&nbsp;            RecursiveNode::class to RecursiveNodeSerializer,</b>
-<b class="fc">&nbsp;            RepeatedWrappedKeysFixture::class to RepeatedWrappedKeysFixtureSerializer,</b>
-<b class="fc">&nbsp;            ReservedWordModel::class to ReservedWordModelSerializer,</b>
-<b class="fc">&nbsp;            ResilientEnumModel::class to ResilientEnumModelSerializer,</b>
-<b class="fc">&nbsp;            ResilientItem::class to ResilientItemSerializer,</b>
-<b class="fc">&nbsp;            SmartDevice::class to SmartDeviceSerializer,</b>
-<b class="fc">&nbsp;            SmartDevice.Light::class to SmartDevice_LightSerializer,</b>
-<b class="fc">&nbsp;            SmartDevice.Thermostat::class to SmartDevice_ThermostatSerializer,</b>
-<b class="fc">&nbsp;            SmartDevice.UnknownDevice::class to SmartDevice_UnknownDeviceSerializer,</b>
-<b class="fc">&nbsp;            SmartHome::class to SmartHomeSerializer,</b>
-<b class="fc">&nbsp;            SseEventEnvelope::class to SseEventEnvelopeSerializer,</b>
-<b class="fc">&nbsp;            StripeObject::class to StripeObjectSerializer,</b>
-<b class="fc">&nbsp;            StripeObject.Charge::class to StripeObject_ChargeSerializer,</b>
-<b class="fc">&nbsp;            StripeObject.Refund::class to StripeObject_RefundSerializer,</b>
-<b class="fc">&nbsp;            StructuralCollisionModel::class to StructuralCollisionModelSerializer,</b>
-<b class="fc">&nbsp;            SymbolItem::class to SymbolItemSerializer,</b>
-<b class="fc">&nbsp;            SyncStatus::class to SyncStatusSerializer,</b>
-<b class="fc">&nbsp;            Tag::class to TagSerializer,</b>
-<b class="fc">&nbsp;            TagsProbe::class to TagsProbeSerializer,</b>
-<b class="fc">&nbsp;            Tweet::class to TweetSerializer,</b>
-<b class="fc">&nbsp;            TweetEntities::class to TweetEntitiesSerializer,</b>
-<b class="fc">&nbsp;            TweetMetadata::class to TweetMetadataSerializer,</b>
-<b class="fc">&nbsp;            TwitterResponse::class to TwitterResponseSerializer,</b>
-<b class="fc">&nbsp;            TwitterSpecialResponse::class to TwitterSpecialResponseSerializer,</b>
-<b class="fc">&nbsp;            TwitterSpecialTweet::class to TwitterSpecialTweetSerializer,</b>
-<b class="fc">&nbsp;            TwitterWrappedTweet::class to TwitterWrappedTweetSerializer,</b>
-<b class="fc">&nbsp;            UniCodeModel::class to UniCodeModelSerializer,</b>
-<b class="fc">&nbsp;            UrlContainer::class to UrlContainerSerializer,</b>
-<b class="fc">&nbsp;            UrlItem::class to UrlItemSerializer,</b>
-<b class="fc">&nbsp;            User::class to UserSerializer,</b>
-<b class="fc">&nbsp;            UserEntities::class to UserEntitiesSerializer,</b>
-<b class="fc">&nbsp;            UserId::class to UserIdSerializer,</b>
-<b class="fc">&nbsp;            UserMention::class to UserMentionSerializer,</b>
-<b class="fc">&nbsp;            UserRole::class to UserRoleSerializer,</b>
-<b class="fc">&nbsp;            UserWithValueClass::class to UserWithValueClassSerializer,</b>
-<b class="fc">&nbsp;            WebhookEnvelope::class to WebhookEnvelopeSerializer,</b>
-<b class="fc">&nbsp;            WideModel::class to WideModelSerializer,</b>
-<b class="fc">&nbsp;            WireExtras::class to WireExtrasSerializer,</b>
-<b class="fc">&nbsp;            WireExtras12::class to WireExtras12Serializer,</b>
-<b class="fc">&nbsp;            WireExtras34::class to WireExtras34Serializer,</b>
-<b class="fc">&nbsp;            WrapSharedPathModel::class to WrapSharedPathModelSerializer,</b>
-<b class="fc">&nbsp;            WrappedKeysFixture::class to WrappedKeysFixtureSerializer,</b>
-<b class="fc">&nbsp;            WrappedModel::class to WrappedModelSerializer)</b>
-&nbsp;      }
+&nbsp;internal object GhostEmitterConstants {
+&nbsp;    const val STR_DESERIALIZE = &quot;deserialize&quot;
+&nbsp;    const val STR_KDOC_DESERIALIZE = &quot;Robust deserialization for [%T].\n&quot;
+&nbsp;    const val DEFAULT_CHUNK_SIZE = 40
+&nbsp;    const val STR_READER = &quot;reader&quot;
+&nbsp;    const val TEMPLATE_PEEK_TYPE =
+&nbsp;        &quot;val typeName = reader.peekStringField(%S)\n  ?: reader.throwError(%S)&quot;
+&nbsp;    const val STR_MISSING_TYPE = &quot;Missing discriminator field for sealed class&quot;
+&nbsp;    const val STR_WHEN_TYPENAME = &quot;val result = when (typeName)&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_BRANCH = &quot;%S -&gt; %T.deserialize(reader)&quot;
+&nbsp;    const val STR_UNKNOWN_TYPE = &quot;else -&gt; reader.throwError(\&quot;Unknown type discriminator: \$typeName\&quot;)&quot;
+&nbsp;    const val STR_RETURN_RESULT = &quot;return result&quot;
+&nbsp;    const val TEMPLATE_RETURN_CONSTRUCTOR = &quot;return %T(%L)&quot;
+&nbsp;    const val TEMPLATE_CONSTRUCTOR = &quot;%T(%L)&quot;
+&nbsp;    const val STR_NULL = &quot;null&quot;
+&nbsp;    const val STR_ZERO = &quot;0&quot;
+&nbsp;    const val STR_ZERO_L = &quot;0L&quot;
+&nbsp;    const val STR_ZERO_D = &quot;0.0&quot;
+&nbsp;    const val STR_ZERO_F = &quot;0.0f&quot;
+&nbsp;    const val STR_CHAR_NULL_LITERAL = &quot;&#39;\\u0000&#39;&quot;
+&nbsp;    const val STR_JSON_CHAR_NULL = &quot;\&quot;\\u0000\&quot;&quot;
+&nbsp;    const val VAL_ZERO = 0
+&nbsp;    const val VAL_ONE = 1
+&nbsp;    const val VAL_TWO = 2
+&nbsp;    const val VAL_THREE = 3
+&nbsp;    const val VAL_FOUR = 4
+&nbsp;    const val VAL_ZERO_L = 0L
+&nbsp;    const val VAL_ONE_L = 1L
+&nbsp;    const val BIT_SHIFT_32 = 32
+&nbsp;    const val LONG_BYTE_MASK = 0xFFL
+&nbsp;    const val STR_FALSE = &quot;false&quot;
+&nbsp;    const val STR_CURLY_OPEN = &quot;{&quot;
+&nbsp;    const val STR_CURLY_CLOSE = &quot;}&quot;
+&nbsp;    const val STR_COLON = &quot;:&quot;
+&nbsp;    const val STR_EMPTY_JSON = &quot;{}&quot;
+&nbsp;    const val STR_EMPTY_ARRAY = &quot;[]&quot;
+&nbsp;    const val STR_EMPTY_STRING = &quot;\&quot;\&quot;&quot;
+&nbsp;    const val STR_DOUBLE_QUOTE = &quot;\&quot;&quot;
+&nbsp;    const val STR_BEGIN_OBJECT = &quot;reader.beginObject()&quot;
+&nbsp;    const val STR_WHILE_TRUE = &quot;while (true)&quot;
+&nbsp;    const val STR_SELECT_NAME_AND_CONSUME = &quot;val index = reader.selectNameAndConsume(OPTIONS)&quot;
+&nbsp;    const val STR_SELECT_SUB_NAME = &quot;val %L = reader.selectNameAndConsume(%L)&quot;
+&nbsp;    const val STR_WHEN_INDEX = &quot;when (index)&quot;
+&nbsp;    const val STR_WHEN_SUB_INDEX = &quot;when (%L)&quot;
+&nbsp;    const val STR_ARROW = &quot; -&gt;&quot;
+&nbsp;    const val STR_UNDERSCORE = &quot;_&quot;
+&nbsp;    const val TEMPLATE_ASSIGN_L = &quot; = %L&quot;
+&nbsp;    const val STR_MINUS_ONE_BREAK = &quot;-1 -&gt; break&quot;
+&nbsp;    const val STR_MINUS_TWO_ARROW = &quot;-2 -&gt;&quot;
+&nbsp;    const val STR_SKIP_VALUE = &quot;reader.skipValue()&quot;
+&nbsp;    const val STR_END_OBJECT = &quot;reader.endObject()&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_T = &quot;%T.deserialize(reader)&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_L = &quot;%L.deserialize(reader)&quot;
+&nbsp;    const val STR_NEXT_INT = &quot;reader.nextInt()&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN = &quot;reader.nextBoolean()&quot;
+&nbsp;    const val STR_NEXT_LONG = &quot;reader.nextLong()&quot;
 &nbsp;
-&nbsp;  @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;  override fun &lt;T : Any&gt; getSerializer(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;? = when (clazz) {</b>
-<b class="pc">&nbsp;      Address::class -&gt; AddressSerializer</b>
-<b class="fc">&nbsp;      ApiEventDefault::class -&gt; ApiEventDefaultSerializer</b>
-<b class="pc">&nbsp;      ApiEventDefault.Login::class -&gt; ApiEventDefault_LoginSerializer</b>
-<b class="pc">&nbsp;      ApiEventDefault.Logout::class -&gt; ApiEventDefault_LogoutSerializer</b>
-<b class="fc">&nbsp;      ApiEventExplicitType::class -&gt; ApiEventExplicitTypeSerializer</b>
-<b class="pc">&nbsp;      ApiEventExplicitType.Login::class -&gt; ApiEventExplicitType_LoginSerializer</b>
-<b class="pc">&nbsp;      ApiEventExplicitType.Logout::class -&gt; ApiEventExplicitType_LogoutSerializer</b>
-<b class="pc">&nbsp;      ApiProductConfig::class -&gt; ApiProductConfigSerializer</b>
-<b class="pc">&nbsp;      ApiUserEvent::class -&gt; ApiUserEventSerializer</b>
-<b class="pc">&nbsp;      BenchUser::class -&gt; BenchUserSerializer</b>
-<b class="fc">&nbsp;      BooleanCoercionModel::class -&gt; BooleanCoercionModelSerializer</b>
-<b class="pc">&nbsp;      Category::class -&gt; CategorySerializer</b>
-<b class="fc">&nbsp;      CoercionStressModel::class -&gt; CoercionStressModelSerializer</b>
-<b class="fc">&nbsp;      CollectionOfNulls::class -&gt; CollectionOfNullsSerializer</b>
-<b class="pc">&nbsp;      CollisionChild::class -&gt; CollisionChildSerializer</b>
-<b class="pc">&nbsp;      CollisionModel::class -&gt; CollisionModelSerializer</b>
-<b class="pc">&nbsp;      ComplexObject::class -&gt; ComplexObjectSerializer</b>
-<b class="pc">&nbsp;      ComplexResponse::class -&gt; ComplexResponseSerializer</b>
-<b class="fc">&nbsp;      ContextualModel::class -&gt; ContextualModelSerializer</b>
-<b class="pc">&nbsp;      CustomAction::class -&gt; CustomActionSerializer</b>
-<b class="fc">&nbsp;      CustomCoderStressModel::class -&gt; CustomCoderStressModelSerializer</b>
-<b class="fc">&nbsp;      CustomDateUser::class -&gt; CustomDateUserSerializer</b>
-<b class="fc">&nbsp;      DecimalStress::class -&gt; DecimalStressSerializer</b>
-<b class="pc">&nbsp;      DeepFlattenedModel::class -&gt; DeepFlattenedModelSerializer</b>
-<b class="pc">&nbsp;      DeepGenericModel::class -&gt; DeepGenericModelSerializer</b>
-<b class="fc">&nbsp;      DeepResilientModel::class -&gt; DeepResilientModelSerializer</b>
-<b class="pc">&nbsp;      DefaultValueNullModel::class -&gt; DefaultValueNullModelSerializer</b>
-<b class="fc">&nbsp;      DeviceEventPayload::class -&gt; DeviceEventPayloadSerializer</b>
-<b class="pc">&nbsp;      DeviceState::class -&gt; DeviceStateSerializer</b>
-<b class="fc">&nbsp;      DeviceStateWrapper::class -&gt; DeviceStateWrapperSerializer</b>
-<b class="fc">&nbsp;      EmojiKeyModel::class -&gt; EmojiKeyModelSerializer</b>
-<b class="pc">&nbsp;      EvolutionModel::class -&gt; EvolutionModelSerializer</b>
-<b class="pc">&nbsp;      ExtendedScalarsModel::class -&gt; ExtendedScalarsModelSerializer</b>
-<b class="pc">&nbsp;      ExtremeMetadata::class -&gt; ExtremeMetadataSerializer</b>
-<b class="pc">&nbsp;      FlattenedModel::class -&gt; FlattenedModelSerializer</b>
-<b class="fc">&nbsp;      GhostAdvancedProfile::class -&gt; GhostAdvancedProfileSerializer</b>
-<b class="fc">&nbsp;      GhostDiscriminatorTestPayload::class -&gt; GhostDiscriminatorTestPayloadSerializer</b>
-<b class="fc">&nbsp;      GhostEnumWrapper::class -&gt; GhostEnumWrapperSerializer</b>
-<b class="fc">&nbsp;      GhostKindEvent::class -&gt; GhostKindEventSerializer</b>
-<b class="fc">&nbsp;      GhostKindEvent.Created::class -&gt; GhostKindEvent_CreatedSerializer</b>
-<b class="pc">&nbsp;      GhostKindEvent.Deleted::class -&gt; GhostKindEvent_DeletedSerializer</b>
-<b class="pc">&nbsp;      GhostKindEvent.Updated::class -&gt; GhostKindEvent_UpdatedSerializer</b>
-<b class="fc">&nbsp;      GhostShape::class -&gt; GhostShapeSerializer</b>
-<b class="pc">&nbsp;      GhostShape.Circle::class -&gt; GhostShape_CircleSerializer</b>
-<b class="pc">&nbsp;      GhostShape.Square::class -&gt; GhostShape_SquareSerializer</b>
-<b class="pc">&nbsp;      GhostStandardsEnum::class -&gt; GhostStandardsEnumSerializer</b>
-<b class="fc">&nbsp;      GhostUserToken::class -&gt; GhostUserTokenSerializer</b>
-<b class="fc">&nbsp;      GodObject::class -&gt; GodObjectSerializer</b>
-<b class="pc">&nbsp;      HashtagItem::class -&gt; HashtagItemSerializer</b>
-<b class="pc">&nbsp;      HierarchyWrappedKeysFixture::class -&gt; HierarchyWrappedKeysFixtureSerializer</b>
-<b class="pc">&nbsp;      HomeConfig::class -&gt; HomeConfigSerializer</b>
-<b class="pc">&nbsp;      HomeStatus::class -&gt; HomeStatusSerializer</b>
-<b class="fc">&nbsp;      IgnoreModel::class -&gt; IgnoreModelSerializer</b>
-<b class="fc">&nbsp;      InvoicePaidPayload::class -&gt; InvoicePaidPayloadSerializer</b>
-<b class="fc">&nbsp;      JsonLdNode::class -&gt; JsonLdNodeSerializer</b>
-<b class="pc">&nbsp;      JsonLdNode.Organization::class -&gt; JsonLdNode_OrganizationSerializer</b>
-<b class="pc">&nbsp;      JsonLdNode.Person::class -&gt; JsonLdNode_PersonSerializer</b>
-<b class="fc">&nbsp;      LargeStringModel::class -&gt; LargeStringModelSerializer</b>
-<b class="fc">&nbsp;      LegacyUser::class -&gt; LegacyUserSerializer</b>
-<b class="pc">&nbsp;      MaliceModel::class -&gt; MaliceModelSerializer</b>
-<b class="fc">&nbsp;      MapEdgeCaseModel::class -&gt; MapEdgeCaseModelSerializer</b>
-<b class="pc">&nbsp;      MediaItem::class -&gt; MediaItemSerializer</b>
-<b class="pc">&nbsp;      MediaSize::class -&gt; MediaSizeSerializer</b>
-<b class="pc">&nbsp;      MediaSizes::class -&gt; MediaSizesSerializer</b>
-<b class="pc">&nbsp;      MixedStructuralModel::class -&gt; MixedStructuralModelSerializer</b>
-<b class="fc">&nbsp;      ModeEventPayload::class -&gt; ModeEventPayloadSerializer</b>
-<b class="fc">&nbsp;      ModelWithExternal::class -&gt; ModelWithExternalSerializer</b>
-<b class="fc">&nbsp;      NamingModel::class -&gt; NamingModelSerializer</b>
-<b class="pc">&nbsp;      NestedContainer::class -&gt; NestedContainerSerializer</b>
-<b class="pc">&nbsp;      NestedDeviceStub::class -&gt; NestedDeviceStubSerializer</b>
-<b class="fc">&nbsp;      NestedGenericModel::class -&gt; NestedGenericModelSerializer</b>
-<b class="pc">&nbsp;      NullabilityStressModel::class -&gt; NullabilityStressModelSerializer</b>
-<b class="pc">&nbsp;      NullablePrimitives::class -&gt; NullablePrimitivesSerializer</b>
-<b class="fc">&nbsp;      Object40::class -&gt; Object40Serializer</b>
-<b class="fc">&nbsp;      Object41::class -&gt; Object41Serializer</b>
-<b class="pc">&nbsp;      OmitIfAbsentWrappedKeysFixture::class -&gt; OmitIfAbsentWrappedKeysFixtureSerializer</b>
-<b class="pc">&nbsp;      OmitIfEmptyWrappedKeysFixture::class -&gt; OmitIfEmptyWrappedKeysFixtureSerializer</b>
-<b class="pc">&nbsp;      OneofPayload::class -&gt; OneofPayloadSerializer</b>
-<b class="pc">&nbsp;      OneofPayload.Code::class -&gt; OneofPayload_CodeSerializer</b>
-<b class="pc">&nbsp;      OneofPayload.Text::class -&gt; OneofPayload_TextSerializer</b>
-<b class="pc">&nbsp;      OpaqueMetadataByteEnvelope::class -&gt; OpaqueMetadataByteEnvelopeSerializer</b>
-<b class="pc">&nbsp;      OpaqueMetadataEnvelope::class -&gt; OpaqueMetadataEnvelopeSerializer</b>
-<b class="fc">&nbsp;      OverlappingKeyModel::class -&gt; OverlappingKeyModelSerializer</b>
-<b class="fc">&nbsp;      PageWithNestedDevices::class -&gt; PageWithNestedDevicesSerializer</b>
-<b class="pc">&nbsp;      PageWithNestedDevices.LoggedIn::class -&gt; PageWithNestedDevices_LoggedInSerializer</b>
-<b class="pc">&nbsp;      Priority::class -&gt; PrioritySerializer</b>
-<b class="pc">&nbsp;      ProtoAccountId::class -&gt; ProtoAccountIdSerializer</b>
-<b class="pc">&nbsp;      ProtoOneofEvent::class -&gt; ProtoOneofEventSerializer</b>
-<b class="pc">&nbsp;      ProtoValueClassCollectionFixture::class -&gt; ProtoValueClassCollectionFixtureSerializer</b>
-<b class="pc">&nbsp;      RawJsonAttributeState::class -&gt; RawJsonAttributeStateSerializer</b>
-<b class="pc">&nbsp;      RawJsonListModel::class -&gt; RawJsonListModelSerializer</b>
-<b class="pc">&nbsp;      RawJsonPayloadModel::class -&gt; RawJsonPayloadModelSerializer</b>
-<b class="fc">&nbsp;      RawPayloadModel::class -&gt; RawPayloadModelSerializer</b>
-<b class="fc">&nbsp;      RecursiveGraphNode::class -&gt; RecursiveGraphNodeSerializer</b>
-<b class="pc">&nbsp;      RecursiveNode::class -&gt; RecursiveNodeSerializer</b>
-<b class="pc">&nbsp;      RepeatedWrappedKeysFixture::class -&gt; RepeatedWrappedKeysFixtureSerializer</b>
-<b class="pc">&nbsp;      ReservedWordModel::class -&gt; ReservedWordModelSerializer</b>
-<b class="fc">&nbsp;      ResilientEnumModel::class -&gt; ResilientEnumModelSerializer</b>
-<b class="fc">&nbsp;      ResilientItem::class -&gt; ResilientItemSerializer</b>
-<b class="pc">&nbsp;      SmartDevice::class -&gt; SmartDeviceSerializer</b>
-<b class="pc">&nbsp;      SmartDevice.Light::class -&gt; SmartDevice_LightSerializer</b>
-<b class="pc">&nbsp;      SmartDevice.Thermostat::class -&gt; SmartDevice_ThermostatSerializer</b>
-<b class="pc">&nbsp;      SmartDevice.UnknownDevice::class -&gt; SmartDevice_UnknownDeviceSerializer</b>
-<b class="fc">&nbsp;      SmartHome::class -&gt; SmartHomeSerializer</b>
-<b class="fc">&nbsp;      SseEventEnvelope::class -&gt; SseEventEnvelopeSerializer</b>
-<b class="fc">&nbsp;      StripeObject::class -&gt; StripeObjectSerializer</b>
-<b class="fc">&nbsp;      StripeObject.Charge::class -&gt; StripeObject_ChargeSerializer</b>
-<b class="pc">&nbsp;      StripeObject.Refund::class -&gt; StripeObject_RefundSerializer</b>
-<b class="fc">&nbsp;      StructuralCollisionModel::class -&gt; StructuralCollisionModelSerializer</b>
-<b class="pc">&nbsp;      SymbolItem::class -&gt; SymbolItemSerializer</b>
-<b class="pc">&nbsp;      SyncStatus::class -&gt; SyncStatusSerializer</b>
-<b class="pc">&nbsp;      Tag::class -&gt; TagSerializer</b>
-<b class="pc">&nbsp;      TagsProbe::class -&gt; TagsProbeSerializer</b>
-<b class="pc">&nbsp;      Tweet::class -&gt; TweetSerializer</b>
-<b class="pc">&nbsp;      TweetEntities::class -&gt; TweetEntitiesSerializer</b>
-<b class="pc">&nbsp;      TweetMetadata::class -&gt; TweetMetadataSerializer</b>
-<b class="pc">&nbsp;      TwitterResponse::class -&gt; TwitterResponseSerializer</b>
-<b class="pc">&nbsp;      TwitterSpecialResponse::class -&gt; TwitterSpecialResponseSerializer</b>
-<b class="pc">&nbsp;      TwitterSpecialTweet::class -&gt; TwitterSpecialTweetSerializer</b>
-<b class="pc">&nbsp;      TwitterWrappedTweet::class -&gt; TwitterWrappedTweetSerializer</b>
-<b class="fc">&nbsp;      UniCodeModel::class -&gt; UniCodeModelSerializer</b>
-<b class="pc">&nbsp;      UrlContainer::class -&gt; UrlContainerSerializer</b>
-<b class="pc">&nbsp;      UrlItem::class -&gt; UrlItemSerializer</b>
-<b class="pc">&nbsp;      User::class -&gt; UserSerializer</b>
-<b class="pc">&nbsp;      UserEntities::class -&gt; UserEntitiesSerializer</b>
-<b class="pc">&nbsp;      UserId::class -&gt; UserIdSerializer</b>
-<b class="pc">&nbsp;      UserMention::class -&gt; UserMentionSerializer</b>
-<b class="pc">&nbsp;      UserRole::class -&gt; UserRoleSerializer</b>
-<b class="fc">&nbsp;      UserWithValueClass::class -&gt; UserWithValueClassSerializer</b>
-<b class="pc">&nbsp;      WebhookEnvelope::class -&gt; WebhookEnvelopeSerializer</b>
-<b class="pc">&nbsp;      WideModel::class -&gt; WideModelSerializer</b>
-<b class="pc">&nbsp;      WireExtras::class -&gt; WireExtrasSerializer</b>
-<b class="pc">&nbsp;      WireExtras12::class -&gt; WireExtras12Serializer</b>
-<b class="pc">&nbsp;      WireExtras34::class -&gt; WireExtras34Serializer</b>
-<b class="fc">&nbsp;      WrapSharedPathModel::class -&gt; WrapSharedPathModelSerializer</b>
-<b class="pc">&nbsp;      WrappedKeysFixture::class -&gt; WrappedKeysFixtureSerializer</b>
-<b class="pc">&nbsp;      WrappedModel::class -&gt; WrappedModelSerializer</b>
-<b class="fc">&nbsp;      else -&gt; null</b>
-&nbsp;  } as GhostSerializer&lt;T&gt;?
+&nbsp;    /**
+&nbsp;     * proto3 JSON mapping: int64/uint64 fields accept both bare numbers and quoted decimal
+&nbsp;     * strings on read. Temporarily flips `coerceStringsToNumbers` around the read — this works
+&nbsp;     * on every reader flavor (streaming, flat, string), not just GhostProtoJsonFlatReader.
+&nbsp;     */
+&nbsp;    const val STR_NEXT_LONG_PROTO_COERCED =
+&nbsp;        &quot;run {\n&quot; +
+&nbsp;            &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
+&nbsp;            &quot;  reader.coerceStringsToNumbers = true\n&quot; +
+&nbsp;            &quot;  val parsed = reader.nextLong()\n&quot; +
+&nbsp;            &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
+&nbsp;            &quot;  parsed\n&quot; +
+&nbsp;            &quot;}&quot;
 &nbsp;
-&nbsp;  override fun prewarm() {
-<b class="fc">&nbsp;    serializersByClass.size</b>
-&nbsp;  }
+&nbsp;    /** proto3 JSON/YAML mapping: full-range `uint64` via quoted decimal string (or coerced bare number). */
+&nbsp;    const val STR_NEXT_ULONG_PROTO_COERCED =
+&nbsp;        &quot;run {\n&quot; +
+&nbsp;            &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
+&nbsp;            &quot;  reader.coerceStringsToNumbers = true\n&quot; +
+&nbsp;            &quot;  val parsed = reader.nextProtoUInt64()\n&quot; +
+&nbsp;            &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
+&nbsp;            &quot;  parsed\n&quot; +
+&nbsp;            &quot;}&quot;
+&nbsp;    const val STR_NEXT_DOUBLE = &quot;reader.nextDouble()&quot;
+&nbsp;    const val STR_NEXT_FLOAT = &quot;reader.nextFloat()&quot;
+&nbsp;    const val STR_NEXT_BYTE = &quot;reader.nextInt().toByte()&quot;
+&nbsp;    const val STR_NEXT_SHORT = &quot;reader.nextInt().toShort()&quot;
+&nbsp;    const val STR_NEXT_CHAR = &quot;reader.nextChar()&quot;
+&nbsp;    const val STR_SERIALIZERS_PKG = &quot;com.ghost.serialization.serializers&quot;
+&nbsp;    const val STR_NEXT_STRING = &quot;reader.nextString()&quot;
+&nbsp;    const val STR_NEXT_INT_OR_NULL = &quot;reader.nextIntOrNull()&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN_OR_NULL = &quot;reader.nextBooleanOrNull()&quot;
+&nbsp;    const val STR_NEXT_LONG_OR_NULL = &quot;reader.nextLongOrNull()&quot;
+&nbsp;    const val STR_NEXT_ULONG = &quot;reader.nextULong()&quot;
+&nbsp;    const val STR_NEXT_ULONG_OR_NULL = &quot;reader.nextULongOrNull()&quot;
+&nbsp;    const val STR_NEXT_STRING_OR_NULL = &quot;reader.nextStringOrNull()&quot;
+&nbsp;    const val TEMPLATE_L_READER = &quot;%T.%L(reader)&quot;
+&nbsp;    const val TEMPLATE_NULL_CHECK_L =
+&nbsp;        &quot;if (reader.isNextNullValue()) {\n  reader.consumeNull()\n  null\n} else {\n  %L\n}&quot;
+&nbsp;    const val TEMPLATE_THROW_S = &quot;reader.throwError(%S)&quot;
+&nbsp;    const val STR_REQ_FIELD_1 = &quot;Required field &#39;&quot;
+&nbsp;    const val STR_REQ_FIELD_2 = &quot;&#39; missing in JSON&quot;
+&nbsp;    const val STR_COMMA_SPACE = &quot;, &quot;
+&nbsp;    const val STR_BANG_BANG = &quot;!!&quot;
+&nbsp;    const val TEMPLATE_RETURN_T_PAREN = &quot;return %T(&quot;
+&nbsp;    const val STR_PAREN = &quot;)&quot;
+&nbsp;        const val TEMPLATE_VAL_RESULT = &quot;val result = %T(&quot;
+&nbsp;    const val STR_OR = &quot; || &quot;
+&nbsp;    const val STR_RETURN_RESULT_COPY = &quot;return result.copy(&quot;
+&nbsp;    const val STR_COMMA = &quot;,&quot;
+&nbsp;    const val STR_EMPTY = &quot;&quot;
+&nbsp;    const val STR_ELSE = &quot;else&quot;
+&nbsp;    const val STR_RETURN_RESULT_FINAL = &quot;return result&quot;
+&nbsp;    const val STR_ERR_INVALID_ENUM_INDEX = &quot;-1 -&gt; reader.throwError(\&quot;Invalid enum value\&quot;)&quot;
+&nbsp;    const val STR_ERR_UNEXPECTED_INDEX = &quot;else -&gt; throw GhostJsonException(\&quot;Unexpected index: \$index\&quot;)&quot;
+&nbsp;    const val STR_FALLBACK_ANNOTATION = &quot;GhostFallback&quot;
+&nbsp;    const val STR_ELSE_BRANCH = &quot;else -&gt;&quot;
+&nbsp;    const val STR_ENUM_SELECT_OPTIONS = &quot;val index = reader.selectString(ENUM_OPTIONS)&quot;
+&nbsp;    const val STR_ENUM_WHEN = &quot;return when (index)&quot;
+&nbsp;    const val TEMPLATE_ENUM_BRANCH = &quot;%L -&gt; %T.%L&quot;
+&nbsp;    const val STR_MASK_INIT = &quot;var mask%L = 0L&quot;
+&nbsp;    const val STR_CTX_CLASS = &quot;DecodingContext&quot;
+&nbsp;    const val STR_DECODE_CHUNK_PREFIX = &quot;decodeChunk&quot;
+&nbsp;    const val STR_SERIALIZE_CHUNK_PREFIX = &quot;serializeChunk&quot;
+&nbsp;    const val STR_READER_VAR = &quot;reader&quot;
+&nbsp;    const val STR_CTX_VAR = &quot;ctx&quot;
+&nbsp;    const val STR_INDEX_VAR = &quot;index&quot;
+&nbsp;    const val STR_WHEN_INDEX_PLAIN = &quot;when (index)&quot;
+&nbsp;    const val STR_BIT_MASK_MIN_LONG = &quot;Long.MIN_VALUE&quot;
+&nbsp;    const val TEMPLATE_DECODE_RESILIENT = &quot;reader.decodeResilient { %L }?.let&quot;
+&nbsp;    const val TEMPLATE_CTX_FIELD_ASSIGN = &quot;ctx.%L = %L&quot;
+&nbsp;    const val TEMPLATE_CTX_FIELD_SET_IT = &quot;ctx.%L = it&quot;
+&nbsp;    const val TEMPLATE_CTX_MASK_OR = &quot;ctx.mask%L = ctx.mask%L or %L&quot;
+&nbsp;    const val STR_CTX_INIT = &quot;val ctx = DecodingContext()&quot;
+&nbsp;    const val TEMPLATE_CHUNK_CALL = &quot;in %L..%L -&gt; %L(reader, ctx, index)&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_MISSING = &quot;if ((ctx.mask%L and %L) == 0L)&quot;
+&nbsp;    const val TEMPLATE_ELSE_IF_MASK_MISSING = &quot;else if ((ctx.mask%L and %L) == 0L)&quot;
+&nbsp;    const val STR_READ_LIST_TEMPLATE = &quot;reader.readList {\n  %L\n}&quot;
+&nbsp;    const val STR_READ_SET_TEMPLATE = &quot;reader.readSet {\n  %L\n}&quot;
+&nbsp;    const val STR_READ_MAP_TEMPLATE = &quot;reader.readMap({ reader.nextKey()!! }) {\n  %L\n}&quot;
+&nbsp;    const val STR_MASK_BITWISE_OR = &quot;mask%L = mask%L or %L&quot;
+&nbsp;    const val STR_IF_OPEN = &quot;if (&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_MATCH_BIT_F = &quot;(ctx.mask%s and %s) != 0L&quot;
+&nbsp;    const val STR_CLOSE_PAREN_FLOW = &quot;)&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_NOT_MET = &quot;if ((ctx.mask%L and %L) != %L)&quot;
+&nbsp;    const val TEMPLATE_MASK_CHECK_MATCH = &quot;(mask%s and %s) != 0L&quot;
+&nbsp;    const val TEMPLATE_MASK_ALL_MET_SIMPLE = &quot;(mask%s and %s) == %s&quot;
+&nbsp;    const val STR_GHOST_PKG = &quot;com.ghost.serialization&quot;
+&nbsp;    const val STR_CONTRACT_PKG = &quot;com.ghost.serialization.contract&quot;
+&nbsp;    const val STR_GHOST_OBJ = &quot;Ghost&quot;
+&nbsp;    const val STR_GHOST_SERIALIZER = &quot;GhostSerializer&quot;
+&nbsp;    const val TEMPLATE_RESOLVE_SERIALIZER = &quot;%T.getSerializer(%T::class)!!&quot;
+<b class="fc">&nbsp;    val BYTE_STRING_CLASS = ClassName(&quot;okio&quot;, &quot;ByteString&quot;)</b>
+&nbsp;    const val DEFAULT_DISCRIMINATOR_KEY = &quot;key&quot;
+&nbsp; 
+&nbsp;    const val STR_WRITER_BEGIN_OBJ = &quot;writer.beginObject()&quot;
+&nbsp;    const val STR_WRITER_NAME_TYPE_VAL = &quot;writer.name(%S).value(%S)&quot;
+&nbsp;    const val STR_WRITER_WRITE_NAME_VAL = &quot;writer.writeNameRaw(%L)&quot;
+&nbsp;    const val STR_WRITER_END_OBJ = &quot;writer.endObject()&quot;
+&nbsp;    const val STR_WRITER_BEGIN_ARR = &quot;writer.beginArray()&quot;
+&nbsp;    const val STR_WRITER_END_ARR = &quot;writer.endArray()&quot;
+&nbsp;    const val STR_PARAM_WRITER = &quot;writer&quot;
+&nbsp;    const val STR_PARAM_VALUE = &quot;value&quot;
+&nbsp;    const val TEMPLATE_CHUNK_CALL_WRITER = &quot;%N(writer, value)&quot;
+&nbsp;    const val STR_FUN_SERIALIZE = &quot;serialize&quot;
+&nbsp;    const val STR_WHEN_VALUE = &quot;when (value)&quot;
+&nbsp;    const val STR_SERIALIZER_SUFFIX = &quot;Serializer&quot;
+&nbsp;    const val TEMPLATE_CHUNK_FUN_NAME = &quot;%s%s_%s&quot;
+&nbsp;    const val TEMPLATE_DECODE_CHUNK_NAME = &quot;%s%s&quot;
+&nbsp;    const val STR_IS_T_ARROW_T_SERIALIZE = &quot;is %T -&gt; %T.serialize(writer, value)&quot;
+&nbsp;    const val TEMPLATE_VAR_NAME = &quot;%sValue&quot;
+&nbsp;    const val TEMPLATE_RESULT_VAR = &quot;result.%s&quot;
+&nbsp;    const val TEMPLATE_MASK_VAR = &quot;mask%s&quot;
+&nbsp;    const val TEMPLATE_CTX_VAR = &quot;ctx.%s&quot;
+&nbsp;    const val TEMPLATE_CTX_MASK_VAR = &quot;ctx.mask%s&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_RETURN = &quot;if ((%s and %s) != 0L) %s else %s&quot;
+&nbsp;    const val TEMPLATE_WRAP_TYPE = &quot;%s(%s)&quot;
+&nbsp;    const val STR_ANNOTATION_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostSerialization&quot;
+&nbsp;    const val STR_ANNOTATION_PROTO_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostProtoSerialization&quot;
+&nbsp;    const val STR_ANNOTATION_YAML_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostYamlSerialization&quot;
+&nbsp;    const val STR_GENERATED_PKG = &quot;com.ghost.serialization.generated&quot;
+&nbsp;    const val STR_REGISTRY_PREFIX = &quot;GhostModuleRegistry&quot;
+&nbsp;    const val STR_LOG_PREFIX = &quot;&gt;&gt;&gt; [GhostSerialization]&quot;
+&nbsp;    const val OPTION_MODULE_NAME = &quot;ghost.moduleName&quot;
+&nbsp;    const val STR_DEFAULT_NAME = &quot;Default&quot;
+&nbsp;    const val STR_DASH = &quot;-&quot;
+&nbsp;    const val STR_LOG_OPTIMIZED = &quot; Successfully optimized: &quot;
+&nbsp;    const val STR_LOG_CRITICAL = &quot; Critical error processing &quot;
+&nbsp;    const val STR_COLON_SPACE = &quot;: &quot;
+&nbsp;    const val STR_REFLECT_PKG = &quot;kotlin.reflect&quot;
+&nbsp;    const val STR_KCLASS = &quot;KClass&quot;
+&nbsp;    const val STR_TYPE_T = &quot;T&quot;
+&nbsp;    const val STR_COLLECTIONS_PKG = &quot;kotlin.collections&quot;
+&nbsp;    const val STR_MAP = &quot;Map&quot;
+&nbsp;    const val STR_FORMAT_S = &quot;%S&quot;
+&nbsp;    const val STR_MAP_OF = &quot;mapOf(\n&quot;
+&nbsp;    const val STR_MAP_ENTRY = &quot;    %T::class to %T&quot;
+&nbsp;    const val STR_COMMA_NEWLINE = &quot;,\n&quot;
+&nbsp;    const val STR_PAREN_CLOSE = &quot;)&quot;
+&nbsp;    const val STR_PROP_SERIALIZERS_MAP = &quot;serializersByClass&quot;
+&nbsp;    const val STR_FUN_GET_SERIALIZER = &quot;getSerializer&quot;
+&nbsp;    const val STR_PARAM_CLAZZ = &quot;clazz&quot;
+&nbsp;    const val STR_UNCHECKED_CAST = &quot;UNCHECKED_CAST&quot;
+&nbsp;    const val STR_GHOST_REGISTRY = &quot;GhostRegistry&quot;
+&nbsp;    const val STR_FUN_PREWARM = &quot;prewarm&quot;
+&nbsp;    const val STR_SERIALIZERS_SIZE = &quot;serializersByClass.size&quot;
+&nbsp;    const val STR_FUN_REG_COUNT = &quot;registeredCount&quot;
+&nbsp;    const val STR_FUN_GET_ALL_SERIALIZERS = &quot;getAllSerializers&quot;
+&nbsp;    const val STR_RETURN_SERIALIZERS = &quot;return serializersByClass&quot;
+&nbsp;    const val STR_KDOC_REGISTRY = &quot;Generated Registry for GhostSerialization.\nUses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.&quot;
+&nbsp;    const val STR_INSTANCE = &quot;INSTANCE&quot;
+&nbsp;    const val STR_INIT_INSTANCE = &quot;%T()&quot;
+&nbsp;    const val STR_META_INF_PROGUARD = &quot;META-INF.proguard&quot;
+&nbsp;    const val STR_GHOST_SERIALIZATION_FILE = &quot;ghost-serialization&quot;
+&nbsp;    const val STR_EXT_PRO = &quot;pro&quot;
+&nbsp;    const val STR_LOG_PROGUARD_WARN = &quot; Could not generate ProGuard rules: &quot;
+&nbsp;    const val STR_SERVICE_REGISTRY = &quot;com.ghost.serialization.contract.GhostRegistry&quot;
+&nbsp;    const val STR_META_INF_SERVICES = &quot;META-INF.services&quot;
+&nbsp;    const val STR_LOG_SERVICE_WARN = &quot; Could not generate ServiceLoader file: &quot;
+&nbsp;    const val STR_LAZY_START = &quot;lazy {\n&quot;
+&nbsp;    const val STR_WHEN_CLAZZ_START = &quot;return when (clazz) {\n&quot;
+&nbsp;    const val STR_WHEN_ENTRY = &quot;    %T::class -&gt; %T\n&quot;
+&nbsp;    const val STR_WHEN_ELSE_NULL = &quot;    else -&gt; null\n&quot;
+&nbsp;    const val STR_WHEN_CLOSE_CAST = &quot;} as %T\n&quot;
+&nbsp;    const val PKG_PARSER_COMMON = &quot;com.ghost.serialization.parser.common&quot;
+&nbsp;    const val PKG_PARSER_BYTES = &quot;com.ghost.serialization.parser.bytes&quot;
+&nbsp;    const val PKG_PARSER_STRINGS = &quot;com.ghost.serialization.parser.strings&quot;
+&nbsp;    const val PKG_PARSER_STREAMING = &quot;com.ghost.serialization.parser.streaming&quot;
+&nbsp;    const val STR_RETURN_L = &quot;return %L&quot;
+&nbsp;    
+&nbsp;    const val REGISTRY_CHUNK_SIZE = 500
+&nbsp;    const val TEMPLATE_GET_SHARD_MAP_CALL = &quot;getShardMap%L()&quot;
+&nbsp;    const val STR_PLUS_SPACED = &quot; + &quot;
+&nbsp;    const val STR_NEWLINE_CLOSE_CURLY = &quot;\n}&quot;
+&nbsp;    const val TEMPLATE_GET_SHARD_CALL = &quot;getShard%L(clazz)?.let { return it as %T }&quot;
+&nbsp;    const val STR_RETURN_NULL = &quot;return null&quot;
+&nbsp;    const val TEMPLATE_SHARD_MAP_NAME = &quot;getShardMap%d&quot;
+&nbsp;    const val TEMPLATE_SHARD_NAME = &quot;getShard%d&quot;
+&nbsp;    
+&nbsp;    const val STR_LIST = &quot;List&quot;
+&nbsp;    const val STR_SET = &quot;Set&quot;
+&nbsp;    const val STR_DOUBLE = &quot;Double&quot;
+&nbsp;    const val STR_FLOAT = &quot;Float&quot;
 &nbsp;
-<b class="nc">&nbsp;  override fun registeredCount(): Int = 137</b>
+&nbsp;    const val TEMPLATE_PROGUARD_KEEP = &quot;&quot;&quot;
+&nbsp;        # Ghost KSP module rules (registry + serializers for this compilation unit)
+&nbsp;        -keep class %1${&#39;$&#39;}s.** { *; }
+&nbsp;        -keep class %1${&#39;$&#39;}s.%2${&#39;$&#39;}s {
+&nbsp;            public static ** INSTANCE;
+&nbsp;            public *** getSerializer(...);
+&nbsp;        }
+&nbsp;        -keep class * implements com.ghost.serialization.contract.GhostSerializer {
+&nbsp;            *;
+&nbsp;        }
+&nbsp;        -keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer {
+&nbsp;            *;
+&nbsp;        }
+&nbsp;    &quot;&quot;&quot;
+&nbsp;    const val STR_DOT = &quot;.&quot;
+&nbsp;    const val STR_T_SERIALIZE_WRITER_ACC = &quot;%T.serialize(writer, %L)&quot;
+&nbsp;    const val STR_ENUM_MEMBER_VAL = &quot;%T.%L -&gt; writer.value(%S)&quot;
+&nbsp;    const val STR_WRITER_VAL_ENUM_NAME = &quot;writer.value(value.name)&quot;
+&nbsp;    const val K_INT = &quot;kotlin.Int&quot;
+&nbsp;    const val K_LONG = &quot;kotlin.Long&quot;
+&nbsp;    const val K_ULONG = &quot;kotlin.ULong&quot;
+&nbsp;    const val K_UINT = &quot;kotlin.UInt&quot;
+&nbsp;    const val K_USHORT = &quot;kotlin.UShort&quot;
+&nbsp;    const val K_UBYTE = &quot;kotlin.UByte&quot;
+&nbsp;    const val K_STRING = &quot;kotlin.String&quot;
+&nbsp;    const val K_BOOLEAN = &quot;kotlin.Boolean&quot;
+&nbsp;    const val K_DOUBLE = &quot;kotlin.Double&quot;
+&nbsp;    const val K_FLOAT = &quot;kotlin.Float&quot;
+&nbsp;    const val K_BYTE = &quot;kotlin.Byte&quot;
+&nbsp;    const val K_SHORT = &quot;kotlin.Short&quot;
+&nbsp;    const val K_CHAR = &quot;kotlin.Char&quot;
+&nbsp;    const val K_UNIT = &quot;kotlin.Unit&quot;
+&nbsp;    const val K_NOTHING = &quot;kotlin.Nothing&quot;
+&nbsp;    const val K_ANY = &quot;kotlin.Any&quot;
+&nbsp;    const val K_BYTE_ARRAY = &quot;kotlin.ByteArray&quot;
+&nbsp;    const val K_RAW_JSON = &quot;com.ghost.serialization.types.RawJson&quot;
+&nbsp;    const val PKG_TYPES = &quot;com.ghost.serialization.types&quot;
+&nbsp;    const val STR_RAW_JSON_TYPE = &quot;RawJson&quot;
+&nbsp;    const val STR_RAW_JSON_FROM_CAPTURE = &quot;reader.captureRawJson()&quot;
+&nbsp;    const val STR_WRITER_RAW_VALUE_SLICE = &quot;writer.rawValue(%L.storage, %L.storageOffset, %L.storageLength)&quot;
+&nbsp;    const val STR_CAPTURE_RAW_JSON_BYTES = &quot;reader.captureRawJsonBytes()&quot;
+&nbsp;    const val STR_WRITER_RAW_VALUE_L = &quot;writer.rawValue(%L)&quot;
+&nbsp;    const val STR_KOTLIN_PREFIX = &quot;kotlin.&quot;
+&nbsp;    const val STR_JAVA_PREFIX = &quot;java.&quot;
+&nbsp;    const val STR_H_VAL_PREFIX = &quot;H_&quot;
+&nbsp;    const val STR_SERIALIZE_CALL = &quot;%L.serialize(writer, %L)&quot;
+&nbsp;    const val STR_WRITER_VAL_L = &quot;writer.value(%L)&quot;
+&nbsp;    const val STR_WRITER_VAL_FLOAT = &quot;writer.value(%L)&quot;
 &nbsp;
-<b class="fc">&nbsp;  override fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = serializersByClass</b>
+&nbsp;    /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
+&nbsp;    const val STR_WRITER_VAL_LONG_AS_STRING = &quot;writer.value(%L.toString())&quot;
 &nbsp;
-&nbsp;  companion object {
-&nbsp;    @JvmField
-<b class="fc">&nbsp;    val INSTANCE: GhostModuleRegistry_Default = GhostModuleRegistry_Default()</b>
-&nbsp;  }
+&nbsp;    /** proto3 JSON mapping: `bytes` fields are Base64 strings on the wire, not inline raw JSON. */
+&nbsp;    const val STR_WRITER_VAL_BYTES_AS_BASE64 = &quot;writer.value(encodeBase64String(%L))&quot;
+&nbsp;    const val STR_DECODE_BASE64_STRING_CALL = &quot;decodeBase64String(reader.nextString())&quot;
+&nbsp;    const val STR_WRITE_FIELD = &quot;writer.writeField(%L, %L)&quot;
+&nbsp;    const val STR_WRITE_NAME_RAW = &quot;writer.writeNameRaw(%L)&quot;
+&nbsp;    const val STR_WRITE_NAME_RAW_NULL = &quot;writer.writeNameRaw(%L).nullValue()&quot;
+&nbsp;    const val STR_CUSTOM_ENCODER_CALL = &quot;%T.%L(writer, %L)&quot;
+&nbsp;    const val STR_CONTEXTUAL_PREFIX = &quot;contextual_&quot;
+&nbsp;    
+&nbsp;    const val TEMPLATE_ENCODE_UTF8 = &quot;%S.encodeUtf8()&quot;
+&nbsp;    const val FMT_JSON_FIELD = &quot;\&quot;%s\&quot;:&quot;
+&nbsp;    
+&nbsp;    // Analyzer Constants
+&nbsp;    const val STR_ERR_CLASS_1 = &quot;GhostSerialization: @GhostSerialization can only be applied to &#39;data class&#39;, &#39;sealed class&#39;, &#39;value class&#39; or &#39;enum class&#39;. &quot;
+&nbsp;    const val STR_ERR_CLASS_2 = &quot;Class &#39;&quot;
+&nbsp;    const val STR_ERR_CLASS_3 = &quot;&#39; is not supported.&quot;
+&nbsp;    const val STR_ERR_PRIV_1 = &quot;GhostSerialization: Properties in @GhostSerialization classes cannot be private. &quot;
+&nbsp;    const val STR_ERR_PRIV_2 = &quot;Please remove &#39;private&#39; modifier from properties in &#39;&quot;
+&nbsp;    const val STR_ERR_PRIV_3 = &quot;&#39;.&quot;
+&nbsp;    const val STR_ERR_DUP_1 = &quot;GhostSerialization: Duplicate JSON name &#39;&quot;
+&nbsp;    const val STR_ERR_DUP_2 = &quot;&#39; found in class &#39;&quot;
+&nbsp;    const val STR_ERR_DUP_3 = &quot;&#39;. &quot;
+&nbsp;    const val STR_ERR_DUP_4 = &quot;Problematic properties: &quot;
+&nbsp;    const val STR_ERR_MAP_1 = &quot;GhostSerialization: Map key must be a String in property &#39;&quot;
+&nbsp;    const val STR_ERR_MAP_2 = &quot;&#39;. &quot;
+&nbsp;    const val STR_ERR_MAP_3 = &quot;JSON only supports string-keyed objects.&quot;
+&nbsp;    const val STR_ERR_YAML_ORPHAN =
+&nbsp;        &quot;GhostYamlSerialization: @GhostYamlSerialization requires @GhostSerialization or @GhostProtoSerialization on the same class.&quot;
+&nbsp;    const val STR_ERR_YAML_RESILIENT =
+&nbsp;        &quot;GhostYamlSerialization: @GhostResilient is JSON-only and cannot be combined with @GhostYamlSerialization.&quot;
+&nbsp;    const val STR_ERR_YAML_SEALED =
+&nbsp;        &quot;GhostYamlSerialization: sealed classes are JSON-only and cannot use @GhostYamlSerialization.&quot;
+&nbsp;    const val STR_ERR_YAML_ENVELOPE =
+&nbsp;        &quot;GhostYamlSerialization: @GhostJsonEnvelope is JSON-only and cannot use @GhostYamlSerialization.&quot;
+&nbsp;    const val STR_ERR_YAML_INFERRED =
+&nbsp;        &quot;GhostYamlSerialization: inferred polymorphism is JSON-only and cannot use @GhostYamlSerialization.&quot;
+&nbsp;    const val STR_ERR_YAML_CUSTOM_CODEC =
+&nbsp;        &quot;GhostYamlSerialization: @GhostDecoder/@GhostEncoder are JSON-only and cannot be used on YAML-enabled models.&quot;
+&nbsp;    const val STR_ERR_YAML_STRUCTURAL =
+&nbsp;        &quot;GhostYamlSerialization: @GhostFlatten/@GhostWrap/@GhostWrappedKeys are JSON-only and cannot be used on YAML-enabled models.&quot;
+&nbsp;    const val STR_ERR_YAML_NESTED_GHOST =
+&nbsp;        &quot;GhostYamlSerialization: nested @GhostSerialization types are not supported on YAML paths.&quot;
+&nbsp;    const val STR_ERR_YAML_RAW_JSON =
+&nbsp;        &quot;GhostYamlSerialization: RawJson is JSON-only and cannot be used on YAML-enabled models.&quot;
+&nbsp;    const val STR_ERR_YAML_BYTE_ARRAY =
+&nbsp;        &quot;GhostYamlSerialization: non-proto ByteArray is JSON-only; use @GhostProtoSerialization for Base64 YAML fields.&quot;
+&nbsp;    const val STR_KOTLIN_DOT = &quot;kotlin.&quot;
+&nbsp;    const val STR_TYPE_INT_ARRAY = &quot;kotlin.IntArray&quot;
+&nbsp;    const val STR_TYPE_LONG_ARRAY = &quot;kotlin.LongArray&quot;
+&nbsp;    const val STR_TYPE_FLOAT_ARRAY = &quot;kotlin.FloatArray&quot;
+&nbsp;    const val STR_TYPE_DOUBLE_ARRAY = &quot;kotlin.DoubleArray&quot;
+&nbsp;    const val STR_TYPE_BOOLEAN_ARRAY = &quot;kotlin.BooleanArray&quot;
+&nbsp;    const val GHOST_IGNORE = &quot;GhostIgnore&quot;
+&nbsp;    const val GHOST_NAME = &quot;GhostName&quot;
+&nbsp;    const val SERIAL_NAME = &quot;SerialName&quot;
+&nbsp;    const val GHOST_SERIALIZATION = &quot;GhostSerialization&quot;
+&nbsp;    const val NAME_ARG = &quot;name&quot;
+&nbsp;    const val LIST_QUALIFIED = &quot;kotlin.collections.List&quot;
+&nbsp;    const val SET_QUALIFIED = &quot;kotlin.collections.Set&quot;
+&nbsp;    const val MAP_QUALIFIED = &quot;kotlin.collections.Map&quot;
+&nbsp;    const val STRING_QUALIFIED = &quot;kotlin.String&quot;
+&nbsp;    const val STR_VALUE_ARG = &quot;value&quot;
+&nbsp;    const val STR_SERIAL_NAME_SUFFIX = &quot;SerialName&quot;
+&nbsp;    const val GHOST_RESILIENT = &quot;GhostResilient&quot;
+&nbsp;    const val GHOST_DECODER = &quot;GhostDecoder&quot;
+&nbsp;    const val GHOST_ENCODER = &quot;GhostEncoder&quot;
+&nbsp;    const val PROVIDER_ARG = &quot;provider&quot;
+&nbsp;    const val FUNCTION_NAME_ARG = &quot;functionName&quot;
+&nbsp;    const val GHOST_FLATTEN = &quot;GhostFlatten&quot;
+&nbsp;    const val GHOST_WRAP = &quot;GhostWrap&quot;
+&nbsp;    const val GHOST_WRAPPED_KEYS = &quot;GhostWrappedKeys&quot;
+&nbsp;    const val KEYS_ARG = &quot;keys&quot;
+&nbsp;    const val OMIT_IF_EMPTY_ARG = &quot;omitIfEmpty&quot;
+&nbsp;    const val OMIT_IF_ABSENT_ARG = &quot;omitIfAbsent&quot;
+&nbsp;    const val PATH_ARG = &quot;path&quot;
+&nbsp;    const val NAME = &quot;name&quot;
+&nbsp;
+&nbsp;    // Generator-specific
+&nbsp;    const val PKG_WRITER_COMMON = &quot;com.ghost.serialization.writer.common&quot;
+&nbsp;    const val PKG_WRITER_BYTES = &quot;com.ghost.serialization.writer.bytes&quot;
+&nbsp;    const val PKG_WRITER_STRINGS = &quot;com.ghost.serialization.writer.strings&quot;
+&nbsp;    const val PKG_CONTRACT = &quot;com.ghost.serialization.contract&quot;
+&nbsp;    const val PKG_EXCEPTION = &quot;com.ghost.serialization.exception&quot;
+&nbsp;    const val PKG_GHOST = &quot;com.ghost.serialization&quot;
+&nbsp;    const val OKIO_PACKAGE = &quot;okio&quot;
+&nbsp;    const val DECODE_RESILIENT = &quot;decodeResilient&quot;
+&nbsp;    const val STR_GHOST_JSON_WRITER = &quot;GhostJsonWriter&quot;
+&nbsp;    const val STR_GHOST_JSON_FLAT_WRITER = &quot;GhostJsonFlatWriter&quot;
+&nbsp;    const val STR_FLAT_BYTE_ARRAY_WRITER = &quot;FlatByteArrayWriter&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_WRITER = &quot;GhostJsonStringWriter&quot;
+&nbsp;    const val STR_GHOST_JSON_READER = &quot;GhostJsonReader&quot;
+&nbsp;    const val STR_GHOST_JSON_FLAT_READER = &quot;GhostJsonFlatReader&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_READER = &quot;GhostJsonStringReader&quot;
+&nbsp;    const val STR_GHOST_JSON_READER_QUALIFIED = &quot;$PKG_PARSER_STREAMING.$STR_GHOST_JSON_READER&quot;
+&nbsp;    const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = &quot;$PKG_PARSER_BYTES.$STR_GHOST_JSON_FLAT_READER&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_READER_QUALIFIED = &quot;$PKG_PARSER_STRINGS.$STR_GHOST_JSON_STRING_READER&quot;
+&nbsp;
+&nbsp;    // YAML codegen (runtime lives in ghost-serialization parser.yaml / writer.yaml)
+&nbsp;    const val STR_YAML_SERIALIZER_FQN = &quot;com.ghost.serialization.yaml.contract.GhostYamlSerializer&quot;
+&nbsp;    const val PKG_YAML_CONTRACT = &quot;com.ghost.serialization.yaml.contract&quot;
+&nbsp;    const val PKG_YAML_WRITER = &quot;com.ghost.serialization.writer.yaml&quot;
+&nbsp;    const val PKG_YAML_PARSER = &quot;com.ghost.serialization.parser.yaml&quot;
+&nbsp;    const val PKG_YAML_SERIALIZER = &quot;com.ghost.serialization.yaml.serializer&quot;
+&nbsp;    const val STR_GHOST_YAML_SERIALIZER = &quot;GhostYamlSerializer&quot;
+&nbsp;    const val STR_GHOST_YAML_WRITER = &quot;GhostYamlWriter&quot;
+&nbsp;    const val STR_GHOST_YAML_FLAT_WRITER = &quot;GhostYamlFlatWriter&quot;
+&nbsp;    const val STR_GHOST_YAML_FLAT_READER = &quot;GhostYamlFlatReader&quot;
+&nbsp;    const val STR_GHOST_YAML_PREFIX = &quot;GhostYaml&quot;
+&nbsp;    const val TEMPLATE_YAML_ARRAY_SERIALIZER = &quot;GhostYaml%sSerializer&quot;
+&nbsp;
+&nbsp;    const val STR_RESET_TOKEN_BYTE = &quot;RESET_TOKEN_BYTE&quot;
+&nbsp;    const val STR_ENSURE_UTF8_BYTES = &quot;reader.ensureUtf8Bytes()&quot;
+&nbsp;    const val STR_CHAR_POSITION_TO_BYTE_POSITION = &quot;reader.charPositionToBytePosition&quot;
+&nbsp;    const val STR_BYTE_POSITION_TO_CHAR_POSITION = &quot;reader.bytePositionToCharPosition&quot;
+&nbsp;    const val STR_OVERRIDE_DESERIALIZE_STRING_READER = &quot;override fun deserialize(reader: GhostJsonStringReader)&quot;
+&nbsp;    const val STR_OVERRIDE_SERIALIZE_FN = &quot;override fun serialize&quot;
+&nbsp;    const val STR_KT_SERIALIZER_FILE_SUFFIX = &quot;Serializer.kt&quot;
+&nbsp;    const val STR_TEST_CUSTOM_DECODER_FN = &quot;decodeHex&quot;
+&nbsp;    const val STR_TEST_DECODER_UTILS = &quot;DecoderUtils&quot;
+&nbsp;    const val STR_TEST_CUSTOM_FIELD_MODEL = &quot;CustomFieldModel&quot;
+&nbsp;    const val STR_TEST_BYTES_RESULT = &quot;bytes&quot;
+&nbsp;    const val STR_TEST_NATIVE_RESULT = &quot;native&quot;
+&nbsp;    const val OPTION_TEXT_CHANNEL = &quot;ghost.textChannel&quot;
+&nbsp;    const val STR_BEGIN_ARRAY = &quot;beginArray&quot;
+&nbsp;    const val STR_END_ARRAY = &quot;endArray&quot;
+&nbsp;    const val STR_READ_LIST = &quot;readList&quot;
+&nbsp;    const val STR_READ_SET = &quot;readSet&quot;
+&nbsp;    const val STR_READ_MAP = &quot;readMap&quot;
+&nbsp;    const val STR_NEXT_KEY = &quot;nextKey&quot;
+&nbsp;    const val STR_SELECT_STRING = &quot;selectString&quot;
+&nbsp;    const val STR_PEEK_STRING_FIELD = &quot;peekStringField&quot;
+&nbsp;    const val STR_GHOST_JSON_EXCEPTION = &quot;GhostJsonException&quot;
+&nbsp;    const val STR_BYTESTRING_IMPORT = &quot;ByteString.Companion.encodeUtf8&quot;
+&nbsp;    const val STR_KDOC_HIGH_PERF = &quot;High-performance serializer for [%T].\n&quot;
+&nbsp;    const val STR_KDOC_GENERATED = &quot;Generated by GhostSerialization. Do not modify manually.\n&quot;
+&nbsp;    const val STR_OPTIONS = &quot;OPTIONS&quot;
+&nbsp;    const val STR_OPTIONS_PREFIX = &quot;OPTIONS_&quot;
+&nbsp;    const val STR_OPTIONS_CLASS = &quot;JsonReaderOptions&quot;
+&nbsp;    const val STR_RESET_TOKEN_BYTE_CALL =
+&nbsp;        &quot;    reader._setNextTokenByte($STR_GHOST_JSON_FLAT_READER_QUALIFIED.$STR_RESET_TOKEN_BYTE)\n&quot;
+&nbsp;    const val STR_RUN_OPEN = &quot;run {\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_TEMP_READER =
+&nbsp;        &quot;    val temp = $STR_GHOST_JSON_READER_QUALIFIED(reader._getRawData())\n    temp._setPosition(reader._getPosition())\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_TEMP_READER_STRING =
+&nbsp;        &quot;    val temp = $STR_GHOST_JSON_READER_QUALIFIED($STR_ENSURE_UTF8_BYTES)\n    temp._setPosition($STR_CHAR_POSITION_TO_BYTE_POSITION(reader.position))\n&quot;
+&nbsp;    const val TEMPLATE_CUSTOM_DECODER_TEMP_CALL = &quot;    val res = %T.%L(temp)\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_UPDATE_POS = &quot;    reader._setPosition(temp._getPosition())\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_UPDATE_POS_STRING =
+&nbsp;        &quot;    reader.position = $STR_BYTE_POSITION_TO_CHAR_POSITION(temp._getPosition())\n&quot;
+&nbsp;    const val STR_CUSTOM_DECODER_RETURN_RES = &quot;    res\n&quot;
+&nbsp;    const val STR_RUN_CLOSE = &quot;}&quot;
+&nbsp;    const val STR_TRY = &quot;try&quot;
+&nbsp;    const val STR_CATCH_EXCEPTION = &quot;catch (_: Exception)&quot;
+&nbsp;    const val TEMPLATE_WARM_UP_READER_INIT = &quot;val %L = %T(\n  %S.encodeToByteArray()\n)&quot;
+&nbsp;    const val TEMPLATE_WARM_UP_STRING_READER_INIT = &quot;val %L = %T(\n  %S\n)&quot;
+&nbsp;    const val TEMPLATE_WARM_UP_DESERIALIZE = &quot;deserialize(%L)&quot;
+&nbsp;    const val STR_READER1 = &quot;reader1&quot;
+&nbsp;    const val STR_READER2 = &quot;reader2&quot;
+&nbsp;    const val STR_READER3 = &quot;reader3&quot;
+&nbsp;    
+&nbsp;    // Import names (raw function names)
+&nbsp;    const val STR_BEGIN_OBJECT_NAME = &quot;beginObject&quot;
+&nbsp;    const val STR_END_OBJECT_NAME = &quot;endObject&quot;
+&nbsp;    const val STR_SELECT_NAME_AND_CONSUME_NAME = &quot;selectNameAndConsume&quot;
+&nbsp;    const val STR_SKIP_VALUE_NAME = &quot;skipValue&quot;
+&nbsp;    const val STR_NEXT_INT_NAME = &quot;nextInt&quot;
+&nbsp;    const val STR_NEXT_LONG_NAME = &quot;nextLong&quot;
+&nbsp;    const val STR_NEXT_ULONG_NAME = &quot;nextULong&quot;
+&nbsp;    const val STR_NEXT_ULONG_OR_NULL_NAME = &quot;nextULongOrNull&quot;
+&nbsp;    const val STR_NEXT_PROTO_UINT64_NAME = &quot;nextProtoUInt64&quot;
+&nbsp;    const val STR_NEXT_STRING_NAME = &quot;nextString&quot;
+&nbsp;    const val STR_NEXT_DOUBLE_NAME = &quot;nextDouble&quot;
+&nbsp;    const val STR_NEXT_FLOAT_NAME = &quot;nextFloat&quot;
+&nbsp;    const val STR_NEXT_CHAR_NAME = &quot;nextChar&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN_NAME = &quot;nextBoolean&quot;
+&nbsp;    const val STR_NEXT_INT_OR_NULL_NAME = &quot;nextIntOrNull&quot;
+&nbsp;    const val STR_NEXT_LONG_OR_NULL_NAME = &quot;nextLongOrNull&quot;
+&nbsp;    const val STR_NEXT_STRING_OR_NULL_NAME = &quot;nextStringOrNull&quot;
+&nbsp;    const val STR_NEXT_BOOLEAN_OR_NULL_NAME = &quot;nextBooleanOrNull&quot;
+&nbsp;    const val STR_CAPTURE_RAW_JSON_BYTES_NAME = &quot;captureRawJsonBytes&quot;
+&nbsp;    const val STR_CAPTURE_RAW_JSON_NAME = &quot;captureRawJson&quot;
+&nbsp;    const val STR_DECODE_BASE64_STRING_NAME = &quot;decodeBase64String&quot;
+&nbsp;    const val STR_ENCODE_BASE64_STRING_NAME = &quot;encodeBase64String&quot;
+&nbsp;    const val STR_BYTE_ARRAY_TYPE = &quot;ByteArray&quot;
+&nbsp;    const val STR_CONSUME_NULL_NAME = &quot;consumeNull&quot;
+&nbsp;    const val STR_IS_NEXT_NULL_VALUE_NAME = &quot;isNextNullValue&quot;
+&nbsp;    const val STR_ENUM_OPTIONS = &quot;ENUM_OPTIONS&quot;
+&nbsp;    const val STR_WARM_UP = &quot;warmUp&quot;
+&nbsp;    const val MARKER = &quot;%S&quot;
+&nbsp;    const val ANNOTATION_GHOST_SERIALIZATION = &quot;GhostSerialization&quot;
+&nbsp;    const val ANNOTATION_GHOST_PROTO_SERIALIZATION = &quot;GhostProtoSerialization&quot;
+&nbsp;    const val ANNOTATION_GHOST_YAML_SERIALIZATION = &quot;GhostYamlSerialization&quot;
+&nbsp;
+&nbsp;    /** `@GhostSerialization(textChannel = …)` argument name. */
+&nbsp;    const val ARG_TEXT_CHANNEL = &quot;textChannel&quot;
+&nbsp;    const val ARG_DISCRIMINATOR = &quot;discriminator&quot;
+&nbsp;    const val ARG_INFERRED = &quot;inferred&quot;
+&nbsp;    const val STR_DEFAULT_DISCRIMINATOR = &quot;type&quot;
+&nbsp;    const val ARG_NAME = &quot;name&quot;
+&nbsp;    const val PKG_KOTLIN = &quot;kotlin&quot;
+&nbsp;    const val STR_OPT_IN = &quot;OptIn&quot;
+&nbsp;    const val STR_INTERNAL_GHOST_API = &quot;InternalGhostApi&quot;
+&nbsp;    const val STR_TYPE_NAME_PROP = &quot;typeName&quot;
+&nbsp;    const val HASH_MULTIPLIER_START = 31
+&nbsp;    const val HASH_MULTIPLIER_LIMIT = 15000
+&nbsp;    const val HASH_MULTIPLIER_STEP = 2
+&nbsp;    /** Polynomial multiplier for collision disambiguation. Must match COLLISION_HASH_MULTIPLIER in GhostJsonConstants. */
+&nbsp;    const val COLLISION_HASH_MULTIPLIER = 31
+&nbsp;    const val HASH_SHIFT_LIMIT = 16
+&nbsp;    /** Table size used when the field-name set is empty (no dispatch needed). */
+&nbsp;    const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
+&nbsp;    /** Candidate dispatch table sizes tried by [com.ghost.serialization.compiler.hash.PerfectHashFinder], ascending. */
+<b class="fc">&nbsp;    val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)</b>
+&nbsp;    const val BYTE_MASK = 0xFF
+&nbsp;    const val BIT_SHIFT_8 = 8
+&nbsp;    const val BIT_SHIFT_16 = 16
+&nbsp;    const val BIT_SHIFT_24 = 24
+&nbsp;    const val MARKER_CLASS = &quot;%T::class&quot;
+&nbsp;    const val STR_WRITER_NULL_VAL = &quot;writer.nullValue()&quot;
+&nbsp;    const val STR_ELIGIBILITY_MASK = &quot;eligibilityMask&quot;
+&nbsp;    const val STR_SEEN_MASK = &quot;seenMask&quot;
+&nbsp;    const val STR_REQ_MASK_PREFIX = &quot;reqMask&quot;
+&nbsp;    const val STR_INSTANCE_VAR = &quot;instance&quot;
+&nbsp;    const val STR_V_VAR_PREFIX = &quot;v&quot;
+&nbsp;    const val STR_INFERRED_ERROR_MSG =
+&nbsp;        &quot;Could not infer subclass (\$eligibilityMask/\$seenMask)&quot;
+&nbsp;    const val STR_REQUIRED_FIELD_MISSING = &quot;Required field &#39;%s&#39; missing for %s&quot;
+&nbsp;    const val STR_ERR_NO_SUBCLASSES = &quot;Inferred polymorphism requested but no subclasses found.&quot;
+&nbsp;    const val STR_COPY = &quot;copy&quot;
+&nbsp;    const val STR_ONE_L = &quot;1L&quot;
+&nbsp;    const val STR_SHL = &quot;shl&quot;
+&nbsp;    const val STR_SPACE = &quot; &quot;
+&nbsp;    const val STR_L_SUFFIX = &quot;L&quot;
+&nbsp;    const val STR_IS_RESILIENT = &quot;isResilient&quot;
+&nbsp;    const val STR_IS_PROTO = &quot;isProto&quot;
+&nbsp;    const val STR_TRUE = &quot;true&quot;
+&nbsp;    
+&nbsp;    // Templates
+&nbsp;    const val TEMPLATE_VAR_NULL_DECL = &quot;var %L%L: %T = %L&quot;
+&nbsp;    const val TEMPLATE_VAR_LONG_INIT = &quot;var %L = %L%L&quot;
+&nbsp;    const val TEMPLATE_VAR_INIT = &quot;var %L = %L&quot;
+&nbsp;    const val TEMPLATE_WHEN_BRANCH = &quot;%L -&gt;&quot;
+&nbsp;    const val TEMPLATE_VAR_ASSIGN = &quot;%L%L = %L&quot;
+&nbsp;    const val TEMPLATE_MASK_AND_ASSIGN = &quot;%L = %L and %L%L&quot;
+&nbsp;    const val TEMPLATE_MASK_OR_SHL_ASSIGN = &quot;%L = %L or (%L %L %L)&quot;
+&nbsp;    const val TEMPLATE_VAL_LONG_INIT = &quot;val %L%L = %L%L&quot;
+&nbsp;    const val TEMPLATE_RESULT_WHEN = &quot;val result = when&quot;
+&nbsp;    const val TEMPLATE_INFERRED_DECISION_BRANCH = &quot;(%L and %L%L) != %L &amp;&amp; (%L and %L) == %L -&gt;&quot;
+&nbsp;    const val TEMPLATE_REQUIRED_ARG = &quot;%L = %L ?: throw %T(%S)&quot;
+&nbsp;    const val TEMPLATE_OPTIONAL_ARG = &quot;%L = %L&quot;
+&nbsp;    const val TEMPLATE_DATA_CLASS_COPY_INIT = &quot;var %L = %T(%L)&quot;
+&nbsp;    const val TEMPLATE_IF_NOT_NULL_COPY = &quot;if (%L != null) %L = %L.%L(%L = %L)&quot;
+&nbsp;    const val TEMPLATE_THROW_EXCEPTION = &quot;throw %T(%S)&quot;
+&nbsp;    const val TEMPLATE_PEEK_STRING_FIELD = &quot;val typeName = reader.peekStringField(%S)&quot;
+&nbsp;    const val STR_IT = &quot;it&quot;
+&nbsp;    const val FMT_LONG_LITERAL = &quot;%dL&quot;
+&nbsp;    const val MASK_SIZE_BITS = 64L
+&nbsp;    const val MASK_SIZE_BITS_MINUS_ONE = 63
+&nbsp;    const val STR_NULL_VAL_CALL = &quot;writer.nullValue()&quot;
+&nbsp;    
+&nbsp;    // Control Flow Templates
+&nbsp;    const val TEMPLATE_IF_NULL = &quot;if (%L == null)&quot;
+&nbsp;    const val TEMPLATE_IF_NOT_NULL = &quot;if (%L != null)&quot;
+&nbsp;    const val TEMPLATE_IF_L = &quot;if (%L)&quot;
+&nbsp;    const val TEMPLATE_IS_INSTANCE = &quot;%L is %T&quot;
+&nbsp;    const val TEMPLATE_CAST = &quot;(%L as %T)&quot;
+&nbsp;    const val TEMPLATE_FOR_MAP = &quot;for ((%L, %L) in %L)&quot;
+&nbsp;
+&nbsp;    // proto3 default-value-omission conditions (guards a field write with &quot;is not the zero value&quot;)
+&nbsp;    const val TEMPLATE_NEQ_ZERO_INT = &quot;%L != 0&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_LONG = &quot;%L != 0L&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_ULONG = &quot;%L != 0uL&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_DOUBLE = &quot;%L != 0.0&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_FLOAT = &quot;%L != 0.0f&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_SHORT = &quot;%L != 0.toShort()&quot;
+&nbsp;    const val TEMPLATE_NEQ_ZERO_BYTE = &quot;%L != 0.toByte()&quot;
+&nbsp;    const val TEMPLATE_IS_NOT_EMPTY = &quot;%L.isNotEmpty()&quot;
+&nbsp;    const val TEMPLATE_ACCESSOR_L = &quot;%L&quot;
+&nbsp;    
+&nbsp;    // Writer Templates
+&nbsp;    const val TEMPLATE_WRITER_VALUE = &quot;writer.value(%L)&quot;
+&nbsp;    const val TEMPLATE_WRITER_NAME = &quot;writer.name(%L)&quot;
+&nbsp;    
+&nbsp;    // Misc
+&nbsp;    const val STR_ITEM_PREFIX = &quot;item&quot;
+&nbsp;    const val STR_MAP_KEY_PREFIX = &quot;mapKey&quot;
+&nbsp;    const val STR_MAP_VAL_PREFIX = &quot;mapVal&quot;
+&nbsp;    const val GHOST_SIGNATURE = &quot;GhostSignature&quot;
+&nbsp;    const val STR_WARN_CUSTOM_CODER = &quot;Detected custom coder for %s: D=%s, E=%s&quot;
+&nbsp;    const val TEMPLATE_NAMED_ARG = &quot;  %N = %L,&quot;
+&nbsp;    const val TEMPLATE_ACCESSOR = &quot;%L.%N&quot;
+&nbsp;    const val TEMPLATE_VARIABLE = &quot;%L&quot;
+&nbsp;
+&nbsp;    const val PROPERTY_MAX_SIZE = 40
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Maximum number of default-valued properties for which the compiler
+&nbsp;     * generates 2^N explicit constructor branches (zero `.copy()` allocations).
+&nbsp;     * 4 → up to 16 branches. More defaults fall back to `createInstance`
+&nbsp;     * (single-shot or required-ctor + `.copy()`).
+&nbsp;     */
+&nbsp;    const val MAX_DEFAULT_BRANCH_COUNT = 4
+&nbsp;
+&nbsp;    const val STR_SRC_TEST = &quot;/src/test/&quot;
+&nbsp;    const val STR_SRC_ANDROID_TEST = &quot;/src/androidTest/&quot;
+&nbsp;    const val STR_SRC_TEST_KSP = &quot;/src/testKsp/&quot;
+&nbsp;    const val STR_TEST_SUFFIX = &quot;_Test&quot;
+&nbsp;
+&nbsp;    const val STR_FUN_VALIDATE_FIELDS = &quot;validateRequiredFields&quot;
+&nbsp;    const val STR_PARAM_MASK0 = &quot;mask0&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_ZERO_STMT = &quot;if ((mask0 and %L) == 0L)&quot;
+&nbsp;    const val TEMPLATE_IF_MASK_NOT_MET_STMT = &quot;if ((mask0 and %L) != %L)&quot;
+&nbsp;    const val TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW = &quot;else if ((mask0 and %L) == 0L)&quot;
+&nbsp;    const val TEMPLATE_VAR_VALUE_DECL = &quot;var %LValue: %T = %L&quot;
+&nbsp;    const val STR_MASK_INDEX_FMT = &quot;mask%d&quot;
+&nbsp;    const val STR_HS_PREFIX = &quot;HS_&quot;
+&nbsp;    const val TEMPLATE_CALL_VALIDATION = &quot;%L(%L, %L)&quot;
+&nbsp;    const val STR_MASK_PREFIX = &quot;MASK_&quot;
+&nbsp;    const val STR_MASK_REQUIRED_PREFIX = &quot;MASK_REQUIRED_&quot;
+&nbsp;    const val STR_MASK_REQUIRED_0 = &quot;MASK_REQUIRED_0&quot;
+&nbsp;    const val STR_MASK_OPTS_PREFIX = &quot;MASK_OPTS_&quot;
+&nbsp;    const val STR_MASK_DEFAULTS_PREFIX = &quot;MASK_DEFAULTS_&quot;
+&nbsp;    const val STR_FUN_CREATE_INSTANCE = &quot;createInstance&quot;
+&nbsp;    const val STR_NULLABLE_SUFFIX = &quot;Nullable&quot;
+&nbsp;    const val STR_ENUM_UNKNOWN = &quot;UNKNOWN&quot;
+&nbsp;    const val STR_TEMP_FLAT_WRITER = &quot;bridgeFlatWriter&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = &quot;val %L = %T(\n&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_BUFFER = &quot;%T()\n&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_CLOSE = &quot;)\n&quot;
+&nbsp;    const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = &quot;%T.%L(%L, %L)&quot;
+&nbsp;    const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
+&nbsp;        &quot;writer.buffer.writeString(%L.buffer.toStringUtf8())&quot;
+&nbsp;    const val TEMPLATE_ENUM_ELSE_FALLBACK = &quot;else -&gt; %T.%L&quot;
+&nbsp;    const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
+&nbsp;        &quot;Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class &quot;
+&nbsp;    const val STR_ERR_FLATTEN_INFINITE_LOOP_2 = &quot;: &quot;
+&nbsp;    const val STR_ERR_SINGLE_SHOT_DEFAULT_1 = &quot;single-shot requires defaultExpression for &quot;
+&nbsp;    const val COMPACT_CALL_MAX_INLINE_LENGTH = 80
+&nbsp;    const val STR_SUB_INDEX_PREFIX = &quot;subIndex&quot;
+&nbsp;    const val TEMPLATE_L = &quot;%L&quot;
+&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_1 = &quot;Could not find a collision-free perfect hash configuration for fields: &quot;
+&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_2 = &quot;. Please ensure there are no duplicate JSON names or conflicting field names.&quot;
+&nbsp;
+&nbsp;    // GhostJsonEnvelope
+&nbsp;    const val STR_GHOST_JSON_ENVELOPE = &quot;GhostJsonEnvelope&quot;
+&nbsp;    const val STR_GHOST_ENVELOPE_PAYLOAD = &quot;GhostEnvelopePayload&quot;
+&nbsp;    const val STR_GHOST_ENVELOPE_FALLBACK = &quot;GhostEnvelopeFallback&quot;
+&nbsp;    const val ARG_ENVELOPE_DISCRIMINATOR = &quot;discriminator&quot;
+&nbsp;    const val ARG_ENVELOPE_TIME_FIELD = &quot;timeField&quot;
+&nbsp;    const val ARG_ENVELOPE_DATA_FIELD = &quot;dataField&quot;
+&nbsp;    const val ARG_ENVELOPE_TARGET = &quot;target&quot;
+&nbsp;    const val STR_FUN_ROUTE_PAYLOAD = &quot;routePayload&quot;
+&nbsp;    const val STR_FUN_PARSE_PAYLOAD = &quot;parsePayload&quot;
+&nbsp;    const val STR_FUN_ROUTE_TYPED = &quot;routeTyped&quot;
+&nbsp;    const val STR_FUN_PARSE_TYPED = &quot;parseTyped&quot;
+&nbsp;    const val STR_PARAM_ENVELOPE = &quot;envelope&quot;
+&nbsp;    const val STR_PARAM_BYTES = &quot;bytes&quot;
+&nbsp;    const val STR_RAW_JSON_DECODE = &quot;RawJsonDecode&quot;
+&nbsp;    const val STR_GHOST = &quot;Ghost&quot;
+&nbsp;    const val STR_TYPE_ANY = &quot;Any&quot;
+&nbsp;    const val STR_ENVELOPE_RETURN_FIELD = &quot;return envelope.%L&quot;
+&nbsp;    const val STR_ENVELOPE_ROUTE_WHEN_OPEN = &quot;return when (envelope.%L) {\n&quot;
+&nbsp;    const val STR_ENVELOPE_ROUTE_CLOSE = &quot;}&quot;
+&nbsp;    const val STR_ENVELOPE_BRANCH = &quot;%S -&gt; %L\n&quot;
+&nbsp;    const val STR_ENVELOPE_ELSE_NULL = &quot;else -&gt; null\n&quot;
+&nbsp;    const val STR_ENVELOPE_ELSE_FALLBACK = &quot;else -&gt; envelope.%L\n&quot;
+&nbsp;    const val STR_ENVELOPE_ELSE_GENERIC = &quot;else -&gt; envelope.%L\n&quot;
+&nbsp;    const val STR_ENVELOPE_PARSE_BYTES_ROUTE = &quot;val envelope = deserialize(%T(%L))\nreturn %L(envelope)&quot;
+&nbsp;    const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = &quot;TargetSerializer&quot;
+&nbsp;    const val TEMPLATE_ENVELOPE_FIELD_ACCESS = &quot;envelope.%L&quot;
+&nbsp;    const val TEMPLATE_ENVELOPE_CACHED_SERIALIZER = &quot;%T.getSerializer(%T::class)!!&quot;
+&nbsp;    const val STR_KDOC_ROUTE_PAYLOAD = &quot;Routes [%T] to its matching opaque JSON payload without re-parsing.\n&quot;
+&nbsp;    const val STR_KDOC_PARSE_PAYLOAD = &quot;Deserializes [%T] from bytes and routes to payload (zero-copy RawJson slice on flat reader).\n&quot;
+&nbsp;    const val STR_KDOC_ROUTE_TYPED = &quot;Routes [%T] and decodes annotated payload targets.\n&quot;
+&nbsp;    const val STR_KDOC_PARSE_TYPED = &quot;Deserializes [%T] from bytes and returns typed payload when configured.\n&quot;
+&nbsp;    const val TEMPLATE_ENVELOPE_TYPED_SERIALIZER = &quot;envelope.%L?.let { %T.decode(it, %L) }&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_1 = &quot;GhostJsonEnvelope: discriminator field &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_2 = &quot;&#39; not found on &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_3 = &quot;&#39;.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_TYPE_1 = &quot;GhostJsonEnvelope: discriminator property &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DISC_TYPE_2 = &quot;&#39; must be String.&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_TIME_1 = &quot;GhostJsonEnvelope: timeField &#39;&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_TIME_2 = &quot;&#39; not found; ignoring.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_MULTI_FALLBACK = &quot;GhostJsonEnvelope: at most one @GhostEnvelopeFallback property is allowed.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DATA_1 = &quot;GhostJsonEnvelope: dataField &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DATA_2 = &quot;&#39; not found on envelope class.&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_1 = &quot;GhostJsonEnvelope: opaque field &#39;&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_2 = &quot;&#39; has no @GhostEnvelopePayload and will not be routed.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_NO_PAYLOADS = &quot;GhostJsonEnvelope: no @GhostEnvelopePayload properties found (fat envelope mode).&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DUP_VALUE_1 = &quot;GhostJsonEnvelope: duplicate discriminator value &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_DUP_VALUE_2 = &quot;&#39; on properties: &quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_1 = &quot;GhostJsonEnvelope: payload property &#39;&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_2 = &quot;&#39; must be nullable RawJson.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_VALUE = &quot;GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value.&quot;
+&nbsp;
+&nbsp;    // @GhostWrappedKeys
+&nbsp;    const val STR_GHOST_WRAPPED_KEYS_CAPTURE = &quot;GhostWrappedKeysCapture&quot;
+&nbsp;    const val STR_CAPTURE_WRAPPED_KEY_NAME = &quot;captureWrappedKey&quot;
+&nbsp;    const val STR_WRAPPED_CAPTURE_PREFIX = &quot;wrappedCapture&quot;
+&nbsp;    const val STR_WRAPPED_KEY_LITERALS_PREFIX = &quot;WRAPPED_KEY_LITERALS_&quot;
+&nbsp;    const val STR_WRAPPED_OMIT_ABSENT_PREFIX = &quot;WRAPPED_OMIT_ABSENT_&quot;
+&nbsp;    const val STR_WRAPPED_JSON_VAR_PREFIX = &quot;wrappedJson&quot;
+&nbsp;    const val STR_JSON_KEY_QUOTE = &quot;\&quot;&quot;
+&nbsp;    const val STR_JSON_KEY_COLON_SUFFIX = &quot;\&quot;:&quot;
+&nbsp;    const val TEMPLATE_CHAINED_MEMBER = &quot;%L.%L&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_CAPTURE_VAR = &quot;val %L = %T(%L)&quot;
+&nbsp;    const val TEMPLATE_CAPTURE_WRAPPED_KEY = &quot;reader.captureWrappedKey(%L, %L)&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_JSON_MATERIALIZE =
+&nbsp;        &quot;val %L = %L.materializeWrappedObject(\n  %L,\n  %L,\n  %L,\n)&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_JSON_IF_NOT_NULL = &quot;if (%L != null)&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_READER_VAR = &quot;val wrappedReader = %T(%L)&quot;
+&nbsp;    // materializeWrappedObject always returns ByteArray (the synthetic object is assembled as
+&nbsp;    // UTF-8) — GhostJsonStringReader&#39;s constructor takes a String, so this target needs a
+&nbsp;    // decode step the byte/flat reader variants don&#39;t.
+&nbsp;    const val TEMPLATE_WRAPPED_STRING_READER_VAR =
+&nbsp;        &quot;val wrappedReader = %T(%L.decodeToString())&quot;
+&nbsp;    const val TEMPLATE_DESERIALIZE_WRAPPED_READER = &quot;%T.deserialize(wrappedReader)&quot;
+&nbsp;    const val TEMPLATE_NULL_ASSIGN = &quot;%L = null&quot;
+&nbsp;    const val TEMPLATE_ARRAY_OF_OPEN = &quot;arrayOf(\n&quot;
+&nbsp;    const val TEMPLATE_WRAPPED_KEY_LITERAL_BYTE = &quot;    %S.encodeToByteArray()&quot;
+&nbsp;    const val TEMPLATE_INT_ARRAY_OF = &quot;intArrayOf(%L)&quot;
+&nbsp;    const val STR_NEWLINE_CLOSE_PAREN = &quot;\n)&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_1 = &quot;GhostWrappedKeys: duplicate wire key &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_2 = &quot;&#39; on &quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_3 = &quot; (properties &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_4 = &quot;&#39; and &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_5 = &quot;&#39;).&quot;
+&nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 = &quot;GhostWrappedKeys: omitIfEmpty = true requires nullable property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_2 = &quot;&#39;.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_COMBINE_1 = &quot;GhostWrappedKeys: property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_COMBINE_2 = &quot;&#39; cannot combine @GhostWrappedKeys with @GhostFlatten or @GhostWrap.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_1 = &quot;GhostWrappedKeys: wire key &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_2 = &quot;&#39; is both a wrapped source and a regular JSON property on &quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_3 = &quot;.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_1 = &quot;GhostWrappedKeys: keys must not be empty on property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_2 = &quot;&#39;.&quot;
+&nbsp;    const val STR_WARN_WRAPPED_UNMAPPED_1 = &quot;GhostWrappedKeys: wire key &#39;&quot;
+&nbsp;    const val STR_WARN_WRAPPED_UNMAPPED_2 = &quot;&#39; does not map to a field on &quot;
+&nbsp;
+&nbsp;    // GeneratedSourceTrimmer
+&nbsp;    const val STR_NEWLINE = &quot;\n&quot;
+&nbsp;    const val STR_EXT_KT = &quot;kt&quot;
+&nbsp;    const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
+&nbsp;        &quot;&quot;&quot;^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$&quot;&quot;&quot;
+&nbsp;    /** Strips explicit `public` modifiers that KotlinPoet adds for Explicit API mode. */
+&nbsp;    const val REGEX_TRIM_REDUNDANT_PUBLIC =
+&nbsp;        &quot;&quot;&quot;^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )&quot;&quot;&quot;
+&nbsp;
+&nbsp;    // DefaultExpressionExtractor — whitelisted ctor-default literals / escapes
+&nbsp;    const val STR_EMPTY_LIST_CALL = &quot;emptyList()&quot;
+&nbsp;    const val STR_EMPTY_SET_CALL = &quot;emptySet()&quot;
+&nbsp;    const val STR_EMPTY_MAP_CALL = &quot;emptyMap()&quot;
+&nbsp;    const val STR_LIST_OF_EMPTY_CALL = &quot;listOf()&quot;
+&nbsp;    const val STR_SET_OF_EMPTY_CALL = &quot;setOf()&quot;
+&nbsp;    const val STR_MAP_OF_EMPTY_CALL = &quot;mapOf()&quot;
+&nbsp;    const val STR_CHAR_ESC_QUOTE = &quot;\\&#39;&quot;
+&nbsp;    const val STR_CHAR_ESC_BACKSLASH = &quot;\\\\&quot;
+&nbsp;    const val STR_CHAR_ESC_N = &quot;\\n&quot;
+&nbsp;    const val STR_CHAR_ESC_T = &quot;\\t&quot;
+&nbsp;    const val STR_CHAR_ESC_R = &quot;\\r&quot;
+&nbsp;    const val STR_CHAR_ESC_B = &quot;\\b&quot;
+&nbsp;    const val STR_CHAR_ESC_DOLLAR = &quot;\\\$&quot;
+&nbsp;    const val STR_UNICODE_ESC_PREFIX = &quot;\\u&quot;
+&nbsp;    const val STR_TRIPLE_QUOTE = &quot;\&quot;\&quot;\&quot;&quot;
+&nbsp;    const val DEFAULT_EXPR_MAX_PARAM_SEARCH_CHARS = 8_192
+&nbsp;    const val DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS = 512
+&nbsp;    const val DEFAULT_EXPR_UNICODE_ESC_LEN = 6
+&nbsp;    const val DEFAULT_EXPR_UNICODE_HEX_LEN = 4
+&nbsp;    const val DEFAULT_EXPR_MIN_CHAR_LITERAL_LEN = 3
+&nbsp;    const val DEFAULT_EXPR_MIN_STRING_LITERAL_LEN = 2
+&nbsp;    const val REGEX_DEFAULT_EXPR_NUMERIC =
+&nbsp;        &quot;&quot;&quot;^-?(?:&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)(?:L|l)?|&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?[fFdD]?|&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)(?:[eE][+-]?\d+)[fFdD]?|&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)[fFdD]&quot;&quot;&quot; +
+&nbsp;            &quot;&quot;&quot;)$&quot;&quot;&quot;
+&nbsp;    const val REGEX_DEFAULT_EXPR_ENUM_REF =
+&nbsp;        &quot;&quot;&quot;^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$&quot;&quot;&quot;
+&nbsp;
+<b class="fc">&nbsp;    val DEFAULT_EXPR_EMPTY_COLLECTION_CALLS = setOf(</b>
+<b class="fc">&nbsp;        STR_EMPTY_LIST_CALL,</b>
+<b class="fc">&nbsp;        STR_EMPTY_SET_CALL,</b>
+<b class="fc">&nbsp;        STR_EMPTY_MAP_CALL,</b>
+<b class="fc">&nbsp;        STR_LIST_OF_EMPTY_CALL,</b>
+<b class="fc">&nbsp;        STR_SET_OF_EMPTY_CALL,</b>
+<b class="fc">&nbsp;        STR_MAP_OF_EMPTY_CALL,</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    val DEFAULT_EXPR_CHAR_ESCAPES = setOf(</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_QUOTE,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_BACKSLASH,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_N,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_T,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_R,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_B,</b>
+<b class="fc">&nbsp;        STR_CHAR_ESC_DOLLAR,</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    val DEFAULT_EXPR_SCALAR_KEYWORDS = setOf(STR_NULL, STR_TRUE, STR_FALSE)</b>
 &nbsp;}
 </code>
 </pre>
@@ -713,7 +918,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 23:51</div>
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
 </div>
 </body>
 </html>

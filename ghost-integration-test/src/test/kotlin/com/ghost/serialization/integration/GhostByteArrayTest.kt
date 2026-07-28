@@ -8,9 +8,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Regression tests for Ghost 1.2.3:
- * Fields of type ByteArray must be serialized as raw JSON bytes and
- * deserialized back via captureRawJsonBytes without re-encoding.
+ * ByteArray fields serialize as raw JSON bytes and deserialize via captureRawJsonBytes
+ * without re-encoding.
  */
 @OptIn(InternalGhostApi::class)
 class GhostByteArrayTest {

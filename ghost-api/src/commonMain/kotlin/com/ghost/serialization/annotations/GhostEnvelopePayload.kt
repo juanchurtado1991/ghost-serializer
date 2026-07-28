@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
  * zero-copy [com.ghost.serialization.types.RawJson] slice parsing.
  *
  * @param value Wire discriminator string (e.g. `"DEVICE_EVENT"`, `"invoice.paid"`).
- * @param target Typed model to decode into; default means return [RawJson] only.
+ * @param target Typed model to decode into; default means return [com.ghost.serialization.types.RawJson] only.
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)

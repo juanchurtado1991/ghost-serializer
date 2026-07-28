@@ -1,26 +1,39 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.JsonReaderOptions
-import com.ghost.serialization.parser.beginArray
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.createByteArraySource
-import com.ghost.serialization.parser.endArray
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.hasNext
-import com.ghost.serialization.parser.nextBoolean
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextString
-import com.ghost.serialization.parser.selectString
-import com.ghost.serialization.parser.skipValue
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.createByteArraySource
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.hasNext
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.strings.beginArray
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.hasNext
+import com.ghost.serialization.parser.strings.nextBoolean
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.selectString
+import com.ghost.serialization.parser.strings.skipValue
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import okio.Buffer
+
 
 /**
  * Hyper-Performance Stress Audit.

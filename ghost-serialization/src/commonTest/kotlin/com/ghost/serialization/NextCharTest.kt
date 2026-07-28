@@ -1,12 +1,15 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.nextChar
-import okio.Buffer
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.bytes.nextChar
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.nextChar
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.nextChar
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import okio.Buffer
+
 
 class NextCharTest {
 

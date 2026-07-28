@@ -2,14 +2,19 @@
 
 package com.ghost.serialization.integration.model
 
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.consumeNull
-import com.ghost.serialization.parser.isNextNullValue
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.nextString
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.isNextNullValue
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.consumeNull
+import com.ghost.serialization.parser.strings.isNextNullValue
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
+
 
 object EncoderHexUtils {
 

@@ -14,7 +14,7 @@ package com.ghost.serialization.annotations
  *   Has no effect on non-sealed classes.
  * @param inferred Whether the type should be inferred automatically.
  * @param textChannel When `true` (the default), generates native
- *   [com.ghost.serialization.parser.GhostJsonStringReader] deserialize/serialize overloads for
+ *   [com.ghost.serialization.parser.strings.GhostJsonStringReader] deserialize/serialize overloads for
  *   this model and any nested `@GhostSerialization` types reachable from its property graph.
  *   Without a native string-channel overload, decoding from a `String` (e.g.
  *   `Ghost.deserialize<T>(json: String)`) falls back to re-encoding the whole document to UTF-8
@@ -23,6 +23,9 @@ package com.ghost.serialization.annotations
  *   per model) on types that are only ever decoded from bytes/streams. Module-wide
  *   `ghost.textChannel=false` forces the bridging behavior for every model in the module
  *   regardless of this per-class value, for projects that want to opt out everywhere at once.
+ *
+ * YAML serialization is **not** enabled by this annotation alone — add [GhostYamlSerialization]
+ * on the same class when you need `Ghost.decodeFromYaml` / framework YAML adapters.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)

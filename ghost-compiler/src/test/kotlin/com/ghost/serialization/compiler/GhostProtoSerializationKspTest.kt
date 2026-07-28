@@ -417,6 +417,110 @@ class GhostProtoSerializationKspTest {
         )
     }
 
+    @Test
+    fun valueClassWrappingCollectionOmitsEmptyAndQuotesElements() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoAccountIdsWrap.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @JvmInline
+                value class AccountIds(val value: List<Long>)
+
+                @GhostProtoSerialization
+                data class ProtoAccountIdsWrap(val ids: AccountIds)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoAccountIdsWrapSerializer.kt"
+        )
+
+        assertTrue(
+            "if (value.ids.value.isNotEmpty()) {" in generated,
+            "Expected empty-list guard on value-class-wrapped collection:\n$generated"
+        )
+        assertTrue(
+            "writer.value(item0.toString())" in generated,
+            "Expected quoted long elements inside wrapped list:\n$generated"
+        )
+    }
+
+    @Test
+    fun uLongFieldIsQuotedAndUsesProtoUInt64Reader() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoShard.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoShard(val shard_id: ULong)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoShardSerializer.kt"
+        )
+
+        assertTrue("writer.value(value.shard_id.toString())" in generated, generated)
+        assertTrue("reader.nextProtoUInt64()" in generated, generated)
+        assertTrue("if (value.shard_id != 0uL) {" in generated, generated)
+    }
+
+    @Test
+    fun valueClassWrappingCollectionDeserializesWithCoercionBlock() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoAccountIdsWrapRead.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @JvmInline
+                value class AccountIds(val value: List<Long>)
+
+                @GhostProtoSerialization
+                data class ProtoAccountIdsWrap(val ids: AccountIds)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoAccountIdsWrapSerializer.kt"
+        )
+
+        assertTrue("readList" in generated, "Expected list reader for value-class-wrapped collection:\n$generated")
+        assertTrue(
+            "reader.coerceStringsToNumbers = true" in generated,
+            "Expected proto int64 coercion inside list elements:\n$generated"
+        )
+        assertTrue(
+            "AccountIds(" in generated,
+            "Expected value class constructor wrapper:\n$generated"
+        )
+    }
+
+    @Test
+    fun uLongFieldDoesNotUseInternalDataPropertyOnSerialize() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "ProtoShardClean.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
+                @GhostProtoSerialization
+                data class ProtoShard(val shard_id: ULong)
+                """.trimIndent()
+            ),
+            serializerFileName = "ProtoShardSerializer.kt"
+        )
+
+        assertFalse(".data" in generated, "ULong must not codegen internal .data access:\n$generated")
+        assertTrue("value.shard_id.toString()" in generated, generated)
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)

@@ -1,30 +1,40 @@
-# Ghost Serialization Consumer ProGuard Rules
-# Absolute Performance, Absolute Integrity
+# Ghost Serialization consumer ProGuard/R8 rules (merged from the ghost-serialization AAR).
 
-# Keep the GhostSerialization annotation itself
 -keep @interface com.ghost.serialization.annotations.GhostSerialization
+-keep @interface com.ghost.serialization.annotations.GhostProtoSerialization
+-keep @interface com.ghost.serialization.annotations.GhostYamlSerialization
 
-# Keep classes annotated with @GhostSerialization and their properties
-# This is important for discovery and if any reflection-based debugging is used
 -keep @com.ghost.serialization.annotations.GhostSerialization class * {
     <fields>;
     <init>(...);
 }
+-keep @com.ghost.serialization.annotations.GhostProtoSerialization class * {
+    <fields>;
+    <init>(...);
+}
+-keep @com.ghost.serialization.annotations.GhostYamlSerialization class * {
+    <fields>;
+    <init>(...);
+}
 
-# Keep the generated Serializers
+-keep class com.ghost.serialization.generated.** { *; }
+
 -keep class * implements com.ghost.serialization.contract.GhostSerializer {
     public static ** INSTANCE;
     public <init>(...);
     *;
 }
+-keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer {
+    public static ** INSTANCE;
+    public <init>(...);
+    *;
+}
 
-# Keep the generated Registries for discovery
 -keep class * implements com.ghost.serialization.contract.GhostRegistry {
     public <init>(...);
     *;
 }
 
-# Preserve ServiceLoader metadata for discovery
 -keepnames class * implements com.ghost.serialization.contract.GhostRegistry
 -keepclassmembers class * implements com.ghost.serialization.contract.GhostRegistry {
     public <init>();

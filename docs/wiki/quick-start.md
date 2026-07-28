@@ -72,6 +72,25 @@ val bytes: ByteArray = Ghost.encodeToBytes(userFromBytes)
 val json: String = Ghost.encodeToString(userFromBytes)
 ```
 
+### YAML (when your API speaks `application/yaml`)
+
+Add `@GhostYamlSerialization` beside `@GhostSerialization` on the DTO, then:
+
+```kotlin
+import com.ghost.serialization.annotations.GhostYamlSerialization
+import com.ghost.serialization.decodeFromYaml
+import com.ghost.serialization.encodeToYaml
+
+@GhostSerialization
+@GhostYamlSerialization
+data class Config(val id: Long, val name: String)
+
+val config: Config = Ghost.decodeFromYaml(yamlText)
+val yaml: String = Ghost.encodeToYaml(config)
+```
+
+See [YAML guide](usage-yaml.md).
+
 Prefer `ByteArray` for network payloads when your HTTP client already exposes bytes. It avoids creating an intermediate `String`.
 
 For very large or unpredictable payloads, deserialize from an Okio `BufferedSource`:
@@ -137,6 +156,7 @@ Ghost predicts the next field in **declaration order**. Matching your `data clas
 - [Kotlin Multiplatform & Ktor](usage-kmp.md)
 - [iOS & Swift](usage-ios.md)
 - [Spring Boot](usage-spring-boot.md)
+- [YAML](usage-yaml.md)
 - [Proto3 JSON](usage-protobuf.md)
 - [Supported types](type-system.md)
 - [Advanced features](advanced-features.md)

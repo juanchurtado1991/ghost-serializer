@@ -18,7 +18,7 @@ import com.ghost.playground.i18n.Strings
 import com.ghost.playground.ui.theme.Sage
 import com.ghost.playground.ui.theme.Teal
 
-/** One collapsible "why it's fast" pillar — expands to what/why/vs sections on tap. */
+/** Collapsible performance pillar; expands to what, why, and comparison sections on tap. */
 @Composable
 internal fun PillarCard(pillar: SpeedPillar, strings: Strings, lang: Lang) {
     var open by remember(pillar.titleEn) { mutableStateOf(false) }

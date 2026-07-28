@@ -5,9 +5,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * Moshi is JVM-only; on Wasm we keep the same round-trip semantics with kotlinx.serialization
- * so the browser lab still runs three timed phases (KSER → Moshi slot → Ghost).
- * JVM/desktop uses real Moshi codegen adapters via [MoshiBench.jvm.kt].
+ * Moshi is JVM-only. On Wasm, this actual preserves round-trip semantics with
+ * kotlinx.serialization so the browser lab still runs three timed phases
+ * (KSER → Moshi slot → Ghost). On JVM and desktop, the JVM `MoshiBench` actual uses Moshi
+ * codegen adapters.
  */
 actual object MoshiBench {
     private val json = Json {

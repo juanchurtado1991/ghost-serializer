@@ -3,6 +3,8 @@ package com.ghost.serialization.spring
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
+import kotlin.reflect.KClass
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractDecoder
@@ -12,7 +14,7 @@ import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import kotlin.reflect.KClass
+
 
 private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 
@@ -20,7 +22,7 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
  * Reactive Decoder for Ghost Serialization.
  *
  * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
- * to the pooled [com.ghost.serialization.parser.GhostJsonReader], avoiding
+ * to the pooled [com.ghost.serialization.parser.streaming.GhostJsonReader], avoiding
  * intermediate Okio/InputStream wrappers entirely.
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(
@@ -129,6 +131,11 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
                 ?: throw IllegalArgumentException(
                     "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
                 )
+            if (serializer.isProto) {
+                return ghostProtoInternalUseFlatReader(bytes) { reader ->
+                    serializer.deserialize(reader)
+                }
+            }
             Ghost.deserialize(serializer, bytes)
         } catch (e: Exception) {
             throw GhostJsonException(

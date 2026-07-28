@@ -46,7 +46,7 @@ private const val CardElevationHovered = 10f
 private const val CardElevationIdleInteractive = 4f
 private const val CardAnimationDurationMs = 140
 
-/** A card with a subtle hover/press lift — used across every tab so the whole lab feels alive. */
+/** Card with subtle hover and press elevation, shared across all playground tabs. */
 @Composable
 internal fun Card(
     title: String,

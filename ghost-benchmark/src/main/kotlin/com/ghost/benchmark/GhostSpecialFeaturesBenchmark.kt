@@ -12,23 +12,24 @@ import com.ghost.serialization.integration.model.SmartHome
 import com.ghost.serialization.integration.model.SseEventEnvelopeSerializer
 import com.ghost.serialization.integration.model.TagsProbe
 import com.ghost.serialization.types.decodeAs
-import com.ghost.protobuf.wkt.ProtoDuration
-import com.ghost.protobuf.wkt.ProtoTimestamp
-import com.ghost.protobuf.wkt.ProtoStruct
-import com.ghost.protobuf.wkt.ProtoStructSerializer
-import com.ghost.protobuf.wkt.ProtoAny
-import com.ghost.protobuf.wkt.ProtoBytesValue
-import com.ghost.protobuf.wkt.ProtoValue
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
+import com.ghost.serialization.proto.wkt.ProtoStruct
+import com.ghost.serialization.proto.wkt.ProtoStructSerializer
+import com.ghost.serialization.proto.wkt.ProtoAny
+import com.ghost.serialization.proto.wkt.ProtoBytesValue
+import com.ghost.serialization.proto.wkt.ProtoValue
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
  * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
  *
- * These are measured independently because they cannot be compared fairly against
- * Gson, Moshi, KSer, or Jackson — they simply don't support these capabilities.
+ * Covers polymorphism, structural flattening, resilience, custom decoders, opaque [com.ghost.serialization.types.RawJson]
+ * envelopes, and protobuf well-known types. These workloads are measured independently because
+ * Moshi, KotlinX Serialization, and Jackson do not expose comparable capabilities.
  *
- * Runs with the same ThreadMXBean methodology as the main benchmark.
+ * Uses the same [ThreadMXBean] allocation methodology as the main synthetic harness.
  */
 object GhostSpecialFeaturesBenchmark {
 
@@ -66,6 +67,7 @@ object GhostSpecialFeaturesBenchmark {
     private const val JSON_SSE_DEVICE_EVENT =
         """{"eventType":"DEVICE_EVENT","eventTime":42,"deviceEvent":{"deviceId":"abc"}}"""
 
+    /** Runs every exclusive-capability benchmark and prints a summary table. */
     fun run() {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {
@@ -221,7 +223,7 @@ object GhostSpecialFeaturesBenchmark {
             threadBean,
             label = "Protobuf — Deserialize ProtoBytesValue",
             jsonSamples = listOf(jsonBytes1)
-        ) { json -> com.ghost.protobuf.GhostProtobuf.deserialize<ProtoBytesValue>(json) }
+        ) { json -> com.ghost.serialization.proto.GhostProto.deserialize<ProtoBytesValue>(json) }
 
         val bytesVal1 = ProtoBytesValue("abcd".encodeToByteArray())
         benchmarkFeature(

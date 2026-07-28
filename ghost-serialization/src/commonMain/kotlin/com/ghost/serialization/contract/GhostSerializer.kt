@@ -3,15 +3,16 @@ package com.ghost.serialization.contract
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 import com.ghost.serialization.ghostInternalEncodeWithWriter
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.withPreparedUtf8Json
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import okio.BufferedSink
 import okio.BufferedSource
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.withPreparedUtf8Json
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
-import com.ghost.serialization.writer.GhostJsonWriter
+
 
 /**
  * Base contract for high-performance JSON serializers.
@@ -68,7 +69,7 @@ interface GhostSerializer<T> {
 
     /**
      * Serializes [value] using the in-memory [writer] (contiguous
-     * [com.ghost.serialization.writer.FlatByteArrayWriter] under the hood).
+     * [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] under the hood).
      * Used by `Ghost.encodeToBytes` (and sink drain / discard) to bypass Okio
      * segment overhead on the synchronous in-memory byte encode path.
      */
@@ -76,7 +77,7 @@ interface GhostSerializer<T> {
 
     /**
      * Serializes [value] using the in-memory text [writer] (contiguous
-     * [com.ghost.serialization.writer.FlatCharArrayWriter] under the hood).
+     * [com.ghost.serialization.writer.strings.FlatCharArrayWriter] under the hood).
      * Used by `Ghost.encodeToString` to write characters directly.
      */
     fun serialize(writer: GhostJsonStringWriter, value: T) {

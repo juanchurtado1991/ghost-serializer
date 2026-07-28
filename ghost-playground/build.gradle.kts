@@ -39,7 +39,6 @@ kotlin {
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.lifecycle.viewmodel.compose)
                 implementation(project(":ghost-serialization"))
-                implementation(project(":ghost-protobuf"))
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
             }
@@ -83,9 +82,9 @@ tasks.configureEach {
 }
 
 /**
- * Publish the production Wasm distribution into repo [docs/] for GitHub Pages
- * (`https://juanchurtado1991.github.io/ghost-serializer/`), preserving wiki,
- * coverage, and Ghost manuals.
+ * Publish the production Wasm distribution into the repo `docs/` directory for GitHub Pages
+ * (`https://juanchurtado1991.github.io/ghost-serializer/`), preserving wiki, coverage,
+ * and Ghost manuals.
  */
 tasks.register("publishToDocs") {
     group = "documentation"

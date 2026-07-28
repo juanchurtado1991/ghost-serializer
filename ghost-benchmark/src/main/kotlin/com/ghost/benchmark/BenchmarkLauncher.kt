@@ -14,15 +14,24 @@ import kotlin.system.exitProcess
 import okio.ByteString.Companion.encodeUtf8
 
 /**
- * CLI entry for all benchmark suites.
+ * CLI entry point for every benchmark suite.
+ *
+ * Each Gradle task launches a fresh JVM with `-Pghost.benchmark.profile=full|fast`
+ * (default `full`). Pass `-PskipTests` to skip the `:allTests` gate.
  *
  * ```
  * ./gradlew :ghost-benchmark:benchmarkTwitter -PskipTests
  * ./gradlew :ghost-benchmark:benchmarkSynthetic -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkRegression -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests   # ~1–2 min dev gate
- * ./gradlew :ghost-benchmark:run -PskipTests          # full README suite
+ * ./gradlew :ghost-benchmark:benchmarkSpecial -PskipTests
+ * ./gradlew :ghost-benchmark:benchmarkRawJson -PskipTests
+ * ./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
+ * ./gradlew :ghost-benchmark:benchmarkProto -PskipTests
+ * ./gradlew :ghost-benchmark:benchmarkRegression -PskipTests          # ~9 min gate
+ * ./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests       # ~1–2 min gate
+ * ./gradlew :ghost-benchmark:run -PskipTests                           # full README suite
  * ```
+ *
+ * Suite selection is driven by the first CLI argument; see [BenchmarkSuite].
  */
 fun main(args: Array<String>) {
     val suite = BenchmarkSuite.fromCliName(args.firstOrNull() ?: BenchmarkSuite.FULL.cliName)
@@ -39,6 +48,8 @@ fun main(args: Array<String>) {
         BenchmarkSuite.TWITTER -> runTwitterSuite(threadBean, regressionGate = true)
         BenchmarkSuite.SPECIAL -> runSpecialSuite()
         BenchmarkSuite.RAWJSON -> runRawJsonSuite()
+        BenchmarkSuite.YAML -> runYamlSuite()
+        BenchmarkSuite.PROTO -> runProtoSuite()
     }
 
     println("\n[COMPLETE] ${suite.cliName} benchmark finished.")
@@ -138,20 +149,36 @@ private fun runRawJsonSuite(): Boolean {
     return true
 }
 
-/** Pre-generated JSON payloads reused across synthetic suites. */
+private fun runYamlSuite(): Boolean = GhostYamlBenchmark.run()
+
+private fun runProtoSuite(): Boolean = GhostProtoBenchmark.run()
+
+/**
+ * Pre-generated JSON payloads reused across synthetic suites.
+ *
+ * @property smallComplex in-memory model for the smallest LIST workload (20 users).
+ * @property smallBytes UTF-8 JSON for [smallComplex].
+ * @property listMediumBytes JSON for a 200-user [com.ghost.serialization.integration.model.ComplexResponse] list.
+ * @property syncLargeBytes JSON for a 2 000-user [com.ghost.serialization.integration.model.ComplexResponse] list.
+ * @property writingComplex in-memory model for the WRITING encode workload (1 000 users).
+ * @property writingBytes pre-encoded JSON for [writingComplex]; used for encode GB/s reporting.
+ * @property stressTreeBytes deeply nested [com.ghost.serialization.integration.model.Category] JSON for stress parsing.
+ * @property failureMalformed truncated JSON used to exercise error paths.
+ * @property failureBytes UTF-8 bytes of [failureMalformed].
+ */
 internal data class BenchmarkPayloads(
     val smallComplex: ComplexResponse,
     val smallBytes: okio.ByteString,
     val listMediumBytes: okio.ByteString,
     val syncLargeBytes: okio.ByteString,
     val writingComplex: ComplexResponse,
-    /** Pre-encoded size of [writingComplex] — used for encode GB/s reporting. */
     val writingBytes: okio.ByteString,
     val stressTreeBytes: okio.ByteString,
     val failureMalformed: String,
     val failureBytes: okio.ByteString,
 ) {
     companion object {
+        /** Builds every synthetic payload from generated in-memory models. */
         fun create(): BenchmarkPayloads {
             val smallComplex = generateComplexData(20)
             val smallBytes = generateNeutralJson(smallComplex).encodeUtf8()

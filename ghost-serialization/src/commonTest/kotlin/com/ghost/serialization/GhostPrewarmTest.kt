@@ -4,10 +4,11 @@ package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertTrue
+
 
 @Suppress("UNCHECKED_CAST")
 class GhostPrewarmTest {
@@ -18,13 +19,13 @@ class GhostPrewarmTest {
         override val typeName: String = "MockUser"
         var warmupCalled = false
         override fun serialize(
-            writer: com.ghost.serialization.writer.GhostJsonWriter,
+            writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
             value: MockUser
         ) {
         }
 
         override fun serialize(
-            writer: com.ghost.serialization.writer.GhostJsonFlatWriter,
+            writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
             value: MockUser
         ) {
         }

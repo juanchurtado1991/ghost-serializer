@@ -6,9 +6,7 @@ import com.ghost.serialization.integration.model.NestedDeviceStub
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/**
- * End-to-end sealed dispatch when nested JSON precedes the discriminator key.
- */
+/** Sealed dispatch when nested JSON precedes the discriminator key. */
 class GhostDiscriminatorAfterNestedIntegrationTest {
 
     @Test

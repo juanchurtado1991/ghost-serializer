@@ -5,8 +5,21 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
+/**
+ * Gradle plugin that wires Ghost Serialization into Android, JVM, and Kotlin Multiplatform projects.
+ *
+ * Apply with plugin id `com.ghostserializer.ghost`. The plugin:
+ * - Adds `ghost-compiler` to KSP when the KSP plugin is present
+ * - Adds `ghost-serialization` and `ghost-api` to the appropriate source set or configuration
+ * - Optionally adds `ghost-ktor` or `ghost-retrofit` when matching network libraries are detected
+ *
+ * Configure behavior through the [GhostExtension] `ghost` block.
+ */
 class GhostPlugin : Plugin<Project> {
 
+    /**
+     * Applies Ghost Serialization dependencies and KSP wiring to [project].
+     */
     override fun apply(project: Project) {
         val extension = createExtension(project)
         val ghostVersion = extension.version
@@ -47,12 +60,14 @@ class GhostPlugin : Plugin<Project> {
             }
         }
 
-        project.plugins.withId(PLUGIN_KSP) { configureKspDependencies() }
+        project.plugins.withId(PLUGIN_KSP) {
+            configureKspDependencies()
+        }
         project.plugins.withId(PLUGIN_KMP) {
             setupKmp(project, ghostVersion)
             configureKspDependencies()
         }
-        
+
         var coreApplied = false
         listOf(PLUGIN_ANDROID_APP, PLUGIN_ANDROID_LIB, PLUGIN_JVM).forEach { pluginId ->
             project.plugins.withId(pluginId) {
@@ -65,8 +80,6 @@ class GhostPlugin : Plugin<Project> {
         }
 
         // 2. Network Adapters (Safe afterEvaluate)
-        // We use afterEvaluate to perform the check ONCE after all dependencies are declared,
-        // avoiding the circularity of providers and the variant resolution issues of configurations.all.
         project.afterEvaluate {
             val version = ghostVersion.get()
             if (extension.autoInjectKtor.get() && hasKtorDependency(project)) {
@@ -75,9 +88,6 @@ class GhostPlugin : Plugin<Project> {
             if (extension.autoInjectRetrofit.get() && hasRetrofitDependency(project)) {
                 injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_RETROFIT:$version")
             }
-            if (extension.autoInjectProtobuf.get() && hasProtobufDependency(project)) {
-                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_PROTOBUF:$version")
-            }
         }
     }
 
@@ -85,7 +95,6 @@ class GhostPlugin : Plugin<Project> {
         return project.extensions.create(EXTENSION_NAME, GhostExtension::class.java).apply {
             autoInjectKtor.convention(true)
             autoInjectRetrofit.convention(true)
-            autoInjectProtobuf.convention(true)
             version.convention(DEFAULT_VERSION)
         }
     }
@@ -93,7 +102,7 @@ class GhostPlugin : Plugin<Project> {
     private fun setupKmp(project: Project, version: Provider<String>) {
         val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
         val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
-        
+
         project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, runtimeDep)
         project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, apiDep)
     }
@@ -114,7 +123,7 @@ class GhostPlugin : Plugin<Project> {
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_KTOR &&
-                        it.name.startsWith(PREFIX_KTOR_CLIENT)
+                    it.name.startsWith(PREFIX_KTOR_CLIENT)
             } ?: false
         }
     }
@@ -124,17 +133,7 @@ class GhostPlugin : Plugin<Project> {
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_RETROFIT &&
-                        it.name == NAME_RETROFIT
-            } ?: false
-        }
-    }
-
-    private fun hasProtobufDependency(project: Project): Boolean {
-        if (project.plugins.hasPlugin(PLUGIN_PROTOBUF)) return true
-        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
-            val config = project.configurations.findByName(name)
-            config?.dependencies?.any {
-                it.group == GROUP_PROTOBUF
+                    it.name == NAME_RETROFIT
             } ?: false
         }
     }
@@ -162,7 +161,6 @@ class GhostPlugin : Plugin<Project> {
         private const val PLUGIN_ANDROID_APP = "com.android.application"
         private const val PLUGIN_ANDROID_LIB = "com.android.library"
         private const val PLUGIN_JVM = "org.jetbrains.kotlin.jvm"
-        private const val PLUGIN_PROTOBUF = "com.google.protobuf"
 
         private const val GROUP_ID = "com.ghostserializer"
         private const val ARTIFACT_COMPILER = "ghost-compiler"
@@ -170,7 +168,6 @@ class GhostPlugin : Plugin<Project> {
         private const val ARTIFACT_API = "ghost-api"
         private const val ARTIFACT_KTOR = "ghost-ktor"
         private const val ARTIFACT_RETROFIT = "ghost-retrofit"
-        private const val ARTIFACT_PROTOBUF = "ghost-protobuf"
 
         private const val CONFIG_COMMON_MAIN_IMPL = "commonMainImplementation"
         private const val CONFIG_IMPL = "implementation"
@@ -184,6 +181,5 @@ class GhostPlugin : Plugin<Project> {
         private const val PREFIX_KTOR_CLIENT = "ktor-client"
         private const val GROUP_RETROFIT = "com.squareup.retrofit2"
         private const val NAME_RETROFIT = "retrofit"
-        private const val GROUP_PROTOBUF = "com.google.protobuf"
     }
 }

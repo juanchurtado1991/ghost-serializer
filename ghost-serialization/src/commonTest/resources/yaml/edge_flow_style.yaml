@@ -1,0 +1,57 @@
+# Edge case: Flow style mappings and sequences
+# Covers: Group C - flow mappings {}, flow sequences [], nested flow
+
+# Simple flow mapping
+simple_flow_map: {name: Alice, age: 30, active: true}
+
+# Simple flow sequence
+simple_flow_seq: [one, two, three, four, five]
+
+# Flow sequence of integers
+int_sequence: [1, 2, 3, 4, 5, 100, 999]
+
+# Flow sequence of mixed types
+mixed_seq: [hello, 42, true, 3.14, null]
+
+# Nested flow mapping
+nested_flow: {user: {name: Bob, role: admin}, config: {timeout: 30, retry: 3}}
+
+# Flow mapping inside block mapping
+server:
+  host: localhost
+  port: 8080
+  options: {ssl: false, keepAlive: true, maxConnections: 100}
+
+# Flow sequences inside block mapping
+allowed_methods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+allowed_origins:
+  - https://app.example.com
+  - https://admin.example.com
+
+# Flow mapping inside sequence
+users:
+  - {id: 1, name: Alice, role: admin}
+  - {id: 2, name: Bob, role: user}
+  - {id: 3, name: Carol, role: viewer}
+
+# Deeply nested flow
+matrix:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+
+# Flow with quoted strings
+quoted_flow: {message: "Hello, World!", path: '/usr/local/bin', regex: '^[a-z]+$'}
+
+# Empty flow collections
+empty_map: {}
+empty_seq: []
+
+# Flow with null values
+nullable_flow: {name: Alice, email: null, phone: null, age: 28}
+
+# Complex nested flow
+complex:
+  metadata: {created: "2024-01-15", version: 3, tags: [yaml, ghost, kotlin]}
+  config:
+    endpoints: [{path: /health, method: GET, auth: false}, {path: /users, method: POST, auth: true}]

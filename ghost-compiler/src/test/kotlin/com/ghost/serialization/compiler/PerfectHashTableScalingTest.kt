@@ -1,17 +1,25 @@
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.JsonReaderOptions
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.selectString
-import org.junit.jupiter.api.Test
+import com.ghost.serialization.compiler.hash.PerfectHashConfig
+import com.ghost.serialization.compiler.hash.PerfectHashFinder
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.selectString
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
+
 
 /**
  * Verifies that PerfectHashFinder scales the dispatch table correctly (128→256→512→1024→2048)

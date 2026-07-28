@@ -44,7 +44,7 @@ class FeatureCatalogTest {
         }
     }
 
-    /** The 4 annotation-focused presets are the ones the Studio dropdown is meant to showcase. */
+    /** The four annotation-focused presets exposed in the Studio dropdown. */
     @Test
     fun coreAnnotationLabsHaveAtLeastFiveVariants() {
         val coreLabIds = setOf("ghostSerialization", "resilient", "flatten", "fallback")
@@ -53,7 +53,7 @@ class FeatureCatalogTest {
         }
     }
 
-    /** Every Studio preset variant must actually run — this is real KSP-generated code now, not a text sketch. */
+    /** Every Studio preset variant executes successfully against KSP-generated serializers. */
     @Test
     fun everyFeatureLabVariantRunsWithoutThrowing() {
         FeatureCatalog.labs.forEach { lab ->

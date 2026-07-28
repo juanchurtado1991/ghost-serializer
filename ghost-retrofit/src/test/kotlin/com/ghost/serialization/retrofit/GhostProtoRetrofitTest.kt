@@ -20,6 +20,9 @@ interface MockProtoApiService {
     @GET("/event")
     suspend fun getEvent(): ProtoDeviceEvent
 
+    @GET("/events")
+    suspend fun getEvents(): List<ProtoDeviceEvent>
+
     @POST("/event")
     suspend fun createEvent(@Body event: ProtoDeviceEvent): ProtoDeviceEvent
 }
@@ -92,5 +95,18 @@ class GhostProtoRetrofitTest {
             """{"deviceId":"123456789012345","label":"sensor-3"}""",
             request.body.readUtf8()
         )
+    }
+
+    @Test
+    fun `deserializes List body via parameterized type`() = runTest {
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""[{"deviceId":"1","label":"a"},{"deviceId":"2","label":"b"}]""")
+        )
+
+        val events = apiService.getEvents()
+        assertEquals(2, events.size)
+        assertEquals(ProtoDeviceEvent(1L, "a"), events[0])
     }
 }

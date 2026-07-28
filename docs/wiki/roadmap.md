@@ -13,7 +13,7 @@ Track progress in [GitHub Issues](https://github.com/juanchurtado1991/ghost-seri
 ## Shipped in 1.3.0 (baseline)
 
 - Kotlin Multiplatform: Android, iOS, JVM, **wasmJs**
-- Framework adapters: Ktor, Retrofit, Spring Boot, Proto3 JSON
+- Framework adapters: Ktor, Retrofit, Spring Boot; **YAML** + Proto3 JSON in unified runtime
 - Maven Central, reproducible benchmarks, [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/), wiki docs
 - `textChannel = true` by default; CI regression gates for benchmarks
 
@@ -73,7 +73,7 @@ Example targets (to add at the top of `README.md` once wired):
 
 | Area | Work | Status |
 |:---|:---|:---:|
-| **Adapter gaps** | Retrofit/Ktor proto converters: `List<T>` / `Map` body unwrapping (matches [known proto gaps](usage-protobuf.md#7-known-gaps-not-yet-implemented)) | Planned |
+| **Adapter gaps** | Retrofit/Ktor proto/YAML converters: `List<T>` / `Map` body unwrapping | Shipped in 1.3.0 |
 | **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)) | Planned |
 | **Regression visibility** | Optional CI artifact or docs page for benchmark regression JSON (Twitter + synthetic gates) | Planned |
 | **Fuzz / malformed JSON** | Extend stress-suite coverage beyond deep nesting and single malformed payloads | Planned |
@@ -84,6 +84,20 @@ Example targets (to add at the top of `README.md` once wired):
 - README shows **CI** and **Coverage** badges above the fold.
 - No module in `ciTestJvmModules` without a clear owner and at least smoke-level tests for public API.
 - Coverage report on Pages updates automatically on every `main` push (already in CI; badge makes it discoverable).
+
+---
+
+## 3. Format & adapter gaps
+
+Items intentionally deferred (parity across YAML and Proto3 JSON adapters):
+
+| Gap | Notes | Status |
+|:---|:---|:---:|
+| **`Set<T>` HTTP bodies** | Top-level `Set<T>` request/response unwrapping in **Retrofit, Ktor, and Spring Boot** (MVC + WebFlux) for proto **and** YAML codecs — same gap as JSON adapters that only unwrap `List`/`Map` generics. `List<T>` and `Map<String, V>` are supported when element/value serializers are registered. | Planned |
+| **Binary protobuf wire** | Varint-encoded gRPC/protobuf binary — Ghost implements proto3 **JSON** mapping only (plus YAML documents for config/API). | Planned |
+| **JSON-only structural features on YAML** | `@GhostResilient`, `@GhostFlatten`, sealed/`@GhostFallback`, `@GhostDecoder`/`@GhostEncoder` — compile-time blocked on `@GhostYamlSerialization`; no runtime fallback. | By design |
+
+See also [YAML usage §7](usage-yaml.md#7-known-gaps-not-yet-implemented) and [Protobuf usage §8](usage-protobuf.md#8-known-gaps-not-yet-implemented).
 
 ---
 

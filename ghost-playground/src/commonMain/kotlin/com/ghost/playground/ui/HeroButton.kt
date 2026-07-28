@@ -39,7 +39,7 @@ private val HeroElevationHovered = 14.dp
 private val HeroElevationIdle = 8.dp
 private val HeroCornerRadius = 16.dp
 
-/** Big primary call-to-action — gradient fill, used for the marquee actions (run pipeline, start speed test). */
+/** Primary call-to-action button with gradient fill, used for run-pipeline and start-speed-test actions. */
 @Composable
 internal fun HeroButton(
     label: String,

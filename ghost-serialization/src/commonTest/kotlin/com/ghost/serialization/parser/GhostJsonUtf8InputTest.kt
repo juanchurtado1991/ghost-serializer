@@ -1,6 +1,9 @@
 @file:OptIn(InternalGhostApi::class)
 
-package com.ghost.serialization.parser
+package com.ghost.serialization.parser.common
+
+
+
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException

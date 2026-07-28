@@ -35,6 +35,7 @@ dependencies {
     // Need this to access Kotlin Multiplatform and Android Gradle Plugin APIs in the plugin
     compileOnly(libs.kotlin.gradle.plugin)
     compileOnly("com.android.tools.build:gradle:${libs.versions.agp.get()}")
+    compileOnly("com.google.devtools.ksp:symbol-processing-gradle-plugin:${libs.versions.ksp.get()}")
     
     testImplementation(gradleTestKit())
     testImplementation(libs.kotlin.test)

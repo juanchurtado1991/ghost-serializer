@@ -2,21 +2,22 @@
 
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
+
 
 /**
- * Per-model `textChannel` on `@GhostSerialization` (default **true** since it defends against a
- * silent, expensive fallback — see [com.ghost.serialization.annotations.GhostSerialization]'s
- * KDoc) with transitive propagation and explicit opt-out.
+ * Per-model `textChannel` on `@GhostSerialization` (defaults to enabled to avoid silent,
+ * expensive string-channel fallback) with transitive propagation and explicit opt-out.
  */
 class GhostTextChannelPerModelKspTest {
 

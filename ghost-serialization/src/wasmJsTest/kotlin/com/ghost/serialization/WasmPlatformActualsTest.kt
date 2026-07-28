@@ -2,12 +2,12 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostHeuristics
-import com.ghost.serialization.parser.GhostJsonConstants
-import com.ghost.serialization.parser.createByteArraySource
-import com.ghost.serialization.parser.ghostReadLong8
+import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonConstants
+import com.ghost.serialization.parser.common.createByteArraySource
+import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import com.ghost.serialization.util.isJvm
-import com.ghost.serialization.writer.copyRangeToCharArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

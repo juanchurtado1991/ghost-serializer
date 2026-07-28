@@ -18,7 +18,8 @@ class GhostRequestBodyAdvice : RequestBodyAdvice {
         targetType: Type,
         converterType: Class<out HttpMessageConverter<*>>
     ): Boolean {
-        return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType)
+        return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType) ||
+            GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)
     }
 
     override fun beforeBodyRead(

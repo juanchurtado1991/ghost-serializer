@@ -1,0 +1,1770 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlFlatReader</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlFlatReader (com.ghost.serialization.parser.yaml)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlFlatReader</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.3%
+  </span>
+  <span class="absValue">
+    (64/85)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.6%
+  </span>
+  <span class="absValue">
+    (483/772)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.2%
+  </span>
+  <span class="absValue">
+    (689/893)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    74.7%
+  </span>
+  <span class="absValue">
+    (3304/4424)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostYamlFlatReader$ChompStyle</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">GhostYamlFlatReader$StateFrame</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (27/27)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75.9%
+  </span>
+  <span class="absValue">
+    (66/87)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.6%
+  </span>
+  <span class="absValue">
+    (483/772)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.3%
+  </span>
+  <span class="absValue">
+    (696/900)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3355/4475)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
+&nbsp;
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
+&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;import com.ghost.serialization.parser.streaming.readList
+&nbsp;import com.ghost.serialization.parser.streaming.readSet
+&nbsp;import com.ghost.serialization.parser.strings.readList
+&nbsp;import com.ghost.serialization.parser.strings.readSet
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * High-performance YAML reader operating on a [ByteArray] with minimal intermediate allocations.
+&nbsp; *
+&nbsp; * ## Design
+&nbsp; * - Compare bytes directly; avoid `.toChar()` in performance-sensitive paths.
+&nbsp; * - All control bytes are defined in [com.ghost.serialization.yaml.GhostYamlConstants].
+&nbsp; * - Validations use bitwise operations for digits, whitespace, and alphabetic characters.
+&nbsp; * - Field matching operates on raw bytes; string decoding is deferred until final value extraction.
+&nbsp; * - Extension hooks for block scalars, flow style, tags, and anchors are wired at construction time.
+&nbsp; *
+&nbsp; * @param rawData The full YAML document as a UTF-8 [ByteArray].
+&nbsp; */
+<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+<b class="fc">&nbsp;open class GhostYamlFlatReader(var rawData: ByteArray) {</b>
+&nbsp;
+&nbsp;    /** Current read position in [rawData]. */
+<b class="fc">&nbsp;    var position: Int = 0</b>
+&nbsp;
+&nbsp;    /** Exclusive upper bound — parse only up to this index. */
+<b class="fc">&nbsp;    var limit: Int = rawData.size</b>
+&nbsp;
+&nbsp;    /** Current indentation column (0-based). Updated on every line. */
+<b class="fc">&nbsp;    internal var currentIndent: Int = 0</b>
+&nbsp;
+&nbsp;    /** Depth counter — guards against stack overflow on extreme nesting. */
+<b class="nc">&nbsp;    internal var depth: Int = 0</b>
+&nbsp;
+&nbsp;    /** Table of defined anchors for the current document. */
+<b class="fc">&nbsp;    internal val anchorTable = HashMap&lt;String, Any?&gt;()</b>
+&nbsp;
+&nbsp;    /** Table of defined tag directives for the current document. */
+<b class="fc">&nbsp;    internal val tagDirectives = HashMap&lt;String, String&gt;()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resets the reader&#39;s state to process a new byte payload.
+&nbsp;     */
+&nbsp;    fun reset(newData: ByteArray) {
+<b class="fc">&nbsp;        this.rawData = newData</b>
+<b class="fc">&nbsp;        this.position = 0</b>
+<b class="fc">&nbsp;        this.limit = newData.size</b>
+<b class="fc">&nbsp;        this.currentIndent = 0</b>
+<b class="fc">&nbsp;        this.depth = 0</b>
+<b class="fc">&nbsp;        this.anchorTable.clear()</b>
+<b class="fc">&nbsp;        this.tagDirectives.clear()</b>
+<b class="fc">&nbsp;        this.rootParsed = false</b>
+<b class="fc">&nbsp;        this.rootObject = null</b>
+<b class="fc">&nbsp;        this.traversalStack.clear()</b>
+<b class="fc">&nbsp;        this.currentMap = null</b>
+<b class="fc">&nbsp;        this.mapIterator = null</b>
+<b class="fc">&nbsp;        this.currentEntry = null</b>
+<b class="fc">&nbsp;        this.currentList = null</b>
+<b class="fc">&nbsp;        this.listIterator = null</b>
+<b class="fc">&nbsp;        this.nextValue = null</b>
+<b class="fc">&nbsp;        this.strictMode = false</b>
+<b class="fc">&nbsp;        this.coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        this.coerceBooleans = false</b>
+<b class="fc">&nbsp;        this.maxDepth = C.MAX_DEPTH</b>
+<b class="fc">&nbsp;        this.maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Public API ─────────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads a single YAML document from the current position.
+&nbsp;     * Returns the parsed value: Map, List, String, Long, Double, Boolean, or null.
+&nbsp;     */
+&nbsp;    fun readDocument(): Any? {
+<b class="fc">&nbsp;        anchorTable.clear()</b>
+<b class="fc">&nbsp;        tagDirectives.clear()</b>
+<b class="fc">&nbsp;        skipDirectivesAndDocumentStart()</b>
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        if (position &gt;= limit) return emptyMap&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;        return readValue(indent = C.INDENT_UNSET, inFlow = false)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads all YAML documents in the source (separated by `---`).
+&nbsp;     */
+&nbsp;    fun readAllDocuments(): List&lt;Any?&gt; {
+<b class="fc">&nbsp;        val results = mutableListOf&lt;Any?&gt;()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            anchorTable.clear()</b>
+<b class="fc">&nbsp;            tagDirectives.clear()</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;            skipDocumentStart()</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;            results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))</b>
+<b class="fc">&nbsp;            skipDocumentEnd()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return results</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads every YAML document and deserializes each with [deserializeDocument].
+&nbsp;     * Resets traversal state between documents so generated `GhostYamlSerializer` paths work.
+&nbsp;     */
+&nbsp;    fun &lt;T&gt; readAllDocuments(deserializeDocument: (GhostYamlFlatReader) -&gt; T): List&lt;T&gt; {
+<b class="fc">&nbsp;        val results = mutableListOf&lt;T&gt;()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            anchorTable.clear()</b>
+<b class="fc">&nbsp;            tagDirectives.clear()</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;            skipDocumentStart()</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;            prepareRootForCurrentDocument()</b>
+<b class="fc">&nbsp;            results.add(deserializeDocument(this))</b>
+<b class="fc">&nbsp;            clearAfterDocument()</b>
+<b class="fc">&nbsp;            skipDocumentEnd()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return results</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Core state machine ─────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads the next YAML value at the current position.
+&nbsp;     *
+&nbsp;     * @param indent The indentation level of the enclosing context (INDENT_UNSET for root).
+&nbsp;     * @param inFlow Whether we are inside a flow collection `{...}` or `[...]`.
+&nbsp;     */
+&nbsp;    internal fun readValue(
+&nbsp;        indent: Int,
+&nbsp;        inFlow: Boolean,
+<b class="fc">&nbsp;        expectedTag: Int = GhostYamlTags.TAG_NONE</b>
+&nbsp;    ): Any? {
+<b class="fc">&nbsp;        skipInlineWhitespace()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val currentByte = rawData[position]</b>
+<b class="fc">&nbsp;        return when (currentByte) {</b>
+<b class="fc">&nbsp;            C.PIPE_BYTE, C.GT_BYTE -&gt; readBlockScalar(currentByte)           // block scalar</b>
+<b class="fc">&nbsp;            C.LEFT_BRACE_BYTE -&gt; readFlowMapping()            // flow mapping</b>
+<b class="fc">&nbsp;            C.LEFT_BRACKET_BYTE -&gt; readFlowSequence()           // flow sequence</b>
+<b class="fc">&nbsp;            C.EXCLAMATION_BYTE -&gt; readTaggedValue(indent)      // tagged value</b>
+<b class="fc">&nbsp;            C.AMPERSAND_BYTE -&gt; readAnchoredValue(indent, inFlow)    // anchor definition</b>
+<b class="fc">&nbsp;            C.ASTERISK_BYTE -&gt; readAlias()                  // alias reference</b>
+<b class="fc">&nbsp;            C.DOUBLE_QUOTE_BYTE -&gt; readDoubleQuotedString()</b>
+<b class="fc">&nbsp;            C.SINGLE_QUOTE_BYTE -&gt; readSingleQuotedString()</b>
+<b class="fc">&nbsp;            C.DASH_BYTE -&gt; {</b>
+&nbsp;                // Either: negative number &quot;-42&quot;, block sequence &quot;- item&quot;, or doc separator &quot;---&quot;
+<b class="pc">&nbsp;                val nextByte = if (position + 1 &lt; localLimit) rawData[position + 1] else 0</b>
+<b class="fc">&nbsp;                when {</b>
+<b class="pc">&nbsp;                    expectedTag != GhostYamlTags.TAG_STR &amp;&amp; isDigit(nextByte) -&gt; readNumber()</b>
+<b class="pc">&nbsp;                    nextByte == C.SPACE_BYTE || nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE -&gt;</b>
+<b class="fc">&nbsp;                        readBlockSequence(indent)</b>
+&nbsp;
+<b class="pc">&nbsp;                    isDocumentMarker() -&gt; null  // document end</b>
+<b class="fc">&nbsp;                    else -&gt; readPlainScalar(indent, inFlow, expectedTag)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; readPlainScalarOrMapping(indent, inFlow, expectedTag)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Block Mapping ──────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads a block mapping starting at the current position.
+&nbsp;     * Called when we detect &quot;key: value&quot; on a new line.
+&nbsp;     *
+&nbsp;     * @param blockIndent The indentation of the first key in this mapping.
+&nbsp;     */
+&nbsp;    internal fun readBlockMapping(blockIndent: Int): Map&lt;String, Any?&gt; {
+<b class="pc">&nbsp;        if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;Maximum nesting depth (${C.MAX_DEPTH}) exceeded&quot;)</b>
+<b class="fc">&nbsp;        depth++</b>
+<b class="fc">&nbsp;        val result = LinkedHashMap&lt;String, Any?&gt;(8)</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+&nbsp;        try {
+<b class="fc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;                if (position &gt;= localLimit) break</b>
+&nbsp;
+<b class="fc">&nbsp;                val lineIndent = currentIndent</b>
+<b class="fc">&nbsp;                if (result.isNotEmpty() &amp;&amp; lineIndent &lt; blockIndent) break  // dedented — end of this mapping</b>
+<b class="fc">&nbsp;                if (isDocumentMarker()) break</b>
+&nbsp;
+&nbsp;                // Read key
+<b class="pc">&nbsp;                val key = readKey() ?: break</b>
+<b class="fc">&nbsp;                skipInlineWhitespace()</b>
+&nbsp;
+&nbsp;                // Expect &#39;:&#39; after the key
+<b class="pc">&nbsp;                if (position &gt;= localLimit || localRawData[position] != C.COLON_BYTE) {</b>
+<b class="fc">&nbsp;                    yamlError(&quot;Expected &#39;:&#39; after key &#39;$key&#39; at position $position&quot;)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                position++ // consume &#39;:&#39;</b>
+&nbsp;
+&nbsp;                // After &#39;:&#39;, determine if value is on the same line or next line
+<b class="fc">&nbsp;                skipInlineWhitespace()</b>
+<b class="fc">&nbsp;                val value = when {</b>
+<b class="fc">&nbsp;                    position &gt;= localLimit -&gt; null</b>
+<b class="fc">&nbsp;                    localRawData[position] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                            localRawData[position] == C.CR_BYTE -&gt; {</b>
+&nbsp;                        // Value is on next line(s) — block scalar, mapping, or sequence
+<b class="fc">&nbsp;                        advanceLine()</b>
+<b class="fc">&nbsp;                        skipWhitespaceAndComments()</b>
+<b class="pc">&nbsp;                        if (position &gt;= localLimit) null</b>
+&nbsp;                        else {
+<b class="fc">&nbsp;                            val valueIndent = currentIndent</b>
+<b class="pc">&nbsp;                            if (valueIndent &lt; blockIndent) {</b>
+&nbsp;                                // No actual indented content — treat as null
+<b class="nc">&nbsp;                                null</b>
+<b class="pc">&nbsp;                            } else if (valueIndent == blockIndent &amp;&amp; !(localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry())) {</b>
+<b class="nc">&nbsp;                                null</b>
+&nbsp;                            } else {
+<b class="fc">&nbsp;                                val firstByte = localRawData[position]</b>
+<b class="fc">&nbsp;                                when {</b>
+<b class="pc">&nbsp;                                    firstByte == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry() -&gt;</b>
+<b class="fc">&nbsp;                                        readBlockSequence(valueIndent)</b>
+&nbsp;
+<b class="pc">&nbsp;                                    firstByte == C.PIPE_BYTE || firstByte == C.GT_BYTE -&gt;</b>
+<b class="nc">&nbsp;                                        readBlockScalar(firstByte)</b>
+&nbsp;
+&nbsp;                                    else -&gt;
+<b class="fc">&nbsp;                                        readBlockMapping(valueIndent)</b>
+&nbsp;                                }
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+<b class="pc">&nbsp;                    localRawData[position] == C.HASH_BYTE -&gt; {</b>
+<b class="nc">&nbsp;                        skipToEndOfLine()</b>
+<b class="nc">&nbsp;                        null</b>
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    else -&gt; readValue(blockIndent, inFlow = false)</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                if (key == C.STR_MERGE_KEY) {</b>
+<b class="fc">&nbsp;                    mergeInto(result, value)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    result[key] = value</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } finally {
+<b class="fc">&nbsp;            depth--</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Block Sequence ─────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads a block sequence (list). Each item starts with &#39;- &#39;.
+&nbsp;     *
+&nbsp;     * @param seqIndent Indentation of the &#39;-&#39; markers.
+&nbsp;     */
+&nbsp;    internal fun readBlockSequence(seqIndent: Int): List&lt;Any?&gt; {
+<b class="pc">&nbsp;        if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;Maximum nesting depth (${C.MAX_DEPTH}) exceeded&quot;)</b>
+<b class="fc">&nbsp;        depth++</b>
+<b class="fc">&nbsp;        val result = mutableListOf&lt;Any?&gt;()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+&nbsp;        try {
+<b class="fc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;                if (position &gt;= localLimit) break</b>
+&nbsp;
+<b class="fc">&nbsp;                val lineIndent = currentIndent</b>
+<b class="fc">&nbsp;                if (result.isNotEmpty() &amp;&amp; lineIndent &lt; seqIndent) break</b>
+<b class="pc">&nbsp;                if (!isBlockSequenceEntry()) break</b>
+<b class="pc">&nbsp;                if (isDocumentMarker()) break</b>
+&nbsp;
+&nbsp;                // Consume &#39;-&#39;
+<b class="fc">&nbsp;                position++ // &#39;-&#39;</b>
+&nbsp;
+&nbsp;                // Indentation of the element value is the position of &#39;-&#39; plus 2.
+<b class="fc">&nbsp;                val elementIndent = lineIndent + 2</b>
+&nbsp;
+&nbsp;                // Skip the optional inline space after &#39;-&#39;
+<b class="pc">&nbsp;                if (position &lt; localLimit &amp;&amp; localRawData[position] == C.SPACE_BYTE) {</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                val item: Any? = when {</b>
+<b class="pc">&nbsp;                    position &gt;= localLimit -&gt; null</b>
+<b class="pc">&nbsp;                    localRawData[position] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                            localRawData[position] == C.CR_BYTE -&gt; {</b>
+<b class="nc">&nbsp;                        advanceLine()</b>
+<b class="nc">&nbsp;                        skipWhitespaceAndComments()</b>
+<b class="nc">&nbsp;                        if (position &gt;= localLimit) null</b>
+&nbsp;                        else {
+<b class="nc">&nbsp;                            val itemIndent = currentIndent</b>
+<b class="nc">&nbsp;                            if (itemIndent &lt; elementIndent) null</b>
+<b class="nc">&nbsp;                            else if (isBlockSequenceEntry()) readBlockSequence(itemIndent)</b>
+<b class="nc">&nbsp;                            else readBlockMapping(itemIndent)</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+&nbsp;                    else -&gt; {
+&nbsp;                        // Value starts on the same line after &#39;- &#39;
+&nbsp;                        // Try reading plain scalar or mapping or sequence.
+&nbsp;                        // Since we are parsing the list item, we can call readValue with elementIndent.
+<b class="fc">&nbsp;                        readValue(elementIndent, inFlow = false)</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                result.add(item)</b>
+&nbsp;            }
+&nbsp;        } finally {
+<b class="fc">&nbsp;            depth--</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Plain scalar or mapping detection ─────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads either a plain scalar (string, int, float, bool, null) or detects
+&nbsp;     * that the current content is actually a block mapping key.
+&nbsp;     */
+&nbsp;    internal fun readPlainScalarOrMapping(
+&nbsp;        indent: Int,
+&nbsp;        inFlow: Boolean,
+<b class="nc">&nbsp;        expectedTag: Int = GhostYamlTags.TAG_NONE</b>
+&nbsp;    ): Any? {
+<b class="fc">&nbsp;        val startPosition = position</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+&nbsp;
+&nbsp;        // Scan forward to find &#39;:&#39; or end-of-line
+<b class="fc">&nbsp;        var scanPosition = position</b>
+<b class="fc">&nbsp;        while (scanPosition &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[scanPosition]</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                currentByte == C.COLON_BYTE -&gt; {</b>
+&nbsp;                    // &#39;:&#39; followed by space/newline/EOF → this is a mapping key
+<b class="fc">&nbsp;                    val afterColon = scanPosition + 1</b>
+<b class="fc">&nbsp;                    if (afterColon &gt;= localLimit ||</b>
+<b class="fc">&nbsp;                        localRawData[afterColon] == C.SPACE_BYTE ||</b>
+<b class="fc">&nbsp;                        localRawData[afterColon] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                        localRawData[afterColon] == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;                        localRawData[afterColon] == C.TAB_BYTE</b>
+&nbsp;                    ) {
+&nbsp;                        // Rewind and parse as block mapping
+<b class="fc">&nbsp;                        position = startPosition</b>
+<b class="fc">&nbsp;                        return readBlockMapping(indent.coerceAtLeast(0))</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    scanPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -&gt; break</b>
+<b class="fc">&nbsp;                currentByte == C.HASH_BYTE -&gt; {</b>
+&nbsp;                    // Inline comment — the plain scalar ends before &#39;#&#39;
+&nbsp;                    // (only if preceded by a space)
+<b class="pc">&nbsp;                    if (scanPosition &gt; startPosition &amp;&amp; localRawData[scanPosition - 1] == C.SPACE_BYTE) break</b>
+<b class="nc">&nbsp;                    scanPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                inFlow &amp;&amp; (currentByte == C.COMMA_BYTE || currentByte == C.RIGHT_BRACE_BYTE || currentByte == C.RIGHT_BRACKET_BYTE) -&gt; break</b>
+<b class="fc">&nbsp;                else -&gt; scanPosition++</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Extract the plain scalar bytes
+<b class="fc">&nbsp;        val endPosition = trimTrailingSpaces(startPosition, scanPosition)</b>
+<b class="fc">&nbsp;        position = scanPosition</b>
+<b class="fc">&nbsp;        return interpretScalar(localRawData, startPosition, endPosition, expectedTag)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun readPlainScalar(
+&nbsp;        indent: Int,
+&nbsp;        inFlow: Boolean,
+<b class="nc">&nbsp;        expectedTag: Int = GhostYamlTags.TAG_NONE</b>
+&nbsp;    ): Any? =
+<b class="fc">&nbsp;        readPlainScalarOrMapping(indent, inFlow, expectedTag)</b>
+&nbsp;
+&nbsp;    // ── Key reading ────────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads a mapping key. Keys are plain scalars ending at &#39;:&#39;.
+&nbsp;     * Quoted keys are supported.
+&nbsp;     */
+&nbsp;    internal fun readKey(): String? {
+<b class="fc">&nbsp;        skipInlineWhitespace()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit) return null</b>
+<b class="fc">&nbsp;        return when (localRawData[position]) {</b>
+<b class="fc">&nbsp;            C.DOUBLE_QUOTE_BYTE -&gt; readDoubleQuotedString() as String</b>
+<b class="pc">&nbsp;            C.SINGLE_QUOTE_BYTE -&gt; readSingleQuotedString() as String</b>
+&nbsp;            else -&gt; {
+<b class="fc">&nbsp;                val startPosition = position</b>
+<b class="fc">&nbsp;                while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                    val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;                    if (currentByte == C.COLON_BYTE) {</b>
+<b class="fc">&nbsp;                        val nextPosition = position + 1</b>
+<b class="fc">&nbsp;                        if (nextPosition &gt;= localLimit ||</b>
+<b class="fc">&nbsp;                            localRawData[nextPosition] == C.SPACE_BYTE ||</b>
+<b class="fc">&nbsp;                            localRawData[nextPosition] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                            localRawData[nextPosition] == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;                            localRawData[nextPosition] == C.TAB_BYTE</b>
+&nbsp;                        ) break
+&nbsp;                    }
+<b class="pc">&nbsp;                    if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) break</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val endPosition = trimTrailingSpaces(startPosition, position)</b>
+<b class="pc">&nbsp;                if (endPosition == startPosition) return null</b>
+<b class="fc">&nbsp;                localRawData.decodeToString(startPosition, endPosition)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Scalar interpretation ──────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Interprets raw bytes as the appropriate Kotlin type.
+&nbsp;     * Never allocates a String until we know it&#39;s needed.
+&nbsp;     *
+&nbsp;     * Type priority (YAML 1.2 core schema):
+&nbsp;     *   null → bool → int → float → string
+&nbsp;     */
+&nbsp;    private fun interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
+<b class="fc">&nbsp;        val length = end - start</b>
+<b class="pc">&nbsp;        if (length == 0) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val firstByte = data[start]</b>
+&nbsp;
+<b class="fc">&nbsp;        if (expectedTag == GhostYamlTags.TAG_STR) {</b>
+<b class="fc">&nbsp;            return data.decodeToString(start, end)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (expectedTag == GhostYamlTags.TAG_NULL) {</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (expectedTag == GhostYamlTags.TAG_BOOL) {</b>
+<b class="fc">&nbsp;            if (isTrueLiteral(data, start, length)) return true</b>
+<b class="pc">&nbsp;            if (isFalseLiteral(data, start, length)) return false</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (expectedTag == GhostYamlTags.TAG_INT) {</b>
+<b class="pc">&nbsp;            tryParseNumber(data, start, end)?.let {</b>
+<b class="pc">&nbsp;                if (it is Long) return it</b>
+<b class="nc">&nbsp;                if (it is Double) return it.toLong()</b>
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;            return data.decodeToString(start, end).toLongOrNull() ?: 0L</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (expectedTag == GhostYamlTags.TAG_FLOAT) {</b>
+<b class="pc">&nbsp;            tryParseNumber(data, start, end)?.let {</b>
+<b class="pc">&nbsp;                if (it is Double) return it</b>
+<b class="nc">&nbsp;                if (it is Long) return it.toDouble()</b>
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;            return data.decodeToString(start, end).toDoubleOrNull() ?: 0.0</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // null: ~, null, Null, NULL
+<b class="pc">&nbsp;        if (firstByte == C.TILDE_BYTE &amp;&amp; length == 1) return null</b>
+<b class="fc">&nbsp;        if (isNullLiteral(data, start, length)) return null</b>
+&nbsp;
+&nbsp;        // bool: true, True, TRUE, false, False, FALSE
+<b class="fc">&nbsp;        if (isTrueLiteral(data, start, length)) return true</b>
+<b class="fc">&nbsp;        if (isFalseLiteral(data, start, length)) return false</b>
+&nbsp;
+&nbsp;        // number: starts with digit, &#39;-&#39;, or &#39;.&#39; (for .inf/.nan)
+<b class="pc">&nbsp;        if (firstByte == C.DASH_BYTE || isDigit(firstByte) || firstByte == C.DOT_BYTE) {</b>
+<b class="fc">&nbsp;            tryParseNumber(data, start, end)?.let { return it }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Fallback: string
+<b class="fc">&nbsp;        return data.decodeToString(start, end)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Quoted strings ─────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    internal fun readDoubleQuotedString(): String {
+<b class="fc">&nbsp;        position++ // consume opening &#39;&quot;&#39;</b>
+<b class="fc">&nbsp;        val startPosition = position</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+&nbsp;
+<b class="fc">&nbsp;        var hasEscape = false</b>
+<b class="fc">&nbsp;        var scanPos = position</b>
+<b class="fc">&nbsp;        while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val byteVal = localRawData[scanPos]</b>
+<b class="fc">&nbsp;            if (byteVal == C.DOUBLE_QUOTE_BYTE) {</b>
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            if (byteVal == C.BACKSLASH_BYTE) {</b>
+<b class="fc">&nbsp;                hasEscape = true</b>
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            scanPos++</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (!hasEscape &amp;&amp; scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;            position = scanPos + 1 // consume string and closing quote</b>
+<b class="fc">&nbsp;            return localRawData.decodeToString(startPosition, scanPos)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var outBuffer = acquireScratchBuffer(256)</b>
+<b class="fc">&nbsp;        var outPos = 0</b>
+&nbsp;        try {
+<b class="fc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;                if (currentByte == C.DOUBLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                    position++</b>
+<b class="fc">&nbsp;                    return outBuffer.decodeToString(0, outPos)</b>
+<b class="fc">&nbsp;                } else if (currentByte == C.BACKSLASH_BYTE) {</b>
+<b class="fc">&nbsp;                    position++</b>
+<b class="pc">&nbsp;                    if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;                    val nextByte = localRawData[position]</b>
+<b class="pc">&nbsp;                    if (nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE) {</b>
+<b class="nc">&nbsp;                        if (nextByte == C.CR_BYTE &amp;&amp; position + 1 &lt; localLimit &amp;&amp; localRawData[position + 1] == C.NEWLINE_BYTE) {</b>
+<b class="nc">&nbsp;                            position++</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        position++</b>
+<b class="nc">&nbsp;                        while (position &lt; localLimit &amp;&amp; (localRawData[position] == C.SPACE_BYTE || localRawData[position] == C.TAB_BYTE)) {</b>
+<b class="nc">&nbsp;                            position++</b>
+&nbsp;                        }
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        val code = processEscapeSequence()</b>
+<b class="fc">&nbsp;                        if (code &lt;= C.UTF8_1BYTE_MAX) {</b>
+<b class="pc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                val newBuffer =</b>
+<b class="nc">&nbsp;                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                                outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                                releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                                outBuffer = newBuffer</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = code.toByte()</b>
+<b class="pc">&nbsp;                        } else if (code &lt;= C.UTF8_2BYTE_MAX) {</b>
+<b class="nc">&nbsp;                            if (outPos + 2 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                val newBuffer =</b>
+<b class="nc">&nbsp;                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                                outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                                releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                                outBuffer = newBuffer</b>
+&nbsp;                            }
+<b class="nc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                                (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()</b>
+<b class="nc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="pc">&nbsp;                        } else if (code &lt;= C.UTF8_3BYTE_MAX) {</b>
+<b class="pc">&nbsp;                            if (outPos + 3 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                val newBuffer =</b>
+<b class="nc">&nbsp;                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                                outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                                releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                                outBuffer = newBuffer</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                            if (outPos + 4 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                                val newBuffer =</b>
+<b class="nc">&nbsp;                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                                outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                                releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                                outBuffer = newBuffer</b>
+&nbsp;                            }
+<b class="nc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                                (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()</b>
+<b class="nc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    val startPos = position</b>
+<b class="fc">&nbsp;                    while (position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        localRawData[position] != C.DOUBLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                        localRawData[position] != C.BACKSLASH_BYTE</b>
+&nbsp;                    ) {
+<b class="fc">&nbsp;                        position++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val rangeLength = position - startPos</b>
+<b class="pc">&nbsp;                    if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                        var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                        while (outPos + rangeLength &gt; newSize) {</b>
+<b class="nc">&nbsp;                            newSize *= C.BUFFER_SCALE_FACTOR</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="nc">&nbsp;                        outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                        releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                        outBuffer = newBuffer</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
+<b class="fc">&nbsp;                    outPos += rangeLength</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } finally {
+<b class="fc">&nbsp;            releaseScratchBuffer(outBuffer)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        yamlError(&quot;Unterminated double-quoted string&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    internal fun readSingleQuotedString(): String {
+<b class="fc">&nbsp;        position++ // consume opening &#39;\&#39;&#39;</b>
+<b class="fc">&nbsp;        val startPosition = position</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+&nbsp;
+<b class="fc">&nbsp;        var hasEscape = false</b>
+<b class="fc">&nbsp;        var scanPos = position</b>
+<b class="fc">&nbsp;        while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val byteVal = localRawData[scanPos]</b>
+<b class="fc">&nbsp;            if (byteVal == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="pc">&nbsp;                if (scanPos + 1 &lt; localLimit &amp;&amp; localRawData[scanPos + 1] == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="nc">&nbsp;                    hasEscape = true</b>
+<b class="nc">&nbsp;                    scanPos += 2</b>
+&nbsp;                    continue
+&nbsp;                }
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            scanPos++</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (!hasEscape &amp;&amp; scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;            position = scanPos + 1 // consume string and closing quote</b>
+<b class="fc">&nbsp;            return localRawData.decodeToString(startPosition, scanPos)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var outBuffer = acquireScratchBuffer(256)</b>
+<b class="fc">&nbsp;        var outPos = 0</b>
+&nbsp;        try {
+<b class="fc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                val currentByte = localRawData[position]</b>
+<b class="pc">&nbsp;                if (currentByte == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="nc">&nbsp;                    position++</b>
+<b class="nc">&nbsp;                    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="nc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        outBuffer[outPos++] = C.SINGLE_QUOTE_BYTE</b>
+<b class="nc">&nbsp;                        position++</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        return outBuffer.decodeToString(0, outPos)</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    val startPos = position</b>
+<b class="pc">&nbsp;                    while (position &lt; localLimit &amp;&amp; localRawData[position] != C.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                        position++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val rangeLength = position - startPos</b>
+<b class="pc">&nbsp;                    if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                        var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                        while (outPos + rangeLength &gt; newSize) {</b>
+<b class="nc">&nbsp;                            newSize *= C.BUFFER_SCALE_FACTOR</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="nc">&nbsp;                        outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                        releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                        outBuffer = newBuffer</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
+<b class="fc">&nbsp;                    outPos += rangeLength</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } finally {
+<b class="fc">&nbsp;            releaseScratchBuffer(outBuffer)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        yamlError(&quot;Unterminated single-quoted string&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun processEscapeSequence(): Int {
+<b class="fc">&nbsp;        val currentByte = rawData[position++]</b>
+<b class="fc">&nbsp;        val currentByteInt = currentByte.toInt()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        return when (currentByte) {</b>
+<b class="fc">&nbsp;            C.DOUBLE_QUOTE_BYTE -&gt; currentByteInt</b>
+<b class="pc">&nbsp;            C.BACKSLASH_BYTE -&gt; currentByteInt</b>
+<b class="pc">&nbsp;            C.ESCAPE_SLASH_BYTE -&gt; currentByteInt</b>
+<b class="pc">&nbsp;            C.SPACE_BYTE -&gt; currentByteInt</b>
+<b class="pc">&nbsp;            C.TAB_BYTE -&gt; currentByteInt</b>
+<b class="pc">&nbsp;            C.LOWERCASE_B_BYTE -&gt; C.CODE_BS</b>
+<b class="pc">&nbsp;            C.LOWERCASE_F_BYTE -&gt; C.CODE_FF</b>
+<b class="fc">&nbsp;            C.LOWERCASE_N_BYTE -&gt; C.CODE_LF</b>
+<b class="pc">&nbsp;            C.LOWERCASE_R_BYTE -&gt; C.CODE_CR</b>
+<b class="fc">&nbsp;            C.LOWERCASE_T_BYTE -&gt; C.CODE_TAB</b>
+<b class="pc">&nbsp;            C.LOWERCASE_U_BYTE -&gt; {        // \uXXXX</b>
+<b class="fc">&nbsp;                if (position + 4 &gt; localLimit) yamlError(&quot;Incomplete \\u escape&quot;)</b>
+<b class="fc">&nbsp;                val hexVal = parseHex(rawData, position, 4)</b>
+<b class="fc">&nbsp;                position += 4</b>
+<b class="fc">&nbsp;                hexVal</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            C.UPPERCASE_U_BYTE -&gt; {        // \UXXXXXXXX</b>
+<b class="nc">&nbsp;                if (position + 8 &gt; localLimit) yamlError(&quot;Incomplete \\U escape&quot;)</b>
+<b class="nc">&nbsp;                val hexVal = parseHex(rawData, position, 8)</b>
+<b class="nc">&nbsp;                position += 8</b>
+<b class="nc">&nbsp;                hexVal</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            C.ZERO_BYTE -&gt; C.CODE_ZERO</b>
+<b class="nc">&nbsp;            C.LOWERCASE_A_BYTE -&gt; C.CODE_BEL</b>
+<b class="nc">&nbsp;            C.LOWERCASE_V_BYTE -&gt; C.CODE_VTAB</b>
+<b class="nc">&nbsp;            C.LOWERCASE_E_BYTE -&gt; C.CODE_ESC</b>
+<b class="nc">&nbsp;            C.UPPERCASE_N_BYTE -&gt; C.CODE_NEXT_LINE</b>
+<b class="nc">&nbsp;            C.UNDERSCORE_BYTE -&gt; C.CODE_NBSP</b>
+<b class="nc">&nbsp;            C.UPPERCASE_L_BYTE -&gt; C.CODE_LINE_SEP</b>
+<b class="nc">&nbsp;            C.UPPERCASE_P_BYTE -&gt; C.CODE_PARA_SEP</b>
+<b class="nc">&nbsp;            else -&gt; yamlError(&quot;Unknown escape: \\${currentByteInt.toChar()}&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun parseHex(data: ByteArray, start: Int, length: Int): Int {
+<b class="fc">&nbsp;        var value = 0</b>
+<b class="fc">&nbsp;        var index = 0</b>
+<b class="fc">&nbsp;        while (index &lt; length) {</b>
+<b class="fc">&nbsp;            val byteVal = data[start + index]</b>
+<b class="fc">&nbsp;            val digit = when {</b>
+<b class="pc">&nbsp;                byteVal in C.ZERO_BYTE..C.NINE_BYTE -&gt; byteVal - C.ZERO_BYTE</b>
+<b class="pc">&nbsp;                byteVal in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; byteVal - C.LOWERCASE_A_BYTE + C.HEX_RADIX_10</b>
+<b class="pc">&nbsp;                byteVal in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; byteVal - C.UPPERCASE_A_BYTE + C.HEX_RADIX_10</b>
+<b class="fc">&nbsp;                else -&gt; yamlError(&quot;Invalid hex char in escape sequence&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            value = (value shl C.HEX_SHIFT_4) or digit</b>
+<b class="fc">&nbsp;            index++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return value</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Number parsing ─────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    private fun readNumber(): Any {
+<b class="fc">&nbsp;        val startPosition = position</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="pc">&nbsp;            if (!isDigit(currentByte) &amp;&amp; currentByte != C.DASH_BYTE &amp;&amp; currentByte != C.PLUS_BYTE &amp;&amp; currentByte != C.DOT_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                currentByte != C.LOWERCASE_E_BYTE &amp;&amp; currentByte != C.UPPERCASE_E_BYTE</b>
+&nbsp;            ) break  // e, E for scientific
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        return tryParseNumber(localRawData, startPosition, position)</b>
+<b class="nc">&nbsp;            ?: localRawData.decodeToString(startPosition, position)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Scalar subsystems (block, flow, tags, anchors) ─────────────────────────
+&nbsp;
+&nbsp;    // ── Whitespace &amp; positioning helpers ──────────────────────────────────────
+&nbsp;
+&nbsp;    /** Skips spaces and tabs (inline whitespace — NOT newlines). */
+&nbsp;    internal fun skipInlineWhitespace() {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;            if (currentByte != C.SPACE_BYTE &amp;&amp; currentByte != C.TAB_BYTE) break</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Skips all whitespace (including newlines) and full-line comments.
+&nbsp;     * Updates [currentIndent] to the column of the next non-whitespace byte.
+&nbsp;     */
+&nbsp;    internal fun skipWhitespaceAndComments() {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            skipInlineWhitespace()</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                currentByte == C.NEWLINE_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                    position++</b>
+<b class="fc">&nbsp;                    currentIndent = 0</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                currentByte == C.CR_BYTE -&gt; {</b>
+<b class="nc">&nbsp;                    position++</b>
+<b class="nc">&nbsp;                    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+<b class="nc">&nbsp;                    currentIndent = 0</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                currentByte == C.HASH_BYTE -&gt; skipToEndOfLine()</b>
+&nbsp;                else -&gt; {
+&nbsp;                    break
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        recomputeCurrentIndent()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Recomputes [currentIndent] by counting leading spaces on the current line. */
+&nbsp;    private fun recomputeCurrentIndent() {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        var lineStart = position</b>
+<b class="pc">&nbsp;        while (lineStart &gt; 0 &amp;&amp; localRawData[lineStart - 1] != C.NEWLINE_BYTE &amp;&amp; localRawData[lineStart - 1] != C.CR_BYTE) {</b>
+<b class="fc">&nbsp;            lineStart--</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var spaces = 0</b>
+<b class="fc">&nbsp;        var pointer = lineStart</b>
+<b class="fc">&nbsp;        while (pointer &lt; localLimit &amp;&amp; localRawData[pointer] == C.SPACE_BYTE) {</b>
+<b class="fc">&nbsp;            spaces++; pointer++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        currentIndent = spaces</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Advances [position] to the next newline (exclusive). */
+&nbsp;    internal fun skipToEndOfLine() {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE) {</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Advances past the current newline character(s). */
+&nbsp;    internal fun advanceLine() {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE) {</b>
+<b class="nc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.CR_BYTE) position++</b>
+<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+<b class="fc">&nbsp;        currentIndent = 0</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Skips `%YAML` and `%TAG` directives at the top of a document. */
+&nbsp;    private fun skipDirectivesAndDocumentStart() {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            skipInlineWhitespace()</b>
+<b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;            when (localRawData[position]) {</b>
+<b class="fc">&nbsp;                C.PERCENT_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                    position++ // consume &#39;%&#39;</b>
+<b class="fc">&nbsp;                    val dirStart = position</b>
+<b class="pc">&nbsp;                    while (position &lt; localLimit &amp;&amp; localRawData[position] != C.SPACE_BYTE &amp;&amp; localRawData[position] != C.TAB_BYTE) {</b>
+<b class="fc">&nbsp;                        position++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val dirName = localRawData.decodeToString(dirStart, position)</b>
+<b class="fc">&nbsp;                    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;                    if (dirName == C.STR_TAG_DIRECTIVE) {</b>
+<b class="fc">&nbsp;                        val handleStart = position</b>
+<b class="pc">&nbsp;                        while (position &lt; localLimit &amp;&amp; localRawData[position] != C.SPACE_BYTE &amp;&amp; localRawData[position] != C.TAB_BYTE) {</b>
+<b class="fc">&nbsp;                            position++</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        val handle = localRawData.decodeToString(handleStart, position)</b>
+<b class="fc">&nbsp;                        skipInlineWhitespace()</b>
+<b class="fc">&nbsp;                        val prefixStart = position</b>
+<b class="pc">&nbsp;                        while (position &lt; localLimit &amp;&amp; localRawData[position] != C.SPACE_BYTE &amp;&amp; localRawData[position] != C.TAB_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                            localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE</b>
+&nbsp;                        ) {
+<b class="fc">&nbsp;                            position++</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        val prefix = localRawData.decodeToString(prefixStart, position)</b>
+<b class="fc">&nbsp;                        tagDirectives[handle] = prefix</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    skipToEndOfLine()</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                C.DASH_BYTE -&gt; if (isDocumentMarker()) {</b>
+<b class="fc">&nbsp;                    position += 3; break</b>
+&nbsp;                } else break
+&nbsp;
+<b class="fc">&nbsp;                C.NEWLINE_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                    position++; currentIndent = 0</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                C.CR_BYTE -&gt; {</b>
+<b class="nc">&nbsp;                    position++</b>
+<b class="nc">&nbsp;                    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+<b class="nc">&nbsp;                    currentIndent = 0</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                C.HASH_BYTE -&gt; skipToEndOfLine()</b>
+&nbsp;                else -&gt; break
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Skips a `---` document start marker if present. */
+&nbsp;    private fun skipDocumentStart() {
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        if (isDocumentMarker()) position += 3</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Skips a `...` document end marker if present. */
+&nbsp;    private fun skipDocumentEnd() {
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        if (position + 2 &lt; localLimit &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[position] == C.DOT_BYTE &amp;&amp;</b>
+<b class="nc">&nbsp;            localRawData[position + 1] == C.DOT_BYTE &amp;&amp;</b>
+<b class="nc">&nbsp;            localRawData[position + 2] == C.DOT_BYTE</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            position += 3</b>
+<b class="nc">&nbsp;            skipToEndOfLine()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns true if current position is at a `---` marker at column 0. */
+&nbsp;    internal fun isDocumentMarker(): Boolean {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        if (position + 2 &gt;= localLimit) return false</b>
+<b class="fc">&nbsp;        return localRawData[position] == C.DASH_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                localRawData[position + 1] == C.DASH_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                localRawData[position + 2] == C.DASH_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                (position + 3 &gt;= localLimit ||</b>
+<b class="pc">&nbsp;                        localRawData[position + 3] == C.SPACE_BYTE ||</b>
+<b class="pc">&nbsp;                        localRawData[position + 3] == C.NEWLINE_BYTE ||</b>
+<b class="nc">&nbsp;                        localRawData[position + 3] == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;                        localRawData[position + 3] == C.TAB_BYTE)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns true if current position is at the start of a block sequence entry `- `. */
+&nbsp;    internal fun isBlockSequenceEntry(): Boolean {
+<b class="fc">&nbsp;        val localLimit = limit</b>
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit || localRawData[position] != C.DASH_BYTE) return false</b>
+<b class="fc">&nbsp;        val nextPosition = position + 1</b>
+<b class="pc">&nbsp;        return nextPosition &gt;= localLimit ||</b>
+<b class="pc">&nbsp;                localRawData[nextPosition] == C.SPACE_BYTE ||</b>
+<b class="nc">&nbsp;                localRawData[nextPosition] == C.NEWLINE_BYTE ||</b>
+<b class="nc">&nbsp;                localRawData[nextPosition] == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;                localRawData[nextPosition] == C.TAB_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Trims trailing spaces between [start] and [end], returning the new end. */
+&nbsp;    internal fun trimTrailingSpaces(start: Int, end: Int): Int {
+<b class="fc">&nbsp;        val localRawData = rawData</b>
+<b class="fc">&nbsp;        var endPos = end</b>
+<b class="pc">&nbsp;        while (endPos &gt; start &amp;&amp; localRawData[endPos - 1] == C.SPACE_BYTE) endPos--</b>
+<b class="fc">&nbsp;        return endPos</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Bitwise scalar type checks ─────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** Bitwise digit check — no `.toChar()`, no range object allocation. */
+&nbsp;    internal fun isDigit(currentByte: Byte): Boolean =
+<b class="fc">&nbsp;        (currentByte - C.DIGIT_LOWER_BOUND).toUByte() &lt;= (C.DIGIT_UPPER_BOUND - C.DIGIT_LOWER_BOUND).toUByte()</b>
+&nbsp;
+&nbsp;    /** Checks if bytes[start..start+len) match &#39;null&#39;, &#39;Null&#39;, or &#39;NULL&#39;. */
+&nbsp;    private fun isNullLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+<b class="fc">&nbsp;        if (length != 4) return false</b>
+<b class="fc">&nbsp;        val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="pc">&nbsp;        return byte0 == C.LOWERCASE_N_BYTE &amp;&amp; byte1 == C.LOWERCASE_U_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_L_BYTE  // n,u,l,l</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Checks if bytes[start..start+len) match &#39;true&#39;, &#39;True&#39;, or &#39;TRUE&#39;. */
+&nbsp;    private fun isTrueLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+<b class="fc">&nbsp;        if (length != 4) return false</b>
+<b class="fc">&nbsp;        val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="pc">&nbsp;        return byte0 == C.LOWERCASE_T_BYTE &amp;&amp; byte1 == C.LOWERCASE_R_BYTE &amp;&amp; byte2 == C.LOWERCASE_U_BYTE &amp;&amp; byte3 == C.LOWERCASE_E_BYTE  // t,r,u,e</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Checks if bytes[start..start+len) match &#39;false&#39;, &#39;False&#39;, or &#39;FALSE&#39;. */
+&nbsp;    private fun isFalseLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+<b class="fc">&nbsp;        if (length != 5) return false</b>
+<b class="fc">&nbsp;        val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;        val byte4 = (data[start + 4].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="pc">&nbsp;        return byte0 == C.LOWERCASE_F_BYTE &amp;&amp; byte1 == C.LOWERCASE_A_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_S_BYTE &amp;&amp; byte4 == C.LOWERCASE_E_BYTE  // f,a,l,s,e</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Attempts to parse [data] between [start] and [end] as a [Long] or [Double].
+&nbsp;     *
+&nbsp;     * Returns `null` when the slice is not a valid number. Parsing is performed incrementally
+&nbsp;     * over bytes; callers must not decode the entire range with [String.toInt] or [String.toDouble].
+&nbsp;     */
+&nbsp;    private fun tryParseNumber(data: ByteArray, start: Int, end: Int): Any? {
+<b class="fc">&nbsp;        val length = end - start</b>
+<b class="pc">&nbsp;        if (length == 0) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        var currentPosition = start</b>
+<b class="fc">&nbsp;        var isNegative = false</b>
+&nbsp;
+<b class="fc">&nbsp;        if (data[currentPosition] == C.DASH_BYTE) {</b>
+<b class="fc">&nbsp;            isNegative = true; currentPosition++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (currentPosition &gt;= end) return null</b>
+&nbsp;
+&nbsp;        // Check for hex (0x), octal (0o), binary (0b)
+<b class="fc">&nbsp;        if (end - currentPosition &gt;= 3 &amp;&amp; data[currentPosition] == C.ZERO_BYTE) {</b>
+<b class="fc">&nbsp;            val nextByte = data[currentPosition + 1]</b>
+<b class="pc">&nbsp;            if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X</b>
+<b class="fc">&nbsp;                var value = 0L</b>
+<b class="fc">&nbsp;                var idx = currentPosition + 2</b>
+<b class="fc">&nbsp;                while (idx &lt; end) {</b>
+<b class="fc">&nbsp;                    val currentByte = data[idx]</b>
+<b class="fc">&nbsp;                    val digit = when {</b>
+<b class="pc">&nbsp;                        isDigit(currentByte) -&gt; (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="pc">&nbsp;                        currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f</b>
+<b class="pc">&nbsp;                        currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F</b>
+<b class="nc">&nbsp;                        else -&gt; return null</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    value = (value shl C.HEX_SHIFT) or digit</b>
+<b class="fc">&nbsp;                    idx++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                return if (isNegative) -value else value</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O</b>
+<b class="fc">&nbsp;                var value = 0L</b>
+<b class="fc">&nbsp;                var idx = currentPosition + 2</b>
+<b class="fc">&nbsp;                while (idx &lt; end) {</b>
+<b class="fc">&nbsp;                    val currentByte = data[idx]</b>
+<b class="pc">&nbsp;                    if (currentByte &lt; C.ZERO_BYTE || currentByte &gt; C.SEVEN_BYTE) return null // 0-7</b>
+<b class="fc">&nbsp;                    val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="fc">&nbsp;                    value = (value shl C.OCTAL_SHIFT) or digit</b>
+<b class="fc">&nbsp;                    idx++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                return if (isNegative) -value else value</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B</b>
+<b class="fc">&nbsp;                var value = 0L</b>
+<b class="fc">&nbsp;                var idx = currentPosition + 2</b>
+<b class="fc">&nbsp;                while (idx &lt; end) {</b>
+<b class="fc">&nbsp;                    val currentByte = data[idx]</b>
+<b class="pc">&nbsp;                    if (currentByte != C.ZERO_BYTE &amp;&amp; currentByte != C.ONE_BYTE) return null // 0 or 1</b>
+<b class="fc">&nbsp;                    val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="fc">&nbsp;                    value = (value shl C.BINARY_SHIFT) or digit</b>
+<b class="fc">&nbsp;                    idx++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                return if (isNegative) -value else value</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Check for .inf / .nan
+<b class="fc">&nbsp;        if (data[currentPosition] == C.DOT_BYTE) {</b>
+<b class="fc">&nbsp;            val stringRepresentation = data.decodeToString(start, end)</b>
+<b class="pc">&nbsp;            return when (stringRepresentation.lowercase()) {</b>
+<b class="fc">&nbsp;                C.STR_DOT_INF, C.STR_PLUS_DOT_INF -&gt; Double.POSITIVE_INFINITY</b>
+<b class="fc">&nbsp;                C.STR_MINUS_DOT_INF -&gt; Double.NEGATIVE_INFINITY</b>
+<b class="fc">&nbsp;                C.STR_DOT_NAN -&gt; Double.NaN</b>
+<b class="nc">&nbsp;                else -&gt; null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Parse integer part byte by byte
+<b class="fc">&nbsp;        var accumulatedLongValue = 0L</b>
+<b class="fc">&nbsp;        var hasDigit = false</b>
+<b class="fc">&nbsp;        var isFloatingPoint = false</b>
+&nbsp;
+<b class="fc">&nbsp;        while (currentPosition &lt; end) {</b>
+<b class="fc">&nbsp;            val currentByte = data[currentPosition]</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                isDigit(currentByte) -&gt; {</b>
+<b class="fc">&nbsp;                    hasDigit = true</b>
+<b class="fc">&nbsp;                    val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
+&nbsp;                    // Overflow check
+<b class="fc">&nbsp;                    if (accumulatedLongValue &gt; (Long.MAX_VALUE - digit) / 10) {</b>
+<b class="fc">&nbsp;                        isFloatingPoint = true</b>
+&nbsp;                        break
+&nbsp;                    }
+<b class="fc">&nbsp;                    accumulatedLongValue = accumulatedLongValue * 10 + digit</b>
+<b class="fc">&nbsp;                    currentPosition++</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                currentByte == C.DOT_BYTE || currentByte == C.LOWERCASE_E_BYTE || currentByte == C.UPPERCASE_E_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                    isFloatingPoint = true</b>
+&nbsp;                    break
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                else -&gt; return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (!hasDigit) return null</b>
+&nbsp;
+<b class="pc">&nbsp;        if (!isFloatingPoint &amp;&amp; currentPosition == end) {</b>
+<b class="fc">&nbsp;            return if (isNegative) -accumulatedLongValue else accumulatedLongValue</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val stringRepresentation = data.decodeToString(start, end)</b>
+<b class="fc">&nbsp;        return stringRepresentation.toDoubleOrNull()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Error handling ────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    internal fun yamlError(message: String): Nothing {
+<b class="fc">&nbsp;        throw GhostYamlException(&quot;$message (position=$position)&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // ── Chomp style enum ──────────────────────────────────────────────────────
+&nbsp;
+<b class="fc">&nbsp;    internal enum class ChompStyle { STRIP, CLIP, KEEP }</b>
+&nbsp;
+&nbsp;    // ── JSON stream-compatible cursor traversal APIs ──────────────────────────
+<b class="fc">&nbsp;    @PublishedApi</b>
+&nbsp;    internal class StateFrame(
+<b class="fc">&nbsp;        val map: Map&lt;String, Any?&gt;?,</b>
+<b class="fc">&nbsp;        val mapIterator: Iterator&lt;Map.Entry&lt;String, Any?&gt;&gt;?,</b>
+<b class="fc">&nbsp;        val entry: Map.Entry&lt;String, Any?&gt;?,</b>
+<b class="fc">&nbsp;        val list: List&lt;Any?&gt;?,</b>
+<b class="fc">&nbsp;        val listIterator: Iterator&lt;Any?&gt;?</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    private var rootParsed = false
+&nbsp;    private var rootObject: Any? = null
+&nbsp;
+&nbsp;    // Stack for object/list traversal (stores state elements)
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val traversalStack = ArrayList&lt;StateFrame&gt;()</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="nc">&nbsp;    internal var currentMap: Map&lt;String, Any?&gt;? = null</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="nc">&nbsp;    internal var mapIterator: Iterator&lt;Map.Entry&lt;String, Any?&gt;&gt;? = null</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="nc">&nbsp;    internal var currentEntry: Map.Entry&lt;String, Any?&gt;? = null</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="nc">&nbsp;    internal var currentList: List&lt;Any?&gt;? = null</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="nc">&nbsp;    internal var listIterator: Iterator&lt;Any?&gt;? = null</b>
+&nbsp;
+<b class="nc">&nbsp;    var nextValue: Any? = null</b>
+&nbsp;
+<b class="fc">&nbsp;    var strictMode: Boolean = false</b>
+<b class="nc">&nbsp;    var coerceStringsToNumbers: Boolean = false</b>
+<b class="nc">&nbsp;    var coerceBooleans: Boolean = false</b>
+<b class="fc">&nbsp;    var maxDepth: Int = C.MAX_DEPTH</b>
+<b class="fc">&nbsp;    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize</b>
+&nbsp;
+<b class="fc">&nbsp;    private val tokenEndObject = -1</b>
+<b class="fc">&nbsp;    private val tokenUnknownName = -2</b>
+&nbsp;
+&nbsp;    private fun ensureRootParsed() {
+<b class="fc">&nbsp;        if (!rootParsed) {</b>
+<b class="fc">&nbsp;            rootObject = readDocument()</b>
+<b class="fc">&nbsp;            nextValue = rootObject</b>
+<b class="fc">&nbsp;            rootParsed = true</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun prepareRootForCurrentDocument() {
+<b class="fc">&nbsp;        traversalStack.clear()</b>
+<b class="fc">&nbsp;        currentMap = null</b>
+<b class="fc">&nbsp;        mapIterator = null</b>
+<b class="fc">&nbsp;        currentEntry = null</b>
+<b class="fc">&nbsp;        currentList = null</b>
+<b class="fc">&nbsp;        listIterator = null</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="fc">&nbsp;        rootObject = readValue(indent = C.INDENT_UNSET, inFlow = false)</b>
+<b class="fc">&nbsp;        nextValue = rootObject</b>
+<b class="fc">&nbsp;        rootParsed = true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun clearAfterDocument() {
+<b class="fc">&nbsp;        traversalStack.clear()</b>
+<b class="fc">&nbsp;        currentMap = null</b>
+<b class="fc">&nbsp;        mapIterator = null</b>
+<b class="fc">&nbsp;        currentEntry = null</b>
+<b class="fc">&nbsp;        currentList = null</b>
+<b class="fc">&nbsp;        listIterator = null</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="fc">&nbsp;        rootParsed = false</b>
+<b class="fc">&nbsp;        rootObject = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun beginObject() {
+<b class="fc">&nbsp;        ensureRootParsed()</b>
+<b class="fc">&nbsp;        val map =</b>
+<b class="fc">&nbsp;            nextValue as? Map&lt;*, *&gt; ?: throw GhostYamlException(&quot;Expected Map but found $nextValue&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;        traversalStack.add(</b>
+<b class="fc">&nbsp;            StateFrame(</b>
+<b class="fc">&nbsp;                currentMap,</b>
+<b class="fc">&nbsp;                mapIterator,</b>
+<b class="fc">&nbsp;                currentEntry,</b>
+<b class="fc">&nbsp;                currentList,</b>
+<b class="fc">&nbsp;                listIterator</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;        currentMap = map as Map&lt;String, Any?&gt;</b>
+<b class="fc">&nbsp;        mapIterator = currentMap!!.entries.iterator()</b>
+<b class="fc">&nbsp;        currentEntry = null</b>
+<b class="fc">&nbsp;        currentList = null</b>
+<b class="fc">&nbsp;        listIterator = null</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun endObject() {
+<b class="pc">&nbsp;        if (traversalStack.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            val frame = traversalStack.removeAt(traversalStack.size - 1)</b>
+<b class="fc">&nbsp;            currentMap = frame.map</b>
+<b class="fc">&nbsp;            mapIterator = frame.mapIterator</b>
+<b class="fc">&nbsp;            currentEntry = frame.entry</b>
+<b class="fc">&nbsp;            currentList = frame.list</b>
+<b class="fc">&nbsp;            listIterator = frame.listIterator</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            currentMap = null</b>
+<b class="nc">&nbsp;            mapIterator = null</b>
+<b class="nc">&nbsp;            currentEntry = null</b>
+<b class="nc">&nbsp;            currentList = null</b>
+<b class="nc">&nbsp;            listIterator = null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        nextValue = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun selectNameAndConsume(options: JsonReaderOptions): Int {
+<b class="pc">&nbsp;        val iterator = mapIterator ?: return tokenEndObject</b>
+<b class="fc">&nbsp;        if (!iterator.hasNext()) {</b>
+<b class="fc">&nbsp;            return tokenEndObject</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val entry = iterator.next()</b>
+<b class="fc">&nbsp;        currentEntry = entry</b>
+<b class="fc">&nbsp;        nextValue = entry.value</b>
+&nbsp;
+<b class="fc">&nbsp;        val index = options.findOptionIndex(entry.key)</b>
+<b class="pc">&nbsp;        if (index &gt;= 0) {</b>
+<b class="fc">&nbsp;            return index</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return tokenUnknownName</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun selectString(options: JsonReaderOptions): Int {
+<b class="nc">&nbsp;        val strValue = nextString()</b>
+<b class="nc">&nbsp;        val index = options.findOptionIndex(strValue)</b>
+<b class="nc">&nbsp;        if (index &gt;= 0) {</b>
+<b class="nc">&nbsp;            return index</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return tokenEndObject</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun skipValue() {
+<b class="nc">&nbsp;        nextValue = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun isNextNullValue(): Boolean {
+<b class="fc">&nbsp;        ensureRootParsed()</b>
+<b class="fc">&nbsp;        return nextValue == null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun consumeNull() {
+<b class="fc">&nbsp;        nextValue = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reads a YAML string, or `null` when the next value is YAML null. */
+&nbsp;    fun nextStringOrNull(): String? {
+<b class="pc">&nbsp;        if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return nextString()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reads a YAML int, or `null` when the next value is YAML null. */
+&nbsp;    fun nextIntOrNull(): Int? {
+<b class="nc">&nbsp;        if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return nextInt()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reads a YAML long, or `null` when the next value is YAML null. */
+&nbsp;    open fun nextLongOrNull(): Long? {
+<b class="nc">&nbsp;        if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return nextLong()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reads a YAML boolean, or `null` when the next value is YAML null. */
+&nbsp;    fun nextBooleanOrNull(): Boolean? {
+<b class="nc">&nbsp;        if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return nextBoolean()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextInt(): Int {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="fc">&nbsp;        if (value is Number) {</b>
+<b class="fc">&nbsp;            return value.toInt()</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (value is String) {</b>
+<b class="pc">&nbsp;            if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                return value.toIntOrNull() ?: 0</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return value.toInt()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;Expected Int but found $value&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    open fun nextLong(): Long {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="pc">&nbsp;        if (value is Number) {</b>
+<b class="fc">&nbsp;            return value.toLong()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (value is String) {</b>
+<b class="nc">&nbsp;            if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                return value.toLongOrNull() ?: 0L</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return value.toLong()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;Expected Long but found $value&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    open fun nextProtoUInt64(): ULong {
+<b class="nc">&nbsp;        val previous = coerceStringsToNumbers</b>
+<b class="nc">&nbsp;        coerceStringsToNumbers = true</b>
+&nbsp;        return try {
+<b class="nc">&nbsp;            nextString().toULong()</b>
+&nbsp;        } finally {
+<b class="nc">&nbsp;            coerceStringsToNumbers = previous</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Plain YAML scalar `ULong` — accepts numeric or string scalars (full range via decimal string). */
+&nbsp;    open fun nextULong(): ULong {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="fc">&nbsp;        when (value) {</b>
+<b class="fc">&nbsp;            is Number -&gt; return value.toLong().toULong()</b>
+<b class="pc">&nbsp;            is String -&gt; {</b>
+<b class="pc">&nbsp;                if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                    return value.toULongOrNull() ?: 0uL</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return value.toULong()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;Expected ULong but found $value&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    open fun nextULongOrNull(): ULong? {
+<b class="pc">&nbsp;        if (isNextNullValue()) {</b>
+<b class="fc">&nbsp;            consumeNull()</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return nextULong()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextDouble(): Double {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="pc">&nbsp;        if (value is Number) {</b>
+<b class="fc">&nbsp;            return value.toDouble()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (value is String) {</b>
+<b class="nc">&nbsp;            if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                return value.toDoubleOrNull() ?: 0.0</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return value.toDouble()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;Expected Double but found $value&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextFloat(): Float {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="pc">&nbsp;        if (value is Number) {</b>
+<b class="fc">&nbsp;            return value.toFloat()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (value is String) {</b>
+<b class="nc">&nbsp;            if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                return value.toFloatOrNull() ?: 0.0f</b>
+&nbsp;            }
+<b class="nc">&nbsp;            return value.toFloat()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;Expected Float but found $value&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextBoolean(): Boolean {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="fc">&nbsp;        if (value is Boolean) {</b>
+<b class="fc">&nbsp;            return value</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (value is String) {</b>
+<b class="pc">&nbsp;            if (coerceBooleans) {</b>
+<b class="nc">&nbsp;                return value.lowercase() == C.STR_TRUE</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return value.toBoolean()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;Expected Boolean but found $value&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
+&nbsp;    fun nextChar(): Char {
+<b class="nc">&nbsp;        val text = nextString()</b>
+<b class="nc">&nbsp;        if (text.length != 1) {</b>
+<b class="nc">&nbsp;            throw GhostYamlException(&quot;Expected single-character string but found length ${text.length}&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return text[0]</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextString(): String {
+<b class="fc">&nbsp;        val value = nextValue</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+<b class="pc">&nbsp;        if (value == null) return &quot;&quot;</b>
+<b class="fc">&nbsp;        return value.toString()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun beginArray() {
+<b class="fc">&nbsp;        ensureRootParsed()</b>
+<b class="pc">&nbsp;        val list = nextValue as? List&lt;*&gt;</b>
+<b class="nc">&nbsp;            ?: throw GhostYamlException(&quot;Expected List but found $nextValue&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;        traversalStack.add(</b>
+<b class="fc">&nbsp;            StateFrame(</b>
+<b class="fc">&nbsp;                currentMap,</b>
+<b class="fc">&nbsp;                mapIterator,</b>
+<b class="fc">&nbsp;                currentEntry,</b>
+<b class="fc">&nbsp;                currentList,</b>
+<b class="fc">&nbsp;                listIterator</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        currentList = list</b>
+<b class="fc">&nbsp;        listIterator = currentList!!.iterator()</b>
+<b class="fc">&nbsp;        currentMap = null</b>
+<b class="fc">&nbsp;        mapIterator = null</b>
+<b class="fc">&nbsp;        currentEntry = null</b>
+<b class="fc">&nbsp;        nextValue = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun endArray() {
+<b class="pc">&nbsp;        if (traversalStack.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            val frame = traversalStack.removeAt(traversalStack.size - 1)</b>
+<b class="fc">&nbsp;            currentMap = frame.map</b>
+<b class="fc">&nbsp;            mapIterator = frame.mapIterator</b>
+<b class="fc">&nbsp;            currentEntry = frame.entry</b>
+<b class="fc">&nbsp;            currentList = frame.list</b>
+<b class="fc">&nbsp;            listIterator = frame.listIterator</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            currentMap = null</b>
+<b class="nc">&nbsp;            mapIterator = null</b>
+<b class="nc">&nbsp;            currentEntry = null</b>
+<b class="nc">&nbsp;            currentList = null</b>
+<b class="nc">&nbsp;            listIterator = null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        nextValue = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun hasNext(): Boolean {
+<b class="pc">&nbsp;        return mapIterator?.hasNext() == true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun hasNextArrayElement(): Boolean {
+<b class="pc">&nbsp;        val iterator = listIterator ?: return false</b>
+<b class="fc">&nbsp;        if (iterator.hasNext()) {</b>
+<b class="fc">&nbsp;            nextValue = iterator.next()</b>
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun isNextCloseArray(): Boolean {
+<b class="pc">&nbsp;        return listIterator == null || !listIterator!!.hasNext()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextKey(): String? {
+<b class="pc">&nbsp;        val iterator = mapIterator ?: return null</b>
+<b class="pc">&nbsp;        if (iterator.hasNext()) {</b>
+<b class="fc">&nbsp;            val entry = iterator.next()</b>
+<b class="fc">&nbsp;            currentEntry = entry</b>
+<b class="fc">&nbsp;            nextValue = entry.value</b>
+<b class="fc">&nbsp;            return entry.key</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun consumeKeySeparator() {
+&nbsp;        // No-op for AST traversal
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    fun throwError(message: String): Nothing {
+<b class="nc">&nbsp;        throw GhostYamlException(message)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun peekStringField(name: String): String? {
+<b class="nc">&nbsp;        ensureRootParsed()</b>
+<b class="nc">&nbsp;        val currentObj = nextValue as? Map&lt;*, *&gt; ?: return null</b>
+<b class="nc">&nbsp;        return currentObj[name]?.toString()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;T&gt; readList(crossinline itemParser: () -&gt; T): List&lt;T&gt; {
+<b class="fc">&nbsp;        beginArray()</b>
+<b class="fc">&nbsp;        if (isNextCloseArray()) {</b>
+<b class="fc">&nbsp;            endArray()</b>
+<b class="fc">&nbsp;            return emptyList()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val list = ArrayList&lt;T&gt;()</b>
+<b class="fc">&nbsp;        while (hasNextArrayElement()) {</b>
+<b class="fc">&nbsp;            list.add(itemParser())</b>
+&nbsp;        }
+<b class="fc">&nbsp;        endArray()</b>
+<b class="fc">&nbsp;        return list</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;T&gt; readSet(crossinline itemParser: () -&gt; T): Set&lt;T&gt; {
+<b class="nc">&nbsp;        beginArray()</b>
+<b class="nc">&nbsp;        if (isNextCloseArray()) {</b>
+<b class="nc">&nbsp;            endArray()</b>
+<b class="nc">&nbsp;            return emptySet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        val set = LinkedHashSet&lt;T&gt;()</b>
+<b class="nc">&nbsp;        while (hasNextArrayElement()) {</b>
+<b class="nc">&nbsp;            set.add(itemParser())</b>
+&nbsp;        }
+<b class="nc">&nbsp;        endArray()</b>
+<b class="nc">&nbsp;        return set</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;K, V&gt; readMap(
+&nbsp;        crossinline keyParser: () -&gt; K,
+&nbsp;        crossinline valueParser: () -&gt; V
+&nbsp;    ): Map&lt;K, V&gt; {
+<b class="fc">&nbsp;        beginObject()</b>
+<b class="fc">&nbsp;        val map = HashMap&lt;K, V&gt;()</b>
+<b class="fc">&nbsp;        while (hasNext()) {</b>
+<b class="fc">&nbsp;            val key = keyParser()</b>
+<b class="fc">&nbsp;            consumeKeySeparator()</b>
+<b class="fc">&nbsp;            val value = valueParser()</b>
+<b class="fc">&nbsp;            map[key] = value</b>
+&nbsp;        }
+<b class="fc">&nbsp;        endObject()</b>
+<b class="fc">&nbsp;        return map</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
+</div>
+</body>
+</html>

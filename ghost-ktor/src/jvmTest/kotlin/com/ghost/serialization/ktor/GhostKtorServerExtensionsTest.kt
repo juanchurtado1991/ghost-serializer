@@ -16,10 +16,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * [respondGhost]/[respondGhostProto] (`ApplicationCall` extensions) bypass Ktor server's
- * `ContentNegotiation` pipeline entirely — they need a real request/response cycle, unlike
- * the client-side bypass extensions covered by [GhostKtorBypassExtensionsTest] (commonTest).
- * JVM-only because `ktor-server-test-host` doesn't ship for Kotlin/Native targets.
+ * Integration tests for [respondGhost] and [respondGhostProto] — server-side bypass extensions
+ * that serialize and respond without Ktor's `ContentNegotiation` pipeline. JVM-only because
+ * `ktor-server-test-host` is not available on Kotlin/Native targets.
  */
 class GhostKtorServerExtensionsTest {
 

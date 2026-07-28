@@ -1,0 +1,284 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlTagSubsystemKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlTagSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlTagSubsystemKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    63.9%
+  </span>
+  <span class="absValue">
+    (76/119)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.8%
+  </span>
+  <span class="absValue">
+    (76/81)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (515/535)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;
+&nbsp;internal object GhostYamlTags {
+&nbsp;    const val TAG_NONE = 0
+&nbsp;    const val TAG_STR = 1
+&nbsp;    const val TAG_INT = 2
+&nbsp;    const val TAG_FLOAT = 3
+&nbsp;    const val TAG_BOOL = 4
+&nbsp;    const val TAG_NULL = 5
+&nbsp;    const val TAG_SEQ = 6
+&nbsp;    const val TAG_MAP = 7
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
+<b class="fc">&nbsp;    position++ // consume &#39;!&#39;</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="pc">&nbsp;    if (position &gt;= localLimit) yamlError(&quot;Unexpected end of input after tag indicator&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;    var isDoubleExcl = false</b>
+<b class="fc">&nbsp;    if (localRawData[position] == C.EXCLAMATION_BYTE) {</b>
+<b class="fc">&nbsp;        isDoubleExcl = true</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var resolvedTag: String? = null</b>
+<b class="fc">&nbsp;    var tagType = GhostYamlTags.TAG_NONE</b>
+&nbsp;
+<b class="fc">&nbsp;    if (isDoubleExcl) {</b>
+<b class="fc">&nbsp;        val tagStart = position</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currByte = localRawData[position]</b>
+<b class="pc">&nbsp;            if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val tagLen = position - tagStart</b>
+<b class="pc">&nbsp;        if (tagLen &gt; 0) {</b>
+<b class="fc">&nbsp;            tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)</b>
+&nbsp;        }
+&nbsp;    } else {
+&nbsp;        // Custom tag
+<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LT_BYTE) {</b>
+&nbsp;            // Verbose tag like !&lt;Circle&gt;
+<b class="fc">&nbsp;            position++ // consume &#39;&lt;&#39;</b>
+<b class="fc">&nbsp;            val tagStart = position</b>
+<b class="pc">&nbsp;            while (position &lt; localLimit &amp;&amp; localRawData[position] != C.GT_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val tagLen = position - tagStart</b>
+<b class="fc">&nbsp;            resolvedTag = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
+<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.GT_BYTE) {</b>
+<b class="fc">&nbsp;                position++ // consume &#39;&gt;&#39;</b>
+&nbsp;            }
+&nbsp;        } else {
+&nbsp;            // Short tag like !Circle or !m!Circle
+<b class="fc">&nbsp;            val tagStart = position</b>
+<b class="pc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                val currByte = localRawData[position]</b>
+<b class="pc">&nbsp;                if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val tagLen = position - tagStart</b>
+<b class="pc">&nbsp;            if (tagLen &gt; 0) {</b>
+<b class="fc">&nbsp;                val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
+&nbsp;                // Check for namespace prefix mapping (%TAG directive)
+<b class="fc">&nbsp;                val exclamationIdx = rawTagName.indexOf(&#39;!&#39;)</b>
+<b class="pc">&nbsp;                if (exclamationIdx != -1) {</b>
+<b class="fc">&nbsp;                    val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)</b>
+<b class="fc">&nbsp;                    val suffix = rawTagName.substring(exclamationIdx + 1)</b>
+<b class="fc">&nbsp;                    val prefix = tagDirectives[handle]</b>
+<b class="pc">&nbsp;                    resolvedTag = if (prefix != null) {</b>
+<b class="fc">&nbsp;                        prefix + suffix</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        rawTagName</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="nc">&nbsp;                    resolvedTag = rawTagName</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Skip inline space after tag
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+&nbsp;
+&nbsp;    // If value is on next line, advance and use next line&#39;s indentation
+<b class="pc">&nbsp;    val valueIndent = if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {</b>
+<b class="fc">&nbsp;        advanceLine()</b>
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        currentIndent</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        indent</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val value = when (tagType) {</b>
+&nbsp;        GhostYamlTags.TAG_SEQ -&gt; {
+<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACKET_BYTE) {</b>
+<b class="nc">&nbsp;                readFlowSequence()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;                readBlockSequence(currentIndent)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        GhostYamlTags.TAG_MAP -&gt; {
+<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACE_BYTE) {</b>
+<b class="nc">&nbsp;                readFlowMapping()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;                readBlockMapping(currentIndent)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            readValue(valueIndent, inFlow = false, expectedTag = tagType)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Inject tag into the Map if it&#39;s a custom tag and value is a Map
+<b class="pc">&nbsp;    if (resolvedTag != null &amp;&amp; value is MutableMap&lt;*, *&gt;) {</b>
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;        val map = value as MutableMap&lt;String, Any?&gt;</b>
+<b class="fc">&nbsp;        map[C.STR_TAG_KEY] = resolvedTag</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(localRawData: ByteArray, start: Int, len: Int): Int {
+<b class="pc">&nbsp;    if (len == 3) {</b>
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_T_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_R_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_STR</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_I_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_T_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_INT</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_E_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_Q_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_SEQ</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_M_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_P_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_MAP</b>
+&nbsp;        }
+&nbsp;    } else if (len == 4) {
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_B_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_BOOL</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_U_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_NULL</b>
+&nbsp;        }
+&nbsp;    } else if (len == 5) {
+<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_F_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 4] == C.CHAR_T_BYTE) {</b>
+<b class="fc">&nbsp;            return GhostYamlTags.TAG_FLOAT</b>
+&nbsp;        }
+&nbsp;    }
+<b class="nc">&nbsp;    return GhostYamlTags.TAG_NONE</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
+</div>
+</body>
+</html>

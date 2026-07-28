@@ -1,12 +1,13 @@
 package com.ghost.serialization.annotations
 
 /**
- * Customizes the key name used for the annotated property during serialization and deserialization.
+ * Customizes the wire key used for the annotated property during serialization and deserialization.
  *
- * By default, the serializer uses the property's name in Kotlin. When this annotation is applied,
- * the serializer will use the provided [name] instead.
+ * By default, the serializer uses the property's Kotlin name. When this annotation is applied,
+ * the serializer uses [name] instead on every generated path where the property is emitted:
+ * **JSON**, **proto3 JSON** ([GhostProtoSerialization]), and **YAML** ([GhostYamlSerialization]).
  *
- * @property name The custom key name to use in the serialized JSON representation.
+ * @property name The custom key name on the wire (JSON field name, YAML mapping key, proto JSON name).
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)

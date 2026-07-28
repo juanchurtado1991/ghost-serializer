@@ -4,18 +4,27 @@ package com.ghost.serialization.retrofit
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.nextBoolean
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextString
-import com.ghost.serialization.parser.skipValue
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.nextBoolean
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.skipValue
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.reflect.KClass
+
 
 @InternalGhostApi
 object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {

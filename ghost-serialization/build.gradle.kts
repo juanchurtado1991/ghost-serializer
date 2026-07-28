@@ -51,7 +51,21 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.test)
         }
+        jvmTest.dependencies {
+            // Reference implementation used as a correctness oracle for proto3 JSON
+            // conformance tests (ProtoJsonConformanceTest) — JVM-only, test-only.
+            implementation(libs.protobuf.java)
+            implementation(libs.protobuf.java.util)
+            // Coverage-guided fuzzing (ProtoWktFuzzTest) — requires the JUnit5 platform.
+            implementation(libs.kotlin.test.junit5)
+            implementation(libs.jazzer.junit)
+            runtimeOnly(libs.junit.engine)
+        }
     }
+}
+
+tasks.named<Test>("jvmTest") {
+    useJUnitPlatform()
 }
 
 ksp { arg("ghost.moduleName", "ghost_serialization") }

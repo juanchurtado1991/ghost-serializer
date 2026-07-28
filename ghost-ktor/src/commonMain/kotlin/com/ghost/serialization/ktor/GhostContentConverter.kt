@@ -4,9 +4,9 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.ghostInternalUseFlatReader
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
@@ -16,6 +16,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
 import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
+
 
 @OptIn(InternalGhostApi::class)
 class GhostContentConverter(

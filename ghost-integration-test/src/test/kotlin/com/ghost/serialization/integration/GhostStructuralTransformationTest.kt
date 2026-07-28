@@ -10,11 +10,12 @@ import com.ghost.serialization.integration.model.MixedStructuralModel
 import com.ghost.serialization.integration.model.MixedStructuralModelSerializer
 import com.ghost.serialization.integration.model.WrappedModel
 import com.ghost.serialization.integration.model.WrappedModelSerializer
-import com.ghost.serialization.parser.GhostJsonReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import okio.Buffer
+
 
 class GhostStructuralTransformationTest {
 

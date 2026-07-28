@@ -9,12 +9,13 @@ import com.ghost.serialization.integration.model.ComplexObjectSerializer
 import com.ghost.serialization.integration.model.NestedContainer
 import com.ghost.serialization.integration.model.Priority
 import com.ghost.serialization.integration.model.Tag
-import com.ghost.serialization.parser.GhostJsonReader
-import okio.Buffer
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import okio.Buffer
+
 
 class GhostRobustnessTest {
 

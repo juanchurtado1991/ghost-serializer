@@ -49,30 +49,36 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import org.gradle.api.provider.Property
 &nbsp;
 &nbsp;/**
-&nbsp; * Configuration options for the Ghost Serialization Gradle Plugin.
+&nbsp; * Gradle extension for configuring the Ghost Serialization plugin.
+&nbsp; *
+&nbsp; * Registered under the `ghost` block when [GhostPlugin] is applied:
+&nbsp; * ```
+&nbsp; * ghost {
+&nbsp; *     version.set(&quot;1.3.0&quot;)
+&nbsp; *     autoInjectKtor.set(true)
+&nbsp; *     autoInjectRetrofit.set(true)
+&nbsp; * }
+&nbsp; * ```
 &nbsp; */
 &nbsp;interface GhostExtension {
 &nbsp;    /**
-&nbsp;     * Whether to automatically apply the ghost-ktor dependency if ktor-client is detected.
-&nbsp;     * Defaults to true.
+&nbsp;     * When `true`, adds `ghost-ktor` if a Ktor client dependency is detected on the classpath.
+&nbsp;     *
+&nbsp;     * Defaults to `true`.
 &nbsp;     */
 &nbsp;    val autoInjectKtor: Property&lt;Boolean&gt;
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Whether to automatically apply the ghost-retrofit dependency if retrofit is detected.
-&nbsp;     * Defaults to true.
+&nbsp;     * When `true`, adds `ghost-retrofit` if Retrofit is detected on the classpath.
+&nbsp;     *
+&nbsp;     * Defaults to `true`.
 &nbsp;     */
 &nbsp;    val autoInjectRetrofit: Property&lt;Boolean&gt;
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Whether to automatically apply the ghost-protobuf dependency if protobuf is detected.
-&nbsp;     * Defaults to true.
-&nbsp;     */
-&nbsp;    val autoInjectProtobuf: Property&lt;Boolean&gt;
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Override the version of Ghost Serialization to use.
-&nbsp;     * By default, this uses the version that matches the plugin version.
+&nbsp;     * Ghost Serialization artifact version used for runtime, API, compiler, and adapter dependencies.
+&nbsp;     *
+&nbsp;     * Defaults to the plugin release version.
 &nbsp;     */
 &nbsp;    val version: Property&lt;String&gt;
 &nbsp;}
@@ -99,7 +105,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 23:51</div>
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
 </div>
 </body>
 </html>

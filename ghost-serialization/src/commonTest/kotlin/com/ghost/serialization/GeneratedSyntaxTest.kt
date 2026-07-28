@@ -1,11 +1,20 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.annotations.GhostSerialization
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.writer.GhostJsonWriter
-import okio.Buffer
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.strings.beginArray
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import okio.Buffer
+
 
 @GhostSerialization
 data class SyntaxModel(

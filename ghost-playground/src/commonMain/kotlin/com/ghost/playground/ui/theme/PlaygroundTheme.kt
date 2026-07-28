@@ -11,7 +11,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/** Ghostly violet — lavender canvas, deep purple + magenta glow accents. */
+/** Playground color palette: lavender canvas with deep purple and magenta accent colors. */
 val CanvasTop = Color(0xFFF6F3FF)
 val CanvasMid = Color(0xFFECE4FF)
 val CanvasBottom = Color(0xFFE0D1FE)

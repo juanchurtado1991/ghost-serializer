@@ -7,18 +7,18 @@ import io.ktor.http.ContentType
 import io.ktor.util.reflect.typeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charsets
-import kotlinx.coroutines.test.runTest
 import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlinx.coroutines.test.runTest
+
 
 /**
- * Direct unit tests for [GhostProtoContentConverter] -- mirrors
- * [GhostContentConverterDirectTest], since it shares the same structure (null-return contract,
- * scratch-buffer growth) but reads through [com.ghost.serialization.parser.GhostProtoJsonFlatReader]
- * instead.
+ * Direct unit tests for [GhostProtoContentConverter] — proto3 JSON read path, null-return
+ * contract, scratch-buffer growth, and list deserialization via
+ * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader].
  */
 class GhostProtoContentConverterDirectTest {
 
@@ -77,5 +77,35 @@ class GhostProtoContentConverterDirectTest {
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<ProtoKtorEvent>(), channel)
 
         assertEquals(ProtoKtorEvent(42L, longLabel), result)
+    }
+
+    @Test
+    fun deserialize_parsesListBodyViaKotlinType() = runTest {
+        val converter = GhostProtoContentConverter()
+        val json = """[{"deviceId":"5","label":"batch"}]"""
+        val channel = ByteReadChannel(json.encodeToByteArray())
+
+        val result = converter.deserialize(
+            Charsets.UTF_8,
+            typeInfo<List<ProtoKtorEvent>>(),
+            channel,
+        ) as List<ProtoKtorEvent>
+
+        assertEquals(listOf(ProtoKtorEvent(5L, "batch")), result)
+    }
+
+    @Test
+    fun deserialize_parsesBareInt64InsideListElements() = runTest {
+        val converter = GhostProtoContentConverter()
+        val json = """[{"deviceId":9223372036854775807,"label":"max"}]"""
+        val channel = ByteReadChannel(json.encodeToByteArray())
+
+        val result = converter.deserialize(
+            Charsets.UTF_8,
+            typeInfo<List<ProtoKtorEvent>>(),
+            channel,
+        ) as List<ProtoKtorEvent>
+
+        assertEquals(Long.MAX_VALUE, result.single().deviceId)
     }
 }

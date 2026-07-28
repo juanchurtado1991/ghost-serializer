@@ -1,6 +1,6 @@
 package com.ghost.playground.features
 
-/** One JSON payload a [FeatureLab] can run — lets a single DTO/annotation be shown under several real-world inputs. */
+/** Sample JSON payload that a [FeatureLab] can execute under a single DTO or annotation preset. */
 data class LabVariant(
     val id: String,
     val labelEn: String,
