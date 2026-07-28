@@ -63,7 +63,11 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             activeStep = 1
             delay(PipelineStepDelay)
             output = out
-            explanation = if (lang == Lang.EN) selectedLab.explainEn(json, out) else selectedLab.explainEs(json, out)
+            explanation = if (lang == Lang.EN) {
+                selectedLab.explainEn(json, out)
+            } else {
+                selectedLab.explainEs(json, out)
+            }
             activeStep = 2
         } catch (e: Throwable) {
             runError = e.message ?: e.toString()
@@ -103,7 +107,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             CodeArea(selectedLab.dtoSource)
         }
 
-        Card(title = strings.jsonInput, accent = Coral) {
+        Card(title = selectedLab.inputLabel(strings), accent = Coral) {
             CodeArea(selectedVariant.json)
         }
 
@@ -126,8 +130,8 @@ fun StudioScreen(strings: Strings, lang: Lang) {
                 PipelineRow(1, strings.pipelineStepReadTitle, strings.pipelineStepReadDetail, StepStatus.Done, true)
                 PipelineRow(
                     2,
-                    strings.pipelineStepRunTitle,
-                    if (activeStep >= 1) strings.pipelineStepRunDetail else strings.speedTestLoading,
+                    selectedLab.pipelineRunTitle(strings),
+                    if (activeStep >= 1) selectedLab.pipelineRunDetail(strings) else strings.speedTestLoading,
                     if (activeStep >= 1) StepStatus.Done else StepStatus.Active,
                     activeStep >= 1,
                 )
