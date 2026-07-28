@@ -1,10 +1,5 @@
 package com.ghost.serialization.compiler.hygiene
 
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.nextInt
-import com.ghost.serialization.parser.streaming.nextLong
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextLong
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -29,7 +24,8 @@ class GeneratedCodeHygieneTest {
             }
         """.trimIndent()
 
-        val violations = GeneratedCodeHygiene.analyzeUnusedMaskConstants(source, "DemoSerializer.kt")
+        val violations =
+            GeneratedCodeHygiene.analyzeUnusedMaskConstants(source, "DemoSerializer.kt")
 
         assertEquals(1, violations.size)
         assertEquals(GeneratedCodeHygiene.Violation.Kind.UNUSED_CONSTANT, violations.single().kind)
@@ -87,7 +83,8 @@ class GeneratedCodeHygieneTest {
             }
         """.trimIndent()
 
-        val violations = GeneratedCodeHygiene.analyzeLocalVariableNaming(source, "DemoSerializer.kt")
+        val violations =
+            GeneratedCodeHygiene.analyzeLocalVariableNaming(source, "DemoSerializer.kt")
         assertEquals(2, violations.size)
         assertTrue(violations.all { it.kind == GeneratedCodeHygiene.Violation.Kind.BAD_LOCAL_NAME })
     }

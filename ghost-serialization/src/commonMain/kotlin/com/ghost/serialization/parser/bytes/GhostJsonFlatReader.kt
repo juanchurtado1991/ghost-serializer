@@ -3,31 +3,23 @@
 
 package com.ghost.serialization.parser.bytes
 
+
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.common.GhostJsonConstants
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.streaming.captureRawJson
-import com.ghost.serialization.parser.streaming.skipNumber
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.captureRawJson
-import com.ghost.serialization.parser.strings.skipNumber
-
-
-import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.exception.GhostJsonException
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
-import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
-import com.ghost.serialization.parser.streaming.decodeResilient
-import com.ghost.serialization.parser.streaming.readList
-import com.ghost.serialization.parser.streaming.readSet
-import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.parser.strings.readSet
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
@@ -101,8 +93,10 @@ open class GhostJsonFlatReader(
     private var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 
     var depth: Int = 0
-    @PublishedApi internal var needsCommaMask: Long = 0L
-    @PublishedApi internal var commaConsumedMask: Long = 0L
+    @PublishedApi
+    internal var needsCommaMask: Long = 0L
+    @PublishedApi
+    internal var commaConsumedMask: Long = 0L
 
     /**
      * Gets the byte at the specified index, masking it to a positive integer.
@@ -764,7 +758,8 @@ open class GhostJsonFlatReader(
         val length = end - start
         val key = computeKeyHash(start, length, options.hasCollisions)
 
-        val hasIndex = ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)
+        val hasIndex =
+            ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)
         val index = options.dispatch[hasIndex]
 
         if (index != C.MATCH_END) {
@@ -805,7 +800,10 @@ open class GhostJsonFlatReader(
             key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)
             if (hasCollisions) {
                 var ci = C.UNICODE_HEX_LENGTH
-                while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + (rawData[start + ci].toInt() and C.BYTE_MASK); ci++ }
+                while (ci < length) {
+                    key =
+                        key * C.COLLISION_HASH_MULTIPLIER + (rawData[start + ci].toInt() and C.BYTE_MASK); ci++
+                }
             }
         } else {
             if (length >= 1) {
@@ -905,12 +903,15 @@ open class GhostJsonFlatReader(
             C.QUOTE_INT -> {
                 skipQuotedString()
             }
+
             C.TRUE_CHAR_INT -> {
                 skipAndValidateLiteral(C.TRUE_BS)
             }
+
             C.FALSE_CHAR_INT -> {
                 skipAndValidateLiteral(C.FALSE_BS)
             }
+
             C.NULL_CHAR_INT -> {
                 skipAndValidateLiteral(C.NULL_BS)
             }

@@ -1,5 +1,5 @@
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 import com.ghost.serialization.compiler.model.EnvelopePayloadMapping
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -105,8 +106,8 @@ internal class EnvelopeAnalyzer(private val logger: KSPLogger) {
             val genericProp = genericDataProperty!!
             properties.filter { prop ->
                 prop.kotlinName != discriminatorProperty.kotlinName &&
-                    prop.kotlinName != timeKotlinName &&
-                    prop.kotlinName != fallbackMapping?.kotlinName
+                        prop.kotlinName != timeKotlinName &&
+                        prop.kotlinName != fallbackMapping?.kotlinName
             }.mapNotNull { prop ->
                 val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null
                 val payloadAnnotation = declaration.annotations.find {
@@ -151,7 +152,8 @@ internal class EnvelopeAnalyzer(private val logger: KSPLogger) {
             logger.error(C.STR_ERR_ENVELOPE_NO_PAYLOADS, classDeclaration)
         }
 
-        val duplicateValues = payloadMappings.groupBy { it.discriminatorValue }.filter { it.value.size > 1 }
+        val duplicateValues =
+            payloadMappings.groupBy { it.discriminatorValue }.filter { it.value.size > 1 }
         duplicateValues.forEach { (value, mappings) ->
             logger.error(
                 "${C.STR_ERR_ENVELOPE_DUP_VALUE_1}$value${C.STR_ERR_ENVELOPE_DUP_VALUE_2}${
@@ -181,7 +183,10 @@ internal class EnvelopeAnalyzer(private val logger: KSPLogger) {
     private fun isStringType(type: KSType): Boolean =
         type.declaration.qualifiedName?.asString() == C.STRING_QUALIFIED
 
-    private fun validateOpaquePayload(prop: GhostPropertyModel, classDeclaration: KSClassDeclaration) {
+    private fun validateOpaquePayload(
+        prop: GhostPropertyModel,
+        classDeclaration: KSClassDeclaration
+    ) {
         if (!prop.isNullable || !prop.type.isRawJson()) {
             logger.error(
                 "${C.STR_ERR_ENVELOPE_PAYLOAD_TYPE_1}${prop.kotlinName}${C.STR_ERR_ENVELOPE_PAYLOAD_TYPE_2}",

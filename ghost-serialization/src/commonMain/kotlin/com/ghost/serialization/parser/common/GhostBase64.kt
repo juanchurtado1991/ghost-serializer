@@ -1,11 +1,9 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -42,9 +40,11 @@ fun decodeBase64String(value: String): ByteArray {
             if (value0 < 0 || value1 < 0 || value2 == -1 || value3 == -1) {
                 throw IllegalArgumentException(C.ERR_INVALID_BASE64)
             }
-            output[outputPosition++] = ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()
+            output[outputPosition++] =
+                ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()
             if (value2 != -2) {
-                output[outputPosition++] = ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()
+                output[outputPosition++] =
+                    ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()
                 if (value3 != -2) {
                     output[outputPosition++] = ((value2 shl C.B64_SHIFT_6) or value3).toByte()
                 }
@@ -62,9 +62,11 @@ fun decodeBase64String(value: String): ByteArray {
         val value2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1
         val value3 = if (chunk[3] < lut.size) lut[chunk[3]] else -1
         if (value0 >= 0 && value1 >= 0) {
-            output[outputPosition++] = ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()
+            output[outputPosition++] =
+                ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()
             if (value2 != -2 && value2 >= 0) {
-                output[outputPosition++] = ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()
+                output[outputPosition++] =
+                    ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()
             }
         }
     }
@@ -89,8 +91,10 @@ fun encodeBase64String(source: ByteArray): String {
         val byte1 = source[index + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK
         val byte2 = source[index + C.B64_OFFSET_2].toInt() and C.B64_BYTE_MASK
         output[outputIndex++] = chars[byte0 shr C.B64_SHIFT_2]
-        output[outputIndex++] = chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]
-        output[outputIndex++] = chars[((byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2) or (byte2 shr C.B64_SHIFT_6)]
+        output[outputIndex++] =
+            chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]
+        output[outputIndex++] =
+            chars[((byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2) or (byte2 shr C.B64_SHIFT_6)]
         output[outputIndex++] = chars[byte2 and C.B64_MASK_6BITS]
         index += C.B64_PAD_DIVISOR
     }
@@ -103,7 +107,8 @@ fun encodeBase64String(source: ByteArray): String {
             output[outputIndex++] = C.EQUALS_BYTE
         } else {
             val byte1 = source[index + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK
-            output[outputIndex++] = chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]
+            output[outputIndex++] =
+                chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]
             output[outputIndex++] = chars[(byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2]
             output[outputIndex++] = C.EQUALS_BYTE
         }

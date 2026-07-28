@@ -44,4 +44,5 @@ object RawJsonDecode {
 inline fun <reified T : Any> RawJson.decodeAs(): T = RawJsonDecode.decode(this)
 
 /** Parses this [RawJson] with an explicit [serializer]. */
-fun <T : Any> RawJson.decodeAs(serializer: GhostSerializer<T>): T = RawJsonDecode.decode(this, serializer)
+fun <T : Any> RawJson.decodeAs(serializer: GhostSerializer<T>): T =
+    RawJsonDecode.decode(this, serializer)

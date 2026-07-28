@@ -1,11 +1,10 @@
 package com.ghost.playground.bench
 
+import com.ghost.playground.bench.SpeedTestEngine.runPhase
 import com.ghost.playground.bench.model.TwitterResponse
 import com.ghost.serialization.Ghost
 import com.ghostserializer.ghost_playground.generated.resources.Res
 import kotlinx.coroutines.delay
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

@@ -55,7 +55,7 @@ fun GhostPlaygroundApp() {
                 modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth(),
                 transitionSpec = {
                     (fadeIn(tween(TabFadeInDurationMs)) togetherWith
-                                    fadeOut(tween(TabFadeOutDurationMs)))
+                            fadeOut(tween(TabFadeOutDurationMs)))
                         .using(SizeTransform(clip = false))
                 },
                 label = "tab",

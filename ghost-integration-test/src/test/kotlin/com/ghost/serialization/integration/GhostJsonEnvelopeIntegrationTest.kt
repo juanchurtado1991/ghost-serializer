@@ -7,9 +7,7 @@ import com.ghost.serialization.integration.model.InvoicePaidPayload
 import com.ghost.serialization.integration.model.ModeEventPayload
 import com.ghost.serialization.integration.model.SseEventEnvelope
 import com.ghost.serialization.integration.model.SseEventEnvelopeSerializer
-import com.ghost.serialization.integration.model.WebhookEnvelope
 import com.ghost.serialization.integration.model.WebhookEnvelopeSerializer
-import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonKind
 import kotlin.test.Test
 import kotlin.test.assertEquals

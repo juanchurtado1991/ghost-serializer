@@ -2,8 +2,6 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.COLLISION_HASH_MULTIPLIER
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_16
@@ -11,9 +9,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_24
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.SINGLE_CHAR_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_HEX_LENGTH
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import kotlin.jvm.JvmStatic
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -50,6 +46,7 @@ class JsonReaderOptions(
     internal val rawChars: Array<CharArray> = Array(rawStrings.size) { i ->
         rawStrings[i].toCharArray()
     }
+
     @PublishedApi
     internal val dispatch = IntArray(tableSize) { -1 }
 
@@ -123,7 +120,10 @@ class JsonReaderOptions(
                 }
                 if (hasCollisions) {
                     var ci = UNICODE_HEX_LENGTH
-                    while (ci < bytes.size) { key = key * COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and BYTE_MASK); ci++ }
+                    while (ci < bytes.size) {
+                        key =
+                            key * COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and BYTE_MASK); ci++
+                    }
                 }
 
                 val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask
@@ -158,7 +158,10 @@ class JsonReaderOptions(
                 }
                 if (hasCollisions) {
                     var ci = UNICODE_HEX_LENGTH
-                    while (ci < keyString.length) { key = key * COLLISION_HASH_MULTIPLIER + (keyString[ci].code and BYTE_MASK); ci++ }
+                    while (ci < keyString.length) {
+                        key =
+                            key * COLLISION_HASH_MULTIPLIER + (keyString[ci].code and BYTE_MASK); ci++
+                    }
                 }
 
                 val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask
@@ -245,7 +248,13 @@ class JsonReaderOptions(
             enableStringDispatch: Boolean,
             vararg names: String
         ): JsonReaderOptions {
-            return of(shift, multiplier, C.DEFAULT_DISPATCH_TABLE_SIZE, enableStringDispatch, *names)
+            return of(
+                shift,
+                multiplier,
+                C.DEFAULT_DISPATCH_TABLE_SIZE,
+                enableStringDispatch,
+                *names
+            )
         }
 
         fun of(

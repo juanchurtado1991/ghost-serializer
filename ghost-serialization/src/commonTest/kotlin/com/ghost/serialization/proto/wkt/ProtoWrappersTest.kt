@@ -1,7 +1,6 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.proto.GhostProto
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,21 +11,24 @@ class ProtoWrappersTest {
 
     init {
         val registry = object : com.ghost.serialization.contract.GhostRegistry {
-            private val map = mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
-                ProtoBoolValue::class to ProtoBoolValueSerializer,
-                ProtoStringValue::class to ProtoStringValueSerializer,
-                ProtoBytesValue::class to ProtoBytesValueSerializer,
-                ProtoDoubleValue::class to ProtoDoubleValueSerializer,
-                ProtoFloatValue::class to ProtoFloatValueSerializer,
-                ProtoInt32Value::class to ProtoInt32ValueSerializer,
-                ProtoInt64Value::class to ProtoInt64ValueSerializer,
-                ProtoUInt32Value::class to ProtoUInt32ValueSerializer,
-                ProtoUInt64Value::class to ProtoUInt64ValueSerializer
-            )
+            private val map =
+                mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
+                    ProtoBoolValue::class to ProtoBoolValueSerializer,
+                    ProtoStringValue::class to ProtoStringValueSerializer,
+                    ProtoBytesValue::class to ProtoBytesValueSerializer,
+                    ProtoDoubleValue::class to ProtoDoubleValueSerializer,
+                    ProtoFloatValue::class to ProtoFloatValueSerializer,
+                    ProtoInt32Value::class to ProtoInt32ValueSerializer,
+                    ProtoInt64Value::class to ProtoInt64ValueSerializer,
+                    ProtoUInt32Value::class to ProtoUInt32ValueSerializer,
+                    ProtoUInt64Value::class to ProtoUInt64ValueSerializer
+                )
+
             @Suppress("UNCHECKED_CAST")
             override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): com.ghost.serialization.contract.GhostSerializer<T>? {
                 return map[clazz] as? com.ghost.serialization.contract.GhostSerializer<T>
             }
+
             override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>> {
                 return map
             }

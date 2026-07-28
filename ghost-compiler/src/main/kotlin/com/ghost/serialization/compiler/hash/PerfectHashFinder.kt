@@ -1,6 +1,7 @@
 @file:Suppress("ReplaceSizeCheckWithIsNotEmpty")
 
 package com.ghost.serialization.compiler.hash
+
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 internal data class PerfectHashConfig(
@@ -51,10 +52,16 @@ internal object PerfectHashFinder {
                 extendedKeyHash = false,
             )
         }
-        findPerfectHashInternal(names, useExtendedKeyHash = false)?.let { (shift, multiplier, tableSize) ->
+        findPerfectHashInternal(
+            names,
+            useExtendedKeyHash = false
+        )?.let { (shift, multiplier, tableSize) ->
             return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = false)
         }
-        findPerfectHashInternal(names, useExtendedKeyHash = true)?.let { (shift, multiplier, tableSize) ->
+        findPerfectHashInternal(
+            names,
+            useExtendedKeyHash = true
+        )?.let { (shift, multiplier, tableSize) ->
             return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = true)
         }
         throw IllegalStateException(
@@ -107,10 +114,14 @@ internal object PerfectHashFinder {
         for (bytes in rawBytes) {
             if (bytes.isNotEmpty()) {
                 var mask = 0L
-                if (bytes.size >= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
-                if (bytes.size >= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
-                if (bytes.size >= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
-                if (bytes.size >= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
+                if (bytes.size >= C.VAL_ONE) mask =
+                    mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
+                if (bytes.size >= C.VAL_TWO) mask =
+                    mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
+                if (bytes.size >= C.VAL_THREE) mask =
+                    mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
+                if (bytes.size >= C.VAL_FOUR) mask =
+                    mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
                 val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)
                 if (!seen.add(packed)) {
                     return true

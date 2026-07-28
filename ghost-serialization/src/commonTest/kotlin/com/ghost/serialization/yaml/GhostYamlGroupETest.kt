@@ -1,12 +1,8 @@
 package com.ghost.serialization.yaml
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
-import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import kotlin.test.assertNotNull
 
 /**
  * Group E tests: anchors (`&anchor`), aliases (`*alias`), and merge keys (`<<: *alias`).
@@ -25,7 +21,7 @@ class GhostYamlGroupETest {
               port: 8080
         """.trimIndent()
         val result = parseMap(yaml)
-        
+
         @Suppress("UNCHECKED_CAST")
         val serviceA = result["service_a"] as Map<String, Any?>
         assertEquals(30L, serviceA["timeout"])
@@ -56,6 +52,7 @@ class GhostYamlGroupETest {
               tags: *tags
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val tags = result["project_a"].let { it as Map<String, Any?> }["tags"] as List<Any?>
         assertEquals(2, tags.size)

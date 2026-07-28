@@ -5,16 +5,12 @@ package com.ghost.serialization.parser.strings
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.captureRawJsonBytes
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.byteToCharPosition
 import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.streaming.captureRawJsonBytes
-import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import okio.ByteString
-import com.ghost.serialization.parser.streaming.decodeResilient
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -577,17 +573,20 @@ class GhostJsonStringReader(
                     bytePos += C.UTF8_1BYTE_SIZE
                     charIndex++
                 }
+
                 code <= C.UTF8_2BYTE_MAX -> {
                     bytePos += C.UTF8_2BYTE_SIZE
                     charIndex++
                 }
+
                 code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
-                    charIndex + 1 < currentLimit &&
-                    rawData[charIndex + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
+                        charIndex + 1 < currentLimit &&
+                        rawData[charIndex + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
                     bytePos += C.UTF8_4BYTE_SIZE
                     table[charIndex + 1] = bytePos
                     charIndex += 2
                 }
+
                 else -> {
                     bytePos += C.UTF8_3BYTE_SIZE
                     charIndex++

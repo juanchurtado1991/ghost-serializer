@@ -4,21 +4,10 @@
 package com.ghost.serialization.parser.strings
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.readQuotedString
-import com.ghost.serialization.parser.bytes.skipNumber
-import com.ghost.serialization.parser.bytes.skipQuotedString
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.JsonReaderOptions
-import com.ghost.serialization.parser.streaming.nextInt
-import com.ghost.serialization.parser.streaming.nextLong
-import com.ghost.serialization.parser.streaming.nextULong
-import com.ghost.serialization.parser.streaming.skipNumber
-import com.ghost.serialization.parser.streaming.readList
-import com.ghost.serialization.parser.streaming.readSet
-import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.parser.strings.readSet
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 fun GhostJsonStringReader.beginObject() {
@@ -412,7 +401,10 @@ fun GhostJsonStringReader.selectNameAndConsume(options: JsonReaderOptions): Int 
 fun GhostJsonStringReader.selectString(options: JsonReaderOptions): Int =
     internalSelect(options, consumeSeparator = false)
 
-private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, consumeSeparator: Boolean): Int {
+private fun GhostJsonStringReader.internalSelect(
+    options: JsonReaderOptions,
+    consumeSeparator: Boolean
+): Int {
     var token = peekNextToken()
     if (token == C.CLOSE_OBJ_INT) {
         return -1
@@ -475,7 +467,8 @@ private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, con
     val key = computeKeyHash(start, length, options.hasCollisions)
 
     val dispatchTable = options.stringDispatch
-    val hasIndex = ((key * options.multiplier + length) shr options.shift) and (dispatchTable.size - 1)
+    val hasIndex =
+        ((key * options.multiplier + length) shr options.shift) and (dispatchTable.size - 1)
     val index = dispatchTable[hasIndex]
 
     if (index != C.MATCH_END) {
@@ -527,7 +520,12 @@ private fun GhostJsonStringReader.selectValidateCommas(token: Int, consumeSepara
     return currentToken
 }
 
-private fun GhostJsonStringReader.handleSelectNoMatch(start: Int, end: Int, length: Int, consumeSeparator: Boolean): Int {
+private fun GhostJsonStringReader.handleSelectNoMatch(
+    start: Int,
+    end: Int,
+    length: Int,
+    consumeSeparator: Boolean
+): Int {
     val newPos = end + 1
     position = newPos
     nextTokenByte = C.MATCH_END
@@ -552,7 +550,11 @@ private fun GhostJsonStringReader.throwUnterminatedStringError() {
     throwError(C.UNTERMINATED_STRING_ERROR)
 }
 
-private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
+private inline fun GhostJsonStringReader.computeKeyHash(
+    start: Int,
+    length: Int,
+    hasCollisions: Boolean
+): Int {
     var key = 0
     val chars = rawChars
     if (length >= 4) {
@@ -563,7 +565,9 @@ private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int,
         key = byte0 or (byte1 shl C.SHIFT_8) or (byte2 shl C.SHIFT_16) or (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
             var ci = C.UNICODE_HEX_LENGTH
-            while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + chars[start + ci].code; ci++ }
+            while (ci < length) {
+                key = key * C.COLLISION_HASH_MULTIPLIER + chars[start + ci].code; ci++
+            }
         }
     } else {
         if (length >= 1) {
@@ -657,12 +661,15 @@ fun GhostJsonStringReader.skipValue() {
         C.QUOTE_INT -> {
             skipQuotedString()
         }
+
         C.TRUE_CHAR_INT -> {
             skipAndValidateLiteral(C.TRUE_BS)
         }
+
         C.FALSE_CHAR_INT -> {
             skipAndValidateLiteral(C.FALSE_BS)
         }
+
         C.NULL_CHAR_INT -> {
             skipAndValidateLiteral(C.NULL_BS)
         }

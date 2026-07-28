@@ -37,7 +37,13 @@ private const val StepDoneBgAlpha = 0.08f
 
 /** One numbered row in the pipeline card; lights up when [lit] is true. */
 @Composable
-internal fun PipelineRow(num: Int, title: String, detail: String, status: StepStatus, lit: Boolean) {
+internal fun PipelineRow(
+    num: Int,
+    title: String,
+    detail: String,
+    status: StepStatus,
+    lit: Boolean
+) {
     val bg = when {
         status == StepStatus.Error -> Rose.copy(StepErrorBgAlpha)
         lit -> TealLight.copy(StepLitBgAlpha)
@@ -60,7 +66,12 @@ internal fun PipelineRow(num: Int, title: String, detail: String, status: StepSt
             if (status == StepStatus.Done) {
                 PlaygroundIcon(PlaygroundIconKind.Check, tint = Color.White, size = 16.dp)
             } else {
-                Text(num.toString(), color = if (lit) Color.White else InkMuted, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text(
+                    num.toString(),
+                    color = if (lit) Color.White else InkMuted,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
             }
         }
         Column {

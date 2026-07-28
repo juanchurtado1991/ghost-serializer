@@ -12,15 +12,16 @@ import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.WriterSinkPair
 import com.ghost.serialization.writer.strings.FlatCharArrayWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
-import okio.BufferedSource
 
 
 private val readerPool = ThreadLocal<GhostJsonReader>()
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 private val stringReaderPool = ThreadLocal<GhostJsonStringReader>()
 private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
+
 @PublishedApi
 internal val writerPool = ThreadLocal<WriterSinkPair>()
 
@@ -38,7 +39,7 @@ internal fun acquireFlatWriterPair(): WriterSinkPair {
     val pair = writerPool.get()
         ?: WriterSinkPair()
             .also { writerPool.set(it) }
-    
+
     pair.writer.reset()
     pair.byteWriter.reset()
     return pair
@@ -135,7 +136,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
                 }.toMutableList()
                 fastIterator = fastRegistries?.iterator()
             }
-            
+
             if (fastIterator?.hasNext() == true) return true
 
             if (slow == null) {

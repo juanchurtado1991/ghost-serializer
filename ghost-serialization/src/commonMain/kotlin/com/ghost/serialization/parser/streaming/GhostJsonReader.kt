@@ -3,10 +3,13 @@
 
 package com.ghost.serialization.parser.streaming
 
+
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.createByteArraySource
@@ -15,16 +18,11 @@ import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
 import com.ghost.serialization.parser.common.scanStringImpl
 import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.findClosingQuote
-
-
-import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.releaseScratchBuffer
 import okio.BufferedSource
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * A high-performance, zero-allocation JSON parser for Kotlin Multiplatform.
@@ -99,8 +97,10 @@ class GhostJsonReader(
      * Incremented on begin*, decremented on end*. */
     var depth: Int = 0
 
-    @PublishedApi internal var needsCommaMask: Long = 0L
-    @PublishedApi internal var commaConsumedMask: Long = 0L
+    @PublishedApi
+    internal var needsCommaMask: Long = 0L
+    @PublishedApi
+    internal var commaConsumedMask: Long = 0L
 
     /** Convenience constructor for ByteArray —
      * used by KSP-generated serializers and tests. */
@@ -368,7 +368,11 @@ class GhostJsonReader(
                     source.contentEqualsString(start, length, cachedString)
                 } else {
                     val localData = rawData
-                    contentEqualsStringImpl(start, length, cachedString) { localData[it].toInt() and C.BYTE_MASK }
+                    contentEqualsStringImpl(
+                        start,
+                        length,
+                        cachedString
+                    ) { localData[it].toInt() and C.BYTE_MASK }
                 }
             } else {
                 false
@@ -455,23 +459,32 @@ class GhostJsonReader(
                                 if (outPos + 2 > outBuffer.size) {
                                     outBuffer = growBuffer(outBuffer, outPos)
                                 }
-                                outBuffer[outPos++] = (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                             } else if (code <= C.BMP_LIMIT) {
                                 if (outPos + 3 > outBuffer.size) {
                                     outBuffer = growBuffer(outBuffer, outPos)
                                 }
-                                outBuffer[outPos++] = (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                             } else {
                                 if (outPos + 4 > outBuffer.size) {
                                     outBuffer = growBuffer(outBuffer, outPos)
                                 }
-                                outBuffer[outPos++] = (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] = (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+                                outBuffer[outPos++] =
+                                    (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                             }
                         }
 
@@ -491,7 +504,7 @@ class GhostJsonReader(
 
                         C.T_BYTE_INT -> {
                             if (outPos + 1 > outBuffer.size) {
-                                  outBuffer = growBuffer(outBuffer, outPos)
+                                outBuffer = growBuffer(outBuffer, outPos)
                             }
                             outBuffer[outPos++] = C.TAB_INT.toByte()
                         }

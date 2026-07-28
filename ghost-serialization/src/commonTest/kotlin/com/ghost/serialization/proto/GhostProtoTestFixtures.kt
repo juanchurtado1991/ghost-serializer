@@ -85,10 +85,12 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
                             reader.consumeKeySeparator()
                             deviceId = reader.nextLong()
                         }
+
                         "label" -> {
                             reader.consumeKeySeparator()
                             label = reader.nextString()
                         }
+
                         else -> {
                             reader.consumeKeySeparator()
                             reader.skipValue()
@@ -97,6 +99,7 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
                 }
                 reader.endObject()
             }
+
             is GhostJsonFlatReader -> {
                 reader.beginObject()
                 while (true) {
@@ -105,10 +108,12 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
                             reader.consumeKeySeparator()
                             deviceId = reader.nextLong()
                         }
+
                         "label" -> {
                             reader.consumeKeySeparator()
                             label = reader.nextString()
                         }
+
                         else -> {
                             reader.consumeKeySeparator()
                             reader.skipValue()
@@ -117,6 +122,7 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
                 }
                 reader.endObject()
             }
+
             is GhostJsonStringReader -> {
                 reader.beginObject()
                 while (true) {
@@ -125,10 +131,12 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
                             reader.consumeKeySeparator()
                             deviceId = reader.nextLong()
                         }
+
                         "label" -> {
                             reader.consumeKeySeparator()
                             label = reader.nextString()
                         }
+
                         else -> {
                             reader.consumeKeySeparator()
                             reader.skipValue()
@@ -137,6 +145,7 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
                 }
                 reader.endObject()
             }
+
             else -> error("Unsupported reader: $reader")
         }
         return ProtoEntryPointDevice(deviceId, label)

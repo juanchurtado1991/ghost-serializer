@@ -25,6 +25,12 @@ internal fun CodeArea(value: String) {
             .background(CodeBg)
             .padding(10.dp),
     ) {
-        Text(value, color = CodeText, fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 16.sp)
+        Text(
+            value,
+            color = CodeText,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 12.sp,
+            lineHeight = 16.sp
+        )
     }
 }

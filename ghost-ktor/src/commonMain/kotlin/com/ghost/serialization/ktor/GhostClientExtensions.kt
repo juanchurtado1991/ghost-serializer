@@ -9,6 +9,7 @@ import io.ktor.client.statement.HttpResponse
 
 @PublishedApi
 internal const val CLIENT_ERROR_PREFIX = "Ghost serializer not found for class "
+
 @PublishedApi
 internal const val CLIENT_ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
 

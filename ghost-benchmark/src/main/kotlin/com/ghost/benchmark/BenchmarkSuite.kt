@@ -39,7 +39,7 @@ internal enum class BenchmarkSuite(
             return entries.firstOrNull { it.cliName == name }
                 ?: error(
                     "Unknown benchmark suite '$name'. " +
-                        "Use: ${entries.joinToString { it.cliName }}"
+                            "Use: ${entries.joinToString { it.cliName }}"
                 )
         }
     }

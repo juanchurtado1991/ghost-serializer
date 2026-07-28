@@ -15,14 +15,6 @@ import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.endObject
-import com.ghost.serialization.parser.strings.nextBoolean
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextKey
-import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import io.ktor.client.HttpClient
@@ -43,15 +35,15 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runTest
 
 
 // --- Mock Models ---
@@ -151,7 +143,9 @@ class GhostKtorTest {
         val mockEngine = MockEngine { request ->
             val bodyText = when (val body = request.body) {
                 is io.ktor.http.content.TextContent -> body.text
-                is io.ktor.http.content.OutgoingContent.ByteArrayContent -> body.bytes().decodeToString()
+                is io.ktor.http.content.OutgoingContent.ByteArrayContent -> body.bytes()
+                    .decodeToString()
+
                 else -> error("Unsupported body type: ${body::class}")
             }
             assertEquals("""{"id":100,"name":"Alice","isActive":false}""", bodyText)

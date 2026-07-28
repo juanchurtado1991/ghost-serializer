@@ -77,7 +77,10 @@ class GhostSerializationKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
-        assertTrue(kspOutput.any { "StatusSerializer.kt" in it }, "Expected enum serializer: $kspOutput")
+        assertTrue(
+            kspOutput.any { "StatusSerializer.kt" in it },
+            "Expected enum serializer: $kspOutput"
+        )
     }
 
     @Test
@@ -99,7 +102,7 @@ class GhostSerializationKspTest {
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
         assertTrue(
             result.messages.contains("data class", ignoreCase = true) ||
-                result.messages.contains("GhostSerialization", ignoreCase = true),
+                    result.messages.contains("GhostSerialization", ignoreCase = true),
             result.messages
         )
     }

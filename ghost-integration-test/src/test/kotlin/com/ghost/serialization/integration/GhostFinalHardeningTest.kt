@@ -1,4 +1,5 @@
 @file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
@@ -24,7 +25,7 @@ class GhostFinalHardeningTest {
         // According to common JSON practice, the last key should win.
         val json = """{"id": 1, "id": 2, "id_internal": 100, "identity": "ghost"}"""
         val model = Ghost.deserialize<OverlappingKeyModel>(json.encodeToByteArray())
-        
+
         assertEquals(2, model.id, "Last key 'id' should win")
         assertEquals(100, model.id_internal)
     }
@@ -34,13 +35,13 @@ class GhostFinalHardeningTest {
         val model = MapEdgeCaseModel(
             complexKeys = mapOf("key with \"quotes\"" to "val1", "key\nnewline" to "val2")
         )
-        
+
         val json = Ghost.serialize(model)
-        
+
         // Verify key escaping in maps
         assertTrue(json.contains("\"key with \\\"quotes\\\"\":\"val1\""))
         assertTrue(json.contains("\"key\\nnewline\":\"val2\""))
-        
+
         val decoded = Ghost.deserialize<MapEdgeCaseModel>(json.encodeToByteArray())
         assertEquals(model, decoded)
     }
@@ -55,10 +56,10 @@ class GhostFinalHardeningTest {
             }
             append("-end")
         }
-        
+
         val model = LargeStringModel(largeString)
         val json = Ghost.serialize(model)
-        
+
         // Ensure it can be deserialized back
         val decoded = Ghost.deserialize<LargeStringModel>(json.encodeToByteArray())
         assertEquals(largeString, decoded.large)
@@ -69,11 +70,11 @@ class GhostFinalHardeningTest {
         // Int.MAX_VALUE as string
         val maxIntStr = Int.MAX_VALUE.toString()
         val json = """{"id": "$maxIntStr", "name": "Max Int"}"""
-        
+
         val model = Ghost.deserialize<UserWithValueClass>(json.encodeToByteArray()) {
             it.coerceStringsToNumbers = true
         }
-        
+
         assertEquals(UserId(Int.MAX_VALUE), model.id)
     }
 
@@ -81,9 +82,9 @@ class GhostFinalHardeningTest {
     fun testCollectionOfNulls() {
         val model = CollectionOfNulls(items = listOf(null, "A", null, "B"))
         val json = Ghost.serialize(model)
-        
+
         assertEquals("{\"items\":[null,\"A\",null,\"B\"]}", json)
-        
+
         val decoded = Ghost.deserialize<CollectionOfNulls>(json.encodeToByteArray())
         assertEquals(model, decoded)
     }
@@ -104,11 +105,11 @@ class GhostFinalHardeningTest {
         repeat(50) {
             current = RecursiveGraphNode("node-$it", current)
         }
-        
+
         val json = Ghost.serialize(current)
         assertTrue(json.contains("node-49"))
         assertTrue(json.contains("bottom"))
-        
+
         val decoded = Ghost.deserialize<RecursiveGraphNode>(json.encodeToByteArray())
         assertEquals("node-49", decoded.name)
     }

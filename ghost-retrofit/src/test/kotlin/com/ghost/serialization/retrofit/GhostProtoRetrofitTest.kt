@@ -86,7 +86,9 @@ class GhostProtoRetrofitTest {
 
     @Test
     fun `writes a quoted int64 request body`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("""{"deviceId":"1","label":"ack"}"""))
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(200).setBody("""{"deviceId":"1","label":"ack"}""")
+        )
 
         apiService.createEvent(ProtoDeviceEvent(deviceId = 123456789012345L, label = "sensor-3"))
 

@@ -8,10 +8,10 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 
 /** KSP regression tests for [@GhostJsonEnvelope][com.ghost.serialization.annotations.GhostJsonEnvelope]. */
@@ -77,7 +77,10 @@ class GhostJsonEnvelopeKspTest {
             "= envelope.`data`" in generated || "= envelope.data" in generated,
             generated
         )
-        assertFalse("fun routeTyped" in generated, "Generic envelope without targets must not emit routeTyped")
+        assertFalse(
+            "fun routeTyped" in generated,
+            "Generic envelope without targets must not emit routeTyped"
+        )
     }
 
     @Test

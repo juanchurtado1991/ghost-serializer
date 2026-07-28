@@ -7,7 +7,6 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
@@ -43,7 +42,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
@@ -354,11 +352,13 @@ class GhostJsonWriter(
      */
     fun value(value: Boolean): GhostJsonWriter {
         appendSeparator()
-        buffer.write(if (value) {
-            TRUE_BS
-        } else {
-            FALSE_BS
-        })
+        buffer.write(
+            if (value) {
+                TRUE_BS
+            } else {
+                FALSE_BS
+            }
+        )
         needsComma = true
         return this
     }
@@ -414,11 +414,13 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
-        buffer.write(if (value) {
-            TRUE_BS
-        } else {
-            FALSE_BS
-        })
+        buffer.write(
+            if (value) {
+                TRUE_BS
+            } else {
+                FALSE_BS
+            }
+        )
     }
 
     /**

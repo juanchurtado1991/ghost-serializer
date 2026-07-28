@@ -1,10 +1,10 @@
 package com.ghost.playground.features
 
 import com.ghost.playground.ui.icons.PlaygroundIconKind
-import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeToYaml
+import com.ghost.serialization.proto.GhostProto
 
 object FeatureCatalog {
     val labs: List<FeatureLab> = listOf(
@@ -27,11 +27,36 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("id", "name", "email"),
             variants = listOf(
-                LabVariant("full", "Full profile", "Perfil completo", """{"id":7,"name":"Neo","email":"neo@matrix.io"}"""),
-                LabVariant("nullEmail", "Null email", "Email nulo", """{"id":8,"name":"Trinity","email":null}"""),
-                LabVariant("missingOptional", "Missing optional field", "Campo opcional ausente", """{"id":9,"name":"Morpheus"}"""),
-                LabVariant("unicode", "Unicode name", "Nombre con unicode", """{"id":10,"name":"Niobe 🚀","email":"niobe@zion.io"}"""),
-                LabVariant("largeId", "Max-size id", "Id al máximo", """{"id":9223372036854775807,"name":"Architect","email":"architect@matrix.io"}"""),
+                LabVariant(
+                    "full",
+                    "Full profile",
+                    "Perfil completo",
+                    """{"id":7,"name":"Neo","email":"neo@matrix.io"}"""
+                ),
+                LabVariant(
+                    "nullEmail",
+                    "Null email",
+                    "Email nulo",
+                    """{"id":8,"name":"Trinity","email":null}"""
+                ),
+                LabVariant(
+                    "missingOptional",
+                    "Missing optional field",
+                    "Campo opcional ausente",
+                    """{"id":9,"name":"Morpheus"}"""
+                ),
+                LabVariant(
+                    "unicode",
+                    "Unicode name",
+                    "Nombre con unicode",
+                    """{"id":10,"name":"Niobe 🚀","email":"niobe@zion.io"}"""
+                ),
+                LabVariant(
+                    "largeId",
+                    "Max-size id",
+                    "Id al máximo",
+                    """{"id":9223372036854775807,"name":"Architect","email":"architect@matrix.io"}"""
+                ),
             ),
             run = { json ->
                 val user = Ghost.deserialize<PlaygroundUser>(json)
@@ -65,11 +90,36 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("theme", "retryCount"),
             variants = listOf(
-                LabVariant("bothWrong", "Both fields wrong type", "Ambos campos con tipo incorrecto", """{"theme":123,"retryCount":"nope"}"""),
-                LabVariant("themeWrong", "Wrong theme type", "Tipo incorrecto en theme", """{"theme":true,"retryCount":5}"""),
-                LabVariant("retryWrong", "Wrong retryCount type", "Tipo incorrecto en retryCount", """{"theme":"dark","retryCount":"lots"}"""),
-                LabVariant("retryNull", "Explicit null for a non-nullable field", "Null explícito en un campo no-nullable", """{"theme":"ok","retryCount":null}"""),
-                LabVariant("bothValid", "Both fields valid", "Ambos campos válidos", """{"theme":"dark","retryCount":10}"""),
+                LabVariant(
+                    "bothWrong",
+                    "Both fields wrong type",
+                    "Ambos campos con tipo incorrecto",
+                    """{"theme":123,"retryCount":"nope"}"""
+                ),
+                LabVariant(
+                    "themeWrong",
+                    "Wrong theme type",
+                    "Tipo incorrecto en theme",
+                    """{"theme":true,"retryCount":5}"""
+                ),
+                LabVariant(
+                    "retryWrong",
+                    "Wrong retryCount type",
+                    "Tipo incorrecto en retryCount",
+                    """{"theme":"dark","retryCount":"lots"}"""
+                ),
+                LabVariant(
+                    "retryNull",
+                    "Explicit null for a non-nullable field",
+                    "Null explícito en un campo no-nullable",
+                    """{"theme":"ok","retryCount":null}"""
+                ),
+                LabVariant(
+                    "bothValid",
+                    "Both fields valid",
+                    "Ambos campos válidos",
+                    """{"theme":"dark","retryCount":10}"""
+                ),
             ),
             run = { json ->
                 val cfg = Ghost.deserialize<ResilientConfig>(json)
@@ -104,11 +154,36 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("name", "city", "zip"),
             variants = listOf(
-                LabVariant("london", "London office", "Oficina en Londres", """{"name":"Ada","address":{"city":"London","zip":"EC2"}}"""),
-                LabVariant("us", "US address", "Dirección en EE.UU.", """{"name":"Grace","address":{"city":"Arlington","zip":"22203"}}"""),
-                LabVariant("cambridge", "Cambridge", "Cambridge", """{"name":"Alan","address":{"city":"Cambridge","zip":"CB2"}}"""),
-                LabVariant("unicode", "Unicode city name", "Ciudad con unicode", """{"name":"José","address":{"city":"São Paulo","zip":"01310-100"}}"""),
-                LabVariant("numericZip", "Numeric-looking zip", "Zip con apariencia numérica", """{"name":"Katherine","address":{"city":"Hampton","zip":"23666"}}"""),
+                LabVariant(
+                    "london",
+                    "London office",
+                    "Oficina en Londres",
+                    """{"name":"Ada","address":{"city":"London","zip":"EC2"}}"""
+                ),
+                LabVariant(
+                    "us",
+                    "US address",
+                    "Dirección en EE.UU.",
+                    """{"name":"Grace","address":{"city":"Arlington","zip":"22203"}}"""
+                ),
+                LabVariant(
+                    "cambridge",
+                    "Cambridge",
+                    "Cambridge",
+                    """{"name":"Alan","address":{"city":"Cambridge","zip":"CB2"}}"""
+                ),
+                LabVariant(
+                    "unicode",
+                    "Unicode city name",
+                    "Ciudad con unicode",
+                    """{"name":"José","address":{"city":"São Paulo","zip":"01310-100"}}"""
+                ),
+                LabVariant(
+                    "numericZip",
+                    "Numeric-looking zip",
+                    "Zip con apariencia numérica",
+                    """{"name":"Katherine","address":{"city":"Hampton","zip":"23666"}}"""
+                ),
             ),
             run = { json ->
                 val person = Ghost.deserialize<FlattenedPerson>(json)
@@ -144,11 +219,31 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = emptyList(),
             variants = listOf(
-                LabVariant("future", "Unknown type", "Tipo desconocido", """{"type":"FutureEvent","payload":true}"""),
-                LabVariant("legacy", "Legacy ping", "Ping legado", """{"type":"LegacyPing","payload":"hello"}"""),
+                LabVariant(
+                    "future",
+                    "Unknown type",
+                    "Tipo desconocido",
+                    """{"type":"FutureEvent","payload":true}"""
+                ),
+                LabVariant(
+                    "legacy",
+                    "Legacy ping",
+                    "Ping legado",
+                    """{"type":"LegacyPing","payload":"hello"}"""
+                ),
                 LabVariant("empty", "Empty type", "Tipo vacío", """{"type":"","payload":null}"""),
-                LabVariant("nested", "Nested payload", "Payload anidado", """{"type":"SensorAlert","payload":{"level":"critical","code":42}}"""),
-                LabVariant("versioned", "Versioned type", "Tipo versionado", """{"type":"v2.event","payload":123}"""),
+                LabVariant(
+                    "nested",
+                    "Nested payload",
+                    "Payload anidado",
+                    """{"type":"SensorAlert","payload":{"level":"critical","code":42}}"""
+                ),
+                LabVariant(
+                    "versioned",
+                    "Versioned type",
+                    "Tipo versionado",
+                    """{"type":"v2.event","payload":123}"""
+                ),
             ),
             run = { json ->
                 Ghost.deserialize<DeviceEvent>(json).toString()
@@ -181,7 +276,12 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("event", "meta"),
             variants = listOf(
-                LabVariant("ping", "Ping event", "Evento ping", """{"event":"ping","meta":{"trace":"abc","n":1}}"""),
+                LabVariant(
+                    "ping",
+                    "Ping event",
+                    "Evento ping",
+                    """{"event":"ping","meta":{"trace":"abc","n":1}}"""
+                ),
             ),
             run = { json ->
                 val env = Ghost.deserialize<EnvelopePayload>(json)
@@ -214,8 +314,18 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("orderId", "label", "retries"),
             variants = listOf(
-                LabVariant("restock", "Restock order", "Orden de reposición", """{"orderId":"5001","label":"restock"}"""),
-                LabVariant("withRetries", "Non-default retries", "Retries distinto del default", """{"orderId":"5002","label":"priority","retries":3}"""),
+                LabVariant(
+                    "restock",
+                    "Restock order",
+                    "Orden de reposición",
+                    """{"orderId":"5001","label":"restock"}"""
+                ),
+                LabVariant(
+                    "withRetries",
+                    "Non-default retries",
+                    "Retries distinto del default",
+                    """{"orderId":"5002","label":"priority","retries":3}"""
+                ),
             ),
             run = { json ->
                 val event = GhostProto.deserialize<ProtoOrderEvent>(json)

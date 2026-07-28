@@ -4,7 +4,6 @@ import com.ghost.playground.bench.model.TwitterResponse
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.generated.GhostModuleRegistry_playground
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -22,7 +21,10 @@ class SpeedTestEngineJvmTest {
     @Test
     fun bundledTwitterDatasetRoundTripsThroughAllEngines() = runBlocking {
         val payload = SpeedTestEngine.loadPayload()
-        assertTrue(payload.length > 5_000, "expected a non-trivial twitter_macro.json payload, got ${payload.length} chars")
+        assertTrue(
+            payload.length > 5_000,
+            "expected a non-trivial twitter_macro.json payload, got ${payload.length} chars"
+        )
 
         val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload)
         assertTrue(ghostDecoded.statuses.isNotEmpty())
@@ -33,9 +35,16 @@ class SpeedTestEngineJvmTest {
 
         val json = Json { ignoreUnknownKeys = true }
         val kserDecoded = json.decodeFromString<TwitterResponse>(payload)
-        assertEquals(ghostDecoded.statuses.size, kserDecoded.statuses.size, "Ghost and kser disagree on tweet count")
+        assertEquals(
+            ghostDecoded.statuses.size,
+            kserDecoded.statuses.size,
+            "Ghost and kser disagree on tweet count"
+        )
         assertEquals(ghostDecoded.statuses.first().id, kserDecoded.statuses.first().id)
-        assertEquals(ghostDecoded.statuses.first().user.screenName, kserDecoded.statuses.first().user.screenName)
+        assertEquals(
+            ghostDecoded.statuses.first().user.screenName,
+            kserDecoded.statuses.first().user.screenName
+        )
 
         MoshiBench.roundTrip(payload)
     }

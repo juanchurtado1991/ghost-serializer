@@ -3,12 +3,12 @@ package com.ghost.serialization.spring
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
 import org.springframework.http.converter.AbstractHttpMessageConverter
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 
 
 /**

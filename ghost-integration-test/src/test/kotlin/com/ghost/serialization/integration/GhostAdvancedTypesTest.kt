@@ -2,12 +2,12 @@
 
 package com.ghost.serialization.integration
 
-import com.ghost.serialization.integration.model.GhostAdvancedProfile
-import com.ghost.serialization.integration.model.GhostShape
-import com.ghost.serialization.integration.model.GhostUserToken
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.EmojiKeyModel
+import com.ghost.serialization.integration.model.GhostAdvancedProfile
+import com.ghost.serialization.integration.model.GhostShape
+import com.ghost.serialization.integration.model.GhostUserToken
 import com.ghost.serialization.integration.model.OverlappingKeyModel
 import kotlin.test.Test
 import kotlin.test.assertEquals

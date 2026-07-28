@@ -11,8 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
+
 /**
  * Malformed YAML, depth limits, duplicate keys, and strict traversal edge cases.
  * YAML counterpart to [com.ghost.serialization.GhostCrashProofTest] and

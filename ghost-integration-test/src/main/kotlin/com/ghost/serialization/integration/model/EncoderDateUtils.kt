@@ -2,9 +2,7 @@
 
 package com.ghost.serialization.integration.model
 
-import com.ghost.serialization.parser.bytes.readQuotedString
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
@@ -30,9 +28,12 @@ object EncoderDateUtils {
     fun encodeLegacyDate(writer: GhostJsonFlatWriter, value: Long) {
         val stringValue = value.toString()
         val formatted = "${
-            stringValue.take(4)}-${
-            stringValue.substring(4, 6)}-${
-            stringValue.substring(6, 8)}"
+            stringValue.take(4)
+        }-${
+            stringValue.substring(4, 6)
+        }-${
+            stringValue.substring(6, 8)
+        }"
         writer.value(formatted)
     }
 
@@ -40,9 +41,12 @@ object EncoderDateUtils {
     fun encodeLegacyDate(writer: GhostJsonWriter, value: Long) {
         val stringValue = value.toString()
         val formatted = "${
-            stringValue.take(4)}-${
-            stringValue.substring(4, 6)}-${
-            stringValue.substring(6, 8)}"
+            stringValue.take(4)
+        }-${
+            stringValue.substring(4, 6)
+        }-${
+            stringValue.substring(6, 8)
+        }"
         writer.value(formatted)
     }
 }

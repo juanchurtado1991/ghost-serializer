@@ -6,6 +6,7 @@ import android.os.Looper
 
 private val pool = ThreadLocal<GhostPool>()
 private val mainThreadInstance = GhostPool()
+
 @Volatile
 private var mainThreadRef: Thread? = null
 private var mainThreadResolved = false

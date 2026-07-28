@@ -4,9 +4,9 @@ package com.ghost.serialization.proto.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.bytes.readQuotedString
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.JsonReaderOptions
-import com.ghost.serialization.parser.bytes.readQuotedString
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.proto.protoReaderOf
 import kotlin.test.Test

@@ -51,7 +51,10 @@ fun StudioScreen(strings: Strings, lang: Lang) {
     var running by remember { mutableStateOf(false) }
     var activeStep by remember { mutableIntStateOf(-1) }
     var output by remember(selectedLab.id, selectedVariant.id) { mutableStateOf<String?>(null) }
-    var explanation by remember(selectedLab.id, selectedVariant.id) { mutableStateOf<String?>(null) }
+    var explanation by remember(
+        selectedLab.id,
+        selectedVariant.id
+    ) { mutableStateOf<String?>(null) }
     var runError by remember(selectedLab.id, selectedVariant.id) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(running) {
@@ -80,10 +83,21 @@ fun StudioScreen(strings: Strings, lang: Lang) {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(strings.presets, color = InkMuted, fontSize = 13.sp, modifier = Modifier.align(Alignment.CenterVertically))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                strings.presets,
+                color = InkMuted,
+                fontSize = 13.sp,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
             FeatureCatalog.labs.forEach { lab ->
-                PresetButton(if (lang == Lang.EN) lab.titleEn else lab.titleEs, selected = selectedLab.id == lab.id) {
+                PresetButton(
+                    if (lang == Lang.EN) lab.titleEn else lab.titleEs,
+                    selected = selectedLab.id == lab.id
+                ) {
                     selectedLab = lab
                     running = false
                     activeStep = -1
@@ -133,7 +147,10 @@ fun StudioScreen(strings: Strings, lang: Lang) {
         ) { running = true }
 
         runError?.let { err ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 PlaygroundIcon(PlaygroundIconKind.Warning, tint = Rose, size = 18.dp)
                 Text(err, color = Rose, fontWeight = FontWeight.SemiBold)
             }
@@ -141,7 +158,13 @@ fun StudioScreen(strings: Strings, lang: Lang) {
 
         if (running || output != null) {
             Card(title = strings.pipelineTitle, accent = Sage) {
-                PipelineRow(1, strings.pipelineStepReadTitle, strings.pipelineStepReadDetail, StepStatus.Done, true)
+                PipelineRow(
+                    1,
+                    strings.pipelineStepReadTitle,
+                    strings.pipelineStepReadDetail,
+                    StepStatus.Done,
+                    true
+                )
                 PipelineRow(
                     2,
                     selectedLab.pipelineRunTitle(strings),
@@ -156,9 +179,17 @@ fun StudioScreen(strings: Strings, lang: Lang) {
                     val (slots, hashSummary) = remember(selectedLab.id) {
                         PerfectHashLab.dispatchPreview(selectedLab.fieldNames)
                     }
-                    Text(hashSummary, color = TealDark, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        hashSummary,
+                        color = TealDark,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                     Spacer(Modifier.height(8.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         slots.forEach { slot ->
                             DispatchCell(slot.index, slot.fieldName, slot.occupied)
                         }
@@ -177,8 +208,9 @@ fun StudioScreen(strings: Strings, lang: Lang) {
     }
 }
 
-private fun FeatureLab.wireFormatDocGuide(strings: Strings): Pair<String, String>? = when (wireFormat) {
-    LabWireFormat.PROTO_JSON -> strings.wikiUsageProtobuf to PlaygroundLinks.WIKI_USAGE_PROTOBUF
-    LabWireFormat.YAML -> strings.wikiUsageYaml to PlaygroundLinks.WIKI_USAGE_YAML
-    LabWireFormat.JSON -> null
-}
+private fun FeatureLab.wireFormatDocGuide(strings: Strings): Pair<String, String>? =
+    when (wireFormat) {
+        LabWireFormat.PROTO_JSON -> strings.wikiUsageProtobuf to PlaygroundLinks.WIKI_USAGE_PROTOBUF
+        LabWireFormat.YAML -> strings.wikiUsageYaml to PlaygroundLinks.WIKI_USAGE_YAML
+        LabWireFormat.JSON -> null
+    }

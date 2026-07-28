@@ -38,9 +38,12 @@ class GhostTypeSystemTest {
 
     @Test
     fun testRecursiveGraphDeep() {
-        val root = RecursiveGraphNode("1", 
-            RecursiveGraphNode("2", 
-                RecursiveGraphNode("3", 
+        val root = RecursiveGraphNode(
+            "1",
+            RecursiveGraphNode(
+                "2",
+                RecursiveGraphNode(
+                    "3",
                     RecursiveGraphNode("4")
                 )
             )
@@ -57,7 +60,7 @@ class GhostTypeSystemTest {
         val decoded = Ghost.deserialize<NestedGenericModel>(json)
         assertEquals(model, decoded)
     }
-    
+
     @Test
     fun testNullablePrimitivesRoundTrip() {
         val model = NullablePrimitives(1, 2L, true, 3.14, "hi")

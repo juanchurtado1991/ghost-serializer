@@ -32,7 +32,8 @@ class GhostRawJsonTest {
     @Test
     fun deserializeRawJsonFieldAliasesResponseBuffer() {
         val json = """{"id":"1","metadata":{"nested":[1,2,3]}}""".encodeToByteArray()
-        val model = Ghost.deserialize<com.ghost.serialization.integration.model.OpaqueMetadataEnvelope>(json)
+        val model =
+            Ghost.deserialize<com.ghost.serialization.integration.model.OpaqueMetadataEnvelope>(json)
 
         assertSame(json, model.metadata.storage)
         assertTrue(model.metadata.storageOffset > 0)

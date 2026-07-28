@@ -1,9 +1,9 @@
 package com.ghost.serialization.integration
 
-import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.integration.model.OneofPayload
 import com.ghost.serialization.integration.model.ProtoOneofEvent
+import com.ghost.serialization.proto.GhostProto
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -28,7 +28,8 @@ class GhostProtoOneofIntegrationTest {
 
     @Test
     fun serializedFormHasNoWrapperOrDiscriminatorKey() {
-        val json = Ghost.encodeToString(ProtoOneofEvent(id = "e1", payload = OneofPayload.Text("hello")))
+        val json =
+            Ghost.encodeToString(ProtoOneofEvent(id = "e1", payload = OneofPayload.Text("hello")))
         assertEquals("""{"id":"e1","text":"hello"}""", json)
     }
 

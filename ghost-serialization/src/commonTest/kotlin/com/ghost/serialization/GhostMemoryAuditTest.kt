@@ -9,21 +9,15 @@ import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.endObject
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextKey
-import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.util.isJvm
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runTest
 
 
 class GhostMemoryAuditTest {

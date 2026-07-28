@@ -1,5 +1,11 @@
 package com.ghost.benchmark
 
+import com.ghost.benchmark.RegressionCalculator.DECODE_STRING
+import com.ghost.benchmark.RegressionCalculator.DEFAULT_TOLERANCE
+import com.ghost.benchmark.RegressionCalculator.LIST_MEDIUM
+import com.ghost.benchmark.RegressionCalculator.TWITTER
+
+
 /**
  * Engine-relative regression detector.
  *
@@ -258,30 +264,40 @@ object RegressionCalculator {
 
     /** Baseline group label for the Twitter macro dataset ([BenchmarkThroughput.TWITTER_PAYLOAD_BYTES]). */
     const val TWITTER = "TWITTER MACRO"
+
     /** Baseline group label for LIST_MEDIUM deserialization (200-item [com.ghost.serialization.integration.model.ComplexResponse] list). */
     const val LIST_MEDIUM = "LIST_MEDIUM (200)"
+
     /** Baseline group label for SYNC_FULL_LARGE deserialization (2 000 items). */
     const val SYNC_FULL = "SYNC_FULL_LARGE (2000)"
+
     /** Baseline group label for WRITING serialization (1 000 items). */
     const val WRITING = "WRITING (1000)"
 
     /** Twitter / synthetic decode category — JSON string input. */
     const val DECODE_STRING = "Decode (String)"
+
     /** Twitter / synthetic decode category — UTF-8 byte array input. */
     const val DECODE_BYTES = "Decode (Bytes)"
+
     /** Twitter / synthetic decode category — Okio buffered source input. */
     const val DECODE_STREAMING = "Decode (Streaming)"
+
     /** Twitter / synthetic encode category — JSON string output. */
     const val ENCODE_STRING = "Encode (String)"
+
     /** Twitter / synthetic encode category — UTF-8 byte array output. */
     const val ENCODE_BYTES = "Encode (Bytes)"
+
     /** Twitter / synthetic encode category — Okio buffered sink output. */
     const val ENCODE_STREAMING = "Encode (Streaming)"
 
     /** Synthetic I/O mode — JSON string channel. */
     const val MODE_STRING = "String"
+
     /** Synthetic I/O mode — UTF-8 byte array channel. */
     const val MODE_BYTES = "Bytes"
+
     /** Synthetic I/O mode — Okio streaming channel. */
     const val MODE_STREAMING = "Streaming"
 

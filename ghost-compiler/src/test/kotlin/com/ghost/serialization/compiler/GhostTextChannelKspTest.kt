@@ -3,14 +3,7 @@
 package com.ghost.serialization.compiler
 
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.bytes.captureRawJson
-import com.ghost.serialization.parser.bytes.nextChar
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.captureRawJson
-import com.ghost.serialization.parser.streaming.nextChar
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.captureRawJson
-import com.ghost.serialization.parser.strings.nextChar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -18,10 +11,10 @@ import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 
 /**
@@ -118,15 +111,18 @@ class GhostTextChannelKspTest {
 
         assertEquals(
             1,
-            Regex("override fun deserialize\\(reader: GhostJsonReader\\)").findAll(generated).count()
+            Regex("override fun deserialize\\(reader: GhostJsonReader\\)").findAll(generated)
+                .count()
         )
         assertEquals(
             1,
-            Regex("override fun deserialize\\(reader: GhostJsonFlatReader\\)").findAll(generated).count()
+            Regex("override fun deserialize\\(reader: GhostJsonFlatReader\\)").findAll(generated)
+                .count()
         )
         assertEquals(
             1,
-            Regex("override fun deserialize\\(reader: GhostJsonStringReader\\)").findAll(generated).count()
+            Regex("override fun deserialize\\(reader: GhostJsonStringReader\\)").findAll(generated)
+                .count()
         )
         assertEquals(3, "reader.readSet".toRegex().findAll(generated).count())
         assertEquals(3, "reader.captureRawJson()".toRegex().findAll(generated).count())

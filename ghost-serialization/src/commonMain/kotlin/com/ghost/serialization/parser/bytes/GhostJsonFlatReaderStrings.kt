@@ -5,12 +5,12 @@ package com.ghost.serialization.parser.bytes
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.rollingHashImpl
 import com.ghost.serialization.parser.common.scanStringSwarNoHash
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**

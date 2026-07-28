@@ -32,7 +32,10 @@ class FeatureCatalogTest {
             // exact bug class fixed by removing dispatchPreview's old 64-slot truncation.
             val occupiedNames = slots.filter { it.occupied }.map { it.fieldName }.toSet()
             lab.fieldNames.forEach { field ->
-                assertTrue(field in occupiedNames, "field '$field' missing from ${lab.id}'s dispatch preview")
+                assertTrue(
+                    field in occupiedNames,
+                    "field '$field' missing from ${lab.id}'s dispatch preview"
+                )
             }
         }
     }
@@ -49,7 +52,10 @@ class FeatureCatalogTest {
     fun coreAnnotationLabsHaveAtLeastFiveVariants() {
         val coreLabIds = setOf("ghostSerialization", "resilient", "flatten", "fallback")
         FeatureCatalog.labs.filter { it.id in coreLabIds }.forEach { lab ->
-            assertTrue(lab.variants.size >= 5, "expected >=5 variants for ${lab.id}, got ${lab.variants.size}")
+            assertTrue(
+                lab.variants.size >= 5,
+                "expected >=5 variants for ${lab.id}, got ${lab.variants.size}"
+            )
         }
     }
 
@@ -59,11 +65,20 @@ class FeatureCatalogTest {
         FeatureCatalog.labs.forEach { lab ->
             lab.variants.forEach { variant ->
                 val output = lab.run(variant.json)
-                assertTrue(output.isNotBlank(), "expected non-blank output for ${lab.id}/${variant.id}")
+                assertTrue(
+                    output.isNotBlank(),
+                    "expected non-blank output for ${lab.id}/${variant.id}"
+                )
                 val explanationEn = lab.explainEn(variant.json, output)
                 val explanationEs = lab.explainEs(variant.json, output)
-                assertTrue(explanationEn.isNotBlank(), "expected EN explanation for ${lab.id}/${variant.id}")
-                assertTrue(explanationEs.isNotBlank(), "expected ES explanation for ${lab.id}/${variant.id}")
+                assertTrue(
+                    explanationEn.isNotBlank(),
+                    "expected EN explanation for ${lab.id}/${variant.id}"
+                )
+                assertTrue(
+                    explanationEs.isNotBlank(),
+                    "expected ES explanation for ${lab.id}/${variant.id}"
+                )
             }
         }
     }

@@ -57,7 +57,11 @@ internal fun DocLink(label: String, url: String, icon: PlaygroundIconKind, accen
             .shadow(elevation.dp, RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(CardBg)
-            .border(1.dp, if (hovered) accent.copy(DocLinkHoverBorderAlpha) else CardBorder, RoundedCornerShape(12.dp))
+            .border(
+                1.dp,
+                if (hovered) accent.copy(DocLinkHoverBorderAlpha) else CardBorder,
+                RoundedCornerShape(12.dp)
+            )
             .hoverable(interactionSource)
             .clickable(interactionSource = interactionSource, indication = null) { openUrl(url) }
             .padding(12.dp),
@@ -70,7 +74,13 @@ internal fun DocLink(label: String, url: String, icon: PlaygroundIconKind, accen
         ) {
             PlaygroundIcon(icon, tint = accent, size = 16.dp)
         }
-        Text(label, color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        Text(
+            label,
+            color = Ink,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            modifier = Modifier.weight(1f)
+        )
         PlaygroundIcon(PlaygroundIconKind.RoundTrip, tint = InkMuted, size = 14.dp)
     }
 }

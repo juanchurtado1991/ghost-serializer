@@ -36,7 +36,10 @@ class GhostAnalyzerValidationKspTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("cannot be private", ignoreCase = true), result.messages)
+        assertTrue(
+            result.messages.contains("cannot be private", ignoreCase = true),
+            result.messages
+        )
     }
 
     @Test
@@ -60,7 +63,10 @@ class GhostAnalyzerValidationKspTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("Duplicate JSON name", ignoreCase = true), result.messages)
+        assertTrue(
+            result.messages.contains("Duplicate JSON name", ignoreCase = true),
+            result.messages
+        )
     }
 
     @Test
@@ -80,7 +86,10 @@ class GhostAnalyzerValidationKspTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("Map key must be a String", ignoreCase = true), result.messages)
+        assertTrue(
+            result.messages.contains("Map key must be a String", ignoreCase = true),
+            result.messages
+        )
     }
 
     @Test
@@ -101,7 +110,10 @@ class GhostAnalyzerValidationKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
-        assertTrue(kspOutput.any { "StringKeyedMapSerializer.kt" in it }, "Expected serializer: $kspOutput")
+        assertTrue(
+            kspOutput.any { "StringKeyedMapSerializer.kt" in it },
+            "Expected serializer: $kspOutput"
+        )
     }
 
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {

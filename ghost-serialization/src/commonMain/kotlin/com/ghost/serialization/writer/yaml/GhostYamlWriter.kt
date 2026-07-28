@@ -1,13 +1,12 @@
 package com.ghost.serialization.writer.yaml
 
-import com.ghost.serialization.yaml.exception.GhostYamlException
-
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.exception.GhostYamlException
 import okio.BufferedSink
 import okio.ByteString
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
  * A highly optimized, low-allocation YAML writer for Kotlin Multiplatform.
@@ -318,22 +317,27 @@ class GhostYamlWriter(
                         buffer.writeByte(C.BACKSLASH_INT)
                         buffer.writeByte(C.CHAR_N_INT)
                     }
+
                     C.CHAR_CR_INT -> {
                         buffer.writeByte(C.BACKSLASH_INT)
                         buffer.writeByte(C.CHAR_R_INT)
                     }
+
                     C.CHAR_TAB_INT -> {
                         buffer.writeByte(C.BACKSLASH_INT)
                         buffer.writeByte(C.CHAR_T_INT)
                     }
+
                     C.CHAR_BS_INT -> {
                         buffer.writeByte(C.BACKSLASH_INT)
                         buffer.writeByte(C.CHAR_B_INT)
                     }
+
                     C.CHAR_FF_INT -> {
                         buffer.writeByte(C.BACKSLASH_INT)
                         buffer.writeByte(C.CHAR_F_INT)
                     }
+
                     else -> {
                         if (charCode < C.CHAR_SPACE_INT) {
                             buffer.writeByte(C.BACKSLASH_INT)
@@ -397,7 +401,8 @@ class GhostYamlWriter(
             header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &&
             header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE
         ) {
-            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB).utf8()
+            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB)
+                .utf8()
         }
         return header.utf8()
     }

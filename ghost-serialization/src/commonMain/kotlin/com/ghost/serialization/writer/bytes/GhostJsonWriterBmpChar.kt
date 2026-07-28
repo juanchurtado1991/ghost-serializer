@@ -3,8 +3,8 @@
 package com.ghost.serialization.writer.bytes
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import okio.Buffer
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -18,6 +18,7 @@ internal fun Buffer.writeQuotedBmpCodeUnit(codePoint: Int) {
             writeByte(C.UTF8_2BYTE_PREFIX or (codePoint shr C.UTF8_SHIFT_6))
             writeByte(C.UTF8_CONT_PREFIX or (codePoint and C.UTF8_CONT_MASK))
         }
+
         else -> {
             writeByte(C.UTF8_3BYTE_PREFIX or (codePoint shr C.SHIFT_12))
             writeByte(C.UTF8_CONT_PREFIX or ((codePoint shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK))

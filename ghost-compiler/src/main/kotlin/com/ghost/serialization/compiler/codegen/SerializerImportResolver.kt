@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.codegen
+
 import com.ghost.serialization.compiler.analysis.isByteArray
 import com.ghost.serialization.compiler.analysis.isList
 import com.ghost.serialization.compiler.analysis.isMap
@@ -11,11 +12,11 @@ import com.ghost.serialization.compiler.analysis.isPrimitiveShort
 import com.ghost.serialization.compiler.analysis.isPrimitiveULong
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isString
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.GhostSerializerContext
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.FileSpec
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -90,11 +91,11 @@ internal class SerializerImportResolver(
     ) {
         val byteArrayClassifications = classifyAllByteArrayUsages()
         val hasList = ctx.properties.any { it.isList } ||
-            allTypes.any { it.contains(C.STR_LIST) }
+                allTypes.any { it.contains(C.STR_LIST) }
         val hasSet = ctx.properties.any { it.isSet } ||
-            allTypes.any { it.contains(C.STR_SET) }
+                allTypes.any { it.contains(C.STR_SET) }
         val hasMap = ctx.properties.any { it.isMap } ||
-            allTypes.any { it.contains(C.STR_MAP) }
+                allTypes.any { it.contains(C.STR_MAP) }
 
         if (hasList || hasSet) {
             fileBuilder.addImport(
@@ -153,6 +154,7 @@ internal class SerializerImportResolver(
                     arg.type?.resolve()?.let { considerType(it) }
                 }
             }
+
             fun considerProperty(prop: GhostPropertyModel) {
                 // Custom decoders emit Provider.fn(reader) only — null handling lives in the provider.
                 if (prop.customDecoder != null) return
@@ -201,7 +203,7 @@ internal class SerializerImportResolver(
 
         val allTypeStrings = allTypes.joinToString()
         val needsNextString = needsNextStringImport() ||
-            byteArrayClassifications.contains(ByteArrayCoverage.COVERED)
+                byteArrayClassifications.contains(ByteArrayCoverage.COVERED)
         // Streaming reader extensions (GhostJsonReader.deserialize).
         if (needsNextIntImport()) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_INT_NAME)
@@ -280,9 +282,9 @@ internal class SerializerImportResolver(
         }
 
         val needsCaptureRawJsonBytes = allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE) &&
-            byteArrayClassifications.contains(ByteArrayCoverage.UNCOVERED)
+                byteArrayClassifications.contains(ByteArrayCoverage.UNCOVERED)
         val needsCaptureRawJson = allTypeStrings.contains(C.K_RAW_JSON) ||
-            allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
+                allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
         if (needsCaptureRawJsonBytes) {
             fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
@@ -480,13 +482,15 @@ internal class SerializerImportResolver(
     }
 
     private fun isValueClassType(type: KSType): Boolean {
-        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
+        val declaration =
+            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
         return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
                 declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
     }
 
     private fun resolveValueClassInnerType(type: KSType): KSType? {
-        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
+        val declaration =
+            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null
         return param.type.resolve()

@@ -1,11 +1,8 @@
 package com.ghost.serialization.yaml
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
-import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertNull
 
 /**
@@ -67,6 +64,7 @@ class GhostYamlGroupDTest {
         // flow collections and block-sequence items to make sure the fix isn't accidentally
         // scoped to just one caller.
         val flow = parseMap("v: {a: -0x10, b: -0o17, c: -0b1010}")
+
         @Suppress("UNCHECKED_CAST")
         val flowMap = flow["v"] as Map<String, Any?>
         assertEquals(-16L, flowMap["a"])
@@ -98,6 +96,7 @@ class GhostYamlGroupDTest {
               key1: value1
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val seq = result["explicit_seq"] as List<Any?>
         assertEquals(2, seq.size)

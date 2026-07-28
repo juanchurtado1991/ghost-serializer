@@ -1,8 +1,6 @@
 package com.ghost.serialization.integration.model
 
-import com.ghost.serialization.parser.bytes.readQuotedString
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter

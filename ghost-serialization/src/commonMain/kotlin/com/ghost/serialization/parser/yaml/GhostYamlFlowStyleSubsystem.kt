@@ -11,10 +11,10 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     position++ // consume '{'
     val result = LinkedHashMap<String, Any?>(8)
     skipWhitespaceAndComments()
-    
+
     val localRawData = rawData
     val localLimit = limit
-    
+
     if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
         position++
         return result
@@ -64,10 +64,10 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
     position++ // consume '['
     val result = mutableListOf<Any?>()
     skipWhitespaceAndComments()
-    
+
     val localRawData = rawData
     val localLimit = limit
-    
+
     if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
         position++
         return result

@@ -55,7 +55,8 @@ class GhostMultiBranchConstructorTest {
 
     @Test
     fun productConfig_roundtrip_preservesAllValues() {
-        val original = ApiProductConfig(id = 99, name = "RoundTrip", maxRetries = 7, isEnabled = false)
+        val original =
+            ApiProductConfig(id = 99, name = "RoundTrip", maxRetries = 7, isEnabled = false)
         val json = Ghost.serialize(original)
         val result = Ghost.deserialize<ApiProductConfig>(json)
         assertEquals(original, result)
@@ -69,7 +70,8 @@ class GhostMultiBranchConstructorTest {
 
     @Test
     fun userEvent_allFieldsPresent_usesAllParsedValues() {
-        val json = """{"userId":10,"eventType":"purchase","version":3,"retryCount":2,"isProcessed":true}"""
+        val json =
+            """{"userId":10,"eventType":"purchase","version":3,"retryCount":2,"isProcessed":true}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
         assertEquals(10, result.userId)
         assertEquals("purchase", result.eventType)

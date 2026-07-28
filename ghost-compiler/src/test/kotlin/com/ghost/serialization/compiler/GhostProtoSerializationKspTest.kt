@@ -134,7 +134,10 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "ProtoSettingsSerializer.kt"
         )
 
-        assertTrue("if (value.retries != 0) {" in generated, "Expected int32 zero-value guard:\n$generated")
+        assertTrue(
+            "if (value.retries != 0) {" in generated,
+            "Expected int32 zero-value guard:\n$generated"
+        )
         assertTrue(
             "if (value.label.isNotEmpty()) {" in generated,
             "Expected empty-string guard:\n$generated"
@@ -282,7 +285,10 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "PlainSettingsSerializer.kt"
         )
 
-        assertFalse("if (value.retries != 0)" in generated, "Non-proto classes must not omit zero values:\n$generated")
+        assertFalse(
+            "if (value.retries != 0)" in generated,
+            "Non-proto classes must not omit zero values:\n$generated"
+        )
         assertTrue("writer.writeField(H_RETRIES, value.retries)" in generated, generated)
     }
 
@@ -306,8 +312,8 @@ class GhostProtoSerializationKspTest {
         assertTrue(
             "override val isProto: Boolean = true" in generated,
             "Expected a runtime-checkable isProto flag on the generated serializer (the " +
-                "@GhostProtoSerialization annotation itself is BINARY-retained, not reflectively " +
-                "visible):\n$generated"
+                    "@GhostProtoSerialization annotation itself is BINARY-retained, not reflectively " +
+                    "visible):\n$generated"
         )
     }
 
@@ -328,7 +334,10 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "PlainFlaggedSerializer.kt"
         )
 
-        assertFalse("isProto" in generated, "Plain @GhostSerialization classes should not emit isProto:\n$generated")
+        assertFalse(
+            "isProto" in generated,
+            "Plain @GhostSerialization classes should not emit isProto:\n$generated"
+        )
     }
 
     @Test
@@ -352,7 +361,10 @@ class GhostProtoSerializationKspTest {
             "writer.writeField(H_REQUESTID, value.requestId)" in generated,
             "Non-proto Long fields must keep the fast unquoted fused path:\n$generated"
         )
-        assertFalse(".toString())" in generated, "Non-proto Long fields must not be quoted:\n$generated")
+        assertFalse(
+            ".toString())" in generated,
+            "Non-proto Long fields must not be quoted:\n$generated"
+        )
     }
 
     @Test
@@ -489,7 +501,10 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "ProtoAccountIdsWrapSerializer.kt"
         )
 
-        assertTrue("readList" in generated, "Expected list reader for value-class-wrapped collection:\n$generated")
+        assertTrue(
+            "readList" in generated,
+            "Expected list reader for value-class-wrapped collection:\n$generated"
+        )
         assertTrue(
             "reader.coerceStringsToNumbers = true" in generated,
             "Expected proto int64 coercion inside list elements:\n$generated"
@@ -517,7 +532,10 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "ProtoShardSerializer.kt"
         )
 
-        assertFalse(".data" in generated, "ULong must not codegen internal .data access:\n$generated")
+        assertFalse(
+            ".data" in generated,
+            "ULong must not codegen internal .data access:\n$generated"
+        )
         assertTrue("value.shard_id.toString()" in generated, generated)
     }
 

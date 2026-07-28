@@ -40,7 +40,8 @@ class GhostConverterFactoryDirectTest {
 
     @Test
     fun responseBodyConverter_returnsNullForUnregisteredType() {
-        val converter = factory.responseBodyConverter(Unregistered::class.java, emptyArray(), retrofit)
+        val converter =
+            factory.responseBodyConverter(Unregistered::class.java, emptyArray(), retrofit)
         assertNull(converter)
     }
 
@@ -67,8 +68,9 @@ class GhostConverterFactoryDirectTest {
     fun responseBodyConverter_growsScratchBufferForPayloadsLargerThanInitialSize() {
         val longName = "n".repeat(600_000)
         val json = """{"id":1,"name":"$longName","isActive":true}"""
-        val converter = factory.responseBodyConverter(RetrofitUser::class.java, emptyArray(), retrofit)
-            ?: error("Expected a converter for a registered type")
+        val converter =
+            factory.responseBodyConverter(RetrofitUser::class.java, emptyArray(), retrofit)
+                ?: error("Expected a converter for a registered type")
 
         val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
         val result = converter.convert(body)

@@ -3,8 +3,8 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.peekStringField
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject
@@ -12,7 +12,6 @@ import com.ghost.serialization.parser.strings.peekStringField
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 
 
 /**

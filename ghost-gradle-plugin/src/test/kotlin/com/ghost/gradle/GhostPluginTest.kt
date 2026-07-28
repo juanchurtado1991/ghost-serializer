@@ -1,8 +1,8 @@
 package com.ghost.gradle
 
-import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.api.Project
 import org.gradle.api.internal.project.DefaultProject
+import org.gradle.testfixtures.ProjectBuilder
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import kotlin.test.Test
 import kotlin.test.assertEquals

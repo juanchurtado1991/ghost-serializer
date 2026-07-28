@@ -37,11 +37,12 @@ class GhostKtorBypassExtensionsTest {
             )
 
             @Suppress("UNCHECKED_CAST")
-            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = when (clazz) {
-                KtorUser::class -> KtorUserSerializer as GhostSerializer<T>
-                ProtoKtorEvent::class -> ProtoKtorEventSerializer as GhostSerializer<T>
-                else -> null
-            }
+            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+                when (clazz) {
+                    KtorUser::class -> KtorUserSerializer as GhostSerializer<T>
+                    ProtoKtorEvent::class -> ProtoKtorEventSerializer as GhostSerializer<T>
+                    else -> null
+                }
         })
     }
 

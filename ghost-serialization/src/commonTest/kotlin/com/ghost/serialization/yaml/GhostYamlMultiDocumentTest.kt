@@ -5,15 +5,16 @@ import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 class GhostYamlMultiDocumentTest {
 
     private data class Widget(val id: Int, val label: String)
 
     private object WidgetSerializer : GhostYamlSerializer<Widget> {
-        override fun serialize(writer: com.ghost.serialization.writer.yaml.GhostYamlWriter, value: Widget) = Unit
+        override fun serialize(
+            writer: com.ghost.serialization.writer.yaml.GhostYamlWriter,
+            value: Widget
+        ) = Unit
 
         override fun serialize(writer: GhostYamlFlatWriter, value: Widget) {
             writer.beginObject()
@@ -27,7 +28,12 @@ class GhostYamlMultiDocumentTest {
             var id = 0
             var label = ""
             while (true) {
-                when (reader.selectNameAndConsume(com.ghost.serialization.parser.common.JsonReaderOptions.of("id", "label"))) {
+                when (reader.selectNameAndConsume(
+                    com.ghost.serialization.parser.common.JsonReaderOptions.of(
+                        "id",
+                        "label"
+                    )
+                )) {
                     0 -> id = reader.nextInt()
                     1 -> label = reader.nextString()
                     -1 -> break
@@ -50,7 +56,8 @@ class GhostYamlMultiDocumentTest {
         """.trimIndent()
 
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
-        val parsed = reader.readAllDocuments { docReader -> WidgetSerializer.deserialize(docReader) }
+        val parsed =
+            reader.readAllDocuments { docReader -> WidgetSerializer.deserialize(docReader) }
 
         assertEquals(listOf(Widget(1, "first"), Widget(2, "second")), parsed)
     }

@@ -157,7 +157,10 @@ class GhostYamlCodegenKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
         assertTrue(
-            result.messages.contains("requires @GhostSerialization or @GhostProtoSerialization", ignoreCase = true),
+            result.messages.contains(
+                "requires @GhostSerialization or @GhostProtoSerialization",
+                ignoreCase = true
+            ),
             result.messages
         )
     }

@@ -1,10 +1,10 @@
 @file:Suppress("ReplaceSizeCheckWithIsNotEmpty")
 
 package com.ghost.serialization.compiler.codegen
+
 import com.ghost.serialization.compiler.codegen.emit.DeserializeCodeEmitter
 import com.ghost.serialization.compiler.codegen.emit.EnvelopeRouterEmitter
 import com.ghost.serialization.compiler.codegen.emit.SerializeCodeEmitter
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.GhostSerializerContext
@@ -16,6 +16,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**

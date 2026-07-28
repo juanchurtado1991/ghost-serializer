@@ -2,17 +2,16 @@
 
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 
 /**
@@ -61,7 +60,8 @@ class GhostTextChannelPerModelKspTest {
         // straight into the nested type's own string-reader overload — that overload MUST
         // exist for the parent to compile, regardless of what the nested type itself requested.
         val generatedParent = readSerializer("ParentOfOptOutSerializer", FORCED_ENABLE_FIXTURE)
-        val generatedOptedOut = readSerializer("OptedOutButReferencedSerializer", FORCED_ENABLE_FIXTURE)
+        val generatedOptedOut =
+            readSerializer("OptedOutButReferencedSerializer", FORCED_ENABLE_FIXTURE)
 
         assertTrue(
             "override fun deserialize(reader: GhostJsonStringReader)" in generatedParent,
@@ -69,7 +69,7 @@ class GhostTextChannelPerModelKspTest {
         assertTrue(
             "override fun deserialize(reader: GhostJsonStringReader)" in generatedOptedOut,
             "A model's own textChannel=false must be overridden when an enabled parent " +
-                "depends on it, otherwise the parent's generated code wouldn't compile",
+                    "depends on it, otherwise the parent's generated code wouldn't compile",
         )
     }
 

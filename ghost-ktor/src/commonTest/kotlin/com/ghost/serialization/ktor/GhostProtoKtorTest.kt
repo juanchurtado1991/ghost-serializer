@@ -15,13 +15,6 @@ import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.endObject
-import com.ghost.serialization.parser.strings.nextKey
-import com.ghost.serialization.parser.strings.nextLong
-import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import io.ktor.client.HttpClient
@@ -33,11 +26,11 @@ import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.test.runTest
 import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.runTest
 
 
 // --- Mock proto-flavored model & hand-written stand-in for @GhostProtoSerialization codegen ---

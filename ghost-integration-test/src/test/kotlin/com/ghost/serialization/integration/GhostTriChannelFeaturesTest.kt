@@ -37,7 +37,10 @@ class GhostTriChannelFeaturesTest {
             body = RawJson.fromUtf8Bytes(rawJson.encodeToByteArray())
         )
         assertTriChannelRoundTrip(model)
-        assertEquals(rawJson, Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToString(model)).body.decodeToString())
+        assertEquals(
+            rawJson,
+            Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToString(model)).body.decodeToString()
+        )
     }
 
     @Test
@@ -48,7 +51,10 @@ class GhostTriChannelFeaturesTest {
             body = RawJson.fromUtf8Bytes(rawJson.encodeToByteArray())
         )
         assertTriChannelRoundTrip(model)
-        assertEquals(rawJson, Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToBytes(model)).body.decodeToString())
+        assertEquals(
+            rawJson,
+            Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToBytes(model)).body.decodeToString()
+        )
     }
 
     @Test

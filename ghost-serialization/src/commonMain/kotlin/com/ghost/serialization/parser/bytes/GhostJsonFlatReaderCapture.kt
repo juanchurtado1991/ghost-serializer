@@ -3,8 +3,8 @@
 package com.ghost.serialization.parser.bytes
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.types.RawJson
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -58,6 +58,7 @@ private fun GhostJsonFlatReader.captureJsonValueBytes() {
                 }
             }
         }
+
         C.QUOTE_INT -> captureSkipStringBytes(data, localLimit)
         C.TRUE_CHAR_INT -> position += 3   // "rue" (the 't' was already consumed)
         C.FALSE_CHAR_INT -> position += 4  // "alse"

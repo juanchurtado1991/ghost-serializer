@@ -67,7 +67,8 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
                         offset += read
                     }
 
-                    val bytesToParse = if (offset == scratch.size) scratch else scratch.copyOf(offset)
+                    val bytesToParse =
+                        if (offset == scratch.size) scratch else scratch.copyOf(offset)
                     ghostYamlInternalUseFlatReader(bytesToParse) { reader ->
                         yamlSerializer.deserialize(reader)
                     }

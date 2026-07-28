@@ -38,7 +38,7 @@ sealed class SmartEvent {
 sealed class DeviceCommand {
     @GhostSerialization
     data class Reboot(val force: Boolean = false) : DeviceCommand()
-    
+
     @GhostSerialization
     data class SetBrightness(val level: Int) : DeviceCommand()
 
@@ -96,9 +96,9 @@ class GhostInferredPolymorphismTest {
                 ]
             }
         """.trimIndent()
-        
+
         val container = Ghost.deserialize<InferredNestedContainer>(json)
-        
+
         assertEquals("dev_123", container.id)
         assertEquals(SmartEvent.HumidityEvent(45.0), container.event)
         assertEquals(3, container.commands.size)

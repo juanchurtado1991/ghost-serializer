@@ -11,10 +11,10 @@ import com.ghost.serialization.integration.model.MixedStructuralModelSerializer
 import com.ghost.serialization.integration.model.WrappedModel
 import com.ghost.serialization.integration.model.WrappedModelSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import okio.Buffer
 
 
 class GhostStructuralTransformationTest {
@@ -49,7 +49,7 @@ class GhostStructuralTransformationTest {
         val model = FlattenedModel(id = 1, level = 42, status = "active", author = "Ghost")
         val buffer = Buffer()
         FlattenedModelSerializer.serialize(buffer, model)
-        
+
         val json = buffer.readUtf8()
         // Note: order might vary based on how we sort properties, but the structure must be correct
         val reader = GhostJsonReader(json.encodeToByteArray())
@@ -63,11 +63,11 @@ class GhostStructuralTransformationTest {
         val model = WrappedModel(id = 1, name = "Juan", age = 30, active = true)
         val buffer = Buffer()
         WrappedModelSerializer.serialize(buffer, model)
-        
+
         val json = buffer.readUtf8()
         // We verify the structure manually here to ensure @GhostWrap works as intended
         // Expected something like: {"id":1,"metadata":{"info":{"name":"Juan","age":30}},"system":{"flags":{"active":true}}}
-        
+
         // Deserialize back to verify parity
         val result = WrappedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(model, result)
@@ -76,7 +76,8 @@ class GhostStructuralTransformationTest {
     @Test
     fun testDeepFlattening() {
         val json = """{"a":{"b":{"c":{"d":{"e":{"f":{"g":"deep"}}}}}}}"""
-        val result = DeepFlattenedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
+        val result =
+            DeepFlattenedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals("deep", result.value)
 
         val buffer = Buffer()
@@ -89,10 +90,11 @@ class GhostStructuralTransformationTest {
         val model = MixedStructuralModel(id = 1, flatValue = "flat", wrappedValue = "wrapped")
         val buffer = Buffer()
         MixedStructuralModelSerializer.serialize(buffer, model)
-        
+
         val json = buffer.readUtf8()
-        val result = MixedStructuralModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
-        
+        val result =
+            MixedStructuralModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
+
         assertEquals(model, result)
     }
 

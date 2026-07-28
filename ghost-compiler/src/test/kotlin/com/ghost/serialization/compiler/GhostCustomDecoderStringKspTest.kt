@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspProcessorOptions
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
  * KSP regression tests for string-native `@GhostDecoder` codegen.
@@ -85,7 +85,8 @@ class GhostCustomDecoderStringKspTest {
         }
         val result = compilation.compile()
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
-        val serializerFileName = "${C.STR_TEST_CUSTOM_FIELD_MODEL}${C.STR_KT_SERIALIZER_FILE_SUFFIX}"
+        val serializerFileName =
+            "${C.STR_TEST_CUSTOM_FIELD_MODEL}${C.STR_KT_SERIALIZER_FILE_SUFFIX}"
         return compilation.kspSourcesDir.walk()
             .filter { it.name == serializerFileName }
             .map { it.readText() }

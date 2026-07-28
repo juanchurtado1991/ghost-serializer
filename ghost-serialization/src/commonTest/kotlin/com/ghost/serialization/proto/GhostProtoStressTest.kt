@@ -46,7 +46,8 @@ class GhostProtoStressTest {
     fun largeLabelPayloadRoundTrips() {
         val label = "x".repeat(100_000)
         val original = ProtoEntryPointDevice(1L, label)
-        val parsed = GhostProto.deserialize<ProtoEntryPointDevice>(GhostProto.encodeToBytes(original))
+        val parsed =
+            GhostProto.deserialize<ProtoEntryPointDevice>(GhostProto.encodeToBytes(original))
         assertEquals(original, parsed)
     }
 

@@ -1,13 +1,10 @@
 package com.ghost.serialization.yaml
+
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
-import com.ghost.serialization.writer.yaml.GhostYamlWriter
-
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 /**
  * Verifies serialize → deserialize round-trip correctness for basic objects,
@@ -16,7 +13,12 @@ import com.ghost.serialization.parser.strings.beginObject
 class GhostYamlRoundtripTest {
 
     // Helper data structure for representation
-    data class TestUser(val name: String, val age: Int, val active: Boolean, val roles: List<String>)
+    data class TestUser(
+        val name: String,
+        val age: Int,
+        val active: Boolean,
+        val roles: List<String>
+    )
 
     @Test
     fun testSimpleScalarsRoundtrip() {
@@ -34,7 +36,7 @@ class GhostYamlRoundtripTest {
         // Now test serialization output
         val buffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter()
         val writer = GhostYamlFlatWriter(buffer)
-        
+
         // Write manually representing a map structure
         writer.beginObject()
         writer.name("name").value("Alice Smith")
@@ -45,7 +47,7 @@ class GhostYamlRoundtripTest {
         writer.endObject()
 
         val serializedYaml = buffer.toStringUtf8()
-        
+
         // Deserialize again
         val secondReader = GhostYamlFlatReader(serializedYaml.encodeToByteArray())
         val resultMap = secondReader.readDocument() as Map<*, *>

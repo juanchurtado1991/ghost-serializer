@@ -31,7 +31,8 @@ class GhostProtoReaderPoolTest {
                     return map[clazz] as? GhostSerializer<T>
                 }
 
-                override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> = map
+                override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> =
+                    map
             },
         )
     }

@@ -46,7 +46,12 @@ class GhostProtoConverterFactoryDirectTest {
     @Test
     fun requestBodyConverter_returnsNullForUnregisteredType() {
         assertNull(
-            factory.requestBodyConverter(Unregistered::class.java, emptyArray(), emptyArray(), retrofit)
+            factory.requestBodyConverter(
+                Unregistered::class.java,
+                emptyArray(),
+                emptyArray(),
+                retrofit
+            )
         )
     }
 
@@ -70,8 +75,10 @@ class GhostProtoConverterFactoryDirectTest {
         val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
             ?: error("Expected Map converter")
 
-        val json = """{"alpha":{"deviceId":"10","label":"A"},"beta":{"deviceId":"20","label":"B"}}"""
+        val json =
+            """{"alpha":{"deviceId":"10","label":"A"},"beta":{"deviceId":"20","label":"B"}}"""
         val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(body) as Map<String, ProtoDeviceEvent>
 
@@ -111,15 +118,19 @@ class GhostProtoConverterFactoryDirectTest {
         val body = converter.convert(
             listOf(ProtoDeviceEvent(deviceId = 99L, label = "batch")),
         )!!
-        assertEquals("""[{"deviceId":"99","label":"batch"}]""", Buffer().apply { body.writeTo(this) }.readUtf8())
+        assertEquals(
+            """[{"deviceId":"99","label":"batch"}]""",
+            Buffer().apply { body.writeTo(this) }.readUtf8()
+        )
     }
 
     @Test
     fun responseBodyConverter_growsScratchBufferForPayloadsLargerThanInitialSize() {
         val longLabel = "n".repeat(600_000)
         val json = """{"deviceId":"42","label":"$longLabel"}"""
-        val converter = factory.responseBodyConverter(ProtoDeviceEvent::class.java, emptyArray(), retrofit)
-            ?: error("Expected a converter for a registered type")
+        val converter =
+            factory.responseBodyConverter(ProtoDeviceEvent::class.java, emptyArray(), retrofit)
+                ?: error("Expected a converter for a registered type")
 
         val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
         val result = converter.convert(body)

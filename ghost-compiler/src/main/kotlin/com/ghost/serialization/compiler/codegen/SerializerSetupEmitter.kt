@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.codegen
+
 import com.ghost.serialization.compiler.analysis.DispatchNamesResolver
 import com.ghost.serialization.compiler.analysis.isGhost
 import com.ghost.serialization.compiler.analysis.isList
@@ -15,7 +16,6 @@ import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isString
 import com.ghost.serialization.compiler.hash.PerfectHashConfig
 import com.ghost.serialization.compiler.hash.PerfectHashFinder
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostSerializerContext
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -23,6 +23,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -65,14 +66,22 @@ internal class SerializerSetupEmitter(
             val cleanName = name.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
 
             typeSpecBuilder.addProperty(
-                PropertySpec.builder(C.STR_H_VAL_PREFIX + cleanName, C.BYTE_STRING_CLASS, KModifier.PRIVATE)
+                PropertySpec.builder(
+                    C.STR_H_VAL_PREFIX + cleanName,
+                    C.BYTE_STRING_CLASS,
+                    KModifier.PRIVATE
+                )
                     .initializer(C.TEMPLATE_ENCODE_UTF8, C.FMT_JSON_FIELD.format(name))
                     .build()
             )
 
             if (ctx.textChannel) {
                 typeSpecBuilder.addProperty(
-                    PropertySpec.builder(C.STR_HS_PREFIX + cleanName, String::class, KModifier.PRIVATE)
+                    PropertySpec.builder(
+                        C.STR_HS_PREFIX + cleanName,
+                        String::class,
+                        KModifier.PRIVATE
+                    )
                         .initializer(C.STR_FORMAT_S, C.FMT_JSON_FIELD.format(name))
                         .build()
                 )
@@ -169,7 +178,8 @@ internal class SerializerSetupEmitter(
                 val key = C.STR_DOUBLE_QUOTE + prop.jsonName + C.STR_DOUBLE_QUOTE
                 val value = when {
                     prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() ||
-                        prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -> C.STR_ZERO
+                            prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -> C.STR_ZERO
+
                     prop.type.isPrimitiveDouble() || prop.type.isPrimitiveFloat() -> C.STR_ZERO_D
                     prop.type.isPrimitiveBoolean() -> C.STR_FALSE
                     prop.type.isPrimitiveChar() -> C.STR_JSON_CHAR_NULL

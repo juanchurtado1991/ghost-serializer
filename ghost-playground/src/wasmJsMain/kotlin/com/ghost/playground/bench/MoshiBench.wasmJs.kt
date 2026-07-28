@@ -1,7 +1,6 @@
 package com.ghost.playground.bench
 
 import com.ghost.playground.bench.model.TwitterResponse
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**

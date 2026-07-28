@@ -1,4 +1,5 @@
 @file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
@@ -53,12 +54,12 @@ class GhostEliteHardeningTest {
     fun testSharedWrapPaths() {
         val model = WrapSharedPathModel(name = "Ghost", token = "SECRET", active = true)
         val json = Ghost.serialize(model)
-        
+
         // Should produce nested structure: {"metadata":{"info":{"name":"Ghost"},"auth":{"token":"SECRET"}},"system":{"flags":{"active":true}}}
         assertTrue(json.contains("\"metadata\":{"))
         assertTrue(json.contains("\"info\":{"))
         assertTrue(json.contains("\"auth\":{"))
-        
+
         val roundtrip = Ghost.deserialize<WrapSharedPathModel>(json)
         assertEquals(model, roundtrip)
     }
@@ -178,11 +179,11 @@ class GhostEliteHardeningTest {
         Ghost.addRegistry(registry)
 
         val model = ContextualModel(id = "c1", color = ExternalColor(255, 0, 0))
-        
+
         val json = Ghost.serialize(model)
-        
+
         assertTrue(json.contains("\"color\":\"#ff0000\""))
-        
+
         val roundtrip = Ghost.deserialize<ContextualModel>(json)
         assertEquals(model, roundtrip)
     }

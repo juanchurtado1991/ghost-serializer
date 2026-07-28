@@ -1,6 +1,5 @@
 package com.ghost.serialization.proto.wkt
 
-import com.ghost.serialization.proto.GhostProto
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -19,7 +18,7 @@ class ProtoWktTest {
         val d = parseDuration("1.000340012s")
         assertEquals(1L, d.seconds)
         assertEquals(340012, d.nanos)
-        
+
         val formatted = formatDuration(d)
         assertEquals("1.000340012s", formatted)
 

@@ -1,7 +1,6 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.analysis.isEnum
+
 import com.ghost.serialization.compiler.analysis.serializerClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.InferredSubclassModel
@@ -14,6 +13,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -75,21 +75,27 @@ internal class DeserializeCodeEmitter(
             isObject -> {
                 emitObjectReturn(body)
             }
+
             isSealed && isInferred -> {
                 emitInferredSealed(body)
             }
+
             isSealed -> {
                 emitSealed(body)
             }
+
             isValue -> {
                 emitValue(body)
             }
+
             isEnum -> {
                 emitEnum(body)
             }
+
             properties.size > PROPERTY_MAX_SIZE -> {
                 emitFragmented(body, typeSpecBuilder, isFlatPath)
             }
+
             else -> {
                 emitStandard(body, typeSpecBuilder, isFlatPath)
             }

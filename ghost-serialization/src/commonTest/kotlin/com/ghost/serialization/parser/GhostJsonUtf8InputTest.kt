@@ -3,8 +3,6 @@
 package com.ghost.serialization.parser.common
 
 
-
-
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import okio.Buffer
@@ -12,7 +10,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /**
  * RFC 8259 §8.1 input-encoding normalization: UTF-8 (with/without BOM),
@@ -62,27 +59,29 @@ class GhostJsonUtf8InputTest {
 
     @Test
     fun utf16LeBomIsDetectedAndTranscoded() {
-        val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + encodeUtf16(sample, littleEndian = true)
+        val bytes =
+            byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + encodeUtf16(sample, littleEndian = true)
         assertEquals(sample, decodeNormalized(bytes))
     }
 
     @Test
     fun utf16BeBomIsDetectedAndTranscoded() {
-        val bytes = byteArrayOf(0xFE.toByte(), 0xFF.toByte()) + encodeUtf16(sample, littleEndian = false)
+        val bytes =
+            byteArrayOf(0xFE.toByte(), 0xFF.toByte()) + encodeUtf16(sample, littleEndian = false)
         assertEquals(sample, decodeNormalized(bytes))
     }
 
     @Test
     fun utf32LeBomIsDetectedAndTranscoded() {
         val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte(), 0x00, 0x00) +
-            encodeUtf32(sample, littleEndian = true)
+                encodeUtf32(sample, littleEndian = true)
         assertEquals(sample, decodeNormalized(bytes))
     }
 
     @Test
     fun utf32BeBomIsDetectedAndTranscoded() {
         val bytes = byteArrayOf(0x00, 0x00, 0xFE.toByte(), 0xFF.toByte()) +
-            encodeUtf32(sample, littleEndian = false)
+                encodeUtf32(sample, littleEndian = false)
         assertEquals(sample, decodeNormalized(bytes))
     }
 
@@ -117,7 +116,8 @@ class GhostJsonUtf8InputTest {
     @Test
     fun streamingUtf8BomIsSkipped() {
         val payload = sample.encodeToByteArray()
-        val source = Buffer().write(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + payload)
+        val source =
+            Buffer().write(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + payload)
         val prepared = prepareUtf8JsonSource(source)
         assertEquals(sample, prepared.readByteArray().decodeToString())
     }

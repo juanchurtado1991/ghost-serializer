@@ -9,13 +9,16 @@ class ProtoAnyTest {
 
     init {
         val registry = object : com.ghost.serialization.contract.GhostRegistry {
-            private val map = mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
-                ProtoAny::class to ProtoAnySerializer
-            )
+            private val map =
+                mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
+                    ProtoAny::class to ProtoAnySerializer
+                )
+
             @Suppress("UNCHECKED_CAST")
             override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): com.ghost.serialization.contract.GhostSerializer<T>? {
                 return map[clazz] as? com.ghost.serialization.contract.GhostSerializer<T>
             }
+
             override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>> {
                 return map
             }
@@ -25,7 +28,8 @@ class ProtoAnyTest {
 
     @Test
     fun testAnyDeserialization() {
-        val json = "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"10.5s\"}"
+        val json =
+            "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"10.5s\"}"
         val parsed = GhostProto.deserialize<ProtoAny>(json)
         assertEquals("type.googleapis.com/google.protobuf.Duration", parsed.typeUrl)
         assertEquals("\"10.5s\"", parsed.value.decodeToString())
@@ -35,7 +39,8 @@ class ProtoAnyTest {
     fun testAnyRoundtripPreservesPayload() {
         // Regression: ProtoAnySerializer used to silently drop the "value" payload on both
         // serialize and deserialize, returning ByteArray(0) unconditionally.
-        val json = "{\"@type\":\"type.googleapis.com/google.protobuf.Struct\",\"value\":{\"a\":1,\"b\":\"c\"}}"
+        val json =
+            "{\"@type\":\"type.googleapis.com/google.protobuf.Struct\",\"value\":{\"a\":1,\"b\":\"c\"}}"
         val parsed = GhostProto.deserialize<ProtoAny>(json)
         assertEquals("{\"a\":1,\"b\":\"c\"}", parsed.value.decodeToString())
 

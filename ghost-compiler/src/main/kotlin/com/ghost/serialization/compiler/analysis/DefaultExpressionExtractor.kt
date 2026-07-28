@@ -1,8 +1,9 @@
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 import com.google.devtools.ksp.symbol.FileLocation
 import com.google.devtools.ksp.symbol.KSValueParameter
 import java.io.File
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -129,7 +130,12 @@ internal object DefaultExpressionExtractor {
         while (index < source.length) {
             index = skipTrivia(source, index)
             if (index >= source.length) break
-            if (source[index].isJavaIdentifierStart() && matchesIdentifier(source, index, paramName)) {
+            if (source[index].isJavaIdentifierStart() && matchesIdentifier(
+                    source,
+                    index,
+                    paramName
+                )
+            ) {
                 val afterName = skipTrivia(source, index + paramName.length)
                 if (afterName < source.length && source[afterName] == CHAR_COLON) {
                     val eq = findDefaultEquals(source, afterName + 1)
@@ -312,13 +318,13 @@ internal object DefaultExpressionExtractor {
             when {
                 source[index].isWhitespace() -> index++
                 index + 1 < source.length &&
-                    source[index] == CHAR_SLASH && source[index + 1] == CHAR_SLASH -> {
+                        source[index] == CHAR_SLASH && source[index + 1] == CHAR_SLASH -> {
                     index += 2
                     while (index < source.length && source[index] != CHAR_NEWLINE) index++
                 }
 
                 index + 1 < source.length &&
-                    source[index] == CHAR_SLASH && source[index + 1] == CHAR_STAR -> {
+                        source[index] == CHAR_SLASH && source[index + 1] == CHAR_STAR -> {
                     index += 2
                     while (index + 1 < source.length &&
                         !(source[index] == CHAR_STAR && source[index + 1] == CHAR_SLASH)
@@ -382,8 +388,8 @@ internal object DefaultExpressionExtractor {
             inner.length == 1 && inner[0] != CHAR_BACKSLASH && inner[0] != CHAR_SINGLE_QUOTE -> true
             inner in C.DEFAULT_EXPR_CHAR_ESCAPES -> true
             inner.startsWith(C.STR_UNICODE_ESC_PREFIX) &&
-                inner.length == C.DEFAULT_EXPR_UNICODE_ESC_LEN &&
-                isHexDigits(inner.substring(2)) -> true
+                    inner.length == C.DEFAULT_EXPR_UNICODE_ESC_LEN &&
+                    isHexDigits(inner.substring(2)) -> true
 
             else -> false
         }
@@ -404,7 +410,7 @@ internal object DefaultExpressionExtractor {
                     when (value[index + 1]) {
                         CHAR_BACKSLASH, CHAR_DOUBLE_QUOTE, CHAR_N, CHAR_T, CHAR_R, CHAR_B,
                         CHAR_DOLLAR, CHAR_SINGLE_QUOTE,
-                        -> index += 2
+                            -> index += 2
 
                         CHAR_U -> {
                             if (index + 5 >= end) return false
@@ -436,13 +442,13 @@ internal object DefaultExpressionExtractor {
         val parts = value.split(CHAR_DOT)
         return parts.all { part ->
             part.first().isUpperCase() ||
-                part.all { it == CHAR_UNDERSCORE || it.isDigit() || it.isUpperCase() }
+                    part.all { it == CHAR_UNDERSCORE || it.isDigit() || it.isUpperCase() }
         }
     }
 
     private fun isHexDigits(value: String): Boolean =
         value.length == C.DEFAULT_EXPR_UNICODE_HEX_LEN &&
-            value.all { it.isDigit() || it in HEX_LOWER_A..HEX_LOWER_F || it in HEX_UPPER_A..HEX_UPPER_F }
+                value.all { it.isDigit() || it in HEX_LOWER_A..HEX_LOWER_F || it in HEX_UPPER_A..HEX_UPPER_F }
 
     private val NUMERIC_REGEX = Regex(C.REGEX_DEFAULT_EXPR_NUMERIC)
     private val ENUM_REF_REGEX = Regex(C.REGEX_DEFAULT_EXPR_ENUM_REF)

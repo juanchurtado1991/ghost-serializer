@@ -1,17 +1,6 @@
 package com.ghost.serialization.compiler.hygiene
 
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
-import com.ghost.serialization.parser.bytes.captureRawJson
-import com.ghost.serialization.parser.bytes.captureRawJsonBytes
-import com.ghost.serialization.parser.streaming.captureRawJson
-import com.ghost.serialization.parser.streaming.captureRawJsonBytes
-import com.ghost.serialization.parser.streaming.readList
-import com.ghost.serialization.parser.streaming.readSet
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.captureRawJson
-import com.ghost.serialization.parser.strings.captureRawJsonBytes
-import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.parser.strings.readSet
 
 
 /**
@@ -174,13 +163,20 @@ internal object GeneratedCodeHygiene {
      * Flags private `MASK_*` consts that are never referenced outside their own declaration.
      * Dead mask constants inflate serializer bytecode without changing behavior.
      */
-    fun analyzeUnusedMaskConstants(source: String, fileLabel: String = "serializer"): List<Violation> {
+    fun analyzeUnusedMaskConstants(
+        source: String,
+        fileLabel: String = "serializer"
+    ): List<Violation> {
         val body = stripImportSection(source)
-        val declRegex = Regex("""^\s*private const val (MASK_[A-Z0-9_]+): Long = .+$""", RegexOption.MULTILINE)
+        val declRegex =
+            Regex("""^\s*private const val (MASK_[A-Z0-9_]+): Long = .+$""", RegexOption.MULTILINE)
         return declRegex.findAll(body).mapNotNull { match ->
             val constName = match.groupValues[1]
             val withoutDecl = body.replace(
-                Regex("""^\s*private const val ${Regex.escape(constName)}: Long = .+$""", RegexOption.MULTILINE),
+                Regex(
+                    """^\s*private const val ${Regex.escape(constName)}: Long = .+$""",
+                    RegexOption.MULTILINE
+                ),
                 "",
             )
             val used = Regex("""(?<![.\w])${Regex.escape(constName)}(?![.\w])""")
@@ -201,7 +197,10 @@ internal object GeneratedCodeHygiene {
      * Property names on the model (named ctor args / `result.foo_bar`) may keep underscores;
      * invented locals must be camelCase.
      */
-    fun analyzeLocalVariableNaming(source: String, fileLabel: String = "serializer"): List<Violation> {
+    fun analyzeLocalVariableNaming(
+        source: String,
+        fileLabel: String = "serializer"
+    ): List<Violation> {
         val body = stripImportSection(source)
         val localDecl = Regex("""^\s+(?:var|val) ([A-Za-z][\w]*_[\w]*)\b""", RegexOption.MULTILINE)
         return localDecl.findAll(body).map { match ->
@@ -237,7 +236,9 @@ internal object GeneratedCodeHygiene {
     private fun isUnwrappableLiteralLine(line: String): Boolean {
         val trimmed = line.trim()
         return trimmed.startsWith("\"") &&
-            (trimmed.contains(".encodeToByteArray()") || trimmed.endsWith("\"") || trimmed.endsWith("\","))
+                (trimmed.contains(".encodeToByteArray()") || trimmed.endsWith("\"") || trimmed.endsWith(
+                    "\","
+                ))
     }
 
     const val MAX_GENERATED_LINE_LENGTH = 120
@@ -286,9 +287,9 @@ internal object GeneratedCodeHygiene {
         val firstNonImportIndex = lines.indexOfFirst { line ->
             val trimmed = line.trim()
             trimmed.isNotEmpty() &&
-                !trimmed.startsWith("@file:") &&
-                !trimmed.startsWith("import ") &&
-                !trimmed.startsWith("package ")
+                    !trimmed.startsWith("@file:") &&
+                    !trimmed.startsWith("import ") &&
+                    !trimmed.startsWith("package ")
         }
         return if (firstNonImportIndex >= 0) {
             lines.drop(firstNonImportIndex).joinToString("\n")

@@ -131,7 +131,9 @@ class GhostYamlKtorTest {
         val mockEngine = MockEngine { request ->
             val bodyText = when (val body = request.body) {
                 is io.ktor.http.content.TextContent -> body.text
-                is io.ktor.http.content.OutgoingContent.ByteArrayContent -> body.bytes().decodeToString()
+                is io.ktor.http.content.OutgoingContent.ByteArrayContent -> body.bytes()
+                    .decodeToString()
+
                 else -> error("Unsupported body type: ${body::class}")
             }
             assertTrue(bodyText.contains("id: 100"))

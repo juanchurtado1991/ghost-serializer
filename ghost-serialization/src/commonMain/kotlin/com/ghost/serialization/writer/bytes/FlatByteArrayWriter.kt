@@ -2,7 +2,6 @@ package com.ghost.serialization.writer.bytes
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
 import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_END
@@ -25,6 +24,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_REPLACEMENT
 import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_18
 import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_6
 import okio.ByteString
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -252,8 +252,8 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
                     val lowSurrogate = text[sourceIndex + 1].code
                     if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {
                         val fullCodePoint = UNICODE_BASE +
-                            (((codePoint - HIGH_SURROGATE_START) shl SHIFT_10) or
-                                (lowSurrogate - LOW_SURROGATE_START))
+                                (((codePoint - HIGH_SURROGATE_START) shl SHIFT_10) or
+                                        (lowSurrogate - LOW_SURROGATE_START))
                         backingArray[writeIndex++] =
                             (UTF8_4BYTE_PREFIX or (fullCodePoint shr UTF8_SHIFT_18)).toByte()
                         backingArray[writeIndex++] =
@@ -296,6 +296,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
                 writeByte(UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6))
                 writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))
             }
+
             else -> {
                 writeByte(UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12))
                 writeByte(UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK))

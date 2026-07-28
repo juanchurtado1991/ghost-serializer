@@ -1,12 +1,9 @@
 package com.ghost.serialization.yaml
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
-import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.assertNull
 
 /**
  * Group C tests: flow-style mappings (`{key: value}`), flow-style sequences (`[a, b, c]`),
@@ -18,6 +15,7 @@ class GhostYamlGroupCTest {
     fun `reads simple flow mapping`() {
         val yaml = "simple_flow_map: {name: Alice, age: 30, active: true}"
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val map = result["simple_flow_map"] as Map<String, Any?>
         assertEquals("Alice", map["name"])
@@ -29,6 +27,7 @@ class GhostYamlGroupCTest {
     fun `reads simple flow sequence`() {
         val yaml = "simple_flow_seq: [one, two, three]"
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val list = result["simple_flow_seq"] as List<Any?>
         assertEquals(3, list.size)
@@ -44,8 +43,10 @@ class GhostYamlGroupCTest {
             empty_seq: []
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val map = result["empty_map"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val seq = result["empty_seq"] as List<Any?>
         assertTrue(map.isEmpty())
@@ -56,8 +57,10 @@ class GhostYamlGroupCTest {
     fun `reads nested flow mapping`() {
         val yaml = "nested_flow: {user: {name: Bob, role: admin}}"
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val nested = result["nested_flow"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val user = nested["user"] as Map<String, Any?>
         assertEquals("Bob", user["name"])

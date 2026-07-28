@@ -1,7 +1,6 @@
 package com.ghost.serialization.writer.strings
 
 
-
 /**
  * JVM actual: delegates to [String.toCharArray] with a destination array — zero-allocation,
  * backed by a single native array copy (System.arraycopy internally).

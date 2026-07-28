@@ -11,8 +11,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 /**
  * Direct unit tests for [GhostYamlFlatWriter], covering the same scenarios as
@@ -35,31 +33,42 @@ class GhostYamlFlatWriterEdgeCaseTest {
             w.endObject()
         }
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
-        return (reader.readDocument() as Map<*, *>) [key]
+        return (reader.readDocument() as Map<*, *>)[key]
     }
 
     // ── A. PRIMITIVE OUTPUT ──────────────────────────────────────────
 
     @Test
     fun writesSingleDigitPositiveInt() {
-        assertEquals("v: 7", writerToString { w -> w.beginObject().name("v").value(7).endObject() }.trim())
+        assertEquals(
+            "v: 7",
+            writerToString { w -> w.beginObject().name("v").value(7).endObject() }.trim()
+        )
     }
 
     @Test
     fun writesSingleDigitNegativeInt() {
-        assertEquals("v: -7", writerToString { w -> w.beginObject().name("v").value(-7).endObject() }.trim())
+        assertEquals(
+            "v: -7",
+            writerToString { w -> w.beginObject().name("v").value(-7).endObject() }.trim()
+        )
     }
 
     @Test
     fun writesMultiDigitInt() {
-        assertEquals("v: 12345", writerToString { w -> w.beginObject().name("v").value(12345).endObject() }.trim())
+        assertEquals(
+            "v: 12345",
+            writerToString { w -> w.beginObject().name("v").value(12345).endObject() }.trim()
+        )
     }
 
     @Test
     fun writesIntMinValue() {
         assertEquals(
             "v: ${Int.MIN_VALUE}",
-            writerToString { w -> w.beginObject().name("v").value(Int.MIN_VALUE).endObject() }.trim()
+            writerToString { w ->
+                w.beginObject().name("v").value(Int.MIN_VALUE).endObject()
+            }.trim()
         )
     }
 
@@ -67,7 +76,9 @@ class GhostYamlFlatWriterEdgeCaseTest {
     fun writesLongMaxValue() {
         assertEquals(
             "v: ${Long.MAX_VALUE}",
-            writerToString { w -> w.beginObject().name("v").value(Long.MAX_VALUE).endObject() }.trim()
+            writerToString { w ->
+                w.beginObject().name("v").value(Long.MAX_VALUE).endObject()
+            }.trim()
         )
     }
 
@@ -75,7 +86,9 @@ class GhostYamlFlatWriterEdgeCaseTest {
     fun writesLongMinValue() {
         assertEquals(
             "v: ${Long.MIN_VALUE}",
-            writerToString { w -> w.beginObject().name("v").value(Long.MIN_VALUE).endObject() }.trim()
+            writerToString { w ->
+                w.beginObject().name("v").value(Long.MIN_VALUE).endObject()
+            }.trim()
         )
     }
 
@@ -83,7 +96,9 @@ class GhostYamlFlatWriterEdgeCaseTest {
     fun writesIntMinValueAsLong() {
         assertEquals(
             "v: ${Int.MIN_VALUE}",
-            writerToString { w -> w.beginObject().name("v").value(Int.MIN_VALUE.toLong()).endObject() }.trim()
+            writerToString { w ->
+                w.beginObject().name("v").value(Int.MIN_VALUE.toLong()).endObject()
+            }.trim()
         )
     }
 
@@ -138,23 +153,34 @@ class GhostYamlFlatWriterEdgeCaseTest {
 
     @Test
     fun writesInfinityAsStringLiteral() {
-        val yaml = writerToString { w -> w.beginObject().name("v").value(Double.POSITIVE_INFINITY).endObject() }
+        val yaml = writerToString { w ->
+            w.beginObject().name("v").value(Double.POSITIVE_INFINITY).endObject()
+        }
         assertTrue(yaml.contains("Infinity"), yaml)
     }
 
     @Test
     fun writesBooleanTrue() {
-        assertEquals("v: true", writerToString { w -> w.beginObject().name("v").value(true).endObject() }.trim())
+        assertEquals(
+            "v: true",
+            writerToString { w -> w.beginObject().name("v").value(true).endObject() }.trim()
+        )
     }
 
     @Test
     fun writesBooleanFalse() {
-        assertEquals("v: false", writerToString { w -> w.beginObject().name("v").value(false).endObject() }.trim())
+        assertEquals(
+            "v: false",
+            writerToString { w -> w.beginObject().name("v").value(false).endObject() }.trim()
+        )
     }
 
     @Test
     fun writesNull() {
-        assertEquals("v: null", writerToString { w -> w.beginObject().name("v").nullValue().endObject() }.trim())
+        assertEquals(
+            "v: null",
+            writerToString { w -> w.beginObject().name("v").nullValue().endObject() }.trim()
+        )
     }
 
     @Test
@@ -165,7 +191,8 @@ class GhostYamlFlatWriterEdgeCaseTest {
 
     @Test
     fun writesULongBeyondLongMaxQuoted() {
-        val yaml = writerToString { w -> w.beginObject().name("v").value(ULong.MAX_VALUE).endObject() }
+        val yaml =
+            writerToString { w -> w.beginObject().name("v").value(ULong.MAX_VALUE).endObject() }
         assertTrue(yaml.contains("\"18446744073709551615\""), yaml)
     }
 
@@ -179,7 +206,8 @@ class GhostYamlFlatWriterEdgeCaseTest {
 
     @Test
     fun escapesQuotesInString() {
-        val yaml = writerToString { w -> w.beginObject().name("v").value("say \"hello\"").endObject() }
+        val yaml =
+            writerToString { w -> w.beginObject().name("v").value("say \"hello\"").endObject() }
         assertTrue(yaml.contains("\\\"hello\\\""), yaml)
     }
 
@@ -282,7 +310,10 @@ class GhostYamlFlatWriterEdgeCaseTest {
             w.endObject()
             w.endObject()
         }
-        assertTrue(yaml.contains("outer:") && yaml.contains("inner:") && yaml.contains("deep"), yaml)
+        assertTrue(
+            yaml.contains("outer:") && yaml.contains("inner:") && yaml.contains("deep"),
+            yaml
+        )
     }
 
     @Test
@@ -422,7 +453,8 @@ class GhostYamlFlatWriterEdgeCaseTest {
     @Test
     fun writeFieldFusesNameAndLongValue() {
         val header = "\"id\":".encodeUtf8()
-        val yaml = writerToString { w -> w.beginObject().writeField(header, Long.MAX_VALUE).endObject() }
+        val yaml =
+            writerToString { w -> w.beginObject().writeField(header, Long.MAX_VALUE).endObject() }
         assertTrue(yaml.contains("${Long.MAX_VALUE}"), yaml)
     }
 
@@ -457,7 +489,8 @@ class GhostYamlFlatWriterEdgeCaseTest {
     @Test
     fun writeFieldFusesNameAndULongValue() {
         val header = "\"shard\":".encodeUtf8()
-        val yaml = writerToString { w -> w.beginObject().writeField(header, ULong.MAX_VALUE).endObject() }
+        val yaml =
+            writerToString { w -> w.beginObject().writeField(header, ULong.MAX_VALUE).endObject() }
         assertTrue(yaml.contains("18446744073709551615"), yaml)
     }
 

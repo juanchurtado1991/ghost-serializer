@@ -47,7 +47,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHE
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.common.GhostDoubleFormatter
 import okio.ByteString
 
@@ -337,7 +336,11 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
      */
     fun value(value: Boolean): GhostJsonFlatWriter {
         appendSeparator()
-        if (value) { buffer.writeTrue() } else { buffer.writeFalse() }
+        if (value) {
+            buffer.writeTrue()
+        } else {
+            buffer.writeFalse()
+        }
         needsComma = true
         return this
     }
@@ -395,7 +398,11 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
      */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
-        if (value) { buffer.writeTrue() } else { buffer.writeFalse() }
+        if (value) {
+            buffer.writeTrue()
+        } else {
+            buffer.writeFalse()
+        }
     }
 
     /**

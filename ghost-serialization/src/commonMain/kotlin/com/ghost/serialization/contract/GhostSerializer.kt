@@ -102,8 +102,8 @@ interface GhostSerializer<T> {
 
     /** Deserializes a new instance of [T] using a specialized flat in-memory [reader]. */
     fun deserialize(reader: GhostJsonFlatReader): T {
-        val delegatedReader = GhostJsonReader(reader.rawData).also { 
-            it.position = reader.position 
+        val delegatedReader = GhostJsonReader(reader.rawData).also {
+            it.position = reader.position
             it.limit = reader.limit
             it.strictMode = reader.strictMode
             it.coerceStringsToNumbers = reader.coerceStringsToNumbers

@@ -44,7 +44,10 @@ class GhostProtoKnownGapsIntegrationTest {
         val model = ProtoAccountIdsMessage(ProtoAccountIds(listOf(42L)))
         val json = Ghost.encodeToString(model)
         assertTrue(json.contains("\"42\""), json)
-        assertFalse(json.contains(",\"42\""), "single-element list must not duplicate values: $json")
+        assertFalse(
+            json.contains(",\"42\""),
+            "single-element list must not duplicate values: $json"
+        )
 
         val roundTrip = Ghost.deserialize<ProtoAccountIdsMessage>(json.encodeToByteArray())
         assertEquals(model, roundTrip)
@@ -107,7 +110,8 @@ class GhostProtoKnownGapsIntegrationTest {
 
     @Test
     fun protoListBodyDeserializesBareInt64Elements() {
-        val json = """[{"deviceId":42,"label":"x"},{"deviceId":9223372036854775807,"label":"max"}]"""
+        val json =
+            """[{"deviceId":42,"label":"x"},{"deviceId":9223372036854775807,"label":"max"}]"""
         val parsed = GhostProto.deserialize<List<ProtoDeviceEventListItem>>(json)
         assertEquals(
             listOf(

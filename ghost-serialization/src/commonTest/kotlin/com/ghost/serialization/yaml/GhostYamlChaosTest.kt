@@ -14,8 +14,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 /**
  * Chaos and stress scenarios for YAML parser/writer.
@@ -106,7 +104,8 @@ class GhostYamlChaosTest {
 
     @Test
     fun flowMappingWithDuplicateCommaParsesLeniently() {
-        val map = GhostYamlFlatReader("{a: 1,, b: 2}".encodeToByteArray()).readDocument() as Map<*, *>
+        val map =
+            GhostYamlFlatReader("{a: 1,, b: 2}".encodeToByteArray()).readDocument() as Map<*, *>
         assertEquals(1L, map["a"])
         assertTrue(map.isNotEmpty())
     }

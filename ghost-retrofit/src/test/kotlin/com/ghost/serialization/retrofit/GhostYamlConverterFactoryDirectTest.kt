@@ -31,7 +31,8 @@ class GhostYamlConverterFactoryDirectTest {
     fun responseBodyConverter_returnsNullForJsonOnlySerializer() {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
-        val converter = factory.responseBodyConverter(ProtoDeviceEvent::class.java, emptyArray(), retrofit)
+        val converter =
+            factory.responseBodyConverter(ProtoDeviceEvent::class.java, emptyArray(), retrofit)
         assertNull(converter)
     }
 
@@ -39,8 +40,9 @@ class GhostYamlConverterFactoryDirectTest {
     fun responseBodyConverter_parsesYamlPayload() {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
-        val converter = factory.responseBodyConverter(YamlDeviceProfile::class.java, emptyArray(), retrofit)
-            ?: error("converter should not be null")
+        val converter =
+            factory.responseBodyConverter(YamlDeviceProfile::class.java, emptyArray(), retrofit)
+                ?: error("converter should not be null")
 
         val yaml = """
             deviceId: 42
@@ -71,6 +73,7 @@ class GhostYamlConverterFactoryDirectTest {
             - deviceId: 2
               label: two
         """.trimIndent()
+
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(yaml.toResponseBody()) as List<YamlDeviceProfile>
         assertEquals(2, result.size)
@@ -89,6 +92,7 @@ class GhostYamlConverterFactoryDirectTest {
               deviceId: 7
               label: east-pod
         """.trimIndent()
+
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(yaml.toResponseBody()) as Map<String, YamlDeviceProfile>
         assertEquals(YamlDeviceProfile(7, "east-pod"), result["east"])

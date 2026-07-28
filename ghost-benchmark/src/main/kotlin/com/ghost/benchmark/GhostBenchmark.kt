@@ -20,13 +20,11 @@ import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.json.okio.encodeToBufferedSink
 import okio.Buffer
 import okio.ByteString
-import okio.ByteString.Companion.encodeUtf8
 import java.io.ByteArrayInputStream
 import java.lang.management.ManagementFactory
 import kotlin.math.sqrt
@@ -61,7 +59,10 @@ internal fun runWarmupPhase(
     val moshiAdapter = engines.complexResponseAdapter
 
     BenchmarkProgress.logStep("ComplexResponse (string / bytes / streaming × all engines)")
-    BenchmarkProgress.repeatWithProgress("Global ComplexResponse", BenchmarkStandard.WARMUP_ITERATIONS) {
+    BenchmarkProgress.repeatWithProgress(
+        "Global ComplexResponse",
+        BenchmarkStandard.WARMUP_ITERATIONS
+    ) {
         // String mode
         moshiAdapter.fromJson(jsonString)
         engines.kJson.decodeFromString<ComplexResponse>(jsonString)
@@ -188,7 +189,10 @@ private fun runModeMetricsSessions(
     block: (sessionIndex: Int) -> ModeMetrics,
 ): List<ModeMetrics> {
     val sessions = mutableListOf<ModeMetrics>()
-    BenchmarkProgress.repeatWithProgress(label, BenchmarkStandard.SYNTHETIC_SESSIONS) { sessionIndex ->
+    BenchmarkProgress.repeatWithProgress(
+        label,
+        BenchmarkStandard.SYNTHETIC_SESSIONS
+    ) { sessionIndex ->
         sessions.add(block(sessionIndex))
     }
     return sessions
@@ -276,13 +280,15 @@ private fun measureStreamingDeserialization(
     sessionIndex: Int,
 ): BenchmarkMetrics {
     val moshiAdapter = engines.complexResponseAdapter
-    return measureEnginesRotated(sessionIndex, threadBean, listOf(
-        "moshi" to {
-            moshiAdapter.fromJson(JsonReader.of(sinks.freshOkioSource()))
-        },
-        "kser" to { engines.kJson.decodeFromBufferedSource<ComplexResponse>(sinks.freshOkioSource()) },
-        "ghost" to { Ghost.deserialize<ComplexResponse>(sinks.freshOkioSource()) },
-    ))
+    return measureEnginesRotated(
+        sessionIndex, threadBean, listOf(
+            "moshi" to {
+                moshiAdapter.fromJson(JsonReader.of(sinks.freshOkioSource()))
+            },
+            "kser" to { engines.kJson.decodeFromBufferedSource<ComplexResponse>(sinks.freshOkioSource()) },
+            "ghost" to { Ghost.deserialize<ComplexResponse>(sinks.freshOkioSource()) },
+        )
+    )
 }
 
 // ============================================================================
@@ -296,11 +302,13 @@ private fun measureStringDeserialization(
     sessionIndex: Int,
 ): BenchmarkMetrics {
     val moshiAdapter = engines.complexResponseAdapter
-    return measureEnginesRotated(sessionIndex, threadBean, listOf(
-        "moshi" to { moshiAdapter.fromJson(jsonString) },
-        "kser" to { engines.kJson.decodeFromString<ComplexResponse>(jsonString) },
-        "ghost" to { Ghost.deserialize<ComplexResponse>(jsonString) },
-    ))
+    return measureEnginesRotated(
+        sessionIndex, threadBean, listOf(
+            "moshi" to { moshiAdapter.fromJson(jsonString) },
+            "kser" to { engines.kJson.decodeFromString<ComplexResponse>(jsonString) },
+            "ghost" to { Ghost.deserialize<ComplexResponse>(jsonString) },
+        )
+    )
 }
 
 private fun measureBytesDeserialization(
@@ -311,11 +319,13 @@ private fun measureBytesDeserialization(
 ): BenchmarkMetrics {
     val stringFromBytes = String(rawBytes, Charsets.UTF_8)
     val moshiAdapter = engines.complexResponseAdapter
-    return measureEnginesRotated(sessionIndex, threadBean, listOf(
-        "moshi" to { moshiAdapter.fromJson(stringFromBytes) },
-        "kser" to { engines.kJson.decodeFromString<ComplexResponse>(stringFromBytes) },
-        "ghost" to { Ghost.deserialize<ComplexResponse>(rawBytes) },
-    ))
+    return measureEnginesRotated(
+        sessionIndex, threadBean, listOf(
+            "moshi" to { moshiAdapter.fromJson(stringFromBytes) },
+            "kser" to { engines.kJson.decodeFromString<ComplexResponse>(stringFromBytes) },
+            "ghost" to { Ghost.deserialize<ComplexResponse>(rawBytes) },
+        )
+    )
 }
 
 // ============================================================================
@@ -329,11 +339,13 @@ private fun measureStringSerialization(
     sessionIndex: Int,
 ): BenchmarkMetrics {
     val moshiAdapter = engines.complexResponseAdapter
-    return measureEnginesRotated(sessionIndex, threadBean, listOf(
-        "moshi" to { moshiAdapter.toJson(complex) },
-        "kser" to { engines.kJson.encodeToString(complex) },
-        "ghost" to { Ghost.encodeToString(complex) },
-    ))
+    return measureEnginesRotated(
+        sessionIndex, threadBean, listOf(
+            "moshi" to { moshiAdapter.toJson(complex) },
+            "kser" to { engines.kJson.encodeToString(complex) },
+            "ghost" to { Ghost.encodeToString(complex) },
+        )
+    )
 }
 
 private fun measureBytesSerialization(
@@ -343,11 +355,13 @@ private fun measureBytesSerialization(
     sessionIndex: Int,
 ): BenchmarkMetrics {
     val moshiAdapter = engines.complexResponseAdapter
-    return measureEnginesRotated(sessionIndex, threadBean, listOf(
-        "moshi" to { moshiAdapter.toJson(complex).encodeToByteArray() },
-        "kser" to { engines.kJson.encodeToString(complex).toByteArray() },
-        "ghost" to { Ghost.encodeToBytes(complex) },
-    ))
+    return measureEnginesRotated(
+        sessionIndex, threadBean, listOf(
+            "moshi" to { moshiAdapter.toJson(complex).encodeToByteArray() },
+            "kser" to { engines.kJson.encodeToString(complex).toByteArray() },
+            "ghost" to { Ghost.encodeToBytes(complex) },
+        )
+    )
 }
 
 private fun measureStreamingSerialization(
@@ -357,25 +371,27 @@ private fun measureStreamingSerialization(
     sessionIndex: Int,
 ): BenchmarkMetrics {
     val moshiAdapter = engines.complexResponseAdapter
-    return measureEnginesRotated(sessionIndex, threadBean, listOf(
-        "moshi" to {
-            val buf = StreamingEncodeSinks.okioBuffer()
-            JsonWriter.of(buf).use { writer ->
-                moshiAdapter.toJson(writer, complex)
-            }
-            buf
-        },
-        "kser" to {
-            val buf = StreamingEncodeSinks.okioBuffer()
-            engines.kJson.encodeToBufferedSink(complex, buf)
-            buf
-        },
-        "ghost" to {
-            val buf = StreamingEncodeSinks.okioBuffer()
-            Ghost.serialize(buf, complex)
-            buf
-        },
-    ))
+    return measureEnginesRotated(
+        sessionIndex, threadBean, listOf(
+            "moshi" to {
+                val buf = StreamingEncodeSinks.okioBuffer()
+                JsonWriter.of(buf).use { writer ->
+                    moshiAdapter.toJson(writer, complex)
+                }
+                buf
+            },
+            "kser" to {
+                val buf = StreamingEncodeSinks.okioBuffer()
+                engines.kJson.encodeToBufferedSink(complex, buf)
+                buf
+            },
+            "ghost" to {
+                val buf = StreamingEncodeSinks.okioBuffer()
+                Ghost.serialize(buf, complex)
+                buf
+            },
+        )
+    )
 }
 
 // ============================================================================
@@ -655,15 +671,51 @@ internal fun syntheticObservations(run: SyntheticRunResults): List<RegressionCal
         )
     }
     return listOf(
-        row(RegressionCalculator.LIST_MEDIUM, RegressionCalculator.MODE_STRING, run.listSessions) { it.string },
-        row(RegressionCalculator.LIST_MEDIUM, RegressionCalculator.MODE_BYTES, run.listSessions) { it.bytes },
-        row(RegressionCalculator.LIST_MEDIUM, RegressionCalculator.MODE_STREAMING, run.listSessions) { it.streaming },
-        row(RegressionCalculator.SYNC_FULL, RegressionCalculator.MODE_STRING, run.syncSessions) { it.string },
-        row(RegressionCalculator.SYNC_FULL, RegressionCalculator.MODE_BYTES, run.syncSessions) { it.bytes },
-        row(RegressionCalculator.SYNC_FULL, RegressionCalculator.MODE_STREAMING, run.syncSessions) { it.streaming },
-        row(RegressionCalculator.WRITING, RegressionCalculator.MODE_STRING, run.writingSessions) { it.string },
-        row(RegressionCalculator.WRITING, RegressionCalculator.MODE_BYTES, run.writingSessions) { it.bytes },
-        row(RegressionCalculator.WRITING, RegressionCalculator.MODE_STREAMING, run.writingSessions) { it.streaming },
+        row(
+            RegressionCalculator.LIST_MEDIUM,
+            RegressionCalculator.MODE_STRING,
+            run.listSessions
+        ) { it.string },
+        row(
+            RegressionCalculator.LIST_MEDIUM,
+            RegressionCalculator.MODE_BYTES,
+            run.listSessions
+        ) { it.bytes },
+        row(
+            RegressionCalculator.LIST_MEDIUM,
+            RegressionCalculator.MODE_STREAMING,
+            run.listSessions
+        ) { it.streaming },
+        row(
+            RegressionCalculator.SYNC_FULL,
+            RegressionCalculator.MODE_STRING,
+            run.syncSessions
+        ) { it.string },
+        row(
+            RegressionCalculator.SYNC_FULL,
+            RegressionCalculator.MODE_BYTES,
+            run.syncSessions
+        ) { it.bytes },
+        row(
+            RegressionCalculator.SYNC_FULL,
+            RegressionCalculator.MODE_STREAMING,
+            run.syncSessions
+        ) { it.streaming },
+        row(
+            RegressionCalculator.WRITING,
+            RegressionCalculator.MODE_STRING,
+            run.writingSessions
+        ) { it.string },
+        row(
+            RegressionCalculator.WRITING,
+            RegressionCalculator.MODE_BYTES,
+            run.writingSessions
+        ) { it.bytes },
+        row(
+            RegressionCalculator.WRITING,
+            RegressionCalculator.MODE_STREAMING,
+            run.writingSessions
+        ) { it.streaming },
     )
 }
 
@@ -696,7 +748,12 @@ private fun engineRankings(metrics: BenchmarkMetrics): List<EngineRank> {
             metrics.ghost.stdevNanos
         ),
         EngineRank("KSER", metrics.kser.nanos, metrics.kser.allocBytes, metrics.kser.stdevNanos),
-        EngineRank("MOSHI", metrics.moshi.nanos, metrics.moshi.allocBytes, metrics.moshi.stdevNanos),
+        EngineRank(
+            "MOSHI",
+            metrics.moshi.nanos,
+            metrics.moshi.allocBytes,
+            metrics.moshi.stdevNanos
+        ),
     ).filter { it.nanos > 0L }
 }
 

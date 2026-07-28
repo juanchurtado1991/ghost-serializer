@@ -123,7 +123,7 @@ class GhostPlugin : Plugin<Project> {
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_KTOR &&
-                    it.name.startsWith(PREFIX_KTOR_CLIENT)
+                        it.name.startsWith(PREFIX_KTOR_CLIENT)
             } ?: false
         }
     }
@@ -133,7 +133,7 @@ class GhostPlugin : Plugin<Project> {
             val config = project.configurations.findByName(name)
             config?.dependencies?.any {
                 it.group == GROUP_RETROFIT &&
-                    it.name == NAME_RETROFIT
+                        it.name == NAME_RETROFIT
             } ?: false
         }
     }

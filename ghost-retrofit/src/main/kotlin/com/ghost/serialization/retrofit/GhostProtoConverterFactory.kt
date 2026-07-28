@@ -6,23 +6,19 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.streaming.consumeNull
-import com.ghost.serialization.parser.streaming.isNextNullValue
-import com.ghost.serialization.parser.strings.consumeNull
-import com.ghost.serialization.parser.strings.isNextNullValue
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
-import java.lang.reflect.Type
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Converter
 import retrofit2.Retrofit
+import java.lang.reflect.Type
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 
 
 /**

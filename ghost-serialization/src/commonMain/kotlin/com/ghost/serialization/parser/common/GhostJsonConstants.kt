@@ -2,11 +2,12 @@ package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
+import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
+import com.ghost.serialization.parser.common.GhostJsonConstants.packScanResult
 import com.ghost.serialization.parser.streaming.StreamingGhostSource
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import kotlin.math.pow
 import okio.ByteString.Companion.encodeUtf8
+import kotlin.math.pow
 
 
 /**
@@ -38,7 +39,8 @@ object GhostJsonConstants {
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
     const val ERR_EXPECTED_QUOTE = "Expected '\"'"
     const val ERR_EXPECTED_SINGLE_CHAR_STRING = "Expected single-character JSON string"
-    const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH = "Expected single-character JSON string, found length "
+    const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH =
+        "Expected single-character JSON string, found length "
     const val ERR_DEPTH_EXCEEDED = "Reached maximum recursion depth"
     const val ERR_NON_FINITE = "JSON does not support non-finite numbers like NaN or Infinity"
     const val ERR_INT_OVERFLOW = "Integer overflow: "
@@ -60,6 +62,7 @@ object GhostJsonConstants {
     const val LITERAL_FALSE = "false"
     const val ERR_INVALID_UNICODE_AT = "Invalid unicode escape at "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
+
     // --- Digit & Limit Constants ---
     const val MIN_SINGLE_DIGIT = 0
     const val MAX_SINGLE_DIGIT = 9
@@ -109,24 +112,34 @@ object GhostJsonConstants {
 
     /** Case-folded byte for 'T' / 't'. Used in "true". */
     const val FOLD_T = 't'.code or 32
+
     /** Case-folded byte for 'R' / 'r'. Used in "true". */
     const val FOLD_R = 'r'.code or 32
+
     /** Case-folded byte for 'U' / 'u'. Used in "true". */
     const val FOLD_U = 'u'.code or 32
+
     /** Case-folded byte for 'E' / 'e'. Used in "true", "false", "yes". */
     const val FOLD_E = 'e'.code or 32
+
     /** Case-folded byte for 'F' / 'f'. Used in "false", "off". */
     const val FOLD_F = 'f'.code or 32
+
     /** Case-folded byte for 'A' / 'a'. Used in "false". */
     const val FOLD_A = 'a'.code or 32
+
     /** Case-folded byte for 'L' / 'l'. Used in "false". */
     const val FOLD_L = 'l'.code or 32
+
     /** Case-folded byte for 'S' / 's'. Used in "false", "yes". */
     const val FOLD_S = 's'.code or 32
+
     /** Case-folded byte for 'Y' / 'y'. Used in "yes", "y". */
     const val FOLD_Y = 'y'.code or 32
+
     /** Case-folded byte for 'N' / 'n'. Used in "no", "n". */
     const val FOLD_N = 'n'.code or 32
+
     /** Case-folded byte for 'O' / 'o'. Used in "on", "no", "off". */
     const val FOLD_O = 'o'.code or 32
 
@@ -140,19 +153,26 @@ object GhostJsonConstants {
     // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
     @PublishedApi
     internal val TRUE_BS = "true".encodeUtf8()
+
     @PublishedApi
     internal val FALSE_BS = "false".encodeUtf8()
+
     @PublishedApi
     internal val NULL_BS = "null".encodeUtf8()
     internal val EMPTY_STRING_BS = "\"\"".encodeUtf8()
+
     @PublishedApi
     internal val MIN_INT_BS = "-2147483648".encodeUtf8()
+
     @PublishedApi
     internal val MIN_LONG_BS = "-9223372036854775808".encodeUtf8()
+
     @PublishedApi
     internal val DOT_ZERO = ".0".encodeToByteArray()
+
     @PublishedApi
     internal val COLON_QUOTE_BS = "\":".encodeUtf8()
+
     @PublishedApi
     internal val TYPE_BS = "type".encodeUtf8()
 
@@ -177,6 +197,7 @@ object GhostJsonConstants {
 
     /** Standard mask for unsigned byte access. */
     const val BYTE_MASK = 0xFF
+
     /** Standard mask for unsigned Long byte access. */
     const val LONG_BYTE_MASK = 0xFFL
 
@@ -216,16 +237,20 @@ object GhostJsonConstants {
     // --- Dispatch Table Defaults ---
     /** Default shift for JsonReaderOptions when no perfect-hash search has been run. */
     const val DEFAULT_DISPATCH_SHIFT = 0
+
     /** Default multiplier for JsonReaderOptions factory methods. */
     const val DEFAULT_DISPATCH_MULTIPLIER = 31
+
     /** Default dispatch table size. Must be a power of two. */
     const val DEFAULT_DISPATCH_TABLE_SIZE = 1024
+
     /** Polynomial multiplier for collision disambiguation (must match all reader computeKeyHash and PerfectHashFinder). */
     const val COLLISION_HASH_MULTIPLIER = 31
 
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
     const val STR_POOL_SIZE = 4096
+
     /** Multiplier for string pool hashing. */
     const val STR_POOL_HASH_MULTIPLIER = 31
 
@@ -684,6 +709,7 @@ object GhostJsonConstants {
     internal object FormatUtils {
         val DIGIT_TENS = ByteArray(100)
         val DIGIT_ONES = ByteArray(100)
+
         init {
             for (i in 0 until 100) {
                 DIGIT_TENS[i] = ((i / BASE_TEN) + ASCII_OFFSET).toByte()

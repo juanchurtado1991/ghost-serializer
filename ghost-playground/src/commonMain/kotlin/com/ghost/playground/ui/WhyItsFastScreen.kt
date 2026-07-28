@@ -12,7 +12,11 @@ import com.ghost.playground.i18n.Strings
 
 @Composable
 internal fun WhyItsFastScreen(strings: Strings, lang: Lang) {
-    Text(strings.speedSubtitle, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 8.dp))
+    Text(
+        strings.speedSubtitle,
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
     SpeedPillars.all.forEach { pillar ->
         PillarCard(pillar, strings, lang)
     }

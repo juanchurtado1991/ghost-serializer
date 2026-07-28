@@ -52,12 +52,19 @@ internal fun PresetButton(label: String, selected: Boolean = false, onClick: () 
             .scale(scale)
             .clip(RoundedCornerShape(20.dp))
             .background(if (selected) Teal else TealLight.copy(PresetUnselectedFillAlpha))
-            .border(1.dp, if (selected) Teal else Teal.copy(PresetUnselectedBorderAlpha), RoundedCornerShape(20.dp))
+            .border(
+                1.dp,
+                if (selected) Teal else Teal.copy(PresetUnselectedBorderAlpha),
+                RoundedCornerShape(20.dp)
+            )
             .hoverable(interactionSource)
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             if (selected) PlaygroundIcon(PlaygroundIconKind.Check, tint = Color.White, size = 11.dp)
             Text(
                 label,

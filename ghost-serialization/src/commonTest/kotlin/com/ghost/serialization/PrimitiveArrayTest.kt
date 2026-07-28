@@ -8,10 +8,10 @@ import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.serializers.IntArraySerializer
 import com.ghost.serialization.serializers.LongArraySerializer
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import okio.Buffer
 
 
 class PrimitiveArrayTest {
@@ -31,7 +31,8 @@ class PrimitiveArrayTest {
         val result = IntArraySerializer.deserialize(reader)
         assertContentEquals(original, result)
 
-        val flatResult = IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        val flatResult =
+            IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
         assertContentEquals(original, flatResult)
 
         val stringResult = IntArraySerializer.deserialize(GhostJsonStringReader(json))
@@ -53,7 +54,8 @@ class PrimitiveArrayTest {
         val result = LongArraySerializer.deserialize(reader)
         assertContentEquals(original, result)
 
-        val flatResult = LongArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        val flatResult =
+            LongArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
         assertContentEquals(original, flatResult)
 
         val stringResult = LongArraySerializer.deserialize(GhostJsonStringReader(json))
@@ -70,7 +72,13 @@ class PrimitiveArrayTest {
 
         val reader = GhostJsonReader("[]".encodeToByteArray())
         assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(reader))
-        assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(GhostJsonFlatReader("[]".encodeToByteArray())))
-        assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(GhostJsonStringReader("[]")))
+        assertContentEquals(
+            intArrayOf(),
+            IntArraySerializer.deserialize(GhostJsonFlatReader("[]".encodeToByteArray()))
+        )
+        assertContentEquals(
+            intArrayOf(),
+            IntArraySerializer.deserialize(GhostJsonStringReader("[]"))
+        )
     }
 }

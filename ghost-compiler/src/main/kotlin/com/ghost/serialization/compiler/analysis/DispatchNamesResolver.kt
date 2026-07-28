@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.analysis
+
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 
 /**

@@ -1,8 +1,8 @@
 @file:OptIn(com.google.devtools.ksp.KspExperimental::class)
 
 package com.ghost.serialization.compiler.analysis
+
 import com.ghost.serialization.annotations.GhostWrappedKeys
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.CustomCoderModel
 import com.ghost.serialization.compiler.model.CustomCoderReaderKind
 import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -21,6 +21,7 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -71,7 +72,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         validatePropertyVisibility(classDeclaration, properties)
 
         val enumValues = getEnumValues(classDeclaration, isEnum)
-        val propertyModels = resolvePropertyModels(classDeclaration, properties, parameters, isEnum, enumValues)
+        val propertyModels =
+            resolvePropertyModels(classDeclaration, properties, parameters, isEnum, enumValues)
 
         val finalModels = resolveSealedSubclasses(classDeclaration, propertyModels, isSealed)
 
@@ -178,10 +180,15 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 .ifEmpty {
                     listOf(
                         GhostPropertyModel(
-                            kotlinName = C.STR_EMPTY, jsonName = C.STR_EMPTY,
+                            kotlinName = C.STR_EMPTY,
+                            jsonName = C.STR_EMPTY,
                             type = classDeclaration.asType(emptyList()),
                             typeName = classDeclaration.toClassName(),
-                            isNullable = false, isGhost = false, isList = false, isSet = false, isEnum = false,
+                            isNullable = false,
+                            isGhost = false,
+                            isList = false,
+                            isSet = false,
+                            isEnum = false,
                             inferredSubclasses = inferredSubclasses
                         )
                     )
@@ -214,8 +221,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 if (owner != null && owner != prop.kotlinName) {
                     logger.error(
                         C.STR_ERR_WRAPPED_DUP_KEY_1 + key + C.STR_ERR_WRAPPED_DUP_KEY_2 +
-                            clazz.simpleName.asString() + C.STR_ERR_WRAPPED_DUP_KEY_3 + owner +
-                            C.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + C.STR_ERR_WRAPPED_DUP_KEY_5,
+                                clazz.simpleName.asString() + C.STR_ERR_WRAPPED_DUP_KEY_3 + owner +
+                                C.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + C.STR_ERR_WRAPPED_DUP_KEY_5,
                         clazz,
                     )
                 }
@@ -243,7 +250,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 if (properties.any { it.wrappedSourceKeys == null && it.jsonName == key }) {
                     logger.error(
                         C.STR_ERR_WRAPPED_KEY_CONFLICT_1 + key + C.STR_ERR_WRAPPED_KEY_CONFLICT_2 +
-                            clazz.simpleName.asString() + C.STR_ERR_WRAPPED_KEY_CONFLICT_3,
+                                clazz.simpleName.asString() + C.STR_ERR_WRAPPED_KEY_CONFLICT_3,
                         clazz,
                     )
                 }
@@ -314,16 +321,16 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val customDecoder = resolveCustomCoder(prop, C.GHOST_DECODER)
         val customEncoder = resolveCustomCoder(prop, C.GHOST_ENCODER)
- 
+
         val flattenPath = resolvePathAnnotation(prop, C.GHOST_FLATTEN)
         val wrapPath = resolvePathAnnotation(prop, C.GHOST_WRAP)
         val wrappedKeysConfig = resolveWrappedKeysAnnotation(prop)
- 
+
         warnIfCustomCoder(prop.simpleName.asString(), customDecoder, customEncoder)
- 
+
         val parentClass = prop.parentDeclaration as? KSClassDeclaration
-        val hasProto = parentClass?.annotations?.any { 
-            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION 
+        val hasProto = parentClass?.annotations?.any {
+            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
         } == true
 
         val serialNameAnnotation = prop.annotations.any {
@@ -345,7 +352,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         } else {
             emptyList()
         }
- 
+
         return GhostPropertyModel(
             kotlinName = prop.simpleName.asString(),
             jsonName = jsonName,
@@ -463,7 +470,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     /**
      * Resolves the custom decoder or encoder helper config model if declared.
      */
-    private fun resolveCustomCoder(prop: KSPropertyDeclaration, annotationName: String): CustomCoderModel? {
+    private fun resolveCustomCoder(
+        prop: KSPropertyDeclaration,
+        annotationName: String
+    ): CustomCoderModel? {
         return prop.annotations.find {
             it.shortName.asString() == annotationName
         }?.let { ann ->
@@ -485,7 +495,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         provider: KSType,
         functionName: String,
     ): Set<CustomCoderReaderKind> {
-        val declaration = provider.declaration as? KSClassDeclaration ?: return setOf(CustomCoderReaderKind.BYTES)
+        val declaration =
+            provider.declaration as? KSClassDeclaration ?: return setOf(CustomCoderReaderKind.BYTES)
         val kinds = declaration.getAllFunctions()
             .filter { it.simpleName.asString() == functionName }
             .mapNotNull { fn ->
@@ -527,6 +538,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                         ?.let { wrappedKeysConfigFromAnnotation(it, annotated) }
                         ?.let { return it }
                 }
+
                 is KSValueParameter -> {
                     annotated.getAnnotationsByType(GhostWrappedKeys::class)
                         .firstOrNull()
@@ -663,7 +675,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         logger.warn(
             C.STR_WARN_WRAPPED_UNMAPPED_1 + wireKey + C.STR_WARN_WRAPPED_UNMAPPED_2 +
-                ownerType.declaration.simpleName.asString(),
+                    ownerType.declaration.simpleName.asString(),
         )
         return null
     }
@@ -706,7 +718,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     /**
      * Resolves the flatten/wrap key paths from annotations.
      */
-    private fun resolvePathAnnotation(prop: KSPropertyDeclaration, annotationName: String): List<String>? {
+    private fun resolvePathAnnotation(
+        prop: KSPropertyDeclaration,
+        annotationName: String
+    ): List<String>? {
         return prop.annotations.find {
             it.shortName.asString() == annotationName
         }?.let { ann ->
@@ -794,7 +809,10 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     /**
      * Resolves the underlying property model for a value class type.
      */
-    private fun resolveValueClassProperty(type: KSType, isProto: Boolean = false): GhostPropertyModel? {
+    private fun resolveValueClassProperty(
+        type: KSType,
+        isProto: Boolean = false
+    ): GhostPropertyModel? {
         val declaration = type.declaration as? KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null

@@ -2,8 +2,6 @@ package com.ghost.serialization.writer.strings
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics.maxWarmCharWriteBufferCapacity
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
 import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_A
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_DOT
@@ -21,6 +19,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_CAPACITY_OVE
 import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import okio.ByteString
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -155,30 +154,35 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
                     backingArray[writeIndex++] = leadByte.toChar()
                     readIndex++
                 }
+
                 (leadByte shr C.UTF8_2BYTE_LEAD_SHIFT) == C.UTF8_2BYTE_LEAD_TAG -> {
                     val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK
                     val codePoint = ((leadByte and C.UTF8_2BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_6) or
-                        (contByte1 and C.UTF8_CONT_MASK)
+                            (contByte1 and C.UTF8_CONT_MASK)
                     backingArray[writeIndex++] = codePoint.toChar()
                     readIndex += C.UTF8_2BYTE_SIZE
                 }
+
                 (leadByte shr C.UTF8_3BYTE_LEAD_SHIFT) == C.UTF8_3BYTE_LEAD_TAG -> {
                     val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK
                     val contByte2 = bytes[readIndex + 2].toInt() and C.BYTE_MASK
-                    val codePoint = ((leadByte and C.UTF8_3BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_12) or
-                        ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or
-                        (contByte2 and C.UTF8_CONT_MASK)
+                    val codePoint =
+                        ((leadByte and C.UTF8_3BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_12) or
+                                ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or
+                                (contByte2 and C.UTF8_CONT_MASK)
                     backingArray[writeIndex++] = codePoint.toChar()
                     readIndex += C.UTF8_3BYTE_SIZE
                 }
+
                 else -> {
                     val contByte1 = bytes[readIndex + 1].toInt() and C.BYTE_MASK
                     val contByte2 = bytes[readIndex + 2].toInt() and C.BYTE_MASK
                     val contByte3 = bytes[readIndex + 3].toInt() and C.BYTE_MASK
-                    val codePoint = ((leadByte and C.UTF8_4BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_18) or
-                        ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_12) or
-                        ((contByte2 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or
-                        (contByte3 and C.UTF8_CONT_MASK)
+                    val codePoint =
+                        ((leadByte and C.UTF8_4BYTE_PAYLOAD_MASK) shl C.UTF8_SHIFT_18) or
+                                ((contByte1 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_12) or
+                                ((contByte2 and C.UTF8_CONT_MASK) shl C.UTF8_SHIFT_6) or
+                                (contByte3 and C.UTF8_CONT_MASK)
                     if (writeIndex + 1 >= backingArray.size) {
                         size = writeIndex
                         ensureCapacity(C.UTF8_2BYTE_SIZE)
@@ -186,7 +190,8 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
                     val updatedArray = array
                     val planeOffset = codePoint - C.UNICODE_BASE
                     val highSurrogate = (planeOffset shr C.SHIFT_10) + C.HIGH_SURROGATE_START
-                    val lowSurrogate = (planeOffset and C.SURROGATE_PAIR_MASK) + C.LOW_SURROGATE_START
+                    val lowSurrogate =
+                        (planeOffset and C.SURROGATE_PAIR_MASK) + C.LOW_SURROGATE_START
                     updatedArray[writeIndex++] = highSurrogate.toChar()
                     updatedArray[writeIndex++] = lowSurrogate.toChar()
                     readIndex += C.UTF8_4BYTE_SIZE

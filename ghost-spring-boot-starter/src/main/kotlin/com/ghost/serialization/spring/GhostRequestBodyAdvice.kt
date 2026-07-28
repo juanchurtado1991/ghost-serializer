@@ -7,7 +7,6 @@ import org.springframework.http.HttpInputMessage
 import org.springframework.http.converter.HttpMessageConverter
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice
-import java.io.IOException
 import java.lang.reflect.Type
 
 @ControllerAdvice
@@ -19,7 +18,7 @@ class GhostRequestBodyAdvice : RequestBodyAdvice {
         converterType: Class<out HttpMessageConverter<*>>
     ): Boolean {
         return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType) ||
-            GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)
+                GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)
     }
 
     override fun beforeBodyRead(

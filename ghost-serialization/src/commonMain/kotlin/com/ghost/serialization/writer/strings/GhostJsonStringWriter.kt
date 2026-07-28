@@ -55,7 +55,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.RESULT_NONE
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.TAB_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG

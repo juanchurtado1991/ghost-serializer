@@ -20,6 +20,7 @@ class GhostYamlResourceFixturesTest {
         assertTrue(result.containsKey("logging"))
         assertTrue(result.containsKey("ghost"))
     }
+
     @Test
     fun `parses edge_multiline yaml dataset completely`() {
         val yaml = readResource("yaml/edge_multiline.yaml")
@@ -44,6 +45,7 @@ class GhostYamlResourceFixturesTest {
         assertEquals("", result["empty_literal"])
         assertEquals("only one line\n", result["single_newline"])
     }
+
     @Test
     fun `parses edge_flow_style yaml dataset completely`() {
         val yaml = readResource("yaml/edge_flow_style.yaml")
@@ -77,6 +79,7 @@ class GhostYamlResourceFixturesTest {
 
         @Suppress("UNCHECKED_CAST")
         val nestedFlow = result["nested_flow"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val user = nestedFlow["user"] as Map<String, Any?>
         assertEquals("Bob", user["name"])
@@ -84,6 +87,7 @@ class GhostYamlResourceFixturesTest {
 
         @Suppress("UNCHECKED_CAST")
         val server = result["server"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val options = server["options"] as Map<String, Any?>
         assertEquals(false, options["ssl"])
@@ -122,6 +126,7 @@ class GhostYamlResourceFixturesTest {
 
         @Suppress("UNCHECKED_CAST")
         val complex = result["complex"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val metadata = complex["metadata"] as Map<String, Any?>
         assertEquals("2024-01-15", metadata["created"])
@@ -130,6 +135,7 @@ class GhostYamlResourceFixturesTest {
         assertEquals(3, tags.size)
         assertEquals("yaml", tags[0])
     }
+
     @Test
     fun `parses openapi_schema yaml dataset completely`() {
         val yaml = readResource("yaml/openapi_schema.yaml")
@@ -151,6 +157,7 @@ class GhostYamlResourceFixturesTest {
         val secMap = security[0] as Map<String, Any?>
         assertTrue(secMap.containsKey("bearerAuth"))
     }
+
     @Test
     fun `parses edge_explicit_tags yaml dataset completely`() {
         val yaml = readResource("yaml/edge_explicit_tags.yaml")
@@ -159,7 +166,10 @@ class GhostYamlResourceFixturesTest {
         assertEquals("8080", result["port_as_string"])
         assertEquals("1.2.3", result["version_as_string"])
         assertEquals("true", result["boolean_as_string"])
-        assertEquals("null", result["null_as_string"]) // !!str null is actually parsed as null or string "null"? Wait, in YAML 1.2, tag !!str forces scalar to be string. So it should be string "null".
+        assertEquals(
+            "null",
+            result["null_as_string"]
+        ) // !!str null is actually parsed as null or string "null"? Wait, in YAML 1.2, tag !!str forces scalar to be string. So it should be string "null".
         assertEquals("0xFF", result["hex_as_string"])
 
         assertEquals(42L, result["explicit_int"])
@@ -190,6 +200,7 @@ class GhostYamlResourceFixturesTest {
         val map = result["explicit_map"] as Map<String, Any?>
         assertEquals("value1", map["key1"])
     }
+
     @Test
     fun `parses edge_anchors yaml dataset completely`() {
         val yaml = readResource("yaml/edge_anchors.yaml")
@@ -224,6 +235,7 @@ class GhostYamlResourceFixturesTest {
         // project_a
         @Suppress("UNCHECKED_CAST")
         val projectA = result["project_a"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val tagsA = projectA["tags"] as List<Any?>
         assertEquals(3, tagsA.size)
@@ -252,6 +264,7 @@ class GhostYamlResourceFixturesTest {
         // database_defaults
         @Suppress("UNCHECKED_CAST")
         val databases = result["databases"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val replica = databases["replica"] as Map<String, Any?>
         assertEquals("db-replica.internal", replica["host"])
@@ -259,6 +272,7 @@ class GhostYamlResourceFixturesTest {
         val replicaPool = replica["pool"] as Map<String, Any?>
         assertEquals(5L, replicaPool["min"])
     }
+
     @Test
     fun `parses edge_polymorphism yaml dataset completely`() {
         val yaml = readResource("yaml/edge_polymorphism.yaml")
@@ -309,6 +323,7 @@ class GhostYamlResourceFixturesTest {
         assertEquals("Success", results[0]["_tag"])
         assertEquals(42L, results[0]["value"])
     }
+
     private fun parseMap(yaml: String): Map<String, Any?> {
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         @Suppress("UNCHECKED_CAST")

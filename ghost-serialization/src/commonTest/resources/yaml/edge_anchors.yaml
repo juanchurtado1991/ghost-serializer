@@ -49,7 +49,7 @@ production_overrides: &prod
   max_connections: 100
 
 service_prod:
-  <<: [*defaults, *prod]
+  <<: [ *defaults, *prod ]
   name: production-service
   host: prod.example.com
 

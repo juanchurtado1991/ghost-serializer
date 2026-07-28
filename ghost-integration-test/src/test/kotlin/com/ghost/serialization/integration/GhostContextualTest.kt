@@ -20,7 +20,7 @@ class GhostContextualTest {
     @BeforeTest
     fun setup() {
         Ghost.resetForTest()
-        
+
         // Register the external serializer manually
         val manualRegistry = object : GhostRegistry {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
@@ -33,7 +33,7 @@ class GhostContextualTest {
                 return mapOf(ExternalDate::class to ExternalDateSerializer)
             }
         }
-        
+
         Ghost.addRegistry(manualRegistry)
     }
 
@@ -41,10 +41,10 @@ class GhostContextualTest {
     fun testExternalContextualSerialization() {
         val model = ModelWithExternal(id = 1, date = ExternalDate(1672531200000L))
         val json = Ghost.serialize(model)
-        
+
         // ExternalDateSerializer writes the timestamp as a raw string
         assertEquals("""{"id":1,"date":"1672531200000"}""", json)
-        
+
         val deserialized = Ghost.deserialize<ModelWithExternal>(json)
         assertEquals(model, deserialized)
     }

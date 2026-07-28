@@ -143,6 +143,7 @@ object I18n {
             speedTestPayloadNote = "Payload: a few tweets from the same twitter_macro.json dataset used in Ghost's own regression benchmarks — trimmed so each round stays fast in your browser.",
             speedTestResultTitle = "Result",
         )
+
         Lang.ES -> Strings(
             brand = "Ghost Serializer Playground",
             tagline = "Mira cómo Ghost parsea tu JSON — paso a paso, de verdad.",

@@ -5,9 +5,9 @@ package com.ghost.serialization.integration
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.integration.model.MaliceModel
-import com.ghost.serialization.integration.model.DecimalStress
 import com.ghost.serialization.integration.model.CollisionModel
+import com.ghost.serialization.integration.model.DecimalStress
+import com.ghost.serialization.integration.model.MaliceModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -20,11 +20,11 @@ class GhostMaliceTest {
         // Create a deeply nested JSON that exceeds the default depth of 255
         val depth = 300
         val nestedJson = "{ \"nested\": ".repeat(depth) + "{}" + "}".repeat(depth)
-        
+
         val exception = assertFailsWith<GhostJsonException> {
             Ghost.deserialize<MaliceModel>(nestedJson.encodeToByteArray())
         }
-        
+
         assertTrue(
             exception.message.contains("Reached maximum recursion depth"),
             "Should throw depth exceeded error"
@@ -36,7 +36,7 @@ class GhostMaliceTest {
         // Test with a massive number of decimals (500+)
         val massiveDecimal = "0." + "1".repeat(500)
         val json = """{"big": $massiveDecimal, "small": 0.1, "precise": 0.2}"""
-        
+
         // This should not throw NumberFormatException,
         // but parse as much as possible or fail gracefully
         Ghost.deserialize<DecimalStress>(json.encodeToByteArray())
@@ -62,7 +62,7 @@ class GhostMaliceTest {
             }
             append("}")
         }
-        
+
         val result = Ghost.deserialize<CollisionModel>(json.encodeToByteArray())
         assertEquals(result.a1, 1, "a1 should be 1")
         assertEquals(result.a100, 100, "a100 should be 100")
