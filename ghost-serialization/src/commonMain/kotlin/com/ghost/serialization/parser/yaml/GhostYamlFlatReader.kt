@@ -750,6 +750,39 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val startPosition = position
         val localLimit = limit
         val localRawData = rawData
+
+        // Negative hex/octal/binary ("-0x10", "-0o17", "-0b101") aren't plain decimal digits,
+        // so the digit-only loop below would stop right after the leading "-0". Scan their
+        // digit classes explicitly and hand the full token to tryParseNumber, which already
+        // knows how to parse (and negate) these bases — see the DASH_BYTE branch below.
+        var prefixPosition = position
+        if (prefixPosition < localLimit && localRawData[prefixPosition] == C.DASH_BYTE) {
+            prefixPosition++
+        }
+        if (prefixPosition + 1 < localLimit && localRawData[prefixPosition] == C.ZERO_BYTE) {
+            val baseByte = localRawData[prefixPosition + 1]
+            val isHex = baseByte == C.LOWERCASE_X_BYTE || baseByte == C.UPPERCASE_X_BYTE
+            val isOctal = baseByte == C.LOWERCASE_O_BYTE || baseByte == C.UPPERCASE_O_BYTE
+            val isBinary = baseByte == C.LOWERCASE_B_BYTE || baseByte == C.UPPERCASE_B_BYTE
+            if (isHex || isOctal || isBinary) {
+                position = prefixPosition + 2
+                while (position < localLimit) {
+                    val currentByte = localRawData[position]
+                    val isBaseDigit = when {
+                        isHex -> isDigit(currentByte) ||
+                            currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||
+                            currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE
+                        isOctal -> currentByte in C.ZERO_BYTE..C.SEVEN_BYTE
+                        else -> currentByte == C.ZERO_BYTE || currentByte == C.ONE_BYTE
+                    }
+                    if (!isBaseDigit) break
+                    position++
+                }
+                return tryParseNumber(localRawData, startPosition, position)
+                    ?: localRawData.decodeToString(startPosition, position)
+            }
+        }
+
         while (position < localLimit) {
             val currentByte = localRawData[position]
             if (!isDigit(currentByte) && currentByte != C.DASH_BYTE && currentByte != C.PLUS_BYTE && currentByte != C.DOT_BYTE &&
