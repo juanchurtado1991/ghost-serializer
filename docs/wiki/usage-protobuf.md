@@ -2,22 +2,24 @@
 
 [![Core](https://img.shields.io/badge/Core-gray.png?style=flat&logo=cpu-z&logoColor=white)](usage-protobuf.md)
 
-`ghost-protobuf` layers [proto3's canonical JSON mapping rules](https://protobuf.dev/programming-guides/proto3/#json) on top of Ghost's byte-first JSON engine. It is **not** a binary Protobuf wire-format implementation — there is no `.proto` schema compiler and no varint/binary encoding. Use it when you need to produce or consume JSON that interoperates with real protobuf libraries (`protojson` in Go, `google.protobuf.util.JsonFormat` in Java, gRPC-gateway, etc.), not for gRPC binary wire compatibility.
+Proto3 JSON mapping ships inside **`ghost-serialization`** (same artifact as JSON and YAML). It layers [proto3's canonical JSON mapping rules](https://protobuf.dev/programming-guides/proto3/#json) on top of Ghost's byte-first JSON engine. It is **not** a binary Protobuf wire-format implementation — there is no `.proto` schema compiler and no varint/binary encoding. Use it when you need to produce or consume JSON that interoperates with real protobuf libraries (`protojson` in Go, `google.protobuf.util.JsonFormat` in Java, gRPC-gateway, etc.), not for gRPC binary wire compatibility.
+
+> **Migration from 1.2.x:** the standalone `ghost-protobuf` artifact was merged into `ghost-serialization`. Replace `implementation("com.ghostserializer:ghost-protobuf:…")` with `ghost-serialization`, rename `GhostProtobuf` → `GhostProto`, and update imports from `com.ghost.protobuf.*` to `com.ghost.serialization.proto.*`.
 
 ---
 
 ## 1. Quick start
 
 ```kotlin
-// build.gradle.kts
-dependencies {
-    implementation("com.ghostserializer:ghost-protobuf:1.3.0")
+// build.gradle.kts — core runtime (Gradle plugin wires KSP automatically)
+plugins {
+    id("com.ghostserializer.ghost") version "1.3.0"
 }
 ```
 
 ```kotlin
 import com.ghost.serialization.annotations.GhostProtoSerialization
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 
 @GhostProtoSerialization
 data class DeviceStatus(
@@ -29,7 +31,7 @@ data class DeviceStatus(
 val json = Ghost.encodeToString(DeviceStatus(device_id = 42, retry_count = 0, label = ""))
 // {"deviceId":"42"}   — int64 quoted, zero-value fields dropped
 
-val decoded: DeviceStatus = GhostProtobuf.deserialize(json)
+val decoded: DeviceStatus = GhostProto.deserialize(json)
 ```
 
 ## 2. What `@GhostProtoSerialization` actually does today
@@ -43,7 +45,7 @@ val decoded: DeviceStatus = GhostProtobuf.deserialize(json)
 | Enums as strings | ✅ | Already Ghost's default enum wire format |
 | Default/empty values omitted on serialize | ✅ | `Int`/`Long`/`Double`/`Float`/`Short`/`Byte` `!= 0`, `Boolean` only when `true`, `String`/`ByteArray`/`List`/`Set`/`Map` only when non-empty |
 | `oneof` | ✅ | Via `@GhostWrappedKeys` + `@GhostSerialization(inferred = true)` — see [§3](#3-oneof-mapping) |
-| Full `uint64` range | ✅ | `ProtoUInt64Value` is `ULong`-backed (see [§4](#4-well-known-types)); hand-roll a `ULong` property with a `@GhostEncoder`/`@GhostDecoder` for your own messages — core Ghost doesn't have first-class `ULong` field support outside `ghost-protobuf`'s WKTs |
+| Full `uint64` range | ✅ | `ProtoUInt64Value` is `ULong`-backed (see [§4](#4-well-known-types)); hand-roll a `ULong` property with a `@GhostEncoder`/`@GhostDecoder` for your own messages — core Ghost doesn't have first-class `ULong` field support outside the WKT wrappers in `com.ghost.serialization.proto.wkt` |
 | `google.protobuf.Any` pack/unpack by type registry | ✅ | `ProtoAnyRegistry.pack()`/`.unpack<T>()`/`.unpackDynamic()` — see [§4](#4-well-known-types) |
 
 **Scope note:** `Long`/`ByteArray` conversion covers direct properties, properties wrapped in exactly one `@JvmInline value class`, elements of `List<T>`/`Set<T>`/`Map<String, V>` (including combinations, e.g. `List<Long>`), and collections of value-class-wrapped `Long`/`ByteArray` elements (e.g. `List<AccountId>` where `AccountId` wraps a `Long`). It does **not** yet cover a value class wrapping a collection (e.g., `value class AccountIds(val value: List<Long>)` — those fall back to plain handling).
@@ -94,7 +96,7 @@ Both directions work: deserialize picks the right subclass from whichever key is
 
 ## 4. Well-Known Types
 
-Hand-written `GhostSerializer` implementations in `com.ghost.protobuf.wkt`:
+Hand-written `GhostSerializer` implementations in `com.ghost.serialization.proto.wkt`:
 
 | Type | Kotlin shape | Wire format |
 |:---|:---|:---|
@@ -114,7 +116,7 @@ Register the ones you use via `Ghost.addRegistry(...)` (see [Advanced Features �
 `ProtoAnyRegistry` maps a `typeUrl` string to a Kotlin type so you don't have to manually encode/decode `ProtoAny.value` yourself:
 
 ```kotlin
-import com.ghost.protobuf.wkt.ProtoAnyRegistry
+import com.ghost.serialization.proto.wkt.ProtoAnyRegistry
 
 ProtoAnyRegistry.register<DeviceRebooted>("type.googleapis.com/myapp.DeviceRebooted")
 
@@ -139,16 +141,20 @@ All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, 
 
 ## 6. Entry points
 
-- `GhostProtobuf.deserialize<T>(bytes/json/source)` and `GhostProtobuf.deserialize(bytes, KClass<T>)` — the primary entry points. Internally use `GhostProtoJsonFlatReader`, which additionally accepts unquoted-or-quoted numeric literals and `"NaN"`/`"Infinity"` for `Double`/`Float` fields per proto3 rules.
-- `GhostProtobuf.encodeToBytes(value)` / `.encodeToString(value)` — thin wrappers over `Ghost.encodeToBytes`/`Ghost.encodeToString`, provided purely so both directions live under one `GhostProtobuf.*` surface.
-- `Ghost.deserialize<T>(...)` / `Ghost.deserializeStreaming<T>(...)` also work for `@GhostProtoSerialization` classes and for most WKTs (int64 coercion and Base64 decoding were made reader-agnostic), **except** they do not get `GhostProtoJsonFlatReader`'s extra leniency (quoted-or-bare int32, `NaN`/`Infinity` literals) unless you specifically go through `GhostProtobuf.*`.
+- `GhostProto.deserialize<T>(bytes/json/source)` and `GhostProto.deserialize(bytes, KClass<T>)` — the primary entry points. Internally use `GhostProtoJsonFlatReader`, which additionally accepts unquoted-or-quoted numeric literals and `"NaN"`/`"Infinity"` for `Double`/`Float` fields per proto3 rules.
+- `GhostProto.encodeToBytes(value)` / `.encodeToString(value)` — thin wrappers over `Ghost.encodeToBytes`/`Ghost.encodeToString`, provided purely so both directions live under one `GhostProto.*` surface.
+- `Ghost.deserialize<T>(...)` / `Ghost.deserializeStreaming<T>(...)` also work for `@GhostProtoSerialization` classes and for most WKTs (int64 coercion and Base64 decoding were made reader-agnostic), **except** they do not get `GhostProtoJsonFlatReader`'s extra leniency (quoted-or-bare int32, `NaN`/`Infinity` literals) unless you specifically go through `GhostProto.*`.
 
 ## 7. Known gaps (not yet implemented)
 
 - `List<T>`/`Map<K,V>` request/response body unwrapping in the Retrofit/Ktor proto converters (direct types only today).
 - A value class that wraps a *collection* (e.g., `value class AccountIds(val value: List<Long>)` — see the scope note in [§2](#2-what-ghostprotoserialization-actually-does-today)).
-- No first-class `ULong` field type for your *own* `@GhostProtoSerialization` messages — only `ghost-protobuf`'s own `ProtoUInt64Value` WKT wrapper has full-range `uint64` support. Model your own `uint64` fields as `ProtoUInt64Value` or a custom `@GhostEncoder`/`@GhostDecoder`.
+- No first-class `ULong` field type for your *own* `@GhostProtoSerialization` messages — only `ProtoUInt64Value` has full-range `uint64` support. Model your own `uint64` fields as `ProtoUInt64Value` or a custom `@GhostEncoder`/`@GhostDecoder`.
+
+## 8. Proto models in YAML
+
+When a `@GhostProtoSerialization` model is eligible for YAML codegen, KSP can emit serializers that read through `GhostProtoYamlFlatReader` — applying proto3 int64-as-string and bytes-as-Base64 rules inside YAML documents. Use the same `Ghost.decodeFromYaml` / `encodeToYaml` entry points as plain JSON models. See [YAML guide §3](usage-yaml.md#3-what-ksp-generates-and-what-it-skips).
 
 ---
 
-← [Back to README](../../README.md) | [Advanced Features](advanced-features.md) | [Type System](type-system.md)
+← [Back to README](../../README.md) | [YAML](usage-yaml.md) | [Advanced Features](advanced-features.md) | [Type System](type-system.md)

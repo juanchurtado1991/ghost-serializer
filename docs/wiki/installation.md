@@ -51,7 +51,6 @@ ghost-compiler       = { module = "com.ghostserializer:ghost-compiler", version.
 ghost-ktor           = { module = "com.ghostserializer:ghost-ktor", version.ref = "ghost" }
 ghost-retrofit       = { module = "com.ghostserializer:ghost-retrofit", version.ref = "ghost" }
 ghost-spring-boot-starter = { module = "com.ghostserializer:ghost-spring-boot-starter", version.ref = "ghost" }
-ghost-protobuf       = { module = "com.ghostserializer:ghost-protobuf", version.ref = "ghost" }
 
 [plugins]
 ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
@@ -78,6 +77,28 @@ ksp {
 
 ---
 
+## YAML serializer generation
+
+KSP generates a `GhostYamlSerializer` for each eligible `@GhostSerialization` model by default. YAML entry points (`Ghost.decodeFromYaml`, `encodeToYaml`) and framework YAML adapters require these generated serializers.
+
+Disable YAML codegen module-wide when you only need JSON:
+
+```kotlin
+// build.gradle.kts
+ghost {
+    generateYaml.set(false)
+}
+
+// equivalent KSP flag
+ksp {
+    arg("ghost.generateYaml", "false")
+}
+```
+
+Proto3 JSON and YAML for `@GhostProtoSerialization` models follow separate KSP rules — see [YAML guide](usage-yaml.md) and [Protobuf guide](usage-protobuf.md).
+
+---
+
 ## Quick Reference by Platform
 
 | Platform | Minimum configuration |
@@ -89,6 +110,7 @@ ksp {
 | **Spring Boot** | Add `ghost-spring-boot-starter` → [Spring Boot Guide →](usage-spring-boot.md) |
 | **Ktor** | Add `ghost-ktor` + `install(ContentNegotiation) { ghost() }` → [KMP Guide →](usage-kmp.md#4-ktor-integration-ghost-ktor) |
 | **Retrofit** | Add `ghost-retrofit` + `GhostConverterFactory.create()` → [Android Guide →](usage-android.md#5-retrofit-integration) |
+| **YAML APIs** | `Ghost.decodeFromYaml` / `encodeToYaml` (generated) → [YAML Guide →](usage-yaml.md) |
 
 ---
 

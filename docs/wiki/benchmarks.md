@@ -39,6 +39,8 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 ./gradlew :ghost-benchmark:benchmarkSynthetic -PskipTests  # ~4–6 min
 ./gradlew :ghost-benchmark:benchmarkSpecial -PskipTests
 ./gradlew :ghost-benchmark:benchmarkRawJson -PskipTests
+./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
+./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests
 
 # Full README suite (cold start + all tables)
 ./gradlew :ghost-benchmark:run -PskipTests
@@ -163,6 +165,22 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 | Top-level `RawJson` decode (string) | 1.167 | 75.23 | 85.750 |
 | Top-level `RawJson` round-trip (bytes in/out) | 1.221 | 71.87 | 85.750 |
 | Top-level `RawJson` round-trip (string in/out) | 0.827 | 106.06 | 171.500 |
+
+---
+
+## 👻 YAML Round-Trip (Ghost-only)
+
+Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-generated `GhostYamlSerializer` on the integration `BenchUser` fixture via `decodeFromYaml` / `encodeToYaml`.
+
+| Task | Profile | Regression gate |
+|:---|:---|:---:|
+| `benchmarkYaml` | full | informational only (`regressionGate = false`) |
+| `benchmarkYamlFast` | fast | informational only |
+| `benchmarkYamlRegression` / `benchmarkYamlRegressionFast` | wired into `benchmarkRegression(Fast)` | no ±10% gate yet |
+
+```bash
+./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests
+```
 
 ---
 
