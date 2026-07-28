@@ -96,7 +96,7 @@ class GhostYamlGroupATest {
     }
 
     @Test
-    fun `reads large integer (Long range)`() {
+    fun `reads large integer Long range`() {
         val yaml = "big: 9223372036854775807"
         val result = parseMap(yaml)
         assertEquals(9223372036854775807L, result["big"])
@@ -128,28 +128,28 @@ class GhostYamlGroupATest {
     // ── Scalar: Boolean ───────────────────────────────────────────────────────
 
     @Test
-    fun `reads boolean true (lowercase)`() {
+    fun `reads boolean true lowercase`() {
         val yaml = "active: true"
         val result = parseMap(yaml)
         assertEquals(true, result["active"])
     }
 
     @Test
-    fun `reads boolean false (lowercase)`() {
+    fun `reads boolean false lowercase`() {
         val yaml = "active: false"
         val result = parseMap(yaml)
         assertEquals(false, result["active"])
     }
 
     @Test
-    fun `reads boolean True (capitalized)`() {
+    fun `reads boolean True capitalized`() {
         val yaml = "active: True"
         val result = parseMap(yaml)
         assertEquals(true, result["active"])
     }
 
     @Test
-    fun `reads boolean FALSE (uppercase)`() {
+    fun `reads boolean FALSE uppercase`() {
         val yaml = "active: FALSE"
         val result = parseMap(yaml)
         assertEquals(false, result["active"])
@@ -158,28 +158,28 @@ class GhostYamlGroupATest {
     // ── Scalar: Null ──────────────────────────────────────────────────────────
 
     @Test
-    fun `reads null (null keyword)`() {
+    fun `reads null null keyword`() {
         val yaml = "value: null"
         val result = parseMap(yaml)
         assertNull(result["value"])
     }
 
     @Test
-    fun `reads null (tilde)`() {
+    fun `reads null tilde`() {
         val yaml = "value: ~"
         val result = parseMap(yaml)
         assertNull(result["value"])
     }
 
     @Test
-    fun `reads null (Null capitalized)`() {
+    fun `reads null Null capitalized`() {
         val yaml = "value: Null"
         val result = parseMap(yaml)
         assertNull(result["value"])
     }
 
     @Test
-    fun `reads null (empty value)`() {
+    fun `reads null empty value`() {
         val yaml = "value:"
         val result = parseMap(yaml)
         assertNull(result["value"])
