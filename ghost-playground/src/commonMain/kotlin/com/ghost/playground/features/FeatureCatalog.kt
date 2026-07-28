@@ -16,6 +16,8 @@ object FeatureCatalog {
             introEn = "Ghost turns JSON into a typed Kotlin value and back — using generated code, not reflection.",
             introEs = "Ghost convierte JSON en un valor Kotlin tipado y viceversa — con código generado, sin reflexión.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 data class PlaygroundUser(
                     val id: Long,
@@ -50,6 +52,9 @@ object FeatureCatalog {
             introEn = "Wrong types in JSON? Ghost keeps your defaults instead of crashing the whole parse.",
             introEs = "¿Tipos incorrectos en JSON? Ghost conserva tus defaults en vez de tumbar todo el parse.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostResilient
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 data class ResilientConfig(
                     @GhostResilient
@@ -85,6 +90,9 @@ object FeatureCatalog {
             introEn = "Nested JSON paths map straight into flat DTO properties — no wrapper classes.",
             introEs = "Paths JSON anidados mapean a props planas del DTO — sin clases wrapper.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostFlatten
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 data class FlattenedPerson(
                     val name: String,
@@ -121,6 +129,9 @@ object FeatureCatalog {
             introEn = "Unknown sealed-class discriminators route to a safe fallback type instead of throwing.",
             introEs = "Discriminadores desconocidos en sealed class van a un fallback seguro en vez de explotar.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostFallback
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 sealed class DeviceEvent {
                     @GhostSerialization
@@ -159,6 +170,9 @@ object FeatureCatalog {
             introEn = "Capture opaque JSON as bytes — no intermediate tree, perfect for passthrough fields.",
             introEs = "Captura JSON opaco como bytes — sin árbol intermedio, ideal para passthrough.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.types.RawJson
+
                 @GhostSerialization
                 data class EnvelopePayload(
                     val event: String,
@@ -185,9 +199,12 @@ object FeatureCatalog {
             icon = PlaygroundIconKind.Bytes,
             titleEn = "Proto-JSON",
             titleEs = "Proto-JSON",
+            wireFormat = LabWireFormat.PROTO_JSON,
             introEn = "@GhostProtoSerialization follows proto3 JSON rules: int64 fields round-trip as quoted strings, and fields left at their default are dropped from the output.",
             introEs = "@GhostProtoSerialization sigue las reglas de proto3 JSON: los campos int64 van y vuelven como strings entre comillas, y los campos en su valor default se omiten del output.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
                 @GhostProtoSerialization
                 data class ProtoOrderEvent(
                     val orderId: Long,
@@ -197,7 +214,8 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("orderId", "label", "retries"),
             variants = listOf(
-                LabVariant("restock", "Restock order", "Orden de reposición", """{"orderId":"5001","label":"restock","retries":0}"""),
+                LabVariant("restock", "Restock order", "Orden de reposición", """{"orderId":"5001","label":"restock"}"""),
+                LabVariant("withRetries", "Non-default retries", "Retries distinto del default", """{"orderId":"5002","label":"priority","retries":3}"""),
             ),
             run = { json ->
                 val event = GhostProto.deserialize<ProtoOrderEvent>(json)
@@ -215,9 +233,13 @@ object FeatureCatalog {
             icon = PlaygroundIconKind.RoundTrip,
             titleEn = "YAML",
             titleEs = "YAML",
+            wireFormat = LabWireFormat.YAML,
             introEn = "Add @GhostYamlSerialization beside @GhostSerialization to opt in to YAML codegen — the same DTO can round-trip YAML documents without a second schema.",
             introEs = "Añade @GhostYamlSerialization junto a @GhostSerialization para activar codegen YAML — el mismo DTO puede hacer round-trip de documentos YAML sin un segundo schema.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
                 @GhostSerialization
                 @GhostYamlSerialization
                 data class PlaygroundUser(

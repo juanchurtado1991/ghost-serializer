@@ -1,6 +1,13 @@
 package com.ghost.playground.features
 
+import com.ghost.playground.i18n.Strings
 import com.ghost.playground.ui.icons.PlaygroundIconKind
+
+enum class LabWireFormat {
+    JSON,
+    PROTO_JSON,
+    YAML,
+}
 
 /** A Studio preset: a real, KSP-compiled DTO demonstrated against one or more [LabVariant] payloads. */
 data class FeatureLab(
@@ -10,6 +17,8 @@ data class FeatureLab(
     val titleEs: String,
     val introEn: String,
     val introEs: String,
+    /** Wire format for the input card label and pipeline copy — defaults to JSON. */
+    val wireFormat: LabWireFormat = LabWireFormat.JSON,
     /** Real Kotlin source for the annotated DTO below — shown read-only, this *is* what runs. */
     val dtoSource: String,
     /** Field names for the dispatch-table preview; empty skips that card (e.g. sealed types). */
@@ -18,4 +27,22 @@ data class FeatureLab(
     val run: (json: String) -> String,
     val explainEn: (input: String, output: String) -> String,
     val explainEs: (input: String, output: String) -> String,
-)
+) {
+    fun inputLabel(strings: Strings): String = when (wireFormat) {
+        LabWireFormat.JSON -> strings.jsonInput
+        LabWireFormat.PROTO_JSON -> strings.protoJsonInput
+        LabWireFormat.YAML -> strings.yamlInput
+    }
+
+    fun pipelineRunTitle(strings: Strings): String = when (wireFormat) {
+        LabWireFormat.JSON -> strings.pipelineStepRunTitle
+        LabWireFormat.PROTO_JSON -> strings.pipelineStepRunTitleProto
+        LabWireFormat.YAML -> strings.pipelineStepRunTitleYaml
+    }
+
+    fun pipelineRunDetail(strings: Strings): String = when (wireFormat) {
+        LabWireFormat.JSON -> strings.pipelineStepRunDetail
+        LabWireFormat.PROTO_JSON -> strings.pipelineStepRunDetailProto
+        LabWireFormat.YAML -> strings.pipelineStepRunDetailYaml
+    }
+}
