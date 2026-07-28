@@ -243,12 +243,22 @@ class GhostSerializationProcessor(
         )
     }
 
+    private fun isGenerateYamlEnabled(): Boolean {
+        return when (options[C.OPTION_GENERATE_YAML]?.lowercase()) {
+            "false", "0", "no" -> false
+            else -> true
+        }
+    }
+
     private fun shouldGenerateYaml(
         resolver: Resolver,
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>,
         envelopeModel: GhostEnvelopeModel?,
     ): Boolean {
+        if (!isGenerateYamlEnabled()) {
+            return false
+        }
         if (resolver.getClassDeclarationByName(
                 resolver.getKSNameFromString(C.STR_YAML_SERIALIZER_FQN)
             ) == null

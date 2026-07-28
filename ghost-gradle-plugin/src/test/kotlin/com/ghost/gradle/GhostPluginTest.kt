@@ -129,7 +129,7 @@ class GhostPluginTest {
     }
 
     @Test
-    fun `plugin injects ghost-protobuf when protobuf dependency is present`() {
+    fun `plugin does not inject ghost-protobuf after proto merge into ghost-serialization`() {
         val project = ProjectBuilder.builder().build()
 
         project.pluginManager.apply("org.jetbrains.kotlin.jvm")
@@ -139,10 +139,36 @@ class GhostPluginTest {
         evaluated(project)
 
         val implDependencies = project.configurations.getByName("implementation").dependencies
-        assertTrue(
+        assertFalse(
             implDependencies.any { it.name == "ghost-protobuf" },
-            "Should inject ghost-protobuf when a com.google.protobuf dependency is declared"
+            "ghost-protobuf artifact was removed; proto support lives in ghost-serialization"
         )
+    }
+
+    @Test
+    fun `plugin defaults generateYaml to true`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(GhostPlugin::class.java)
+
+        val extension = project.extensions.getByType(GhostExtension::class.java)
+        assertTrue(extension.generateYaml.get())
+    }
+
+    @Test
+    fun `plugin wires generateYaml ksp arg when ksp is applied`() {
+        val project = ProjectBuilder.builder().build()
+
+        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
+        project.pluginManager.apply("com.google.devtools.ksp")
+        project.pluginManager.apply(GhostPlugin::class.java)
+        project.extensions.getByType(GhostExtension::class.java).generateYaml.set(false)
+
+        evaluated(project)
+
+        val kspExtension = project.extensions.getByType(
+            com.google.devtools.ksp.gradle.KspExtension::class.java
+        )
+        assertEquals("false", kspExtension.arguments["ghost.generateYaml"])
     }
 
     @Test
@@ -157,7 +183,6 @@ class GhostPluginTest {
         val implDependencies = project.configurations.getByName("implementation").dependencies
         assertFalse(implDependencies.any { it.name == "ghost-ktor" })
         assertFalse(implDependencies.any { it.name == "ghost-retrofit" })
-        assertFalse(implDependencies.any { it.name == "ghost-protobuf" })
     }
 
     @Test

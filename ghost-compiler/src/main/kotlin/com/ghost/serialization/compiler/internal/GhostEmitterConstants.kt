@@ -387,6 +387,7 @@ internal object GhostEmitterConstants {
     const val STR_TEST_BYTES_RESULT = "bytes"
     const val STR_TEST_NATIVE_RESULT = "native"
     const val OPTION_TEXT_CHANNEL = "ghost.textChannel"
+    const val OPTION_GENERATE_YAML = "ghost.generateYaml"
     const val STR_BEGIN_ARRAY = "beginArray"
     const val STR_END_ARRAY = "endArray"
     const val STR_READ_LIST = "readList"

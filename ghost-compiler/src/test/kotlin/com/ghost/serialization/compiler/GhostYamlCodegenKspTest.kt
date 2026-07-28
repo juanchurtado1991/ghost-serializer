@@ -6,6 +6,7 @@ import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
+import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.jupiter.api.Test
@@ -108,6 +109,30 @@ class GhostYamlCodegenKspTest {
         )
     }
 
+    @Test
+    fun skipsYamlWhenGenerateYamlOptionIsFalse() {
+        val generated = compileKspOnly(
+            mapOf("ghost.generateYaml" to "false"),
+            SourceFile.kotlin(
+                "YamlOptOutUser.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class YamlOptOutUser(val id: Int, val name: String)
+                """.trimIndent()
+            ),
+            serializerFileName = "YamlOptOutUserSerializer.kt"
+        )
+
+        assertFalse(
+            "GhostYamlSerializer" in generated,
+            "ghost.generateYaml=false must disable YAML codegen:\n$generated"
+        )
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
@@ -117,12 +142,17 @@ class GhostYamlCodegenKspTest {
             .first()
     }
 
-    private fun compileKspOnly(source: SourceFile, serializerFileName: String): String {
+    private fun compileKspOnly(
+        options: Map<String, String>,
+        source: SourceFile,
+        serializerFileName: String,
+    ): String {
         val compilation = KotlinCompilation().apply {
             sources = listOf(source)
             inheritClassPath = true
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = false
+            kspProcessorOptions = options.toMutableMap()
             languageVersion = "1.9"
             apiVersion = "1.9"
             kotlincArguments = listOf("-Xskip-metadata-version-check")
@@ -135,6 +165,9 @@ class GhostYamlCodegenKspTest {
             .map { it.readText() }
             .first()
     }
+
+    private fun compileKspOnly(source: SourceFile, serializerFileName: String): String =
+        compileKspOnly(emptyMap(), source, serializerFileName)
 
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {
