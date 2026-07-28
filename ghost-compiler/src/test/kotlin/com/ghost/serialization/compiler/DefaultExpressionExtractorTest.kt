@@ -1,5 +1,7 @@
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.compiler.analysis.DefaultExpressionExtractor
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

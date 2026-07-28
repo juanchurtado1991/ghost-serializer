@@ -4,7 +4,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.compiler.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
  * Static analysis helpers for generated Ghost serializer sources.

@@ -2,7 +2,7 @@
 
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.compiler.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspProcessorOptions
