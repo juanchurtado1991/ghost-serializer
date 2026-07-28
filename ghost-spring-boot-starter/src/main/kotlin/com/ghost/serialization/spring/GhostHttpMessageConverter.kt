@@ -4,7 +4,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
 import org.springframework.http.HttpInputMessage
@@ -80,13 +80,14 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         // itself is BINARY-retained (invisible to reflection), so `serializer.isProto` is how
         // this shared, globally-registered converter tells the two cases apart.
         if (serializer.isProto) {
-            val reader = GhostProtoJsonFlatReader(bytes)
-            reader.strictMode = isStrict
-            if (isCoerce) {
-                reader.coerceStringsToNumbers = true
-                reader.coerceBooleans = true
+            return ghostProtoInternalUseFlatReader(bytes) { reader ->
+                reader.strictMode = isStrict
+                if (isCoerce) {
+                    reader.coerceStringsToNumbers = true
+                    reader.coerceBooleans = true
+                }
+                serializer.deserialize(reader)
             }
-            return serializer.deserialize(reader)
         }
 
         return com.ghost.serialization.ghostInternalUseFlatReader(bytes) { reader ->

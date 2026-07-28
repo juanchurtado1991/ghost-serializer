@@ -40,6 +40,7 @@ fun main(args: Array<String>) {
         BenchmarkSuite.SPECIAL -> runSpecialSuite()
         BenchmarkSuite.RAWJSON -> runRawJsonSuite()
         BenchmarkSuite.YAML -> runYamlSuite()
+        BenchmarkSuite.PROTO -> runProtoSuite()
     }
 
     println("\n[COMPLETE] ${suite.cliName} benchmark finished.")
@@ -140,6 +141,8 @@ private fun runRawJsonSuite(): Boolean {
 }
 
 private fun runYamlSuite(): Boolean = GhostYamlBenchmark.run()
+
+private fun runProtoSuite(): Boolean = GhostProtoBenchmark.run()
 
 /** Pre-generated JSON payloads reused across synthetic suites. */
 internal data class BenchmarkPayloads(

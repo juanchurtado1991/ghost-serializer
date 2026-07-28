@@ -24,6 +24,9 @@ internal enum class BenchmarkSuite(
 
     /** Ghost-only YAML round-trip on KSP-generated GhostYamlSerializer. */
     YAML("yaml", regressionGate = false),
+
+    /** Ghost-only proto3 JSON round-trip via GhostProto on @GhostProtoSerialization models. */
+    PROTO("proto", regressionGate = false),
     ;
 
     companion object {

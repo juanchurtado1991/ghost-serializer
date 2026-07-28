@@ -37,10 +37,12 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 # Individual suites (add -PskipTests to skip allTests gate)
 ./gradlew :ghost-benchmark:benchmarkTwitter -PskipTests    # ~1–2 min
 ./gradlew :ghost-benchmark:benchmarkSynthetic -PskipTests  # ~4–6 min
-./gradlew :ghost-benchmark:benchmarkSpecial -PskipTests
+./gradlew :ghost-benchmark:benchmarkSpecial -PskipTests    # JSON features + proto WKT micro-bench
 ./gradlew :ghost-benchmark:benchmarkRawJson -PskipTests
-./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
+./gradlew :ghost-benchmark:benchmarkYaml -PskipTests       # YAML parser/writer (full profile)
 ./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests
+./gradlew :ghost-benchmark:benchmarkProto -PskipTests      # Proto3 JSON via GhostProto (full profile)
+./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests
 
 # Full README suite (cold start + all tables)
 ./gradlew :ghost-benchmark:run -PskipTests
@@ -53,7 +55,7 @@ Exit code `1` = regression beyond ±10% tolerance vs baseline (twitter / synthet
 |------|------------|-----------------|
 | `benchmarkTwitter` / `benchmarkTwitterFast` | ~3 min / ~30s | ✅ 6 categories |
 | `benchmarkSynthetic` / `benchmarkSyntheticFast` | ~6 min / ~60s | ✅ 9 categories |
-| `benchmarkRegression` / `benchmarkRegressionFast` | ~9 min / ~1–2 min | ✅ all 15 |
+| `benchmarkRegression` / `benchmarkRegressionFast` | ~9 min / ~1–2 min | ✅ JSON only (15 categories) + yaml/proto informational |
 | `run` (full) | ~8–10 min | ✅ all 15 |
 
 ---
@@ -170,17 +172,66 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 
 ## 👻 YAML Round-Trip (Ghost-only)
 
-Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-generated `GhostYamlSerializer` on the integration `BenchUser` fixture via `decodeFromYaml` / `encodeToYaml`.
+Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-generated `GhostYamlSerializer` on the integration [`YamlBenchUser`](../../ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/YamlBenchUser.kt) fixture via `Ghost.decodeFromYaml` / `encodeToYaml` / `encodeToYamlBytes`.
+
+**Fixture:** block-style YAML document (**90 B** full profile, **49 B** minimal round-trip). Parser: `GhostYamlFlatReader` · Writer: `GhostYamlFlatWriter`.
 
 | Task | Profile | Regression gate |
 |:---|:---|:---:|
 | `benchmarkYaml` | full | informational only (`regressionGate = false`) |
 | `benchmarkYamlFast` | fast | informational only |
-| `benchmarkYamlRegression` / `benchmarkYamlRegressionFast` | wired into `benchmarkRegression(Fast)` | no ±10% gate yet |
+| `benchmarkYamlRegression` / `benchmarkYamlRegressionFast` | aliases | wired into `benchmarkRegression(Fast)` |
 
 ```bash
+./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
 ./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests
 ```
+
+**Full profile** (5000 measurement runs, Linux JVM 17, July 2026). Fixtures are **~90 B** — at this scale **µs/op** is the meaningful metric; GB/s is shown for completeness but is dominated by payload size (a 1 µs parse of 90 B is only ~0.09 GB/s even if the parser is fast).
+
+| Operation | Latency (µs/op) | Allocation (KB/op) | Throughput (GB/s) |
+|:---|---:|---:|---:|
+| Decode (`decodeFromYaml` bytes) | **1.27** ⏱️ | **1.211** 💾 | 0.071 |
+| Encode (`encodeToYamlBytes`) | **0.65** | **0.773** | 0.138 |
+| Encode (`encodeToYaml` string) | 1.29 | 0.837 | 0.070 |
+| Decode (`decodeFromYaml` string) | 2.59 | 1.321 | 0.035 |
+| Round-trip (minimal fixture, 49 B) | 1.78 | 1.852 | 0.027 |
+
+Prefer **`ByteArray`** inputs when your client already exposes bytes — avoids an intermediate `String` and matches the flat reader hot path.
+
+---
+
+## 👻 Proto3 JSON Round-Trip (Ghost-only)
+
+Ghost-only suite — there is no KSER/Moshi proto3-JSON equivalent. Exercises KSP-generated `@GhostProtoSerialization` serializers through **`GhostProto`** (`GhostProtoJsonFlatReader` on decode; proto quoting / default omission on encode) on [`ProtoBenchUser`](../../ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/ProtoBenchUser.kt).
+
+**Fixture:** proto3 JSON with quoted `userId`, omitted default fields (**110 B** full profile, **65 B** minimal round-trip).
+
+| Task | Profile | Regression gate |
+|:---|:---|:---:|
+| `benchmarkProto` | full | informational only |
+| `benchmarkProtoFast` | fast | informational only |
+| `benchmarkProtoRegression` / `benchmarkProtoRegressionFast` | aliases | wired into `benchmarkRegression(Fast)` |
+
+```bash
+./gradlew :ghost-benchmark:benchmarkProto -PskipTests
+./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests
+```
+
+**Full profile** (5000 measurement runs, Linux JVM 17, July 2026). Fixtures are **~110 B** — use **µs/op** (and allocation) to judge parser/writer cost; GB/s is a secondary column and looks artificially low on tiny proto3 JSON documents.
+
+| Operation | Latency (µs/op) | Allocation (KB/op) | Throughput (GB/s) |
+|:---|---:|---:|---:|
+| Decode (`GhostProto.deserialize` string) | **0.95** ⏱️ | 0.188 | 0.116 |
+| Round-trip (minimal fixture, 65 B) | 1.04 | 0.469 | 0.063 |
+| Decode (`GhostProto.deserialize` bytes) | 1.26 | **0.063** 💾 | 0.088 |
+| Encode (`GhostProto.encodeToString`) | 1.03 | 0.352 | 0.107 |
+| Encode (`GhostProto.encodeToBytes`) | 1.20 | 0.203 | 0.092 |
+
+> **Reader pooling (1.3.0+)**  
+> `GhostProto.deserialize(bytes)` and HTTP adapters now reuse a **`ThreadLocal` pooled `GhostProtoJsonFlatReader`** via `ghostProtoInternalUseFlatReader` — same pattern as `Ghost.deserialize(bytes)` and `Ghost.decodeFromYaml(bytes)`. The `String` overload still UTF-8-encodes per call; prefer **`ByteArray`** on hot paths.
+
+**Well-Known Types** (`ProtoDuration`, `ProtoTimestamp`, `ProtoStruct`, …) are covered separately in `benchmarkSpecial` (micro-benchmarks, not the generated-model round-trip above).
 
 ---
 

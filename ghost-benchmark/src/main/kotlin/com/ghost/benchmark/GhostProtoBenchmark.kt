@@ -2,92 +2,80 @@
 
 package com.ghost.benchmark
 
-import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.decodeFromYaml
-import com.ghost.serialization.encodeToYaml
-import com.ghost.serialization.encodeToYamlBytes
-import com.ghost.serialization.integration.model.YamlBenchUser
+import com.ghost.serialization.integration.model.ProtoBenchUser
+import com.ghost.serialization.proto.GhostProto
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Ghost-only YAML round-trip benchmark (no KSER/Moshi equivalent).
+ * Ghost-only proto3 JSON round-trip benchmark (no KSER/Moshi equivalent).
  *
- * Exercises KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer] paths on a
- * representative integration fixture ([YamlBenchUser]).
+ * Exercises KSP-generated serializers with [GhostProtoJsonFlatReader] via [GhostProto] on the
+ * integration [ProtoBenchUser] fixture (quoted int64, default-value omission on encode).
  */
-object GhostYamlBenchmark {
+object GhostProtoBenchmark {
 
-    private const val YAML_USER = """
-id: 42
-name: Ghost Benchmark
-email: bench@ghost.io
-score: 88.5
-isActive: true
-role: VIEWER
-"""
+    /** Proto3 JSON — default fields omitted on wire. */
+    private const val JSON_USER =
+        """{"userId":"42","name":"Ghost Benchmark","email":"bench@ghost.io","score":88.5,"isActive":true,"role":"VIEWER"}"""
 
-    private const val YAML_USER_MINIMAL = """
-id: 7
-name: Neo
-email: neo@matrix.io
-score: 100.0
-"""
+    private const val JSON_USER_MINIMAL =
+        """{"userId":"7","name":"Neo","email":"neo@matrix.io","score":100.0}"""
 
     fun run(): Boolean {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {
-            println("  ⚠️  ThreadMXBean not available — skipping YAML benchmark.")
+            println("  ⚠️  ThreadMXBean not available — skipping Proto3 JSON benchmark.")
             return true
         }
         threadBean.isThreadAllocatedMemoryEnabled = true
 
         println("\n════════════════════════════════════════════════════════════════")
-        println("  👻 YAML ROUND-TRIP — GhostYamlSerializer (YamlBenchUser)")
+        println("  👻 PROTO3 JSON ROUND-TRIP — GhostProto (ProtoBenchUser)")
         println("════════════════════════════════════════════════════════════════")
 
-        measureString(
-            threadBean,
-            label = "Decode YamlBenchUser (YAML string)",
-            yaml = YAML_USER,
-        ) { text ->
-            Ghost.decodeFromYaml<YamlBenchUser>(text)
-        }
-
         measureBytes(
             threadBean,
-            label = "Decode YamlBenchUser (YAML bytes)",
-            yaml = YAML_USER,
+            label = "Decode ProtoBenchUser (JSON bytes)",
+            json = JSON_USER,
         ) { bytes ->
-            Ghost.decodeFromYaml<YamlBenchUser>(bytes)
+            GhostProto.deserialize<ProtoBenchUser>(bytes)
         }
-
-        val user = Ghost.decodeFromYaml<YamlBenchUser>(YAML_USER)
 
         measureString(
             threadBean,
-            label = "Encode YamlBenchUser (encodeToYaml string)",
-            yaml = YAML_USER,
-        ) {
-            Ghost.encodeToYaml(user)
+            label = "Decode ProtoBenchUser (JSON string)",
+            json = JSON_USER,
+        ) { text ->
+            GhostProto.deserialize<ProtoBenchUser>(text)
         }
+
+        val user = GhostProto.deserialize<ProtoBenchUser>(JSON_USER)
 
         measureBytes(
             threadBean,
-            label = "Encode YamlBenchUser (encodeToYamlBytes)",
-            yaml = YAML_USER,
+            label = "Encode ProtoBenchUser (encodeToBytes)",
+            json = JSON_USER,
         ) {
-            Ghost.encodeToYamlBytes(user)
+            GhostProto.encodeToBytes(user)
         }
 
         measureString(
             threadBean,
-            label = "Round-trip (decode → encodeToYaml, minimal profile)",
-            yaml = YAML_USER_MINIMAL,
+            label = "Encode ProtoBenchUser (encodeToString)",
+            json = JSON_USER,
         ) {
-            val decoded = Ghost.decodeFromYaml<YamlBenchUser>(YAML_USER_MINIMAL)
-            Ghost.encodeToYaml(decoded)
+            GhostProto.encodeToString(user)
+        }
+
+        measureString(
+            threadBean,
+            label = "Round-trip (decode → encodeToString, minimal profile)",
+            json = JSON_USER_MINIMAL,
+        ) {
+            val decoded = GhostProto.deserialize<ProtoBenchUser>(JSON_USER_MINIMAL)
+            GhostProto.encodeToString(decoded)
         }
 
         println("════════════════════════════════════════════════════════════════\n")
@@ -97,10 +85,10 @@ score: 100.0
     private inline fun measureBytes(
         threadBean: ThreadMXBean,
         label: String,
-        yaml: String,
+        json: String,
         crossinline block: (ByteArray) -> Any?,
     ) {
-        val payload = yaml.trimIndent().encodeToByteArray()
+        val payload = json.encodeToByteArray()
         repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(payload) }
         BenchmarkProgress.logStep("Measure: $label")
         report(threadBean, label, payloadBytes = payload.size.toLong(), block = { block(payload) })
@@ -109,17 +97,16 @@ score: 100.0
     private inline fun measureString(
         threadBean: ThreadMXBean,
         label: String,
-        yaml: String,
+        json: String,
         crossinline block: (String) -> Any?,
     ) {
-        val payload = yaml.trimIndent()
-        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(payload) }
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(json) }
         BenchmarkProgress.logStep("Measure: $label")
         report(
             threadBean,
             label,
-            payloadBytes = payload.encodeToByteArray().size.toLong(),
-            block = { block(payload) },
+            payloadBytes = json.encodeToByteArray().size.toLong(),
+            block = { block(json) },
         )
     }
 
