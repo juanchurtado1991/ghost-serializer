@@ -359,6 +359,21 @@ internal object GhostEmitterConstants {
     const val STR_GHOST_JSON_READER_QUALIFIED = "$PKG_PARSER_STREAMING.$STR_GHOST_JSON_READER"
     const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = "$PKG_PARSER_BYTES.$STR_GHOST_JSON_FLAT_READER"
     const val STR_GHOST_JSON_STRING_READER_QUALIFIED = "$PKG_PARSER_STRINGS.$STR_GHOST_JSON_STRING_READER"
+
+    // YAML codegen (runtime lives in ghost-serialization parser.yaml / writer.yaml)
+    const val STR_YAML_SERIALIZER_FQN = "com.ghost.serialization.yaml.contract.GhostYamlSerializer"
+    const val PKG_YAML_CONTRACT = "com.ghost.serialization.yaml.contract"
+    const val PKG_YAML_WRITER = "com.ghost.serialization.writer.yaml"
+    const val PKG_YAML_PARSER = "com.ghost.serialization.parser.yaml"
+    const val PKG_YAML_SERIALIZER = "com.ghost.serialization.yaml.serializer"
+    const val STR_GHOST_YAML_SERIALIZER = "GhostYamlSerializer"
+    const val STR_GHOST_YAML_WRITER = "GhostYamlWriter"
+    const val STR_GHOST_YAML_FLAT_WRITER = "GhostYamlFlatWriter"
+    const val STR_GHOST_YAML_FLAT_READER = "GhostYamlFlatReader"
+    const val STR_GHOST_PROTO_YAML_FLAT_READER = "GhostProtoYamlFlatReader"
+    const val STR_GHOST_YAML_PREFIX = "GhostYaml"
+    const val TEMPLATE_YAML_ARRAY_SERIALIZER = "GhostYaml%sSerializer"
+
     const val STR_RESET_TOKEN_BYTE = "RESET_TOKEN_BYTE"
     const val STR_ENSURE_UTF8_BYTES = "reader.ensureUtf8Bytes()"
     const val STR_CHAR_POSITION_TO_BYTE_POSITION = "reader.charPositionToBytePosition"
