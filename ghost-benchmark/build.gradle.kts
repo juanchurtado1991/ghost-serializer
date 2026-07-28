@@ -89,18 +89,43 @@ registerBenchmarkTask(
     "rawjson",
     "Ghost-only RawJson byte vs string channels",
 )
+registerBenchmarkTask(
+    "benchmarkYaml",
+    "yaml",
+    "Ghost-only YAML round-trip (BenchUser GhostYamlSerializer)",
+)
+registerBenchmarkTask(
+    "benchmarkYamlFast",
+    "yaml",
+    "YAML round-trip fast profile (~30s)",
+    profile = "fast",
+)
 
 tasks.register("benchmarkRegression") {
     group = "benchmark"
-    description = "Twitter + synthetic + special regression gates, full profile (~9 min); runs allTests first unless -PskipTests"
-    dependsOn("benchmarkTwitter", "benchmarkSynthetic", "benchmarkSpecial")
+    description = "Twitter + synthetic + special + yaml regression gates, full profile (~9 min); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkTwitter", "benchmarkSynthetic", "benchmarkSpecial", "benchmarkYaml")
     configureBenchmarkTestGate()
 }
 
 tasks.register("benchmarkRegressionFast") {
     group = "benchmark"
-    description = "Twitter + synthetic + special regression gates, fast profile (~1–2 min); runs allTests first unless -PskipTests"
-    dependsOn("benchmarkTwitterFast", "benchmarkSyntheticFast", "benchmarkSpecial")
+    description = "Twitter + synthetic + special + yaml regression gates, fast profile (~1–2 min); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkTwitterFast", "benchmarkSyntheticFast", "benchmarkSpecial", "benchmarkYamlFast")
+    configureBenchmarkTestGate()
+}
+
+tasks.register("benchmarkYamlRegression") {
+    group = "benchmark"
+    description = "YAML round-trip gate, full profile; runs allTests first unless -PskipTests"
+    dependsOn("benchmarkYaml")
+    configureBenchmarkTestGate()
+}
+
+tasks.register("benchmarkYamlRegressionFast") {
+    group = "benchmark"
+    description = "YAML round-trip gate, fast profile (~30s); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkYamlFast")
     configureBenchmarkTestGate()
 }
 

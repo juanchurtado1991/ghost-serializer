@@ -21,6 +21,9 @@ internal enum class BenchmarkSuite(
 
     /** Ghost-only RawJson byte vs string channels. */
     RAWJSON("rawjson", regressionGate = false),
+
+    /** Ghost-only YAML round-trip on KSP-generated GhostYamlSerializer. */
+    YAML("yaml", regressionGate = false),
     ;
 
     companion object {

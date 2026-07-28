@@ -39,6 +39,7 @@ fun main(args: Array<String>) {
         BenchmarkSuite.TWITTER -> runTwitterSuite(threadBean, regressionGate = true)
         BenchmarkSuite.SPECIAL -> runSpecialSuite()
         BenchmarkSuite.RAWJSON -> runRawJsonSuite()
+        BenchmarkSuite.YAML -> runYamlSuite()
     }
 
     println("\n[COMPLETE] ${suite.cliName} benchmark finished.")
@@ -137,6 +138,8 @@ private fun runRawJsonSuite(): Boolean {
     RawJsonCaptureBenchmark.run()
     return true
 }
+
+private fun runYamlSuite(): Boolean = GhostYamlBenchmark.run()
 
 /** Pre-generated JSON payloads reused across synthetic suites. */
 internal data class BenchmarkPayloads(
