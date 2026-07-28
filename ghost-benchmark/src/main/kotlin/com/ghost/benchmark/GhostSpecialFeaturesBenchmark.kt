@@ -25,10 +25,11 @@ import java.lang.management.ManagementFactory
 /**
  * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
  *
- * These are measured independently because they cannot be compared fairly against
- * Gson, Moshi, KSer, or Jackson — they simply don't support these capabilities.
+ * Covers polymorphism, structural flattening, resilience, custom decoders, opaque [com.ghost.serialization.types.RawJson]
+ * envelopes, and protobuf well-known types. These workloads are measured independently because
+ * Moshi, KotlinX Serialization, and Jackson do not expose comparable capabilities.
  *
- * Runs with the same ThreadMXBean methodology as the main benchmark.
+ * Uses the same [ThreadMXBean] allocation methodology as the main synthetic harness.
  */
 object GhostSpecialFeaturesBenchmark {
 
@@ -66,6 +67,7 @@ object GhostSpecialFeaturesBenchmark {
     private const val JSON_SSE_DEVICE_EVENT =
         """{"eventType":"DEVICE_EVENT","eventTime":42,"deviceEvent":{"deviceId":"abc"}}"""
 
+    /** Runs every exclusive-capability benchmark and prints a summary table. */
     fun run() {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {

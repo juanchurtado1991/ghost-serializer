@@ -2,13 +2,6 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
@@ -31,11 +24,12 @@ import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import okio.BufferedSink
-import okio.BufferedSource
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
+import okio.BufferedSink
+import okio.BufferedSource
+
 
 /**
  * Platform synchronization primitive.

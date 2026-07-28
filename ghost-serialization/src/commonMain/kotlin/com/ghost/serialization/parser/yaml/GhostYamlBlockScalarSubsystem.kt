@@ -6,7 +6,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * Subsystem for parsing YAML Block Scalars (Literal | and Folded > styles).
  */
 
-/** Group B — Block scalar (| and >). */
+/** Parses block scalar values (literal `|` and folded `>` styles). */
 internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
     // Skip the indicator and any chomp/indent modifiers on the same line
     position++ // consume '|' or '>'

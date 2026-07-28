@@ -14,8 +14,8 @@ import java.lang.management.ManagementFactory
 /**
  * Ghost-only YAML round-trip benchmark (no KSER/Moshi equivalent).
  *
- * Exercises KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer] paths on a
- * representative integration fixture ([YamlBenchUser]).
+ * Exercises KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer] paths on the
+ * integration fixture [com.ghost.serialization.integration.model.YamlBenchUser].
  */
 object GhostYamlBenchmark {
 
@@ -35,6 +35,11 @@ email: neo@matrix.io
 score: 100.0
 """
 
+    /**
+     * Runs YAML decode, encode, and round-trip scenarios.
+     *
+     * @return `true` when the suite completes (always, including when ThreadMXBean is unavailable).
+     */
     fun run(): Boolean {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {

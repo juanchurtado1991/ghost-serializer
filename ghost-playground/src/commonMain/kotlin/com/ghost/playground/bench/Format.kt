@@ -3,7 +3,7 @@ package com.ghost.playground.bench
 import kotlin.math.abs
 import kotlin.math.round
 
-/** Cross-platform decimal formatting — `String.format`/`%.1f` aren't available in commonMain. */
+/** Cross-platform decimal formatting; `String.format` and `%.1f` are unavailable in commonMain. */
 fun roundTo(value: Double, decimals: Int): String {
     if (value.isNaN() || value.isInfinite()) return "0"
     val factor = when (decimals) {

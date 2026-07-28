@@ -1,9 +1,10 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.*
+import com.ghost.serialization.compiler.analysis.isEnum
+import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE
+import com.ghost.serialization.compiler.model.GhostPropertyModel
+import com.ghost.serialization.compiler.model.InferredSubclassModel
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.ClassName
@@ -13,7 +14,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Main coordinator (Orchestrator) for the deserialization code generation process.
@@ -24,8 +25,9 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
  * task to specialized emitters.
  *
  * ### Orchestration Strategy:
- * - **Polymorphic Types:** Direct delegation for Sealed or [Enum] types.
- * - **Large DTOs (> [PROPERTY_MAX_SIZE]):** Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
+ * - **Polymorphic Types:** Direct delegation for sealed or [kotlin.Enum] types.
+ * - **Large DTOs (> [com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE]):**
+ *   Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
  * - **Standard DTOs:** Delegates to [StandardEmitter] for highly-optimized, inlinable code.
  *
  * @property properties The list of property metadata to be deserialized.
@@ -56,9 +58,9 @@ internal class DeserializeCodeEmitter(
     /**
      * Entry point for the code generation pipeline.
      *
-     * Evaluates the DTO structure to determine the optimal generation strategy.
-     * It manages the injection of contextual serializers and ensures [isResilientClass]
-     * metadata is correctly propagated to the generated serializer.
+     * Evaluates the DTO structure to determine the optimal generation strategy,
+     * injects contextual serializers, and propagates resilience metadata to the generated
+     * serializer when the enclosing class is marked resilient.
      *
      * @param typeSpecBuilder The builder for the serializer object/class.
      * @param isFlatPath Whether the code is generating for a flat reader vs standard.
@@ -294,7 +296,7 @@ internal class DeserializeCodeEmitter(
     )
 
     /**
-     * Resolves and builds the [InferredSealedContext] from the property models.
+     * Resolves and builds the inferred-sealed dispatch context from the property models.
      * Returns null if no inferred subclasses are declared.
      */
     private fun createInferredSealedContext(properties: List<GhostPropertyModel>): InferredSealedContext? {

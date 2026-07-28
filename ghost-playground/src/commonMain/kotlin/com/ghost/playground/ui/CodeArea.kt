@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.sp
 import com.ghost.playground.ui.theme.CodeBg
 import com.ghost.playground.ui.theme.CodeText
 
-/** Read-only monospace code/JSON block — every Studio preset's DTO source and payload is a fixed, curated sample. */
+/** Read-only monospace block for curated DTO source and sample payload text. */
 @Composable
 internal fun CodeArea(value: String) {
     Box(

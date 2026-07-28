@@ -20,11 +20,10 @@ import okio.Buffer
  * Twitter macro-dataset benchmark comparing Ghost vs Moshi (codegen) vs KotlinX Serialization.
  *
  * Measures throughput (µs/op + GB/s of JSON bytes) and memory allocation (KB/op)
- * across 6 categories:
- * String / Bytes / Streaming × Decode / Encode
+ * across six categories: String / Bytes / Streaming × Decode / Encode.
  *
- * JIT is warmed globally in [warmupGlobal] (phase 2); [run] only runs a short local warmup
- * before measurement.
+ * Global JIT warmup runs in [warmupGlobal] during [BenchmarkSuite.FULL] phase 2;
+ * [run] performs a short local warmup immediately before measurement.
  */
 object TwitterBenchmark {
 
@@ -67,7 +66,11 @@ object TwitterBenchmark {
     }
 
     /**
-     * Global JIT warmup for Twitter paths — called once from [GhostBenchmark] phase 2.
+     * Global JIT warmup for Twitter decode/encode paths across all I/O modes.
+     *
+     * Invoked from [BenchmarkSuite.FULL] phase 2 alongside the synthetic warmup.
+     *
+     * @param iterations number of warmup iterations (typically [BenchmarkStandard.WARMUP_ITERATIONS]).
      */
     fun warmupGlobal(iterations: Int) {
         val ctx = loadWarmupContext() ?: return
@@ -77,6 +80,13 @@ object TwitterBenchmark {
         }
     }
 
+    /**
+     * Runs the Twitter macro benchmark and returns observations for [RegressionCalculator].
+     *
+     * @param threadBean JVM bean for per-op allocation tracking, or `null` to skip memory metrics.
+     * @return six [RegressionCalculator.Observed] rows (one per decode/encode category), or empty
+     *   when `twitter_macro.json` is missing from the classpath.
+     */
     fun run(threadBean: ThreadMXBean?): List<RegressionCalculator.Observed> {
         println("\n========================================================")
         println("BENCHMARK: TWITTER MACRO DATASET")

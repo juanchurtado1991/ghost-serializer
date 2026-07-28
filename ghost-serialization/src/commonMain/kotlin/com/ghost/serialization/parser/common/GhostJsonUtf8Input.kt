@@ -3,18 +3,15 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import okio.Buffer
 import okio.BufferedSource
+
 
 /**
  * RFC 8259 §8.1: JSON text may be UTF-8, UTF-16, or UTF-32 (with or without BOM).

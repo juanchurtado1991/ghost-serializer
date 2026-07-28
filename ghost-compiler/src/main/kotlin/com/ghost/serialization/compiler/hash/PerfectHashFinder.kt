@@ -18,8 +18,8 @@ internal object PerfectHashFinder {
      *
      * ### How the Reader uses these parameters (Runtime Walkthrough):
      *
-     * Suppose we have a field named **"age"** (3 bytes: 'a'=97, 'g'=103, 'e'=101)
-     * and the optimizer chose `multiplier = 31` and `shift = 5`.
+     * For a field named **"age"** (3 bytes: 'a'=97, 'g'=103, 'e'=101)
+     * and optimizer parameters `multiplier = 31` and `shift = 5`:
      *
      * | Step | Action | Description | Resulting Value |
      * | :--- | :--- | :--- | :--- |
@@ -29,8 +29,8 @@ internal object PerfectHashFinder {
      * | **4. Lookup** | Index | Access the dispatch table | `dispatch(hash)` -> Returns index |
      *
      * #### Deep dive into "Packing" (Step 2):
-     * Imagine a 32-bit Integer as 4 empty boxes. We place each byte into a box,
-     * shifting them to the left so they don't overlap:
+     * A 32-bit integer is treated as four byte slots. Each input byte is placed in its slot,
+     * shifted left so the slots do not overlap:
      *
      * ```text
      * Slot 4 (24-31) | Slot 3 (16-23) | Slot 2 (8-15) | Slot 1 (0-7)

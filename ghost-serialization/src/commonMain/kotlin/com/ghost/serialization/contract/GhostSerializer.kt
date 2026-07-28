@@ -1,23 +1,18 @@
 package com.ghost.serialization.contract
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 import com.ghost.serialization.ghostInternalEncodeWithWriter
-import okio.BufferedSink
-import okio.BufferedSource
-import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.withPreparedUtf8Json
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import okio.BufferedSink
+import okio.BufferedSource
+
 
 /**
  * Base contract for high-performance JSON serializers.

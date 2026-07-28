@@ -1,15 +1,29 @@
 package com.ghost.serialization.compiler.codegen
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.emit.*
+import com.ghost.serialization.compiler.analysis.DispatchNamesResolver
+import com.ghost.serialization.compiler.analysis.isGhost
+import com.ghost.serialization.compiler.analysis.isList
+import com.ghost.serialization.compiler.analysis.isMap
+import com.ghost.serialization.compiler.analysis.isPrimitiveBoolean
+import com.ghost.serialization.compiler.analysis.isPrimitiveByte
+import com.ghost.serialization.compiler.analysis.isPrimitiveChar
+import com.ghost.serialization.compiler.analysis.isPrimitiveDouble
+import com.ghost.serialization.compiler.analysis.isPrimitiveFloat
+import com.ghost.serialization.compiler.analysis.isPrimitiveInt
+import com.ghost.serialization.compiler.analysis.isPrimitiveLong
+import com.ghost.serialization.compiler.analysis.isPrimitiveShort
+import com.ghost.serialization.compiler.analysis.isSet
+import com.ghost.serialization.compiler.analysis.isString
+import com.ghost.serialization.compiler.hash.PerfectHashConfig
+import com.ghost.serialization.compiler.hash.PerfectHashFinder
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostSerializerContext
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Emits serializer companion setup: perfect-hash OPTIONS, cached field headers, enum tables, warmUp.

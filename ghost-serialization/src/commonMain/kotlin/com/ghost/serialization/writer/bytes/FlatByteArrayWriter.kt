@@ -1,13 +1,13 @@
 package com.ghost.serialization.writer.bytes
 
-import com.ghost.serialization.writer.common.*
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
+import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_END
 import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_START
 import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
-import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonConstants.LOW_SURROGATE_END
 import com.ghost.serialization.parser.common.GhostJsonConstants.LOW_SURROGATE_START
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_10
@@ -24,8 +24,8 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_MAX_BMP_BYT
 import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_REPLACEMENT_CHAR
 import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_18
 import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_6
-import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
 import okio.ByteString
+
 
 /**
  * A growing flat-array byte buffer used as the in-memory output target for

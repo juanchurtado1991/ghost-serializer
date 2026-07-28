@@ -1,6 +1,6 @@
 package com.ghost.serialization.types
 
-/** JSON value category of a [RawJson] payload (first-token classification). */
+/** JSON value category of a [com.ghost.serialization.types.RawJson] payload (first-token classification). */
 enum class RawJsonKind {
     /** `{` … `}` */
     OBJECT,

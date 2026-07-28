@@ -3,12 +3,15 @@
 
 package com.ghost.serialization.parser.streaming
 
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.getDoublePowerOfTen
+import com.ghost.serialization.parser.common.getFloatPowerOfTen
+import com.ghost.serialization.parser.common.isDigit
+import com.ghost.serialization.parser.common.isExponentMarker
+import com.ghost.serialization.parser.common.isNumericSeparator
+import com.ghost.serialization.parser.strings.nextString
+
 
 /**
  * Reads a JSON number and returns it as a Float.

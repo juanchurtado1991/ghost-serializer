@@ -64,7 +64,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
             val tagLen = position - tagStart
             if (tagLen > 0) {
                 val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)
-                // Check for namespace prefix mapping (Group G)
+                // Check for namespace prefix mapping (%TAG directive)
                 val exclamationIdx = rawTagName.indexOf('!')
                 if (exclamationIdx != -1) {
                     val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)

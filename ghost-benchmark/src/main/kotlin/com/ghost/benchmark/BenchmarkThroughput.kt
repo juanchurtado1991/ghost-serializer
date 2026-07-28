@@ -60,10 +60,13 @@ internal object BenchmarkThroughput {
         return meanGb * (stdevNanos.toDouble() / meanNanos.toDouble())
     }
 
+    /** Formats a GB/s throughput value with three decimal places. */
     fun formatGbPerSec(value: Double): String = "%.3f".format(value)
 
+    /** Formats a µs/op latency value with one decimal place. */
     fun formatMicros(value: Double): String = "%.1f".format(value)
 
+    /** Formats mean µs/op with optional ± stdev when [stdev] is positive. */
     fun formatMicrosWithStdev(mean: Double, stdev: Double): String {
         return if (stdev > 0.0) {
             "%7.1f ±%-5.1f".format(mean, stdev)
@@ -72,6 +75,7 @@ internal object BenchmarkThroughput {
         }
     }
 
+    /** Formats mean GB/s with optional ± stdev when [stdev] is positive. */
     fun formatGbPerSecWithStdev(mean: Double, stdev: Double): String {
         return if (stdev > 0.0) {
             "%7.3f ±%-5.3f".format(mean, stdev)

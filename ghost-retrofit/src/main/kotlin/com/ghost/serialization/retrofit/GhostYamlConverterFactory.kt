@@ -23,7 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
- * Retrofit `Converter.Factory` for YAML-backed types ([GhostYamlSerializer]).
+ * Retrofit `Converter.Factory` for YAML-backed types
+ * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
  *
  * ```kotlin
  * Retrofit.Builder()

@@ -8,18 +8,21 @@ import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.readSet
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readSet
 
 
 /**
- * High-performance, zero-intermediate-allocation YAML reader operating on a [ByteArray].
+ * High-performance YAML reader operating on a [ByteArray] with minimal intermediate allocations.
  *
- * ## Philosophy (Ghost rules)
- * - Byte vs Byte always — never `.toChar()` in the hot path.
- * - All control bytes via [com.ghost.serialization.yaml.GhostYamlConstants] — zero magic numbers.
- * - Bitwise ops for all validations (digit, whitespace, alpha).
- * - No `decodeToString` during field matching — only at final value decode.
- * - Hooks for Groups B-G are present as stubs from the start so the architecture
- *   never needs a rewrite when higher groups are implemented.
+ * ## Design
+ * - Compare bytes directly; avoid `.toChar()` in performance-sensitive paths.
+ * - All control bytes are defined in [com.ghost.serialization.yaml.GhostYamlConstants].
+ * - Validations use bitwise operations for digits, whitespace, and alphabetic characters.
+ * - Field matching operates on raw bytes; string decoding is deferred until final value extraction.
+ * - Extension hooks for block scalars, flow style, tags, and anchors are wired at construction time.
  *
  * @param rawData The full YAML document as a UTF-8 [ByteArray].
  */
@@ -148,12 +151,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
         val currentByte = rawData[position]
         return when (currentByte) {
-            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte)           // Group B hook
-            C.LEFT_BRACE_BYTE -> readFlowMapping()            // Group C hook
-            C.LEFT_BRACKET_BYTE -> readFlowSequence()           // Group C hook
-            C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // Group D/F hook
-            C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow)    // Group E hook
-            C.ASTERISK_BYTE -> readAlias()                  // Group E hook
+            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte)           // block scalar
+            C.LEFT_BRACE_BYTE -> readFlowMapping()            // flow mapping
+            C.LEFT_BRACKET_BYTE -> readFlowSequence()           // flow sequence
+            C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // tagged value
+            C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow)    // anchor definition
+            C.ASTERISK_BYTE -> readAlias()                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readDoubleQuotedString()
             C.SINGLE_QUOTE_BYTE -> readSingleQuotedString()
             C.DASH_BYTE -> {
@@ -758,7 +761,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             ?: localRawData.decodeToString(startPosition, position)
     }
 
-    // ── Group B-G hooks (stubs) ────────────────────────────────────────────────
+    // ── Scalar subsystems (block, flow, tags, anchors) ─────────────────────────
 
     // ── Whitespace & positioning helpers ──────────────────────────────────────
 
@@ -992,9 +995,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Tries to parse bytes as Long or Double.
-     * Returns null if the bytes don't represent a valid number.
-     * PROHIBITED: `.toInt()`, `.toDouble()` on the whole string — we parse byte by byte.
+     * Attempts to parse [data] between [start] and [end] as a [Long] or [Double].
+     *
+     * Returns `null` when the slice is not a valid number. Parsing is performed incrementally
+     * over bytes; callers must not decode the entire range with [String.toInt] or [String.toDouble].
      */
     private fun tryParseNumber(data: ByteArray, start: Int, end: Int): Any? {
         val length = end - start

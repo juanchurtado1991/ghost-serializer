@@ -1,8 +1,16 @@
 package com.ghost.serialization.compiler.ksp
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.codegen.*
-import com.ghost.serialization.compiler.hash.*
+import com.ghost.serialization.compiler.analysis.EnvelopeAnalyzer
+import com.ghost.serialization.compiler.analysis.GhostAnalyzer
+import com.ghost.serialization.compiler.analysis.TextChannelPlanner
+import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
+import com.ghost.serialization.compiler.analysis.isByteArray
+import com.ghost.serialization.compiler.analysis.isRawJson
+import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.codegen.GhostCodeGenerator
+import com.ghost.serialization.compiler.codegen.writeTrimmedTo
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostEnvelopeModel
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -27,7 +35,7 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
 import kotlin.reflect.KClass
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Main KSP Processor for Ghost Serialization.
@@ -36,8 +44,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
  * specialized serializers, and builds a global registry mapping classes to serializers
  * to avoid reflection at runtime.
  *
- * @property codeGenerator The KSP [CodeGenerator] used to create new serializer and registry files.
- * @property logger The [KSPLogger] used to report compilation errors, warnings, and messages.
+ * @property codeGenerator The KSP [com.google.devtools.ksp.processing.CodeGenerator] used to create new serializer and registry files.
+ * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors, warnings, and messages.
  * @property options Map of key-value pairs representing processor options passed from build scripts.
  */
 class GhostSerializationProcessor(
@@ -98,7 +106,7 @@ class GhostSerializationProcessor(
      * Searches for `@GhostSerialization` annotated classes, generates their serializers,
      * and compiles the final module registry if any class was successfully processed.
      *
-     * @param resolver KSP [Resolver] used to query symbols and types.
+     * @param resolver KSP [com.google.devtools.ksp.processing.Resolver] used to query symbols and types.
      * @return List of symbols that couldn't be processed in this round.
      */
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -195,7 +203,7 @@ class GhostSerializationProcessor(
      *
      * @param classDeclaration KSP class declaration of the target serializable model.
      * @param propertiesModel The properties metadata model parsed from the declaration.
-     * @return The [ClassName] of the generated serializer class, or null if it was already processed.
+     * @return The [com.squareup.kotlinpoet.ClassName] of the generated serializer class, or null if it was already processed.
      */
     private fun generateSerializer(
         classDeclaration: KSClassDeclaration,
@@ -384,7 +392,7 @@ class GhostSerializationProcessor(
      * and recording originating files for incremental compilation.
      *
      * @param classDeclaration KSP class declaration of the target serializable model.
-     * @param serializerClassName The [ClassName] of the generated serializer.
+     * @param serializerClassName The [com.squareup.kotlinpoet.ClassName] of the generated serializer.
      */
     private fun registerSerializer(
         classDeclaration: KSClassDeclaration,
@@ -629,7 +637,7 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Generates a KotlinPoet [CodeBlock] mapping class types to their serializer instances.
+     * Generates a KotlinPoet [com.squareup.kotlinpoet.CodeBlock] mapping class types to their serializer instances.
      *
      * @param entries Serializable class entry mappings.
      * @return Pre-compiled registry map code block.

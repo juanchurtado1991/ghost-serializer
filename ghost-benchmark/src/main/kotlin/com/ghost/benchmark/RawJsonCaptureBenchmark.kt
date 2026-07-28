@@ -12,11 +12,11 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Benchmarks opaque JSON capture: [RawJson] slice path vs [ByteArray] copy path,
- * across flat bytes and native string channels.
+ * Benchmarks opaque JSON capture: [com.ghost.serialization.types.RawJson] slice path vs [ByteArray]
+ * copy path across bytes and string channels.
  *
- * Scalar access, decodeAs, and JsonEnvelope routing are measured in
- * [GhostSpecialFeaturesBenchmark] (exclusive-capabilities table).
+ * Scalar access, `RawJson.decodeAs`, and JsonEnvelope routing are measured
+ * in [GhostSpecialFeaturesBenchmark].
  */
 object RawJsonCaptureBenchmark {
 
@@ -25,6 +25,7 @@ object RawJsonCaptureBenchmark {
     private val encodePayloadJson = """{"id":"bench-1","body":{"nested":true}}"""
     private val topLevelRawJson = largeObjectJson.substringAfter("\"metadata\":").removeSuffix("}")
 
+    /** Runs decode, encode, and round-trip RawJson capture scenarios; prints a summary table. */
     fun run() {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {

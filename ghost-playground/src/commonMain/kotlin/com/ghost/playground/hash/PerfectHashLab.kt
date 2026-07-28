@@ -1,8 +1,8 @@
 package com.ghost.playground.hash
 
 /**
- * Perfect-hash search aligned with ghost-compiler PerfectHashFinder.
- * Lives in the playground so Wasm can build dispatch tables without the JVM KSP module.
+ * Perfect-hash search aligned with `PerfectHashFinder` in ghost-compiler.
+ * Duplicated here so Wasm can build dispatch tables without the JVM KSP module.
  */
 data class PerfectHashConfig(
     val shift: Int,
@@ -42,7 +42,7 @@ object PerfectHashLab {
         error("Could not find a collision-free perfect hash for fields: ${names.joinToString()}")
     }
 
-    /** Returns config + dispatch indices (-1 = empty slot). */
+    /** Returns the hash configuration and dispatch indices (`-1` marks an empty slot). */
     fun dispatchTable(names: List<String>): Pair<PerfectHashConfig, IntArray> {
         if (names.isEmpty()) {
             return PerfectHashConfig(
@@ -59,10 +59,9 @@ object PerfectHashLab {
     }
 
     /**
-     * All slots + a human-readable hash summary, for the dispatch preview UI. Truncating this
-     * (a prior version capped at 64) is wrong: the minimum table size is 128 and the hash spreads
-     * fields across the full range, so a field landing in slot 64-127 would silently vanish from
-     * the preview even though it's really dispatched — looked like a missing-field bug.
+     * All dispatch slots plus a human-readable hash summary for the preview UI.
+     * The full table must be returned: the minimum size is 128, and fields may hash
+     * into slots above 64, so truncating the preview would hide occupied entries.
      */
     fun dispatchPreview(names: List<String>): Pair<List<DispatchSlot>, String> {
         val (cfg, table) = dispatchTable(names)

@@ -1,9 +1,10 @@
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.model.*
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Resolves which `@GhostSerialization` models in a compilation round need the native

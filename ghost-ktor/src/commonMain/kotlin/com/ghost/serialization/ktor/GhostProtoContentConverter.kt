@@ -1,15 +1,11 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
+import com.ghost.serialization.releaseScratchBuffer
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
@@ -20,15 +16,16 @@ import io.ktor.utils.io.charsets.Charset
 import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
 
+
 /**
  * Ktor [ContentConverter] for proto3 JSON mapping (`@GhostProtoSerialization`).
  *
  * Differs from [GhostContentConverter] only on the read path: request/response bodies are
  * parsed through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare
  * int64/uint64, lenient int32 (rejects fractional values), and quoted `"NaN"`/`"Infinity"`
- * literals per proto3 JSON rules. `serialize` reuses [Ghost.encodeToBytes] since wire
- * correctness on write is already generated into the `@GhostProtoSerialization` serializer's
- * own `serialize()` method.
+ * literals per proto3 JSON rules. Encoding reuses [Ghost.encodeToBytes] since proto3 wire
+ * correctness (int64 quoting, Base64 `bytes`, default-value omission) is generated into
+ * the `@GhostProtoSerialization` serializer's own `serialize()` method.
  *
  * ```kotlin
  * install(ContentNegotiation) { ghostProto() }

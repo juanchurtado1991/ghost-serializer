@@ -1,14 +1,11 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.Ghost
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.proto.GhostProto
-import com.ghost.serialization.Ghost
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
+
 
 @PublishedApi
 internal const val CLIENT_ERROR_PREFIX = "Ghost serializer not found for class "
@@ -17,7 +14,7 @@ internal const val CLIENT_ERROR_SUFFIX = ". Make sure it is annotated with @Ghos
 
 /**
  * Deserializes the response body directly using Ghost, bypassing Ktor Client's
- * ContentNegotiation pipeline to maximize performance.
+ * ContentNegotiation pipeline.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
     val bytes = this.body<ByteArray>()
@@ -37,7 +34,8 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
 }
 
 /**
- * YAML variant of [bodyGhost] for types whose serializer implements [GhostYamlSerializer].
+ * YAML variant of [bodyGhost] for types whose serializer implements
+ * [com.ghost.serialization.yaml.contract.GhostYamlSerializer].
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostYaml(): T {
     val bytes = this.body<ByteArray>()

@@ -7,7 +7,7 @@ enum class PlaygroundDest {
     LearnMore,
 }
 
-/** Absolute GitHub URLs for docs opened from the playground (Wasm + JVM). */
+/** Absolute GitHub URLs for documentation opened from the playground on Wasm and JVM targets. */
 object PlaygroundLinks {
     private const val REPO = "https://github.com/juanchurtado1991/ghost-serializer"
     private const val DOCS_BLOB = "$REPO/blob/main/docs"

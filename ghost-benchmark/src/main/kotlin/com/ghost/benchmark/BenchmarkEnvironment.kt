@@ -40,16 +40,26 @@ import com.sun.management.ThreadMXBean
 import kotlin.reflect.KClass
 
 /**
- * One-time Ghost registry + prewarm shared by every benchmark JVM.
+ * One-time Ghost registry wiring and JVM prewarm shared by every benchmark process.
+ *
+ * Registers manual serializers for integration-test types (external coders, protobuf WKTs),
+ * calls [com.ghost.serialization.Ghost.prewarm], and enables thread allocation tracking.
  */
 internal object BenchmarkEnvironment {
 
+    /**
+     * Initializes Ghost and platform diagnostics.
+     *
+     * @return a [ThreadMXBean] with allocation tracking enabled, or `null` when unsupported
+     *   (callers should exit the JVM with a non-zero status).
+     */
     fun init(): ThreadMXBean? {
         Ghost.addRegistry(manualRegistry)
         Ghost.prewarm()
         return initializePlatformDiagnostics()
     }
 
+    /** Prints the suite banner and active [BenchmarkProfile] iteration counts. */
     fun printConfigHeader(suite: BenchmarkSuite) {
         println("\n--- GHOST BENCHMARK: ${suite.cliName.uppercase()} ---")
         println(

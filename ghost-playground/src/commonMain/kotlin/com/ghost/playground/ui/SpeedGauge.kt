@@ -30,8 +30,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * A speedtest.net-style semicircle dial. [value]/[maxValue] drive the needle; the arc, ticks, and
- * needle all animate smoothly between live updates instead of jumping.
+ * Semicircle speed dial. [value] and [maxValue] drive the needle; the arc, ticks, and needle
+ * animate smoothly between updates.
  */
 @Composable
 fun SpeedGauge(

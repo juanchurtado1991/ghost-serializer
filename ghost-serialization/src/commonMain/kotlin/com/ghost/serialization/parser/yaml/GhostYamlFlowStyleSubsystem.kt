@@ -6,7 +6,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * Subsystem for parsing YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]).
  */
 
-/** Group C — Flow mapping. */
+/** Parses flow-style mappings (`{key: value}`). */
 internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     position++ // consume '{'
     val result = LinkedHashMap<String, Any?>(8)
@@ -59,7 +59,7 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     return result
 }
 
-/** Group C — Flow sequence. */
+/** Parses flow-style sequences (`[a, b, c]`). */
 internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
     position++ // consume '['
     val result = mutableListOf<Any?>()

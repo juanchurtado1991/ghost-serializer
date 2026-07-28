@@ -40,11 +40,11 @@ data class SpeedSample(
 )
 
 /**
- * speedtest.net-style race: short shared warmup, then measured phases in order
- * **KSER → Moshi (codegen) → Ghost** so Ghost's win is the last thing you see.
+ * Speed-test-style benchmark: a short shared warmup, then measured phases in order
+ * **KSER → Moshi (codegen) → Ghost**. Ghost runs last so its result appears after the others.
  *
- * Kotlin/Wasm runs on the browser's single thread — see [runPhase] for why we batch work
- * and call [delay] between batches.
+ * Kotlin/Wasm executes on the browser's single thread; see [runPhase] for batching and
+ * [delay] between batches.
  */
 object SpeedTestEngine {
     val WARMUP_DURATION: Duration = 3.seconds

@@ -2,15 +2,14 @@
 
 package com.ghost.serialization.integration.model
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+
 
 @InternalGhostApi
 object ExternalColorSerializer : GhostSerializer<ExternalColor> {

@@ -3,15 +3,17 @@ package com.ghost.serialization.annotations
 import kotlin.reflect.KClass
 
 /**
- * Delegated field decoding.
- * Useful for specific formats (custom dates, legacy booleans) without
- * writing a full serializer.
+ * Delegates deserialization of the annotated property to a static function in [provider].
  *
- * @param provider The class/object containing the decoding function.
- * @param functionName The name of the static function. Supported first-parameter types:
- *   - `GhostJsonReader` — bytes / streaming channel (default)
- *   - `GhostJsonFlatReader` — flat byte buffer channel
- *   - `GhostJsonStringReader` — native string channel when `textChannel=true` on `@GhostSerialization` (or module `ghost.textChannel=true`)
+ * Use this for custom wire formats (dates, legacy booleans, and similar) without writing a
+ * full serializer.
+ *
+ * @param provider Class or object that declares the decoding function.
+ * @param functionName Name of the static decoding function. The first parameter must be one of:
+ *   - [com.ghost.serialization.parser.streaming.GhostJsonReader] — streaming byte input (default)
+ *   - [com.ghost.serialization.parser.bytes.GhostJsonFlatReader] — flat byte buffer input
+ *   - [com.ghost.serialization.parser.strings.GhostJsonStringReader] — native string input when
+ *     [GhostSerialization.textChannel] is `true` (or module `ghost.textChannel=true`)
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)

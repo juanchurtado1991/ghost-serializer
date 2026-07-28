@@ -2,10 +2,10 @@
 
 package com.ghost.serialization.writer.bytes
 
-import com.ghost.serialization.writer.common.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import okio.Buffer
+
 
 /**
  * Writes a JSON string containing a single BMP code point into an Okio [Buffer].

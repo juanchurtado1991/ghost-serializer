@@ -18,8 +18,7 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
  * Reactive Encoder for Ghost Serialization.
  *
  * Serializes through the pooled [com.ghost.serialization.writer.bytes.GhostJsonFlatWriter]
- * to a [ByteArray] and wraps it with [DataBufferFactory.wrap], producing a
- * zero-copy [DataBuffer] backed by the serialized bytes directly.
+ * to a [ByteArray], then wraps the bytes in a [DataBuffer] via [DataBufferFactory].
  */
 class GhostReactiveEncoder : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,

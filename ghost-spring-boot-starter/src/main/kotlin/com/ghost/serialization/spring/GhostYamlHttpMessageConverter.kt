@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
- * Spring [org.springframework.http.converter.HttpMessageConverter] for YAML-backed Ghost types
- * ([GhostYamlSerializer]).
+ * [org.springframework.http.converter.HttpMessageConverter] for YAML-backed Ghost types
+ * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
  */
 class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
     MediaType("application", "yaml"),

@@ -2,13 +2,8 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.COLLISION_HASH_MULTIPLIER
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_16
@@ -16,8 +11,10 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_24
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.SINGLE_CHAR_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_HEX_LENGTH
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import kotlin.jvm.JvmStatic
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+
 
 /**
  * Dispatch options for optimized JSON field identification.

@@ -3,14 +3,23 @@
 
 package com.ghost.serialization.parser.strings
 
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.bytes.readQuotedString
+import com.ghost.serialization.parser.bytes.skipNumber
+import com.ghost.serialization.parser.bytes.skipQuotedString
+import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
+import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextLong
+import com.ghost.serialization.parser.streaming.nextULong
+import com.ghost.serialization.parser.streaming.skipNumber
+import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.readSet
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readSet
+
 
 fun GhostJsonStringReader.beginObject() {
     if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
@@ -389,7 +398,7 @@ private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
     val length = end - contentStart
     position = end + 1
     nextTokenByte = C.RESET_TOKEN_BYTE
-    return matchCoerceBooleanBytes(
+    return com.ghost.serialization.parser.common.matchCoerceBooleanBytes(
         start = contentStart,
         length = length,
         onError = { throwError(C.ERR_EXPECTED_BOOLEAN) },

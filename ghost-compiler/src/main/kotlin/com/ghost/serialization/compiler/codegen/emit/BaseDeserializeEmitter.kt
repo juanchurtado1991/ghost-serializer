@@ -1,8 +1,27 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.*
+import com.ghost.serialization.compiler.analysis.isByteArray
+import com.ghost.serialization.compiler.analysis.isEnum
+import com.ghost.serialization.compiler.analysis.isGhost
+import com.ghost.serialization.compiler.analysis.isKotlinUnsignedPrimitive
+import com.ghost.serialization.compiler.analysis.isList
+import com.ghost.serialization.compiler.analysis.isMap
+import com.ghost.serialization.compiler.analysis.isPrimitiveBoolean
+import com.ghost.serialization.compiler.analysis.isPrimitiveByte
+import com.ghost.serialization.compiler.analysis.isPrimitiveChar
+import com.ghost.serialization.compiler.analysis.isPrimitiveDouble
+import com.ghost.serialization.compiler.analysis.isPrimitiveFloat
+import com.ghost.serialization.compiler.analysis.isPrimitiveInt
+import com.ghost.serialization.compiler.analysis.isPrimitiveLong
+import com.ghost.serialization.compiler.analysis.isPrimitiveShort
+import com.ghost.serialization.compiler.analysis.isPrimitiveULong
+import com.ghost.serialization.compiler.analysis.isRawJson
+import com.ghost.serialization.compiler.analysis.isSet
+import com.ghost.serialization.compiler.analysis.isString
+import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.CustomCoderModel
+import com.ghost.serialization.compiler.model.CustomCoderReaderKind
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -11,7 +30,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Abstract base class for all deserialization emitters within the Ghost compiler.
@@ -80,7 +99,8 @@ internal abstract class BaseDeserializeEmitter(
      *
      * During runtime, the generated serializer uses this mask to perform high-performance schema validation.
      * By comparing the received mask against this required mask using a binary AND operation
-     * (`mask & requiredMask == requiredMask`), we validate the object integrity in a single CPU cycle.
+     * (`mask & requiredMask == requiredMask`), the generated serializer validates object
+     * integrity in a single CPU cycle.
      *
      * @return A [LongArray] where each set bit represents a mandatory field that must be validated
      * after the deserialization process completes.
@@ -195,7 +215,7 @@ internal abstract class BaseDeserializeEmitter(
      * It handles null-safety by wrapping the reader call in a null check template.
      */
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
-        // customDecoder is handled in [buildCall] before nullability — never reaches here.
+        // customDecoder is handled in buildCall before nullability — never reaches here.
         if (prop.isPrimitiveArray) {
             val serializerClass = if (readerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
                 ClassName(
@@ -283,7 +303,7 @@ internal abstract class BaseDeserializeEmitter(
      * Dispatches the correct [CodeBlock] to read a specific [KSType] from the JSON reader.
      * * This acts as the recursive entry point for the emitter. It follows these resolution rules:
      * 1. **Ghost/Enum types:** Delegates to an existing serializer (recursive call).
-     * 2. **Primitives:** Maps directly to optimized `GhostJsonReader` methods (e.g., [kotlin.random.Random.Default.nextInt]).
+     * 2. **Primitives:** Maps directly to optimized `GhostJsonReader` methods (e.g. `nextInt()`).
      * 3. **Collections (List/Map):** Applies a recursive template to handle generic types.
      * 4. **Fallbacks:** Uses contextual resolution for unknown or custom types.
      *
@@ -447,7 +467,8 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Emits a fused `nextXOrNull()` when [nullable], otherwise the non-null `nextX()` call.
+     * Emits a fused `nextXOrNull()` when the property is nullable; otherwise the non-null
+     * `nextX()` call.
      * Avoids the generated `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
      */
     private fun scalarReaderCall(nonNullCall: String, orNullCall: String, nullable: Boolean): CodeBlock =
@@ -473,8 +494,8 @@ internal abstract class BaseDeserializeEmitter(
      * for every property and all validation/defaults masks, completely eliminating magic numbers.
      *
      * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
-     * @param emitRequiredAggregateMasks When false, skip [MASK_REQUIRED_N] (e.g. StandardEmitter
-     * with a single required field validates via the property mask only).
+     * @param emitRequiredAggregateMasks When false, skip aggregate `MASK_REQUIRED_N` constants
+     * (e.g. StandardEmitter with a single required field validates via the property mask only).
      */
     protected fun emitPropertyMaskConstants(
         typeSpecBuilder: TypeSpec.Builder,
@@ -518,7 +539,7 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Registers a [MASK_DEFAULTS_N] constant when the copy-based default-value return path needs it.
+     * Registers a `MASK_DEFAULTS_N` constant when the copy-based default-value return path needs it.
      */
     protected fun emitDefaultMaskConstant(
         typeSpecBuilder: TypeSpec.Builder,
@@ -542,9 +563,9 @@ internal abstract class BaseDeserializeEmitter(
     /**
      * Injects private property references for contextual serializers into the generated class.
      *
-     * This implements a static Dependency Injection strategy. Instead of looking up
-     * serializers at runtime (which would require reflection), we pre-resolve and
-     * inject them as private final fields during the compilation phase.
+     * This implements a static dependency-injection strategy. Instead of looking up
+     * serializers at runtime (which would require reflection), the compiler pre-resolves
+     * and injects them as private final fields during code generation.
      *
      * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
      */

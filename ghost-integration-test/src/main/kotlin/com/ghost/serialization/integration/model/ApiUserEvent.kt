@@ -5,9 +5,8 @@ import com.squareup.moshi.JsonClass
 import kotlinx.serialization.Serializable
 
 /**
- * Realistic model with 2 required + 3 default-valued properties.
- * Exercises the N=3 multi-branch path (8 constructor branches, 0 `.copy()` calls).
- * The compiler allows up to N=4 (`MAX_DEFAULT_BRANCH_COUNT`); this fixture stays at N=3.
+ * Multi-branch constructor fixture with 2 required + 3 default-valued properties (N=3, 8 branches).
+ * Stays below the compiler limit of N=4 (`MAX_DEFAULT_BRANCH_COUNT`).
  */
 @Serializable
 @JsonClass(generateAdapter = true)
