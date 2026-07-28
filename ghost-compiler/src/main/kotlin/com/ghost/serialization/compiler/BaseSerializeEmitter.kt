@@ -286,8 +286,8 @@ internal abstract class BaseSerializeEmitter(
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
             if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {
-                val flatWriter = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_FLAT_WRITER)
-                val flatBuffer = ClassName(C.PKG_WRITER, C.STR_FLAT_BYTE_ARRAY_WRITER)
+                val flatWriter = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_FLAT_WRITER)
+                val flatBuffer = ClassName(C.PKG_WRITER_BYTES, C.STR_FLAT_BYTE_ARRAY_WRITER)
                 val bridgeWriterName = C.STR_TEMP_FLAT_WRITER
                 code.add(
                     CodeBlock.builder()

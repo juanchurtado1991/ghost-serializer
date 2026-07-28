@@ -37,7 +37,7 @@ internal object WrappedKeysEmitter {
             body.addStatement(
                 C.TEMPLATE_WRAPPED_CAPTURE_VAR,
                 captureVariableName(prop),
-                ClassName(C.PKG_PARSER, C.STR_GHOST_WRAPPED_KEYS_CAPTURE),
+                ClassName(C.PKG_PARSER_COMMON, C.STR_GHOST_WRAPPED_KEYS_CAPTURE),
                 keys.size,
             )
         }

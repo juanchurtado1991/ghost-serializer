@@ -182,12 +182,12 @@ internal class GhostSerializerContext private constructor(
                 enumValues = enumValues,
                 hasFallbackEnum = hasFallbackEnum,
                 serializerInterface = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER),
-                streamingWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_WRITER),
-                flatWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_FLAT_WRITER),
-                stringWriterClass = ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_STRING_WRITER),
-                streamingReaderClass = ClassName(C.PKG_PARSER, C.STR_GHOST_JSON_READER),
-                flatReaderClass = ClassName(C.PKG_PARSER, C.STR_GHOST_JSON_FLAT_READER),
-                stringReaderClass = ClassName(C.PKG_PARSER, C.STR_GHOST_JSON_STRING_READER),
+                streamingWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER),
+                flatWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_FLAT_WRITER),
+                stringWriterClass = ClassName(C.PKG_WRITER_STRINGS, C.STR_GHOST_JSON_STRING_WRITER),
+                streamingReaderClass = ClassName(C.PKG_PARSER_STREAMING, C.STR_GHOST_JSON_READER),
+                flatReaderClass = ClassName(C.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),
+                stringReaderClass = ClassName(C.PKG_PARSER_STRINGS, C.STR_GHOST_JSON_STRING_READER),
             )
         }
 

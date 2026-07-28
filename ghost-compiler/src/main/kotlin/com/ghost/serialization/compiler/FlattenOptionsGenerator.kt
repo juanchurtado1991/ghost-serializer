@@ -103,7 +103,7 @@ internal object FlattenOptionsGenerator {
 
         val hashConfig = PerfectHashFinder.findPerfectHash(names)
 
-        val optionsClass = readerClass.peerClass(C.STR_OPTIONS_CLASS)
+        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)
         val optionsInitializer = GeneratedCallFormat.jsonReaderOptionsOf(
             optionsClass = optionsClass,
             shift = hashConfig.shift,

@@ -27,7 +27,7 @@ internal class SerializerSetupEmitter(
             DispatchNamesResolver.topLevelNames(ctx.properties)
         }
         val hashConfig = PerfectHashFinder.findPerfectHash(names)
-        val optionsClass = ctx.readerClass.peerClass(C.STR_OPTIONS_CLASS)
+        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(C.STR_OPTIONS, optionsClass)
@@ -66,7 +66,7 @@ internal class SerializerSetupEmitter(
     fun addEnumOptions(typeSpecBuilder: TypeSpec.Builder) {
         val values = ctx.enumValues!!.values.toList()
         val hashConfig = PerfectHashFinder.findPerfectHash(values)
-        val optionsClass = ctx.readerClass.peerClass(C.STR_OPTIONS_CLASS)
+        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder(C.STR_ENUM_OPTIONS, optionsClass)
