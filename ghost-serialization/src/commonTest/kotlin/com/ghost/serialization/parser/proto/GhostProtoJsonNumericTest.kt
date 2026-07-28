@@ -67,4 +67,34 @@ class ProtoJsonNumericTest {
         val readerInt = GhostProtoJsonFlatReader("1".encodeToByteArray())
         assertEquals(1, readerInt.nextProtoEnum(options))
     }
+
+    @Test
+    fun nextProtoUInt64_acceptsQuotedMaxValueOnProtoFlatReader() {
+        val reader = GhostProtoJsonFlatReader("\"18446744073709551615\"".encodeToByteArray())
+        assertEquals(ULong.MAX_VALUE, reader.nextProtoUInt64())
+    }
+
+    @Test
+    fun nextProtoUInt64_acceptsBareNumberWithinLongRangeOnProtoFlatReader() {
+        val reader = GhostProtoJsonFlatReader("9223372036854775807".encodeToByteArray())
+        assertEquals(Long.MAX_VALUE.toULong(), reader.nextProtoUInt64())
+    }
+
+    @Test
+    fun nextProtoUInt64_acceptsQuotedValueOnPlainFlatReader() {
+        val reader = GhostJsonFlatReader("\"9000000000000000001\"".encodeToByteArray())
+        assertEquals(9_000_000_000_000_000_001uL, reader.nextProtoUInt64())
+    }
+
+    @Test
+    fun nextProtoUInt64_zeroLiteralOnPlainFlatReader() {
+        val reader = GhostJsonFlatReader("0".encodeToByteArray())
+        assertEquals(0uL, reader.nextProtoUInt64())
+    }
+
+    @Test
+    fun nextULong_plainJsonFlatReaderMatchesProtoUInt64Behavior() {
+        val reader = GhostJsonFlatReader("\"18446744073709551615\"".encodeToByteArray())
+        assertEquals(ULong.MAX_VALUE, reader.nextULong())
+    }
 }

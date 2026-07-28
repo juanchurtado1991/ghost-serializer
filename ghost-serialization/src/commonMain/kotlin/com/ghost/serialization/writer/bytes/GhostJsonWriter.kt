@@ -228,6 +228,15 @@ class GhostJsonWriter(
         return this
     }
 
+    @InternalGhostApi
+    fun writeField(header: ByteString, value: ULong): GhostJsonWriter {
+        appendSeparator()
+        buffer.write(header)
+        writeULongValueRaw(value)
+        needsComma = true
+        return this
+    }
+
     /**
      * Fused name + value with automatic comma handling.
      * Used by KSP-generated serializers for subsequent object fields.
@@ -308,6 +317,13 @@ class GhostJsonWriter(
     fun value(number: Long): GhostJsonWriter {
         appendSeparator()
         writeLongValueRaw(number)
+        needsComma = true
+        return this
+    }
+
+    fun value(number: ULong): GhostJsonWriter {
+        appendSeparator()
+        writeULongValueRaw(number)
         needsComma = true
         return this
     }
@@ -450,6 +466,15 @@ class GhostJsonWriter(
             return
         }
         writeLongValueRawInternal(value)
+    }
+
+    @InternalGhostApi
+    fun writeULongValueRaw(value: ULong) {
+        if (value <= Long.MAX_VALUE.toULong()) {
+            writeLongValueRaw(value.toLong())
+        } else {
+            writeStringValueRaw(value.toString())
+        }
     }
 
     /**

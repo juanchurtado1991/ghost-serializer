@@ -191,6 +191,35 @@ class GhostYamlCodegenKspTest {
         )
     }
 
+    @Test
+    fun plainULongFieldUsesNextULongOnYamlDeserialize() {
+        val generated = compileAndReadSerializer(
+            SourceFile.kotlin(
+                "YamlShard.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class YamlShard(val shard_id: ULong)
+                """.trimIndent()
+            ),
+            serializerFileName = "YamlShardSerializer.kt"
+        )
+
+        assertTrue(
+            "reader.nextULong()" in generated,
+            "Expected plain ULong YAML scalar reader:\n$generated"
+        )
+        assertFalse(
+            "ULongSerializer" in generated,
+            "Plain ULong must not require contextual serializer:\n$generated"
+        )
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)

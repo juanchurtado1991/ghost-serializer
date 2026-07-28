@@ -340,7 +340,11 @@ object Ghost {
                         val itemSerializer = getSerializer(itemType)
                             ?: return@runSynchronized null
 
-                        ListSerializer(itemSerializer)
+                        if (itemSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
+                            com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(itemSerializer)
+                        } else {
+                            ListSerializer(itemSerializer)
+                        }
                     }
 
                     Set::class -> {
@@ -360,7 +364,11 @@ object Ghost {
                         val valueSerializer = getSerializer(valueType)
                             ?: return@runSynchronized null
 
-                        MapSerializer(valueSerializer)
+                        if (valueSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
+                            com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(valueSerializer)
+                        } else {
+                            MapSerializer(valueSerializer)
+                        }
                     }
 
                     else -> {

@@ -24,5 +24,15 @@ class GhostProtoYamlFlatReader(
         }
     }
 
+    override fun nextProtoUInt64(): ULong {
+        val previous = coerceStringsToNumbers
+        coerceStringsToNumbers = true
+        return try {
+            nextString().toULong()
+        } finally {
+            coerceStringsToNumbers = previous
+        }
+    }
+
     fun nextProtoBytes(): ByteArray = decodeBase64String(nextString())
 }

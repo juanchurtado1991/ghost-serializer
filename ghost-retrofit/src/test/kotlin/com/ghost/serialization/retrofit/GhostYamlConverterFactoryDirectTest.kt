@@ -13,6 +13,15 @@ import kotlin.test.assertNull
 
 class GhostYamlConverterFactoryDirectTest {
 
+    private interface ParameterizedYamlHolder {
+        fun list(): List<YamlDeviceProfile>
+        fun map(): Map<String, YamlDeviceProfile>
+    }
+
+    private interface JsonOnlyListHolder {
+        fun list(): List<ProtoDeviceEvent>
+    }
+
     @BeforeEach
     fun setup() {
         Ghost.addRegistry(YamlRetrofitTestRegistry)
@@ -39,5 +48,49 @@ class GhostYamlConverterFactoryDirectTest {
         """.trimIndent()
         val result = converter.convert(yaml.toResponseBody())
         assertEquals(YamlDeviceProfile(42, "sensor-1"), result)
+    }
+
+    @Test
+    fun responseBodyConverter_returnsNullForListOfNonYamlSerializer() {
+        val factory = GhostYamlConverterFactory.create()
+        val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
+        val genericType = JsonOnlyListHolder::class.java.getMethod("list").genericReturnType
+        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
+    }
+
+    @Test
+    fun responseBodyConverter_parsesYamlListBody() {
+        val factory = GhostYamlConverterFactory.create()
+        val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
+        val genericType = ParameterizedYamlHolder::class.java.getMethod("list").genericReturnType
+        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+
+        val yaml = """
+            - deviceId: 1
+              label: one
+            - deviceId: 2
+              label: two
+        """.trimIndent()
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.convert(yaml.toResponseBody()) as List<YamlDeviceProfile>
+        assertEquals(2, result.size)
+        assertEquals("one", result[0].label)
+    }
+
+    @Test
+    fun responseBodyConverter_parsesYamlMapBody() {
+        val factory = GhostYamlConverterFactory.create()
+        val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
+        val genericType = ParameterizedYamlHolder::class.java.getMethod("map").genericReturnType
+        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+
+        val yaml = """
+            east:
+              deviceId: 7
+              label: east-pod
+        """.trimIndent()
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.convert(yaml.toResponseBody()) as Map<String, YamlDeviceProfile>
+        assertEquals(YamlDeviceProfile(7, "east-pod"), result["east"])
     }
 }

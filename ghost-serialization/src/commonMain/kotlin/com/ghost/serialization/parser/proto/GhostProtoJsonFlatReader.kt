@@ -27,13 +27,9 @@ class GhostProtoJsonFlatReader(
 
     override fun nextLong(): Long = nextProtoInt64()
 
-    fun nextProtoUInt32(): Long = readProtoUInt32()
+    override fun nextProtoUInt64(): ULong = readProtoUInt64()
 
-    /**
-     * Full `uint64` range (0 to [ULong.MAX_VALUE]) — accepts either the canonical quoted
-     * decimal string or a bare JSON number (only safe for values within [Long.MAX_VALUE]).
-     */
-    fun nextProtoUInt64(): ULong = readProtoUInt64()
+    fun nextProtoUInt32(): Long = readProtoUInt32()
 
     fun nextProtoBytes(): ByteArray = readProtoBytes()
 

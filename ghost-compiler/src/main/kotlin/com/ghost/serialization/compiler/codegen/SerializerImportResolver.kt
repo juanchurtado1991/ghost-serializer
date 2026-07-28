@@ -130,6 +130,7 @@ internal class SerializerImportResolver(
                     type.isString() -> nullableImports.add(C.STR_NEXT_STRING_OR_NULL_NAME)
                     type.isPrimitiveInt() -> nullableImports.add(C.STR_NEXT_INT_OR_NULL_NAME)
                     type.isPrimitiveLong() -> nullableImports.add(C.STR_NEXT_LONG_OR_NULL_NAME)
+                    type.isPrimitiveULong() -> nullableImports.add(C.STR_NEXT_ULONG_OR_NULL_NAME)
                     type.isPrimitiveBoolean() -> nullableImports.add(C.STR_NEXT_BOOLEAN_OR_NULL_NAME)
                     else -> {
                         // Nested serializers, collections, floats, etc. still use the classic guard.
@@ -197,6 +198,12 @@ internal class SerializerImportResolver(
         if (needsNextLongImport()) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_LONG_NAME)
         }
+        if (needsNextULongImport()) {
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_ULONG_NAME)
+        }
+        if (needsNextProtoUInt64Import()) {
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_PROTO_UINT64_NAME)
+        }
         if (needsNextString) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_STRING_NAME)
         }
@@ -221,6 +228,9 @@ internal class SerializerImportResolver(
             }
             if (needsNextLongImport()) {
                 fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_LONG_NAME)
+            }
+            if (needsNextULongImport()) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_ULONG_NAME)
             }
             if (needsNextString) {
                 fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_STRING_NAME)
@@ -336,6 +346,29 @@ internal class SerializerImportResolver(
     private fun needsNextIntImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextInt)
 
     private fun needsNextLongImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextLong)
+
+    private fun needsNextULongImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextULong)
+
+    private fun needsNextProtoUInt64Import(): Boolean =
+        ctx.isProto && anyPropertyNeeds(::propertyNeedsNextProtoUInt64)
+
+    private fun propertyNeedsNextULong(property: GhostPropertyModel): Boolean {
+        if (property.customDecoder != null) return false
+        if (property.isProto) return false
+        if (property.type.isPrimitiveULong()) return true
+        property.valueClassProperty?.let { underlying ->
+            if (!underlying.isProto && underlying.type.isPrimitiveULong()) return true
+        }
+        return typeNeedsNestedScalar(property.type) { nested ->
+            !property.isProto && nested.isPrimitiveULong()
+        }
+    }
+
+    private fun propertyNeedsNextProtoUInt64(property: GhostPropertyModel): Boolean {
+        if (property.customDecoder != null) return false
+        if (property.isProto && property.type.isPrimitiveULong()) return true
+        return false
+    }
 
     private fun needsNextBooleanImport(): Boolean = anyPropertyNeeds(::propertyNeedsNextBoolean)
 

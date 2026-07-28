@@ -77,6 +77,16 @@ internal object GhostEmitterConstants {
             "  reader.coerceStringsToNumbers = savedCoerce\n" +
             "  parsed\n" +
             "}"
+
+    /** proto3 JSON/YAML mapping: full-range `uint64` via quoted decimal string (or coerced bare number). */
+    const val STR_NEXT_ULONG_PROTO_COERCED =
+        "run {\n" +
+            "  val savedCoerce = reader.coerceStringsToNumbers\n" +
+            "  reader.coerceStringsToNumbers = true\n" +
+            "  val parsed = reader.nextProtoUInt64()\n" +
+            "  reader.coerceStringsToNumbers = savedCoerce\n" +
+            "  parsed\n" +
+            "}"
     const val STR_NEXT_DOUBLE = "reader.nextDouble()"
     const val STR_NEXT_FLOAT = "reader.nextFloat()"
     const val STR_NEXT_BYTE = "reader.nextInt().toByte()"
@@ -87,6 +97,8 @@ internal object GhostEmitterConstants {
     const val STR_NEXT_INT_OR_NULL = "reader.nextIntOrNull()"
     const val STR_NEXT_BOOLEAN_OR_NULL = "reader.nextBooleanOrNull()"
     const val STR_NEXT_LONG_OR_NULL = "reader.nextLongOrNull()"
+    const val STR_NEXT_ULONG = "reader.nextULong()"
+    const val STR_NEXT_ULONG_OR_NULL = "reader.nextULongOrNull()"
     const val STR_NEXT_STRING_OR_NULL = "reader.nextStringOrNull()"
     const val TEMPLATE_L_READER = "%T.%L(reader)"
     const val TEMPLATE_NULL_CHECK_L =
@@ -254,6 +266,10 @@ internal object GhostEmitterConstants {
     const val STR_WRITER_VAL_ENUM_NAME = "writer.value(value.name)"
     const val K_INT = "kotlin.Int"
     const val K_LONG = "kotlin.Long"
+    const val K_ULONG = "kotlin.ULong"
+    const val K_UINT = "kotlin.UInt"
+    const val K_USHORT = "kotlin.UShort"
+    const val K_UBYTE = "kotlin.UByte"
     const val K_STRING = "kotlin.String"
     const val K_BOOLEAN = "kotlin.Boolean"
     const val K_DOUBLE = "kotlin.Double"
@@ -453,6 +469,9 @@ internal object GhostEmitterConstants {
     const val STR_SKIP_VALUE_NAME = "skipValue"
     const val STR_NEXT_INT_NAME = "nextInt"
     const val STR_NEXT_LONG_NAME = "nextLong"
+    const val STR_NEXT_ULONG_NAME = "nextULong"
+    const val STR_NEXT_ULONG_OR_NULL_NAME = "nextULongOrNull"
+    const val STR_NEXT_PROTO_UINT64_NAME = "nextProtoUInt64"
     const val STR_NEXT_STRING_NAME = "nextString"
     const val STR_NEXT_DOUBLE_NAME = "nextDouble"
     const val STR_NEXT_FLOAT_NAME = "nextFloat"
@@ -554,6 +573,7 @@ internal object GhostEmitterConstants {
     // proto3 default-value-omission conditions (guards a field write with "is not the zero value")
     const val TEMPLATE_NEQ_ZERO_INT = "%L != 0"
     const val TEMPLATE_NEQ_ZERO_LONG = "%L != 0L"
+    const val TEMPLATE_NEQ_ZERO_ULONG = "%L != 0uL"
     const val TEMPLATE_NEQ_ZERO_DOUBLE = "%L != 0.0"
     const val TEMPLATE_NEQ_ZERO_FLOAT = "%L != 0.0f"
     const val TEMPLATE_NEQ_ZERO_SHORT = "%L != 0.toShort()"

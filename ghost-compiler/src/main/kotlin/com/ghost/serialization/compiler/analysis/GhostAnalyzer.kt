@@ -364,8 +364,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             mapValueIsGhost = mapValueType?.let { isGhostType(it) } ?: false,
             isPrimitiveArray = isPrimitiveArray,
             primitiveArrayType = primitiveArrayType,
-            isValueClass = isValueClass(type),
-            valueClassProperty = if (isValueClass(type)) {
+            isValueClass = isValueClass(type) && !type.isKotlinUnsignedPrimitive(),
+            valueClassProperty = if (isValueClass(type) && !type.isKotlinUnsignedPrimitive()) {
                 resolveValueClassProperty(type, hasProto)
             } else {
                 null
@@ -753,7 +753,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         if (isBuiltIn) {
             return when (qualifiedName) {
-                C.K_STRING, C.K_INT, C.K_LONG, C.K_DOUBLE, C.K_FLOAT,
+                C.K_STRING, C.K_INT, C.K_LONG, C.K_ULONG, C.K_UINT, C.K_USHORT, C.K_UBYTE,
+                C.K_DOUBLE, C.K_FLOAT,
                 C.K_BOOLEAN, C.K_BYTE, C.K_SHORT, C.K_CHAR, C.K_UNIT, C.K_ANY,
                 C.K_BYTE_ARRAY -> false
 

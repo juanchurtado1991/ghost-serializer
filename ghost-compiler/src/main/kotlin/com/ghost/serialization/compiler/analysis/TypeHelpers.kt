@@ -60,6 +60,18 @@ internal fun KSType.isPrimitiveLong(): Boolean {
     return nonNullTypeName() == LONG
 }
 
+internal fun KSType.isPrimitiveULong(): Boolean {
+    return declaration.qualifiedName?.asString() == C.K_ULONG
+}
+
+/** Kotlin inline unsigned scalars — not user `@JvmInline` value classes for codegen unboxing. */
+internal fun KSType.isKotlinUnsignedPrimitive(): Boolean {
+    return when (declaration.qualifiedName?.asString()) {
+        C.K_ULONG, C.K_UINT, C.K_USHORT, C.K_UBYTE -> true
+        else -> false
+    }
+}
+
 /**
  * Checks whether this type matches the standard primitive [Double] type.
  */
@@ -93,6 +105,7 @@ internal fun KSType.isPrimitive(): Boolean {
     return isPrimitiveInt() ||
         isPrimitiveBoolean() ||
         isPrimitiveLong() ||
+        isPrimitiveULong() ||
         isPrimitiveDouble() ||
         isPrimitiveFloat() ||
         isPrimitiveByte() ||

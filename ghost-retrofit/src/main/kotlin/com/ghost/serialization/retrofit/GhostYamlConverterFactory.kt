@@ -10,6 +10,8 @@ import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
+import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -98,10 +100,34 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
     private fun getSerializerWithCache(type: Type): GhostSerializer<Any>? {
         val cached = serializerCache[type]
         if (cached != null) return cached
-        if (type !is Class<*>) return null
-        val serializer = Ghost.getSerializer(type.kotlin as KClass<Any>) ?: return null
+        val serializer = getSerializerForType(type) ?: return null
         val existing = serializerCache.putIfAbsent(type, serializer)
         return existing ?: serializer
+    }
+
+    private fun getSerializerForType(type: Type): GhostSerializer<Any>? {
+        if (type is Class<*>) {
+            return Ghost.getSerializer(type.kotlin as KClass<Any>)
+        }
+
+        if (type is java.lang.reflect.ParameterizedType) {
+            val rawType = type.rawType as? Class<*> ?: return null
+
+            if (List::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull() ?: return null
+                val itemSerializer = getSerializerWithCache(arg) ?: return null
+                if (itemSerializer !is GhostYamlSerializer<*>) return null
+                return GhostYamlListSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
+            if (Map::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.getOrNull(1) ?: return null
+                val valueSerializer = getSerializerWithCache(arg) ?: return null
+                if (valueSerializer !is GhostYamlSerializer<*>) return null
+                return GhostYamlMapSerializer(valueSerializer) as GhostSerializer<Any>
+            }
+        }
+        return null
     }
 
     companion object {

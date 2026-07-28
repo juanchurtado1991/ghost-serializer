@@ -241,6 +241,36 @@ open class GhostJsonFlatReader(
     open fun nextLong(): Long = nextLongExtension()
 
     /**
+     * proto3 `uint64` scalar — quoted decimal string on the wire; bare JSON numbers accepted
+     * on read when they fit in [Long]. Subclasses (e.g. [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader])
+     * override for full [ULong] range.
+     */
+    open fun nextProtoUInt64(): ULong {
+        val saved = coerceStringsToNumbers
+        coerceStringsToNumbers = true
+        return try {
+            if (peekNextToken() == C.QUOTE_INT) {
+                nextString().toULong()
+            } else {
+                nextLong().toULong()
+            }
+        } finally {
+            coerceStringsToNumbers = saved
+        }
+    }
+
+    /** Plain JSON/YAML scalar `ULong` — quoted decimal string for full range, bare number when it fits in [Long]. */
+    open fun nextULong(): ULong = nextProtoUInt64()
+
+    fun nextULongOrNull(): ULong? {
+        if (isNextNullValue()) {
+            consumeNull()
+            return null
+        }
+        return nextULong()
+    }
+
+    /**
      * Resets the reader's state to process a new byte payload.
      */
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
