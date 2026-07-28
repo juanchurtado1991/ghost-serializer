@@ -57,26 +57,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.6%
+    63.6%
   </span>
   <span class="absValue">
-    (483/772)
+    (528/830)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    77.2%
+    77.6%
   </span>
   <span class="absValue">
-    (689/893)
+    (710/915)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74.7%
+    75.4%
   </span>
   <span class="absValue">
-    (3304/4424)
+    (3464/4595)
   </span>
 </td>
 </tr>
@@ -148,26 +148,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.6%
+    63.6%
   </span>
   <span class="absValue">
-    (483/772)
+    (528/830)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    77.3%
+    77.8%
   </span>
   <span class="absValue">
-    (696/900)
+    (717/922)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    75.7%
   </span>
   <span class="absValue">
-    (3355/4475)
+    (3515/4646)
   </span>
 </td>
 </tr>
@@ -930,6 +930,39 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val startPosition = position</b>
 <b class="fc">&nbsp;        val localLimit = limit</b>
 <b class="fc">&nbsp;        val localRawData = rawData</b>
+&nbsp;
+&nbsp;        // Negative hex/octal/binary (&quot;-0x10&quot;, &quot;-0o17&quot;, &quot;-0b101&quot;) aren&#39;t plain decimal digits,
+&nbsp;        // so the digit-only loop below would stop right after the leading &quot;-0&quot;. Scan their
+&nbsp;        // digit classes explicitly and hand the full token to tryParseNumber, which already
+&nbsp;        // knows how to parse (and negate) these bases — see the DASH_BYTE branch below.
+<b class="fc">&nbsp;        var prefixPosition = position</b>
+<b class="pc">&nbsp;        if (prefixPosition &lt; localLimit &amp;&amp; localRawData[prefixPosition] == C.DASH_BYTE) {</b>
+<b class="fc">&nbsp;            prefixPosition++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (prefixPosition + 1 &lt; localLimit &amp;&amp; localRawData[prefixPosition] == C.ZERO_BYTE) {</b>
+<b class="fc">&nbsp;            val baseByte = localRawData[prefixPosition + 1]</b>
+<b class="pc">&nbsp;            val isHex = baseByte == C.LOWERCASE_X_BYTE || baseByte == C.UPPERCASE_X_BYTE</b>
+<b class="pc">&nbsp;            val isOctal = baseByte == C.LOWERCASE_O_BYTE || baseByte == C.UPPERCASE_O_BYTE</b>
+<b class="pc">&nbsp;            val isBinary = baseByte == C.LOWERCASE_B_BYTE || baseByte == C.UPPERCASE_B_BYTE</b>
+<b class="fc">&nbsp;            if (isHex || isOctal || isBinary) {</b>
+<b class="fc">&nbsp;                position = prefixPosition + 2</b>
+<b class="pc">&nbsp;                while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                    val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;                    val isBaseDigit = when {</b>
+<b class="fc">&nbsp;                        isHex -&gt; isDigit(currentByte) ||</b>
+<b class="pc">&nbsp;                            currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||</b>
+<b class="pc">&nbsp;                            currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE</b>
+<b class="pc">&nbsp;                        isOctal -&gt; currentByte in C.ZERO_BYTE..C.SEVEN_BYTE</b>
+<b class="fc">&nbsp;                        else -&gt; currentByte == C.ZERO_BYTE || currentByte == C.ONE_BYTE</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    if (!isBaseDigit) break</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="pc">&nbsp;                return tryParseNumber(localRawData, startPosition, position)</b>
+<b class="nc">&nbsp;                    ?: localRawData.decodeToString(startPosition, position)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
 <b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
 <b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
 <b class="pc">&nbsp;            if (!isDigit(currentByte) &amp;&amp; currentByte != C.DASH_BYTE &amp;&amp; currentByte != C.PLUS_BYTE &amp;&amp; currentByte != C.DOT_BYTE &amp;&amp;</b>
@@ -1201,7 +1234,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                while (idx &lt; end) {</b>
 <b class="fc">&nbsp;                    val currentByte = data[idx]</b>
 <b class="fc">&nbsp;                    val digit = when {</b>
-<b class="pc">&nbsp;                        isDigit(currentByte) -&gt; (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="fc">&nbsp;                        isDigit(currentByte) -&gt; (currentByte - C.ZERO_BYTE).toLong()</b>
 <b class="pc">&nbsp;                        currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f</b>
 <b class="pc">&nbsp;                        currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F</b>
 <b class="nc">&nbsp;                        else -&gt; return null</b>
@@ -1209,7 +1242,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    value = (value shl C.HEX_SHIFT) or digit</b>
 <b class="fc">&nbsp;                    idx++</b>
 &nbsp;                }
-<b class="pc">&nbsp;                return if (isNegative) -value else value</b>
+<b class="fc">&nbsp;                return if (isNegative) -value else value</b>
 &nbsp;            }
 <b class="pc">&nbsp;            if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O</b>
 <b class="fc">&nbsp;                var value = 0L</b>
@@ -1221,7 +1254,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    value = (value shl C.OCTAL_SHIFT) or digit</b>
 <b class="fc">&nbsp;                    idx++</b>
 &nbsp;                }
-<b class="pc">&nbsp;                return if (isNegative) -value else value</b>
+<b class="fc">&nbsp;                return if (isNegative) -value else value</b>
 &nbsp;            }
 <b class="pc">&nbsp;            if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B</b>
 <b class="fc">&nbsp;                var value = 0L</b>
@@ -1233,7 +1266,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    value = (value shl C.BINARY_SHIFT) or digit</b>
 <b class="fc">&nbsp;                    idx++</b>
 &nbsp;                }
-<b class="pc">&nbsp;                return if (isNegative) -value else value</b>
+<b class="fc">&nbsp;                return if (isNegative) -value else value</b>
 &nbsp;            }
 &nbsp;        }
 &nbsp;
@@ -1764,7 +1797,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 23:18</div>
+    <div style="float:right;">generated on 2026-07-28 06:15</div>
 </div>
 </body>
 </html>
