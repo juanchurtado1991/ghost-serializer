@@ -6,6 +6,7 @@ import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import io.ktor.http.ContentType
 import io.ktor.serialization.Configuration
 
@@ -28,4 +29,17 @@ fun Configuration.ghostProto(
     configurer: ((GhostProtoJsonFlatReader) -> Unit)? = null
 ) {
     register(contentType, GhostProtoContentConverter(configurer))
+}
+
+internal const val CONTENT_TYPE_APPLICATION = "application"
+internal const val CONTENT_TYPE_YAML = "yaml"
+
+/**
+ * Extension to register Ghost YAML serialization as the content negotiator in Ktor.
+ */
+fun Configuration.ghostYaml(
+    contentType: ContentType = ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML),
+    configurer: ((GhostYamlFlatReader) -> Unit)? = null
+) {
+    register(contentType, GhostYamlContentConverter(configurer))
 }
