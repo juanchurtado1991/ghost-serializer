@@ -24,8 +24,10 @@ class GhostProtoYamlCodegenKspTest {
                 package fixtures
 
                 import com.ghost.serialization.annotations.GhostProtoSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
 
                 @GhostProtoSerialization
+                @GhostYamlSerialization
                 data class ProtoYamlCounter(val request_id: Long, val retries: Int)
                 """.trimIndent()
             ),
@@ -55,8 +57,10 @@ class GhostProtoYamlCodegenKspTest {
                 package fixtures
 
                 import com.ghost.serialization.annotations.GhostProtoSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
 
                 @GhostProtoSerialization
+                @GhostYamlSerialization
                 data class ProtoYamlBlob(val payload: ByteArray)
                 """.trimIndent()
             ),

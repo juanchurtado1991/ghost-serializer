@@ -7,7 +7,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.encodeToYamlBytes
-import com.ghost.serialization.integration.model.BenchUser
+import com.ghost.serialization.integration.model.YamlBenchUser
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
@@ -15,7 +15,7 @@ import java.lang.management.ManagementFactory
  * Ghost-only YAML round-trip benchmark (no KSER/Moshi equivalent).
  *
  * Exercises KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer] paths on a
- * representative integration fixture ([BenchUser]).
+ * representative integration fixture ([YamlYamlBenchUser]).
  */
 object GhostYamlBenchmark {
 
@@ -44,30 +44,30 @@ score: 100.0
         threadBean.isThreadAllocatedMemoryEnabled = true
 
         println("\n════════════════════════════════════════════════════════════════")
-        println("  👻 YAML ROUND-TRIP — GhostYamlSerializer (BenchUser)")
+        println("  👻 YAML ROUND-TRIP — GhostYamlSerializer (YamlBenchUser)")
         println("════════════════════════════════════════════════════════════════")
 
         measureString(
             threadBean,
-            label = "Decode BenchUser (YAML string)",
+            label = "Decode YamlBenchUser (YAML string)",
             yaml = YAML_USER,
         ) { text ->
-            Ghost.decodeFromYaml<BenchUser>(text)
+            Ghost.decodeFromYaml<YamlBenchUser>(text)
         }
 
         measureBytes(
             threadBean,
-            label = "Decode BenchUser (YAML bytes)",
+            label = "Decode YamlBenchUser (YAML bytes)",
             yaml = YAML_USER,
         ) { bytes ->
-            Ghost.decodeFromYaml<BenchUser>(bytes)
+            Ghost.decodeFromYaml<YamlBenchUser>(bytes)
         }
 
-        val user = Ghost.decodeFromYaml<BenchUser>(YAML_USER)
+        val user = Ghost.decodeFromYaml<YamlBenchUser>(YAML_USER)
 
         measureString(
             threadBean,
-            label = "Encode BenchUser (encodeToYaml string)",
+            label = "Encode YamlBenchUser (encodeToYaml string)",
             yaml = YAML_USER,
         ) {
             Ghost.encodeToYaml(user)
@@ -75,7 +75,7 @@ score: 100.0
 
         measureBytes(
             threadBean,
-            label = "Encode BenchUser (encodeToYamlBytes)",
+            label = "Encode YamlBenchUser (encodeToYamlBytes)",
             yaml = YAML_USER,
         ) {
             Ghost.encodeToYamlBytes(user)
@@ -86,7 +86,7 @@ score: 100.0
             label = "Round-trip (decode → encodeToYaml, minimal profile)",
             yaml = YAML_USER_MINIMAL,
         ) {
-            val decoded = Ghost.decodeFromYaml<BenchUser>(YAML_USER_MINIMAL)
+            val decoded = Ghost.decodeFromYaml<YamlBenchUser>(YAML_USER_MINIMAL)
             Ghost.encodeToYaml(decoded)
         }
 

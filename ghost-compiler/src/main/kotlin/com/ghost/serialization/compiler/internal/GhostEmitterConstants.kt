@@ -171,6 +171,7 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_WRAP_TYPE = "%s(%s)"
     const val STR_ANNOTATION_SERIALIZATION = "com.ghost.serialization.annotations.GhostSerialization"
     const val STR_ANNOTATION_PROTO_SERIALIZATION = "com.ghost.serialization.annotations.GhostProtoSerialization"
+    const val STR_ANNOTATION_YAML_SERIALIZATION = "com.ghost.serialization.annotations.GhostYamlSerialization"
     const val STR_GENERATED_PKG = "com.ghost.serialization.generated"
     const val STR_REGISTRY_PREFIX = "GhostModuleRegistry"
     const val STR_LOG_PREFIX = ">>> [GhostSerialization]"
@@ -307,6 +308,26 @@ internal object GhostEmitterConstants {
     const val STR_ERR_MAP_1 = "GhostSerialization: Map key must be a String in property '"
     const val STR_ERR_MAP_2 = "'. "
     const val STR_ERR_MAP_3 = "JSON only supports string-keyed objects."
+    const val STR_ERR_YAML_ORPHAN =
+        "GhostYamlSerialization: @GhostYamlSerialization requires @GhostSerialization or @GhostProtoSerialization on the same class."
+    const val STR_ERR_YAML_RESILIENT =
+        "GhostYamlSerialization: @GhostResilient is JSON-only and cannot be combined with @GhostYamlSerialization."
+    const val STR_ERR_YAML_SEALED =
+        "GhostYamlSerialization: sealed classes are JSON-only and cannot use @GhostYamlSerialization."
+    const val STR_ERR_YAML_ENVELOPE =
+        "GhostYamlSerialization: @GhostJsonEnvelope is JSON-only and cannot use @GhostYamlSerialization."
+    const val STR_ERR_YAML_INFERRED =
+        "GhostYamlSerialization: inferred polymorphism is JSON-only and cannot use @GhostYamlSerialization."
+    const val STR_ERR_YAML_CUSTOM_CODEC =
+        "GhostYamlSerialization: @GhostDecoder/@GhostEncoder are JSON-only and cannot be used on YAML-enabled models."
+    const val STR_ERR_YAML_STRUCTURAL =
+        "GhostYamlSerialization: @GhostFlatten/@GhostWrap/@GhostWrappedKeys are JSON-only and cannot be used on YAML-enabled models."
+    const val STR_ERR_YAML_NESTED_GHOST =
+        "GhostYamlSerialization: nested @GhostSerialization types are not supported on YAML paths."
+    const val STR_ERR_YAML_RAW_JSON =
+        "GhostYamlSerialization: RawJson is JSON-only and cannot be used on YAML-enabled models."
+    const val STR_ERR_YAML_BYTE_ARRAY =
+        "GhostYamlSerialization: non-proto ByteArray is JSON-only; use @GhostProtoSerialization for Base64 YAML fields."
     const val STR_KOTLIN_DOT = "kotlin."
     const val STR_TYPE_INT_ARRAY = "kotlin.IntArray"
     const val STR_TYPE_LONG_ARRAY = "kotlin.LongArray"
@@ -453,6 +474,7 @@ internal object GhostEmitterConstants {
     const val MARKER = "%S"
     const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
     const val ANNOTATION_GHOST_PROTO_SERIALIZATION = "GhostProtoSerialization"
+    const val ANNOTATION_GHOST_YAML_SERIALIZATION = "GhostYamlSerialization"
 
     /** `@GhostSerialization(textChannel = …)` argument name. */
     const val ARG_TEXT_CHANNEL = "textChannel"

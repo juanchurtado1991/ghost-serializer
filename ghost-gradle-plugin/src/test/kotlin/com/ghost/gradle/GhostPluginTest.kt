@@ -146,32 +146,6 @@ class GhostPluginTest {
     }
 
     @Test
-    fun `plugin defaults generateYaml to true`() {
-        val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply(GhostPlugin::class.java)
-
-        val extension = project.extensions.getByType(GhostExtension::class.java)
-        assertTrue(extension.generateYaml.get())
-    }
-
-    @Test
-    fun `plugin wires generateYaml ksp arg when ksp is applied`() {
-        val project = ProjectBuilder.builder().build()
-
-        project.pluginManager.apply("org.jetbrains.kotlin.jvm")
-        project.pluginManager.apply("com.google.devtools.ksp")
-        project.pluginManager.apply(GhostPlugin::class.java)
-        project.extensions.getByType(GhostExtension::class.java).generateYaml.set(false)
-
-        evaluated(project)
-
-        val kspExtension = project.extensions.getByType(
-            com.google.devtools.ksp.gradle.KspExtension::class.java
-        )
-        assertEquals("false", kspExtension.arguments["ghost.generateYaml"])
-    }
-
-    @Test
     fun `plugin does not inject network adapters when no matching dependency is present`() {
         val project = ProjectBuilder.builder().build()
 

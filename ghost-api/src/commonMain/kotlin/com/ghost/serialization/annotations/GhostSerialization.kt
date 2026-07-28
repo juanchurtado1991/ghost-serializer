@@ -23,6 +23,9 @@ package com.ghost.serialization.annotations
  *   per model) on types that are only ever decoded from bytes/streams. Module-wide
  *   `ghost.textChannel=false` forces the bridging behavior for every model in the module
  *   regardless of this per-class value, for projects that want to opt out everywhere at once.
+ *
+ * YAML serialization is **not** enabled by this annotation alone — add [GhostYamlSerialization]
+ * on the same class when you need `Ghost.decodeFromYaml` / framework YAML adapters.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)

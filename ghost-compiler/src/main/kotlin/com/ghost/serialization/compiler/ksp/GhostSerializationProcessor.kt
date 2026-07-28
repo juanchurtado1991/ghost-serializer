@@ -142,6 +142,8 @@ class GhostSerializationProcessor(
             )
         }
 
+        reportOrphanGhostYamlSerialization(resolver)
+
         if (validClasses.isNotEmpty()) {
             generateModuleRegistry()
             generateProGuardRules()
@@ -243,20 +245,16 @@ class GhostSerializationProcessor(
         )
     }
 
-    private fun isGenerateYamlEnabled(): Boolean {
-        return when (options[C.OPTION_GENERATE_YAML]?.lowercase()) {
-            "false", "0", "no" -> false
-            else -> true
-        }
-    }
-
     private fun shouldGenerateYaml(
         resolver: Resolver,
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>,
         envelopeModel: GhostEnvelopeModel?,
     ): Boolean {
-        if (!isGenerateYamlEnabled()) {
+        val hasYamlAnnotation = classDeclaration.annotations.any {
+            it.shortName.asString() == C.ANNOTATION_GHOST_YAML_SERIALIZATION
+        }
+        if (!hasYamlAnnotation) {
             return false
         }
         if (resolver.getClassDeclarationByName(
@@ -265,10 +263,26 @@ class GhostSerializationProcessor(
         ) {
             return false
         }
+        val hasGhostSerialization = classDeclaration.annotations.any {
+            it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION
+        }
+        val hasProtoSerialization = classDeclaration.annotations.any {
+            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
+        }
+        if (!hasGhostSerialization && !hasProtoSerialization) {
+            logger.error(C.STR_ERR_YAML_ORPHAN, classDeclaration)
+            return false
+        }
+        if (classHasResilient(classDeclaration, propertiesModel)) {
+            logger.error(C.STR_ERR_YAML_RESILIENT, classDeclaration)
+            return false
+        }
         if (classDeclaration.modifiers.contains(Modifier.SEALED)) {
+            logger.error(C.STR_ERR_YAML_SEALED, classDeclaration)
             return false
         }
         if (envelopeModel != null) {
+            logger.error(C.STR_ERR_YAML_ENVELOPE, classDeclaration)
             return false
         }
         val isInferred = classDeclaration.annotations
@@ -278,9 +292,63 @@ class GhostSerializationProcessor(
             ?.value as? Boolean
             ?: false
         if (isInferred) {
+            logger.error(C.STR_ERR_YAML_INFERRED, classDeclaration)
             return false
         }
+        propertiesModel.forEach { prop ->
+            if (propertyDisablesYamlCodegen(prop)) {
+                logger.error(
+                    yamlIncompatibilityReason(prop) ?: C.STR_ERR_YAML_NESTED_GHOST,
+                    classDeclaration,
+                )
+            }
+        }
         return propertiesModel.none { propertyDisablesYamlCodegen(it) }
+    }
+
+    private fun reportOrphanGhostYamlSerialization(resolver: Resolver) {
+        resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_YAML_SERIALIZATION)
+            .filterIsInstance<KSClassDeclaration>()
+            .forEach { classDeclaration ->
+                val hasGhostSerialization = classDeclaration.annotations.any {
+                    it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION
+                }
+                val hasProtoSerialization = classDeclaration.annotations.any {
+                    it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
+                }
+                if (!hasGhostSerialization && !hasProtoSerialization) {
+                    logger.error(C.STR_ERR_YAML_ORPHAN, classDeclaration)
+                }
+            }
+    }
+
+    private fun classHasResilient(
+        classDeclaration: KSClassDeclaration,
+        propertiesModel: List<GhostPropertyModel>,
+    ): Boolean {
+        if (classDeclaration.annotations.any { it.shortName.asString() == C.GHOST_RESILIENT }) {
+            return true
+        }
+        return propertiesModel.any { it.isResilient }
+    }
+
+    private fun yamlIncompatibilityReason(prop: GhostPropertyModel): String? {
+        if (prop.isContextual || prop.customDecoder != null || prop.customEncoder != null) {
+            return C.STR_ERR_YAML_CUSTOM_CODEC
+        }
+        if (prop.wrappedSourceKeys != null || prop.flattenPath != null || prop.wrapPath != null) {
+            return C.STR_ERR_YAML_STRUCTURAL
+        }
+        if (prop.type.isRawJson()) {
+            return C.STR_ERR_YAML_RAW_JSON
+        }
+        if (!prop.isProto && prop.type.isByteArray()) {
+            return C.STR_ERR_YAML_BYTE_ARRAY
+        }
+        if (prop.isGhost) {
+            return C.STR_ERR_YAML_NESTED_GHOST
+        }
+        return null
     }
 
     private fun propertyDisablesYamlCodegen(prop: GhostPropertyModel): Boolean {
@@ -293,7 +361,7 @@ class GhostSerializationProcessor(
         if (prop.isSealedClass) {
             return true
         }
-        if (prop.isGhost && !prop.isEnum) {
+        if (prop.isGhost) {
             return true
         }
         if (prop.listInnerIsGhost || prop.mapValueIsGhost) {

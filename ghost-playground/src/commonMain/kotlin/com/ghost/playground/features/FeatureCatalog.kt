@@ -215,10 +215,11 @@ object FeatureCatalog {
             icon = PlaygroundIconKind.RoundTrip,
             titleEn = "YAML",
             titleEs = "YAML",
-            introEn = "Ghost 1.3 generates GhostYamlSerializer companions — the same DTO can round-trip YAML documents without a second schema.",
-            introEs = "Ghost 1.3 genera companions GhostYamlSerializer — el mismo DTO puede hacer round-trip de documentos YAML sin un segundo schema.",
+            introEn = "Add @GhostYamlSerialization beside @GhostSerialization to opt in to YAML codegen — the same DTO can round-trip YAML documents without a second schema.",
+            introEs = "Añade @GhostYamlSerialization junto a @GhostSerialization para activar codegen YAML — el mismo DTO puede hacer round-trip de documentos YAML sin un segundo schema.",
             dtoSource = """
                 @GhostSerialization
+                @GhostYamlSerialization
                 data class PlaygroundUser(
                     val id: Long,
                     val name: String,

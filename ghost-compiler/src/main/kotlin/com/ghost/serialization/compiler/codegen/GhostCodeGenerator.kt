@@ -186,10 +186,11 @@ internal class GhostCodeGenerator(
                 ctx.isEnum,
                 ctx.sealedSubclasses,
                 ctx.sealedDiscriminatorKey,
-                ctx.isResilient,
+                isResilientClass = false,
                 ctx.isInferred,
                 ctx.isObject,
-                hasFallback = ctx.hasFallbackEnum
+                hasFallback = ctx.hasFallbackEnum,
+                supportsResilience = false,
             )
             yamlDeserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
         }

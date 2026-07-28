@@ -29,7 +29,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 internal class FragmentedEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
-    readerClass: ClassName
+    readerClass: ClassName,
+    private val supportsResilience: Boolean = true,
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
@@ -204,7 +205,7 @@ internal class FragmentedEmitter(
             val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
             
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
-            if (prop.isResilient) {
+            if (prop.isResilient && supportsResilience) {
                 chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
                 chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.localTrackingName())
                 chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)

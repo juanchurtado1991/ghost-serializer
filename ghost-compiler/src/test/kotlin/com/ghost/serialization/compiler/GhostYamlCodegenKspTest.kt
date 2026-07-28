@@ -6,7 +6,6 @@ import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
-import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.jupiter.api.Test
@@ -14,11 +13,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** KSP regression tests for generated [GhostYamlSerializer] companions. */
+/** KSP regression tests for opt-in [@GhostYamlSerialization] codegen. */
 class GhostYamlCodegenKspTest {
 
     @Test
-    fun generatesYamlSerializeAndDeserializeMethods() {
+    fun generatesYamlSerializeAndDeserializeMethodsWhenYamlAnnotationPresent() {
         val generated = compileAndReadSerializer(
             SourceFile.kotlin(
                 "YamlUser.kt",
@@ -26,8 +25,10 @@ class GhostYamlCodegenKspTest {
                 package fixtures
 
                 import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
 
                 @GhostSerialization
+                @GhostYamlSerialization
                 data class YamlUser(val id: Int, val name: String)
                 """.trimIndent()
             ),
@@ -46,11 +47,38 @@ class GhostYamlCodegenKspTest {
             "override fun deserialize(reader: GhostYamlFlatReader" in generated,
             "Expected YAML flat deserialize method:\n$generated"
         )
+        assertFalse(
+            "decodeResilient" in generated,
+            "YAML deserialize path must not use decodeResilient:\n$generated"
+        )
     }
 
     @Test
-    fun skipsYamlWhenPropertyUsesCustomEncoder() {
+    fun skipsYamlWithoutGhostYamlSerializationAnnotation() {
         val generated = compileKspOnly(
+            SourceFile.kotlin(
+                "JsonOnlyUser.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class JsonOnlyUser(val id: Int, val name: String)
+                """.trimIndent()
+            ),
+            serializerFileName = "JsonOnlyUserSerializer.kt"
+        )
+
+        assertFalse(
+            "GhostYamlSerializer" in generated,
+            "YAML codegen requires @GhostYamlSerialization:\n$generated"
+        )
+    }
+
+    @Test
+    fun rejectsYamlWhenPropertyUsesCustomEncoder() {
+        val (_, result) = compile(
             SourceFile.kotlin(
                 "CustomYamlModel.kt",
                 """
@@ -58,9 +86,11 @@ class GhostYamlCodegenKspTest {
 
                 import com.ghost.serialization.annotations.GhostEncoder
                 import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
                 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 
                 @GhostSerialization
+                @GhostYamlSerialization
                 data class CustomYamlModel(
                     @GhostEncoder(provider = Encoder::class, functionName = "encode")
                     val token: String,
@@ -72,13 +102,63 @@ class GhostYamlCodegenKspTest {
                     }
                 }
                 """.trimIndent()
-            ),
-            serializerFileName = "CustomYamlModelSerializer.kt"
+            )
         )
 
-        assertFalse(
-            "GhostYamlSerializer" in generated,
-            "Custom encoder properties must disable YAML codegen:\n$generated"
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains("@GhostDecoder/@GhostEncoder", ignoreCase = true),
+            result.messages
+        )
+    }
+
+    @Test
+    fun rejectsResilientCombinedWithGhostYamlSerialization() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "ResilientYamlUser.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostResilient
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                @GhostResilient
+                data class ResilientYamlUser(val id: Int, val name: String)
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains("@GhostResilient is JSON-only", ignoreCase = true),
+            result.messages
+        )
+    }
+
+    @Test
+    fun rejectsOrphanGhostYamlSerialization() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "OrphanYaml.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostYamlSerialization
+                data class OrphanYaml(val id: Int)
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains("requires @GhostSerialization or @GhostProtoSerialization", ignoreCase = true),
+            result.messages
         )
     }
 
@@ -91,8 +171,10 @@ class GhostYamlCodegenKspTest {
                 package fixtures
 
                 import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
 
                 @GhostSerialization
+                @GhostYamlSerialization
                 data class YamlScores(val values: IntArray)
                 """.trimIndent()
             ),
@@ -109,30 +191,6 @@ class GhostYamlCodegenKspTest {
         )
     }
 
-    @Test
-    fun skipsYamlWhenGenerateYamlOptionIsFalse() {
-        val generated = compileKspOnly(
-            mapOf("ghost.generateYaml" to "false"),
-            SourceFile.kotlin(
-                "YamlOptOutUser.kt",
-                """
-                package fixtures
-
-                import com.ghost.serialization.annotations.GhostSerialization
-
-                @GhostSerialization
-                data class YamlOptOutUser(val id: Int, val name: String)
-                """.trimIndent()
-            ),
-            serializerFileName = "YamlOptOutUserSerializer.kt"
-        )
-
-        assertFalse(
-            "GhostYamlSerializer" in generated,
-            "ghost.generateYaml=false must disable YAML codegen:\n$generated"
-        )
-    }
-
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
@@ -142,17 +200,12 @@ class GhostYamlCodegenKspTest {
             .first()
     }
 
-    private fun compileKspOnly(
-        options: Map<String, String>,
-        source: SourceFile,
-        serializerFileName: String,
-    ): String {
+    private fun compileKspOnly(source: SourceFile, serializerFileName: String): String {
         val compilation = KotlinCompilation().apply {
             sources = listOf(source)
             inheritClassPath = true
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = false
-            kspProcessorOptions = options.toMutableMap()
             languageVersion = "1.9"
             apiVersion = "1.9"
             kotlincArguments = listOf("-Xskip-metadata-version-check")
@@ -165,9 +218,6 @@ class GhostYamlCodegenKspTest {
             .map { it.readText() }
             .first()
     }
-
-    private fun compileKspOnly(source: SourceFile, serializerFileName: String): String =
-        compileKspOnly(emptyMap(), source, serializerFileName)
 
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {

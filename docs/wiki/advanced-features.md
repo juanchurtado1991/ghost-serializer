@@ -6,6 +6,42 @@ This page documents Ghost's advanced capabilities that have no equivalent in Gso
 
 ---
 
+## Format compatibility
+
+Ghost generates separate code paths for **JSON** (default via `@GhostSerialization`), **proto3 JSON** (`@GhostProtoSerialization`), and **YAML** (opt-in via `@GhostYamlSerialization` on the same class). Not every annotation applies to every format.
+
+### Cross-format (JSON + proto3 JSON + YAML when codegen runs)
+
+| Annotation / capability | Notes |
+|:---|:---|
+| `@GhostName` | Wire key override on all generated paths |
+| `@GhostIgnore` | Property skipped on read/write everywhere |
+| Plain scalars, enums, `List`/`Set`/`Map` of compatible types | YAML requires `@GhostYamlSerialization` + compatible shape |
+| `@GhostStrict` / `@GhostCoerce` | Runtime reader flags — JSON readers today; YAML reader supports coerce/strict fields where wired in adapters |
+
+### JSON-only (KSP error if combined with `@GhostYamlSerialization`)
+
+| Feature | Why |
+|:---|:---|
+| `@GhostResilient` | Uses `decodeResilient` on JSON readers only |
+| `@GhostJsonEnvelope` + payload annotations | Envelope/discriminator model is JSON-specific |
+| Sealed hierarchies + `@GhostFallback` | Discriminator polymorphism |
+| `@GhostSerialization(inferred = true)` | Field-presence polymorphism |
+| `@GhostFlatten` / `@GhostWrap` / `@GhostWrappedKeys` | JSON path navigation / proto oneof wiring |
+| `@GhostDecoder` / `@GhostEncoder` | Hand-written JSON reader/writer signatures |
+| Contextual serializers | Registry hooks tied to JSON codegen |
+| `RawJson` | Captures raw JSON bytes |
+| Non-proto `ByteArray` | Opaque JSON bytes (proto uses Base64 via `@GhostProtoSerialization`) |
+| Nested `@GhostSerialization` types in YAML graphs | YAML codegen supports flat DTOs only (including `@GhostSerialization` enums as properties) |
+
+### Proto3 JSON (`@GhostProtoSerialization`)
+
+Separate mapping rules (camelCase, omit defaults, quoted int64, Base64 bytes). YAML for proto models also requires `@GhostYamlSerialization` and uses `GhostProtoYamlFlatReader` for proto numeric/bytes rules inside YAML documents.
+
+→ **[YAML guide](usage-yaml.md)** · **[Protobuf guide](usage-protobuf.md)**
+
+---
+
 ## 1. Resilience & Anti-Explosion
 
 ### Polymorphic Fallbacks (`@GhostFallback`)
@@ -25,7 +61,7 @@ sealed class DeviceEvent {
 ```
 
 ### Field Resilience (`@GhostResilient`)
-Catch type mismatches or unknown enums and assign a safe default instead of failing:
+Catch type mismatches or unknown enums and assign a safe default instead of failing — **JSON readers only**. Not emitted for YAML; combining `@GhostResilient` with `@GhostYamlSerialization` is a compile-time error.
 
 ```kotlin
 @GhostSerialization

@@ -74,15 +74,22 @@ val json: String = Ghost.encodeToString(userFromBytes)
 
 ### YAML (when your API speaks `application/yaml`)
 
+Add `@GhostYamlSerialization` beside `@GhostSerialization` on the DTO, then:
+
 ```kotlin
+import com.ghost.serialization.annotations.GhostYamlSerialization
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeToYaml
 
-val user: User = Ghost.decodeFromYaml(yamlText)
-val yaml: String = Ghost.encodeToYaml(user)
+@GhostSerialization
+@GhostYamlSerialization
+data class Config(val id: Long, val name: String)
+
+val config: Config = Ghost.decodeFromYaml(yamlText)
+val yaml: String = Ghost.encodeToYaml(config)
 ```
 
-Requires KSP-generated `GhostYamlSerializer` (default `generateYaml = true`). See [YAML guide](usage-yaml.md).
+See [YAML guide](usage-yaml.md).
 
 Prefer `ByteArray` for network payloads when your HTTP client already exposes bytes. It avoids creating an intermediate `String`.
 

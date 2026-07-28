@@ -72,7 +72,7 @@ ksp(libs.ghost.compiler)
 ## Gradle Plugin
 
 ### `com.ghostserializer.ghost` — Auto-Configuration Plugin
-Automatically adds the core runtime and applies `ghost-compiler` as a KSP dependency to every supported compilation target declared in your module. It also detects Ktor and Retrofit dependencies and can inject the matching Ghost adapter. YAML and Proto3 JSON ship inside `ghost-serialization` — no separate YAML or protobuf artifacts. Use `generateYaml` to opt out of YAML serializer generation. This eliminates most manual KSP and dependency wiring without changing other serializers.
+Automatically adds the core runtime and applies `ghost-compiler` as a KSP dependency to every supported compilation target declared in your module. It also detects Ktor and Retrofit dependencies and can inject the matching Ghost adapter. YAML codegen is opt-in per class via `@GhostYamlSerialization`. This eliminates most manual KSP and dependency wiring without changing other serializers.
 
 ```toml
 [plugins]
@@ -160,7 +160,7 @@ Proto3 JSON mapping and YAML are **not** separate Maven artifacts in 1.3.0+. Bot
 
 | Format | Entry points | KSP |
 |:---|:---|:---|
-| **YAML** | `Ghost.decodeFromYaml` / `encodeToYaml` | `GhostYamlSerializer` when `generateYaml = true` (default) |
+| **YAML** | `Ghost.decodeFromYaml` / `encodeToYaml` | `@GhostYamlSerialization` on the class |
 | **Proto3 JSON** | `GhostProto.deserialize` / `encodeToString` | `@GhostProtoSerialization` |
 
 Proto3 includes `GhostProtoJsonFlatReader`, WKT serializers (`ProtoDuration`, `ProtoTimestamp`, `ProtoAny`, …), and `ProtoAnyRegistry`.
