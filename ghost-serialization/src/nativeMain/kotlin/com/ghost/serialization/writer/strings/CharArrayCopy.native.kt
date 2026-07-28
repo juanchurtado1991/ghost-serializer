@@ -1,6 +1,7 @@
 package com.ghost.serialization.writer.strings
 
-import com.ghost.serialization.writer.common.*
+
+
 /**
  * Native actual: manual loop copy — no temporary CharArray allocated.
  */

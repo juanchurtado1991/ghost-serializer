@@ -1,8 +1,8 @@
 package com.ghost.serialization.writer.bytes
 
-import com.ghost.serialization.writer.common.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
+
 
 /**
  * Pooled, reusable encode-target for in-memory byte encodes

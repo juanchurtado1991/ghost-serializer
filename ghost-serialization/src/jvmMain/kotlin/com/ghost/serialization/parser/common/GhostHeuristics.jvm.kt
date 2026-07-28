@@ -2,13 +2,10 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+
 private const val PROP_INITIAL_COLLECTION_CAPACITY = "ghost.initialCollectionCapacity"
 private const val PROP_MAX_STRING_POOL_LENGTH = "ghost.maxStringPoolLength"
 private const val PROP_MAX_COLLECTION_SIZE = "ghost.maxCollectionSize"

@@ -2,13 +2,13 @@
 
 package com.ghost.serialization.parser.proto
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.bytes.nextDoubleExtension
+import com.ghost.serialization.parser.bytes.nextIntExtension
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.strings.nextInt
+
 
 internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
     // Spec: "Values with nonzero fractional portions are not allowed"

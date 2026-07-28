@@ -232,7 +232,7 @@ internal object GhostEmitterConstants {
     const val PKG_PARSER_BYTES = "com.ghost.serialization.parser.bytes"
     const val PKG_PARSER_STRINGS = "com.ghost.serialization.parser.strings"
     const val PKG_PARSER_STREAMING = "com.ghost.serialization.parser.streaming"
-    /** @deprecated Use [PKG_PARSER_BYTES] or the channel-specific package. */
+    /** @deprecated Use `PKG_PARSER_BYTES` or a channel-specific parser package. */
     const val PKG_PARSER = PKG_PARSER_BYTES
     const val STR_RETURN_L = "return %L"
     
@@ -383,7 +383,7 @@ internal object GhostEmitterConstants {
     const val PKG_WRITER_COMMON = "com.ghost.serialization.writer.common"
     const val PKG_WRITER_BYTES = "com.ghost.serialization.writer.bytes"
     const val PKG_WRITER_STRINGS = "com.ghost.serialization.writer.strings"
-    /** @deprecated Use [PKG_WRITER_BYTES] or the channel-specific package. */
+    /** @deprecated Use `PKG_WRITER_BYTES` or a channel-specific writer package. */
     const val PKG_WRITER = PKG_WRITER_BYTES
     const val PKG_CONTRACT = "com.ghost.serialization.contract"
     const val PKG_EXCEPTION = "com.ghost.serialization.exception"
@@ -516,7 +516,7 @@ internal object GhostEmitterConstants {
     const val HASH_SHIFT_LIMIT = 16
     /** Table size used when the field-name set is empty (no dispatch needed). */
     const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
-    /** Candidate dispatch table sizes tried by [PerfectHashFinder], ascending. */
+    /** Candidate dispatch table sizes tried by [com.ghost.serialization.compiler.hash.PerfectHashFinder], ascending. */
     val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)
     const val BYTE_MASK = 0xFF
     const val BIT_SHIFT_8 = 8
@@ -749,7 +749,7 @@ internal object GhostEmitterConstants {
     const val STR_EXT_KT = "kt"
     const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
         """^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$"""
-    /** KotlinPoet emits explicit `public` for Explicit API mode; serializers don't need it. */
+    /** Strips explicit `public` modifiers that KotlinPoet adds for Explicit API mode. */
     const val REGEX_TRIM_REDUNDANT_PUBLIC =
         """^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )"""
 

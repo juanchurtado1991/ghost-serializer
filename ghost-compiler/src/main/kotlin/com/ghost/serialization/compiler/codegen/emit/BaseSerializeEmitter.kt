@@ -1,8 +1,14 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.*
+import com.ghost.serialization.compiler.analysis.isEnum
+import com.ghost.serialization.compiler.analysis.isGhost
+import com.ghost.serialization.compiler.analysis.isKotlinUnsignedPrimitive
+import com.ghost.serialization.compiler.analysis.isList
+import com.ghost.serialization.compiler.analysis.isMap
+import com.ghost.serialization.compiler.analysis.isRawJson
+import com.ghost.serialization.compiler.analysis.isSet
+import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -11,7 +17,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Abstract base class for all serialization emitters within the Ghost compiler.
@@ -35,7 +41,7 @@ internal abstract class BaseSerializeEmitter(
      * Monotonically increasing counter to generate unique loop variable names
      * (`sizeN`, `iN`, `keyN`, `valN`) within a single serialization function scope.
      *
-     * Using [depth] alone caused collisions when a DTO had multiple list/map fields
+     * Nesting depth alone caused collisions when a DTO had multiple list/map fields
      * at the same nesting level (all start at depth=0 → duplicate `size0`, `i0`).
      */
     private var loopCounter = 0

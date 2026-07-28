@@ -1,5 +1,6 @@
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.model.*
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -12,7 +13,7 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Resolves the generated serializer companion object's [ClassName] for this [KSType].
@@ -159,7 +160,8 @@ internal fun KSType.isEnum(): Boolean {
 
 /**
  * Checks whether this type is [kotlin.ByteArray].
- * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+ * Fields of this type capture raw JSON bytes via the reader's
+ * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
  */
 internal fun KSType.isByteArray(): Boolean {
     return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY
@@ -167,7 +169,8 @@ internal fun KSType.isByteArray(): Boolean {
 
 /**
  * Checks whether this type is [com.ghost.serialization.types.RawJson].
- * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+ * Fields of this type capture raw JSON bytes via the reader's
+ * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
  */
 internal fun KSType.isRawJson(): Boolean {
     return declaration.qualifiedName?.asString() == C.K_RAW_JSON

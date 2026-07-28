@@ -2,42 +2,46 @@
 
 package com.ghost.serialization.retrofit
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.isNextNullValue
+import com.ghost.serialization.parser.strings.consumeNull
+import com.ghost.serialization.parser.strings.isNextNullValue
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import java.lang.reflect.Type
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Converter
 import retrofit2.Retrofit
-import java.lang.reflect.Type
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
+
 
 /**
- * Retrofit `Converter.Factory` for proto3 JSON mapping (`@GhostProtoSerialization`).
+ * Retrofit `Converter.Factory` for proto3 JSON mapping
+ * ([@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]).
  *
  * Differs from [GhostConverterFactory] only on the read path: response bodies are parsed
- * through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare int64/uint64,
- * lenient int32 (rejects fractional values), and quoted `"NaN"`/`"Infinity"` literals per
- * proto3 JSON rules — required for round-tripping payloads produced by real protobuf/JSON
- * libraries. Encoding (`requestBodyConverter`) reuses [Ghost.encodeToBytes] since proto3 wire
- * correctness (int64 quoting, Base64 `bytes`, default-value omission) is generated directly
- * into the `@GhostProtoSerialization` serializer's own `serialize()` method.
+ * through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader], which additionally
+ * accepts quoted-or-bare int64/uint64, lenient int32 (rejects fractional values), and quoted
+ * `"NaN"`/`"Infinity"` literals per proto3 JSON rules — required for round-tripping payloads
+ * produced by real protobuf/JSON libraries. Encoding (`requestBodyConverter`) reuses
+ * [com.ghost.serialization.Ghost.encodeToBytes] since proto3 wire correctness (int64 quoting,
+ * Base64 `bytes`, default-value omission) is generated directly into the
+ * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]
+ * serializer's own `serialize()` method.
  *
  * Also unwraps `List<T>`/`Map<String, V>` request/response bodies when the element/value
  * serializer is registered — same pattern as [GhostConverterFactory], still using
- * [GhostProtoJsonFlatReader] on the read path.
+ * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] on the read path.
  *
  * ```kotlin
  * Retrofit.Builder()

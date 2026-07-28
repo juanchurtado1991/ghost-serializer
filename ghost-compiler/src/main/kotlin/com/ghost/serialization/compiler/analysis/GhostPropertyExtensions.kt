@@ -1,7 +1,8 @@
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.model.*
-import com.squareup.kotlinpoet.TypeName
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
+import com.squareup.kotlinpoet.TypeName
+
 
 /**
  * Extension methods for [GhostPropertyModel] to facilitate code generation.

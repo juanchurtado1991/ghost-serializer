@@ -1,14 +1,11 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import io.ktor.http.ContentType
 import io.ktor.serialization.Configuration
+
 
 /**
  * Extension to register Ghost as the content negotiator in Ktor.

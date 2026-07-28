@@ -1,18 +1,15 @@
 package com.ghost.serialization.spring
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
 import org.springframework.http.converter.AbstractHttpMessageConverter
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
+
 
 /**
  * Spring [org.springframework.http.converter.HttpMessageConverter]
@@ -48,11 +45,9 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
     }
 
     /**
-     * Prevents Ghost from intercepting standard primitive and java.lang types.
-     * This ensures Spring falls back to its default converters (e.g. StringHttpMessageConverter)
-     * for endpoints returning text/plain, raw bytes, or basic values, preserving their correct HTTP formats.
-     *
-     * Extracted to a clean helper to facilitate JVM JIT compilation and inlining.
+     * Excludes primitive and `java.lang` wrapper types so Spring falls back to its default
+     * converters (for example [org.springframework.http.converter.StringHttpMessageConverter])
+     * for text/plain, raw bytes, and scalar responses.
      */
     private fun isExcludedType(clazz: Class<*>): Boolean {
         return clazz == String::class.java ||

@@ -35,6 +35,7 @@ internal object IntArrayJsonAdapter : JsonAdapter<IntArray>() {
     }
 }
 
+/** Builds a Moshi instance with adapters required by integration-test benchmark models. */
 internal fun createBenchmarkMoshi(): Moshi {
     return Moshi.Builder()
         .add(IntArray::class.java, IntArrayJsonAdapter)

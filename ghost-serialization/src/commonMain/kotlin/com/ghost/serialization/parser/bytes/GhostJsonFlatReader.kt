@@ -3,17 +3,31 @@
 
 package com.ghost.serialization.parser.bytes
 
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
+import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.GhostSource
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.createByteArraySource
+import com.ghost.serialization.parser.common.findClosingQuoteImpl
+import com.ghost.serialization.parser.streaming.captureRawJson
+import com.ghost.serialization.parser.streaming.skipNumber
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.captureRawJson
+import com.ghost.serialization.parser.strings.skipNumber
+
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
+import com.ghost.serialization.parser.streaming.decodeResilient
+import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.readSet
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readSet
 
 /**
  * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
@@ -621,7 +635,7 @@ open class GhostJsonFlatReader(
         val length = end - contentStart
         position = end + 1
         nextTokenByte = C.RESET_TOKEN_BYTE
-        return matchCoerceBooleanBytes(
+        return com.ghost.serialization.parser.common.matchCoerceBooleanBytes(
             start = contentStart,
             length = length,
             onError = { throwError(C.ERR_EXPECTED_BOOLEAN) },

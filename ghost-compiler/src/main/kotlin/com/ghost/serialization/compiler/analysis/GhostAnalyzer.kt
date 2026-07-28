@@ -1,28 +1,33 @@
 @file:OptIn(com.google.devtools.ksp.KspExperimental::class)
 
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.model.*
+import com.ghost.serialization.annotations.GhostWrappedKeys
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.CustomCoderModel
+import com.ghost.serialization.compiler.model.CustomCoderReaderKind
+import com.ghost.serialization.compiler.model.GhostPropertyModel
+import com.ghost.serialization.compiler.model.InferredSubclassModel
+import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
+import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
-import com.ghost.serialization.annotations.GhostWrappedKeys
+
 
 /**
  * Analyzes Kotlin classes during KSP processing to generate serialization metadata.
  *
- * This analyzer is responsible for inspecting a [KSClassDeclaration], validating it against
- * the framework's serialization rules, and converting its valid properties into a list of
+ * This analyzer inspects a [com.google.devtools.ksp.symbol.KSClassDeclaration], validates it against
+ * the framework's serialization rules, and converts its valid properties into a list of
  * [GhostPropertyModel] instances for code generation.
  *
  * ### Validations:
@@ -31,7 +36,7 @@ import com.ghost.serialization.annotations.GhostWrappedKeys
  * - **Maps:** If a property is a `Map`, its key must resolve to a `String`.
  * - **Naming:** Duplicate JSON keys within the same class are not allowed.
  *
- * @property logger The [KSPLogger] used to report compilation errors for invalid declarations.
+ * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors for invalid declarations.
  */
 internal class GhostAnalyzer(private val logger: KSPLogger) {
 
@@ -667,7 +672,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
      * proto3 `oneof` mapping support: when the wrapped type is a sealed class (e.g. an
      * `inferred = true` hierarchy used to decode whichever wire key is present), the wire keys
      * live on its *subclasses*, not on the sealed parent itself (which typically declares no
-     * properties of its own). Resolves [wireKey] against each subclass' direct properties and
+     * properties of its own). Resolves the wire key against each subclass' direct properties and
      * tags the result with that subclass so the emitter can smart-cast before accessing it.
      */
     private fun resolveUnwrapFieldFromSealedSubclass(

@@ -1,11 +1,22 @@
 package com.ghost.serialization.compiler.codegen
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.emit.*
+import com.ghost.serialization.compiler.analysis.isByteArray
+import com.ghost.serialization.compiler.analysis.isList
+import com.ghost.serialization.compiler.analysis.isMap
+import com.ghost.serialization.compiler.analysis.isPrimitiveBoolean
+import com.ghost.serialization.compiler.analysis.isPrimitiveByte
+import com.ghost.serialization.compiler.analysis.isPrimitiveChar
+import com.ghost.serialization.compiler.analysis.isPrimitiveInt
+import com.ghost.serialization.compiler.analysis.isPrimitiveLong
+import com.ghost.serialization.compiler.analysis.isPrimitiveShort
+import com.ghost.serialization.compiler.analysis.isPrimitiveULong
+import com.ghost.serialization.compiler.analysis.isSet
+import com.ghost.serialization.compiler.analysis.isString
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
+import com.ghost.serialization.compiler.model.GhostSerializerContext
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.FileSpec
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Plans and applies conditional parser/type imports for a generated serializer file.
@@ -306,8 +317,8 @@ internal class SerializerImportResolver(
     /**
      * Classifies every `ByteArray` occurrence reachable from this class's properties (directly,
      * through `List`/`Set`/`Map` elements, through a value-class wrapper, or through an inferred
-     * sealed subclass) as [ByteArrayCoverage.COVERED] by the proto3 Base64 codegen path (needs
-     * `decodeBase64String`/`encodeBase64String`), or [ByteArrayCoverage.UNCOVERED] (still needs
+     * sealed subclass) as `ByteArrayCoverage.COVERED` by the proto3 Base64 codegen path (needs
+     * `decodeBase64String`/`encodeBase64String`), or `ByteArrayCoverage.UNCOVERED` (still needs
      * the raw-JSON-passthrough `captureRawJsonBytes` import). Coverage mirrors exactly what
      * `BaseSerializeEmitter`/`BaseDeserializeEmitter` do: `isProto` propagates unchanged through
      * `List`/`Set`/`Map` recursion, but inferred sealed subclass properties are never proto-aware.

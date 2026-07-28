@@ -1,12 +1,8 @@
 package com.ghost.serialization.parser.strings
 
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.types.RawJson
+
 
 /**
  * Captures the next complete JSON value as owned [RawJson] (UTF-16 source requires encoding).
@@ -20,7 +16,7 @@ fun GhostJsonStringReader.captureRawJson(): RawJson =
  * Since [GhostJsonStringReader] operates on a UTF-16 [String], the captured char range is
  * converted to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes]: a range copy of the cached
  * UTF-8 view when present, otherwise an encode of that range only. Prefer
- * [GhostJsonFlatReader.captureRawJsonBytes] when starting from a [ByteArray] source.
+ * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] when starting from a [ByteArray] source.
  */
 fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
     skipWhitespace()

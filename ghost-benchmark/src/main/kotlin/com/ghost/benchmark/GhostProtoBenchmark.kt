@@ -11,18 +11,25 @@ import java.lang.management.ManagementFactory
 /**
  * Ghost-only proto3 JSON round-trip benchmark (no KSER/Moshi equivalent).
  *
- * Exercises KSP-generated serializers with [GhostProtoJsonFlatReader] via [GhostProto] on the
- * integration [ProtoBenchUser] fixture (quoted int64, default-value omission on encode).
+ * Exercises KSP-generated serializers with [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader]
+ * via [com.ghost.serialization.proto.GhostProto] on the integration fixture
+ * [com.ghost.serialization.integration.model.ProtoBenchUser] (quoted int64 strings, default-value
+ * omission on encode).
  */
 object GhostProtoBenchmark {
 
-    /** Proto3 JSON — default fields omitted on wire. */
+    /** Proto3 JSON fixture — default fields omitted on wire. */
     private const val JSON_USER =
         """{"userId":"42","name":"Ghost Benchmark","email":"bench@ghost.io","score":88.5,"isActive":true,"role":"VIEWER"}"""
 
     private const val JSON_USER_MINIMAL =
         """{"userId":"7","name":"Neo","email":"neo@matrix.io","score":100.0}"""
 
+    /**
+     * Runs proto3 JSON decode, encode, and round-trip scenarios.
+     *
+     * @return `true` when the suite completes (always, including when ThreadMXBean is unavailable).
+     */
     fun run(): Boolean {
         val threadBean = ManagementFactory.getThreadMXBean() as? ThreadMXBean
         if (threadBean == null || !threadBean.isThreadAllocatedMemorySupported) {

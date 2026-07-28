@@ -1,6 +1,7 @@
 package com.ghost.serialization.writer.strings
 
-import com.ghost.serialization.writer.common.*
+
+
 /**
  * Copies characters from [this] string in the range [startIndex, endIndex) into [dest],
  * starting at [destOffset].

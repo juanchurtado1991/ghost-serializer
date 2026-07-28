@@ -1,27 +1,27 @@
 package com.ghost.serialization.writer.strings
 
-import com.ghost.serialization.writer.common.*
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.GhostHeuristics.maxWarmCharWriteBufferCapacity
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
+import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_A
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_DOT
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_E
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_F
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_L
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_N
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_R
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_S
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_T
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_ZERO
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_CAPACITY_OVERFLOW_PREFIX
 import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_T
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_R
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_E
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_F
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_A
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_L
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_S
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_N
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_DOT
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_ZERO
-import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-import com.ghost.serialization.parser.common.GhostHeuristics.maxWarmCharWriteBufferCapacity
 import okio.ByteString
+
 
 /**
  * A growing flat-array character buffer used as the in-memory output target for

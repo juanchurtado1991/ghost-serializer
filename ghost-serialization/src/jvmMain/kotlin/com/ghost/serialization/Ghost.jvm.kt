@@ -2,24 +2,20 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.contract.GhostRegistry
-import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.prepareUtf8JsonSource
+import com.ghost.serialization.parser.common.withPreparedUtf8Json
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.writer.bytes.WriterSinkPair
 import com.ghost.serialization.writer.strings.FlatCharArrayWriter
-import okio.BufferedSource
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
+import okio.BufferedSource
+
 
 private val readerPool = ThreadLocal<GhostJsonReader>()
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()

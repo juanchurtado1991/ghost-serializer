@@ -1,6 +1,7 @@
 package com.ghost.serialization.parser.bytes
 
-import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.common.GhostJsonConstants
+
 /**
  * Reads [GhostJsonConstants.LONG_BYTES] consecutive bytes starting at [index] into a single [Long].
  *

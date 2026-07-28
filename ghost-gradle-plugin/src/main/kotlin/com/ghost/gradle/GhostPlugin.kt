@@ -5,8 +5,21 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
+/**
+ * Gradle plugin that wires Ghost Serialization into Android, JVM, and Kotlin Multiplatform projects.
+ *
+ * Apply with plugin id `com.ghostserializer.ghost`. The plugin:
+ * - Adds `ghost-compiler` to KSP when the KSP plugin is present
+ * - Adds `ghost-serialization` and `ghost-api` to the appropriate source set or configuration
+ * - Optionally adds `ghost-ktor` or `ghost-retrofit` when matching network libraries are detected
+ *
+ * Configure behavior through the [GhostExtension] `ghost` block.
+ */
 class GhostPlugin : Plugin<Project> {
 
+    /**
+     * Applies Ghost Serialization dependencies and KSP wiring to [project].
+     */
     override fun apply(project: Project) {
         val extension = createExtension(project)
         val ghostVersion = extension.version

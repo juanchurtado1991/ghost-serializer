@@ -21,9 +21,8 @@ package com.ghost.serialization.annotations
  *
  * **Not for proto3 JSON** (or KSP error when combined with [GhostYamlSerialization]):
  * [GhostJsonEnvelope], [GhostFlatten], [GhostWrap], sealed/`inferred` on the message itself,
- * [GhostDecoder]/[GhostEncoder], `RawJson`, and non-proto opaque `ByteArray`.
- *
- * See the wiki *Usage — Protobuf* and *Advanced Features — Format compatibility* for the full matrix.
+ * [GhostDecoder], [GhostEncoder], [com.ghost.serialization.types.RawJson], and non-proto opaque
+ * [kotlin.ByteArray].
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)

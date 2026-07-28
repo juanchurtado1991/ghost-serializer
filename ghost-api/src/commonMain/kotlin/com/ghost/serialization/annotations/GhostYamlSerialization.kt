@@ -14,10 +14,9 @@ package com.ghost.serialization.annotations
  *
  * **JSON-only features** (cannot be combined with this annotation — KSP error):
  * [GhostResilient], [GhostJsonEnvelope], [GhostFlatten], [GhostWrap], [GhostWrappedKeys],
- * sealed/`inferred` polymorphism, [GhostDecoder]/[GhostEncoder], contextual serializers,
- * `RawJson`, non-proto `ByteArray`, and nested Ghost types that fail the YAML scan.
- *
- * See the wiki *Advanced Features — Format compatibility* for the full matrix.
+ * sealed/`inferred` polymorphism, [GhostDecoder], [GhostEncoder], contextual serializers,
+ * [com.ghost.serialization.types.RawJson], non-proto [kotlin.ByteArray], and nested Ghost types
+ * that fail the YAML scan.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)

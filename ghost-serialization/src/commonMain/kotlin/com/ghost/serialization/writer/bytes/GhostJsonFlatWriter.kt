@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.writer.bytes
 
-import com.ghost.serialization.writer.common.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
@@ -49,7 +48,9 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_S
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.writer.common.GhostDoubleFormatter
 import okio.ByteString
+
 
 /**
  * In-memory specialization of [GhostJsonWriter] backed by a contiguous
@@ -364,7 +365,7 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     /**
      * Writes raw JSON bytes directly into the stream without quoting or escaping.
      * Use this to emit a pre-serialized JSON fragment (object, array, or primitive)
-     * captured via [com.ghost.serialization.parser.captureRawJsonBytes].
+     * captured via [com.ghost.serialization.parser.bytes.captureRawJsonBytes].
      */
     fun rawValue(bytes: ByteArray): GhostJsonFlatWriter {
         appendSeparator()

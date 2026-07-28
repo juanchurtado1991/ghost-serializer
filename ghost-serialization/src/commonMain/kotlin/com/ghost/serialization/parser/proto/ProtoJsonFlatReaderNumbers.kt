@@ -2,14 +2,19 @@
 
 package com.ghost.serialization.parser.proto
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.bytes.nextDoubleExtension
+import com.ghost.serialization.parser.bytes.nextFloatExtension
+import com.ghost.serialization.parser.bytes.nextLongExtension
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.selectString
+
 
 internal fun GhostProtoJsonFlatReader.nextProtoFloat(): Float {
     val token = peekNextToken()

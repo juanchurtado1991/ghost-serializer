@@ -2,15 +2,12 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import kotlin.math.pow
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import kotlin.math.pow
+
 
 /**
  * Checks if the byte code matches dot, lower 'e', or upper 'E'.

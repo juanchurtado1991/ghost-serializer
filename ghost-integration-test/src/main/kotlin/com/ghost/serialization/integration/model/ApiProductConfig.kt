@@ -5,8 +5,7 @@ import com.squareup.moshi.JsonClass
 import kotlinx.serialization.Serializable
 
 /**
- * Realistic model with 2 required + 2 default-valued properties.
- * Exercises the N=2 multi-branch path (4 constructor branches, 0 .copy() calls).
+ * Multi-branch constructor fixture with 2 required + 2 default-valued properties (N=2, 4 branches).
  */
 @Serializable
 @JsonClass(generateAdapter = true)

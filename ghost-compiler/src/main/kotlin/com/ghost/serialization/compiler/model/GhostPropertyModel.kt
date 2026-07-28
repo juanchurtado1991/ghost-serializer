@@ -58,7 +58,7 @@ internal data class InferredSubclassModel(
  * @property isGhost True if the property's type is itself annotated with @GhostSerialization.
  * @property isList True if the property type is a [List].
  * @property isSet True if the property type is a [Set].
- * @property isEnum True if the property type is an [Enum].
+ * @property isEnum True if the property type is a [kotlin.Enum].
  * @property listInnerType The resolved [KSType] of the generic element inside the list, if applicable.
  * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
  * @property listInnerIsEnum True if the list inner type is an enum.

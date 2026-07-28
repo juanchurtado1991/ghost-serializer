@@ -3,24 +3,36 @@ package com.ghost.gradle
 import org.gradle.api.provider.Property
 
 /**
- * Configuration options for the Ghost Serialization Gradle Plugin.
+ * Gradle extension for configuring the Ghost Serialization plugin.
+ *
+ * Registered under the `ghost` block when [GhostPlugin] is applied:
+ * ```
+ * ghost {
+ *     version.set("1.3.0")
+ *     autoInjectKtor.set(true)
+ *     autoInjectRetrofit.set(true)
+ * }
+ * ```
  */
 interface GhostExtension {
     /**
-     * Whether to automatically apply the ghost-ktor dependency if ktor-client is detected.
-     * Defaults to true.
+     * When `true`, adds `ghost-ktor` if a Ktor client dependency is detected on the classpath.
+     *
+     * Defaults to `true`.
      */
     val autoInjectKtor: Property<Boolean>
 
     /**
-     * Whether to automatically apply the ghost-retrofit dependency if retrofit is detected.
-     * Defaults to true.
+     * When `true`, adds `ghost-retrofit` if Retrofit is detected on the classpath.
+     *
+     * Defaults to `true`.
      */
     val autoInjectRetrofit: Property<Boolean>
 
     /**
-     * Override the version of Ghost Serialization to use.
-     * By default, this uses the version that matches the plugin version.
+     * Ghost Serialization artifact version used for runtime, API, compiler, and adapter dependencies.
+     *
+     * Defaults to the plugin release version.
      */
     val version: Property<String>
 }

@@ -82,9 +82,9 @@ tasks.configureEach {
 }
 
 /**
- * Publish the production Wasm distribution into repo [docs/] for GitHub Pages
- * (`https://juanchurtado1991.github.io/ghost-serializer/`), preserving wiki,
- * coverage, and Ghost manuals.
+ * Publish the production Wasm distribution into the repo `docs/` directory for GitHub Pages
+ * (`https://juanchurtado1991.github.io/ghost-serializer/`), preserving wiki, coverage,
+ * and Ghost manuals.
  */
 tasks.register("publishToDocs") {
     group = "documentation"

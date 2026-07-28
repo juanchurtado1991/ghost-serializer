@@ -1,12 +1,7 @@
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.bytes.ghostReadLong8
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
@@ -27,6 +22,9 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SWAR_ONES
 import com.ghost.serialization.parser.common.GhostJsonConstants.SWAR_QUOTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.WHITESPACE_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.packScanResult
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+
 
 private const val UNROLL_STEP = 4
 private const val INDEX_OFFSET_1 = 1

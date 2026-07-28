@@ -4,8 +4,8 @@ package com.ghost.serialization.yaml
  * Byte-level constants for YAML control characters.
  *
  * Every control byte used by the YAML parser is declared here with a descriptive name.
- * PROHIBITED: magic numbers in the hot path. Always use these constants.
- * PROHIBITED: .toChar() comparisons. Always compare Byte to Byte (these constants).
+ * Call sites should use these named constants instead of raw byte literals, and compare
+ * bytes directly (Byte to Byte) rather than converting to [Char].
  */
 internal object GhostYamlConstants {
 
@@ -195,7 +195,7 @@ internal object GhostYamlConstants {
     /**
      * Mask to convert lowercase ASCII letter to uppercase.
      * Apply: `b.toInt() and ASCII_UPPER_MASK` on a known letter byte.
-     * PROHIBITED for unknown bytes — only use when byte is confirmed alphabetic.
+     * Use only when the byte is confirmed to be alphabetic.
      */
     const val ASCII_TO_UPPER_MASK: Int = 0xDF
 

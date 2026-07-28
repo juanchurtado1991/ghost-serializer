@@ -4,8 +4,8 @@ import com.ghost.serialization.annotations.GhostSerialization
 import kotlinx.serialization.Serializable
 
 /**
- * Same shape as the twitter_macro.json dataset used by ghost-benchmark's TwitterBenchmark —
- * dual-annotated so the Speed Test tab can race the real Ghost codegen against kotlinx.serialization.
+ * Matches the `twitter_macro.json` dataset used by ghost-benchmark's TwitterBenchmark.
+ * Dual-annotated so the Speed Test tab can compare Ghost codegen against kotlinx.serialization.
  */
 @Serializable
 @GhostSerialization(textChannel = true)

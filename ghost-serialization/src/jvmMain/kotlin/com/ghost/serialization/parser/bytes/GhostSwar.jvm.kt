@@ -1,8 +1,8 @@
 package com.ghost.serialization.parser.bytes
 
-import com.ghost.serialization.parser.common.*
 import java.lang.invoke.MethodHandles
 import java.nio.ByteOrder
+
 
 /**
  * Native-order `byte[]`→`long` view. Plain [java.lang.invoke.VarHandle.get] permits unaligned

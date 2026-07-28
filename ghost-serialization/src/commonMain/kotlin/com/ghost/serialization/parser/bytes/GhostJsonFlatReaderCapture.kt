@@ -2,13 +2,10 @@
 
 package com.ghost.serialization.parser.bytes
 
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.types.RawJson
+
 
 /**
  * Captures the next complete JSON value (object, array, string, number, boolean, null)

@@ -3,15 +3,19 @@
 
 package com.ghost.serialization.parser.strings
 
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.bytes.captureRawJsonBytes
+import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.byteToCharPosition
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.captureRawJsonBytes
+import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import okio.ByteString
+import com.ghost.serialization.parser.streaming.decodeResilient
+
 
 /**
  * High-performance JSON parser operating directly on Kotlin Strings.
@@ -470,7 +474,7 @@ class GhostJsonStringReader(
 
     /**
      * Computes a cheap hash from the first four char code-points of the string content.
-     * Mirrors the hash used in [GhostJsonFlatReader] for byte sources.
+     * Uses the same algorithm as [GhostJsonFlatReader] for byte sources.
      */
     private fun computeStringPoolHash(start: Int, length: Int): Int {
         val chars = rawChars
@@ -541,7 +545,7 @@ class GhostJsonStringReader(
      *
      * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
      * cached array (used by custom-decoder bridges). Otherwise encodes only the range —
-     * avoids a full document UTF-8 pass for [captureRawJsonBytes] on large envelopes.
+     * avoids a full document UTF-8 pass for [com.ghost.serialization.parser.strings.captureRawJsonBytes] on large envelopes.
      */
     @InternalGhostApi
     fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {

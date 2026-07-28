@@ -5,6 +5,6 @@ import com.ghost.serialization.annotations.GhostSerialization
 @GhostSerialization
 data class ContextualModel(
     val id: String,
-    /** see [ExternalColorSerializer]*/
+    /** Hex RGB string serialized by [ExternalColorSerializer]. */
     val color: ExternalColor
 )

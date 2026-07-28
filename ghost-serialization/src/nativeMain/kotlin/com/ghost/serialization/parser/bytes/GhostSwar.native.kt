@@ -1,6 +1,5 @@
 package com.ghost.serialization.parser.bytes
 
-import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_1
 import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_2
@@ -16,6 +15,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_40
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_48
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_56
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
+
 
 // Scalar assembly for Kotlin/Native (iOS). Byte order is irrelevant for the symmetric
 // comparisons this feeds.

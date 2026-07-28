@@ -293,7 +293,7 @@ object FeatureCatalog {
         ),
     )
 
-    /** Tiny best-effort extractor for this catalog's own hand-written sample JSON — not a general parser. */
+    /** Best-effort JSON string-field extractor for this catalog's sample payloads; not a general parser. */
     private fun extractJsonStringField(json: String, key: String): String? {
         val marker = "\"$key\""
         val keyIndex = json.indexOf(marker)

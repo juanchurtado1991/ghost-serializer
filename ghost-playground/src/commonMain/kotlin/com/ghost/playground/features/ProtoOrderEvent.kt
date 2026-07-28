@@ -3,8 +3,8 @@ package com.ghost.playground.features
 import com.ghost.serialization.annotations.GhostProtoSerialization
 
 /**
- * proto3 JSON mapping: int64 fields round-trip as quoted strings, and fields left at their
- * default value are omitted from the encoded output — both visible in this lab's output.
+ * Proto3 JSON mapping demo: `int64` fields round-trip as quoted strings, and fields at their
+ * default value are omitted from encoded output.
  */
 @GhostProtoSerialization
 data class ProtoOrderEvent(

@@ -16,8 +16,8 @@ internal const val ERROR_PREFIX = "Ghost serializer not found for class "
 internal const val ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
 
 /**
- * Serializes the [value] directly using Ghost Serializer and responds,
- * bypassing the ContentNegotiation pipeline entirely to maximize throughput.
+ * Serializes [value] directly with Ghost and responds, bypassing Ktor Server's
+ * ContentNegotiation pipeline.
  */
 suspend inline fun <reified T : Any> ApplicationCall.respondGhost(
     value: T,
@@ -31,10 +31,9 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhost(
 }
 
 /**
- * Proto3-JSON variant of [respondGhost] — named for discoverability alongside [respondGhost]
- * and `bodyGhostProto`. Encoding is identical either way: proto3 wire correctness (int64
- * quoting, Base64 bytes, default-value omission) is generated into the
- * `@GhostProtoSerialization` serializer's own `serialize()` method, not a separate writer.
+ * Proto3-JSON variant of [respondGhost] for `@GhostProtoSerialization` types.
+ * Encoding reuses [Ghost.encodeToBytes]; proto3 wire correctness is generated into the
+ * serializer's own `serialize()` method. See also [bodyGhostProto].
  */
 suspend inline fun <reified T : Any> ApplicationCall.respondGhostProto(
     value: T,

@@ -2,12 +2,12 @@
 
 package com.ghost.serialization.writer.bytes
 
-import com.ghost.serialization.writer.common.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
+import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
@@ -37,11 +37,13 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SAFE_INTEGER
 import com.ghost.serialization.parser.common.GhostJsonConstants.NULL_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
+import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
+import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
@@ -50,12 +52,11 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHE
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.writer.common.GhostDoubleFormatter
 import okio.BufferedSink
 import okio.ByteString
+
 
 /**
  * A highly optimized, low-allocation JSON writer for Kotlin Multiplatform.
@@ -385,7 +386,7 @@ class GhostJsonWriter(
     /**
      * Writes raw JSON bytes directly into the stream without quoting or escaping.
      * Use this to emit a pre-serialized JSON fragment captured via
-     * [com.ghost.serialization.parser.captureRawJsonBytes].
+     * [com.ghost.serialization.parser.bytes.captureRawJsonBytes].
      */
     fun rawValue(bytes: ByteArray): GhostJsonWriter {
         appendSeparator()

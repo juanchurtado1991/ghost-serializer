@@ -1,17 +1,26 @@
 @file:Suppress("unused")
 
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.*
+import com.ghost.serialization.compiler.analysis.DispatchNamesResolver
+import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
+import com.ghost.serialization.compiler.analysis.getDefaultValueReturnExpression
+import com.ghost.serialization.compiler.analysis.getInitialValue
+import com.ghost.serialization.compiler.analysis.getReturnExpression
+import com.ghost.serialization.compiler.analysis.getSingleShotDefaultArgExpression
+import com.ghost.serialization.compiler.analysis.getVariableType
+import com.ghost.serialization.compiler.analysis.isPrimitive
+import com.ghost.serialization.compiler.analysis.localTrackingName
+import com.ghost.serialization.compiler.analysis.localValueName
+import com.ghost.serialization.compiler.codegen.GeneratedCallFormat
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Emitter for standard deserialization logic.
@@ -545,7 +554,8 @@ internal class StandardEmitter(
      * `if ((maskN and BIT) != 0L) parsed else <sourceDefault>`.
      *
      * Uses `val result = Type(...); return result` because KotlinPoet cannot nest
-     * named-arg [CodeBlock.Builder.addStatement]s under an open `return %T(` call.
+     * named-arg [com.squareup.kotlinpoet.CodeBlock.Builder.addStatement] calls under an open
+     * `return %T(` call.
      */
     private fun emitSingleShotReturn(
         body: CodeBlock.Builder,

@@ -1,8 +1,8 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.model.*
-import com.ghost.serialization.compiler.analysis.*
-import com.ghost.serialization.compiler.hash.*
-import com.ghost.serialization.compiler.codegen.*
+import com.ghost.serialization.compiler.analysis.isEnum
+import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -10,7 +10,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 
 /**
  * Main coordinator (Orchestrator) for the serialization code generation process.
@@ -70,7 +70,7 @@ internal class SerializeCodeEmitter(
     private var activeEmitter: BaseSerializeEmitter? = null
 
     /**
-     * Builds the [FunSpec] of the serialize function.
+     * Builds the [com.squareup.kotlinpoet.FunSpec] of the serialize function.
      *
      * @param writerClass The JSON writer class being targeted.
      * @param typeSpecBuilder Companion object builder where nested options or shards can be registered.

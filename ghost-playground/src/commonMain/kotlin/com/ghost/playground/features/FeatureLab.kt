@@ -9,7 +9,7 @@ enum class LabWireFormat {
     YAML,
 }
 
-/** A Studio preset: a real, KSP-compiled DTO demonstrated against one or more [LabVariant] payloads. */
+/** Studio preset for a KSP-compiled DTO demonstrated against one or more [LabVariant] payloads. */
 data class FeatureLab(
     val id: String,
     val icon: PlaygroundIconKind,
@@ -17,11 +17,11 @@ data class FeatureLab(
     val titleEs: String,
     val introEn: String,
     val introEs: String,
-    /** Wire format for the input card label and pipeline copy — defaults to JSON. */
+    /** Wire format for the input card label and pipeline step text; defaults to JSON. */
     val wireFormat: LabWireFormat = LabWireFormat.JSON,
-    /** Real Kotlin source for the annotated DTO below — shown read-only, this *is* what runs. */
+    /** Kotlin source for the annotated DTO; shown read-only and executed by the pipeline. */
     val dtoSource: String,
-    /** Field names for the dispatch-table preview; empty skips that card (e.g. sealed types). */
+    /** Field names shown in the dispatch-table preview; an empty list hides that card. */
     val fieldNames: List<String>,
     val variants: List<LabVariant>,
     val run: (json: String) -> String,
