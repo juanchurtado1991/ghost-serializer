@@ -2,23 +2,23 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.strings.beginArray
+import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.nextInt
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.test.runTest
+
 
 class GhostMemoryTest {
 

@@ -1,10 +1,18 @@
 package com.ghost.serialization.compiler.hygiene
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.parser.bytes.captureRawJson
+import com.ghost.serialization.parser.bytes.captureRawJsonBytes
+import com.ghost.serialization.parser.streaming.captureRawJson
+import com.ghost.serialization.parser.streaming.captureRawJsonBytes
+import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.readSet
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.captureRawJson
+import com.ghost.serialization.parser.strings.captureRawJsonBytes
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readSet
+
 
 /**
  * Static analysis helpers for generated Ghost serializer sources.

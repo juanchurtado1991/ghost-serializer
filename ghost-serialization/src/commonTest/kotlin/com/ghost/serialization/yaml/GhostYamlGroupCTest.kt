@@ -9,9 +9,7 @@ import kotlin.test.assertTrue
 import kotlin.test.assertNull
 
 /**
- * TDD — Group C Tests (Red phase)
- *
- * Tests for: Flow style mappings ({key: value}), flow style sequences ([a, b, c]),
+ * Group C tests: flow-style mappings (`{key: value}`), flow-style sequences (`[a, b, c]`),
  * and deeply nested combinations of flow and block styles.
  */
 class GhostYamlGroupCTest {

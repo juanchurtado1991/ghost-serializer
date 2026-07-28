@@ -1,12 +1,14 @@
 package com.ghost.serialization.compiler.hygiene
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextLong
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextLong
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
 
 class GeneratedCodeHygieneTest {
 

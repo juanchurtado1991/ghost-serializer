@@ -1,10 +1,5 @@
 package com.ghost.serialization.proto.wkt
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
@@ -27,6 +22,7 @@ import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
 
 /**
  * Cross-checks Ghost's proto3 JSON output against `protobuf-java` (Google's own reference

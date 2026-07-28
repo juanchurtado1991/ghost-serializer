@@ -2,10 +2,6 @@
 
 package com.ghost.serialization.integration
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.DeepFlattenedModelSerializer
 import com.ghost.serialization.integration.model.FlattenedModel
@@ -19,6 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import okio.Buffer
+
 
 class GhostStructuralTransformationTest {
 

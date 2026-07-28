@@ -12,6 +12,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.strings.beginObject
 
 private data class YamlWidget(val code: String, val qty: Int)
 

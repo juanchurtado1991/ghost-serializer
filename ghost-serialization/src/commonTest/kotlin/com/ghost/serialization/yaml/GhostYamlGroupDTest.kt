@@ -9,10 +9,8 @@ import kotlin.test.assertTrue
 import kotlin.test.assertNull
 
 /**
- * TDD — Group D Tests (Red phase)
- *
- * Tests for: Explicit tags (!!str, !!int, !!float, !!bool, !!null, !!seq, !!map),
- * and dates/timestamps implicit checking.
+ * Group D tests: explicit tags (`!!str`, `!!int`, `!!float`, `!!bool`, `!!null`, `!!seq`, `!!map`),
+ * and date/timestamp implicit checking.
  */
 class GhostYamlGroupDTest {
 

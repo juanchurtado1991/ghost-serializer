@@ -1,9 +1,5 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
@@ -11,18 +7,18 @@ import io.ktor.http.ContentType
 import io.ktor.util.reflect.typeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charsets
-import kotlinx.coroutines.test.runTest
 import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlinx.coroutines.test.runTest
+
 
 /**
- * Direct unit tests for [GhostProtoContentConverter] -- mirrors
- * [GhostContentConverterDirectTest], since it shares the same structure (null-return contract,
- * scratch-buffer growth) but reads through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader]
- * instead.
+ * Direct unit tests for [GhostProtoContentConverter] — proto3 JSON read path, null-return
+ * contract, scratch-buffer growth, and list deserialization via
+ * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader].
  */
 class GhostProtoContentConverterDirectTest {
 

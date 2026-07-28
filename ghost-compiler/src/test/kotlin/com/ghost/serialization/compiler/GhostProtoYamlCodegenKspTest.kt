@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** KSP regression tests for `@GhostProtoSerialization` YAML codegen paths. */
+/** KSP regression tests for [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization] YAML codegen paths. */
 class GhostProtoYamlCodegenKspTest {
 
     @Test

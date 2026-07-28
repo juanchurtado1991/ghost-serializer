@@ -10,10 +10,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/**
- * RawJson API semantics and bytes-channel zero-copy behavior.
- * Tri-channel round-trips live in [GhostTriChannelFeaturesTest].
- */
+/** RawJson API semantics and bytes-channel zero-copy behavior. */
 class GhostRawJsonTest {
 
     @Test

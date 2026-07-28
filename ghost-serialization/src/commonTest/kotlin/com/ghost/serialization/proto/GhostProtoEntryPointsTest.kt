@@ -1,15 +1,11 @@
 package com.ghost.serialization.proto
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.proto.wkt.ProtoDuration
 import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+
 
 class GhostProtoEntryPointsTest {
 

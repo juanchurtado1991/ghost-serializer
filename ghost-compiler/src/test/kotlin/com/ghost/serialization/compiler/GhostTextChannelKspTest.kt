@@ -2,12 +2,15 @@
 
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.bytes.captureRawJson
+import com.ghost.serialization.parser.bytes.nextChar
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.captureRawJson
+import com.ghost.serialization.parser.streaming.nextChar
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.captureRawJson
+import com.ghost.serialization.parser.strings.nextChar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -15,10 +18,11 @@ import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
+
 
 /**
  * KSP and runtime regression tests for the native string channel (`ghost.textChannel`).

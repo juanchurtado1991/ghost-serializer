@@ -2,12 +2,22 @@
 
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.hygiene.GeneratedCodeHygiene
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.nextBooleanOrNull
+import com.ghost.serialization.parser.streaming.nextIntOrNull
+import com.ghost.serialization.parser.streaming.nextLongOrNull
+import com.ghost.serialization.parser.streaming.nextStringOrNull
+import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.readSet
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.nextBooleanOrNull
+import com.ghost.serialization.parser.strings.nextIntOrNull
+import com.ghost.serialization.parser.strings.nextLongOrNull
+import com.ghost.serialization.parser.strings.nextStringOrNull
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readSet
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -15,9 +25,10 @@ import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
+
 
 /**
  * Regression tests ensuring KSP-generated serializers stay lean: no dead imports,

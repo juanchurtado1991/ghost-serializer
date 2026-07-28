@@ -8,10 +8,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * TDD — Group B Tests (Red phase)
- *
- * Tests for: multiline block scalars (literal '|' and folded '>'),
- * chomp style indicators ('-', '+'), and explicit indentation indicators.
+ * Group B tests: multiline block scalars (literal `|` and folded `>`),
+ * chomp style indicators (`-`, `+`), and explicit indentation indicators.
  */
 class GhostYamlGroupBTest {
 

@@ -2,21 +2,26 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.nextDouble
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.nextDouble
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextString
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+
 /**
- * Spec Integrity hardening tests (TDD).
- * These tests ensure compliance with RFC 8259.
+ * RFC 8259 compliance and spec-integrity hardening tests.
  */
 class GhostHardeningTest {
 

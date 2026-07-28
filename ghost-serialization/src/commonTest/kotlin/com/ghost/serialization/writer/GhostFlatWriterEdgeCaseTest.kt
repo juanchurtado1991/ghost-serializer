@@ -12,10 +12,10 @@ import kotlin.test.assertFailsWith
 
 /**
  * Direct unit tests for [GhostJsonFlatWriter] — the in-memory / [FlatByteArrayWriter]-backed
- * writer used by every KSP-generated serializer's flat encode path. Mirrors
- * [com.ghost.serialization.GhostWriterEdgeCaseTest]'s scenarios (which only exercises the
- * sibling Okio-streaming [GhostJsonWriter]) so both writers get the same direct scrutiny,
- * plus the flat writer's own fused/raw APIs that [GhostJsonWriter] doesn't have.
+ * writer used by every KSP-generated serializer's flat encode path. Exercises the same scenarios
+ * as [com.ghost.serialization.GhostWriterEdgeCaseTest] (which covers the sibling Okio-streaming
+ * [GhostJsonWriter]) so both writers receive equivalent coverage, plus the flat writer's
+ * fused/raw APIs that [GhostJsonWriter] does not expose.
  */
 class GhostFlatWriterEdgeCaseTest {
 
@@ -189,7 +189,7 @@ class GhostFlatWriterEdgeCaseTest {
     fun escapesBackspaceAndFormFeed() {
         assertEquals(
             "{\"v\":\"\\b\\f\"}",
-            writerToString { w -> w.beginObject().name("v").value("\b").endObject() }
+            writerToString { w -> w.beginObject().name("v").value("\u0008\u000C").endObject() }
         )
     }
 

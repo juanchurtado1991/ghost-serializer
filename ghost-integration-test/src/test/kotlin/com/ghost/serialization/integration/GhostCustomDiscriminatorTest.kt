@@ -18,19 +18,9 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for the custom sealed class discriminator feature.
- *
- * Covers:
- * 1. Backward compatibility — implicit "type" (no annotation param)
- * 2. Explicit "type" == implicit "type" (same output)
- * 3. Custom "kind" discriminator — serialize + deserialize roundtrip
- * 4. Custom "object" discriminator (Stripe-style)
- * 5. Custom "@type" discriminator (JSON-LD style)
- * 6. Missing discriminator field → throws, not silently corrupts
- * 7. Unknown discriminator value → throws, not silently returns null
- * 8. Discriminator key appears correctly in serialized JSON
- * 9. All subclasses in each sealed family roundtrip correctly
- * 10. Composed payload with mixed discriminators
+ * Custom sealed-class discriminator support: implicit and explicit `type`, custom keys such as
+ * `kind`, `object`, and `@type`, error handling for missing or unknown discriminators, serialized
+ * key placement, subclass round-trips, and mixed-discriminator payloads.
  */
 class GhostCustomDiscriminatorTest {
 

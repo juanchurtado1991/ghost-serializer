@@ -15,10 +15,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Direct unit tests for [GhostReactiveDecoder] — no Spring context, so these run fast and
- * target the specific canDecode/decode/decodeToMono branches precisely (multi-buffer join
- * vs per-buffer ndjson streaming, error wrapping). End-to-end wiring through a real WebFlux
- * app is covered separately by [GhostSpringWebFluxIntegrationTest].
+ * Unit tests for [GhostReactiveDecoder] without a Spring context. Covers `canDecode`,
+ * `decode`, and `decodeToMono` branches (multi-buffer join, NDJSON streaming, error
+ * wrapping). End-to-end WebFlux wiring is covered by [GhostSpringWebFluxIntegrationTest].
  */
 class GhostReactiveDecoderTest {
 
