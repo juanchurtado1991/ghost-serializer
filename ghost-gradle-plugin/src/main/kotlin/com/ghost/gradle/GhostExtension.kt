@@ -19,10 +19,10 @@ interface GhostExtension {
     val autoInjectRetrofit: Property<Boolean>
 
     /**
-     * Whether to automatically apply the ghost-protobuf dependency if protobuf is detected.
-     * Defaults to true.
+     * Whether KSP should emit [com.ghost.serialization.yaml.contract.GhostYamlSerializer] companions.
+     * Defaults to true; opt out with `ghost { generateYaml.set(false) }` or `ksp { arg("ghost.generateYaml", "false") }`.
      */
-    val autoInjectProtobuf: Property<Boolean>
+    val generateYaml: Property<Boolean>
 
     /**
      * Override the version of Ghost Serialization to use.
