@@ -14,8 +14,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @Configuration(proxyBeanMethods = false)
 open class GhostWebMvcAutoConfiguration : WebMvcConfigurer {
     override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
-        converters.add(0, GhostHttpMessageConverter())
+        // JSON first — YAML converter must not win default */* negotiation.
         converters.add(0, GhostYamlHttpMessageConverter())
+        converters.add(0, GhostHttpMessageConverter())
     }
 
     @org.springframework.context.annotation.Bean

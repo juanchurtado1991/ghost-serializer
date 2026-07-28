@@ -47,6 +47,20 @@ class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
             clazz.name.startsWith("java.lang.")
     }
 
+    override fun canWrite(mediaType: MediaType?): Boolean {
+        if (mediaType == null || mediaType.isWildcardType || mediaType.isWildcardSubtype) {
+            return false
+        }
+        return super.canWrite(mediaType)
+    }
+
+    override fun canRead(mediaType: MediaType?): Boolean {
+        if (mediaType == null) {
+            return false
+        }
+        return super.canRead(mediaType)
+    }
+
     override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
         val bytes = inputMessage.body.readBytes()
         val isStrict = GhostSpringConfig.strict.get()
