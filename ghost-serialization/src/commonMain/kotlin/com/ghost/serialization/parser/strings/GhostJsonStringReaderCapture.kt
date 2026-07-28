@@ -1,7 +1,7 @@
 package com.ghost.serialization.parser.strings
 
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.types.RawJson
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -41,6 +41,7 @@ private fun GhostJsonStringReader.captureStringReaderValueBytes() {
                 }
             }
         }
+
         C.QUOTE_INT -> captureStringReaderSkipString(chars, localLimit)
         C.TRUE_CHAR_INT -> position += 3
         C.FALSE_CHAR_INT -> position += 4

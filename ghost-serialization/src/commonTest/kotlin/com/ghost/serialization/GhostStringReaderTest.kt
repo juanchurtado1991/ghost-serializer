@@ -3,34 +3,11 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.readQuotedString
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.byteToCharPosition
 import com.ghost.serialization.parser.common.charToBytePosition
-import com.ghost.serialization.parser.streaming.beginArray
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.streaming.consumeArraySeparator
-import com.ghost.serialization.parser.streaming.consumeKeySeparator
-import com.ghost.serialization.parser.streaming.consumeNull
-import com.ghost.serialization.parser.streaming.endArray
-import com.ghost.serialization.parser.streaming.endObject
-import com.ghost.serialization.parser.streaming.hasNext
-import com.ghost.serialization.parser.streaming.isNextNullValue
-import com.ghost.serialization.parser.streaming.nextBoolean
-import com.ghost.serialization.parser.streaming.nextDouble
-import com.ghost.serialization.parser.streaming.nextFloat
-import com.ghost.serialization.parser.streaming.nextInt
-import com.ghost.serialization.parser.streaming.nextKey
-import com.ghost.serialization.parser.streaming.nextLong
-import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.streaming.peekStringField
-import com.ghost.serialization.parser.streaming.selectNameAndConsume
-import com.ghost.serialization.parser.streaming.selectString
-import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.parser.strings.readMap
 import com.ghost.serialization.parser.strings.beginArray
 import com.ghost.serialization.parser.strings.beginObject
 import com.ghost.serialization.parser.strings.consumeArraySeparator
@@ -48,6 +25,8 @@ import com.ghost.serialization.parser.strings.nextKey
 import com.ghost.serialization.parser.strings.nextLong
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.parser.strings.peekStringField
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readMap
 import com.ghost.serialization.parser.strings.selectNameAndConsume
 import com.ghost.serialization.parser.strings.selectString
 import com.ghost.serialization.parser.strings.skipValue
@@ -58,7 +37,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.decodeResilient
 
 
 /**
@@ -1434,8 +1412,10 @@ class GhostStringReaderTest {
         while (charPos <= s.length) {
             val bytePos = charToBytePosition(s, charPos)
             val recoveredCharPos = byteToCharPosition(s, bytePos)
-            assertEquals(charPos, recoveredCharPos,
-                "Round-trip failed at charPos=$charPos")
+            assertEquals(
+                charPos, recoveredCharPos,
+                "Round-trip failed at charPos=$charPos"
+            )
             // Skip the low surrogate index — it doesn't have a standalone byte boundary
             if (charPos < s.length && s[charPos].isHighSurrogate()) {
                 charPos += 2

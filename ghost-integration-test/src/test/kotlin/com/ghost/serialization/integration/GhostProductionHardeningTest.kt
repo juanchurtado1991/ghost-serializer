@@ -26,13 +26,20 @@ data class DeepNestedModel(
 
 @GhostSerialization(inferred = true)
 sealed class MassiveInferredRoot {
-    @GhostSerialization data class A(val a: Int) : MassiveInferredRoot()
-    @GhostSerialization data class B(val b: String) : MassiveInferredRoot()
-    @GhostSerialization data class C(val c: Double) : MassiveInferredRoot()
-    @GhostSerialization data class D(val d: Boolean) : MassiveInferredRoot()
-    @GhostSerialization data class E(val e: Long) : MassiveInferredRoot()
-    @GhostSerialization data class F(val f: Float) : MassiveInferredRoot()
-    @GhostSerialization data class G(@GhostSignature val g: Int, val extra: String) : MassiveInferredRoot()
+    @GhostSerialization
+    data class A(val a: Int) : MassiveInferredRoot()
+    @GhostSerialization
+    data class B(val b: String) : MassiveInferredRoot()
+    @GhostSerialization
+    data class C(val c: Double) : MassiveInferredRoot()
+    @GhostSerialization
+    data class D(val d: Boolean) : MassiveInferredRoot()
+    @GhostSerialization
+    data class E(val e: Long) : MassiveInferredRoot()
+    @GhostSerialization
+    data class F(val f: Float) : MassiveInferredRoot()
+    @GhostSerialization
+    data class G(@GhostSignature val g: Int, val extra: String) : MassiveInferredRoot()
 }
 
 class GhostProductionHardeningTest {
@@ -57,10 +64,10 @@ class GhostProductionHardeningTest {
     fun testMassiveInferredPolymorphism() {
         val jsonA = """{"a": 1}"""
         val jsonG = """{"g": 7, "extra": "ghost"}"""
-        
+
         val resA = Ghost.deserialize<MassiveInferredRoot>(jsonA)
         val resG = Ghost.deserialize<MassiveInferredRoot>(jsonG)
-        
+
         assertEquals(MassiveInferredRoot.A(1), resA)
         assertEquals(MassiveInferredRoot.G(7, "ghost"), resG)
     }

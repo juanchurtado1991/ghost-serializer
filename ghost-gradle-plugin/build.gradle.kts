@@ -19,13 +19,14 @@ java {
 gradlePlugin {
     website.set("https://github.com/juanchurtado1991/ghost-serializer")
     vcsUrl.set("https://github.com/juanchurtado1991/ghost-serializer.git")
-    
+
     plugins {
         create("ghostPlugin") {
             id = "com.ghostserializer.ghost"
             implementationClass = "com.ghost.gradle.GhostPlugin"
             displayName = "Ghost Serialization Plugin"
-            description = "Auto-configures Kotlin Symbol Processing (KSP) and dependencies for Ghost Serialization across Android, JVM, and Kotlin Multiplatform."
+            description =
+                "Auto-configures Kotlin Symbol Processing (KSP) and dependencies for Ghost Serialization across Android, JVM, and Kotlin Multiplatform."
             tags.set(listOf("kotlin", "serialization", "ksp", "multiplatform", "android"))
         }
     }
@@ -36,7 +37,7 @@ dependencies {
     compileOnly(libs.kotlin.gradle.plugin)
     compileOnly("com.android.tools.build:gradle:${libs.versions.agp.get()}")
     compileOnly("com.google.devtools.ksp:symbol-processing-gradle-plugin:${libs.versions.ksp.get()}")
-    
+
     testImplementation(gradleTestKit())
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit5)

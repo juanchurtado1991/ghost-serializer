@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.codegen.emit
+
 import com.ghost.serialization.compiler.analysis.isEnum
 import com.ghost.serialization.compiler.analysis.isGhost
 import com.ghost.serialization.compiler.analysis.isKotlinUnsignedPrimitive
@@ -7,7 +8,6 @@ import com.ghost.serialization.compiler.analysis.isMap
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.serializerClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
@@ -17,6 +17,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -74,6 +75,7 @@ internal abstract class BaseSerializeEmitter(
             C.K_FLOAT -> {
                 true
             }
+
             else -> {
                 false
             }
@@ -90,7 +92,10 @@ internal abstract class BaseSerializeEmitter(
      * @return The `!= zeroValue` (or `isNotEmpty()` / bare truthy) condition to guard the write
      *   with, or `null` if this property is not subject to proto3 default omission.
      */
-    private fun buildProtoNonDefaultCondition(prop: GhostPropertyModel, accessor: CodeBlock): CodeBlock? {
+    private fun buildProtoNonDefaultCondition(
+        prop: GhostPropertyModel,
+        accessor: CodeBlock
+    ): CodeBlock? {
         if (!prop.isProto || prop.customEncoder != null) {
             return null
         }
@@ -185,13 +190,18 @@ internal abstract class BaseSerializeEmitter(
         }
 
         prop.wrappedUnwrapFields.forEach { field ->
-            val headerName = prefix + field.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
+            val headerName =
+                prefix + field.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
 
             // proto3 oneof: this wire key lives on one sealed subclass of the wrapped type, not
             // on the wrapped (sealed parent) type itself — guard with an `is` smart-cast instead
             // of a plain path accessor.
             if (field.sealedSubclassName != null) {
-                val accessor = buildSealedSubclassFieldAccessor(prop.kotlinName, field.sealedSubclassName, field.kotlinPath)
+                val accessor = buildSealedSubclassFieldAccessor(
+                    prop.kotlinName,
+                    field.sealedSubclassName,
+                    field.kotlinPath
+                )
                 code.beginControlFlow(
                     C.TEMPLATE_IF_L,
                     CodeBlock.of(C.TEMPLATE_IS_INSTANCE, accessorRoot, field.sealedSubclassName)
@@ -355,17 +365,18 @@ internal abstract class BaseSerializeEmitter(
             }
 
             prop.isPrimitiveArray -> {
-                val serializerClass = if (writerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
-                    ClassName(
-                        C.PKG_YAML_SERIALIZER,
-                        C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)
-                    )
-                } else {
-                    ClassName(
-                        C.STR_SERIALIZERS_PKG,
-                        prop.primitiveArrayType + C.STR_SERIALIZER_SUFFIX
-                    )
-                }
+                val serializerClass =
+                    if (writerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
+                        ClassName(
+                            C.PKG_YAML_SERIALIZER,
+                            C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)
+                        )
+                    } else {
+                        ClassName(
+                            C.STR_SERIALIZERS_PKG,
+                            prop.primitiveArrayType + C.STR_SERIALIZER_SUFFIX
+                        )
+                    }
                 code.addStatement(
                     C.STR_T_SERIALIZE_WRITER_ACC,
                     serializerClass,
@@ -391,7 +402,13 @@ internal abstract class BaseSerializeEmitter(
             }
 
             else -> {
-                emitTypeValue(code, prop.type, accessor, skipNullCheck = true, isProto = prop.isProto)
+                emitTypeValue(
+                    code,
+                    prop.type,
+                    accessor,
+                    skipNullCheck = true,
+                    isProto = prop.isProto
+                )
             }
         }
     }
@@ -424,11 +441,19 @@ internal abstract class BaseSerializeEmitter(
         if (isValueClassType(type) && !type.isKotlinUnsignedPrimitive()) {
             val innerType = resolveValueClassInnerType(type)
             if (innerType != null) {
-                val valueClassProperty = (type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration)
-                    ?.primaryConstructor?.parameters?.firstOrNull()?.name?.asString()
+                val valueClassProperty =
+                    (type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration)
+                        ?.primaryConstructor?.parameters?.firstOrNull()?.name?.asString()
                 if (valueClassProperty != null) {
-                    val innerAccessor = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, accessor, valueClassProperty)
-                    emitTypeValue(code, innerType, innerAccessor, skipNullCheck = true, isProto = isProto)
+                    val innerAccessor =
+                        CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, accessor, valueClassProperty)
+                    emitTypeValue(
+                        code,
+                        innerType,
+                        innerAccessor,
+                        skipNullCheck = true,
+                        isProto = isProto
+                    )
                     if (isNullable && !skipNullCheck) {
                         code.endControlFlow()
                     }
@@ -467,6 +492,7 @@ internal abstract class BaseSerializeEmitter(
             typeName == C.K_INT -> {
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
+
             typeName == C.K_LONG -> {
                 if (isProto) {
                     code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
@@ -474,6 +500,7 @@ internal abstract class BaseSerializeEmitter(
                     code.addStatement(C.STR_WRITER_VAL_L, accessor)
                 }
             }
+
             typeName == C.K_ULONG -> {
                 if (isProto) {
                     code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
@@ -481,27 +508,35 @@ internal abstract class BaseSerializeEmitter(
                     code.addStatement(C.STR_WRITER_VAL_L, accessor)
                 }
             }
+
             typeName == C.K_STRING -> {
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
+
             typeName == C.K_BOOLEAN -> {
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
+
             typeName == C.K_DOUBLE -> {
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
+
             typeName == C.K_FLOAT -> {
                 code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)
             }
+
             typeName == C.K_BYTE -> {
                 code.addStatement("writer.value(%L.toInt())", accessor)
             }
+
             typeName == C.K_SHORT -> {
                 code.addStatement("writer.value(%L.toInt())", accessor)
             }
+
             typeName == C.K_CHAR -> {
                 code.addStatement(C.STR_WRITER_VAL_L, accessor)
             }
+
             typeName == C.K_BYTE_ARRAY -> {
                 if (isProto) {
                     code.addStatement(C.STR_WRITER_VAL_BYTES_AS_BASE64, accessor)
@@ -509,12 +544,15 @@ internal abstract class BaseSerializeEmitter(
                     code.addStatement(C.STR_WRITER_RAW_VALUE_L, accessor)
                 }
             }
+
             type.isList() -> {
                 emitList(code, type, accessor, isProto)
             }
+
             type.isSet() -> {
                 emitSet(code, type, accessor, isProto)
             }
+
             type.isMap() -> {
                 emitMap(code, type, accessor, isProto)
             }
@@ -537,7 +575,12 @@ internal abstract class BaseSerializeEmitter(
      * name collisions when a DTO contains multiple list fields or nested list structures
      * within the same generated function scope.
      */
-    private fun emitList(code: CodeBlock.Builder, type: KSType, accessor: Any, isProto: Boolean = false) {
+    private fun emitList(
+        code: CodeBlock.Builder,
+        type: KSType,
+        accessor: Any,
+        isProto: Boolean = false
+    ) {
         val slot = loopCounter++
         val sizeVar = "size$slot"
         val indexVar = "i$slot"
@@ -560,7 +603,12 @@ internal abstract class BaseSerializeEmitter(
     /**
      * Emits set collection serialization — iterates elements without materializing a [List].
      */
-    private fun emitSet(code: CodeBlock.Builder, type: KSType, accessor: Any, isProto: Boolean = false) {
+    private fun emitSet(
+        code: CodeBlock.Builder,
+        type: KSType,
+        accessor: Any,
+        isProto: Boolean = false
+    ) {
         val slot = loopCounter++
         val itemVar = C.STR_ITEM_PREFIX + slot
         code.addStatement(C.STR_WRITER_BEGIN_ARR)
@@ -583,7 +631,12 @@ internal abstract class BaseSerializeEmitter(
      * name collisions when a DTO contains multiple map fields or nested map structures
      * within the same generated function scope.
      */
-    private fun emitMap(code: CodeBlock.Builder, type: KSType, accessor: Any, isProto: Boolean = false) {
+    private fun emitMap(
+        code: CodeBlock.Builder,
+        type: KSType,
+        accessor: Any,
+        isProto: Boolean = false
+    ) {
         val slot = loopCounter++
         val keyVar = C.STR_MAP_KEY_PREFIX + slot
         val valVar = C.STR_MAP_VAL_PREFIX + slot
@@ -608,9 +661,9 @@ internal abstract class BaseSerializeEmitter(
             val simpleName = type.declaration.simpleName.asString()
             val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else ""
             C.STR_CONTEXTUAL_PREFIX +
-                simpleName.replaceFirstChar { it.lowercase() } +
-                nullableSuffix +
-                C.STR_SERIALIZER_SUFFIX
+                    simpleName.replaceFirstChar { it.lowercase() } +
+                    nullableSuffix +
+                    C.STR_SERIALIZER_SUFFIX
         }
     }
 
@@ -642,13 +695,15 @@ internal abstract class BaseSerializeEmitter(
     }
 
     private fun isValueClassType(type: KSType): Boolean {
-        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
+        val declaration =
+            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
         return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
                 declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
     }
 
     private fun resolveValueClassInnerType(type: KSType): KSType? {
-        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
+        val declaration =
+            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null
         return param.type.resolve()

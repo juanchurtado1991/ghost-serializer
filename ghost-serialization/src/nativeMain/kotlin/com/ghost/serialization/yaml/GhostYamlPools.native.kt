@@ -2,8 +2,8 @@ package com.ghost.serialization.yaml
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import kotlin.native.concurrent.ThreadLocal
 
 @ThreadLocal

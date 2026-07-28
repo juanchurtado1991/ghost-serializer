@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.retrofit
 
-import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer

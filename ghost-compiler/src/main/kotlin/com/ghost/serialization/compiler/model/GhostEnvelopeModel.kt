@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.model
+
 import com.squareup.kotlinpoet.TypeName
 
 /**

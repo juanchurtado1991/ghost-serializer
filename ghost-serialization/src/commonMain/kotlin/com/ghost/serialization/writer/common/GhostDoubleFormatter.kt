@@ -1,7 +1,9 @@
 package com.ghost.serialization.writer.common
 
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.writer.common.GhostDoubleFormatter.MAX_DECIMALS
+import com.ghost.serialization.writer.common.GhostDoubleFormatter.writeLongDirect
 import kotlin.math.roundToInt
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * High-performance, Zero-Allocation formatting engine for [Double] numbers.

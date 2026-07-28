@@ -90,7 +90,8 @@ object RawJsonCaptureBenchmark {
 
         println("\n  ── Encode (RawJson payload model) ──")
 
-        val encodeModel = Ghost.deserialize<RawJsonPayloadModel>(encodePayloadJson.encodeToByteArray())
+        val encodeModel =
+            Ghost.deserialize<RawJsonPayloadModel>(encodePayloadJson.encodeToByteArray())
 
         measureBytes(
             threadBean,

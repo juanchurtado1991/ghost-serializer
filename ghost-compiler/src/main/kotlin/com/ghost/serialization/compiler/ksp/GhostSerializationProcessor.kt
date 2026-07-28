@@ -1,14 +1,13 @@
 package com.ghost.serialization.compiler.ksp
+
 import com.ghost.serialization.compiler.analysis.EnvelopeAnalyzer
 import com.ghost.serialization.compiler.analysis.GhostAnalyzer
 import com.ghost.serialization.compiler.analysis.TextChannelPlanner
 import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
 import com.ghost.serialization.compiler.analysis.isByteArray
 import com.ghost.serialization.compiler.analysis.isRawJson
-import com.ghost.serialization.compiler.analysis.serializerClassName
 import com.ghost.serialization.compiler.codegen.GhostCodeGenerator
 import com.ghost.serialization.compiler.codegen.writeTrimmedTo
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -35,6 +34,7 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
 import kotlin.reflect.KClass
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -87,7 +87,7 @@ class GhostSerializationProcessor(
 
         // Append _Test if we are in a test source set to avoid collisions
         if (moduleName == C.STR_DEFAULT_NAME) {
-            val isTest = originatingFiles.any { 
+            val isTest = originatingFiles.any {
                 val path = it.filePath
                 path.contains(C.STR_SRC_TEST) ||
                         path.contains(C.STR_SRC_ANDROID_TEST) ||

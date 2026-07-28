@@ -4,7 +4,6 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
-import kotlin.reflect.KClass
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractDecoder
@@ -14,6 +13,7 @@ import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import kotlin.reflect.KClass
 
 
 private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()

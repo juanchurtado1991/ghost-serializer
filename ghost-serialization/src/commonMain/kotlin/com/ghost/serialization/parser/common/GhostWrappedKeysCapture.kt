@@ -22,7 +22,7 @@ import com.ghost.serialization.types.RawJson
  * allocation on the hot path).
  */
 class GhostWrappedKeysCapture(
-  private val slotCount: Int,
+    private val slotCount: Int,
 ) {
     private val values = arrayOfNulls<RawJson>(slotCount)
     private var presentMask = 0

@@ -7,9 +7,10 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.proto.GhostProto.encodeToBytes
 import com.ghost.serialization.releaseScratchBuffer
-import kotlin.reflect.KClass
 import okio.BufferedSource
+import kotlin.reflect.KClass
 
 
 object GhostProto {

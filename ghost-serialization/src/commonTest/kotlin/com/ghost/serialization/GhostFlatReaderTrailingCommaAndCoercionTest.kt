@@ -2,25 +2,6 @@ package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginArray
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.streaming.consumeArraySeparator
-import com.ghost.serialization.parser.streaming.consumeKeySeparator
-import com.ghost.serialization.parser.streaming.endArray
-import com.ghost.serialization.parser.streaming.hasNext
-import com.ghost.serialization.parser.streaming.nextBoolean
-import com.ghost.serialization.parser.streaming.nextInt
-import com.ghost.serialization.parser.streaming.nextKey
-import com.ghost.serialization.parser.strings.beginArray
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeArraySeparator
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.endArray
-import com.ghost.serialization.parser.strings.hasNext
-import com.ghost.serialization.parser.strings.nextBoolean
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

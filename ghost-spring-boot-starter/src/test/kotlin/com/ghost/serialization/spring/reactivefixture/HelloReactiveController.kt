@@ -24,7 +24,11 @@ class HelloReactiveController {
     fun getHelloStream(): Flux<HelloMessage> =
         Flux.just(HelloMessage(1, "a"), HelloMessage(2, "b"))
 
-    @PostMapping("/hello-stream", consumes = ["application/x-ndjson"], produces = ["application/x-ndjson"])
+    @PostMapping(
+        "/hello-stream",
+        consumes = ["application/x-ndjson"],
+        produces = ["application/x-ndjson"]
+    )
     fun postHelloStream(@RequestBody messages: Flux<HelloMessage>): Flux<HelloMessage> =
         messages.map { it.copy(name = it.name.uppercase()) }
 }

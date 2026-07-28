@@ -303,6 +303,7 @@ internal object GhostYamlConstants {
     const val HEX_MASK = 0x0F
     const val TEN_LONG = 10L
     const val ASCII_LIMIT = 128
+
     // ── Pre-encoded JSON Header extraction constants ──────────────────────────
     const val HEADER_MIN_SIZE = 3
     const val HEADER_QUOTE_START_OFFSET = 0

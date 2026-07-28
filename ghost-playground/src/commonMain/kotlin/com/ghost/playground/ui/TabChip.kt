@@ -34,11 +34,20 @@ internal fun TabChip(label: String, selected: Boolean, accent: Color, onClick: (
         Modifier
             .clip(RoundedCornerShape(12.dp))
             .background(if (selected) accent else if (hovered) accent.copy(TabChipHoverFillAlpha) else CardBg)
-            .border(1.dp, if (selected || hovered) accent else CardBorder, RoundedCornerShape(12.dp))
+            .border(
+                1.dp,
+                if (selected || hovered) accent else CardBorder,
+                RoundedCornerShape(12.dp)
+            )
             .hoverable(interactionSource)
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
     ) {
-        Text(label, color = if (selected) Color.White else Ink, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        Text(
+            label,
+            color = if (selected) Color.White else Ink,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp
+        )
     }
 }

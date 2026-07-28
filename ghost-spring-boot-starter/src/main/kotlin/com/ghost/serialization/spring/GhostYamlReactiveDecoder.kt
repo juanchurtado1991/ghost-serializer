@@ -1,7 +1,6 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader

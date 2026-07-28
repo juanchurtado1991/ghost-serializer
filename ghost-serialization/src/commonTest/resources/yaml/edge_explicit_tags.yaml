@@ -85,4 +85,4 @@ mixed_types:
   enabled: !!bool true
   created: 2024-06-24
   notes: null
-  scores: [1, 2, 3, 4, 5]
+  scores: [ 1, 2, 3, 4, 5 ]

@@ -17,8 +17,6 @@ import java.lang.management.ManagementFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 /**
  * JVM pool reuse and allocation guards for YAML flat reader/writer.
@@ -33,16 +31,29 @@ class GhostYamlReaderPoolTest {
         GhostYamlSerializer<PoolWidget> {
         override val typeName: String = "PoolWidget"
 
-        override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: PoolWidget) = Unit
-        override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: PoolWidget) = Unit
+        override fun serialize(
+            writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+            value: PoolWidget
+        ) = Unit
+
+        override fun serialize(
+            writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+            value: PoolWidget
+        ) = Unit
+
         override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): PoolWidget =
             PoolWidget(0, "")
+
         override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): PoolWidget =
             PoolWidget(0, "")
+
         override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): PoolWidget =
             PoolWidget(0, "")
 
-        override fun serialize(writer: com.ghost.serialization.writer.yaml.GhostYamlWriter, value: PoolWidget) = Unit
+        override fun serialize(
+            writer: com.ghost.serialization.writer.yaml.GhostYamlWriter,
+            value: PoolWidget
+        ) = Unit
 
         override fun serialize(writer: GhostYamlFlatWriter, value: PoolWidget) {
             writer.beginObject()
@@ -79,7 +90,8 @@ class GhostYamlReaderPoolTest {
                     return map[clazz] as? GhostSerializer<T>
                 }
 
-                override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> = map
+                override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> =
+                    map
             },
         )
     }

@@ -6,9 +6,9 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextChar
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextChar
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import okio.Buffer
 
 
 class NextCharTest {

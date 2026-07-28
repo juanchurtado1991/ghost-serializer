@@ -1,8 +1,8 @@
 package com.ghost.serialization.compiler.codegen.emit
+
 import com.ghost.serialization.compiler.analysis.localNameSuffix
 import com.ghost.serialization.compiler.analysis.localValueName
 import com.ghost.serialization.compiler.analysis.serializerClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -11,6 +11,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**

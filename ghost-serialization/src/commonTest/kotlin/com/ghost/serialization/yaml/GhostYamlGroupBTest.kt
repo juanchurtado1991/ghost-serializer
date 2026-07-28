@@ -1,11 +1,8 @@
 package com.ghost.serialization.yaml
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
-import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * Group B tests: multiline block scalars (literal `|` and folded `>`),

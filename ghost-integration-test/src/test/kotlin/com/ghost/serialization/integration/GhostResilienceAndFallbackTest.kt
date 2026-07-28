@@ -29,11 +29,11 @@ class GhostResilienceAndFallbackTest {
         val home = Ghost.deserialize<SmartHome>(json)
         assertEquals("home_1", home.id)
         assertEquals(2, home.devices.size)
-        
+
         val light = home.devices[0]
         assertTrue(light is SmartDevice.Light)
         assertEquals(80, light.brightness)
-        
+
         val unknown = home.devices[1]
         assertTrue(unknown is SmartDevice.UnknownDevice)
         // Note: rawData gets the default value because we didn't add a mechanism to capture unknown data yet,
@@ -57,13 +57,13 @@ class GhostResilienceAndFallbackTest {
 
         val home = Ghost.deserialize<SmartHome>(json)
         assertEquals("home_2", home.id)
-        
+
         // active is nullable and resilient, should become null
         assertEquals(null, home.active)
-        
+
         // deviceCount is non-nullable with default 0, should become 0
         assertEquals(0, home.deviceCount)
-        
+
         assertEquals(HomeStatus.ONLINE, home.status)
     }
 
@@ -82,7 +82,7 @@ class GhostResilienceAndFallbackTest {
 
         val home = Ghost.deserialize<SmartHome>(json)
         assertEquals("home_3", home.id)
-        
+
         // status is resilient and nullable, should be null
         assertEquals(null, home.status)
     }
@@ -112,7 +112,7 @@ class GhostResilienceAndFallbackTest {
             "devices": []
         }
         """.trimIndent()
-        
+
         val homeFalse = Ghost.deserialize<SmartHome>(jsonFalse) {
             it.coerceBooleans = true
         }
@@ -134,7 +134,7 @@ class GhostResilienceAndFallbackTest {
 
         val home = Ghost.deserialize<SmartHome>(json)
         assertEquals("home_5", home.id)
-        
+
         // config is malformed but @GhostResilient, should be null instead of crashing
         assertEquals(null, home.config)
     }

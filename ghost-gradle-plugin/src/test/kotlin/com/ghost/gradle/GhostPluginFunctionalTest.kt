@@ -172,7 +172,10 @@ class GhostPluginFunctionalTest {
             .forwardOutput()
 
         val result = runner.build()
-        assertTrue(result.output.contains("SUCCESS"), "Build with plugin applied before KSP should succeed")
+        assertTrue(
+            result.output.contains("SUCCESS"),
+            "Build with plugin applied before KSP should succeed"
+        )
     }
 
     @Test

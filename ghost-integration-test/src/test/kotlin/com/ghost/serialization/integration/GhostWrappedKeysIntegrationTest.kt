@@ -14,7 +14,6 @@ import com.ghost.serialization.integration.model.WireExtras34
 import com.ghost.serialization.integration.model.WrappedKeysFixture
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class GhostWrappedKeysIntegrationTest {
 

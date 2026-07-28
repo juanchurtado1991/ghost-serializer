@@ -10,32 +10,32 @@ import com.ghost.serialization.integration.model.ExternalColor
 import com.ghost.serialization.integration.model.ExternalColorSerializer
 import com.ghost.serialization.integration.model.ExternalDate
 import com.ghost.serialization.integration.model.ExternalDateSerializer
-import com.ghost.serialization.proto.wkt.ProtoDuration
-import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
-import com.ghost.serialization.proto.wkt.ProtoTimestamp
-import com.ghost.serialization.proto.wkt.ProtoTimestampSerializer
 import com.ghost.serialization.proto.wkt.ProtoAny
 import com.ghost.serialization.proto.wkt.ProtoAnySerializer
-import com.ghost.serialization.proto.wkt.ProtoValue
-import com.ghost.serialization.proto.wkt.ProtoValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoBoolValue
 import com.ghost.serialization.proto.wkt.ProtoBoolValueSerializer
-import com.ghost.serialization.proto.wkt.ProtoStringValue
-import com.ghost.serialization.proto.wkt.ProtoStringValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoBytesValue
 import com.ghost.serialization.proto.wkt.ProtoBytesValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoDoubleValue
 import com.ghost.serialization.proto.wkt.ProtoDoubleValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
 import com.ghost.serialization.proto.wkt.ProtoFloatValue
 import com.ghost.serialization.proto.wkt.ProtoFloatValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoInt32Value
 import com.ghost.serialization.proto.wkt.ProtoInt32ValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoInt64Value
 import com.ghost.serialization.proto.wkt.ProtoInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoStringValue
+import com.ghost.serialization.proto.wkt.ProtoStringValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
+import com.ghost.serialization.proto.wkt.ProtoTimestampSerializer
 import com.ghost.serialization.proto.wkt.ProtoUInt32Value
 import com.ghost.serialization.proto.wkt.ProtoUInt32ValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoUInt64Value
 import com.ghost.serialization.proto.wkt.ProtoUInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoValue
+import com.ghost.serialization.proto.wkt.ProtoValueSerializer
 import com.sun.management.ThreadMXBean
 import kotlin.reflect.KClass
 
@@ -64,10 +64,10 @@ internal object BenchmarkEnvironment {
         println("\n--- GHOST BENCHMARK: ${suite.cliName.uppercase()} ---")
         println(
             "  Profile: ${BenchmarkStandard.profileName} — global warmup=${BenchmarkStandard.WARMUP_ITERATIONS}, " +
-                "local warmup=${BenchmarkStandard.LOCAL_WARMUP_ITERATIONS}, " +
-                "synthetic sessions=${BenchmarkStandard.SYNTHETIC_SESSIONS}, " +
-                "measurement runs=${BenchmarkStandard.MEASUREMENT_RUNS}, " +
-                "regression ±${"%.0f".format(BenchmarkStandard.REGRESSION_TOLERANCE * 100.0)}%"
+                    "local warmup=${BenchmarkStandard.LOCAL_WARMUP_ITERATIONS}, " +
+                    "synthetic sessions=${BenchmarkStandard.SYNTHETIC_SESSIONS}, " +
+                    "measurement runs=${BenchmarkStandard.MEASUREMENT_RUNS}, " +
+                    "regression ±${"%.0f".format(BenchmarkStandard.REGRESSION_TOLERANCE * 100.0)}%"
         )
     }
 

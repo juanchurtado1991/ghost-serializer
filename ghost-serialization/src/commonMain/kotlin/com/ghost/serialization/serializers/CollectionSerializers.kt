@@ -16,12 +16,12 @@ import com.ghost.serialization.parser.streaming.decodeResilient
 import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.hasNext
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextDouble
+import com.ghost.serialization.parser.streaming.nextFloat
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
-import com.ghost.serialization.parser.streaming.nextFloat
-import com.ghost.serialization.parser.streaming.nextDouble
-import com.ghost.serialization.parser.streaming.nextBoolean
 import com.ghost.serialization.parser.streaming.readList
 import com.ghost.serialization.parser.streaming.readSet
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -32,18 +32,17 @@ import com.ghost.serialization.parser.strings.consumeKeySeparator
 import com.ghost.serialization.parser.strings.endArray
 import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.parser.strings.hasNext
+import com.ghost.serialization.parser.strings.nextBoolean
+import com.ghost.serialization.parser.strings.nextDouble
+import com.ghost.serialization.parser.strings.nextFloat
 import com.ghost.serialization.parser.strings.nextInt
 import com.ghost.serialization.parser.strings.nextKey
 import com.ghost.serialization.parser.strings.nextLong
-import com.ghost.serialization.parser.strings.nextFloat
-import com.ghost.serialization.parser.strings.nextDouble
-import com.ghost.serialization.parser.strings.nextBoolean
 import com.ghost.serialization.parser.strings.readList
 import com.ghost.serialization.parser.strings.readSet
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import kotlin.collections.RandomAccess
 
 
 /**
@@ -285,8 +284,9 @@ class MapSerializer<V>(
     private val valueSerializer: GhostSerializer<V>
 ) : GhostSerializer<Map<String, V>> {
 
-    override val typeName: String get() =
-        "Map<String, ${valueSerializer.typeName}>"
+    override val typeName: String
+        get() =
+            "Map<String, ${valueSerializer.typeName}>"
 
     override fun serialize(
         writer: GhostJsonWriter,

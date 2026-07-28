@@ -28,10 +28,14 @@ class GhostSpringYamlMvcIntegrationTest {
             .andExpect(status().isOk)
             .andExpect(content().contentTypeCompatibleWith(MediaType("application", "yaml")))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("id: 1")))
-            .andExpect(content().string(org.hamcrest.Matchers.anyOf(
-                org.hamcrest.Matchers.containsString("name: ghost"),
-                org.hamcrest.Matchers.containsString("name: \"ghost\""),
-            )))
+            .andExpect(
+                content().string(
+                    org.hamcrest.Matchers.anyOf(
+                        org.hamcrest.Matchers.containsString("name: ghost"),
+                        org.hamcrest.Matchers.containsString("name: \"ghost\""),
+                    )
+                )
+            )
     }
 
     @Test
@@ -47,9 +51,13 @@ class GhostSpringYamlMvcIntegrationTest {
                 ),
         )
             .andExpect(status().isOk)
-            .andExpect(content().string(org.hamcrest.Matchers.anyOf(
-                org.hamcrest.Matchers.containsString("name: BOOT"),
-                org.hamcrest.Matchers.containsString("name: \"BOOT\""),
-            )))
+            .andExpect(
+                content().string(
+                    org.hamcrest.Matchers.anyOf(
+                        org.hamcrest.Matchers.containsString("name: BOOT"),
+                        org.hamcrest.Matchers.containsString("name: \"BOOT\""),
+                    )
+                )
+            )
     }
 }

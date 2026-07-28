@@ -1,8 +1,8 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.integration.model.IgnoreModel
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.integration.model.IgnoreModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

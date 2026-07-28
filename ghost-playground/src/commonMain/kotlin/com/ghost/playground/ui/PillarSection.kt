@@ -14,7 +14,12 @@ import com.ghost.playground.ui.theme.InkSoft
 @Composable
 internal fun PillarSection(label: String, body: String, muted: Boolean = false) {
     Column {
-        Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (muted) InkMuted else Coral)
+        Text(
+            label.uppercase(),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (muted) InkMuted else Coral
+        )
         Text(body, style = MaterialTheme.typography.bodyLarge, color = if (muted) InkSoft else Ink)
     }
 }

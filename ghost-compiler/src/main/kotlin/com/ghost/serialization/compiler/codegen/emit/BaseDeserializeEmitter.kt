@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.codegen.emit
+
 import com.ghost.serialization.compiler.analysis.isByteArray
 import com.ghost.serialization.compiler.analysis.isEnum
 import com.ghost.serialization.compiler.analysis.isGhost
@@ -18,7 +19,6 @@ import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isString
 import com.ghost.serialization.compiler.analysis.serializerClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.CustomCoderModel
 import com.ghost.serialization.compiler.model.CustomCoderReaderKind
 import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -30,6 +30,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -333,7 +334,9 @@ internal abstract class BaseDeserializeEmitter(
                 val innerType = resolveValueClassInnerType(type)
                 val call = if (innerType != null) {
                     val constructorCall = buildTypeReaderCall(innerType, isProto)
-                    val className = type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) } ?: type.toTypeName()
+                    val className =
+                        type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) }
+                            ?: type.toTypeName()
                     CodeBlock.of(C.TEMPLATE_CONSTRUCTOR, className, constructorCall)
                 } else {
                     val name = getContextualSerializerName(type)
@@ -355,11 +358,13 @@ internal abstract class BaseDeserializeEmitter(
                 C.STR_NEXT_INT_OR_NULL,
                 type.isMarkedNullable
             )
+
             type.isPrimitiveBoolean() -> scalarReaderCall(
                 C.STR_NEXT_BOOLEAN,
                 C.STR_NEXT_BOOLEAN_OR_NULL,
                 type.isMarkedNullable
             )
+
             type.isPrimitiveLong() -> if (isProto) {
                 // Quoted int64 coercion — keep generic null guard around the run block.
                 val call = CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
@@ -371,6 +376,7 @@ internal abstract class BaseDeserializeEmitter(
                     type.isMarkedNullable
                 )
             }
+
             type.isPrimitiveULong() -> if (isProto) {
                 val call = CodeBlock.of(C.STR_NEXT_ULONG_PROTO_COERCED)
                 if (type.isMarkedNullable) nullGuarded(call) else call
@@ -381,22 +387,27 @@ internal abstract class BaseDeserializeEmitter(
                     type.isMarkedNullable
                 )
             }
+
             type.isPrimitiveDouble() -> {
                 val call = CodeBlock.of(C.STR_NEXT_DOUBLE)
                 if (type.isMarkedNullable) nullGuarded(call) else call
             }
+
             type.isPrimitiveFloat() -> {
                 val call = CodeBlock.of(C.STR_NEXT_FLOAT)
                 if (type.isMarkedNullable) nullGuarded(call) else call
             }
+
             type.isPrimitiveByte() -> {
                 val call = CodeBlock.of(C.STR_NEXT_BYTE)
                 if (type.isMarkedNullable) nullGuarded(call) else call
             }
+
             type.isPrimitiveShort() -> {
                 val call = CodeBlock.of(C.STR_NEXT_SHORT)
                 if (type.isMarkedNullable) nullGuarded(call) else call
             }
+
             type.isPrimitiveChar() -> {
                 val call = CodeBlock.of(C.STR_NEXT_CHAR)
                 if (type.isMarkedNullable) nullGuarded(call) else call
@@ -471,7 +482,11 @@ internal abstract class BaseDeserializeEmitter(
      * `nextX()` call.
      * Avoids the generated `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
      */
-    private fun scalarReaderCall(nonNullCall: String, orNullCall: String, nullable: Boolean): CodeBlock =
+    private fun scalarReaderCall(
+        nonNullCall: String,
+        orNullCall: String,
+        nullable: Boolean
+    ): CodeBlock =
         CodeBlock.of(if (nullable) orNullCall else nonNullCall)
 
     /**
@@ -607,13 +622,15 @@ internal abstract class BaseDeserializeEmitter(
         CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)
 
     private fun isValueClassType(type: KSType): Boolean {
-        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
+        val declaration =
+            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
         return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
                 declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
     }
 
     private fun resolveValueClassInnerType(type: KSType): KSType? {
-        val declaration = type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
+        val declaration =
+            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
         val primaryConstructor = declaration.primaryConstructor ?: return null
         val param = primaryConstructor.parameters.firstOrNull() ?: return null
         return param.type.resolve()

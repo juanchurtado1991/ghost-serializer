@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.model
+
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
@@ -99,7 +100,7 @@ internal class GhostSerializerContext private constructor(
 
             val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
             val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||
-                classDeclaration.modifiers.contains(Modifier.INLINE)
+                    classDeclaration.modifiers.contains(Modifier.INLINE)
             val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
             val isObject = classDeclaration.classKind == ClassKind.OBJECT
             val isResilient =
@@ -197,7 +198,10 @@ internal class GhostSerializerContext private constructor(
                 flatReaderClass = ClassName(C.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),
                 stringReaderClass = ClassName(C.PKG_PARSER_STRINGS, C.STR_GHOST_JSON_STRING_READER),
                 hasYaml = hasYaml,
-                yamlSerializerInterface = ClassName(C.PKG_YAML_CONTRACT, C.STR_GHOST_YAML_SERIALIZER),
+                yamlSerializerInterface = ClassName(
+                    C.PKG_YAML_CONTRACT,
+                    C.STR_GHOST_YAML_SERIALIZER
+                ),
                 yamlWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_WRITER),
                 yamlFlatWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_FLAT_WRITER),
                 yamlFlatReaderClass = yamlFlatReaderClass,

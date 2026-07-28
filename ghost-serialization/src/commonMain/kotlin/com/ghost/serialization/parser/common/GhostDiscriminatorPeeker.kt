@@ -1,7 +1,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker.peek
 import com.ghost.serialization.parser.common.GhostHeuristics.maxDiscriminatorPeekDistance
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
@@ -14,10 +14,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.RESULT_NONE
 import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.beginObject
 import okio.ByteString
 
 
@@ -100,6 +97,7 @@ object GhostDiscriminatorPeeker {
             QUOTE_INT -> {
                 // Already inside an object (e.g. after beginObject() on the string channel).
             }
+
             else -> return null
         }
 
@@ -243,10 +241,12 @@ object GhostDiscriminatorPeeker {
                     depth++
                     position++
                 }
+
                 CLOSE_OBJ_INT, CLOSE_ARR_INT -> {
                     depth--
                     position++
                 }
+
                 else -> position++
             }
         }

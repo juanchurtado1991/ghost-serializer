@@ -1,4 +1,5 @@
 package com.ghost.serialization.compiler.model
+
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName

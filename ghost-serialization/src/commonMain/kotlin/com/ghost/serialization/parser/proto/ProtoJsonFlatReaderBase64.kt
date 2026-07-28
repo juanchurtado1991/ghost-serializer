@@ -5,20 +5,20 @@ package com.ghost.serialization.parser.proto
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.bytes.readQuotedString
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
     val decodedString = readQuotedString()
     val lut = C.BASE64_LUT
     val length = decodedString.length
-    
+
     val outputBuffer = acquireScratchBuffer(length)
     var outputPosition = 0
     val chunk = IntArray(4)
     var chunkIndex = 0
-    
+
     try {
         for (charIndex in 0 until length) {
             val byteCode = decodedString[charIndex].code
@@ -47,7 +47,7 @@ internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
                 chunkIndex = 0
             }
         }
-        
+
         if (chunkIndex > 0) {
             while (chunkIndex < 4) {
                 chunk[chunkIndex++] = C.EQUALS_INT
@@ -64,7 +64,7 @@ internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
                 }
             }
         }
-        
+
         return outputBuffer.copyOf(outputPosition)
     } finally {
         releaseScratchBuffer(outputBuffer)

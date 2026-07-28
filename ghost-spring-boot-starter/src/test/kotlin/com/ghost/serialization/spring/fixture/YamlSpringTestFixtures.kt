@@ -26,7 +26,8 @@ object YamlProfileMessageSerializer :
 
     override fun serialize(writer: GhostJsonWriter, value: YamlProfileMessage) = Unit
     override fun serialize(writer: GhostJsonFlatWriter, value: YamlProfileMessage) = Unit
-    override fun deserialize(reader: GhostJsonReader): YamlProfileMessage = YamlProfileMessage(0, "")
+    override fun deserialize(reader: GhostJsonReader): YamlProfileMessage =
+        YamlProfileMessage(0, "")
 
     override fun serialize(writer: GhostYamlWriter, value: YamlProfileMessage) {
         writer.beginObject()

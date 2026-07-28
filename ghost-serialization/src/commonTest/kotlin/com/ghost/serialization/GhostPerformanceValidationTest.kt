@@ -10,10 +10,6 @@ import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectString
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.parser.strings.selectString
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.reflect.KClass

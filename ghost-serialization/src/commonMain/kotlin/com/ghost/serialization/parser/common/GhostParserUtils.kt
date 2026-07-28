@@ -2,11 +2,9 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import kotlin.math.pow
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -106,19 +104,22 @@ internal inline fun matchCoerceBooleanBytes(
             }
         }
     }
+
     C.BOOL_STR_LEN_2 -> {
         val b0 = getByte(start)
         val b1 = getByte(start + 1)
         when {
             // "on" / "ON"
             (b0 or C.CASE_INSENSITIVE_MASK) == C.FOLD_O &&
-            (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_N -> true
+                    (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_N -> true
             // "no" / "NO"
             (b0 or C.CASE_INSENSITIVE_MASK) == C.FOLD_N &&
-            (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_O -> false
+                    (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_O -> false
+
             else -> onError()
         }
     }
+
     C.BOOL_STR_LEN_3 -> {
         val b0 = getByte(start)
         val b1 = getByte(start + 1)
@@ -126,15 +127,17 @@ internal inline fun matchCoerceBooleanBytes(
         when {
             // "yes" / "YES"
             (b0 or C.CASE_INSENSITIVE_MASK) == C.FOLD_Y &&
-            (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_E &&
-            (b2 or C.CASE_INSENSITIVE_MASK) == C.FOLD_S -> true
+                    (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_E &&
+                    (b2 or C.CASE_INSENSITIVE_MASK) == C.FOLD_S -> true
             // "off" / "OFF"
             (b0 or C.CASE_INSENSITIVE_MASK) == C.FOLD_O &&
-            (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_F &&
-            (b2 or C.CASE_INSENSITIVE_MASK) == C.FOLD_F -> false
+                    (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_F &&
+                    (b2 or C.CASE_INSENSITIVE_MASK) == C.FOLD_F -> false
+
             else -> onError()
         }
     }
+
     C.BOOL_STR_LEN_4 -> {
         val b0 = getByte(start)
         val b1 = getByte(start + 1)
@@ -144,9 +147,11 @@ internal inline fun matchCoerceBooleanBytes(
         if ((b0 or C.CASE_INSENSITIVE_MASK) == C.FOLD_T &&
             (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_R &&
             (b2 or C.CASE_INSENSITIVE_MASK) == C.FOLD_U &&
-            (b3 or C.CASE_INSENSITIVE_MASK) == C.FOLD_E) true
+            (b3 or C.CASE_INSENSITIVE_MASK) == C.FOLD_E
+        ) true
         else onError()
     }
+
     C.BOOL_STR_LEN_5 -> {
         val b0 = getByte(start)
         val b1 = getByte(start + 1)
@@ -158,9 +163,11 @@ internal inline fun matchCoerceBooleanBytes(
             (b1 or C.CASE_INSENSITIVE_MASK) == C.FOLD_A &&
             (b2 or C.CASE_INSENSITIVE_MASK) == C.FOLD_L &&
             (b3 or C.CASE_INSENSITIVE_MASK) == C.FOLD_S &&
-            (b4 or C.CASE_INSENSITIVE_MASK) == C.FOLD_E) false
+            (b4 or C.CASE_INSENSITIVE_MASK) == C.FOLD_E
+        ) false
         else onError()
     }
+
     else -> onError()
 }
 
@@ -189,16 +196,19 @@ fun charToBytePosition(s: String, charPos: Int): Int {
                 bytePos += C.UTF8_1BYTE_SIZE
                 i++
             }
+
             code <= C.UTF8_2BYTE_MAX -> {
                 bytePos += C.UTF8_2BYTE_SIZE
                 i++
             }
+
             code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
                     i + 1 < s.length &&
                     s[i + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
                 bytePos += C.UTF8_4BYTE_SIZE
                 i += 2
             }
+
             else -> {
                 bytePos += C.UTF8_3BYTE_SIZE
                 i++
@@ -229,16 +239,19 @@ fun byteToCharPosition(s: String, targetBytePos: Int): Int {
                 bytePos += C.UTF8_1BYTE_SIZE
                 i++
             }
+
             code <= C.UTF8_2BYTE_MAX -> {
                 bytePos += C.UTF8_2BYTE_SIZE
                 i++
             }
+
             code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
                     i + 1 < s.length &&
                     s[i + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
                 bytePos += C.UTF8_4BYTE_SIZE
                 i += 2
             }
+
             else -> {
                 bytePos += C.UTF8_3BYTE_SIZE
                 i++

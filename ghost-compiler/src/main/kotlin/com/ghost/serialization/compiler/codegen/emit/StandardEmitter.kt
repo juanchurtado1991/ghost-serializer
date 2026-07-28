@@ -1,6 +1,7 @@
 @file:Suppress("unused")
 
 package com.ghost.serialization.compiler.codegen.emit
+
 import com.ghost.serialization.compiler.analysis.DispatchNamesResolver
 import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
 import com.ghost.serialization.compiler.analysis.getDefaultValueReturnExpression
@@ -12,7 +13,6 @@ import com.ghost.serialization.compiler.analysis.isPrimitive
 import com.ghost.serialization.compiler.analysis.localTrackingName
 import com.ghost.serialization.compiler.analysis.localValueName
 import com.ghost.serialization.compiler.codegen.GeneratedCallFormat
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -20,6 +20,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -227,8 +228,8 @@ internal class StandardEmitter(
             if (subProps.size > 1 && subProps.all { pathIndex >= fullPaths[propertyIndices[it]!!].size }) {
                 throw IllegalStateException(
                     C.STR_ERR_FLATTEN_INFINITE_LOOP_1 + originalClassName +
-                        C.STR_ERR_FLATTEN_INFINITE_LOOP_2 +
-                        subProps.map { it.kotlinName + " -> " + it.jsonName }
+                            C.STR_ERR_FLATTEN_INFINITE_LOOP_2 +
+                            subProps.map { it.kotlinName + " -> " + it.jsonName }
                 )
             }
 
@@ -300,7 +301,12 @@ internal class StandardEmitter(
     private fun emitFieldValidationCall(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
         if (requiredProps.isNotEmpty()) {
-            body.addStatement(C.TEMPLATE_CALL_VALIDATION, C.STR_FUN_VALIDATE_FIELDS, C.STR_PARAM_MASK0, C.STR_READER_VAR)
+            body.addStatement(
+                C.TEMPLATE_CALL_VALIDATION,
+                C.STR_FUN_VALIDATE_FIELDS,
+                C.STR_PARAM_MASK0,
+                C.STR_READER_VAR
+            )
         }
     }
 
@@ -335,7 +341,11 @@ internal class StandardEmitter(
             )
             funBody.endControlFlow()
         } else {
-            funBody.beginControlFlow(C.TEMPLATE_IF_MASK_NOT_MET_STMT, requiredMask0Name, requiredMask0Name)
+            funBody.beginControlFlow(
+                C.TEMPLATE_IF_MASK_NOT_MET_STMT,
+                requiredMask0Name,
+                requiredMask0Name
+            )
             requiredProps.forEachIndexed { propIdx, prop ->
                 val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
@@ -365,7 +375,8 @@ internal class StandardEmitter(
      * @param typeSpecBuilder The serializer class builder.
      */
     private fun emitCreateInstanceHelper(typeSpecBuilder: TypeSpec.Builder) {
-        val hasCreateInstance = typeSpecBuilder.funSpecs.any { it.name == C.STR_FUN_CREATE_INSTANCE }
+        val hasCreateInstance =
+            typeSpecBuilder.funSpecs.any { it.name == C.STR_FUN_CREATE_INSTANCE }
         if (hasCreateInstance) return
 
         val funBuilder = FunSpec.builder(C.STR_FUN_CREATE_INSTANCE)
@@ -461,7 +472,8 @@ internal class StandardEmitter(
             .sortedByDescending { mask -> (C.VAL_ZERO until size).sumOf { bit -> (mask shr bit) and C.VAL_ONE } }
 
         for (subsetBits in subsets) {
-            val conditionStr = buildSubsetCondition(subsetBits, defaultPropsWithIndex, typeSpecBuilder)
+            val conditionStr =
+                buildSubsetCondition(subsetBits, defaultPropsWithIndex, typeSpecBuilder)
             body.beginControlFlow(C.STR_IF_OPEN + conditionStr + C.STR_CLOSE_PAREN_FLOW)
             body.addStatement(C.TEMPLATE_RETURN_T_PAREN, originalClassName)
             requiredProps.forEach { prop ->
@@ -470,7 +482,11 @@ internal class StandardEmitter(
             for (i in C.VAL_ZERO until size) {
                 if (subsetBits and (C.VAL_ONE shl i) != C.VAL_ZERO) {
                     val (_, prop) = defaultPropsWithIndex[i]
-                    body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+                    body.addStatement(
+                        C.TEMPLATE_NAMED_ARG,
+                        prop.kotlinName,
+                        prop.getReturnExpression()
+                    )
                 }
             }
             body.addStatement(C.STR_PAREN)
@@ -511,7 +527,8 @@ internal class StandardEmitter(
                 defaultPropsInSubset.add(prop)
                 val maskIdx = globalIdx / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = globalIdx % C.MASK_SIZE_BITS.toInt()
-                maskGroups[maskIdx] = (maskGroups[maskIdx] ?: C.VAL_ZERO_L) or (C.VAL_ONE_L shl bitIdx)
+                maskGroups[maskIdx] =
+                    (maskGroups[maskIdx] ?: C.VAL_ZERO_L) or (C.VAL_ONE_L shl bitIdx)
             }
         }
         val constName = C.STR_MASK_OPTS_PREFIX + defaultPropsInSubset

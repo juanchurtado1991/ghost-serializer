@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @GhostSerialization
 @Serializable
-enum class UserRole { 
-    EDITOR, 
-    VIEWER 
+enum class UserRole {
+    EDITOR,
+    VIEWER
 }

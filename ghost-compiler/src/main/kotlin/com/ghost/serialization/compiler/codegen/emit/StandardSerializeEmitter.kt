@@ -1,8 +1,9 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**

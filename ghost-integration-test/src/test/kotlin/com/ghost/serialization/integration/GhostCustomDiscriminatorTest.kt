@@ -78,7 +78,10 @@ class GhostCustomDiscriminatorTest {
 
         assertContains(json, "\"kind\"")
         assertContains(json, "\"Created\"")
-        assertTrue(!json.contains("\"type\""), "Should not contain 'type' when discriminator is 'kind'")
+        assertTrue(
+            !json.contains("\"type\""),
+            "Should not contain 'type' when discriminator is 'kind'"
+        )
     }
 
     @Test
@@ -121,7 +124,10 @@ class GhostCustomDiscriminatorTest {
 
         assertContains(json, "\"object\"")
         assertContains(json, "\"Charge\"")
-        assertTrue(!json.contains("\"type\""), "Should not contain 'type' when discriminator is 'object'")
+        assertTrue(
+            !json.contains("\"type\""),
+            "Should not contain 'type' when discriminator is 'object'"
+        )
     }
 
     @Test
@@ -168,7 +174,8 @@ class GhostCustomDiscriminatorTest {
 
     @Test
     fun `atType discriminator roundtrip Organization`() {
-        val node: JsonLdNode = JsonLdNode.Organization(name = "Ghost Corp", url = "https://ghost.dev")
+        val node: JsonLdNode =
+            JsonLdNode.Organization(name = "Ghost Corp", url = "https://ghost.dev")
         val json = Ghost.serialize(node)
         val decoded = Ghost.deserialize<JsonLdNode>(json)
         assertEquals(node, decoded)
@@ -241,7 +248,10 @@ class GhostCustomDiscriminatorTest {
         val json = Ghost.serialize(StripeObject.Charge(2000L, "usd"))
         val objIndex = json.indexOf("\"object\"")
         val amountIndex = json.indexOf("\"amount\"")
-        assertTrue(objIndex < amountIndex, "Discriminator 'object' should appear before payload fields")
+        assertTrue(
+            objIndex < amountIndex,
+            "Discriminator 'object' should appear before payload fields"
+        )
     }
 
     // ─── 9. List of polymorphic objects with custom discriminator ─────────────

@@ -1,7 +1,7 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import io.ktor.http.ContentType
@@ -12,6 +12,7 @@ import io.ktor.server.response.respond
 
 @PublishedApi
 internal const val ERROR_PREFIX = "Ghost serializer not found for class "
+
 @PublishedApi
 internal const val ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
 

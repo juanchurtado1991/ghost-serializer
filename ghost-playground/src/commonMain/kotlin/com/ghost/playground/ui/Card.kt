@@ -96,8 +96,14 @@ internal fun Card(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.size(CardAccentBarSize.first, CardAccentBarSize.second).background(accent, RoundedCornerShape(3.dp)))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                Modifier.size(CardAccentBarSize.first, CardAccentBarSize.second)
+                    .background(accent, RoundedCornerShape(3.dp))
+            )
             leadingIcon?.let {
                 Box(
                     Modifier

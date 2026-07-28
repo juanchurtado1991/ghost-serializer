@@ -6,14 +6,8 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.bytes.nextDoubleExtension
 import com.ghost.serialization.parser.bytes.nextFloatExtension
 import com.ghost.serialization.parser.bytes.nextLongExtension
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.JsonReaderOptions
-import com.ghost.serialization.parser.streaming.nextInt
-import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.streaming.selectString
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.parser.strings.selectString
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 internal fun GhostProtoJsonFlatReader.nextProtoFloat(): Float {
@@ -40,7 +34,10 @@ internal fun GhostProtoJsonFlatReader.nextProtoFloat(): Float {
                 }
             }
             if (start + C.NEG_INFINITY_QUOTED_LEN - 1 <= limit && getByte(start + C.NEG_INFINITY_QUOTED_LEN - 2) == C.QUOTE_INT) {
-                if (b0 == C.MINUS_INT && getByte(start + 1) == C.I_BYTE_INT && matchInfinityBytes(start + 1)) { // "-Infinity"
+                if (b0 == C.MINUS_INT && getByte(start + 1) == C.I_BYTE_INT && matchInfinityBytes(
+                        start + 1
+                    )
+                ) { // "-Infinity"
                     position = start + C.NEG_INFINITY_QUOTED_LEN - 1
                     nextTokenByte = C.RESET_TOKEN_BYTE
                     return Float.NEGATIVE_INFINITY
@@ -81,7 +78,10 @@ internal fun GhostProtoJsonFlatReader.nextProtoDouble(): Double {
                 }
             }
             if (start + C.NEG_INFINITY_QUOTED_LEN - 1 <= limit && getByte(start + C.NEG_INFINITY_QUOTED_LEN - 2) == C.QUOTE_INT) {
-                if (b0 == C.MINUS_INT && getByte(start + 1) == C.I_BYTE_INT && matchInfinityBytes(start + 1)) { // "-Infinity"
+                if (b0 == C.MINUS_INT && getByte(start + 1) == C.I_BYTE_INT && matchInfinityBytes(
+                        start + 1
+                    )
+                ) { // "-Infinity"
                     position = start + C.NEG_INFINITY_QUOTED_LEN - 1
                     nextTokenByte = C.RESET_TOKEN_BYTE
                     return Double.NEGATIVE_INFINITY
@@ -103,12 +103,12 @@ private fun GhostProtoJsonFlatReader.matchInfinityBytes(start: Int): Boolean {
     // Infinity has 8 characters: I, n, f, i, n, i, t, y
     // We already checked 'I' (73) in the caller, verify remaining 7 bytes
     return getByte(start + 1) == C.N_LOWER_BYTE_INT &&
-           getByte(start + 2) == C.F_LOWER_BYTE_INT &&
-           getByte(start + 3) == C.I_LOWER_BYTE_INT &&
-           getByte(start + 4) == C.N_LOWER_BYTE_INT &&
-           getByte(start + 5) == C.I_LOWER_BYTE_INT &&
-           getByte(start + 6) == C.T_LOWER_BYTE_INT &&
-           getByte(start + 7) == C.Y_LOWER_BYTE_INT
+            getByte(start + 2) == C.F_LOWER_BYTE_INT &&
+            getByte(start + 3) == C.I_LOWER_BYTE_INT &&
+            getByte(start + 4) == C.N_LOWER_BYTE_INT &&
+            getByte(start + 5) == C.I_LOWER_BYTE_INT &&
+            getByte(start + 6) == C.T_LOWER_BYTE_INT &&
+            getByte(start + 7) == C.Y_LOWER_BYTE_INT
 }
 
 internal fun GhostProtoJsonFlatReader.nextProtoInt64(): Long {

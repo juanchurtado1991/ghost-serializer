@@ -4,21 +4,11 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginArray
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.streaming.endArray
-import com.ghost.serialization.parser.streaming.endObject
-import com.ghost.serialization.parser.strings.beginArray
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.endArray
-import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.serializers.IntArraySerializer
-import com.ghost.serialization.serializers.ListSerializer
-import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import okio.Buffer
 
 
 class JsonSyntaxTest {
@@ -28,17 +18,17 @@ class JsonSyntaxTest {
         val data = IntArray(100) { it }
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
-        
+
         IntArraySerializer.serialize(writer, data)
         writer.release()
-        
+
         writer.flush()
         val json = buffer.readUtf8()
         // Verify no missing commas: [0,1,2,...]
         // If commas are missing, it would be [012...]
         val expectedStart = "[0,1,2,3,4,5,6,7,8,9,10"
         assertEquals(true, json.startsWith(expectedStart), "JSON was: ${json.take(50)}...")
-        
+
         // Also verify with a real parser (simulated by our reader)
         val reader = GhostJsonReader(json.encodeToByteArray())
         val decoded = IntArraySerializer.deserialize(reader)
@@ -56,10 +46,10 @@ class JsonSyntaxTest {
             mapOf("id" to 2, "tags" to emptyList<String>()),
             mapOf("id" to 3, "tags" to listOf("c"))
         )
-        
+
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
-        
+
         // Manual serialization to simulate generated code
         writer.beginArray()
         for (obj in data) {
@@ -76,10 +66,11 @@ class JsonSyntaxTest {
         }
         writer.endArray()
         writer.release()
-        
+
         writer.flush()
         val json = buffer.readUtf8()
-        val expected = "[{\"id\":1,\"tags\":[\"a\",\"b\"]},{\"id\":2,\"tags\":[]},{\"id\":3,\"tags\":[\"c\"]}]"
+        val expected =
+            "[{\"id\":1,\"tags\":[\"a\",\"b\"]},{\"id\":2,\"tags\":[]},{\"id\":3,\"tags\":[\"c\"]}]"
         assertEquals(expected, json)
     }
 }

@@ -1,8 +1,8 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.integration.model.PageWithNestedDevices
 import com.ghost.serialization.integration.model.NestedDeviceStub
+import com.ghost.serialization.integration.model.PageWithNestedDevices
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

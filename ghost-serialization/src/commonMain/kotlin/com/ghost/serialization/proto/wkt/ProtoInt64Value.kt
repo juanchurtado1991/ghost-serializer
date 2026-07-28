@@ -5,15 +5,13 @@ package com.ghost.serialization.proto.wkt
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextLong
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.nextLong
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.jvm.JvmInline
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -21,7 +19,8 @@ import kotlin.jvm.JvmInline
  *
  * The JSON representation for `Int64Value` is JSON string.
  */
-@JvmInline value class ProtoInt64Value(val value: Long)
+@JvmInline
+value class ProtoInt64Value(val value: Long)
 
 // Helper to format a Long to String zero-allocation.
 // Operates in negative space throughout (never negates the full magnitude) so that
@@ -61,9 +60,21 @@ internal fun formatLong(value: Long): String {
  */
 object ProtoInt64ValueSerializer : GhostSerializer<ProtoInt64Value> {
     override val typeName: String get() = C.WKT_INT64_VALUE_TYPE
-    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) { writer.value(formatLong(value.value)) }
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) { writer.value(formatLong(value.value)) }
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) { writer.value(formatLong(value.value)) }
-    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value = ProtoInt64Value(reader.nextLong())
-    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value = ProtoInt64Value(reader.nextLong())
+    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
+        writer.value(formatLong(value.value))
+    }
+
+    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
+        writer.value(formatLong(value.value))
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) {
+        writer.value(formatLong(value.value))
+    }
+
+    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value =
+        ProtoInt64Value(reader.nextLong())
+
+    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value =
+        ProtoInt64Value(reader.nextLong())
 }

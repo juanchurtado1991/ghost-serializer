@@ -1,5 +1,5 @@
 package com.ghost.serialization.compiler.analysis
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -13,6 +13,7 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -104,14 +105,14 @@ internal fun KSType.isPrimitiveChar(): Boolean {
  */
 internal fun KSType.isPrimitive(): Boolean {
     return isPrimitiveInt() ||
-        isPrimitiveBoolean() ||
-        isPrimitiveLong() ||
-        isPrimitiveULong() ||
-        isPrimitiveDouble() ||
-        isPrimitiveFloat() ||
-        isPrimitiveByte() ||
-        isPrimitiveShort() ||
-        isPrimitiveChar()
+            isPrimitiveBoolean() ||
+            isPrimitiveLong() ||
+            isPrimitiveULong() ||
+            isPrimitiveDouble() ||
+            isPrimitiveFloat() ||
+            isPrimitiveByte() ||
+            isPrimitiveShort() ||
+            isPrimitiveChar()
 }
 
 /**

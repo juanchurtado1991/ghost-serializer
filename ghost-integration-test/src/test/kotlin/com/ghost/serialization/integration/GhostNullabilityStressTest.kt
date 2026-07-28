@@ -1,13 +1,13 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.integration.model.NullabilityStressModel
-import com.ghost.serialization.integration.model.DefaultValueNullModel
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.integration.model.DefaultValueNullModel
+import com.ghost.serialization.integration.model.NullabilityStressModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class GhostNullabilityStressTest {
 
@@ -18,10 +18,10 @@ class GhostNullabilityStressTest {
             nullableMap = mapOf("one" to 1, "two" to null),
             nestedNullable = listOf(listOf(1, null), null, listOf(3))
         )
-        
+
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<NullabilityStressModel>(json)
-        
+
         assertEquals(model, decoded)
     }
 
@@ -30,7 +30,7 @@ class GhostNullabilityStressTest {
         val model = NullabilityStressModel(null, null, null)
         val json = Ghost.serialize(model)
         assertEquals("{\"nullableList\":null,\"nullableMap\":null,\"nestedNullable\":null}", json)
-        
+
         val decoded = Ghost.deserialize<NullabilityStressModel>(json)
         assertNull(decoded.nullableList)
         assertNull(decoded.nullableMap)

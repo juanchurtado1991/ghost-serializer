@@ -3,27 +3,25 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectNameAndConsume
 import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
 import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.parser.strings.selectNameAndConsume
 import com.ghost.serialization.parser.strings.skipValue
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
-import okio.Buffer
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 
 
 /**

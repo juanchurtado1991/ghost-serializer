@@ -1,5 +1,8 @@
 package com.ghost.serialization.types
 
+import com.ghost.serialization.types.RawJson.Companion.fromBufferSlice
+
+
 /**
  * Opaque JSON held as verbatim UTF-8 bytes of the wire representation.
  *

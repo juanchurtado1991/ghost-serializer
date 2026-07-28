@@ -1,8 +1,6 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.captureRawJson
-import com.ghost.serialization.parser.bytes.readQuotedString
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import com.ghost.serialization.parser.streaming.beginObject
@@ -12,21 +10,13 @@ import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.captureRawJson
-import com.ghost.serialization.parser.strings.consumeArraySeparator
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.endObject
-import com.ghost.serialization.parser.strings.findClosingQuote
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextString
+import okio.Buffer
+import okio.ByteString.Companion.encodeUtf8
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import okio.Buffer
-import okio.ByteString.Companion.encodeUtf8
 
 
 /**

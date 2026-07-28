@@ -10,13 +10,16 @@ class ProtoValueTest {
 
     init {
         val registry = object : com.ghost.serialization.contract.GhostRegistry {
-            private val map = mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
-                ProtoValue::class to ProtoValueSerializer
-            )
+            private val map =
+                mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
+                    ProtoValue::class to ProtoValueSerializer
+                )
+
             @Suppress("UNCHECKED_CAST")
             override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): com.ghost.serialization.contract.GhostSerializer<T>? {
                 return map[clazz] as? com.ghost.serialization.contract.GhostSerializer<T>
             }
+
             override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>> {
                 return map
             }

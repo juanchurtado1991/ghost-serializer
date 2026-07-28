@@ -29,7 +29,10 @@ class GhostReactiveDecoderTest {
     @Test
     fun canDecode_trueForAnnotatedTypeWithSupportedMimeType() {
         assertTrue(
-            decoder.canDecode(ResolvableType.forClass(HelloMessage::class.java), MediaType.APPLICATION_JSON)
+            decoder.canDecode(
+                ResolvableType.forClass(HelloMessage::class.java),
+                MediaType.APPLICATION_JSON
+            )
         )
     }
 
@@ -46,7 +49,10 @@ class GhostReactiveDecoderTest {
     @Test
     fun canDecode_falseForUnsupportedMimeType() {
         assertFalse(
-            decoder.canDecode(ResolvableType.forClass(HelloMessage::class.java), MediaType.APPLICATION_XML)
+            decoder.canDecode(
+                ResolvableType.forClass(HelloMessage::class.java),
+                MediaType.APPLICATION_XML
+            )
         )
     }
 

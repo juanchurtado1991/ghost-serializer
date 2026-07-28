@@ -5,7 +5,6 @@ import com.ghost.serialization.integration.model.ComplexResponse
 import com.ghost.serialization.integration.model.ExtremeMetadata
 import com.ghost.serialization.integration.model.TwitterResponse
 import com.ghost.serialization.integration.model.UserRole
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -87,7 +86,8 @@ class GhostTextChannelPerModelIntegrationTest {
             "override fun deserialize(reader: GhostJsonStringReader)"
 
         private const val TWITTER_RESPONSE_SERIALIZER = "TwitterResponseSerializer.kt"
-        private const val TWITTER_SPECIAL_RESPONSE_SERIALIZER = "TwitterSpecialResponseSerializer.kt"
+        private const val TWITTER_SPECIAL_RESPONSE_SERIALIZER =
+            "TwitterSpecialResponseSerializer.kt"
         private const val TWITTER_WRAPPED_TWEET_SERIALIZER = "TwitterWrappedTweetSerializer.kt"
         private const val TWEET_SERIALIZER = "TweetSerializer.kt"
         private const val USER_SERIALIZER = "UserSerializer.kt"

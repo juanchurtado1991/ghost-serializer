@@ -1,7 +1,6 @@
 package com.ghost.serialization.writer.strings
 
 
-
 /**
  * Wasm actual: manual loop copy — no temporary CharArray allocated.
  */

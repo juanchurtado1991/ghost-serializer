@@ -12,18 +12,15 @@ import com.ghost.serialization.encodeAllToYaml
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.encodeToYamlBytes
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
-import okio.Buffer
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 /**
  * Entry-point and tri-channel parity tests for YAML serializers.
@@ -39,12 +36,22 @@ class GhostYamlEntryPointTest {
         GhostYamlSerializer<YamlScalarBox> {
         override val typeName: String = "YamlScalarBox"
 
-        override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: YamlScalarBox) = Unit
-        override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: YamlScalarBox) = Unit
+        override fun serialize(
+            writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+            value: YamlScalarBox
+        ) = Unit
+
+        override fun serialize(
+            writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+            value: YamlScalarBox
+        ) = Unit
+
         override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): YamlScalarBox =
             YamlScalarBox("", 0)
+
         override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): YamlScalarBox =
             YamlScalarBox("", 0)
+
         override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): YamlScalarBox =
             YamlScalarBox("", 0)
 
@@ -94,7 +101,8 @@ class GhostYamlEntryPointTest {
                     return map[clazz] as? GhostSerializer<T>
                 }
 
-                override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> = map
+                override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> =
+                    map
             },
         )
     }

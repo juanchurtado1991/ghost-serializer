@@ -46,7 +46,10 @@ class GhostBugFixKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
-        assertTrue(kspOutput.any { "VehicleSerializer.kt" in it }, "Expected VehicleSerializer.kt: $kspOutput")
+        assertTrue(
+            kspOutput.any { "VehicleSerializer.kt" in it },
+            "Expected VehicleSerializer.kt: $kspOutput"
+        )
     }
 
     // Fix 3 (auto-UNKNOWN): enum with UNKNOWN constant auto-generates fallback
@@ -67,8 +70,9 @@ class GhostBugFixKspTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
-        val generated = compilation.kspSourcesDir.walk().filter { it.name == "ConnectionStateSerializer.kt" }
-            .map { it.readText() }.firstOrNull()
+        val generated =
+            compilation.kspSourcesDir.walk().filter { it.name == "ConnectionStateSerializer.kt" }
+                .map { it.readText() }.firstOrNull()
         assertTrue(generated != null, "ConnectionStateSerializer.kt not generated")
         assertTrue(
             "else -> ConnectionState.UNKNOWN" in (generated ?: ""),
@@ -94,8 +98,9 @@ class GhostBugFixKspTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
-        val generated = compilation.kspSourcesDir.walk().filter { it.name == "SyncStateSerializer.kt" }
-            .map { it.readText() }.firstOrNull()
+        val generated =
+            compilation.kspSourcesDir.walk().filter { it.name == "SyncStateSerializer.kt" }
+                .map { it.readText() }.firstOrNull()
         assertTrue(generated != null, "SyncStateSerializer.kt not generated")
         assertTrue(
             "else -> SyncState.unknown" in (generated ?: ""),
@@ -129,8 +134,9 @@ class GhostBugFixKspTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
-        val generated = compilation.kspSourcesDir.walk().filter { it.name == "LocationPermissionSerializer.kt" }
-            .map { it.readText() }.firstOrNull()
+        val generated =
+            compilation.kspSourcesDir.walk().filter { it.name == "LocationPermissionSerializer.kt" }
+                .map { it.readText() }.firstOrNull()
         assertTrue(generated != null, "LocationPermissionSerializer.kt not generated")
         assertTrue(
             Regex("""JsonReaderOptions\.of\(\s*\d+,""").containsMatchIn(generated!!),
@@ -157,7 +163,10 @@ class GhostBugFixKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
-        assertTrue(kspOutput.any { "RawPayloadSerializer.kt" in it }, "Expected RawPayloadSerializer.kt: $kspOutput")
+        assertTrue(
+            kspOutput.any { "RawPayloadSerializer.kt" in it },
+            "Expected RawPayloadSerializer.kt: $kspOutput"
+        )
     }
 
     // RawJson field compiles and generates captureRawJsonBytes path
@@ -189,7 +198,8 @@ class GhostBugFixKspTest {
             "Expected captureRawJson in generated serializer:\n$generated"
         )
         assertTrue(
-            "writer.rawValue(value.body.storage, value.body.storageOffset, value.body.storageLength)" in (generated ?: ""),
+            "writer.rawValue(value.body.storage, value.body.storageOffset, value.body.storageLength)" in (generated
+                ?: ""),
             "Expected slice rawValue in generated serializer:\n$generated"
         )
     }

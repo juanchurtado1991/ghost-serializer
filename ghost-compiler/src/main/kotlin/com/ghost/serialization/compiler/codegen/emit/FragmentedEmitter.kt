@@ -1,6 +1,7 @@
 @file:Suppress("unused", "SameParameterValue")
 
 package com.ghost.serialization.compiler.codegen.emit
+
 import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
 import com.ghost.serialization.compiler.analysis.getFragmentedDefaultValueReturnExpression
 import com.ghost.serialization.compiler.analysis.getFragmentedReturnExpression
@@ -8,7 +9,6 @@ import com.ghost.serialization.compiler.analysis.getFragmentedSingleShotDefaultA
 import com.ghost.serialization.compiler.analysis.getInitialValue
 import com.ghost.serialization.compiler.analysis.getVariableType
 import com.ghost.serialization.compiler.analysis.localTrackingName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -17,6 +17,7 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -145,7 +146,7 @@ internal class FragmentedEmitter(
         body.beginControlFlow(C.STR_WHILE_TRUE)
         body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
         body.beginControlFlow(C.STR_WHEN_INDEX)
-        
+
         chunks.forEachIndexed { chunkIdx, chunkProps ->
             val start = chunkIdx * chunkSize
             val end = start + chunkProps.size - C.VAL_ONE
@@ -208,7 +209,7 @@ internal class FragmentedEmitter(
             val call = buildCall(prop)
             val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()
             val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
-            
+
             chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
             if (prop.isResilient && supportsResilience) {
                 chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
@@ -237,7 +238,12 @@ internal class FragmentedEmitter(
     private fun emitValidation(body: CodeBlock.Builder) {
         val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
         if (hasRequired) {
-            body.addStatement(C.TEMPLATE_CALL_VALIDATION, C.STR_FUN_VALIDATE_FIELDS, C.STR_CTX_VAR, C.STR_READER_VAR)
+            body.addStatement(
+                C.TEMPLATE_CALL_VALIDATION,
+                C.STR_FUN_VALIDATE_FIELDS,
+                C.STR_CTX_VAR,
+                C.STR_READER_VAR
+            )
         }
     }
 
@@ -248,7 +254,10 @@ internal class FragmentedEmitter(
      * @param typeSpecBuilder The serializer class builder.
      * @param contextClassName Class name of the context object holding property variables.
      */
-    private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder, contextClassName: ClassName) {
+    private fun emitValidationHelper(
+        typeSpecBuilder: TypeSpec.Builder,
+        contextClassName: ClassName
+    ) {
         val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
         if (!hasRequired) {
             return
@@ -312,7 +321,7 @@ internal class FragmentedEmitter(
         funBuilder.addCode(funBody.build())
         typeSpecBuilder.addFunction(funBuilder.build())
     }
-    
+
     /**
      * Emits the target class instantiation return statement.
      *

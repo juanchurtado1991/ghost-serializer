@@ -48,7 +48,10 @@ fun SpeedGauge(
     // needle settling into place rather than a mechanical tween.
     val animatedValue by animateFloatAsState(
         targetValue = value.toFloat(),
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "gaugeValue",
     )
     val fraction = (animatedValue / safeMax.toFloat()).coerceIn(0f, 1f)
@@ -119,7 +122,12 @@ fun SpeedGauge(
             }
         }
         Spacer(Modifier.height(2.dp))
-        Text(formatCompactNumber(animatedValue.toDouble()), fontWeight = FontWeight.Black, fontSize = 26.sp, color = Ink)
+        Text(
+            formatCompactNumber(animatedValue.toDouble()),
+            fontWeight = FontWeight.Black,
+            fontSize = 26.sp,
+            color = Ink
+        )
         Text(unit, fontSize = 11.sp, color = InkMuted)
     }
 }

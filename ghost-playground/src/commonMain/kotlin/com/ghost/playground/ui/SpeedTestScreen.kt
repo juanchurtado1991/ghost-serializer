@@ -81,9 +81,9 @@ fun SpeedTestScreen(strings: Strings) {
     }
 
     val isActive = phase == SpeedTestPhase.Warmup ||
-        phase == SpeedTestPhase.RunningKser ||
-        phase == SpeedTestPhase.RunningMoshi ||
-        phase == SpeedTestPhase.RunningGhost
+            phase == SpeedTestPhase.RunningKser ||
+            phase == SpeedTestPhase.RunningMoshi ||
+            phase == SpeedTestPhase.RunningGhost
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Card(title = strings.speedTest, accent = Teal, leadingIcon = PlaygroundIconKind.Benchmark) {
@@ -128,7 +128,13 @@ fun SpeedTestScreen(strings: Strings) {
                     trackColor = TealLight.copy(0.3f),
                 )
                 Text(
-                    "${strings.speedTestElapsed}: ${formatSeconds(localSample.elapsed.toDouble(DurationUnit.SECONDS))} / " +
+                    "${strings.speedTestElapsed}: ${
+                        formatSeconds(
+                            localSample.elapsed.toDouble(
+                                DurationUnit.SECONDS
+                            )
+                        )
+                    } / " +
                             formatSeconds(localSample.totalDuration.toDouble(DurationUnit.SECONDS)),
                     fontSize = 12.sp,
                     color = InkMuted,
@@ -210,7 +216,8 @@ fun SpeedTestScreen(strings: Strings) {
                 ).sortedByDescending { it.second }
                 val winner = rankings.first()
                 val slowest = rankings.last()
-                val pct = if (slowest.second > 0.0) roundTo(winner.second / slowest.second, 1) else "—"
+                val pct =
+                    if (slowest.second > 0.0) roundTo(winner.second / slowest.second, 1) else "—"
 
                 Card(
                     title = strings.speedTestResultTitle,

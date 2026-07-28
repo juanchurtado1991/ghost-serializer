@@ -32,7 +32,10 @@ class GhostReactiveEncoderTest {
     @Test
     fun canEncode_trueForAnnotatedTypeWithSupportedMimeType() {
         assertTrue(
-            encoder.canEncode(ResolvableType.forClass(HelloMessage::class.java), MediaType.APPLICATION_JSON)
+            encoder.canEncode(
+                ResolvableType.forClass(HelloMessage::class.java),
+                MediaType.APPLICATION_JSON
+            )
         )
     }
 
@@ -49,7 +52,10 @@ class GhostReactiveEncoderTest {
     @Test
     fun canEncode_falseForUnsupportedMimeType() {
         assertFalse(
-            encoder.canEncode(ResolvableType.forClass(HelloMessage::class.java), MediaType.APPLICATION_XML)
+            encoder.canEncode(
+                ResolvableType.forClass(HelloMessage::class.java),
+                MediaType.APPLICATION_XML
+            )
         )
     }
 
@@ -64,7 +70,12 @@ class GhostReactiveEncoderTest {
         )
 
         StepVerifier.create(flux)
-            .assertNext { buffer -> assertEquals("""{"id":1,"name":"ghost"}""", bufferText(buffer)) }
+            .assertNext { buffer ->
+                assertEquals(
+                    """{"id":1,"name":"ghost"}""",
+                    bufferText(buffer)
+                )
+            }
             .verifyComplete()
     }
 
@@ -80,8 +91,18 @@ class GhostReactiveEncoderTest {
         )
 
         StepVerifier.create(flux)
-            .assertNext { buffer -> assertEquals("""{"id":1,"name":"a"}""" + "\n", bufferText(buffer)) }
-            .assertNext { buffer -> assertEquals("""{"id":2,"name":"b"}""" + "\n", bufferText(buffer)) }
+            .assertNext { buffer ->
+                assertEquals(
+                    """{"id":1,"name":"a"}""" + "\n",
+                    bufferText(buffer)
+                )
+            }
+            .assertNext { buffer ->
+                assertEquals(
+                    """{"id":2,"name":"b"}""" + "\n",
+                    bufferText(buffer)
+                )
+            }
             .verifyComplete()
     }
 

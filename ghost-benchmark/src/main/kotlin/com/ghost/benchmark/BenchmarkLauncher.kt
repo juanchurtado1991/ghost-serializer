@@ -10,8 +10,8 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.ComplexResponse
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlin.system.exitProcess
 import okio.ByteString.Companion.encodeUtf8
+import kotlin.system.exitProcess
 
 /**
  * CLI entry point for every benchmark suite.
@@ -62,7 +62,11 @@ private fun runFullSuite(threadBean: ThreadMXBean, engines: BenchmarkEngines): B
     BenchmarkProgress.logPhase(1, 5, "Cold start")
     runAndPrintColdStart(payloads.smallBytes, engines)
 
-    BenchmarkProgress.logPhase(2, 5, "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)")
+    BenchmarkProgress.logPhase(
+        2,
+        5,
+        "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
+    )
     performPhaseGc()
     runWarmupPhase(engines, payloads.smallBytes, payloads.smallComplex)
     TwitterBenchmark.warmupGlobal(BenchmarkStandard.WARMUP_ITERATIONS)
@@ -71,7 +75,7 @@ private fun runFullSuite(threadBean: ThreadMXBean, engines: BenchmarkEngines): B
         3,
         5,
         "Synthetic suite (${BenchmarkStandard.SYNTHETIC_SESSIONS} sessions × " +
-            "${BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION} samples)",
+                "${BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION} samples)",
     )
     performPhaseGc()
     val synthetic = runSyntheticBenchmarks(threadBean, engines, payloads)
@@ -99,7 +103,11 @@ private fun runSyntheticSuite(
 ): Boolean {
     val payloads = BenchmarkPayloads.create()
 
-    BenchmarkProgress.logPhase(1, 2, "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)")
+    BenchmarkProgress.logPhase(
+        1,
+        2,
+        "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
+    )
     performPhaseGc()
     runWarmupPhase(engines, payloads.smallBytes, payloads.smallComplex)
 
@@ -107,7 +115,7 @@ private fun runSyntheticSuite(
         2,
         2,
         "Synthetic suite (${BenchmarkStandard.SYNTHETIC_SESSIONS} sessions × " +
-            "${BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION} samples)",
+                "${BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION} samples)",
     )
     performPhaseGc()
     val synthetic = runSyntheticBenchmarks(threadBean, engines, payloads)
@@ -124,7 +132,11 @@ private fun runSyntheticSuite(
 }
 
 private fun runTwitterSuite(threadBean: ThreadMXBean, regressionGate: Boolean): Boolean {
-    BenchmarkProgress.logPhase(1, 2, "Twitter JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)")
+    BenchmarkProgress.logPhase(
+        1,
+        2,
+        "Twitter JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
+    )
     performPhaseGc()
     TwitterBenchmark.warmupGlobal(BenchmarkStandard.WARMUP_ITERATIONS)
 

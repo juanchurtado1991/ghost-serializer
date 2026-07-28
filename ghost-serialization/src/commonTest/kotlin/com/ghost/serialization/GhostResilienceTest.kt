@@ -11,12 +11,6 @@ import com.ghost.serialization.parser.streaming.hasNext
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectString
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.hasNext
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.parser.strings.selectString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -32,20 +26,20 @@ class GhostResilienceTest {
                 "name": "Ghost",
                 "missing_field": 
         """.trimIndent()
-        
+
         val reader = GhostJsonReader(json.encodeToByteArray())
-        
+
         // This simulates a generated serializer failing at a specific point
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
             reader.selectString(JsonReaderOptions.of("name"))
             reader.consumeKeySeparator()
             reader.nextString() // name
-            
+
             // Now we are at the end, simulate a missing field check
             reader.throwError("Required field 'info' missing")
         }
-        
+
         // After the fix, this was -1. Now it must be the current reader position.
         // The reader passed "Ghost", so it is currently on line 1 (at the comma).
         assertEquals(1, exception.line, "Line must be precisely tracked")
@@ -57,7 +51,7 @@ class GhostResilienceTest {
     fun testTruncatedJsonReporting() {
         val json = """{"id": 123, "name": "Ju"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        
+
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
             while (reader.hasNext()) {
@@ -69,7 +63,7 @@ class GhostResilienceTest {
                 }
             }
         }
-        
+
         assertEquals(0, exception.line)
         assertTrue(exception.column >= 22, "Column should be at least 22: ${exception.column}")
     }
@@ -78,18 +72,18 @@ class GhostResilienceTest {
     fun testStrictModeUnknownFieldReporting() {
         val json = """{"id": 1, "unknown_field": true}"""
         val reader = GhostJsonReader(json.encodeToByteArray(), strictMode = true)
-        
+
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
             val opts = JsonReaderOptions.of("id")
             assertEquals(0, reader.selectString(opts))
             reader.consumeKeySeparator()
             reader.nextInt()
-            
+
             // Next one is 'unknown_field', in strict mode it should throw
             reader.selectString(opts)
         }
-        
+
         assertTrue(exception.message.contains("unknown_field"))
         assertEquals(0, exception.line)
         // Position should be near the start of the unknown field

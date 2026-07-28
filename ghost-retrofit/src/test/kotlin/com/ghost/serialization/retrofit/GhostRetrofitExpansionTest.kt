@@ -84,7 +84,9 @@ class GhostRetrofitExpansionTest {
 
     @Test
     fun `strict endpoint throws on missing comma`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}"))
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}")
+        )
         kotlin.test.assertFailsWith<Exception> {
             apiService.getStrictUser()
         }
@@ -92,7 +94,9 @@ class GhostRetrofitExpansionTest {
 
     @Test
     fun `lenient endpoint passes on missing comma`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}"))
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}")
+        )
         val user = apiService.getLenientUser()
         assertEquals(1, user.id)
         assertEquals("John", user.name)
@@ -100,7 +104,10 @@ class GhostRetrofitExpansionTest {
 
     @Test
     fun `coerced endpoint coerces primitive values`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{\"id\":\"42\", \"name\":\"John\", \"isActive\":\"true\"}"))
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(200)
+                .setBody("{\"id\":\"42\", \"name\":\"John\", \"isActive\":\"true\"}")
+        )
         val user = apiService.getCoercedUser()
         assertEquals(42, user.id)
         assertEquals("John", user.name)

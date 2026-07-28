@@ -25,6 +25,7 @@ internal enum class BenchmarkProfile(
         progressInterval = 500,
         regressionTolerance = RegressionCalculator.DEFAULT_TOLERANCE,
     ),
+
     /** Developer gate profile — same tolerance, fewer warmup and session iterations. */
     FAST(
         warmupIterations = 2_000,

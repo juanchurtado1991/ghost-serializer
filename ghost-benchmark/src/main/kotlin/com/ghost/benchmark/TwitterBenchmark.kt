@@ -2,6 +2,8 @@
 
 package com.ghost.benchmark
 
+import com.ghost.benchmark.TwitterBenchmark.run
+import com.ghost.benchmark.TwitterBenchmark.warmupGlobal
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.TwitterResponse
@@ -9,11 +11,10 @@ import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.json.okio.encodeToBufferedSink
+import kotlinx.serialization.serializer
 import okio.Buffer
 
 /**
@@ -97,7 +98,10 @@ object TwitterBenchmark {
         BenchmarkProgress.logStep(
             "Local warmup (${BenchmarkStandard.LOCAL_WARMUP_ITERATIONS} iterations before measure)"
         )
-        BenchmarkProgress.repeatWithProgress("Twitter local", BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) {
+        BenchmarkProgress.repeatWithProgress(
+            "Twitter local",
+            BenchmarkStandard.LOCAL_WARMUP_ITERATIONS
+        ) {
             ctx.runWarmupIteration()
         }
 
@@ -292,7 +296,9 @@ object TwitterBenchmark {
         val payloadBytes = BenchmarkThroughput.TWITTER_PAYLOAD_BYTES
         println("\n--- Twitter Dataset Performance Summary (Fastest First) ---")
         println(
-            "  Payload: %d bytes → µs/op and decimal GB/s (ops/s × payload / 10⁹)".format(payloadBytes)
+            "  Payload: %d bytes → µs/op and decimal GB/s (ops/s × payload / 10⁹)".format(
+                payloadBytes
+            )
         )
         println(
             "| Operation          | Engine | Throughput (GB/s) | Latency (µs/op) | Mem (KB/op) |"
@@ -379,7 +385,8 @@ object TwitterBenchmark {
 
         val stdDev = if (numBatches > 1) {
             val mean = batchThroughputs.average()
-            val variance = batchThroughputs.map { (it - mean) * (it - mean) }.sum() / (numBatches - 1)
+            val variance =
+                batchThroughputs.map { (it - mean) * (it - mean) }.sum() / (numBatches - 1)
             kotlin.math.sqrt(variance)
         } else {
             0.0

@@ -2,9 +2,14 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.Ghost.deserialize
+import com.ghost.serialization.Ghost.deserializeStreaming
+import com.ghost.serialization.Ghost.encodeToSink
+import com.ghost.serialization.Ghost.encodeToString
+import com.ghost.serialization.Ghost.serialize
+import com.ghost.serialization.Ghost.serializerCache
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -24,11 +29,11 @@ import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import okio.BufferedSink
+import okio.BufferedSource
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
-import okio.BufferedSink
-import okio.BufferedSource
 
 
 /**
@@ -62,7 +67,11 @@ expect fun <T> ghostInternalUseStringReader(json: String, block: (GhostJsonStrin
  * Runs a block of operations using a pooled [GhostJsonFlatReader] instance.
  */
 @OptIn(InternalGhostApi::class)
-expect fun <T> ghostInternalUseFlatReader(bytes: ByteArray, limit: Int = bytes.size, block: (GhostJsonFlatReader) -> T): T
+expect fun <T> ghostInternalUseFlatReader(
+    bytes: ByteArray,
+    limit: Int = bytes.size,
+    block: (GhostJsonFlatReader) -> T
+): T
 
 /**
  * Runs a block of operations using a pooled [GhostJsonReader] reading from an Okio [BufferedSource].
@@ -108,7 +117,10 @@ expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (GhostJsonFla
  * implements as a few `System.arraycopy`s into its segment buffer.
  */
 @InternalGhostApi
-expect inline fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, crossinline block: (GhostJsonFlatWriter) -> Unit)
+expect inline fun ghostInternalEncodeAndDrainTo(
+    sink: BufferedSink,
+    crossinline block: (GhostJsonFlatWriter) -> Unit
+)
 
 /**
  * Core entry point for Ghost Serialization.
@@ -270,33 +282,43 @@ object Ghost {
             String::class -> {
                 StringSerializer as GhostSerializer<T>
             }
+
             Int::class -> {
                 IntSerializer as GhostSerializer<T>
             }
+
             Long::class -> {
                 LongSerializer as GhostSerializer<T>
             }
+
             Boolean::class -> {
                 BooleanSerializer as GhostSerializer<T>
             }
+
             Double::class -> {
                 DoubleSerializer as GhostSerializer<T>
             }
+
             Float::class -> {
                 FloatSerializer as GhostSerializer<T>
             }
+
             Byte::class -> {
                 ByteSerializer as GhostSerializer<T>
             }
+
             Short::class -> {
                 ShortSerializer as GhostSerializer<T>
             }
+
             Char::class -> {
                 CharSerializer as GhostSerializer<T>
             }
+
             RawJson::class -> {
                 RawJsonSerializer as GhostSerializer<T>
             }
+
             else -> {
                 null
             }
@@ -335,7 +357,9 @@ object Ghost {
                             ?: return@runSynchronized null
 
                         if (itemSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
-                            com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(itemSerializer)
+                            com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(
+                                itemSerializer
+                            )
                         } else {
                             ListSerializer(itemSerializer)
                         }
@@ -359,7 +383,9 @@ object Ghost {
                             ?: return@runSynchronized null
 
                         if (valueSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
-                            com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(valueSerializer)
+                            com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(
+                                valueSerializer
+                            )
                         } else {
                             MapSerializer(valueSerializer)
                         }
@@ -401,7 +427,7 @@ object Ghost {
         // share the same KClass and must NOT pollute that cache.
         val type = typeProducer()
         return (getSerializer(type) ?: getSerializer(kClass as KClass<Any>))
-            as? GhostSerializer<T>
+                as? GhostSerializer<T>
             ?: throwError("$NOT_FOUND $kClass. $MISSING_ANN")
     }
 
@@ -860,9 +886,12 @@ object Ghost {
         }
     }
 
-    internal const val DEFAULT_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_Default"
-    internal const val TEST_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
-    internal const val ANDROID_REGISTRY_NAME = "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
+    internal const val DEFAULT_REGISTRY_NAME =
+        "com.ghost.serialization.generated.GhostModuleRegistry_Default"
+    internal const val TEST_REGISTRY_NAME =
+        "com.ghost.serialization.generated.GhostModuleRegistry_Default_Test"
+    internal const val ANDROID_REGISTRY_NAME =
+        "com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization"
     internal const val INSTANCE_FIELD = "INSTANCE"
 
     /**

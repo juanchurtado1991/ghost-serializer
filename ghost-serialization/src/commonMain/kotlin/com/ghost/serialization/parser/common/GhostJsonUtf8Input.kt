@@ -5,12 +5,9 @@ package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import okio.Buffer
 import okio.BufferedSource
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -48,14 +45,17 @@ internal inline fun <T> withPreparedUtf8Json(
             val utf8 = utf16ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = true)
             block(utf8, 0, utf8.size)
         }
+
         JsonEncodingKind.UTF16_BE -> {
             val utf8 = utf16ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = false)
             block(utf8, 0, utf8.size)
         }
+
         JsonEncodingKind.UTF32_LE -> {
             val utf8 = utf32ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = true)
             block(utf8, 0, utf8.size)
         }
+
         JsonEncodingKind.UTF32_BE -> {
             val utf8 = utf32ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = false)
             block(utf8, 0, utf8.size)
@@ -110,7 +110,11 @@ internal class DetectedJsonEncoding(
     val bomSize: Int
 )
 
-internal fun detectJsonByteEncoding(bytes: ByteArray, offset: Int, length: Int): DetectedJsonEncoding {
+internal fun detectJsonByteEncoding(
+    bytes: ByteArray,
+    offset: Int,
+    length: Int
+): DetectedJsonEncoding {
     if (length <= 0) return DetectedJsonEncoding(JsonEncodingKind.UTF8, NO_BOM)
 
     val b0 = bytes[offset].toInt() and C.BYTE_MASK
@@ -144,10 +148,13 @@ internal fun detectJsonByteEncoding(bytes: ByteArray, offset: Int, length: Int):
         when {
             b0 == NUL_BYTE && b1 == NUL_BYTE && b2 == NUL_BYTE && b3 != NUL_BYTE ->
                 return DetectedJsonEncoding(JsonEncodingKind.UTF32_BE, NO_BOM)
+
             b0 != NUL_BYTE && b1 == NUL_BYTE && b2 == NUL_BYTE && b3 == NUL_BYTE ->
                 return DetectedJsonEncoding(JsonEncodingKind.UTF32_LE, NO_BOM)
+
             b0 == NUL_BYTE && b1 != NUL_BYTE && b2 == NUL_BYTE && b3 != NUL_BYTE ->
                 return DetectedJsonEncoding(JsonEncodingKind.UTF16_BE, NO_BOM)
+
             b0 != NUL_BYTE && b1 == NUL_BYTE && b2 != NUL_BYTE && b3 == NUL_BYTE ->
                 return DetectedJsonEncoding(JsonEncodingKind.UTF16_LE, NO_BOM)
         }
@@ -155,6 +162,7 @@ internal fun detectJsonByteEncoding(bytes: ByteArray, offset: Int, length: Int):
         when {
             b0 == NUL_BYTE && b1 != NUL_BYTE ->
                 return DetectedJsonEncoding(JsonEncodingKind.UTF16_BE, NO_BOM)
+
             b0 != NUL_BYTE && b1 == NUL_BYTE ->
                 return DetectedJsonEncoding(JsonEncodingKind.UTF16_LE, NO_BOM)
         }
@@ -189,11 +197,13 @@ internal fun utf16ToUtf8(
                     throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
                 }
                 SUPPLEMENTARY_PLANE_BASE +
-                    ((unit - C.HIGH_SURROGATE_START) shl SURROGATE_TO_CP_SHIFT) +
-                    (low - C.LOW_SURROGATE_START)
+                        ((unit - C.HIGH_SURROGATE_START) shl SURROGATE_TO_CP_SHIFT) +
+                        (low - C.LOW_SURROGATE_START)
             }
+
             unit in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END ->
                 throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+
             else -> unit
         }
         oi = writeUtf8CodePoint(out, oi, cp)
@@ -253,19 +263,25 @@ private fun writeUtf8CodePoint(out: ByteArray, offset: Int, cp: Int): Int {
         cp < C.UTF8_1BYTE_LIMIT -> {
             out[o++] = cp.toByte()
         }
+
         cp < C.UTF8_2BYTE_LIMIT -> {
             out[o++] = (C.UTF8_2BYTE_PREFIX or (cp shr C.UTF8_SHIFT_6)).toByte()
             out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
         }
+
         cp < SUPPLEMENTARY_PLANE_BASE -> {
             out[o++] = (C.UTF8_3BYTE_PREFIX or (cp shr C.UTF8_SHIFT_12)).toByte()
-            out[o++] = (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+            out[o++] =
+                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
             out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
         }
+
         else -> {
             out[o++] = (C.UTF8_4BYTE_PREFIX or (cp shr C.UTF8_SHIFT_18)).toByte()
-            out[o++] = (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-            out[o++] = (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+            out[o++] =
+                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
+            out[o++] =
+                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
             out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
         }
     }

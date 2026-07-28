@@ -22,7 +22,8 @@ class HelloController {
     fun postStrict(@RequestBody message: HelloMessage): HelloMessage = message
 
     @PostMapping("/strict-param")
-    fun postStrictParam(@RequestBody @com.ghost.serialization.annotations.GhostStrict message: HelloMessage): HelloMessage = message
+    fun postStrictParam(@RequestBody @com.ghost.serialization.annotations.GhostStrict message: HelloMessage): HelloMessage =
+        message
 
     @com.ghost.serialization.annotations.GhostCoerce
     @PostMapping("/coerce")

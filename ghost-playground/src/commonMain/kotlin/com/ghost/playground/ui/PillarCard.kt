@@ -27,13 +27,25 @@ internal fun PillarCard(pillar: SpeedPillar, strings: Strings, lang: Lang) {
     Card(title = title, accent = Sage, leadingIcon = pillar.icon, onClick = { open = !open }) {
         AnimatedVisibility(open) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillarSection(strings.whatItIs, if (lang == Lang.EN) pillar.whatEn else pillar.whatEs)
+                PillarSection(
+                    strings.whatItIs,
+                    if (lang == Lang.EN) pillar.whatEn else pillar.whatEs
+                )
                 PillarSection(strings.whyFast, if (lang == Lang.EN) pillar.whyEn else pillar.whyEs)
-                PillarSection(strings.vsOthers, if (lang == Lang.EN) pillar.vsEn else pillar.vsEs, muted = true)
+                PillarSection(
+                    strings.vsOthers,
+                    if (lang == Lang.EN) pillar.vsEn else pillar.vsEs,
+                    muted = true
+                )
             }
         }
         if (!open) {
-            Text(strings.tapToLearnMore, color = Teal, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(
+                strings.tapToLearnMore,
+                color = Teal,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

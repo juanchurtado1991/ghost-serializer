@@ -6,14 +6,11 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 /**
  * Documents intentional divergence between [Ghost] (plain JSON reader) and
@@ -71,19 +68,22 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun ghostProtoDeserializeAcceptsQuotedInt64() {
-        val parsed = GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":"42","label":"x"}""")
+        val parsed =
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":"42","label":"x"}""")
         assertEquals(42L, parsed.deviceId)
     }
 
     @Test
     fun ghostProtoDeserializeAcceptsBareInt64() {
-        val parsed = GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"}""")
+        val parsed =
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"}""")
         assertEquals(42L, parsed.deviceId)
     }
 
     @Test
     fun ghostEntryPointAcceptsBareInt64ForHandWrittenSerializer() {
-        val parsed = Ghost.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"}""".encodeToByteArray())
+        val parsed =
+            Ghost.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"}""".encodeToByteArray())
         assertEquals(42L, parsed.deviceId)
     }
 

@@ -2,8 +2,6 @@ package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
@@ -42,9 +40,9 @@ class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
 
     private fun isExcludedType(clazz: Class<*>): Boolean {
         return clazz == String::class.java ||
-            clazz == ByteArray::class.java ||
-            clazz.isPrimitive ||
-            clazz.name.startsWith("java.lang.")
+                clazz == ByteArray::class.java ||
+                clazz.isPrimitive ||
+                clazz.name.startsWith("java.lang.")
     }
 
     override fun canWrite(mediaType: MediaType?): Boolean {

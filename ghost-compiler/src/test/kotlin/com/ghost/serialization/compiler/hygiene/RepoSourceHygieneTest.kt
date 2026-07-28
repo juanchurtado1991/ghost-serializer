@@ -3,9 +3,9 @@ package com.ghost.serialization.compiler.hygiene
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.streams.asSequence
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import kotlin.streams.asSequence
 
 class RepoSourceHygieneTest {
 
@@ -36,9 +36,9 @@ class RepoSourceHygieneTest {
                 .asSequence()
                 .filter { path ->
                     Files.isRegularFile(path) &&
-                        path.toString().endsWith(".kt") &&
-                        path.toString().contains("${Path.of("src")}${Path.of("/")}") &&
-                        !path.toString().contains("${Path.of("build")}${Path.of("/")}")
+                            path.toString().endsWith(".kt") &&
+                            path.toString().contains("${Path.of("src")}${Path.of("/")}") &&
+                            !path.toString().contains("${Path.of("build")}${Path.of("/")}")
                 }
                 .forEach { path ->
                     val relative = repoRoot.relativize(path).toString().replace('\\', '/')
@@ -53,7 +53,7 @@ class RepoSourceHygieneTest {
         assertTrue(
             violations.isEmpty(),
             "Wildcard imports are forbidden; use explicit imports instead:\n" +
-                violations.joinToString("\n"),
+                    violations.joinToString("\n"),
         )
     }
 }

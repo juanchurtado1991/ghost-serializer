@@ -16,23 +16,11 @@ import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.parser.strings.beginArray
-import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.parser.strings.consumeKeySeparator
-import com.ghost.serialization.parser.strings.endArray
-import com.ghost.serialization.parser.strings.endObject
-import com.ghost.serialization.parser.strings.hasNext
-import com.ghost.serialization.parser.strings.nextBoolean
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextKey
-import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.parser.strings.selectString
-import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import okio.Buffer
 
 
 /**
@@ -104,7 +92,8 @@ class GhostStressAuditTest {
         )
 
         malformedInputs.forEach { input ->
-            val reader = GhostJsonReader(createByteArraySource(input.encodeToByteArray()), strictMode = true)
+            val reader =
+                GhostJsonReader(createByteArraySource(input.encodeToByteArray()), strictMode = true)
             assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
                 recursiveSkip(reader)
                 reader.skipWhitespace()

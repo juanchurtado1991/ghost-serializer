@@ -41,8 +41,10 @@ class StreamingGhostSource(
     override val size: Int get() = Int.MAX_VALUE
 
     private val bufferBytes = ByteArray(GhostJsonConstants.STREAMING_BUFFER_SIZE)
+
     /** Absolute start index of the bytes currently cached in [bufferBytes]. */
     private var bufferStart = -1
+
     /** Absolute end index (exclusive) of the bytes currently cached in [bufferBytes]. */
     private var bufferEnd = -1
 
@@ -108,7 +110,7 @@ class StreamingGhostSource(
             i++
         }
         val aligned = (retainFrom / GhostJsonConstants.STREAMING_BUFFER_SIZE) *
-            GhostJsonConstants.STREAMING_BUFFER_SIZE
+                GhostJsonConstants.STREAMING_BUFFER_SIZE
         val toSkip = aligned - discarded
         if (toSkip < GhostJsonConstants.STREAMING_BUFFER_SIZE) return
 
@@ -291,7 +293,8 @@ class StreamingGhostSource(
                         if (byte0 == localQuoteInt) return localPosition
                         return -1
                     }
-                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask
+                    val byte1 =
+                        bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask
                     if (byte1 < localAsciiLimit &&
                         (escapeMasks[byte1 shr localBitmaskShift] shr
                                 (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
@@ -299,7 +302,8 @@ class StreamingGhostSource(
                         if (byte1 == localQuoteInt) return localPosition + 1
                         return -1
                     }
-                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask
+                    val byte2 =
+                        bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask
                     if (byte2 < localAsciiLimit &&
                         (escapeMasks[byte2 shr localBitmaskShift] shr
                                 (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
@@ -307,7 +311,8 @@ class StreamingGhostSource(
                         if (byte2 == localQuoteInt) return localPosition + 2
                         return -1
                     }
-                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask
+                    val byte3 =
+                        bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask
                     if (byte3 < localAsciiLimit &&
                         (escapeMasks[byte3 shr localBitmaskShift] shr
                                 (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
@@ -319,7 +324,8 @@ class StreamingGhostSource(
                 }
 
                 while (localPosition < segmentLimit) {
-                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask
+                    val singleByte =
+                        bufferBytes[localPosition - segmentStart].toInt() and localByteMask
                     if (singleByte < localAsciiLimit &&
                         (escapeMasks[singleByte shr localBitmaskShift] shr
                                 (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone
@@ -449,7 +455,8 @@ class StreamingGhostSource(
                 var localPosition = currentPosition
 
                 while (localPosition < segmentLimit) {
-                    val byteValue = bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
+                    val byteValue =
+                        bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
                     if (byteValue != str[localPosition - start].code) return false
                     localPosition++
                 }

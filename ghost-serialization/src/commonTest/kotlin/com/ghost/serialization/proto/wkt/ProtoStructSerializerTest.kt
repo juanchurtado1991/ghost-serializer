@@ -5,9 +5,9 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import okio.Buffer
 
 
 /**
@@ -65,7 +65,8 @@ class ProtoStructSerializerTest {
         val json = byteWriter.toStringUtf8()
         assertEquals("""{"nested":{"inner":42.0}}""", json)
 
-        val parsed = ProtoStructSerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        val parsed =
+            ProtoStructSerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
         assertEquals(struct, parsed)
     }
 

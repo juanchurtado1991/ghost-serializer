@@ -1,14 +1,10 @@
 package com.ghost.serialization.yaml
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
-import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.assertFalse
-import kotlin.test.assertFailsWith
 
 /**
  * Group A tests: block mappings, block sequences, all scalar types,
@@ -205,6 +201,7 @@ class GhostYamlGroupATest {
               name: Alice
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val user = result["user"] as Map<String, Any?>
         assertEquals(1L, user["id"])
@@ -220,10 +217,13 @@ class GhostYamlGroupATest {
                   d: deep_value
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val a = result["a"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val b = a["b"] as Map<String, Any?>
+
         @Suppress("UNCHECKED_CAST")
         val c = b["c"] as Map<String, Any?>
         assertEquals("deep_value", c["d"])
@@ -240,6 +240,7 @@ class GhostYamlGroupATest {
               - ghost
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val tags = result["tags"] as List<Any?>
         assertEquals(3, tags.size)
@@ -257,6 +258,7 @@ class GhostYamlGroupATest {
               - 30
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val scores = result["scores"] as List<Any?>
         assertEquals(10L, scores[0])
@@ -274,6 +276,7 @@ class GhostYamlGroupATest {
                 name: Bob
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val users = result["users"] as List<Any?>
         assertEquals(2, users.size)
@@ -293,6 +296,7 @@ class GhostYamlGroupATest {
                 - 4
         """.trimIndent()
         val result = parseMap(yaml)
+
         @Suppress("UNCHECKED_CAST")
         val matrix = result["matrix"] as List<Any?>
         assertEquals(2, matrix.size)

@@ -60,7 +60,10 @@ internal fun HeroButton(
         Modifier
             .fillMaxWidth()
             .scale(scale)
-            .shadow(if (hovered) HeroElevationHovered else HeroElevationIdle, RoundedCornerShape(HeroCornerRadius))
+            .shadow(
+                if (hovered) HeroElevationHovered else HeroElevationIdle,
+                RoundedCornerShape(HeroCornerRadius)
+            )
             .clip(RoundedCornerShape(HeroCornerRadius))
             .background(Brush.horizontalGradient(colors))
             .hoverable(interactionSource)
@@ -73,7 +76,10 @@ internal fun HeroButton(
             .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             icon?.let { PlaygroundIcon(it, tint = Color.White, size = 22.dp) }
             Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
         }

@@ -125,6 +125,7 @@ internal object RawJsonValueScanner {
             RawJsonKind.NUMBER,
             RawJsonKind.BOOLEAN,
             RawJsonKind.NULL -> raw.decodeToString()
+
             RawJsonKind.OBJECT,
             RawJsonKind.ARRAY,
             RawJsonKind.INVALID -> raw.decodeToString()
@@ -136,25 +137,25 @@ internal object RawJsonValueScanner {
 
     private fun RawJson.matchesTrueLiteral(): Boolean =
         storageLength == TRUE_LEN &&
-            storage[storageOffset].toInt() == TRUE_CHAR &&
-            storage[storageOffset + 1].toInt() == CHAR_R &&
-            storage[storageOffset + 2].toInt() == CHAR_U &&
-            storage[storageOffset + 3].toInt() == CHAR_E
+                storage[storageOffset].toInt() == TRUE_CHAR &&
+                storage[storageOffset + 1].toInt() == CHAR_R &&
+                storage[storageOffset + 2].toInt() == CHAR_U &&
+                storage[storageOffset + 3].toInt() == CHAR_E
 
     private fun RawJson.matchesFalseLiteral(): Boolean =
         storageLength == FALSE_LEN &&
-            storage[storageOffset].toInt() == FALSE_CHAR &&
-            storage[storageOffset + 1].toInt() == CHAR_A &&
-            storage[storageOffset + 2].toInt() == CHAR_L &&
-            storage[storageOffset + 3].toInt() == CHAR_S &&
-            storage[storageOffset + 4].toInt() == CHAR_E
+                storage[storageOffset].toInt() == FALSE_CHAR &&
+                storage[storageOffset + 1].toInt() == CHAR_A &&
+                storage[storageOffset + 2].toInt() == CHAR_L &&
+                storage[storageOffset + 3].toInt() == CHAR_S &&
+                storage[storageOffset + 4].toInt() == CHAR_E
 
     private fun RawJson.matchesNullLiteral(): Boolean =
         storageLength == NULL_LEN &&
-            storage[storageOffset].toInt() == NULL_CHAR &&
-            storage[storageOffset + 1].toInt() == CHAR_U &&
-            storage[storageOffset + 2].toInt() == CHAR_L &&
-            storage[storageOffset + 3].toInt() == CHAR_L
+                storage[storageOffset].toInt() == NULL_CHAR &&
+                storage[storageOffset + 1].toInt() == CHAR_U &&
+                storage[storageOffset + 2].toInt() == CHAR_L &&
+                storage[storageOffset + 3].toInt() == CHAR_L
 
     private fun RawJson.isJsonNumberToken(): Boolean {
         var index = 0
@@ -203,6 +204,7 @@ internal object RawJsonValueScanner {
                 negative = true
                 index++
             }
+
             ZERO, in ONE..NINE -> Unit
             else -> return null
         }
@@ -233,6 +235,7 @@ internal object RawJsonValueScanner {
                     value = next
                     index++
                 }
+
                 DOT, EXP_LOWER, EXP_UPPER -> return null
                 else -> return null
             }
@@ -271,13 +274,14 @@ internal object RawJsonValueScanner {
                             val lowSurrogate = readHex4(index + 2)
                             index += 6
                             val codePoint = UNICODE_BASE +
-                                ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +
-                                (lowSurrogate - LOW_SURROGATE_START)
+                                    ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +
+                                    (lowSurrogate - LOW_SURROGATE_START)
                             appendCodePoint(builder, codePoint)
                         } else {
                             appendCodePoint(builder, hex)
                         }
                     }
+
                     else -> builder.append(escaped.toChar())
                 }
             } else {

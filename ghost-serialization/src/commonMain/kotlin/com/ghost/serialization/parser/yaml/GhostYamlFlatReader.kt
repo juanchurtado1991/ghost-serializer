@@ -1,17 +1,12 @@
 package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.yaml.exception.GhostYamlException
-
 import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.yaml.exception.GhostYamlException
 import com.ghost.serialization.yaml.GhostYamlConstants as C
-import com.ghost.serialization.parser.streaming.readList
-import com.ghost.serialization.parser.streaming.readSet
-import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.parser.strings.readSet
 
 
 /**
@@ -770,8 +765,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     val currentByte = localRawData[position]
                     val isBaseDigit = when {
                         isHex -> isDigit(currentByte) ||
-                            currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||
-                            currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE
+                                currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||
+                                currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE
+
                         isOctal -> currentByte in C.ZERO_BYTE..C.SEVEN_BYTE
                         else -> currentByte == C.ZERO_BYTE || currentByte == C.ONE_BYTE
                     }

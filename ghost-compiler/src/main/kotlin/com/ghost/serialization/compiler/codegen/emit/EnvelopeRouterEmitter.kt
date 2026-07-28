@@ -1,5 +1,5 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+
 import com.ghost.serialization.compiler.model.EnvelopePayloadMapping
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.squareup.kotlinpoet.ClassName
@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 private val nullableAnyType = ClassName(C.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)
@@ -42,7 +43,10 @@ internal class EnvelopeRouterEmitter(
         typedMappings.forEach { mapping ->
             val targetType = mapping.targetType ?: return@forEach
             typeSpecBuilder.addProperty(
-                PropertySpec.builder(targetSerializerPropertyName(mapping), ghostSerializerType.parameterizedBy(targetType))
+                PropertySpec.builder(
+                    targetSerializerPropertyName(mapping),
+                    ghostSerializerType.parameterizedBy(targetType)
+                )
                     .addModifiers(KModifier.PRIVATE)
                     .initializer(C.TEMPLATE_ENVELOPE_CACHED_SERIALIZER, ghostClass, targetType)
                     .build()

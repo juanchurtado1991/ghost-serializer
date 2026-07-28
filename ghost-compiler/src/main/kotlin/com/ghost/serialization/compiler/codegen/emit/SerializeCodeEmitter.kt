@@ -1,7 +1,6 @@
 package com.ghost.serialization.compiler.codegen.emit
-import com.ghost.serialization.compiler.analysis.isEnum
+
 import com.ghost.serialization.compiler.analysis.serializerClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ClassName
@@ -10,6 +9,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -86,12 +86,15 @@ internal class SerializeCodeEmitter(
             isSealed -> {
                 emitSealedDispatch(code)
             }
+
             isValue -> {
                 emitValueUnboxing(code)
             }
+
             isEnum -> {
                 emitEnumSerialization(code)
             }
+
             properties.size > C.PROPERTY_MAX_SIZE -> {
                 val fragmented = FragmentedSerializeEmitter(
                     sortedProperties,
@@ -106,6 +109,7 @@ internal class SerializeCodeEmitter(
                     sealedDiscriminatorKey
                 )
             }
+
             else -> {
                 val standard = StandardSerializeEmitter(
                     sortedProperties,

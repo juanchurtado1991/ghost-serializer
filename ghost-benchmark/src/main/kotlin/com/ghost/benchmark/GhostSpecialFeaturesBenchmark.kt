@@ -11,14 +11,14 @@ import com.ghost.serialization.integration.model.ResilientItem
 import com.ghost.serialization.integration.model.SmartHome
 import com.ghost.serialization.integration.model.SseEventEnvelopeSerializer
 import com.ghost.serialization.integration.model.TagsProbe
-import com.ghost.serialization.types.decodeAs
-import com.ghost.serialization.proto.wkt.ProtoDuration
-import com.ghost.serialization.proto.wkt.ProtoTimestamp
-import com.ghost.serialization.proto.wkt.ProtoStruct
-import com.ghost.serialization.proto.wkt.ProtoStructSerializer
 import com.ghost.serialization.proto.wkt.ProtoAny
 import com.ghost.serialization.proto.wkt.ProtoBytesValue
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoStruct
+import com.ghost.serialization.proto.wkt.ProtoStructSerializer
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
 import com.ghost.serialization.proto.wkt.ProtoValue
+import com.ghost.serialization.types.decodeAs
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
@@ -37,7 +37,8 @@ object GhostSpecialFeaturesBenchmark {
     private const val LABEL_FLATTEN = "Structural Flattening — @GhostFlatten (3 levels deep)"
     private const val LABEL_RESILIENT = "Resilience — @GhostResilient (type mismatch recovery)"
     private const val LABEL_DECODER = "Custom Decoders — @GhostDecoder (hex + nullable transform)"
-    private const val LABEL_FALLBACK = "Polymorphic Fallback — @GhostFallback (unknown discriminator)"
+    private const val LABEL_FALLBACK =
+        "Polymorphic Fallback — @GhostFallback (unknown discriminator)"
     private const val LABEL_RAWJSON_CAPTURE = "Opaque JSON — RawJson field capture (slice, bytes)"
     private const val LABEL_RAWJSON_KIND = "Opaque JSON — RawJson.kind() on captured slice"
     private const val LABEL_RAWJSON_DECODE_AS = "Opaque JSON — RawJson.decodeAs<T>() second stage"
@@ -333,7 +334,13 @@ object GhostSpecialFeaturesBenchmark {
             totalTimeNanos += System.nanoTime() - timeBefore
             totalAllocBytes += threadBean.getThreadAllocatedBytes(threadId) - allocBefore
         }
-        printResult(label, totalTimeNanos, totalAllocBytes, BenchmarkStandard.MEASUREMENT_RUNS.toLong(), payloadBytes = 0L)
+        printResult(
+            label,
+            totalTimeNanos,
+            totalAllocBytes,
+            BenchmarkStandard.MEASUREMENT_RUNS.toLong(),
+            payloadBytes = 0L
+        )
     }
 
     private fun printResult(

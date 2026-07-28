@@ -30,17 +30,23 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesSingleDigitPositiveInt() {
-        assertEquals("""{"v":7}""", writerToString { w -> w.beginObject().name("v").value(7).endObject() })
+        assertEquals(
+            """{"v":7}""",
+            writerToString { w -> w.beginObject().name("v").value(7).endObject() })
     }
 
     @Test
     fun writesSingleDigitNegativeInt() {
-        assertEquals("""{"v":-7}""", writerToString { w -> w.beginObject().name("v").value(-7).endObject() })
+        assertEquals(
+            """{"v":-7}""",
+            writerToString { w -> w.beginObject().name("v").value(-7).endObject() })
     }
 
     @Test
     fun writesMultiDigitInt() {
-        assertEquals("""{"v":12345}""", writerToString { w -> w.beginObject().name("v").value(12345).endObject() })
+        assertEquals(
+            """{"v":12345}""",
+            writerToString { w -> w.beginObject().name("v").value(12345).endObject() })
     }
 
     @Test
@@ -71,18 +77,24 @@ class GhostFlatWriterEdgeCaseTest {
     fun writesIntMinValueAsLong() {
         assertEquals(
             """{"v":${Int.MIN_VALUE}}""",
-            writerToString { w -> w.beginObject().name("v").value(Int.MIN_VALUE.toLong()).endObject() }
+            writerToString { w ->
+                w.beginObject().name("v").value(Int.MIN_VALUE.toLong()).endObject()
+            }
         )
     }
 
     @Test
     fun writesDoubleValue() {
-        assertEquals("""{"v":3.14}""", writerToString { w -> w.beginObject().name("v").value(3.14).endObject() })
+        assertEquals(
+            """{"v":3.14}""",
+            writerToString { w -> w.beginObject().name("v").value(3.14).endObject() })
     }
 
     @Test
     fun writesWholeNumberDouble() {
-        assertEquals("""{"v":5.0}""", writerToString { w -> w.beginObject().name("v").value(5.0).endObject() })
+        assertEquals(
+            """{"v":5.0}""",
+            writerToString { w -> w.beginObject().name("v").value(5.0).endObject() })
     }
 
     @Test
@@ -95,22 +107,30 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesNegativeZeroDouble() {
-        assertEquals("""{"v":-0.0}""", writerToString { w -> w.beginObject().name("v").value(-0.0).endObject() })
+        assertEquals(
+            """{"v":-0.0}""",
+            writerToString { w -> w.beginObject().name("v").value(-0.0).endObject() })
     }
 
     @Test
     fun writesFloatValue() {
-        assertEquals("""{"v":2.5}""", writerToString { w -> w.beginObject().name("v").value(2.5f).endObject() })
+        assertEquals(
+            """{"v":2.5}""",
+            writerToString { w -> w.beginObject().name("v").value(2.5f).endObject() })
     }
 
     @Test
     fun writesWholeNumberFloat() {
-        assertEquals("""{"v":4.0}""", writerToString { w -> w.beginObject().name("v").value(4.0f).endObject() })
+        assertEquals(
+            """{"v":4.0}""",
+            writerToString { w -> w.beginObject().name("v").value(4.0f).endObject() })
     }
 
     @Test
     fun writesNegativeZeroFloat() {
-        assertEquals("""{"v":-0.0}""", writerToString { w -> w.beginObject().name("v").value(-0.0f).endObject() })
+        assertEquals(
+            """{"v":-0.0}""",
+            writerToString { w -> w.beginObject().name("v").value(-0.0f).endObject() })
     }
 
     @Test
@@ -123,7 +143,9 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun doubleValueThrowsGhostExceptionForInfinity() {
         assertFailsWith<GhostJsonException> {
-            writerToString { w -> w.beginObject().name("v").value(Double.POSITIVE_INFINITY).endObject() }
+            writerToString { w ->
+                w.beginObject().name("v").value(Double.POSITIVE_INFINITY).endObject()
+            }
         }
     }
 
@@ -136,29 +158,39 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesBooleanTrue() {
-        assertEquals("""{"v":true}""", writerToString { w -> w.beginObject().name("v").value(true).endObject() })
+        assertEquals(
+            """{"v":true}""",
+            writerToString { w -> w.beginObject().name("v").value(true).endObject() })
     }
 
     @Test
     fun writesBooleanFalse() {
-        assertEquals("""{"v":false}""", writerToString { w -> w.beginObject().name("v").value(false).endObject() })
+        assertEquals(
+            """{"v":false}""",
+            writerToString { w -> w.beginObject().name("v").value(false).endObject() })
     }
 
     @Test
     fun writesNull() {
-        assertEquals("""{"v":null}""", writerToString { w -> w.beginObject().name("v").nullValue().endObject() })
+        assertEquals(
+            """{"v":null}""",
+            writerToString { w -> w.beginObject().name("v").nullValue().endObject() })
     }
 
     @Test
     fun writesCharValue() {
-        assertEquals("""{"v":"x"}""", writerToString { w -> w.beginObject().name("v").value('x').endObject() })
+        assertEquals(
+            """{"v":"x"}""",
+            writerToString { w -> w.beginObject().name("v").value('x').endObject() })
     }
 
     // ── B. STRING ESCAPING ───────────────────────────────────────────
 
     @Test
     fun writesEmptyString() {
-        assertEquals("""{"v":""}""", writerToString { w -> w.beginObject().name("v").value("").endObject() })
+        assertEquals(
+            """{"v":""}""",
+            writerToString { w -> w.beginObject().name("v").value("").endObject() })
     }
 
     @Test
@@ -195,7 +227,9 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesUnicodeDirectly() {
-        assertEquals("""{"v":"漢字"}""", writerToString { w -> w.beginObject().name("v").value("漢字").endObject() })
+        assertEquals(
+            """{"v":"漢字"}""",
+            writerToString { w -> w.beginObject().name("v").value("漢字").endObject() })
     }
 
     @Test
@@ -217,7 +251,9 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesEmojiSurrogatePairDirectly() {
-        assertEquals("""{"v":"🚀🔥"}""", writerToString { w -> w.beginObject().name("v").value("🚀🔥").endObject() })
+        assertEquals(
+            """{"v":"🚀🔥"}""",
+            writerToString { w -> w.beginObject().name("v").value("🚀🔥").endObject() })
     }
 
     @Test
@@ -265,7 +301,9 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesArrayWithMultipleValues() {
-        assertEquals("[1,2,3]", writerToString { w -> w.beginArray().value(1).value(2).value(3).endArray() })
+        assertEquals(
+            "[1,2,3]",
+            writerToString { w -> w.beginArray().value(1).value(2).value(3).endArray() })
     }
 
     @Test
@@ -273,7 +311,8 @@ class GhostFlatWriterEdgeCaseTest {
         assertEquals(
             """{"outer":{"inner":"deep"}}""",
             writerToString { w ->
-                w.beginObject().name("outer").beginObject().name("inner").value("deep").endObject().endObject()
+                w.beginObject().name("outer").beginObject().name("inner").value("deep").endObject()
+                    .endObject()
             }
         )
     }
@@ -306,7 +345,8 @@ class GhostFlatWriterEdgeCaseTest {
         assertEquals(
             """{"v":{"nested":1}}""",
             writerToString { w ->
-                w.beginObject().name("v").rawValue("""{"nested":1}""".encodeToByteArray()).endObject()
+                w.beginObject().name("v").rawValue("""{"nested":1}""".encodeToByteArray())
+                    .endObject()
             }
         )
     }

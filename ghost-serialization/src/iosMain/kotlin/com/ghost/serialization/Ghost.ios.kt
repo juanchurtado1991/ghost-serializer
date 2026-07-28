@@ -7,16 +7,15 @@ import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.prepareUtf8JsonSource
 import com.ghost.serialization.parser.common.withPreparedUtf8Json
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.WriterSinkPair
 import com.ghost.serialization.writer.strings.FlatCharArrayWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import kotlin.native.concurrent.ThreadLocal
 import okio.BufferedSource
 import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
+import kotlin.native.concurrent.ThreadLocal
 
 
 @ThreadLocal
@@ -34,6 +33,7 @@ private var cachedSourceReader: GhostJsonReader? = null
 @ThreadLocal
 @PublishedApi
 internal var cachedWriterPair: WriterSinkPair? = null
+
 @PublishedApi
 internal class WriterStringPair {
     val charWriter = FlatCharArrayWriter()
@@ -61,7 +61,11 @@ private class IosConcurrentMap<K, V> : MutableMap<K, V> {
 
     private inline fun <T> withLock(block: () -> T): T {
         objc_sync_enter(lock)
-        return try { block() } finally { objc_sync_exit(lock) }
+        return try {
+            block()
+        } finally {
+            objc_sync_exit(lock)
+        }
     }
 
     override val size: Int get() = withLock { delegate.size }

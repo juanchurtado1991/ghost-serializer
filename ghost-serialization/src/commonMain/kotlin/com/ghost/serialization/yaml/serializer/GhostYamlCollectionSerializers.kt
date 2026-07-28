@@ -200,13 +200,22 @@ class GhostYamlListSerializer<T>(
     override val typeName: String
         get() = "List<${itemSerializer.typeName}>"
 
-    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: List<T>) =
+    override fun serialize(
+        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+        value: List<T>
+    ) =
         jsonList.serialize(writer, value)
 
-    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: List<T>) =
+    override fun serialize(
+        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+        value: List<T>
+    ) =
         jsonList.serialize(writer, value)
 
-    override fun serialize(writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter, value: List<T>) =
+    override fun serialize(
+        writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter,
+        value: List<T>
+    ) =
         jsonList.serialize(writer, value)
 
     override fun serialize(writer: GhostYamlWriter, value: List<T>) {
@@ -260,13 +269,22 @@ class GhostYamlMapSerializer<V>(
     override val typeName: String
         get() = "Map<String, ${valueSerializer.typeName}>"
 
-    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: Map<String, V>) =
+    override fun serialize(
+        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+        value: Map<String, V>
+    ) =
         jsonMap.serialize(writer, value)
 
-    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: Map<String, V>) =
+    override fun serialize(
+        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+        value: Map<String, V>
+    ) =
         jsonMap.serialize(writer, value)
 
-    override fun serialize(writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter, value: Map<String, V>) =
+    override fun serialize(
+        writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter,
+        value: Map<String, V>
+    ) =
         jsonMap.serialize(writer, value)
 
     override fun serialize(writer: GhostYamlWriter, value: Map<String, V>) {

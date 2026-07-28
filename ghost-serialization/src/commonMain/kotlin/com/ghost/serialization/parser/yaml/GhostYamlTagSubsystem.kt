@@ -86,13 +86,14 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
     skipInlineWhitespace()
 
     // If value is on next line, advance and use next line's indentation
-    val valueIndent = if (position < localLimit && (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
-        advanceLine()
-        skipWhitespaceAndComments()
-        currentIndent
-    } else {
-        indent
-    }
+    val valueIndent =
+        if (position < localLimit && (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
+            advanceLine()
+            skipWhitespaceAndComments()
+            currentIndent
+        } else {
+            indent
+        }
 
     val value = when (tagType) {
         GhostYamlTags.TAG_SEQ -> {
@@ -103,6 +104,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
                 readBlockSequence(currentIndent)
             }
         }
+
         GhostYamlTags.TAG_MAP -> {
             if (position < localLimit && localRawData[position] == C.LEFT_BRACE_BYTE) {
                 readFlowMapping()
@@ -111,6 +113,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
                 readBlockMapping(currentIndent)
             }
         }
+
         else -> {
             readValue(valueIndent, inFlow = false, expectedTag = tagType)
         }
@@ -126,7 +129,11 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
     return value
 }
 
-private fun GhostYamlFlatReader.matchDoubleExclamationTag(localRawData: ByteArray, start: Int, len: Int): Int {
+private fun GhostYamlFlatReader.matchDoubleExclamationTag(
+    localRawData: ByteArray,
+    start: Int,
+    len: Int
+): Int {
     if (len == 3) {
         if (localRawData[start] == C.CHAR_S_BYTE && localRawData[start + 1] == C.CHAR_T_BYTE && localRawData[start + 2] == C.CHAR_R_BYTE) {
             return GhostYamlTags.TAG_STR

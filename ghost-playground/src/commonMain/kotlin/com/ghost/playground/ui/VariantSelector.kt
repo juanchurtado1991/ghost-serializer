@@ -63,15 +63,26 @@ fun VariantSelector(
                 .widthIn(min = DropdownMinWidth)
                 .clip(RoundedCornerShape(DropdownCornerRadius))
                 .background(TealLight.copy(DropdownFillAlpha))
-                .border(DropdownBorderWidth, if (hovered) Teal else Teal.copy(DropdownBorderAlphaIdle), RoundedCornerShape(DropdownCornerRadius))
+                .border(
+                    DropdownBorderWidth,
+                    if (hovered) Teal else Teal.copy(DropdownBorderAlphaIdle),
+                    RoundedCornerShape(DropdownCornerRadius)
+                )
                 .hoverable(interactionSource)
-                .clickable(interactionSource = interactionSource, indication = null) { expanded = true }
+                .clickable(interactionSource = interactionSource, indication = null) {
+                    expanded = true
+                }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(label.uppercase(), color = InkMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    label.uppercase(),
+                    color = InkMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
                 Text(
                     if (isEnglish) selected.labelEn else selected.labelEs,
                     color = TealDark,

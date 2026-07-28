@@ -4,7 +4,6 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
-import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlDoubleArraySerializer
@@ -18,8 +17,6 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.strings.beginObject
 
 private data class YamlWidget(val code: String, val qty: Int)
 
@@ -28,12 +25,22 @@ private object YamlWidgetSerializer :
     GhostYamlSerializer<YamlWidget> {
     override val typeName: String = "YamlWidget"
 
-    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: YamlWidget) = Unit
-    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: YamlWidget) = Unit
+    override fun serialize(
+        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+        value: YamlWidget
+    ) = Unit
+
+    override fun serialize(
+        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+        value: YamlWidget
+    ) = Unit
+
     override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): YamlWidget =
         YamlWidget("", 0)
+
     override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): YamlWidget =
         YamlWidget("", 0)
+
     override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): YamlWidget =
         YamlWidget("", 0)
 
@@ -81,16 +88,20 @@ class GhostYamlCollectionSerializersTest {
                 writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
                 value: YamlWidget,
             ) = Unit
+
             override fun serialize(
                 writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
                 value: YamlWidget,
             ) = Unit
+
             override fun deserialize(
                 reader: com.ghost.serialization.parser.streaming.GhostJsonReader,
             ): YamlWidget = YamlWidget("", 0)
+
             override fun deserialize(
                 reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader,
             ): YamlWidget = YamlWidget("", 0)
+
             override fun deserialize(
                 reader: com.ghost.serialization.parser.strings.GhostJsonStringReader,
             ): YamlWidget = YamlWidget("", 0)
@@ -108,7 +119,10 @@ class GhostYamlCollectionSerializersTest {
         val emptyYaml = """
             []
         """.trimIndent()
-        assertEquals(emptyList(), serializer.deserialize(GhostYamlFlatReader(emptyYaml.encodeToByteArray())))
+        assertEquals(
+            emptyList(),
+            serializer.deserialize(GhostYamlFlatReader(emptyYaml.encodeToByteArray()))
+        )
 
         val yaml = """
             - code: alpha
@@ -136,7 +150,10 @@ class GhostYamlCollectionSerializersTest {
         val serializer = GhostYamlMapSerializer(YamlWidgetSerializer)
 
         val emptyYaml = "{}\n"
-        assertEquals(emptyMap(), serializer.deserialize(GhostYamlFlatReader(emptyYaml.encodeToByteArray())))
+        assertEquals(
+            emptyMap(),
+            serializer.deserialize(GhostYamlFlatReader(emptyYaml.encodeToByteArray()))
+        )
 
         val yaml = """
             alpha:

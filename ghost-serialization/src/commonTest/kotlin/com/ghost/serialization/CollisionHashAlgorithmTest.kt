@@ -78,7 +78,11 @@ class CollisionHashAlgorithmTest {
         }
         streaming.endObject()
         streamingResults.forEach { (idx, value) ->
-            assertEquals(value, idx, "Streaming reader: field '${fields[value]}' dispatched to wrong index")
+            assertEquals(
+                value,
+                idx,
+                "Streaming reader: field '${fields[value]}' dispatched to wrong index"
+            )
         }
 
         // Flat reader
@@ -93,7 +97,11 @@ class CollisionHashAlgorithmTest {
         }
         flat.endObject()
         flatResults.forEach { (idx, value) ->
-            assertEquals(value, idx, "Flat reader: field '${fields[value]}' dispatched to wrong index")
+            assertEquals(
+                value,
+                idx,
+                "Flat reader: field '${fields[value]}' dispatched to wrong index"
+            )
         }
 
         // String reader
@@ -108,7 +116,11 @@ class CollisionHashAlgorithmTest {
         }
         string.endObject()
         stringResults.forEach { (idx, value) ->
-            assertEquals(value, idx, "String reader: field '${fields[value]}' dispatched to wrong index")
+            assertEquals(
+                value,
+                idx,
+                "String reader: field '${fields[value]}' dispatched to wrong index"
+            )
         }
     }
 
@@ -127,7 +139,10 @@ class CollisionHashAlgorithmTest {
         // "device"(6), "deviceId"(8), "deviceName"(10), "deviceStatus"(12)
         val options = optionsOf("device", "deviceId", "deviceName", "deviceStatus")
         assertFalse(options.hasCollisions)
-        assertAllThreeReadersDispatch(options, listOf("device", "deviceId", "deviceName", "deviceStatus"))
+        assertAllThreeReadersDispatch(
+            options,
+            listOf("device", "deviceId", "deviceName", "deviceStatus")
+        )
     }
 
     // ─── 2. basic collision — differ at last byte ───────────────────────────────
@@ -175,7 +190,10 @@ class CollisionHashAlgorithmTest {
         // user_id/user_ip (differ at last) + eventType/eventTime (same last+middle)
         val options = optionsOf("user_id", "user_ip", "eventType", "eventTime")
         assertTrue(options.hasCollisions)
-        assertAllThreeReadersDispatch(options, listOf("user_id", "user_ip", "eventType", "eventTime"))
+        assertAllThreeReadersDispatch(
+            options,
+            listOf("user_id", "user_ip", "eventType", "eventTime")
+        )
     }
 
     @Test
@@ -190,7 +208,13 @@ class CollisionHashAlgorithmTest {
         assertTrue(options.hasCollisions)
         assertAllThreeReadersDispatch(
             options,
-            listOf("user_id", "user_ip", "hubZwaveExceptionEvent", "hubZwaveS2AuthRequestEvent", "hubZwaveStatusEvent")
+            listOf(
+                "user_id",
+                "user_ip",
+                "hubZwaveExceptionEvent",
+                "hubZwaveS2AuthRequestEvent",
+                "hubZwaveStatusEvent"
+            )
         )
     }
 
@@ -260,7 +284,8 @@ class CollisionHashAlgorithmTest {
     @Test
     fun hasCollisions_trueOnlyWhenBothPrefixAndLengthMatch() {
         // Adding a field that shares prefix AND length with an existing one
-        val withoutCollision = optionsOf("deviceEvent", "deviceGroup")  // 11 vs 11? No: deviceGroup=11 chars too
+        val withoutCollision =
+            optionsOf("deviceEvent", "deviceGroup")  // 11 vs 11? No: deviceGroup=11 chars too
         // deviceEvent = 11, deviceGroup = 11 — both share `devi` and length 11 → collision!
         assertTrue(withoutCollision.hasCollisions)
     }
@@ -271,15 +296,24 @@ class CollisionHashAlgorithmTest {
     fun collision_largeFieldSet_sseEventEnvelopeStyle() {
         // Field set modeled after RawSseEventEnvelope; eventType/eventTime share last+middle byte (regression case)
         val fields = listOf(
-            "eventType", "eventTime",                          // share `even` len 9 — same lastByte+middleByte
-            "deviceEvent", "deviceCommandsEvent",              // share `devi`, different lengths
-            "deviceGroupEvent", "deviceHealthEvent",           // share `devi`, different lengths
-            "deviceLifecycleEvent", "deviceJoinEvent",         // share `devi`, different lengths
-            "hubHealthEvent", "hubLifecycleEvent",             // share `hubH`/`hubL`
-            "hubZwaveExceptionEvent", "hubZwaveStatusEvent",   // share `hubZ`, different lengths
-            "smartAppEvent", "smartAppDashboardCardEvent",     // share `smar`, different lengths
-            "locationLifecycleEvent", "modeEvent",             // different prefixes
-            "sceneLifecycleEvent", "ruleLifecycleEvent"        // different prefixes
+            "eventType",
+            "eventTime",                          // share `even` len 9 — same lastByte+middleByte
+            "deviceEvent",
+            "deviceCommandsEvent",              // share `devi`, different lengths
+            "deviceGroupEvent",
+            "deviceHealthEvent",           // share `devi`, different lengths
+            "deviceLifecycleEvent",
+            "deviceJoinEvent",         // share `devi`, different lengths
+            "hubHealthEvent",
+            "hubLifecycleEvent",             // share `hubH`/`hubL`
+            "hubZwaveExceptionEvent",
+            "hubZwaveStatusEvent",   // share `hubZ`, different lengths
+            "smartAppEvent",
+            "smartAppDashboardCardEvent",     // share `smar`, different lengths
+            "locationLifecycleEvent",
+            "modeEvent",             // different prefixes
+            "sceneLifecycleEvent",
+            "ruleLifecycleEvent"        // different prefixes
         )
         val options = optionsOf(*fields.toTypedArray())
         assertTrue(options.hasCollisions)
@@ -341,7 +375,12 @@ class CollisionHashAlgorithmTest {
         val json = """{"user_ip":3,"user_id":2,"eventTime":1,"eventType":0}"""
         val bytes = json.encodeToByteArray()
 
-        fun readAll(selectFn: () -> Int, intFn: () -> Int, separatorFn: () -> Unit, endFn: () -> Unit): Map<Int, Int> {
+        fun readAll(
+            selectFn: () -> Int,
+            intFn: () -> Int,
+            separatorFn: () -> Unit,
+            endFn: () -> Unit
+        ): Map<Int, Int> {
             val result = mutableMapOf<Int, Int>()
             repeat(4) {
                 val idx = selectFn()
@@ -436,7 +475,7 @@ class CollisionHashAlgorithmTest {
             val stringIdx = string.selectString(options)
 
             assertEquals(expectedIdx, streamIdx, "Streaming: '$fieldName'")
-            assertEquals(expectedIdx, flatIdx,   "Flat: '$fieldName'")
+            assertEquals(expectedIdx, flatIdx, "Flat: '$fieldName'")
             assertEquals(expectedIdx, stringIdx, "String: '$fieldName'")
         }
     }

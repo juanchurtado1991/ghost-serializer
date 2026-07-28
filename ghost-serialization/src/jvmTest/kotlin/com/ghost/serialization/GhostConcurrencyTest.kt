@@ -7,6 +7,13 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -15,13 +22,6 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 
 
 class GhostConcurrencyTest {
@@ -37,6 +37,7 @@ class GhostConcurrencyTest {
         override fun serialize(writer: GhostJsonWriter, value: Int) {
             writer.value(value.toLong())
         }
+
         override fun serialize(writer: GhostJsonFlatWriter, value: Int) {
             writer.value(value.toLong())
         }

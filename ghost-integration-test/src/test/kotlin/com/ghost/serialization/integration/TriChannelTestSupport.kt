@@ -2,9 +2,9 @@ package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import okio.Buffer
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import okio.Buffer
 
 
 /**

@@ -34,6 +34,11 @@ internal fun LangToggle(label: String, on: Boolean, click: () -> Unit) {
             .clickable(onClick = click)
             .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
-        Text(label, color = if (on) Color.White else InkMuted, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        Text(
+            label,
+            color = if (on) Color.White else InkMuted,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp
+        )
     }
 }

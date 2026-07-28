@@ -6,26 +6,13 @@ package com.ghost.serialization.parser.streaming
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.bytes.readQuotedString
-import com.ghost.serialization.parser.bytes.skipNumber
-import com.ghost.serialization.parser.bytes.skipQuotedString
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.common.GhostJsonConstants
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.scanStringImpl
-import com.ghost.serialization.parser.strings.findClosingQuote
-import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.parser.strings.nextLong
-import com.ghost.serialization.parser.strings.nextULong
-import com.ghost.serialization.parser.strings.skipNumber
-import com.ghost.serialization.parser.streaming.decodeResilient
-import com.ghost.serialization.parser.streaming.readList
-import com.ghost.serialization.parser.streaming.readSet
-import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.parser.strings.readSet
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
@@ -726,7 +713,9 @@ private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollision
                 (byte3 shl C.SHIFT_24)
         if (hasCollisions) {
             var ci = C.UNICODE_HEX_LENGTH
-            while (ci < length) { key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++ }
+            while (ci < length) {
+                key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++
+            }
         }
     } else {
         if (length >= 1) key = key or getByte(start)

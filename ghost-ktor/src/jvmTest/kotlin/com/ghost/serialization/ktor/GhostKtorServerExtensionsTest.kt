@@ -6,9 +6,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
 import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
@@ -32,11 +30,12 @@ class GhostKtorServerExtensionsTest {
             )
 
             @Suppress("UNCHECKED_CAST")
-            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = when (clazz) {
-                KtorUser::class -> KtorUserSerializer as GhostSerializer<T>
-                ProtoKtorEvent::class -> ProtoKtorEventSerializer as GhostSerializer<T>
-                else -> null
-            }
+            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+                when (clazz) {
+                    KtorUser::class -> KtorUserSerializer as GhostSerializer<T>
+                    ProtoKtorEvent::class -> ProtoKtorEventSerializer as GhostSerializer<T>
+                    else -> null
+                }
         })
     }
 
@@ -59,7 +58,10 @@ class GhostKtorServerExtensionsTest {
     fun respondGhost_honorsCustomStatusCode() = testApplication {
         routing {
             get("/user") {
-                call.respondGhost(KtorUser(id = 1, name = "Ada", isActive = false), HttpStatusCode.Created)
+                call.respondGhost(
+                    KtorUser(id = 1, name = "Ada", isActive = false),
+                    HttpStatusCode.Created
+                )
             }
         }
 
@@ -86,13 +88,21 @@ class GhostKtorServerExtensionsTest {
     fun respondGhostProto_writesProtoWireFormat() = testApplication {
         routing {
             get("/event") {
-                call.respondGhostProto(ProtoKtorEvent(deviceId = Long.MAX_VALUE, label = "sensor-1"))
+                call.respondGhostProto(
+                    ProtoKtorEvent(
+                        deviceId = Long.MAX_VALUE,
+                        label = "sensor-1"
+                    )
+                )
             }
         }
 
         val response = client.get("/event")
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("""{"deviceId":"9223372036854775807","label":"sensor-1"}""", response.bodyAsText())
+        assertEquals(
+            """{"deviceId":"9223372036854775807","label":"sensor-1"}""",
+            response.bodyAsText()
+        )
     }
 }
