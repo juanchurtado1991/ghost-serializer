@@ -1,6 +1,6 @@
 package com.ghost.serialization.sample.api
 
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.sample.model.BooksLabResult
 import com.ghost.serialization.sample.model.EngineResult
@@ -58,7 +58,7 @@ class OpenLibraryRepository {
             val proto3Bytes = proto3Json.encodeToByteArray()
 
             // ── Step 3: Parse books for the UI (standard path) ────────────────────
-            val responseObj: OpenLibraryResponse = GhostProtobuf.deserialize(standardBytes)
+            val responseObj: OpenLibraryResponse = GhostProto.deserialize(standardBytes)
 
             // ── Step 4: Warmup all engines ────────────────────────────────────────
             onStatusChange("JIT Warmup (${BenchmarkEngine.WARMUP_ITERATIONS}x)...")
@@ -137,7 +137,7 @@ class OpenLibraryRepository {
         onStatusChange: (String) -> Unit
     ): List<EngineResult> {
         val ghostProto = BenchmarkEngine.measure("[Proto3] GhostProto", onStatusChange) {
-            GhostProtobuf.deserialize<OpenLibraryResponse>(proto3Bytes)
+            GhostProto.deserialize<OpenLibraryResponse>(proto3Bytes)
         }
         return listOf(ghostProto)
     }
@@ -151,10 +151,10 @@ class OpenLibraryRepository {
     ) {
         repeat(BenchmarkEngine.WARMUP_ITERATIONS) {
             Ghost.deserialize<OpenLibraryResponse>(standardBytes)
-            GhostProtobuf.deserialize<OpenLibraryResponse>(standardBytes)
+            GhostProto.deserialize<OpenLibraryResponse>(standardBytes)
             kSerJson.decodeFromString<OpenLibraryResponse>(standardJson)
 
-            GhostProtobuf.deserialize<OpenLibraryResponse>(proto3Bytes)
+            GhostProto.deserialize<OpenLibraryResponse>(proto3Bytes)
         }
         forceGC()
     }

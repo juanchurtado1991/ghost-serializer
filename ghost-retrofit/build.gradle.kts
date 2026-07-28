@@ -9,7 +9,6 @@ kotlin {
 
 dependencies {
     implementation(project(":ghost-serialization"))
-    implementation(project(":ghost-protobuf"))
     implementation(libs.retrofit)
     implementation(libs.okhttp)
     

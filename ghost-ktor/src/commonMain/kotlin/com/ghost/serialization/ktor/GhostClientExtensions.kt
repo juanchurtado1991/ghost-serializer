@@ -4,7 +4,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
@@ -32,5 +32,5 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
     val bytes = this.body<ByteArray>()
-    return GhostProtobuf.deserialize(bytes, T::class)
+    return GhostProto.deserialize(bytes, T::class)
 }

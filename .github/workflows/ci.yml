@@ -138,7 +138,6 @@ jobs:
           ./gradlew
           :ghost-api:wasmJsBrowserTest
           :ghost-serialization:wasmJsBrowserTest
-          :ghost-protobuf:wasmJsBrowserTest
           :ghost-ktor:wasmJsBrowserTest
           :ghost-sample:compileKotlinWasmJs
           :ghost-playground:compileKotlinWasmJs
