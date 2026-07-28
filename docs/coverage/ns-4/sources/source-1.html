@@ -100,17 +100,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
-&nbsp;import com.ghost.serialization.compiler.model.*
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;import com.google.devtools.ksp.symbol.FileLocation
 &nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
 &nbsp;import java.io.File
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Extracts constructor-parameter default expressions from Kotlin source text.
 &nbsp; *
-&nbsp; * KSP only exposes [KSValueParameter.hasDefault], never the expression itself. When the
-&nbsp; * declaring file is available via [FileLocation], this extractor reads the source, isolates
+&nbsp; * KSP only exposes [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the
+&nbsp; * expression itself. When the declaring file is available via
+&nbsp; * [com.google.devtools.ksp.symbol.FileLocation], this extractor reads the source, isolates
 &nbsp; * the parameter&#39;s RHS, and accepts it only when it matches a strict literal whitelist.
 &nbsp; * Anything unrecognized returns `null` so callers can fall back to `.copy()`.
 &nbsp; */
@@ -601,7 +602,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

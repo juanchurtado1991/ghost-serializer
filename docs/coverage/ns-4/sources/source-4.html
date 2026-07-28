@@ -157,28 +157,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(com.google.devtools.ksp.KspExperimental::class)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.analysis
-&nbsp;import com.ghost.serialization.compiler.model.*
+&nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.model.CustomCoderModel
+&nbsp;import com.ghost.serialization.compiler.model.CustomCoderReaderKind
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.ghost.serialization.compiler.model.InferredSubclassModel
+&nbsp;import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
+&nbsp;import com.google.devtools.ksp.getAnnotationsByType
 &nbsp;import com.google.devtools.ksp.processing.KSPLogger
 &nbsp;import com.google.devtools.ksp.symbol.ClassKind
-&nbsp;import com.google.devtools.ksp.getAnnotationsByType
 &nbsp;import com.google.devtools.ksp.symbol.KSAnnotated
 &nbsp;import com.google.devtools.ksp.symbol.KSAnnotation
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-&nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
 &nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
 &nbsp;import com.google.devtools.ksp.symbol.Modifier
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
 &nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
-&nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Analyzes Kotlin classes during KSP processing to generate serialization metadata.
 &nbsp; *
-&nbsp; * This analyzer is responsible for inspecting a [KSClassDeclaration], validating it against
-&nbsp; * the framework&#39;s serialization rules, and converting its valid properties into a list of
+&nbsp; * This analyzer inspects a [com.google.devtools.ksp.symbol.KSClassDeclaration], validates it against
+&nbsp; * the framework&#39;s serialization rules, and converts its valid properties into a list of
 &nbsp; * [GhostPropertyModel] instances for code generation.
 &nbsp; *
 &nbsp; * ### Validations:
@@ -187,7 +192,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * - **Maps:** If a property is a `Map`, its key must resolve to a `String`.
 &nbsp; * - **Naming:** Duplicate JSON keys within the same class are not allowed.
 &nbsp; *
-&nbsp; * @property logger The [KSPLogger] used to report compilation errors for invalid declarations.
+&nbsp; * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors for invalid declarations.
 &nbsp; */
 <b class="fc">&nbsp;internal class GhostAnalyzer(private val logger: KSPLogger) {</b>
 &nbsp;
@@ -823,7 +828,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * proto3 `oneof` mapping support: when the wrapped type is a sealed class (e.g. an
 &nbsp;     * `inferred = true` hierarchy used to decode whichever wire key is present), the wire keys
 &nbsp;     * live on its *subclasses*, not on the sealed parent itself (which typically declares no
-&nbsp;     * properties of its own). Resolves [wireKey] against each subclass&#39; direct properties and
+&nbsp;     * properties of its own). Resolves the wire key against each subclass&#39; direct properties and
 &nbsp;     * tags the result with that subclass so the emitter can smart-cast before accessing it.
 &nbsp;     */
 &nbsp;    private fun resolveUnwrapFieldFromSealedSubclass(
@@ -1067,7 +1072,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

@@ -151,11 +151,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.model.*
-&nbsp;import com.ghost.serialization.compiler.analysis.*
-&nbsp;import com.ghost.serialization.compiler.hash.*
-&nbsp;import com.ghost.serialization.compiler.codegen.*
+&nbsp;import com.ghost.serialization.compiler.analysis.isEnum
+&nbsp;import com.ghost.serialization.compiler.analysis.serializerClassName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.ghost.serialization.compiler.model.InferredSubclassModel
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.squareup.kotlinpoet.BOOLEAN
 &nbsp;import com.squareup.kotlinpoet.ClassName
@@ -165,7 +166,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Main coordinator (Orchestrator) for the deserialization code generation process.
@@ -176,8 +177,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * task to specialized emitters.
 &nbsp; *
 &nbsp; * ### Orchestration Strategy:
-&nbsp; * - **Polymorphic Types:** Direct delegation for Sealed or [Enum] types.
-&nbsp; * - **Large DTOs (&gt; [PROPERTY_MAX_SIZE]):** Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
+&nbsp; * - **Polymorphic Types:** Direct delegation for sealed or [kotlin.Enum] types.
+&nbsp; * - **Large DTOs (&gt; [com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE]):**
+&nbsp; *   Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
 &nbsp; * - **Standard DTOs:** Delegates to [StandardEmitter] for highly-optimized, inlinable code.
 &nbsp; *
 &nbsp; * @property properties The list of property metadata to be deserialized.
@@ -208,9 +210,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Entry point for the code generation pipeline.
 &nbsp;     *
-&nbsp;     * Evaluates the DTO structure to determine the optimal generation strategy.
-&nbsp;     * It manages the injection of contextual serializers and ensures [isResilientClass]
-&nbsp;     * metadata is correctly propagated to the generated serializer.
+&nbsp;     * Evaluates the DTO structure to determine the optimal generation strategy,
+&nbsp;     * injects contextual serializers, and propagates resilience metadata to the generated
+&nbsp;     * serializer when the enclosing class is marked resilient.
 &nbsp;     *
 &nbsp;     * @param typeSpecBuilder The builder for the serializer object/class.
 &nbsp;     * @param isFlatPath Whether the code is generating for a flat reader vs standard.
@@ -446,7 +448,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    )
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Resolves and builds the [InferredSealedContext] from the property models.
+&nbsp;     * Resolves and builds the inferred-sealed dispatch context from the property models.
 &nbsp;     * Returns null if no inferred subclasses are declared.
 &nbsp;     */
 &nbsp;    private fun createInferredSealedContext(properties: List&lt;GhostPropertyModel&gt;): InferredSealedContext? {
@@ -767,7 +769,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

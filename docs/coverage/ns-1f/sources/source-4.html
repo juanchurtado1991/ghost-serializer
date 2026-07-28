@@ -103,7 +103,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.writer.strings
 &nbsp;
-&nbsp;import com.ghost.serialization.writer.common.*
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
@@ -112,60 +111,62 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BS_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COMMA_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CR_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT_CHARS
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS_CHARS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HUNDRED_LONG
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BS_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.FF_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LF_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CR_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TAB_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT_NEG
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT_NEG
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT_L
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT_L
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT_NEG_L
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT_NEG_L
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_INT_STR
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_LONG_STR
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_B_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_F_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_N_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_R_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_T_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.FF_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS_CHARS
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_MASK
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HUNDRED_LONG
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LF_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT_L
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT_NEG
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SINGLE_DIGIT_NEG_L
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_INT_STR
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_LONG_STR
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT_L
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT_NEG
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SINGLE_DIGIT_NEG_L
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.RESULT_NONE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TAB_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
+&nbsp;import com.ghost.serialization.writer.common.GhostDoubleFormatter
 &nbsp;import okio.ByteString
+&nbsp;
 &nbsp;
 <b class="fc">&nbsp;@Suppress(&quot;SameParameterValue&quot;, &quot;NOTHING_TO_INLINE&quot;)</b>
 &nbsp;class GhostJsonStringWriter @InternalGhostApi constructor(
@@ -951,7 +952,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

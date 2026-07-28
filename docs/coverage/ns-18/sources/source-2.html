@@ -154,42 +154,46 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.retrofit
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.*
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
 &nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.streaming.consumeNull
+&nbsp;import com.ghost.serialization.parser.streaming.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.strings.consumeNull
+&nbsp;import com.ghost.serialization.parser.strings.isNextNullValue
 &nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 &nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import com.ghost.serialization.serializers.ListSerializer
 &nbsp;import com.ghost.serialization.serializers.MapSerializer
+&nbsp;import java.lang.reflect.Type
+&nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;import kotlin.reflect.KClass
 &nbsp;import okhttp3.MediaType.Companion.toMediaType
 &nbsp;import okhttp3.RequestBody
 &nbsp;import okhttp3.RequestBody.Companion.toRequestBody
 &nbsp;import okhttp3.ResponseBody
 &nbsp;import retrofit2.Converter
 &nbsp;import retrofit2.Retrofit
-&nbsp;import java.lang.reflect.Type
-&nbsp;import java.util.concurrent.ConcurrentHashMap
-&nbsp;import kotlin.reflect.KClass
+&nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Retrofit `Converter.Factory` for proto3 JSON mapping (`@GhostProtoSerialization`).
+&nbsp; * Retrofit `Converter.Factory` for proto3 JSON mapping
+&nbsp; * ([@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]).
 &nbsp; *
 &nbsp; * Differs from [GhostConverterFactory] only on the read path: response bodies are parsed
-&nbsp; * through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare int64/uint64,
-&nbsp; * lenient int32 (rejects fractional values), and quoted `&quot;NaN&quot;`/`&quot;Infinity&quot;` literals per
-&nbsp; * proto3 JSON rules — required for round-tripping payloads produced by real protobuf/JSON
-&nbsp; * libraries. Encoding (`requestBodyConverter`) reuses [Ghost.encodeToBytes] since proto3 wire
-&nbsp; * correctness (int64 quoting, Base64 `bytes`, default-value omission) is generated directly
-&nbsp; * into the `@GhostProtoSerialization` serializer&#39;s own `serialize()` method.
+&nbsp; * through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader], which additionally
+&nbsp; * accepts quoted-or-bare int64/uint64, lenient int32 (rejects fractional values), and quoted
+&nbsp; * `&quot;NaN&quot;`/`&quot;Infinity&quot;` literals per proto3 JSON rules — required for round-tripping payloads
+&nbsp; * produced by real protobuf/JSON libraries. Encoding (`requestBodyConverter`) reuses
+&nbsp; * [com.ghost.serialization.Ghost.encodeToBytes] since proto3 wire correctness (int64 quoting,
+&nbsp; * Base64 `bytes`, default-value omission) is generated directly into the
+&nbsp; * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]
+&nbsp; * serializer&#39;s own `serialize()` method.
 &nbsp; *
 &nbsp; * Also unwraps `List&lt;T&gt;`/`Map&lt;String, V&gt;` request/response bodies when the element/value
 &nbsp; * serializer is registered — same pattern as [GhostConverterFactory], still using
-&nbsp; * [GhostProtoJsonFlatReader] on the read path.
+&nbsp; * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] on the read path.
 &nbsp; *
 &nbsp; * ```kotlin
 &nbsp; * Retrofit.Builder()
@@ -324,7 +328,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

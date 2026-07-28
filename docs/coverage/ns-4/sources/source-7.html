@@ -100,7 +100,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
-&nbsp;import com.ghost.serialization.compiler.model.*
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.google.devtools.ksp.symbol.ClassKind
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSType
@@ -113,7 +114,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.LONG
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
 &nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Resolves the generated serializer companion object&#39;s [ClassName] for this [KSType].
@@ -260,7 +261,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Checks whether this type is [kotlin.ByteArray].
-&nbsp; * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+&nbsp; * Fields of this type capture raw JSON bytes via the reader&#39;s
+&nbsp; * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
 &nbsp; */
 &nbsp;internal fun KSType.isByteArray(): Boolean {
 <b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY</b>
@@ -268,7 +270,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Checks whether this type is [com.ghost.serialization.types.RawJson].
-&nbsp; * Fields of this type capture raw JSON bytes via [captureRawJsonBytes].
+&nbsp; * Fields of this type capture raw JSON bytes via the reader&#39;s
+&nbsp; * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
 &nbsp; */
 &nbsp;internal fun KSType.isRawJson(): Boolean {
 <b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_RAW_JSON</b>
@@ -358,7 +361,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

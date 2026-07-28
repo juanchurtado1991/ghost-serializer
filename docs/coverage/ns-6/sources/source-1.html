@@ -100,10 +100,29 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.model.*
-&nbsp;import com.ghost.serialization.compiler.analysis.*
-&nbsp;import com.ghost.serialization.compiler.hash.*
-&nbsp;import com.ghost.serialization.compiler.codegen.*
+&nbsp;import com.ghost.serialization.compiler.analysis.isByteArray
+&nbsp;import com.ghost.serialization.compiler.analysis.isEnum
+&nbsp;import com.ghost.serialization.compiler.analysis.isGhost
+&nbsp;import com.ghost.serialization.compiler.analysis.isKotlinUnsignedPrimitive
+&nbsp;import com.ghost.serialization.compiler.analysis.isList
+&nbsp;import com.ghost.serialization.compiler.analysis.isMap
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveBoolean
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveByte
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveChar
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveDouble
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveFloat
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveInt
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveLong
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveShort
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitiveULong
+&nbsp;import com.ghost.serialization.compiler.analysis.isRawJson
+&nbsp;import com.ghost.serialization.compiler.analysis.isSet
+&nbsp;import com.ghost.serialization.compiler.analysis.isString
+&nbsp;import com.ghost.serialization.compiler.analysis.serializerClassName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.model.CustomCoderModel
+&nbsp;import com.ghost.serialization.compiler.model.CustomCoderReaderKind
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.google.devtools.ksp.symbol.KSType
 &nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;import com.squareup.kotlinpoet.CodeBlock
@@ -112,7 +131,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
 &nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Abstract base class for all deserialization emitters within the Ghost compiler.
@@ -181,7 +200,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     *
 &nbsp;     * During runtime, the generated serializer uses this mask to perform high-performance schema validation.
 &nbsp;     * By comparing the received mask against this required mask using a binary AND operation
-&nbsp;     * (`mask &amp; requiredMask == requiredMask`), we validate the object integrity in a single CPU cycle.
+&nbsp;     * (`mask &amp; requiredMask == requiredMask`), the generated serializer validates object
+&nbsp;     * integrity in a single CPU cycle.
 &nbsp;     *
 &nbsp;     * @return A [LongArray] where each set bit represents a mandatory field that must be validated
 &nbsp;     * after the deserialization process completes.
@@ -296,7 +316,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * It handles null-safety by wrapping the reader call in a null check template.
 &nbsp;     */
 &nbsp;    protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
-&nbsp;        // customDecoder is handled in [buildCall] before nullability — never reaches here.
+&nbsp;        // customDecoder is handled in buildCall before nullability — never reaches here.
 <b class="pc">&nbsp;        if (prop.isPrimitiveArray) {</b>
 <b class="nc">&nbsp;            val serializerClass = if (readerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {</b>
 <b class="nc">&nbsp;                ClassName(</b>
@@ -384,7 +404,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Dispatches the correct [CodeBlock] to read a specific [KSType] from the JSON reader.
 &nbsp;     * * This acts as the recursive entry point for the emitter. It follows these resolution rules:
 &nbsp;     * 1. **Ghost/Enum types:** Delegates to an existing serializer (recursive call).
-&nbsp;     * 2. **Primitives:** Maps directly to optimized `GhostJsonReader` methods (e.g., [kotlin.random.Random.Default.nextInt]).
+&nbsp;     * 2. **Primitives:** Maps directly to optimized `GhostJsonReader` methods (e.g. `nextInt()`).
 &nbsp;     * 3. **Collections (List/Map):** Applies a recursive template to handle generic types.
 &nbsp;     * 4. **Fallbacks:** Uses contextual resolution for unknown or custom types.
 &nbsp;     *
@@ -548,7 +568,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Emits a fused `nextXOrNull()` when [nullable], otherwise the non-null `nextX()` call.
+&nbsp;     * Emits a fused `nextXOrNull()` when the property is nullable; otherwise the non-null
+&nbsp;     * `nextX()` call.
 &nbsp;     * Avoids the generated `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
 &nbsp;     */
 &nbsp;    private fun scalarReaderCall(nonNullCall: String, orNullCall: String, nullable: Boolean): CodeBlock =
@@ -574,8 +595,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * for every property and all validation/defaults masks, completely eliminating magic numbers.
 &nbsp;     *
 &nbsp;     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
-&nbsp;     * @param emitRequiredAggregateMasks When false, skip [MASK_REQUIRED_N] (e.g. StandardEmitter
-&nbsp;     * with a single required field validates via the property mask only).
+&nbsp;     * @param emitRequiredAggregateMasks When false, skip aggregate `MASK_REQUIRED_N` constants
+&nbsp;     * (e.g. StandardEmitter with a single required field validates via the property mask only).
 &nbsp;     */
 &nbsp;    protected fun emitPropertyMaskConstants(
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
@@ -619,7 +640,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Registers a [MASK_DEFAULTS_N] constant when the copy-based default-value return path needs it.
+&nbsp;     * Registers a `MASK_DEFAULTS_N` constant when the copy-based default-value return path needs it.
 &nbsp;     */
 &nbsp;    protected fun emitDefaultMaskConstant(
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
@@ -643,9 +664,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Injects private property references for contextual serializers into the generated class.
 &nbsp;     *
-&nbsp;     * This implements a static Dependency Injection strategy. Instead of looking up
-&nbsp;     * serializers at runtime (which would require reflection), we pre-resolve and
-&nbsp;     * inject them as private final fields during the compilation phase.
+&nbsp;     * This implements a static dependency-injection strategy. Instead of looking up
+&nbsp;     * serializers at runtime (which would require reflection), the compiler pre-resolves
+&nbsp;     * and injects them as private final fields during code generation.
 &nbsp;     *
 &nbsp;     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
 &nbsp;     */
@@ -722,7 +743,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

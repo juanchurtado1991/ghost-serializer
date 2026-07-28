@@ -132,16 +132,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.ktor
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.*
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
 &nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
-&nbsp;import com.ghost.serialization.releaseScratchBuffer
-&nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 &nbsp;import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+&nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import io.ktor.http.ContentType
 &nbsp;import io.ktor.http.content.ByteArrayContent
 &nbsp;import io.ktor.http.content.OutgoingContent
@@ -152,15 +148,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import io.ktor.utils.io.readAvailable
 &nbsp;import kotlin.reflect.KClass
 &nbsp;
+&nbsp;
 &nbsp;/**
 &nbsp; * Ktor [ContentConverter] for proto3 JSON mapping (`@GhostProtoSerialization`).
 &nbsp; *
 &nbsp; * Differs from [GhostContentConverter] only on the read path: request/response bodies are
 &nbsp; * parsed through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare
 &nbsp; * int64/uint64, lenient int32 (rejects fractional values), and quoted `&quot;NaN&quot;`/`&quot;Infinity&quot;`
-&nbsp; * literals per proto3 JSON rules. `serialize` reuses [Ghost.encodeToBytes] since wire
-&nbsp; * correctness on write is already generated into the `@GhostProtoSerialization` serializer&#39;s
-&nbsp; * own `serialize()` method.
+&nbsp; * literals per proto3 JSON rules. Encoding reuses [Ghost.encodeToBytes] since proto3 wire
+&nbsp; * correctness (int64 quoting, Base64 `bytes`, default-value omission) is generated into
+&nbsp; * the `@GhostProtoSerialization` serializer&#39;s own `serialize()` method.
 &nbsp; *
 &nbsp; * ```kotlin
 &nbsp; * install(ContentNegotiation) { ghostProto() }
@@ -253,7 +250,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

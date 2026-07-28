@@ -137,17 +137,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;unused&quot;)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.model.*
-&nbsp;import com.ghost.serialization.compiler.analysis.*
-&nbsp;import com.ghost.serialization.compiler.hash.*
-&nbsp;import com.ghost.serialization.compiler.codegen.*
+&nbsp;import com.ghost.serialization.compiler.analysis.DispatchNamesResolver
+&nbsp;import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
+&nbsp;import com.ghost.serialization.compiler.analysis.getDefaultValueReturnExpression
+&nbsp;import com.ghost.serialization.compiler.analysis.getInitialValue
+&nbsp;import com.ghost.serialization.compiler.analysis.getReturnExpression
+&nbsp;import com.ghost.serialization.compiler.analysis.getSingleShotDefaultArgExpression
+&nbsp;import com.ghost.serialization.compiler.analysis.getVariableType
+&nbsp;import com.ghost.serialization.compiler.analysis.isPrimitive
+&nbsp;import com.ghost.serialization.compiler.analysis.localTrackingName
+&nbsp;import com.ghost.serialization.compiler.analysis.localValueName
+&nbsp;import com.ghost.serialization.compiler.codegen.GeneratedCallFormat
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;import com.squareup.kotlinpoet.CodeBlock
 &nbsp;import com.squareup.kotlinpoet.FunSpec
 &nbsp;import com.squareup.kotlinpoet.KModifier
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Emitter for standard deserialization logic.
@@ -681,7 +690,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * `if ((maskN and BIT) != 0L) parsed else &lt;sourceDefault&gt;`.
 &nbsp;     *
 &nbsp;     * Uses `val result = Type(...); return result` because KotlinPoet cannot nest
-&nbsp;     * named-arg [CodeBlock.Builder.addStatement]s under an open `return %T(` call.
+&nbsp;     * named-arg [com.squareup.kotlinpoet.CodeBlock.Builder.addStatement] calls under an open
+&nbsp;     * `return %T(` call.
 &nbsp;     */
 &nbsp;    private fun emitSingleShotReturn(
 &nbsp;        body: CodeBlock.Builder,
@@ -779,7 +789,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

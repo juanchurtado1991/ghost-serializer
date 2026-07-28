@@ -155,12 +155,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Opaque JSON held as verbatim UTF-8 bytes of the wire representation.
 &nbsp; *
-&nbsp; * Ghost serializes and deserializes [RawJson] as an inline JSON value (object, array,
-&nbsp; * string, number, boolean, or null) using zero-copy capture when parsed from a
-&nbsp; * [ByteArray] source, without building an intermediate parse tree.
+&nbsp; * Ghost serializes and deserializes [com.ghost.serialization.types.RawJson] as an inline JSON
+&nbsp; * value (object, array, string, number, boolean, or null) using zero-copy capture when parsed
+&nbsp; * from a [kotlin.ByteArray] source, without building an intermediate parse tree.
 &nbsp; *
-&nbsp; * Prefer [RawJson] over [kotlin.ByteArray] on public model fields: it documents intent
-&nbsp; * and provides value-based [equals] / [hashCode].
+&nbsp; * Prefer [com.ghost.serialization.types.RawJson] over [kotlin.ByteArray] on public model fields:
+&nbsp; * it documents intent and provides value-based [equals] / [hashCode].
 &nbsp; *
 &nbsp; * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength]
 &nbsp; * alias the parse input buffer until [bytes] is accessed (which materializes an
@@ -183,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            storage.copyOfRange(storageOffset, storageOffset + storageLength)</b>
 &nbsp;        }
 &nbsp;
-&nbsp;    /** Decodes the captured UTF-8 JSON bytes as a [String] (wire form, including quotes for strings). */
+&nbsp;    /** Decodes the captured UTF-8 JSON bytes as a [kotlin.String] (wire form, including quotes for strings). */
 &nbsp;    fun decodeToString(): String =
 <b class="fc">&nbsp;        storage.decodeToString(storageOffset, storageOffset + storageLength)</b>
 &nbsp;
@@ -207,7 +207,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
 <b class="fc">&nbsp;    fun asLongOrNull(): Long? = RawJsonValueScanner.asLongOrNull(this)</b>
 &nbsp;
-&nbsp;    /** JSON number as [Double]; integer path is zero-allocation, fraction/exponent uses UTF-8 decode once. */
+&nbsp;    /** JSON number as [kotlin.Double]; integer path avoids extra allocation; fraction/exponent uses UTF-8 decode once. */
 <b class="fc">&nbsp;    fun asDoubleOrNull(): Double? = RawJsonValueScanner.asDoubleOrNull(this)</b>
 &nbsp;
 &nbsp;    /**
@@ -266,10 +266,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    override fun toString(): String = &quot;RawJson(${decodeToString()})&quot;</b>
 &nbsp;
 &nbsp;    companion object {
-&nbsp;        /** Initial accumulator for [contentHashCode]; matches [ByteArray.contentHashCode]. */
+&nbsp;        /** Initial accumulator for [contentHashCode]; matches `kotlin.collections.contentHashCode`. */
 &nbsp;        private const val CONTENT_HASH_SEED = 1
 &nbsp;
-&nbsp;        /** Multiplier for [contentHashCode]; matches `java.util.Arrays.hashCode` and [String.hashCode]. */
+&nbsp;        /** Multiplier for [contentHashCode]; matches `java.util.Arrays.hashCode` and [kotlin.String.hashCode]. */
 &nbsp;        private const val CONTENT_HASH_MULTIPLIER = 31
 &nbsp;
 &nbsp;        /** Wraps an owned UTF-8 buffer exactly as it appears in JSON. */
@@ -279,7 +279,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        fun fromBufferSlice(buffer: ByteArray, offset: Int, length: Int): RawJson =
 <b class="fc">&nbsp;            RawJson(buffer, offset, length)</b>
 &nbsp;
-&nbsp;        /** Encodes [json] to UTF-8 bytes. For round-trip tests, prefer wire capture. */
+&nbsp;        /** Encodes [json] to UTF-8 bytes. Prefer [fromBufferSlice] or reader capture when decoding parsed wire bytes. */
 <b class="fc">&nbsp;        fun fromString(json: String): RawJson = fromUtf8Bytes(json.encodeToByteArray())</b>
 &nbsp;    }
 &nbsp;}
@@ -306,7 +306,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>
