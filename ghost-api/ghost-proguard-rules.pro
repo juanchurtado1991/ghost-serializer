@@ -1,12 +1,16 @@
-# Preserve classes annotated with @GhostSerialization.
-# Ghost uses compile-time generated code (no reflection), but preserving these
-# prevents R8/ProGuard from aggressively stripping domain models that are only
-# instantiated dynamically via JSON deserialization or accessed dynamically.
+# Ghost consumer ProGuard/R8 rules (merged automatically from the ghost-api AAR).
+# Ghost uses compile-time generated code (no reflection), but preserving annotated
+# DTOs prevents R8 from stripping models only referenced via deserialization.
 
 -keep @com.ghost.serialization.annotations.GhostSerialization class * { *; }
+-keep @com.ghost.serialization.annotations.GhostProtoSerialization class * { *; }
+-keep @com.ghost.serialization.annotations.GhostYamlSerialization class * { *; }
 
-# Preserve the core annotation itself just in case it is queried at runtime (rare)
 -keep class com.ghost.serialization.annotations.GhostSerialization { *; }
+-keep class com.ghost.serialization.annotations.GhostProtoSerialization { *; }
+-keep class com.ghost.serialization.annotations.GhostYamlSerialization { *; }
 
-# Ghost's generated serializers must be preserved if they are accessed dynamically
+-keep class com.ghost.serialization.generated.** { *; }
+
 -keep class * implements com.ghost.serialization.contract.GhostSerializer { *; }
+-keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer { *; }

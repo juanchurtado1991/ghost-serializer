@@ -251,12 +251,16 @@ internal object GhostEmitterConstants {
     const val STR_FLOAT = "Float"
 
     const val TEMPLATE_PROGUARD_KEEP = """
-        # GhostSerialization Robust Keep Rules
-        -keep class %s.%s {
+        # Ghost KSP module rules (registry + serializers for this compilation unit)
+        -keep class %1${'$'}s.** { *; }
+        -keep class %1${'$'}s.%2${'$'}s {
             public static ** INSTANCE;
             public *** getSerializer(...);
         }
         -keep class * implements com.ghost.serialization.contract.GhostSerializer {
+            *;
+        }
+        -keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer {
             *;
         }
     """
