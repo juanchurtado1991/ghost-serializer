@@ -1,5 +1,7 @@
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.compiler.codegen.GeneratedSourceTrimmer
+
 import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*

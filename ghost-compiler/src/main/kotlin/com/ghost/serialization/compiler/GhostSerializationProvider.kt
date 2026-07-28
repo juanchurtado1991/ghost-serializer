@@ -3,6 +3,7 @@ package com.ghost.serialization.compiler
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.ghost.serialization.compiler.ksp.GhostSerializationProcessor
 
 /**
  * Entry point for the KSP plugin. It provides the environment

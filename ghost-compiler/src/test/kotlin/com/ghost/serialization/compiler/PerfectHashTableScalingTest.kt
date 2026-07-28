@@ -1,6 +1,7 @@
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.compiler.hash.PerfectHashConfig
+import com.ghost.serialization.compiler.hash.PerfectHashFinder
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*

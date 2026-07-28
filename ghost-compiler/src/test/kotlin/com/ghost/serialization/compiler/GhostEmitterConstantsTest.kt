@@ -1,5 +1,6 @@
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
