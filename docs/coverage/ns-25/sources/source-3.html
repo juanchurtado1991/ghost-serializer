@@ -1,0 +1,97 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlSerialization</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.annotations</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlSerialization (com.ghost.serialization.annotations)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlSerialization</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
+&nbsp;
+&nbsp;/**
+&nbsp; * Opt-in marker for YAML serializer generation on a model that already uses
+&nbsp; * [GhostSerialization] or [GhostProtoSerialization].
+&nbsp; *
+&nbsp; * Without this annotation, KSP emits JSON (and proto3 JSON mapping when applicable) only.
+&nbsp; * With it, KSP also emits a [com.ghost.serialization.yaml.contract.GhostYamlSerializer]
+&nbsp; * companion when the model shape is YAML-compatible.
+&nbsp; *
+&nbsp; * **Cross-format annotations** (also honored on YAML and proto3 JSON paths when codegen runs):
+&nbsp; * - [GhostName] — wire key override
+&nbsp; * - [GhostIgnore] — skip property on read/write
+&nbsp; *
+&nbsp; * **JSON-only features** (cannot be combined with this annotation — KSP error):
+&nbsp; * [GhostResilient], [GhostJsonEnvelope], [GhostFlatten], [GhostWrap], [GhostWrappedKeys],
+&nbsp; * sealed/`inferred` polymorphism, [GhostDecoder]/[GhostEncoder], contextual serializers,
+&nbsp; * `RawJson`, non-proto `ByteArray`, and nested Ghost types that fail the YAML scan.
+&nbsp; *
+&nbsp; * See the wiki *Advanced Features — Format compatibility* for the full matrix.
+&nbsp; */
+&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostYamlSerialization
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 22:17</div>
+</div>
+</body>
+</html>
