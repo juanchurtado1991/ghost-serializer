@@ -6,7 +6,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.*
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.pack
 import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.register
 import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.unpack
@@ -90,7 +90,9 @@ object ProtoAnyRegistry {
     fun <T : Any> unpack(any: ProtoAny, kClass: KClass<T>): T {
         val serializer = Ghost.getSerializer(kClass) as? GhostSerializer<T>
             ?: Ghost.throwError("${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}")
-        return serializer.deserialize(GhostProtoJsonFlatReader(any.value))
+        return ghostProtoInternalUseFlatReader(any.value) { reader ->
+            serializer.deserialize(reader)
+        }
     }
 
     /** Reified convenience for [unpack]. */
@@ -105,7 +107,9 @@ object ProtoAnyRegistry {
     fun unpackDynamic(any: ProtoAny): Any? {
         val kClass = classByTypeUrl[any.typeUrl] ?: return null
         val serializer = Ghost.getSerializer(kClass) ?: return null
-        return serializer.deserialize(GhostProtoJsonFlatReader(any.value))
+        return ghostProtoInternalUseFlatReader(any.value) { reader ->
+            serializer.deserialize(reader)
+        }
     }
 
     /** Test-only: clears all registered typeUrl/KClass mappings. */

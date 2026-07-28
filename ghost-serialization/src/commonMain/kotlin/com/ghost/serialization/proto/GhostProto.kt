@@ -19,9 +19,10 @@ import kotlin.reflect.KClass
 object GhostProto {
 
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
-        val reader = GhostProtoJsonFlatReader(bytes)
-        val serializer = Ghost.resolveSerializer<T>()
-        return serializer.deserialize(reader)
+        return ghostProtoInternalUseFlatReader(bytes) { reader ->
+            val serializer = Ghost.resolveSerializer<T>()
+            serializer.deserialize(reader)
+        }
     }
 
     /**
@@ -33,7 +34,9 @@ object GhostProto {
     fun <T : Any> deserialize(bytes: ByteArray, clazz: KClass<T>): T {
         val serializer = Ghost.getSerializer(clazz)
             ?: Ghost.throwError("${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}")
-        return serializer.deserialize(GhostProtoJsonFlatReader(bytes))
+        return ghostProtoInternalUseFlatReader(bytes) { reader ->
+            serializer.deserialize(reader)
+        }
     }
 
     /**
@@ -72,12 +75,10 @@ object GhostProto {
                 if (count == -1) break
                 offset += count
             }
-            // Zero-allocation slice range initialization on reader
-            val reader = GhostProtoJsonFlatReader(bytes)
-            reader.limit = offset
-            reader.position = 0
-            val serializer = Ghost.resolveSerializer<T>()
-            return serializer.deserialize(reader)
+            return ghostProtoInternalUseFlatReader(bytes, length = offset) { reader ->
+                val serializer = Ghost.resolveSerializer<T>()
+                serializer.deserialize(reader)
+            }
         } finally {
             releaseScratchBuffer(bytes)
         }

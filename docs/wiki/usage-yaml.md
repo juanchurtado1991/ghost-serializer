@@ -114,10 +114,22 @@ data class ConfigDto(val id: Long, val name: String)
 
 Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
 
-- `Set<T>` top-level HTTP request/response bodies in Retrofit/Ktor YAML converters (parity with [Proto §8](usage-protobuf.md#8-known-gaps-not-yet-implemented))
+- `Set<T>` top-level HTTP request/response bodies in Retrofit, Ktor, and Spring Boot (MVC + WebFlux) YAML converters (parity with [Proto §8](usage-protobuf.md#8-known-gaps-not-yet-implemented))
 - Binary protobuf wire format (varint encoding) — YAML/JSON paths are for config/API documents, not gRPC binary
 
 Structural JSON-only features (`@GhostResilient`, `@GhostFlatten`, sealed polymorphism, etc.) remain blocked at compile time with `@GhostYamlSerialization` — see [§2](#2-supported-annotations-on-yaml-paths).
+
+---
+
+## 8. Benchmarks
+
+Ghost-only YAML round-trip numbers (`GhostYamlFlatReader` / `GhostYamlFlatWriter` on `YamlBenchUser`):
+
+```bash
+./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
+```
+
+→ **[Benchmarks — YAML round-trip](benchmarks.md#-yaml-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
 
 ---
 

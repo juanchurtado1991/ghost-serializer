@@ -172,12 +172,28 @@ All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, 
 
 Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
 
-- `Set<T>` top-level request/response bodies in Retrofit/Ktor proto converters (`List<T>` and `Map<String, V>` are supported)
+- `Set<T>` top-level request/response bodies in Retrofit, Ktor, and Spring Boot (MVC + WebFlux) proto converters (`List<T>` and `Map<String, V>` are supported)
 - Binary protobuf wire format (varint encoding) — Ghost only implements proto3 **JSON** mapping
 
 ## 9. Proto models in YAML
 
 When a `@GhostProtoSerialization` model is eligible for YAML codegen, KSP can emit serializers that read through `GhostProtoYamlFlatReader` — applying proto3 int64-as-string and bytes-as-Base64 rules inside YAML documents. Use the same `Ghost.decodeFromYaml` / `encodeToYaml` entry points as plain JSON models. See [YAML guide §3](usage-yaml.md#3-what-ksp-generates-and-what-it-skips).
+
+## 10. Benchmarks
+
+**Generated models** — proto3 JSON round-trip on `ProtoBenchUser` via pooled **`GhostProto`** (`ghostProtoInternalUseFlatReader`, same pooling model as JSON/YAML flat readers):
+
+```bash
+./gradlew :ghost-benchmark:benchmarkProto -PskipTests
+```
+
+→ **[Benchmarks — Proto3 JSON round-trip](benchmarks.md#-proto3-json-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
+
+**Well-Known Types** (`ProtoDuration`, `ProtoTimestamp`, …) — micro-benchmarks inside `benchmarkSpecial`:
+
+```bash
+./gradlew :ghost-benchmark:benchmarkSpecial -PskipTests
+```
 
 ---
 

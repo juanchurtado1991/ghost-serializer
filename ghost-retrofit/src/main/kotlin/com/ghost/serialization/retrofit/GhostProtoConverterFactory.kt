@@ -10,7 +10,7 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
@@ -78,13 +78,13 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
                         offset += read
                     }
 
-                    val reader = GhostProtoJsonFlatReader(scratch)
-                    reader.limit = offset
-                    if (reader.isNextNullValue()) {
-                        reader.consumeNull()
-                        null
-                    } else {
-                        serializer.deserialize(reader)
+                    ghostProtoInternalUseFlatReader(scratch, length = offset) { reader ->
+                        if (reader.isNextNullValue()) {
+                            reader.consumeNull()
+                            null
+                        } else {
+                            serializer.deserialize(reader)
+                        }
                     }
                 } finally {
                     releaseScratchBuffer(scratch)

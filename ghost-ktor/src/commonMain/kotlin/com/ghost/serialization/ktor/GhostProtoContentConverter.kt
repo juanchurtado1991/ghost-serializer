@@ -8,6 +8,7 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
@@ -84,11 +85,10 @@ class GhostProtoContentConverter(
                 offset += read
             }
 
-            val reader = GhostProtoJsonFlatReader(scratch)
-            reader.limit = offset
-            configurer?.invoke(reader)
-
-            return serializer.deserialize(reader)
+            return ghostProtoInternalUseFlatReader(scratch, length = offset) { reader ->
+                configurer?.invoke(reader)
+                serializer.deserialize(reader)
+            }
         } finally {
             releaseScratchBuffer(scratch)
         }

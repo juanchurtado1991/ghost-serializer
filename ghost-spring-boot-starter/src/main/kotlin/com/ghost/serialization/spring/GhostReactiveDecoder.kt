@@ -4,7 +4,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
@@ -135,8 +135,9 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
                     "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
                 )
             if (serializer.isProto) {
-                val reader = GhostProtoJsonFlatReader(bytes)
-                return serializer.deserialize(reader)
+                return ghostProtoInternalUseFlatReader(bytes) { reader ->
+                    serializer.deserialize(reader)
+                }
             }
             Ghost.deserialize(serializer, bytes)
         } catch (e: Exception) {

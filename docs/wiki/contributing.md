@@ -38,8 +38,10 @@ cd ghost-serializer
 | `./gradlew verifyAndBenchmarkFast` | `allTests` then fast regression gate |
 | `./gradlew verifyAndBenchmark` | `allTests` then full regression gate |
 | `./gradlew :ghost-compiler:test` | KSP processor / emitter tests only |
-| `./gradlew :ghost-benchmark:benchmarkRegressionFast` | `allTests` first, then fast regression |
+| `./gradlew :ghost-benchmark:benchmarkRegressionFast` | `allTests` first, then fast regression (JSON gate + yaml/proto informational) |
 | `./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests` | Benchmark only — no test gate |
+| `./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests` | YAML parser/writer only (~30s) |
+| `./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests` | Proto3 JSON round-trip only (~30s) |
 | `./gradlew :ghost-benchmark:run` | `allTests` first, then full JVM benchmark harness |
 | `./gradlew :ghost-benchmark:run -PskipTests` | Benchmark only — no test gate |
 | `./gradlew koverHtmlReport` | Merged JVM/Android line/branch coverage across all Kover-enabled modules — `build/reports/kover/html/index.html` |
