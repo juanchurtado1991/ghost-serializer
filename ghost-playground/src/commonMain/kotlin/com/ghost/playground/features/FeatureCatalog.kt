@@ -3,6 +3,8 @@ package com.ghost.playground.features
 import com.ghost.playground.ui.icons.PlaygroundIconKind
 import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.decodeFromYaml
+import com.ghost.serialization.encodeToYaml
 
 object FeatureCatalog {
     val labs: List<FeatureLab> = listOf(
@@ -206,6 +208,64 @@ object FeatureCatalog {
             },
             explainEs = { _, out ->
                 "orderId se mantuvo como string entre comillas (convención int64 de proto3) y retries=0 (el default) se omitió del output: $out"
+            },
+        ),
+        FeatureLab(
+            id = "yamlRoundtrip",
+            icon = PlaygroundIconKind.RoundTrip,
+            titleEn = "YAML",
+            titleEs = "YAML",
+            introEn = "Ghost 1.3 generates GhostYamlSerializer companions — the same DTO can round-trip YAML documents without a second schema.",
+            introEs = "Ghost 1.3 genera companions GhostYamlSerializer — el mismo DTO puede hacer round-trip de documentos YAML sin un segundo schema.",
+            dtoSource = """
+                @GhostSerialization
+                data class PlaygroundUser(
+                    val id: Long,
+                    val name: String,
+                    val email: String? = null,
+                )
+            """.trimIndent(),
+            fieldNames = listOf("id", "name", "email"),
+            variants = listOf(
+                LabVariant(
+                    "full",
+                    "Full profile",
+                    "Perfil completo",
+                    """
+                    id: 7
+                    name: Neo
+                    email: neo@matrix.io
+                    """.trimIndent(),
+                ),
+                LabVariant(
+                    "missingOptional",
+                    "Missing optional field",
+                    "Campo opcional ausente",
+                    """
+                    id: 9
+                    name: Morpheus
+                    """.trimIndent(),
+                ),
+                LabVariant(
+                    "nullEmail",
+                    "Null email",
+                    "Email nulo",
+                    """
+                    id: 8
+                    name: Trinity
+                    email: null
+                    """.trimIndent(),
+                ),
+            ),
+            run = { yaml ->
+                val user = Ghost.decodeFromYaml<PlaygroundUser>(yaml)
+                Ghost.encodeToYaml(user)
+            },
+            explainEn = { _, out ->
+                "Ghost parsed YAML with the generated GhostYamlFlatReader and wrote YAML again with GhostYamlFlatWriter. Output: $out"
+            },
+            explainEs = { _, out ->
+                "Ghost parseó YAML con GhostYamlFlatReader generado y reescribió YAML con GhostYamlFlatWriter. Salida: $out"
             },
         ),
     )
