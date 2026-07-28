@@ -132,13 +132,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    skipInlineWhitespace()
 &nbsp;
 &nbsp;    // If value is on next line, advance and use next line&#39;s indentation
-&nbsp;    val valueIndent = if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
-&nbsp;        advanceLine()
-&nbsp;        skipWhitespaceAndComments()
-&nbsp;        currentIndent
-&nbsp;    } else {
-&nbsp;        indent
-&nbsp;    }
+&nbsp;    val valueIndent =
+&nbsp;        if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
+&nbsp;            advanceLine()
+&nbsp;            skipWhitespaceAndComments()
+&nbsp;            currentIndent
+&nbsp;        } else {
+&nbsp;            indent
+&nbsp;        }
 &nbsp;
 &nbsp;    val value = when (tagType) {
 &nbsp;        GhostYamlTags.TAG_SEQ -&gt; {
@@ -149,6 +150,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                readBlockSequence(currentIndent)
 &nbsp;            }
 &nbsp;        }
+&nbsp;
 &nbsp;        GhostYamlTags.TAG_MAP -&gt; {
 &nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACE_BYTE) {
 &nbsp;                readFlowMapping()
@@ -157,6 +159,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                readBlockMapping(currentIndent)
 &nbsp;            }
 &nbsp;        }
+&nbsp;
 &nbsp;        else -&gt; {
 &nbsp;            readValue(valueIndent, inFlow = false, expectedTag = tagType)
 &nbsp;        }
@@ -172,7 +175,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    return value
 &nbsp;}
 &nbsp;
-&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(localRawData: ByteArray, start: Int, len: Int): Int {
+&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(
+&nbsp;    localRawData: ByteArray,
+&nbsp;    start: Int,
+&nbsp;    len: Int
+&nbsp;): Int {
 &nbsp;    if (len == 3) {
 &nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_T_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_R_BYTE) {
 &nbsp;            return GhostYamlTags.TAG_STR
@@ -223,7 +230,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

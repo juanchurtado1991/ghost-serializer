@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74.6%
+    74.4%
   </span>
   <span class="absValue">
-    (264/354)
+    (265/356)
   </span>
 </td>
 <td class="coverageStat">
@@ -108,7 +108,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
@@ -144,7 +143,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
@@ -455,11 +453,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun value(value: Boolean): GhostJsonWriter {
 <b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(if (value) {</b>
-<b class="fc">&nbsp;            TRUE_BS</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            FALSE_BS</b>
-&nbsp;        })
+<b class="fc">&nbsp;        buffer.write(</b>
+<b class="fc">&nbsp;            if (value) {</b>
+<b class="fc">&nbsp;                TRUE_BS</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                FALSE_BS</b>
+&nbsp;            }
+&nbsp;        )
 <b class="fc">&nbsp;        needsComma = true</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
@@ -515,11 +515,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeBooleanValueRaw(value: Boolean) {
-<b class="nc">&nbsp;        buffer.write(if (value) {</b>
-<b class="nc">&nbsp;            TRUE_BS</b>
-&nbsp;        } else {
-<b class="nc">&nbsp;            FALSE_BS</b>
-&nbsp;        })
+<b class="nc">&nbsp;        buffer.write(</b>
+<b class="nc">&nbsp;            if (value) {</b>
+<b class="nc">&nbsp;                TRUE_BS</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                FALSE_BS</b>
+&nbsp;            }
+&nbsp;        )
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -964,7 +966,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

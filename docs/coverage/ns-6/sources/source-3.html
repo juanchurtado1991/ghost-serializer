@@ -151,9 +151,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.analysis.isEnum
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.analysis.serializerClassName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.ghost.serialization.compiler.model.InferredSubclassModel
@@ -166,6 +165,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -227,21 +227,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;            isObject -&gt; {</b>
 <b class="nc">&nbsp;                emitObjectReturn(body)</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            isSealed &amp;&amp; isInferred -&gt; {</b>
 <b class="fc">&nbsp;                emitInferredSealed(body)</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            isSealed -&gt; {</b>
 <b class="fc">&nbsp;                emitSealed(body)</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            isValue -&gt; {</b>
 <b class="fc">&nbsp;                emitValue(body)</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            isEnum -&gt; {</b>
 <b class="fc">&nbsp;                emitEnum(body)</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            properties.size &gt; PROPERTY_MAX_SIZE -&gt; {</b>
 <b class="nc">&nbsp;                emitFragmented(body, typeSpecBuilder, isFlatPath)</b>
 &nbsp;            }
+&nbsp;
 &nbsp;            else -&gt; {
 <b class="fc">&nbsp;                emitStandard(body, typeSpecBuilder, isFlatPath)</b>
 &nbsp;            }
@@ -769,7 +775,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

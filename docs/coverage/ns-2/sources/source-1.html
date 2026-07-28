@@ -57,26 +57,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.6%
+    70.1%
   </span>
   <span class="absValue">
-    (96/134)
+    (94/134)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.4%
+    70.7%
   </span>
   <span class="absValue">
-    (150/213)
+    (152/215)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.8%
+    71.4%
   </span>
   <span class="absValue">
-    (763/1062)
+    (758/1062)
   </span>
 </td>
 </tr>
@@ -508,26 +508,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.6%
-  </span>
-  <span class="absValue">
-    (96/134)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
     70.1%
   </span>
   <span class="absValue">
-    (157/224)
+    (94/134)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.3%
+    70.4%
   </span>
   <span class="absValue">
-    (801/1123)
+    (159/226)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.9%
+  </span>
+  <span class="absValue">
+    (796/1123)
   </span>
 </td>
 </tr>
@@ -542,9 +542,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization
 &nbsp;
+&nbsp;import com.ghost.serialization.Ghost.deserialize
+&nbsp;import com.ghost.serialization.Ghost.deserializeStreaming
+&nbsp;import com.ghost.serialization.Ghost.encodeToSink
+&nbsp;import com.ghost.serialization.Ghost.encodeToString
+&nbsp;import com.ghost.serialization.Ghost.serialize
+&nbsp;import com.ghost.serialization.Ghost.serializerCache
 &nbsp;import com.ghost.serialization.contract.GhostRegistry
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -564,11 +569,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.types.RawJsonSerializer
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import okio.BufferedSink
+&nbsp;import okio.BufferedSource
 &nbsp;import kotlin.reflect.KClass
 &nbsp;import kotlin.reflect.KType
 &nbsp;import kotlin.reflect.typeOf
-&nbsp;import okio.BufferedSink
-&nbsp;import okio.BufferedSource
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -602,7 +607,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Runs a block of operations using a pooled [GhostJsonFlatReader] instance.
 &nbsp; */
 &nbsp;@OptIn(InternalGhostApi::class)
-&nbsp;expect fun &lt;T&gt; ghostInternalUseFlatReader(bytes: ByteArray, limit: Int = bytes.size, block: (GhostJsonFlatReader) -&gt; T): T
+&nbsp;expect fun &lt;T&gt; ghostInternalUseFlatReader(
+&nbsp;    bytes: ByteArray,
+&nbsp;    limit: Int = bytes.size,
+&nbsp;    block: (GhostJsonFlatReader) -&gt; T
+&nbsp;): T
 &nbsp;
 &nbsp;/**
 &nbsp; * Runs a block of operations using a pooled [GhostJsonReader] reading from an Okio [BufferedSource].
@@ -648,7 +657,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * implements as a few `System.arraycopy`s into its segment buffer.
 &nbsp; */
 &nbsp;@InternalGhostApi
-&nbsp;expect inline fun ghostInternalEncodeAndDrainTo(sink: BufferedSink, crossinline block: (GhostJsonFlatWriter) -&gt; Unit)
+&nbsp;expect inline fun ghostInternalEncodeAndDrainTo(
+&nbsp;    sink: BufferedSink,
+&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit
+&nbsp;)
 &nbsp;
 &nbsp;/**
 &nbsp; * Core entry point for Ghost Serialization.
@@ -810,33 +822,43 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            String::class -&gt; {</b>
 <b class="fc">&nbsp;                StringSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            Int::class -&gt; {</b>
 <b class="fc">&nbsp;                IntSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            Long::class -&gt; {</b>
 <b class="nc">&nbsp;                LongSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            Boolean::class -&gt; {</b>
 <b class="nc">&nbsp;                BooleanSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            Double::class -&gt; {</b>
 <b class="nc">&nbsp;                DoubleSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            Float::class -&gt; {</b>
 <b class="fc">&nbsp;                FloatSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            Byte::class -&gt; {</b>
 <b class="nc">&nbsp;                ByteSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            Short::class -&gt; {</b>
 <b class="nc">&nbsp;                ShortSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            Char::class -&gt; {</b>
 <b class="nc">&nbsp;                CharSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            RawJson::class -&gt; {</b>
 <b class="fc">&nbsp;                RawJsonSerializer as GhostSerializer&lt;T&gt;</b>
 &nbsp;            }
+&nbsp;
 &nbsp;            else -&gt; {
 <b class="fc">&nbsp;                null</b>
 &nbsp;            }
@@ -875,7 +897,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                            ?: return@runSynchronized null</b>
 &nbsp;
 <b class="fc">&nbsp;                        if (itemSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer&lt;*&gt;) {</b>
-<b class="fc">&nbsp;                            com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(itemSerializer)</b>
+<b class="fc">&nbsp;                            com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(</b>
+<b class="fc">&nbsp;                                itemSerializer</b>
+&nbsp;                            )
 &nbsp;                        } else {
 <b class="fc">&nbsp;                            ListSerializer(itemSerializer)</b>
 &nbsp;                        }
@@ -899,7 +923,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                            ?: return@runSynchronized null</b>
 &nbsp;
 <b class="fc">&nbsp;                        if (valueSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer&lt;*&gt;) {</b>
-<b class="fc">&nbsp;                            com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(valueSerializer)</b>
+<b class="fc">&nbsp;                            com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(</b>
+<b class="fc">&nbsp;                                valueSerializer</b>
+&nbsp;                            )
 &nbsp;                        } else {
 <b class="fc">&nbsp;                            MapSerializer(valueSerializer)</b>
 &nbsp;                        }
@@ -934,14 +960,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    ): GhostSerializer&lt;T&gt; {
 &nbsp;        // Fast path: serializerCache is populated at startup by addRegistry/prewarm.
 &nbsp;        // Safe for all types that were registered as KClass → serializer mappings.
-<b class="fc">&nbsp;        (serializerCache[kClass] as? GhostSerializer&lt;T&gt;)?.let { return it }</b>
+<b class="pc">&nbsp;        (serializerCache[kClass] as? GhostSerializer&lt;T&gt;)?.let { return it }</b>
 &nbsp;        // Slow path (first call for this KType): getSerializer(KType) internally
 &nbsp;        // caches the result in typeCache so subsequent calls are O(1).
 &nbsp;        // No write to serializerCache here — generic types (List&lt;T&gt;, Map&lt;K,V&gt;)
 &nbsp;        // share the same KClass and must NOT pollute that cache.
 <b class="fc">&nbsp;        val type = typeProducer()</b>
 <b class="fc">&nbsp;        return (getSerializer(type) ?: getSerializer(kClass as KClass&lt;Any&gt;))</b>
-&nbsp;            as? GhostSerializer&lt;T&gt;
+&nbsp;                as? GhostSerializer&lt;T&gt;
 <b class="fc">&nbsp;            ?: throwError(&quot;$NOT_FOUND $kClass. $MISSING_ANN&quot;)</b>
 &nbsp;    }
 &nbsp;
@@ -1400,9 +1426,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    internal const val DEFAULT_REGISTRY_NAME = &quot;com.ghost.serialization.generated.GhostModuleRegistry_Default&quot;
-&nbsp;    internal const val TEST_REGISTRY_NAME = &quot;com.ghost.serialization.generated.GhostModuleRegistry_Default_Test&quot;
-&nbsp;    internal const val ANDROID_REGISTRY_NAME = &quot;com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization&quot;
+&nbsp;    internal const val DEFAULT_REGISTRY_NAME =
+&nbsp;        &quot;com.ghost.serialization.generated.GhostModuleRegistry_Default&quot;
+&nbsp;    internal const val TEST_REGISTRY_NAME =
+&nbsp;        &quot;com.ghost.serialization.generated.GhostModuleRegistry_Default_Test&quot;
+&nbsp;    internal const val ANDROID_REGISTRY_NAME =
+&nbsp;        &quot;com.ghost.serialization.generated.GhostModuleRegistry_ghost_serialization&quot;
 &nbsp;    internal const val INSTANCE_FIELD = &quot;INSTANCE&quot;
 &nbsp;
 &nbsp;    /**
@@ -1452,7 +1481,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

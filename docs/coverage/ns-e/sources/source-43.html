@@ -96,9 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.bytes.readQuotedString
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextString
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
@@ -124,9 +122,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    fun encodeLegacyDate(writer: GhostJsonFlatWriter, value: Long) {
 <b class="fc">&nbsp;        val stringValue = value.toString()</b>
 <b class="fc">&nbsp;        val formatted = &quot;${</b>
-<b class="fc">&nbsp;            stringValue.take(4)}-${</b>
-<b class="fc">&nbsp;            stringValue.substring(4, 6)}-${</b>
-<b class="fc">&nbsp;            stringValue.substring(6, 8)}&quot;</b>
+<b class="fc">&nbsp;            stringValue.take(4)</b>
+&nbsp;        }-${
+<b class="fc">&nbsp;            stringValue.substring(4, 6)</b>
+&nbsp;        }-${
+<b class="fc">&nbsp;            stringValue.substring(6, 8)</b>
+&nbsp;        }&quot;
 <b class="fc">&nbsp;        writer.value(formatted)</b>
 &nbsp;    }
 &nbsp;
@@ -134,9 +135,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    fun encodeLegacyDate(writer: GhostJsonWriter, value: Long) {
 <b class="nc">&nbsp;        val stringValue = value.toString()</b>
 <b class="nc">&nbsp;        val formatted = &quot;${</b>
-<b class="nc">&nbsp;            stringValue.take(4)}-${</b>
-<b class="nc">&nbsp;            stringValue.substring(4, 6)}-${</b>
-<b class="nc">&nbsp;            stringValue.substring(6, 8)}&quot;</b>
+<b class="nc">&nbsp;            stringValue.take(4)</b>
+&nbsp;        }-${
+<b class="nc">&nbsp;            stringValue.substring(4, 6)</b>
+&nbsp;        }-${
+<b class="nc">&nbsp;            stringValue.substring(6, 8)</b>
+&nbsp;        }&quot;
 <b class="nc">&nbsp;        writer.value(formatted)</b>
 &nbsp;    }
 &nbsp;}
@@ -163,7 +167,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

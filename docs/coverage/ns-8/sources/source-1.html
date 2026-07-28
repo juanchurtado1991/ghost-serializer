@@ -93,6 +93,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.internal
+&nbsp;
 &nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;
 &nbsp;/**
@@ -111,7 +112,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_MISSING_TYPE = &quot;Missing discriminator field for sealed class&quot;
 &nbsp;    const val STR_WHEN_TYPENAME = &quot;val result = when (typeName)&quot;
 &nbsp;    const val TEMPLATE_DESERIALIZE_BRANCH = &quot;%S -&gt; %T.deserialize(reader)&quot;
-&nbsp;    const val STR_UNKNOWN_TYPE = &quot;else -&gt; reader.throwError(\&quot;Unknown type discriminator: \$typeName\&quot;)&quot;
+&nbsp;    const val STR_UNKNOWN_TYPE =
+&nbsp;        &quot;else -&gt; reader.throwError(\&quot;Unknown type discriminator: \$typeName\&quot;)&quot;
 &nbsp;    const val STR_RETURN_RESULT = &quot;return result&quot;
 &nbsp;    const val TEMPLATE_RETURN_CONSTRUCTOR = &quot;return %T(%L)&quot;
 &nbsp;    const val TEMPLATE_CONSTRUCTOR = &quot;%T(%L)&quot;
@@ -165,22 +167,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    const val STR_NEXT_LONG_PROTO_COERCED =
 &nbsp;        &quot;run {\n&quot; +
-&nbsp;            &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
-&nbsp;            &quot;  reader.coerceStringsToNumbers = true\n&quot; +
-&nbsp;            &quot;  val parsed = reader.nextLong()\n&quot; +
-&nbsp;            &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
-&nbsp;            &quot;  parsed\n&quot; +
-&nbsp;            &quot;}&quot;
+&nbsp;                &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
+&nbsp;                &quot;  reader.coerceStringsToNumbers = true\n&quot; +
+&nbsp;                &quot;  val parsed = reader.nextLong()\n&quot; +
+&nbsp;                &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
+&nbsp;                &quot;  parsed\n&quot; +
+&nbsp;                &quot;}&quot;
 &nbsp;
 &nbsp;    /** proto3 JSON/YAML mapping: full-range `uint64` via quoted decimal string (or coerced bare number). */
 &nbsp;    const val STR_NEXT_ULONG_PROTO_COERCED =
 &nbsp;        &quot;run {\n&quot; +
-&nbsp;            &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
-&nbsp;            &quot;  reader.coerceStringsToNumbers = true\n&quot; +
-&nbsp;            &quot;  val parsed = reader.nextProtoUInt64()\n&quot; +
-&nbsp;            &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
-&nbsp;            &quot;  parsed\n&quot; +
-&nbsp;            &quot;}&quot;
+&nbsp;                &quot;  val savedCoerce = reader.coerceStringsToNumbers\n&quot; +
+&nbsp;                &quot;  reader.coerceStringsToNumbers = true\n&quot; +
+&nbsp;                &quot;  val parsed = reader.nextProtoUInt64()\n&quot; +
+&nbsp;                &quot;  reader.coerceStringsToNumbers = savedCoerce\n&quot; +
+&nbsp;                &quot;  parsed\n&quot; +
+&nbsp;                &quot;}&quot;
 &nbsp;    const val STR_NEXT_DOUBLE = &quot;reader.nextDouble()&quot;
 &nbsp;    const val STR_NEXT_FLOAT = &quot;reader.nextFloat()&quot;
 &nbsp;    const val STR_NEXT_BYTE = &quot;reader.nextInt().toByte()&quot;
@@ -204,7 +206,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_BANG_BANG = &quot;!!&quot;
 &nbsp;    const val TEMPLATE_RETURN_T_PAREN = &quot;return %T(&quot;
 &nbsp;    const val STR_PAREN = &quot;)&quot;
-&nbsp;        const val TEMPLATE_VAL_RESULT = &quot;val result = %T(&quot;
+&nbsp;    const val TEMPLATE_VAL_RESULT = &quot;val result = %T(&quot;
 &nbsp;    const val STR_OR = &quot; || &quot;
 &nbsp;    const val STR_RETURN_RESULT_COPY = &quot;return result.copy(&quot;
 &nbsp;    const val STR_COMMA = &quot;,&quot;
@@ -212,7 +214,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_ELSE = &quot;else&quot;
 &nbsp;    const val STR_RETURN_RESULT_FINAL = &quot;return result&quot;
 &nbsp;    const val STR_ERR_INVALID_ENUM_INDEX = &quot;-1 -&gt; reader.throwError(\&quot;Invalid enum value\&quot;)&quot;
-&nbsp;    const val STR_ERR_UNEXPECTED_INDEX = &quot;else -&gt; throw GhostJsonException(\&quot;Unexpected index: \$index\&quot;)&quot;
+&nbsp;    const val STR_ERR_UNEXPECTED_INDEX =
+&nbsp;        &quot;else -&gt; throw GhostJsonException(\&quot;Unexpected index: \$index\&quot;)&quot;
 &nbsp;    const val STR_FALLBACK_ANNOTATION = &quot;GhostFallback&quot;
 &nbsp;    const val STR_ELSE_BRANCH = &quot;else -&gt;&quot;
 &nbsp;    const val STR_ENUM_SELECT_OPTIONS = &quot;val index = reader.selectString(ENUM_OPTIONS)&quot;
@@ -252,7 +255,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val TEMPLATE_RESOLVE_SERIALIZER = &quot;%T.getSerializer(%T::class)!!&quot;
 <b class="fc">&nbsp;    val BYTE_STRING_CLASS = ClassName(&quot;okio&quot;, &quot;ByteString&quot;)</b>
 &nbsp;    const val DEFAULT_DISCRIMINATOR_KEY = &quot;key&quot;
-&nbsp; 
+&nbsp;
 &nbsp;    const val STR_WRITER_BEGIN_OBJ = &quot;writer.beginObject()&quot;
 &nbsp;    const val STR_WRITER_NAME_TYPE_VAL = &quot;writer.name(%S).value(%S)&quot;
 &nbsp;    const val STR_WRITER_WRITE_NAME_VAL = &quot;writer.writeNameRaw(%L)&quot;
@@ -275,9 +278,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val TEMPLATE_CTX_MASK_VAR = &quot;ctx.mask%s&quot;
 &nbsp;    const val TEMPLATE_IF_MASK_RETURN = &quot;if ((%s and %s) != 0L) %s else %s&quot;
 &nbsp;    const val TEMPLATE_WRAP_TYPE = &quot;%s(%s)&quot;
-&nbsp;    const val STR_ANNOTATION_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostSerialization&quot;
-&nbsp;    const val STR_ANNOTATION_PROTO_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostProtoSerialization&quot;
-&nbsp;    const val STR_ANNOTATION_YAML_SERIALIZATION = &quot;com.ghost.serialization.annotations.GhostYamlSerialization&quot;
+&nbsp;    const val STR_ANNOTATION_SERIALIZATION =
+&nbsp;        &quot;com.ghost.serialization.annotations.GhostSerialization&quot;
+&nbsp;    const val STR_ANNOTATION_PROTO_SERIALIZATION =
+&nbsp;        &quot;com.ghost.serialization.annotations.GhostProtoSerialization&quot;
+&nbsp;    const val STR_ANNOTATION_YAML_SERIALIZATION =
+&nbsp;        &quot;com.ghost.serialization.annotations.GhostYamlSerialization&quot;
 &nbsp;    const val STR_GENERATED_PKG = &quot;com.ghost.serialization.generated&quot;
 &nbsp;    const val STR_REGISTRY_PREFIX = &quot;GhostModuleRegistry&quot;
 &nbsp;    const val STR_LOG_PREFIX = &quot;&gt;&gt;&gt; [GhostSerialization]&quot;
@@ -307,7 +313,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_FUN_REG_COUNT = &quot;registeredCount&quot;
 &nbsp;    const val STR_FUN_GET_ALL_SERIALIZERS = &quot;getAllSerializers&quot;
 &nbsp;    const val STR_RETURN_SERIALIZERS = &quot;return serializersByClass&quot;
-&nbsp;    const val STR_KDOC_REGISTRY = &quot;Generated Registry for GhostSerialization.\nUses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.&quot;
+&nbsp;    const val STR_KDOC_REGISTRY =
+&nbsp;        &quot;Generated Registry for GhostSerialization.\nUses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.&quot;
 &nbsp;    const val STR_INSTANCE = &quot;INSTANCE&quot;
 &nbsp;    const val STR_INIT_INSTANCE = &quot;%T()&quot;
 &nbsp;    const val STR_META_INF_PROGUARD = &quot;META-INF.proguard&quot;
@@ -327,7 +334,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val PKG_PARSER_STRINGS = &quot;com.ghost.serialization.parser.strings&quot;
 &nbsp;    const val PKG_PARSER_STREAMING = &quot;com.ghost.serialization.parser.streaming&quot;
 &nbsp;    const val STR_RETURN_L = &quot;return %L&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    const val REGISTRY_CHUNK_SIZE = 500
 &nbsp;    const val TEMPLATE_GET_SHARD_MAP_CALL = &quot;getShardMap%L()&quot;
 &nbsp;    const val STR_PLUS_SPACED = &quot; + &quot;
@@ -336,7 +343,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_RETURN_NULL = &quot;return null&quot;
 &nbsp;    const val TEMPLATE_SHARD_MAP_NAME = &quot;getShardMap%d&quot;
 &nbsp;    const val TEMPLATE_SHARD_NAME = &quot;getShard%d&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    const val STR_LIST = &quot;List&quot;
 &nbsp;    const val STR_SET = &quot;Set&quot;
 &nbsp;    const val STR_DOUBLE = &quot;Double&quot;
@@ -381,7 +388,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val PKG_TYPES = &quot;com.ghost.serialization.types&quot;
 &nbsp;    const val STR_RAW_JSON_TYPE = &quot;RawJson&quot;
 &nbsp;    const val STR_RAW_JSON_FROM_CAPTURE = &quot;reader.captureRawJson()&quot;
-&nbsp;    const val STR_WRITER_RAW_VALUE_SLICE = &quot;writer.rawValue(%L.storage, %L.storageOffset, %L.storageLength)&quot;
+&nbsp;    const val STR_WRITER_RAW_VALUE_SLICE =
+&nbsp;        &quot;writer.rawValue(%L.storage, %L.storageOffset, %L.storageLength)&quot;
 &nbsp;    const val STR_CAPTURE_RAW_JSON_BYTES = &quot;reader.captureRawJsonBytes()&quot;
 &nbsp;    const val STR_WRITER_RAW_VALUE_L = &quot;writer.rawValue(%L)&quot;
 &nbsp;    const val STR_KOTLIN_PREFIX = &quot;kotlin.&quot;
@@ -402,15 +410,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_WRITE_NAME_RAW_NULL = &quot;writer.writeNameRaw(%L).nullValue()&quot;
 &nbsp;    const val STR_CUSTOM_ENCODER_CALL = &quot;%T.%L(writer, %L)&quot;
 &nbsp;    const val STR_CONTEXTUAL_PREFIX = &quot;contextual_&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    const val TEMPLATE_ENCODE_UTF8 = &quot;%S.encodeUtf8()&quot;
 &nbsp;    const val FMT_JSON_FIELD = &quot;\&quot;%s\&quot;:&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    // Analyzer Constants
-&nbsp;    const val STR_ERR_CLASS_1 = &quot;GhostSerialization: @GhostSerialization can only be applied to &#39;data class&#39;, &#39;sealed class&#39;, &#39;value class&#39; or &#39;enum class&#39;. &quot;
+&nbsp;    const val STR_ERR_CLASS_1 =
+&nbsp;        &quot;GhostSerialization: @GhostSerialization can only be applied to &#39;data class&#39;, &#39;sealed class&#39;, &#39;value class&#39; or &#39;enum class&#39;. &quot;
 &nbsp;    const val STR_ERR_CLASS_2 = &quot;Class &#39;&quot;
 &nbsp;    const val STR_ERR_CLASS_3 = &quot;&#39; is not supported.&quot;
-&nbsp;    const val STR_ERR_PRIV_1 = &quot;GhostSerialization: Properties in @GhostSerialization classes cannot be private. &quot;
+&nbsp;    const val STR_ERR_PRIV_1 =
+&nbsp;        &quot;GhostSerialization: Properties in @GhostSerialization classes cannot be private. &quot;
 &nbsp;    const val STR_ERR_PRIV_2 = &quot;Please remove &#39;private&#39; modifier from properties in &#39;&quot;
 &nbsp;    const val STR_ERR_PRIV_3 = &quot;&#39;.&quot;
 &nbsp;    const val STR_ERR_DUP_1 = &quot;GhostSerialization: Duplicate JSON name &#39;&quot;
@@ -489,7 +499,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_GHOST_JSON_STRING_READER = &quot;GhostJsonStringReader&quot;
 &nbsp;    const val STR_GHOST_JSON_READER_QUALIFIED = &quot;$PKG_PARSER_STREAMING.$STR_GHOST_JSON_READER&quot;
 &nbsp;    const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = &quot;$PKG_PARSER_BYTES.$STR_GHOST_JSON_FLAT_READER&quot;
-&nbsp;    const val STR_GHOST_JSON_STRING_READER_QUALIFIED = &quot;$PKG_PARSER_STRINGS.$STR_GHOST_JSON_STRING_READER&quot;
+&nbsp;    const val STR_GHOST_JSON_STRING_READER_QUALIFIED =
+&nbsp;        &quot;$PKG_PARSER_STRINGS.$STR_GHOST_JSON_STRING_READER&quot;
 &nbsp;
 &nbsp;    // YAML codegen (runtime lives in ghost-serialization parser.yaml / writer.yaml)
 &nbsp;    const val STR_YAML_SERIALIZER_FQN = &quot;com.ghost.serialization.yaml.contract.GhostYamlSerializer&quot;
@@ -508,7 +519,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_ENSURE_UTF8_BYTES = &quot;reader.ensureUtf8Bytes()&quot;
 &nbsp;    const val STR_CHAR_POSITION_TO_BYTE_POSITION = &quot;reader.charPositionToBytePosition&quot;
 &nbsp;    const val STR_BYTE_POSITION_TO_CHAR_POSITION = &quot;reader.bytePositionToCharPosition&quot;
-&nbsp;    const val STR_OVERRIDE_DESERIALIZE_STRING_READER = &quot;override fun deserialize(reader: GhostJsonStringReader)&quot;
+&nbsp;    const val STR_OVERRIDE_DESERIALIZE_STRING_READER =
+&nbsp;        &quot;override fun deserialize(reader: GhostJsonStringReader)&quot;
 &nbsp;    const val STR_OVERRIDE_SERIALIZE_FN = &quot;override fun serialize&quot;
 &nbsp;    const val STR_KT_SERIALIZER_FILE_SUFFIX = &quot;Serializer.kt&quot;
 &nbsp;    const val STR_TEST_CUSTOM_DECODER_FN = &quot;decodeHex&quot;
@@ -553,7 +565,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_READER1 = &quot;reader1&quot;
 &nbsp;    const val STR_READER2 = &quot;reader2&quot;
 &nbsp;    const val STR_READER3 = &quot;reader3&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    // Import names (raw function names)
 &nbsp;    const val STR_BEGIN_OBJECT_NAME = &quot;beginObject&quot;
 &nbsp;    const val STR_END_OBJECT_NAME = &quot;endObject&quot;
@@ -600,11 +612,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val HASH_MULTIPLIER_START = 31
 &nbsp;    const val HASH_MULTIPLIER_LIMIT = 15000
 &nbsp;    const val HASH_MULTIPLIER_STEP = 2
+&nbsp;
 &nbsp;    /** Polynomial multiplier for collision disambiguation. Must match COLLISION_HASH_MULTIPLIER in GhostJsonConstants. */
 &nbsp;    const val COLLISION_HASH_MULTIPLIER = 31
 &nbsp;    const val HASH_SHIFT_LIMIT = 16
+&nbsp;
 &nbsp;    /** Table size used when the field-name set is empty (no dispatch needed). */
 &nbsp;    const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
+&nbsp;
 &nbsp;    /** Candidate dispatch table sizes tried by [com.ghost.serialization.compiler.hash.PerfectHashFinder], ascending. */
 <b class="fc">&nbsp;    val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)</b>
 &nbsp;    const val BYTE_MASK = 0xFF
@@ -630,7 +645,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_IS_RESILIENT = &quot;isResilient&quot;
 &nbsp;    const val STR_IS_PROTO = &quot;isProto&quot;
 &nbsp;    const val STR_TRUE = &quot;true&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    // Templates
 &nbsp;    const val TEMPLATE_VAR_NULL_DECL = &quot;var %L%L: %T = %L&quot;
 &nbsp;    const val TEMPLATE_VAR_LONG_INIT = &quot;var %L = %L%L&quot;
@@ -653,7 +668,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val MASK_SIZE_BITS = 64L
 &nbsp;    const val MASK_SIZE_BITS_MINUS_ONE = 63
 &nbsp;    const val STR_NULL_VAL_CALL = &quot;writer.nullValue()&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    // Control Flow Templates
 &nbsp;    const val TEMPLATE_IF_NULL = &quot;if (%L == null)&quot;
 &nbsp;    const val TEMPLATE_IF_NOT_NULL = &quot;if (%L != null)&quot;
@@ -672,11 +687,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val TEMPLATE_NEQ_ZERO_BYTE = &quot;%L != 0.toByte()&quot;
 &nbsp;    const val TEMPLATE_IS_NOT_EMPTY = &quot;%L.isNotEmpty()&quot;
 &nbsp;    const val TEMPLATE_ACCESSOR_L = &quot;%L&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    // Writer Templates
 &nbsp;    const val TEMPLATE_WRITER_VALUE = &quot;writer.value(%L)&quot;
 &nbsp;    const val TEMPLATE_WRITER_NAME = &quot;writer.name(%L)&quot;
-&nbsp;    
+&nbsp;
 &nbsp;    // Misc
 &nbsp;    const val STR_ITEM_PREFIX = &quot;item&quot;
 &nbsp;    const val STR_MAP_KEY_PREFIX = &quot;mapKey&quot;
@@ -734,8 +749,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val COMPACT_CALL_MAX_INLINE_LENGTH = 80
 &nbsp;    const val STR_SUB_INDEX_PREFIX = &quot;subIndex&quot;
 &nbsp;    const val TEMPLATE_L = &quot;%L&quot;
-&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_1 = &quot;Could not find a collision-free perfect hash configuration for fields: &quot;
-&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_2 = &quot;. Please ensure there are no duplicate JSON names or conflicting field names.&quot;
+&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_1 =
+&nbsp;        &quot;Could not find a collision-free perfect hash configuration for fields: &quot;
+&nbsp;    const val STR_ERR_PERFECT_HASH_COLLISION_2 =
+&nbsp;        &quot;. Please ensure there are no duplicate JSON names or conflicting field names.&quot;
 &nbsp;
 &nbsp;    // GhostJsonEnvelope
 &nbsp;    const val STR_GHOST_JSON_ENVELOPE = &quot;GhostJsonEnvelope&quot;
@@ -761,14 +778,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_ENVELOPE_ELSE_NULL = &quot;else -&gt; null\n&quot;
 &nbsp;    const val STR_ENVELOPE_ELSE_FALLBACK = &quot;else -&gt; envelope.%L\n&quot;
 &nbsp;    const val STR_ENVELOPE_ELSE_GENERIC = &quot;else -&gt; envelope.%L\n&quot;
-&nbsp;    const val STR_ENVELOPE_PARSE_BYTES_ROUTE = &quot;val envelope = deserialize(%T(%L))\nreturn %L(envelope)&quot;
+&nbsp;    const val STR_ENVELOPE_PARSE_BYTES_ROUTE =
+&nbsp;        &quot;val envelope = deserialize(%T(%L))\nreturn %L(envelope)&quot;
 &nbsp;    const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = &quot;TargetSerializer&quot;
 &nbsp;    const val TEMPLATE_ENVELOPE_FIELD_ACCESS = &quot;envelope.%L&quot;
 &nbsp;    const val TEMPLATE_ENVELOPE_CACHED_SERIALIZER = &quot;%T.getSerializer(%T::class)!!&quot;
-&nbsp;    const val STR_KDOC_ROUTE_PAYLOAD = &quot;Routes [%T] to its matching opaque JSON payload without re-parsing.\n&quot;
-&nbsp;    const val STR_KDOC_PARSE_PAYLOAD = &quot;Deserializes [%T] from bytes and routes to payload (zero-copy RawJson slice on flat reader).\n&quot;
+&nbsp;    const val STR_KDOC_ROUTE_PAYLOAD =
+&nbsp;        &quot;Routes [%T] to its matching opaque JSON payload without re-parsing.\n&quot;
+&nbsp;    const val STR_KDOC_PARSE_PAYLOAD =
+&nbsp;        &quot;Deserializes [%T] from bytes and routes to payload (zero-copy RawJson slice on flat reader).\n&quot;
 &nbsp;    const val STR_KDOC_ROUTE_TYPED = &quot;Routes [%T] and decodes annotated payload targets.\n&quot;
-&nbsp;    const val STR_KDOC_PARSE_TYPED = &quot;Deserializes [%T] from bytes and returns typed payload when configured.\n&quot;
+&nbsp;    const val STR_KDOC_PARSE_TYPED =
+&nbsp;        &quot;Deserializes [%T] from bytes and returns typed payload when configured.\n&quot;
 &nbsp;    const val TEMPLATE_ENVELOPE_TYPED_SERIALIZER = &quot;envelope.%L?.let { %T.decode(it, %L) }&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_DISC_1 = &quot;GhostJsonEnvelope: discriminator field &#39;&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_DISC_2 = &quot;&#39; not found on &#39;&quot;
@@ -777,17 +798,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_ERR_ENVELOPE_DISC_TYPE_2 = &quot;&#39; must be String.&quot;
 &nbsp;    const val STR_WARN_ENVELOPE_TIME_1 = &quot;GhostJsonEnvelope: timeField &#39;&quot;
 &nbsp;    const val STR_WARN_ENVELOPE_TIME_2 = &quot;&#39; not found; ignoring.&quot;
-&nbsp;    const val STR_ERR_ENVELOPE_MULTI_FALLBACK = &quot;GhostJsonEnvelope: at most one @GhostEnvelopeFallback property is allowed.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_MULTI_FALLBACK =
+&nbsp;        &quot;GhostJsonEnvelope: at most one @GhostEnvelopeFallback property is allowed.&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_DATA_1 = &quot;GhostJsonEnvelope: dataField &#39;&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_DATA_2 = &quot;&#39; not found on envelope class.&quot;
 &nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_1 = &quot;GhostJsonEnvelope: opaque field &#39;&quot;
-&nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_2 = &quot;&#39; has no @GhostEnvelopePayload and will not be routed.&quot;
-&nbsp;    const val STR_ERR_ENVELOPE_NO_PAYLOADS = &quot;GhostJsonEnvelope: no @GhostEnvelopePayload properties found (fat envelope mode).&quot;
+&nbsp;    const val STR_WARN_ENVELOPE_UNTAGGED_2 =
+&nbsp;        &quot;&#39; has no @GhostEnvelopePayload and will not be routed.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_NO_PAYLOADS =
+&nbsp;        &quot;GhostJsonEnvelope: no @GhostEnvelopePayload properties found (fat envelope mode).&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_DUP_VALUE_1 = &quot;GhostJsonEnvelope: duplicate discriminator value &#39;&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_DUP_VALUE_2 = &quot;&#39; on properties: &quot;
 &nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_1 = &quot;GhostJsonEnvelope: payload property &#39;&quot;
 &nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_2 = &quot;&#39; must be nullable RawJson.&quot;
-&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_VALUE = &quot;GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value.&quot;
+&nbsp;    const val STR_ERR_ENVELOPE_PAYLOAD_VALUE =
+&nbsp;        &quot;GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value.&quot;
 &nbsp;
 &nbsp;    // @GhostWrappedKeys
 &nbsp;    const val STR_GHOST_WRAPPED_KEYS_CAPTURE = &quot;GhostWrappedKeysCapture&quot;
@@ -805,6 +830,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        &quot;val %L = %L.materializeWrappedObject(\n  %L,\n  %L,\n  %L,\n)&quot;
 &nbsp;    const val TEMPLATE_WRAPPED_JSON_IF_NOT_NULL = &quot;if (%L != null)&quot;
 &nbsp;    const val TEMPLATE_WRAPPED_READER_VAR = &quot;val wrappedReader = %T(%L)&quot;
+&nbsp;
 &nbsp;    // materializeWrappedObject always returns ByteArray (the synthetic object is assembled as
 &nbsp;    // UTF-8) — GhostJsonStringReader&#39;s constructor takes a String, so this target needs a
 &nbsp;    // decode step the byte/flat reader variants don&#39;t.
@@ -821,14 +847,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_3 = &quot; (properties &#39;&quot;
 &nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_4 = &quot;&#39; and &#39;&quot;
 &nbsp;    const val STR_ERR_WRAPPED_DUP_KEY_5 = &quot;&#39;).&quot;
-&nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 = &quot;GhostWrappedKeys: omitIfEmpty = true requires nullable property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 =
+&nbsp;        &quot;GhostWrappedKeys: omitIfEmpty = true requires nullable property &#39;&quot;
 &nbsp;    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_2 = &quot;&#39;.&quot;
 &nbsp;    const val STR_ERR_WRAPPED_COMBINE_1 = &quot;GhostWrappedKeys: property &#39;&quot;
-&nbsp;    const val STR_ERR_WRAPPED_COMBINE_2 = &quot;&#39; cannot combine @GhostWrappedKeys with @GhostFlatten or @GhostWrap.&quot;
+&nbsp;    const val STR_ERR_WRAPPED_COMBINE_2 =
+&nbsp;        &quot;&#39; cannot combine @GhostWrappedKeys with @GhostFlatten or @GhostWrap.&quot;
 &nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_1 = &quot;GhostWrappedKeys: wire key &#39;&quot;
-&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_2 = &quot;&#39; is both a wrapped source and a regular JSON property on &quot;
+&nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_2 =
+&nbsp;        &quot;&#39; is both a wrapped source and a regular JSON property on &quot;
 &nbsp;    const val STR_ERR_WRAPPED_KEY_CONFLICT_3 = &quot;.&quot;
-&nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_1 = &quot;GhostWrappedKeys: keys must not be empty on property &#39;&quot;
+&nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_1 =
+&nbsp;        &quot;GhostWrappedKeys: keys must not be empty on property &#39;&quot;
 &nbsp;    const val STR_ERR_WRAPPED_EMPTY_KEYS_2 = &quot;&#39;.&quot;
 &nbsp;    const val STR_WARN_WRAPPED_UNMAPPED_1 = &quot;GhostWrappedKeys: wire key &#39;&quot;
 &nbsp;    const val STR_WARN_WRAPPED_UNMAPPED_2 = &quot;&#39; does not map to a field on &quot;
@@ -838,6 +868,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_EXT_KT = &quot;kt&quot;
 &nbsp;    const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
 &nbsp;        &quot;&quot;&quot;^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$&quot;&quot;&quot;
+&nbsp;
 &nbsp;    /** Strips explicit `public` modifiers that KotlinPoet adds for Explicit API mode. */
 &nbsp;    const val REGEX_TRIM_REDUNDANT_PUBLIC =
 &nbsp;        &quot;&quot;&quot;^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )&quot;&quot;&quot;
@@ -866,11 +897,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val DEFAULT_EXPR_MIN_STRING_LITERAL_LEN = 2
 &nbsp;    const val REGEX_DEFAULT_EXPR_NUMERIC =
 &nbsp;        &quot;&quot;&quot;^-?(?:&quot;&quot;&quot; +
-&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)(?:L|l)?|&quot;&quot;&quot; +
-&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?[fFdD]?|&quot;&quot;&quot; +
-&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)(?:[eE][+-]?\d+)[fFdD]?|&quot;&quot;&quot; +
-&nbsp;            &quot;&quot;&quot;(?:0|[1-9]\d*)[fFdD]&quot;&quot;&quot; +
-&nbsp;            &quot;&quot;&quot;)$&quot;&quot;&quot;
+&nbsp;                &quot;&quot;&quot;(?:0|[1-9]\d*)(?:L|l)?|&quot;&quot;&quot; +
+&nbsp;                &quot;&quot;&quot;(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?[fFdD]?|&quot;&quot;&quot; +
+&nbsp;                &quot;&quot;&quot;(?:0|[1-9]\d*)(?:[eE][+-]?\d+)[fFdD]?|&quot;&quot;&quot; +
+&nbsp;                &quot;&quot;&quot;(?:0|[1-9]\d*)[fFdD]&quot;&quot;&quot; +
+&nbsp;                &quot;&quot;&quot;)$&quot;&quot;&quot;
 &nbsp;    const val REGEX_DEFAULT_EXPR_ENUM_REF =
 &nbsp;        &quot;&quot;&quot;^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$&quot;&quot;&quot;
 &nbsp;
@@ -918,7 +949,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

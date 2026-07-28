@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90%
+    90.9%
   </span>
   <span class="absValue">
-    (9/10)
+    (10/11)
   </span>
 </td>
 <td class="coverageStat">
@@ -116,7 +116,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun add(value: Int) {
 <b class="fc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="fc">&nbsp;            val newCapacity = if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="fc">&nbsp;            val newCapacity =</b>
+<b class="fc">&nbsp;                if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
 <b class="fc">&nbsp;            buffer = buffer.copyOf(newCapacity)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        buffer[currentSize++] = value</b>
@@ -153,7 +154,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun add(value: Long) {
 &nbsp;        if (currentSize == buffer.size) {
-&nbsp;            val newCapacity = if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
+&nbsp;            val newCapacity =
+&nbsp;                if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
 &nbsp;            buffer = buffer.copyOf(newCapacity)
 &nbsp;        }
 &nbsp;        buffer[currentSize++] = value
@@ -199,7 +201,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -106,16 +106,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
-&nbsp;import com.ghost.serialization.parser.bytes.captureRawJsonBytes
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.byteToCharPosition
 &nbsp;import com.ghost.serialization.parser.streaming.beginObject
-&nbsp;import com.ghost.serialization.parser.streaming.captureRawJsonBytes
-&nbsp;import com.ghost.serialization.parser.streaming.skipValue
 &nbsp;import com.ghost.serialization.writer.strings.copyRangeToCharArray
 &nbsp;import okio.ByteString
-&nbsp;import com.ghost.serialization.parser.streaming.decodeResilient
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -678,17 +674,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    bytePos += C.UTF8_1BYTE_SIZE</b>
 <b class="fc">&nbsp;                    charIndex++</b>
 &nbsp;                }
+&nbsp;
 <b class="pc">&nbsp;                code &lt;= C.UTF8_2BYTE_MAX -&gt; {</b>
 <b class="nc">&nbsp;                    bytePos += C.UTF8_2BYTE_SIZE</b>
 <b class="nc">&nbsp;                    charIndex++</b>
 &nbsp;                }
+&nbsp;
 <b class="pc">&nbsp;                code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &amp;&amp;</b>
-<b class="pc">&nbsp;                    charIndex + 1 &lt; currentLimit &amp;&amp;</b>
-<b class="pc">&nbsp;                    rawData[charIndex + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -&gt; {</b>
+<b class="pc">&nbsp;                        charIndex + 1 &lt; currentLimit &amp;&amp;</b>
+<b class="pc">&nbsp;                        rawData[charIndex + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -&gt; {</b>
 <b class="fc">&nbsp;                    bytePos += C.UTF8_4BYTE_SIZE</b>
 <b class="fc">&nbsp;                    table[charIndex + 1] = bytePos</b>
 <b class="fc">&nbsp;                    charIndex += 2</b>
 &nbsp;                }
+&nbsp;
 &nbsp;                else -&gt; {
 <b class="nc">&nbsp;                    bytePos += C.UTF8_3BYTE_SIZE</b>
 <b class="nc">&nbsp;                    charIndex++</b>
@@ -724,7 +723,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

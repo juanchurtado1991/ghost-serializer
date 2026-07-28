@@ -104,8 +104,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.writer.bytes
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import okio.Buffer
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -119,6 +119,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            writeByte(C.UTF8_2BYTE_PREFIX or (codePoint shr C.UTF8_SHIFT_6))</b>
 <b class="nc">&nbsp;            writeByte(C.UTF8_CONT_PREFIX or (codePoint and C.UTF8_CONT_MASK))</b>
 &nbsp;        }
+&nbsp;
 &nbsp;        else -&gt; {
 <b class="nc">&nbsp;            writeByte(C.UTF8_3BYTE_PREFIX or (codePoint shr C.SHIFT_12))</b>
 <b class="nc">&nbsp;            writeByte(C.UTF8_CONT_PREFIX or ((codePoint shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK))</b>
@@ -150,7 +151,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -93,7 +93,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.model.EnvelopePayloadMapping
 &nbsp;import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 &nbsp;import com.squareup.kotlinpoet.ClassName
@@ -103,6 +103,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 <b class="fc">&nbsp;private val nullableAnyType = ClassName(C.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)</b>
@@ -136,7 +137,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        typedMappings.forEach { mapping -&gt;
 &nbsp;            val targetType = mapping.targetType ?: return@forEach
 &nbsp;            typeSpecBuilder.addProperty(
-&nbsp;                PropertySpec.builder(targetSerializerPropertyName(mapping), ghostSerializerType.parameterizedBy(targetType))
+&nbsp;                PropertySpec.builder(
+&nbsp;                    targetSerializerPropertyName(mapping),
+&nbsp;                    ghostSerializerType.parameterizedBy(targetType)
+&nbsp;                )
 &nbsp;                    .addModifiers(KModifier.PRIVATE)
 &nbsp;                    .initializer(C.TEMPLATE_ENVELOPE_CACHED_SERIALIZER, ghostClass, targetType)
 &nbsp;                    .build()
@@ -284,7 +288,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

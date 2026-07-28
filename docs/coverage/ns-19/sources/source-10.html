@@ -117,12 +117,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.endArray
 &nbsp;import com.ghost.serialization.parser.streaming.endObject
 &nbsp;import com.ghost.serialization.parser.streaming.hasNext
+&nbsp;import com.ghost.serialization.parser.streaming.nextBoolean
+&nbsp;import com.ghost.serialization.parser.streaming.nextDouble
+&nbsp;import com.ghost.serialization.parser.streaming.nextFloat
 &nbsp;import com.ghost.serialization.parser.streaming.nextInt
 &nbsp;import com.ghost.serialization.parser.streaming.nextKey
 &nbsp;import com.ghost.serialization.parser.streaming.nextLong
-&nbsp;import com.ghost.serialization.parser.streaming.nextFloat
-&nbsp;import com.ghost.serialization.parser.streaming.nextDouble
-&nbsp;import com.ghost.serialization.parser.streaming.nextBoolean
 &nbsp;import com.ghost.serialization.parser.streaming.readList
 &nbsp;import com.ghost.serialization.parser.streaming.readSet
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -133,18 +133,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.endArray
 &nbsp;import com.ghost.serialization.parser.strings.endObject
 &nbsp;import com.ghost.serialization.parser.strings.hasNext
+&nbsp;import com.ghost.serialization.parser.strings.nextBoolean
+&nbsp;import com.ghost.serialization.parser.strings.nextDouble
+&nbsp;import com.ghost.serialization.parser.strings.nextFloat
 &nbsp;import com.ghost.serialization.parser.strings.nextInt
 &nbsp;import com.ghost.serialization.parser.strings.nextKey
 &nbsp;import com.ghost.serialization.parser.strings.nextLong
-&nbsp;import com.ghost.serialization.parser.strings.nextFloat
-&nbsp;import com.ghost.serialization.parser.strings.nextDouble
-&nbsp;import com.ghost.serialization.parser.strings.nextBoolean
 &nbsp;import com.ghost.serialization.parser.strings.readList
 &nbsp;import com.ghost.serialization.parser.strings.readSet
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-&nbsp;import kotlin.collections.RandomAccess
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -386,8 +385,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    private val valueSerializer: GhostSerializer&lt;V&gt;</b>
 &nbsp;) : GhostSerializer&lt;Map&lt;String, V&gt;&gt; {
 &nbsp;
-&nbsp;    override val typeName: String get() =
-<b class="nc">&nbsp;        &quot;Map&lt;String, ${valueSerializer.typeName}&gt;&quot;</b>
+&nbsp;    override val typeName: String
+&nbsp;        get() =
+<b class="nc">&nbsp;            &quot;Map&lt;String, ${valueSerializer.typeName}&gt;&quot;</b>
 &nbsp;
 &nbsp;    override fun serialize(
 &nbsp;        writer: GhostJsonWriter,
@@ -992,7 +992,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

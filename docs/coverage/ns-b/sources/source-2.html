@@ -240,8 +240,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /** Deserializes a new instance of [T] using a specialized flat in-memory [reader]. */
 <b class="nc">&nbsp;    fun deserialize(reader: GhostJsonFlatReader): T {</b>
-<b class="fc">&nbsp;        val delegatedReader = GhostJsonReader(reader.rawData).also { </b>
-<b class="fc">&nbsp;            it.position = reader.position </b>
+<b class="fc">&nbsp;        val delegatedReader = GhostJsonReader(reader.rawData).also {</b>
+<b class="fc">&nbsp;            it.position = reader.position</b>
 <b class="fc">&nbsp;            it.limit = reader.limit</b>
 <b class="fc">&nbsp;            it.strictMode = reader.strictMode</b>
 <b class="fc">&nbsp;            it.coerceStringsToNumbers = reader.coerceStringsToNumbers</b>
@@ -304,7 +304,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

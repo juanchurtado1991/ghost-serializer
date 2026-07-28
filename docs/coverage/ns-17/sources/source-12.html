@@ -99,15 +99,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextFloat
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextFloat
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -115,18 +113,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `FloatValue` is JSON number.
 &nbsp; */
-<b class="fc">&nbsp;@JvmInline value class ProtoFloatValue(val value: Float)</b>
+&nbsp;@JvmInline
+<b class="fc">&nbsp;value class ProtoFloatValue(val value: Float)</b>
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoFloatValue].
 &nbsp; */
 &nbsp;object ProtoFloatValueSerializer : GhostSerializer&lt;ProtoFloatValue&gt; {
 &nbsp;    override val typeName: String get() = C.WKT_FLOAT_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoFloatValue) { writer.value(value.value.toDouble()) }
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFloatValue) { writer.value(value.value.toDouble()) }
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoFloatValue) { writer.value(value.value.toDouble()) }
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoFloatValue = ProtoFloatValue(reader.nextFloat())
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoFloatValue = ProtoFloatValue(reader.nextFloat())
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoFloatValue) {
+&nbsp;        writer.value(value.value.toDouble())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFloatValue) {
+&nbsp;        writer.value(value.value.toDouble())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoFloatValue) {
+&nbsp;        writer.value(value.value.toDouble())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoFloatValue =
+&nbsp;        ProtoFloatValue(reader.nextFloat())
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoFloatValue =
+&nbsp;        ProtoFloatValue(reader.nextFloat())
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

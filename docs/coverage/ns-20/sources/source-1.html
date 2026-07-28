@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.6%
+    84.7%
   </span>
   <span class="absValue">
-    (215/254)
+    (216/255)
   </span>
 </td>
 <td class="coverageStat">
@@ -101,14 +101,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.yaml
 &nbsp;
-&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
-&nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
 &nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
 &nbsp;/**
 &nbsp; * Contiguous in-memory specialized YAML writer backed by FlatByteArrayWriter.
@@ -412,22 +411,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
 <b class="fc">&nbsp;                        buffer.writeByte(C.CHAR_N_INT)</b>
 &nbsp;                    }
+&nbsp;
 &nbsp;                    C.CHAR_CR_INT -&gt; {
 <b class="fc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
 <b class="fc">&nbsp;                        buffer.writeByte(C.CHAR_R_INT)</b>
 &nbsp;                    }
+&nbsp;
 &nbsp;                    C.CHAR_TAB_INT -&gt; {
 <b class="fc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
 <b class="fc">&nbsp;                        buffer.writeByte(C.CHAR_T_INT)</b>
 &nbsp;                    }
+&nbsp;
 &nbsp;                    C.CHAR_BS_INT -&gt; {
 <b class="fc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
 <b class="fc">&nbsp;                        buffer.writeByte(C.CHAR_B_INT)</b>
 &nbsp;                    }
+&nbsp;
 &nbsp;                    C.CHAR_FF_INT -&gt; {
 <b class="fc">&nbsp;                        buffer.writeByte(C.BACKSLASH_INT)</b>
 <b class="fc">&nbsp;                        buffer.writeByte(C.CHAR_F_INT)</b>
 &nbsp;                    }
+&nbsp;
 &nbsp;                    else -&gt; {
 <b class="pc">&nbsp;                        if (charCode &lt; C.CHAR_SPACE_INT) {</b>
 <b class="nc">&nbsp;                            buffer.writeByte(C.BACKSLASH_INT)</b>
@@ -491,7 +495,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;            header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &amp;&amp;</b>
 <b class="pc">&nbsp;            header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE</b>
 &nbsp;        ) {
-<b class="fc">&nbsp;            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB).utf8()</b>
+<b class="fc">&nbsp;            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB)</b>
+<b class="fc">&nbsp;                .utf8()</b>
 &nbsp;        }
 <b class="nc">&nbsp;        return header.utf8()</b>
 &nbsp;    }
@@ -574,7 +579,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

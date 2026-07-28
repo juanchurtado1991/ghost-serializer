@@ -68,7 +68,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     89%
   </span>
   <span class="absValue">
-    (443/498)
+    (446/501)
   </span>
 </td>
 <td class="coverageStat">
@@ -131,7 +131,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     89%
   </span>
   <span class="absValue">
-    (444/499)
+    (447/502)
   </span>
 </td>
 <td class="coverageStat">
@@ -155,31 +155,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.bytes
 &nbsp;
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.GhostSource
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.common.createByteArraySource
 &nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
 &nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
-&nbsp;import com.ghost.serialization.parser.streaming.skipNumber
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.captureRawJson
-&nbsp;import com.ghost.serialization.parser.strings.skipNumber
-&nbsp;
-&nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import okio.ByteString
 &nbsp;import okio.ByteString.Companion.encodeUtf8
-&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
-&nbsp;import com.ghost.serialization.parser.streaming.decodeResilient
-&nbsp;import com.ghost.serialization.parser.streaming.readList
-&nbsp;import com.ghost.serialization.parser.streaming.readSet
-&nbsp;import com.ghost.serialization.parser.strings.readList
-&nbsp;import com.ghost.serialization.parser.strings.readSet
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
 &nbsp; * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
@@ -253,8 +245,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 &nbsp;
 <b class="fc">&nbsp;    var depth: Int = 0</b>
-<b class="fc">&nbsp;    @PublishedApi internal var needsCommaMask: Long = 0L</b>
-<b class="fc">&nbsp;    @PublishedApi internal var commaConsumedMask: Long = 0L</b>
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal var needsCommaMask: Long = 0L</b>
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal var commaConsumedMask: Long = 0L</b>
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Gets the byte at the specified index, masking it to a positive integer.
@@ -916,7 +910,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val length = end - start</b>
 <b class="fc">&nbsp;        val key = computeKeyHash(start, length, options.hasCollisions)</b>
 &nbsp;
-<b class="fc">&nbsp;        val hasIndex = ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)</b>
+<b class="fc">&nbsp;        val hasIndex =</b>
+<b class="fc">&nbsp;            ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)</b>
 <b class="fc">&nbsp;        val index = options.dispatch[hasIndex]</b>
 &nbsp;
 <b class="fc">&nbsp;        if (index != C.MATCH_END) {</b>
@@ -957,7 +952,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)</b>
 <b class="fc">&nbsp;            if (hasCollisions) {</b>
 <b class="fc">&nbsp;                var ci = C.UNICODE_HEX_LENGTH</b>
-<b class="fc">&nbsp;                while (ci &lt; length) { key = key * C.COLLISION_HASH_MULTIPLIER + (rawData[start + ci].toInt() and C.BYTE_MASK); ci++ }</b>
+<b class="fc">&nbsp;                while (ci &lt; length) {</b>
+<b class="fc">&nbsp;                    key =</b>
+<b class="fc">&nbsp;                        key * C.COLLISION_HASH_MULTIPLIER + (rawData[start + ci].toInt() and C.BYTE_MASK); ci++</b>
+&nbsp;                }
 &nbsp;            }
 &nbsp;        } else {
 <b class="pc">&nbsp;            if (length &gt;= 1) {</b>
@@ -1057,12 +1055,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            C.QUOTE_INT -&gt; {
 <b class="fc">&nbsp;                skipQuotedString()</b>
 &nbsp;            }
+&nbsp;
 &nbsp;            C.TRUE_CHAR_INT -&gt; {
 <b class="nc">&nbsp;                skipAndValidateLiteral(C.TRUE_BS)</b>
 &nbsp;            }
+&nbsp;
 &nbsp;            C.FALSE_CHAR_INT -&gt; {
 <b class="fc">&nbsp;                skipAndValidateLiteral(C.FALSE_BS)</b>
 &nbsp;            }
+&nbsp;
 &nbsp;            C.NULL_CHAR_INT -&gt; {
 <b class="nc">&nbsp;                skipAndValidateLiteral(C.NULL_BS)</b>
 &nbsp;            }
@@ -1232,7 +1233,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -99,15 +99,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextInt
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextInt
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -115,18 +113,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `Int32Value` is JSON number.
 &nbsp; */
-<b class="fc">&nbsp;@JvmInline value class ProtoInt32Value(val value: Int)</b>
+&nbsp;@JvmInline
+<b class="fc">&nbsp;value class ProtoInt32Value(val value: Int)</b>
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoInt32Value].
 &nbsp; */
 &nbsp;object ProtoInt32ValueSerializer : GhostSerializer&lt;ProtoInt32Value&gt; {
 &nbsp;    override val typeName: String get() = C.WKT_INT32_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt32Value) { writer.value(value.value.toLong()) }
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt32Value) { writer.value(value.value.toLong()) }
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt32Value) { writer.value(value.value.toLong()) }
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt32Value = ProtoInt32Value(reader.nextInt())
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt32Value = ProtoInt32Value(reader.nextInt())
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt32Value) {
+&nbsp;        writer.value(value.value.toLong())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt32Value) {
+&nbsp;        writer.value(value.value.toLong())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt32Value) {
+&nbsp;        writer.value(value.value.toLong())
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt32Value =
+&nbsp;        ProtoInt32Value(reader.nextInt())
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt32Value =
+&nbsp;        ProtoInt32Value(reader.nextInt())
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

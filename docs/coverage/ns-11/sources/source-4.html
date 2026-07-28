@@ -102,7 +102,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker.peek
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.maxDiscriminatorPeekDistance
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
@@ -115,10 +115,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.RESULT_NONE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.beginObject
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.beginObject
 &nbsp;import okio.ByteString
 &nbsp;
 &nbsp;
@@ -201,6 +198,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            QUOTE_INT -&gt; {
 &nbsp;                // Already inside an object (e.g. after beginObject() on the string channel).
 &nbsp;            }
+&nbsp;
 <b class="nc">&nbsp;            else -&gt; return null</b>
 &nbsp;        }
 &nbsp;
@@ -344,10 +342,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    depth++</b>
 <b class="fc">&nbsp;                    position++</b>
 &nbsp;                }
+&nbsp;
 &nbsp;                CLOSE_OBJ_INT, CLOSE_ARR_INT -&gt; {
 <b class="fc">&nbsp;                    depth--</b>
 <b class="fc">&nbsp;                    position++</b>
 &nbsp;                }
+&nbsp;
 <b class="fc">&nbsp;                else -&gt; position++</b>
 &nbsp;            }
 &nbsp;        }
@@ -434,7 +434,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

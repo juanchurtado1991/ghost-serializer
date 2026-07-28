@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.9%
+    86.1%
   </span>
   <span class="absValue">
-    (287/334)
+    (291/338)
   </span>
 </td>
 <td class="coverageStat">
@@ -148,7 +148,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
-&nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import com.ghost.serialization.writer.common.GhostDoubleFormatter
 &nbsp;import okio.ByteString
 &nbsp;
@@ -438,7 +437,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun value(value: Boolean): GhostJsonFlatWriter {
 <b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        if (value) { buffer.writeTrue() } else { buffer.writeFalse() }</b>
+<b class="fc">&nbsp;        if (value) {</b>
+<b class="fc">&nbsp;            buffer.writeTrue()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            buffer.writeFalse()</b>
+&nbsp;        }
 <b class="fc">&nbsp;        needsComma = true</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
@@ -496,7 +499,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    @InternalGhostApi
 &nbsp;    fun writeBooleanValueRaw(value: Boolean) {
-<b class="fc">&nbsp;        if (value) { buffer.writeTrue() } else { buffer.writeFalse() }</b>
+<b class="fc">&nbsp;        if (value) {</b>
+<b class="fc">&nbsp;            buffer.writeTrue()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            buffer.writeFalse()</b>
+&nbsp;        }
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -939,7 +946,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -161,11 +161,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.bytes.ghostReadLong8
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.packScanResult
 &nbsp;import com.ghost.serialization.parser.streaming.StreamingGhostSource
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import kotlin.math.pow
 &nbsp;import okio.ByteString.Companion.encodeUtf8
+&nbsp;import kotlin.math.pow
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -197,7 +198,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val ERR_UNEXPECTED_EOF = &quot;Unexpected end of input&quot;
 &nbsp;    const val ERR_EXPECTED_QUOTE = &quot;Expected &#39;\&quot;&#39;&quot;
 &nbsp;    const val ERR_EXPECTED_SINGLE_CHAR_STRING = &quot;Expected single-character JSON string&quot;
-&nbsp;    const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH = &quot;Expected single-character JSON string, found length &quot;
+&nbsp;    const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH =
+&nbsp;        &quot;Expected single-character JSON string, found length &quot;
 &nbsp;    const val ERR_DEPTH_EXCEEDED = &quot;Reached maximum recursion depth&quot;
 &nbsp;    const val ERR_NON_FINITE = &quot;JSON does not support non-finite numbers like NaN or Infinity&quot;
 &nbsp;    const val ERR_INT_OVERFLOW = &quot;Integer overflow: &quot;
@@ -219,6 +221,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val LITERAL_FALSE = &quot;false&quot;
 &nbsp;    const val ERR_INVALID_UNICODE_AT = &quot;Invalid unicode escape at &quot;
 &nbsp;    const val ERR_CAPACITY_OVERFLOW_PREFIX = &quot;FlatByteArrayWriter capacity overflow: &quot;
+&nbsp;
 &nbsp;    // --- Digit &amp; Limit Constants ---
 &nbsp;    const val MIN_SINGLE_DIGIT = 0
 &nbsp;    const val MAX_SINGLE_DIGIT = 9
@@ -268,24 +271,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /** Case-folded byte for &#39;T&#39; / &#39;t&#39;. Used in &quot;true&quot;. */
 &nbsp;    const val FOLD_T = &#39;t&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;R&#39; / &#39;r&#39;. Used in &quot;true&quot;. */
 &nbsp;    const val FOLD_R = &#39;r&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;U&#39; / &#39;u&#39;. Used in &quot;true&quot;. */
 &nbsp;    const val FOLD_U = &#39;u&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;E&#39; / &#39;e&#39;. Used in &quot;true&quot;, &quot;false&quot;, &quot;yes&quot;. */
 &nbsp;    const val FOLD_E = &#39;e&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;F&#39; / &#39;f&#39;. Used in &quot;false&quot;, &quot;off&quot;. */
 &nbsp;    const val FOLD_F = &#39;f&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;A&#39; / &#39;a&#39;. Used in &quot;false&quot;. */
 &nbsp;    const val FOLD_A = &#39;a&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;L&#39; / &#39;l&#39;. Used in &quot;false&quot;. */
 &nbsp;    const val FOLD_L = &#39;l&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;S&#39; / &#39;s&#39;. Used in &quot;false&quot;, &quot;yes&quot;. */
 &nbsp;    const val FOLD_S = &#39;s&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;Y&#39; / &#39;y&#39;. Used in &quot;yes&quot;, &quot;y&quot;. */
 &nbsp;    const val FOLD_Y = &#39;y&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;N&#39; / &#39;n&#39;. Used in &quot;no&quot;, &quot;n&quot;. */
 &nbsp;    const val FOLD_N = &#39;n&#39;.code or 32
+&nbsp;
 &nbsp;    /** Case-folded byte for &#39;O&#39; / &#39;o&#39;. Used in &quot;on&quot;, &quot;no&quot;, &quot;off&quot;. */
 &nbsp;    const val FOLD_O = &#39;o&#39;.code or 32
 &nbsp;
@@ -299,19 +312,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val TRUE_BS = &quot;true&quot;.encodeUtf8()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val FALSE_BS = &quot;false&quot;.encodeUtf8()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val NULL_BS = &quot;null&quot;.encodeUtf8()</b>
 <b class="fc">&nbsp;    internal val EMPTY_STRING_BS = &quot;\&quot;\&quot;&quot;.encodeUtf8()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val MIN_INT_BS = &quot;-2147483648&quot;.encodeUtf8()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val MIN_LONG_BS = &quot;-9223372036854775808&quot;.encodeUtf8()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val DOT_ZERO = &quot;.0&quot;.encodeToByteArray()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val COLON_QUOTE_BS = &quot;\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal val TYPE_BS = &quot;type&quot;.encodeUtf8()</b>
 &nbsp;
@@ -336,6 +356,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /** Standard mask for unsigned byte access. */
 &nbsp;    const val BYTE_MASK = 0xFF
+&nbsp;
 &nbsp;    /** Standard mask for unsigned Long byte access. */
 &nbsp;    const val LONG_BYTE_MASK = 0xFFL
 &nbsp;
@@ -375,16 +396,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    // --- Dispatch Table Defaults ---
 &nbsp;    /** Default shift for JsonReaderOptions when no perfect-hash search has been run. */
 &nbsp;    const val DEFAULT_DISPATCH_SHIFT = 0
+&nbsp;
 &nbsp;    /** Default multiplier for JsonReaderOptions factory methods. */
 &nbsp;    const val DEFAULT_DISPATCH_MULTIPLIER = 31
+&nbsp;
 &nbsp;    /** Default dispatch table size. Must be a power of two. */
 &nbsp;    const val DEFAULT_DISPATCH_TABLE_SIZE = 1024
+&nbsp;
 &nbsp;    /** Polynomial multiplier for collision disambiguation (must match all reader computeKeyHash and PerfectHashFinder). */
 &nbsp;    const val COLLISION_HASH_MULTIPLIER = 31
 &nbsp;
 &nbsp;    // --- Pooling &amp; Cache Metrics ---
 &nbsp;    /** Number of buckets in the string reuse pool. Must be power of two. */
 &nbsp;    const val STR_POOL_SIZE = 4096
+&nbsp;
 &nbsp;    /** Multiplier for string pool hashing. */
 &nbsp;    const val STR_POOL_HASH_MULTIPLIER = 31
 &nbsp;
@@ -843,6 +868,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    internal object FormatUtils {
 <b class="fc">&nbsp;        val DIGIT_TENS = ByteArray(100)</b>
 <b class="fc">&nbsp;        val DIGIT_ONES = ByteArray(100)</b>
+&nbsp;
 <b class="fc">&nbsp;        init {</b>
 <b class="fc">&nbsp;            for (i in 0 until 100) {</b>
 <b class="fc">&nbsp;                DIGIT_TENS[i] = ((i / BASE_TEN) + ASCII_OFFSET).toByte()</b>
@@ -894,7 +920,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

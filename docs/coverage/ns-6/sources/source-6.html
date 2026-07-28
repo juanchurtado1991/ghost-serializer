@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/198)
+    (0/202)
   </span>
 </td>
 <td class="coverageStat">
@@ -102,6 +102,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;unused&quot;, &quot;SameParameterValue&quot;)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.codegen.emit
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
 &nbsp;import com.ghost.serialization.compiler.analysis.getFragmentedDefaultValueReturnExpression
 &nbsp;import com.ghost.serialization.compiler.analysis.getFragmentedReturnExpression
@@ -109,7 +110,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.analysis.getInitialValue
 &nbsp;import com.ghost.serialization.compiler.analysis.getVariableType
 &nbsp;import com.ghost.serialization.compiler.analysis.localTrackingName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;import com.squareup.kotlinpoet.CodeBlock
@@ -118,6 +118,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.KModifier
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -246,7 +247,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        body.beginControlFlow(C.STR_WHILE_TRUE)</b>
 <b class="nc">&nbsp;        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)</b>
 <b class="nc">&nbsp;        body.beginControlFlow(C.STR_WHEN_INDEX)</b>
-&nbsp;        
+&nbsp;
 <b class="nc">&nbsp;        chunks.forEachIndexed { chunkIdx, chunkProps -&gt;</b>
 <b class="nc">&nbsp;            val start = chunkIdx * chunkSize</b>
 <b class="nc">&nbsp;            val end = start + chunkProps.size - C.VAL_ONE</b>
@@ -309,7 +310,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            val call = buildCall(prop)</b>
 <b class="nc">&nbsp;            val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()</b>
 <b class="nc">&nbsp;            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()</b>
-&nbsp;            
+&nbsp;
 <b class="nc">&nbsp;            chunkBody.beginControlFlow(&quot;$globalIndex${C.STR_ARROW}&quot;)</b>
 <b class="nc">&nbsp;            if (prop.isResilient &amp;&amp; supportsResilience) {</b>
 <b class="nc">&nbsp;                chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)</b>
@@ -338,7 +339,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun emitValidation(body: CodeBlock.Builder) {
 <b class="nc">&nbsp;        val hasRequired = properties.any { !it.isNullable &amp;&amp; !it.hasDefaultValue }</b>
 <b class="nc">&nbsp;        if (hasRequired) {</b>
-<b class="nc">&nbsp;            body.addStatement(C.TEMPLATE_CALL_VALIDATION, C.STR_FUN_VALIDATE_FIELDS, C.STR_CTX_VAR, C.STR_READER_VAR)</b>
+<b class="nc">&nbsp;            body.addStatement(</b>
+<b class="nc">&nbsp;                C.TEMPLATE_CALL_VALIDATION,</b>
+<b class="nc">&nbsp;                C.STR_FUN_VALIDATE_FIELDS,</b>
+<b class="nc">&nbsp;                C.STR_CTX_VAR,</b>
+<b class="nc">&nbsp;                C.STR_READER_VAR</b>
+&nbsp;            )
 &nbsp;        }
 &nbsp;    }
 &nbsp;
@@ -349,7 +355,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * @param typeSpecBuilder The serializer class builder.
 &nbsp;     * @param contextClassName Class name of the context object holding property variables.
 &nbsp;     */
-&nbsp;    private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder, contextClassName: ClassName) {
+&nbsp;    private fun emitValidationHelper(
+&nbsp;        typeSpecBuilder: TypeSpec.Builder,
+&nbsp;        contextClassName: ClassName
+&nbsp;    ) {
 <b class="nc">&nbsp;        val hasRequired = properties.any { !it.isNullable &amp;&amp; !it.hasDefaultValue }</b>
 <b class="nc">&nbsp;        if (!hasRequired) {</b>
 &nbsp;            return
@@ -413,7 +422,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        funBuilder.addCode(funBody.build())</b>
 <b class="nc">&nbsp;        typeSpecBuilder.addFunction(funBuilder.build())</b>
 &nbsp;    }
-&nbsp;    
+&nbsp;
 &nbsp;    /**
 &nbsp;     * Emits the target class instantiation return statement.
 &nbsp;     *
@@ -520,7 +529,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

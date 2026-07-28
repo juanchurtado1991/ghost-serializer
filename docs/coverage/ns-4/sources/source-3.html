@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.6%
+    70.8%
   </span>
   <span class="absValue">
-    (96/136)
+    (97/137)
   </span>
 </td>
 <td class="coverageStat">
@@ -100,7 +100,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.model.EnvelopePayloadMapping
 &nbsp;import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -109,6 +109,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSType
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -206,8 +207,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val genericProp = genericDataProperty!!</b>
 <b class="fc">&nbsp;            properties.filter { prop -&gt;</b>
 <b class="fc">&nbsp;                prop.kotlinName != discriminatorProperty.kotlinName &amp;&amp;</b>
-<b class="pc">&nbsp;                    prop.kotlinName != timeKotlinName &amp;&amp;</b>
-<b class="pc">&nbsp;                    prop.kotlinName != fallbackMapping?.kotlinName</b>
+<b class="pc">&nbsp;                        prop.kotlinName != timeKotlinName &amp;&amp;</b>
+<b class="pc">&nbsp;                        prop.kotlinName != fallbackMapping?.kotlinName</b>
 <b class="fc">&nbsp;            }.mapNotNull { prop -&gt;</b>
 <b class="pc">&nbsp;                val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null</b>
 <b class="pc">&nbsp;                val payloadAnnotation = declaration.annotations.find {</b>
@@ -252,7 +253,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            logger.error(C.STR_ERR_ENVELOPE_NO_PAYLOADS, classDeclaration)</b>
 &nbsp;        }
 &nbsp;
-<b class="pc">&nbsp;        val duplicateValues = payloadMappings.groupBy { it.discriminatorValue }.filter { it.value.size &gt; 1 }</b>
+<b class="fc">&nbsp;        val duplicateValues =</b>
+<b class="pc">&nbsp;            payloadMappings.groupBy { it.discriminatorValue }.filter { it.value.size &gt; 1 }</b>
 <b class="fc">&nbsp;        duplicateValues.forEach { (value, mappings) -&gt;</b>
 <b class="nc">&nbsp;            logger.error(</b>
 <b class="nc">&nbsp;                &quot;${C.STR_ERR_ENVELOPE_DUP_VALUE_1}$value${C.STR_ERR_ENVELOPE_DUP_VALUE_2}${</b>
@@ -282,7 +284,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun isStringType(type: KSType): Boolean =
 <b class="pc">&nbsp;        type.declaration.qualifiedName?.asString() == C.STRING_QUALIFIED</b>
 &nbsp;
-&nbsp;    private fun validateOpaquePayload(prop: GhostPropertyModel, classDeclaration: KSClassDeclaration) {
+&nbsp;    private fun validateOpaquePayload(
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        classDeclaration: KSClassDeclaration
+&nbsp;    ) {
 <b class="pc">&nbsp;        if (!prop.isNullable || !prop.type.isRawJson()) {</b>
 <b class="nc">&nbsp;            logger.error(</b>
 <b class="nc">&nbsp;                &quot;${C.STR_ERR_ENVELOPE_PAYLOAD_TYPE_1}${prop.kotlinName}${C.STR_ERR_ENVELOPE_PAYLOAD_TYPE_2}&quot;,</b>
@@ -364,7 +369,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

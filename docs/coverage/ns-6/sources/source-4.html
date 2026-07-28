@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     97.8%
   </span>
   <span class="absValue">
-    (89/91)
+    (91/93)
   </span>
 </td>
 <td class="coverageStat">
@@ -100,7 +100,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.model.EnvelopePayloadMapping
 &nbsp;import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 &nbsp;import com.squareup.kotlinpoet.ClassName
@@ -110,6 +110,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;private val nullableAnyType = ClassName(C.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)
@@ -143,7 +144,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        typedMappings.forEach { mapping -&gt;</b>
 <b class="pc">&nbsp;            val targetType = mapping.targetType ?: return@forEach</b>
 <b class="fc">&nbsp;            typeSpecBuilder.addProperty(</b>
-<b class="fc">&nbsp;                PropertySpec.builder(targetSerializerPropertyName(mapping), ghostSerializerType.parameterizedBy(targetType))</b>
+<b class="fc">&nbsp;                PropertySpec.builder(</b>
+<b class="fc">&nbsp;                    targetSerializerPropertyName(mapping),</b>
+<b class="fc">&nbsp;                    ghostSerializerType.parameterizedBy(targetType)</b>
+&nbsp;                )
 <b class="fc">&nbsp;                    .addModifiers(KModifier.PRIVATE)</b>
 <b class="fc">&nbsp;                    .initializer(C.TEMPLATE_ENVELOPE_CACHED_SERIALIZER, ghostClass, targetType)</b>
 <b class="fc">&nbsp;                    .build()</b>
@@ -291,7 +295,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>
