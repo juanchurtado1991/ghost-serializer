@@ -24,7 +24,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * @param rawData The full YAML document as a UTF-8 [ByteArray].
  */
 @OptIn(InternalGhostApi::class)
-class GhostYamlFlatReader(var rawData: ByteArray) {
+open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     /** Current read position in [rawData]. */
     var position: Int = 0
@@ -1249,6 +1249,42 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         nextValue = null
     }
 
+    /** Reads a YAML string, or `null` when the next value is YAML null. */
+    fun nextStringOrNull(): String? {
+        if (isNextNullValue()) {
+            consumeNull()
+            return null
+        }
+        return nextString()
+    }
+
+    /** Reads a YAML int, or `null` when the next value is YAML null. */
+    fun nextIntOrNull(): Int? {
+        if (isNextNullValue()) {
+            consumeNull()
+            return null
+        }
+        return nextInt()
+    }
+
+    /** Reads a YAML long, or `null` when the next value is YAML null. */
+    open fun nextLongOrNull(): Long? {
+        if (isNextNullValue()) {
+            consumeNull()
+            return null
+        }
+        return nextLong()
+    }
+
+    /** Reads a YAML boolean, or `null` when the next value is YAML null. */
+    fun nextBooleanOrNull(): Boolean? {
+        if (isNextNullValue()) {
+            consumeNull()
+            return null
+        }
+        return nextBoolean()
+    }
+
     fun nextInt(): Int {
         val value = nextValue
         nextValue = null
@@ -1264,7 +1300,7 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         throw GhostYamlException("Expected Int but found $value")
     }
 
-    fun nextLong(): Long {
+    open fun nextLong(): Long {
         val value = nextValue
         nextValue = null
         if (value is Number) {
@@ -1426,6 +1462,20 @@ class GhostYamlFlatReader(var rawData: ByteArray) {
         }
         endArray()
         return list
+    }
+
+    inline fun <T> readSet(crossinline itemParser: () -> T): Set<T> {
+        beginArray()
+        if (isNextCloseArray()) {
+            endArray()
+            return emptySet()
+        }
+        val set = LinkedHashSet<T>()
+        while (hasNextArrayElement()) {
+            set.add(itemParser())
+        }
+        endArray()
+        return set
     }
 
     inline fun <K, V> readMap(
