@@ -1038,17 +1038,19 @@ Spring Boot **3.4.5** verified in starter tests.
 
 ## 21. ProGuard / R8 {#cap-21--proguard-r8}
 
-Generated: `META-INF/proguard/ghost-serialization.pro`
+Ghost ships R8 keep rules in three layers — you usually **do not** hand-copy rules into `proguard-rules.pro`:
 
-Consumer rules in ghost-api. Serializers and generated package must be kept if you use minify — the plugin emits rules.
+1. **Consumer rules (automatic)** — merged from the `ghost-api` and `ghost-serialization` AARs when `minifyEnabled true`. They keep `@GhostSerialization`, `@GhostProtoSerialization`, `@GhostYamlSerialization` DTOs, `com.ghost.serialization.generated.**`, and all `GhostSerializer` / `GhostYamlSerializer` companions.
+2. **KSP-generated rules (per module)** — `build/generated/ksp/.../META-INF/proguard/ghost-serialization.pro` keeps that module's `GhostModuleRegistry_*` and its serializers.
+3. **App-specific rules (rare)** — only if you use custom registries or non-Ghost reflection; see [ghost-android-test-app](https://github.com/juanchurtado1991/ghost-android-test-app) for a release build with R8 enabled.
 
-In Android test app: keep `@GhostSerialization` and `generated.**`.
+**Release checklist:** build a `release` variant and confirm `META-INF/proguard/ghost-serialization.pro` is present under the module that runs KSP. If `Ghost.prewarm()` or Retrofit works in debug but fails in release with `NOT_FOUND`, R8 stripped something — re-sync Gradle and verify the Ghost plugin runs on every module that declares `@GhostSerialization` models.
 
 ---
 
 ## 22. Maven Central publishing {#cap-22--publicacin-maven-central}
 
-Publishable (publish.gradle.kts): ghost-* except sample, benchmark, integration-test.
+Publishable (publish.gradle.kts): ghost-* except benchmark, integration-test, playground.
 
 **From Mac** for full KMP (iosArm64 + iosSimulatorArm64 + JVM + Android AAR).
 
@@ -1135,7 +1137,7 @@ All use **1.3.0 Maven Central** (no mavenLocal in final config).
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
 6. **Retrofit:** `.addConverterFactory(GhostConverterFactory.create())`
-7. **Release:** confirm ProGuard keep includes `com.ghost.serialization.generated.**`
+7. **Release:** R8 keep rules merge automatically from Ghost AARs + KSP (`META-INF/proguard/ghost-serialization.pro` per module). See [§21](#cap-21--proguard-r8).
 
 ### What happens on the first Retrofit request
 
@@ -1199,7 +1201,7 @@ A 100 MB HTTP body is **not** rejected automatically by Ghost; configure OkHttp,
 2. KSP did not run (broken clean, module without ghost plugin) → `./gradlew :app:kspDebugKotlin` or rebuild.
 3. Model in another module without KSP in that module → each module with models needs plugin + ksp.
 4. **iOS/KMP:** forgot `Ghost.addRegistry(GhostModuleRegistry_xxx.INSTANCE)` at framework startup.
-5. R8 removed serializers → add `generated.**` and `@GhostSerialization` rules.
+5. R8 removed serializers → rebuild; consumer rules from `ghost-api` / `ghost-serialization` AARs and KSP `META-INF/proguard/` should keep `@GhostSerialization` / `@GhostProtoSerialization` / `@GhostYamlSerialization` models and `com.ghost.serialization.generated.**`. See [§21](#cap-21--proguard-r8).
 
 ### GhostJsonException — missing required field
 
@@ -1653,14 +1655,18 @@ The processor writes rules that keep:
 - `GhostModuleRegistry_*` and its `INSTANCE` field
 - `GhostRegistry` interfaces for ServiceLoader
 
-On Android consumer:
+On Android, consumer AAR rules (automatic) plus KSP output keep:
 
 ```proguard
 -keep @com.ghost.serialization.annotations.GhostSerialization class * { *; }
+-keep @com.ghost.serialization.annotations.GhostProtoSerialization class * { *; }
+-keep @com.ghost.serialization.annotations.GhostYamlSerialization class * { *; }
 -keep class com.ghost.serialization.generated.** { *; }
+-keep class * implements com.ghost.serialization.contract.GhostSerializer { *; }
+-keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer { *; }
 ```
 
-Without this: `NOT_FOUND` in release even if debug works.
+Without this (or with KSP disabled on a module): `NOT_FOUND` in release even if debug works.
 
 ---
 
