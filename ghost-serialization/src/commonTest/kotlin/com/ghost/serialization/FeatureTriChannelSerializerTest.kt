@@ -2,35 +2,33 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.readSet
+import com.ghost.serialization.parser.strings.readSet
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.serializers.ByteSerializer
 import com.ghost.serialization.serializers.CharSerializer
 import com.ghost.serialization.serializers.FloatSerializer
+import com.ghost.serialization.serializers.IntSerializer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.SetSerializer
 import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
-import com.ghost.serialization.serializers.IntSerializer
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
-import okio.Buffer
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
+import okio.Buffer
+
 
 /**
  * Unit-level tri-channel tests for built-in serializers (pending 1.2.5 release).

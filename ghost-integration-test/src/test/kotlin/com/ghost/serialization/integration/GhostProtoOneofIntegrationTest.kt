@@ -9,10 +9,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * End-to-end proof that `@GhostWrappedKeys` + `@GhostSerialization(inferred = true)` compose to
- * implement proto3 `oneof` JSON mapping — real KSP-generated code, not a hand-written stand-in
- * or a source-text assertion. See [com.ghost.serialization.integration.model.ProtoOneofEvent]
- * for why this composition works.
+ * Integration coverage for proto3 `oneof` JSON mapping via `@GhostWrappedKeys` and
+ * `@GhostSerialization(inferred = true)`. See [OneofPayload] for the composition pattern.
  */
 class GhostProtoOneofIntegrationTest {
 

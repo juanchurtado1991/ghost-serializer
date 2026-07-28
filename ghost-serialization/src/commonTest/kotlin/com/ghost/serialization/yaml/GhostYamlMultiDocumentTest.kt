@@ -5,6 +5,8 @@ import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.strings.beginObject
 
 class GhostYamlMultiDocumentTest {
 

@@ -13,7 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** KSP regression tests for opt-in [@GhostYamlSerialization] codegen. */
+/** KSP regression tests for [@GhostYamlSerialization][com.ghost.serialization.annotations.GhostYamlSerialization] codegen. */
 class GhostYamlCodegenKspTest {
 
     @Test

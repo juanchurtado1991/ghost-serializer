@@ -1,21 +1,25 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.writer.common.*
-import com.ghost.serialization.writer.strings.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.writer.bytes.*
-import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.selectString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
 
 /**
  * Regression suite for the collision disambiguation algorithm.
@@ -265,8 +269,7 @@ class CollisionHashAlgorithmTest {
 
     @Test
     fun collision_largeFieldSet_sseEventEnvelopeStyle() {
-        // Mirrors the actual fields in core-kmp RawSseEventEnvelope that broke compilation
-        // Key pairs: eventType/eventTime (same last+middle byte — the critical regression)
+        // Field set modeled after RawSseEventEnvelope; eventType/eventTime share last+middle byte (regression case)
         val fields = listOf(
             "eventType", "eventTime",                          // share `even` len 9 — same lastByte+middleByte
             "deviceEvent", "deviceCommandsEvent",              // share `devi`, different lengths

@@ -9,10 +9,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Regression tests for Ghost 1.2.3 — auto-UNKNOWN fallback for enum deserialization.
+ * Auto-UNKNOWN fallback for enum deserialization.
  *
- * If an enum has a constant named UNKNOWN (any case), the compiler auto-generates
- * an else branch pointing to it so unrecognized values never throw GhostJsonException.
+ * When an enum defines an UNKNOWN constant (any case), the compiler generates an else branch
+ * so unrecognized wire values map to it instead of throwing GhostJsonException.
  */
 @OptIn(InternalGhostApi::class)
 class GhostFallbackEnumTest {

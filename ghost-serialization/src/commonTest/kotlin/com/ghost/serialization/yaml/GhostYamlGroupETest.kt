@@ -9,9 +9,7 @@ import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
 
 /**
- * TDD — Group E Tests (Red phase)
- *
- * Tests for: Anchors (&anchor), Aliases (*alias), and Merge Keys (<<: *alias).
+ * Group E tests: anchors (`&anchor`), aliases (`*alias`), and merge keys (`<<: *alias`).
  */
 class GhostYamlGroupETest {
 

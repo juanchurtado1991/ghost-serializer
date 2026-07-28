@@ -1,18 +1,14 @@
 package com.ghost.serialization.proto.wkt
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
-import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import okio.Buffer
+
 
 /**
  * [ProtoStructSerializer] (the top-level `ProtoStruct = Map<String, ProtoValue>` entry point,

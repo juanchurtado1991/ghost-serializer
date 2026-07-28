@@ -13,11 +13,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * [GhostAnalyzer] validation error paths that [GhostSerializationKspTest] doesn't cover
- * (it only exercises `validateClassKind`'s "not a data/sealed/value/enum class" error).
- * `validatePropertyVisibility`, `validateNames`, and `validateMapKey` had no test anywhere
- * in this module -- each only surfaces via a real KSP compile (`logger.error` records a
- * diagnostic; it doesn't throw), so these can't be unit-tested without compiling source.
+ * KSP regression tests for [com.ghost.serialization.compiler.analysis.GhostAnalyzer] validation
+ * errors not covered by [GhostSerializationKspTest]: private properties, duplicate JSON names,
+ * and non-String map keys.
  */
 class GhostAnalyzerValidationKspTest {
 

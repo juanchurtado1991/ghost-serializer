@@ -6,12 +6,12 @@ import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.strings.beginObject
 
 /**
- * TDD - GhostYamlRoundtripTest
- *
- * Verifies correctness of serialize -> string -> deserialize -> equals roundtrip
- * for basic objects, block styles, lists, and maps.
+ * Verifies serialize → deserialize round-trip correctness for basic objects,
+ * block styles, lists, and maps.
  */
 class GhostYamlRoundtripTest {
 

@@ -1,23 +1,20 @@
 package com.ghost.serialization.integration
 
-import com.ghost.serialization.parser.common.*
-import com.ghost.serialization.parser.bytes.*
-import com.ghost.serialization.parser.strings.*
-import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.integration.model.ComplexResponse
 import com.ghost.serialization.integration.model.ExtremeMetadata
 import com.ghost.serialization.integration.model.TwitterResponse
 import com.ghost.serialization.integration.model.UserRole
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+
 /**
- * Verifies per-model `textChannel` codegen in this module: every plain `@GhostSerialization`
- * model (Twitter macro roots and the synthetic benchmark models alike) defaults to the native
- * string channel unless it opts out explicitly.
+ * Per-model `textChannel` codegen: plain `@GhostSerialization` models (Twitter macro roots and
+ * synthetic benchmark models) default to the native string channel unless opted out explicitly.
  */
 class GhostTextChannelPerModelIntegrationTest {
 

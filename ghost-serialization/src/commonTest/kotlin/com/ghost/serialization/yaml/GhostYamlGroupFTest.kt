@@ -9,9 +9,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * TDD — Group F & G Tests (Red phase)
- *
- * Tests for: Polymorphism (Tag-based, Property-based) and Directives (%YAML, %TAG).
+ * Group F and G tests: tag-based and property-based polymorphism, and directives (`%YAML`, `%TAG`).
  */
 class GhostYamlGroupFTest {
 

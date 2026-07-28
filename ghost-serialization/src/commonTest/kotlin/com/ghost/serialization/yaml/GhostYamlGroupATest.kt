@@ -11,13 +11,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 
 /**
- * TDD — Group A Tests (Red phase)
+ * Group A tests: block mappings, block sequences, all scalar types,
+ * quoted strings, nested objects/lists, comments, and multiple documents.
  *
- * Tests for: block mappings, block sequences, all scalar types,
- * quoted strings, nested objects/lists, comments, multiple documents.
- *
- * These tests define the expected behavior of [GhostYamlFlatReader].
- * All tests were written BEFORE the implementation (Red → Green → Refactor).
+ * Defines expected behavior of [GhostYamlFlatReader].
  */
 class GhostYamlGroupATest {
 
@@ -389,11 +386,10 @@ class GhostYamlGroupATest {
         assertTrue(result.isEmpty())
     }
 
-    // ── Helpers (will be backed by GhostYamlFlatReader) ──────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
      * Parses a YAML string and returns the top-level mapping as Map<String, Any?>.
-     * Backed by [GhostYamlFlatReader] once implemented.
      */
     private fun parseMap(yaml: String): Map<String, Any?> {
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
