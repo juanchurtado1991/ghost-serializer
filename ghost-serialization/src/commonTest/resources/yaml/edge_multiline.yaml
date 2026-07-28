@@ -1,0 +1,92 @@
+# Edge case: Block scalar styles - all variations
+# Covers: Group B - literal block (|), folded block (>), chomp indicators
+
+# Literal block - preserves all newlines exactly
+literal_block: |
+  Line one
+  Line two
+  Line three
+
+# Literal block with strip chomp - removes trailing newlines
+literal_strip: |-
+  Line one
+  Line two
+  Line three
+
+# Literal block with keep chomp - keeps all trailing newlines
+literal_keep: |+
+  Line one
+  Line two
+  Line three
+
+
+# Folded block - newlines become spaces (except blank lines = paragraph break)
+folded_block: >
+  This is the first
+  paragraph which gets
+  folded into one line.
+
+  This is a second
+  paragraph after
+  a blank line.
+
+# Folded with strip chomp
+folded_strip: >-
+  This line
+  is folded
+  and trailing newlines stripped
+
+# Folded with keep chomp
+folded_keep: >+
+  This line
+  is folded
+  with trailing newlines kept
+
+
+# Literal block with explicit indentation indicator (2 spaces)
+indented_2: |2
+  This block starts at column 2
+  and preserves relative indentation
+    inner indent here
+
+# Literal block with explicit indentation indicator (4 spaces)
+indented_4: |4
+    This block starts at column 4
+    and preserves relative indentation
+
+# Empty literal block
+empty_literal: |
+
+# Single newline literal block
+single_newline: |
+  only one line
+
+# Multi-paragraph folded
+multi_para_folded: >
+  First paragraph line one
+  first paragraph line two.
+
+  Second paragraph line one
+  second paragraph line two.
+
+  Third paragraph.
+
+# Deeply nested multiline
+nested:
+  level1:
+    description: |
+      This is a multiline description
+      at the second nesting level.
+      It preserves its newlines.
+    summary: >
+      This is a folded summary
+      that becomes a single line.
+    items:
+      - name: item1
+        note: |
+          Multiline note
+          for item 1.
+      - name: item2
+        note: >
+          Folded note
+          for item 2.
