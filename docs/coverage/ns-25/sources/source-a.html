@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostFlatten</title>
+  <title>GhostSerialization Coverage Report > GhostFallback</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostFlatten (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostFallback (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostFlatten</td>
+  <td class="name">GhostFallback</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,26 +47,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Maps a nested JSON property directly to a field in the annotated class.
+&nbsp; * Indicates that this subclass should be used as the fallback when deserializing
+&nbsp; * a sealed class and the discriminator value in the JSON does not match any known subclass.
 &nbsp; *
-&nbsp; * Example:
-&nbsp; * ```kotlin
-&nbsp; * @GhostSerialization
-&nbsp; * data class Device(
-&nbsp; *     @GhostFlatten(&quot;attributes.value.level&quot;)
-&nbsp; *     val level: Int
-&nbsp; * )
-&nbsp; * ```
-&nbsp; * JSON: `{&quot;attributes&quot;: {&quot;value&quot;: {&quot;level&quot;: 42}}}`
-&nbsp; *
-&nbsp; * This avoids creating intermediate wrapper classes and significantly reduces memory allocation
-&nbsp; * by parsing nested values directly into the target field.
-&nbsp; *
-&nbsp; * @param path The dot-separated path to the JSON property.
+&nbsp; * Only one subclass per sealed class hierarchy can be annotated with this annotation.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
+&nbsp;@Target(AnnotationTarget.CLASS)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostFlatten(val path: String)
+&nbsp;annotation class GhostFallback
 </code>
 </pre>
 </div>
@@ -90,7 +78,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 23:10</div>
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
 </div>
 </body>
 </html>
