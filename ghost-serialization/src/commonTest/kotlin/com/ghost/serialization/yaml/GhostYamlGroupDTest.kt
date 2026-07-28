@@ -45,7 +45,7 @@ class GhostYamlGroupDTest {
     }
 
     @Test
-    fun `reads negative hex, octal, and binary scalars`() {
+    fun `reads negative hex octal and binary scalars`() {
         // readNumber()'s digit scanner used to stop right after the leading "-0", leaving
         // "x10"/"o17"/"b1010" unconsumed and corrupting the next key. Regression test.
         val yaml = """
@@ -62,7 +62,7 @@ class GhostYamlGroupDTest {
     }
 
     @Test
-    fun `reads negative hex, octal, and binary in flow style and as array items`() {
+    fun `reads negative hex octal and binary in flow style and as array items`() {
         // Same readNumber() code path as the block-mapping case above, but exercised through
         // flow collections and block-sequence items to make sure the fix isn't accidentally
         // scoped to just one caller.
