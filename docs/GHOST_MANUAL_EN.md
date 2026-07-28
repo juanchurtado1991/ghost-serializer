@@ -1266,7 +1266,7 @@ Ghost.getSerializer(MyClass::class)
 Highlights since 1.2.7 (see `CHANGELOG.md` for the full list):
 
 - **Kotlin 2.4.0 / KSP 2.3.10 / Ktor 3.5.1** toolchain.
-- **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-protobuf`, `ghost-ktor`, and `ghost-sample`.
+- **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-ktor`, and `ghost-sample` (JSON, YAML, and Proto3 JSON share the unified `ghost-serialization` runtime).
 - **Decode hot path**: in-order field prediction, SWAR whitespace/string scanning, deferred pool hash — string/bytes/streaming.
 - **`textChannel = true` by default** (native string reader/writer overloads).
 - **RFC 8259** UTF-8/UTF-16/UTF-32 input normalization on byte/streaming entrypoints.
