@@ -232,8 +232,6 @@ internal object GhostEmitterConstants {
     const val PKG_PARSER_BYTES = "com.ghost.serialization.parser.bytes"
     const val PKG_PARSER_STRINGS = "com.ghost.serialization.parser.strings"
     const val PKG_PARSER_STREAMING = "com.ghost.serialization.parser.streaming"
-    /** @deprecated Use `PKG_PARSER_BYTES` or a channel-specific parser package. */
-    const val PKG_PARSER = PKG_PARSER_BYTES
     const val STR_RETURN_L = "return %L"
     
     const val REGISTRY_CHUNK_SIZE = 500
@@ -383,8 +381,6 @@ internal object GhostEmitterConstants {
     const val PKG_WRITER_COMMON = "com.ghost.serialization.writer.common"
     const val PKG_WRITER_BYTES = "com.ghost.serialization.writer.bytes"
     const val PKG_WRITER_STRINGS = "com.ghost.serialization.writer.strings"
-    /** @deprecated Use `PKG_WRITER_BYTES` or a channel-specific writer package. */
-    const val PKG_WRITER = PKG_WRITER_BYTES
     const val PKG_CONTRACT = "com.ghost.serialization.contract"
     const val PKG_EXCEPTION = "com.ghost.serialization.exception"
     const val PKG_GHOST = "com.ghost.serialization"
@@ -411,7 +407,6 @@ internal object GhostEmitterConstants {
     const val STR_GHOST_YAML_WRITER = "GhostYamlWriter"
     const val STR_GHOST_YAML_FLAT_WRITER = "GhostYamlFlatWriter"
     const val STR_GHOST_YAML_FLAT_READER = "GhostYamlFlatReader"
-    const val STR_GHOST_PROTO_YAML_FLAT_READER = "GhostProtoYamlFlatReader"
     const val STR_GHOST_YAML_PREFIX = "GhostYaml"
     const val TEMPLATE_YAML_ARRAY_SERIALIZER = "GhostYaml%sSerializer"
 

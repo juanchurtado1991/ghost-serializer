@@ -76,6 +76,108 @@ object GhostYamlLongArraySerializer : GhostYamlSerializer<LongArray> {
     }
 }
 
+object GhostYamlFloatArraySerializer : GhostYamlSerializer<FloatArray> {
+    override fun serialize(writer: GhostYamlWriter, value: FloatArray) {
+        writer.beginArray()
+        val size = value.size
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
+        }
+        writer.endArray()
+    }
+
+    override fun serialize(writer: GhostYamlFlatWriter, value: FloatArray) {
+        writer.beginArray()
+        val size = value.size
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
+        }
+        writer.endArray()
+    }
+
+    override fun deserialize(reader: GhostYamlFlatReader): FloatArray {
+        reader.beginArray()
+        val list = ArrayList<Float>()
+        while (reader.hasNextArrayElement()) {
+            list.add(reader.nextFloat())
+        }
+        reader.endArray()
+        return list.toFloatArray()
+    }
+}
+
+object GhostYamlDoubleArraySerializer : GhostYamlSerializer<DoubleArray> {
+    override fun serialize(writer: GhostYamlWriter, value: DoubleArray) {
+        writer.beginArray()
+        val size = value.size
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
+        }
+        writer.endArray()
+    }
+
+    override fun serialize(writer: GhostYamlFlatWriter, value: DoubleArray) {
+        writer.beginArray()
+        val size = value.size
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
+        }
+        writer.endArray()
+    }
+
+    override fun deserialize(reader: GhostYamlFlatReader): DoubleArray {
+        reader.beginArray()
+        val list = ArrayList<Double>()
+        while (reader.hasNextArrayElement()) {
+            list.add(reader.nextDouble())
+        }
+        reader.endArray()
+        return list.toDoubleArray()
+    }
+}
+
+object GhostYamlBooleanArraySerializer : GhostYamlSerializer<BooleanArray> {
+    override fun serialize(writer: GhostYamlWriter, value: BooleanArray) {
+        writer.beginArray()
+        val size = value.size
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
+        }
+        writer.endArray()
+    }
+
+    override fun serialize(writer: GhostYamlFlatWriter, value: BooleanArray) {
+        writer.beginArray()
+        val size = value.size
+        var idx = 0
+        while (idx < size) {
+            writer.value(value[idx])
+            idx++
+        }
+        writer.endArray()
+    }
+
+    override fun deserialize(reader: GhostYamlFlatReader): BooleanArray {
+        reader.beginArray()
+        val list = ArrayList<Boolean>()
+        while (reader.hasNextArrayElement()) {
+            list.add(reader.nextBoolean())
+        }
+        reader.endArray()
+        return list.toBooleanArray()
+    }
+}
+
 /**
  * YAML list body serializer — used by Retrofit/Ktor YAML adapters for `List<T>` endpoints when
  * [itemSerializer] also implements [GhostYamlSerializer].
