@@ -21,8 +21,8 @@ class GhostYamlWriter(
     internal var depth = 0
     internal var scratch: ByteArray? = null
 
-    private val contexts = IntArray(C.MAX_DEPTH)
-    private val itemCounts = IntArray(C.MAX_DEPTH)
+    private val contexts = IntArray(C.MAX_DEPTH + 1)
+    private val itemCounts = IntArray(C.MAX_DEPTH + 1)
     private var pendingSpace = false
     private var justWroteDash = false
 
