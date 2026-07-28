@@ -43,7 +43,7 @@ private val DropdownBorderWidth = 1.dp
 private const val DropdownFillAlpha = 0.3f
 private const val DropdownBorderAlphaIdle = 0.35f
 
-/** Trigger + popup for choosing among a [FeatureLab]'s [LabVariant]s. Hidden entirely for single-variant labs. */
+/** Dropdown trigger and menu for selecting a [FeatureLab] [LabVariant]; hidden for single-variant labs. */
 @Composable
 fun VariantSelector(
     variants: List<LabVariant>,

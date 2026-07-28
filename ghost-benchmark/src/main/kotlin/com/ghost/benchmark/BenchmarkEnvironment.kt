@@ -10,46 +10,56 @@ import com.ghost.serialization.integration.model.ExternalColor
 import com.ghost.serialization.integration.model.ExternalColorSerializer
 import com.ghost.serialization.integration.model.ExternalDate
 import com.ghost.serialization.integration.model.ExternalDateSerializer
-import com.ghost.protobuf.wkt.ProtoDuration
-import com.ghost.protobuf.wkt.ProtoDurationSerializer
-import com.ghost.protobuf.wkt.ProtoTimestamp
-import com.ghost.protobuf.wkt.ProtoTimestampSerializer
-import com.ghost.protobuf.wkt.ProtoAny
-import com.ghost.protobuf.wkt.ProtoAnySerializer
-import com.ghost.protobuf.wkt.ProtoValue
-import com.ghost.protobuf.wkt.ProtoValueSerializer
-import com.ghost.protobuf.wkt.ProtoBoolValue
-import com.ghost.protobuf.wkt.ProtoBoolValueSerializer
-import com.ghost.protobuf.wkt.ProtoStringValue
-import com.ghost.protobuf.wkt.ProtoStringValueSerializer
-import com.ghost.protobuf.wkt.ProtoBytesValue
-import com.ghost.protobuf.wkt.ProtoBytesValueSerializer
-import com.ghost.protobuf.wkt.ProtoDoubleValue
-import com.ghost.protobuf.wkt.ProtoDoubleValueSerializer
-import com.ghost.protobuf.wkt.ProtoFloatValue
-import com.ghost.protobuf.wkt.ProtoFloatValueSerializer
-import com.ghost.protobuf.wkt.ProtoInt32Value
-import com.ghost.protobuf.wkt.ProtoInt32ValueSerializer
-import com.ghost.protobuf.wkt.ProtoInt64Value
-import com.ghost.protobuf.wkt.ProtoInt64ValueSerializer
-import com.ghost.protobuf.wkt.ProtoUInt32Value
-import com.ghost.protobuf.wkt.ProtoUInt32ValueSerializer
-import com.ghost.protobuf.wkt.ProtoUInt64Value
-import com.ghost.protobuf.wkt.ProtoUInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
+import com.ghost.serialization.proto.wkt.ProtoTimestampSerializer
+import com.ghost.serialization.proto.wkt.ProtoAny
+import com.ghost.serialization.proto.wkt.ProtoAnySerializer
+import com.ghost.serialization.proto.wkt.ProtoValue
+import com.ghost.serialization.proto.wkt.ProtoValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoBoolValue
+import com.ghost.serialization.proto.wkt.ProtoBoolValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoStringValue
+import com.ghost.serialization.proto.wkt.ProtoStringValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoBytesValue
+import com.ghost.serialization.proto.wkt.ProtoBytesValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDoubleValue
+import com.ghost.serialization.proto.wkt.ProtoDoubleValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoFloatValue
+import com.ghost.serialization.proto.wkt.ProtoFloatValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoInt32Value
+import com.ghost.serialization.proto.wkt.ProtoInt32ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoInt64Value
+import com.ghost.serialization.proto.wkt.ProtoInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoUInt32Value
+import com.ghost.serialization.proto.wkt.ProtoUInt32ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoUInt64Value
+import com.ghost.serialization.proto.wkt.ProtoUInt64ValueSerializer
 import com.sun.management.ThreadMXBean
 import kotlin.reflect.KClass
 
 /**
- * One-time Ghost registry + prewarm shared by every benchmark JVM.
+ * One-time Ghost registry wiring and JVM prewarm shared by every benchmark process.
+ *
+ * Registers manual serializers for integration-test types (external coders, protobuf WKTs),
+ * calls [com.ghost.serialization.Ghost.prewarm], and enables thread allocation tracking.
  */
 internal object BenchmarkEnvironment {
 
+    /**
+     * Initializes Ghost and platform diagnostics.
+     *
+     * @return a [ThreadMXBean] with allocation tracking enabled, or `null` when unsupported
+     *   (callers should exit the JVM with a non-zero status).
+     */
     fun init(): ThreadMXBean? {
         Ghost.addRegistry(manualRegistry)
         Ghost.prewarm()
         return initializePlatformDiagnostics()
     }
 
+    /** Prints the suite banner and active [BenchmarkProfile] iteration counts. */
     fun printConfigHeader(suite: BenchmarkSuite) {
         println("\n--- GHOST BENCHMARK: ${suite.cliName.uppercase()} ---")
         println(

@@ -1,0 +1,33 @@
+@file:OptIn(InternalGhostApi::class)
+
+package com.ghost.serialization.parser.proto
+
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.JsonReaderOptions
+
+
+class GhostProtoJsonFlatReader(
+    rawData: ByteArray,
+    maxDepth: Int = C.MAX_DEPTH,
+    maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
+) : GhostJsonFlatReader(rawData, maxDepth = maxDepth, maxCollectionSize = maxCollectionSize) {
+
+    override fun nextFloat(): Float = nextProtoFloat()
+
+    override fun nextDouble(): Double = nextProtoDouble()
+
+    override fun nextInt(): Int = nextProtoInt32()
+
+    override fun nextLong(): Long = nextProtoInt64()
+
+    override fun nextProtoUInt64(): ULong = readProtoUInt64()
+
+    fun nextProtoUInt32(): Long = readProtoUInt32()
+
+    fun nextProtoBytes(): ByteArray = readProtoBytes()
+
+    fun nextProtoEnum(options: JsonReaderOptions): Int = readProtoEnum(options)
+}

@@ -29,7 +29,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":ghost-serialization"))
-            implementation(project(":ghost-protobuf"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
         }

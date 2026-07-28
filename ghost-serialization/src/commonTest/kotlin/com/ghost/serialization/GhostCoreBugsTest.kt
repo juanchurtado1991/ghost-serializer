@@ -1,24 +1,25 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.JsonReaderOptions
-import com.ghost.serialization.parser.createByteArraySource
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.nextDouble
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.selectString
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.readQuotedString
-import com.ghost.serialization.writer.FlatByteArrayWriter
-import com.ghost.serialization.writer.GhostDoubleFormatter
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.bytes.readQuotedString
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.createByteArraySource
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextDouble
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.selectString
 import com.ghost.serialization.serializers.GhostIntList
 import com.ghost.serialization.serializers.GhostLongList
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.common.GhostDoubleFormatter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
+import com.ghost.serialization.parser.strings.beginObject
 
 class GhostCoreBugsTest {
 
@@ -83,19 +84,19 @@ class GhostCoreBugsTest {
         assertTrue(!safeOptions.hasCollisions) // Must be false since there are no collisions
 
         val json = "{\"user_id\":1,\"user_ip\":2}"
-        
+
         val r1 = GhostJsonReader(json.encodeToByteArray())
         r1.beginObject()
         val match1 = r1.selectString(options)
         assertEquals(0, match1) // user_id index is 0
         r1.consumeKeySeparator()
         r1.nextInt()
-        
+
         val match2 = r1.selectString(options)
         assertEquals(1, match2) // user_ip index is 1
         r1.consumeKeySeparator()
         r1.nextInt()
-        
+
         r1.endObject()
     }
 
@@ -103,13 +104,13 @@ class GhostCoreBugsTest {
     fun testDepthLimitNegativeBoundarySafety() {
         val jsonBytes = "}".encodeToByteArray()
         val reader = GhostJsonFlatReader(jsonBytes)
-        
+
         // Depth starts at 0
         assertEquals(0, reader.depth)
         reader.endObject()
         // Decrementing past 0 should stay at 0
         assertEquals(0, reader.depth)
-        
+
         // Verify depth is clamped at 0 for streaming reader
         val reader2 = GhostJsonReader(createByteArraySource(jsonBytes))
         assertEquals(0, reader2.depth)

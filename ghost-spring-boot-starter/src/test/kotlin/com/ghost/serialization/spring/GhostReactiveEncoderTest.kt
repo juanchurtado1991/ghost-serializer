@@ -15,9 +15,8 @@ import kotlin.test.assertTrue
 data class UnregisteredReactiveMessage(val value: Int)
 
 /**
- * Direct unit tests for [GhostReactiveEncoder] — no Spring context, so these run fast and
- * target the specific canEncode/encode branches precisely. End-to-end wiring through a real
- * WebFlux app is covered separately by [GhostSpringWebFluxIntegrationTest].
+ * Unit tests for [GhostReactiveEncoder] without a Spring context. Covers `canEncode` and
+ * `encode` branches. End-to-end WebFlux wiring is covered by [GhostSpringWebFluxIntegrationTest].
  */
 class GhostReactiveEncoderTest {
 

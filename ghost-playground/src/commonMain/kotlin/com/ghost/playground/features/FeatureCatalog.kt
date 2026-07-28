@@ -1,8 +1,10 @@
 package com.ghost.playground.features
 
 import com.ghost.playground.ui.icons.PlaygroundIconKind
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.decodeFromYaml
+import com.ghost.serialization.encodeToYaml
 
 object FeatureCatalog {
     val labs: List<FeatureLab> = listOf(
@@ -14,6 +16,8 @@ object FeatureCatalog {
             introEn = "Ghost turns JSON into a typed Kotlin value and back — using generated code, not reflection.",
             introEs = "Ghost convierte JSON en un valor Kotlin tipado y viceversa — con código generado, sin reflexión.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 data class PlaygroundUser(
                     val id: Long,
@@ -48,6 +52,9 @@ object FeatureCatalog {
             introEn = "Wrong types in JSON? Ghost keeps your defaults instead of crashing the whole parse.",
             introEs = "¿Tipos incorrectos en JSON? Ghost conserva tus defaults en vez de tumbar todo el parse.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostResilient
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 data class ResilientConfig(
                     @GhostResilient
@@ -83,6 +90,9 @@ object FeatureCatalog {
             introEn = "Nested JSON paths map straight into flat DTO properties — no wrapper classes.",
             introEs = "Paths JSON anidados mapean a props planas del DTO — sin clases wrapper.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostFlatten
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 data class FlattenedPerson(
                     val name: String,
@@ -119,6 +129,9 @@ object FeatureCatalog {
             introEn = "Unknown sealed-class discriminators route to a safe fallback type instead of throwing.",
             introEs = "Discriminadores desconocidos en sealed class van a un fallback seguro en vez de explotar.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostFallback
+                import com.ghost.serialization.annotations.GhostSerialization
+
                 @GhostSerialization
                 sealed class DeviceEvent {
                     @GhostSerialization
@@ -157,6 +170,9 @@ object FeatureCatalog {
             introEn = "Capture opaque JSON as bytes — no intermediate tree, perfect for passthrough fields.",
             introEs = "Captura JSON opaco como bytes — sin árbol intermedio, ideal para passthrough.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.types.RawJson
+
                 @GhostSerialization
                 data class EnvelopePayload(
                     val event: String,
@@ -183,9 +199,12 @@ object FeatureCatalog {
             icon = PlaygroundIconKind.Bytes,
             titleEn = "Proto-JSON",
             titleEs = "Proto-JSON",
-            introEn = "@GhostProtoSerialization follows proto3 JSON rules: int64 fields round-trip as quoted strings, and fields left at their default are dropped from the output.",
-            introEs = "@GhostProtoSerialization sigue las reglas de proto3 JSON: los campos int64 van y vuelven como strings entre comillas, y los campos en su valor default se omiten del output.",
+            wireFormat = LabWireFormat.PROTO_JSON,
+            introEn = "@GhostProtoSerialization applies proto3 JSON rules (quoted int64, Base64 bytes, default omission). Works with @GhostName and @GhostIgnore; add @GhostYamlSerialization for YAML. Not compatible with @GhostFlatten, @GhostJsonEnvelope, RawJson, or sealed discriminators — use @GhostWrappedKeys for oneof.",
+            introEs = "@GhostProtoSerialization aplica reglas proto3 JSON (int64 entre comillas, bytes Base64, omisión de defaults). Compatible con @GhostName y @GhostIgnore; añade @GhostYamlSerialization para YAML. No combina con @GhostFlatten, @GhostJsonEnvelope, RawJson ni sealed con discriminador — usa @GhostWrappedKeys para oneof.",
             dtoSource = """
+                import com.ghost.serialization.annotations.GhostProtoSerialization
+
                 @GhostProtoSerialization
                 data class ProtoOrderEvent(
                     val orderId: Long,
@@ -195,11 +214,12 @@ object FeatureCatalog {
             """.trimIndent(),
             fieldNames = listOf("orderId", "label", "retries"),
             variants = listOf(
-                LabVariant("restock", "Restock order", "Orden de reposición", """{"orderId":"5001","label":"restock","retries":0}"""),
+                LabVariant("restock", "Restock order", "Orden de reposición", """{"orderId":"5001","label":"restock"}"""),
+                LabVariant("withRetries", "Non-default retries", "Retries distinto del default", """{"orderId":"5002","label":"priority","retries":3}"""),
             ),
             run = { json ->
-                val event = GhostProtobuf.deserialize<ProtoOrderEvent>(json)
-                GhostProtobuf.encodeToString(event)
+                val event = GhostProto.deserialize<ProtoOrderEvent>(json)
+                GhostProto.encodeToString(event)
             },
             explainEn = { _, out ->
                 "orderId stayed a quoted string (proto3 int64 convention) and retries=0 (the default) was dropped from the output: $out"
@@ -208,9 +228,72 @@ object FeatureCatalog {
                 "orderId se mantuvo como string entre comillas (convención int64 de proto3) y retries=0 (el default) se omitió del output: $out"
             },
         ),
+        FeatureLab(
+            id = "yamlRoundtrip",
+            icon = PlaygroundIconKind.RoundTrip,
+            titleEn = "YAML",
+            titleEs = "YAML",
+            wireFormat = LabWireFormat.YAML,
+            introEn = "Add @GhostYamlSerialization beside @GhostSerialization to opt in to YAML codegen — the same DTO can round-trip YAML documents without a second schema.",
+            introEs = "Añade @GhostYamlSerialization junto a @GhostSerialization para activar codegen YAML — el mismo DTO puede hacer round-trip de documentos YAML sin un segundo schema.",
+            dtoSource = """
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class PlaygroundUser(
+                    val id: Long,
+                    val name: String,
+                    val email: String? = null,
+                )
+            """.trimIndent(),
+            fieldNames = listOf("id", "name", "email"),
+            variants = listOf(
+                LabVariant(
+                    "full",
+                    "Full profile",
+                    "Perfil completo",
+                    """
+                    id: 7
+                    name: Neo
+                    email: neo@matrix.io
+                    """.trimIndent(),
+                ),
+                LabVariant(
+                    "missingOptional",
+                    "Missing optional field",
+                    "Campo opcional ausente",
+                    """
+                    id: 9
+                    name: Morpheus
+                    """.trimIndent(),
+                ),
+                LabVariant(
+                    "nullEmail",
+                    "Null email",
+                    "Email nulo",
+                    """
+                    id: 8
+                    name: Trinity
+                    email: null
+                    """.trimIndent(),
+                ),
+            ),
+            run = { yaml ->
+                val user = Ghost.decodeFromYaml<PlaygroundUser>(yaml)
+                Ghost.encodeToYaml(user)
+            },
+            explainEn = { _, out ->
+                "Ghost parsed YAML with the generated GhostYamlFlatReader and wrote YAML again with GhostYamlFlatWriter. Output: $out"
+            },
+            explainEs = { _, out ->
+                "Ghost parseó YAML con GhostYamlFlatReader generado y reescribió YAML con GhostYamlFlatWriter. Salida: $out"
+            },
+        ),
     )
 
-    /** Tiny best-effort extractor for this catalog's own hand-written sample JSON — not a general parser. */
+    /** Best-effort JSON string-field extractor for this catalog's sample payloads; not a general parser. */
     private fun extractJsonStringField(json: String, key: String): String? {
         val marker = "\"$key\""
         val keyIndex = json.indexOf(marker)

@@ -22,11 +22,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * [bodyGhost]/[bodyGhostProto] bypass Ktor's `ContentNegotiation` pipeline entirely, so they
- * need coverage independent of [GhostKtorTest]/[GhostProtoKtorTest], which only exercise the
- * `ContentNegotiation`-routed path (`.body()` via [GhostContentConverter]/[GhostProtoContentConverter]).
- * Reuses the `KtorUser`/`UnregisteredUser`/`ProtoKtorEvent` fixtures declared in those files
- * (same package, same source set).
+ * Direct unit tests for [bodyGhost] and [bodyGhostProto] — client bypass extensions that
+ * deserialize response bodies without Ktor's `ContentNegotiation` pipeline.
  */
 class GhostKtorBypassExtensionsTest {
 

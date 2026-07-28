@@ -3,19 +3,21 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostRegistry
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.prepareUtf8JsonSource
-import com.ghost.serialization.parser.withPreparedUtf8Json
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
-import com.ghost.serialization.writer.WriterSinkPair
-import com.ghost.serialization.writer.FlatCharArrayWriter
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.prepareUtf8JsonSource
+import com.ghost.serialization.parser.common.withPreparedUtf8Json
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.StreamingGhostSource
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.WriterSinkPair
+import com.ghost.serialization.writer.strings.FlatCharArrayWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import kotlin.native.concurrent.ThreadLocal
 import okio.BufferedSource
 import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
-import kotlin.native.concurrent.ThreadLocal
+
 
 @ThreadLocal
 private var cachedReader: GhostJsonReader? = null

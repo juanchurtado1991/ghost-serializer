@@ -3,33 +3,54 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.GhostJsonConstants
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.JsonReaderOptions
-import com.ghost.serialization.parser.beginArray
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.byteToCharPosition
-import com.ghost.serialization.parser.charToBytePosition
-import com.ghost.serialization.parser.consumeArraySeparator
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.consumeNull
-import com.ghost.serialization.parser.endArray
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.hasNext
-import com.ghost.serialization.parser.isNextNullValue
-import com.ghost.serialization.parser.nextBoolean
-import com.ghost.serialization.parser.nextDouble
-import com.ghost.serialization.parser.nextFloat
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextLong
-import com.ghost.serialization.parser.nextString
-import com.ghost.serialization.parser.peekStringField
-import com.ghost.serialization.parser.readList
-import com.ghost.serialization.parser.readMap
-import com.ghost.serialization.parser.selectNameAndConsume
-import com.ghost.serialization.parser.selectString
-import com.ghost.serialization.parser.skipValue
+import com.ghost.serialization.parser.bytes.readQuotedString
+import com.ghost.serialization.parser.common.GhostJsonConstants
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.byteToCharPosition
+import com.ghost.serialization.parser.common.charToBytePosition
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeArraySeparator
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.hasNext
+import com.ghost.serialization.parser.streaming.isNextNullValue
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextDouble
+import com.ghost.serialization.parser.streaming.nextFloat
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextLong
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.peekStringField
+import com.ghost.serialization.parser.streaming.selectNameAndConsume
+import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.readList
+import com.ghost.serialization.parser.strings.readMap
+import com.ghost.serialization.parser.strings.beginArray
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeArraySeparator
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.consumeNull
+import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.hasNext
+import com.ghost.serialization.parser.strings.isNextNullValue
+import com.ghost.serialization.parser.strings.nextBoolean
+import com.ghost.serialization.parser.strings.nextDouble
+import com.ghost.serialization.parser.strings.nextFloat
+import com.ghost.serialization.parser.strings.nextInt
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextLong
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.peekStringField
+import com.ghost.serialization.parser.strings.selectNameAndConsume
+import com.ghost.serialization.parser.strings.selectString
+import com.ghost.serialization.parser.strings.skipValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -37,13 +58,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.ghost.serialization.parser.streaming.decodeResilient
+
 
 /**
  * Comprehensive unit tests for [GhostJsonStringReader].
  *
- * Mirrors the coverage depth of [GhostFlatReaderEdgeCaseTest], [GhostCrashProofTest],
- * and [GhostReaderAdvancedTest] so that the String reader is held to the exact same
- * correctness contract as its byte-based siblings.
+ * Provides coverage comparable to [GhostFlatReaderEdgeCaseTest], [GhostCrashProofTest],
+ * and [GhostReaderAdvancedTest] so the string reader meets the same correctness contract
+ * as its byte-based siblings.
  *
  * Sections:
  *   1.  isNextNullValue correctness
@@ -56,7 +79,7 @@ import kotlin.test.assertTrue
  *   8.  Stream exhaustion mid-parse
  *   9.  Escape character roundtrips
  *   10. Numbers at end of stream
- *   11. skipValue gauntlet
+ *   11. skipValue stress cases
  *   12. Depth tracking
  *   13. Strict mode enforcement
  *   14. Float precision
@@ -706,7 +729,7 @@ class GhostStringReaderTest {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 10. skipValue gauntlet
+    // 10. skipValue stress cases
     // ══════════════════════════════════════════════════════════════════
 
     @Test

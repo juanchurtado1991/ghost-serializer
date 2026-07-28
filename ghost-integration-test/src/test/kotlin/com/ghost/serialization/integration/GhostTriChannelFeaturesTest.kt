@@ -16,9 +16,7 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/**
- * Integration coverage for new features across bytes, string, and streaming channels.
- */
+/** Tri-channel coverage for RawJson payloads, opaque metadata capture, and related features. */
 class GhostTriChannelFeaturesTest {
 
     @Test

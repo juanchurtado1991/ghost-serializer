@@ -1,0 +1,803 @@
+package com.ghost.serialization.compiler.internal
+import com.squareup.kotlinpoet.ClassName
+
+/**
+ * Centralized constants for the deserialization code emitters and generators.
+ *
+ * Contains all string literals, templates, and identifiers used during code generation
+ * to ensure consistency and eliminate magic strings across the emitter modules.
+ */
+internal object GhostEmitterConstants {
+    const val STR_DESERIALIZE = "deserialize"
+    const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
+    const val DEFAULT_CHUNK_SIZE = 40
+    const val STR_READER = "reader"
+    const val TEMPLATE_PEEK_TYPE =
+        "val typeName = reader.peekStringField(%S)\n  ?: reader.throwError(%S)"
+    const val STR_MISSING_TYPE = "Missing discriminator field for sealed class"
+    const val STR_WHEN_TYPENAME = "val result = when (typeName)"
+    const val TEMPLATE_DESERIALIZE_BRANCH = "%S -> %T.deserialize(reader)"
+    const val STR_UNKNOWN_TYPE = "else -> reader.throwError(\"Unknown type discriminator: \$typeName\")"
+    const val STR_RETURN_RESULT = "return result"
+    const val TEMPLATE_RETURN_CONSTRUCTOR = "return %T(%L)"
+    const val TEMPLATE_CONSTRUCTOR = "%T(%L)"
+    const val STR_NULL = "null"
+    const val STR_ZERO = "0"
+    const val STR_ZERO_L = "0L"
+    const val STR_ZERO_D = "0.0"
+    const val STR_ZERO_F = "0.0f"
+    const val STR_CHAR_NULL_LITERAL = "'\\u0000'"
+    const val STR_JSON_CHAR_NULL = "\"\\u0000\""
+    const val VAL_ZERO = 0
+    const val VAL_ONE = 1
+    const val VAL_TWO = 2
+    const val VAL_THREE = 3
+    const val VAL_FOUR = 4
+    const val VAL_ZERO_L = 0L
+    const val VAL_ONE_L = 1L
+    const val BIT_SHIFT_32 = 32
+    const val LONG_BYTE_MASK = 0xFFL
+    const val STR_FALSE = "false"
+    const val STR_CURLY_OPEN = "{"
+    const val STR_CURLY_CLOSE = "}"
+    const val STR_COLON = ":"
+    const val STR_EMPTY_JSON = "{}"
+    const val STR_EMPTY_ARRAY = "[]"
+    const val STR_EMPTY_STRING = "\"\""
+    const val STR_DOUBLE_QUOTE = "\""
+    const val STR_BEGIN_OBJECT = "reader.beginObject()"
+    const val STR_WHILE_TRUE = "while (true)"
+    const val STR_SELECT_NAME_AND_CONSUME = "val index = reader.selectNameAndConsume(OPTIONS)"
+    const val STR_SELECT_SUB_NAME = "val %L = reader.selectNameAndConsume(%L)"
+    const val STR_WHEN_INDEX = "when (index)"
+    const val STR_WHEN_SUB_INDEX = "when (%L)"
+    const val STR_ARROW = " ->"
+    const val STR_UNDERSCORE = "_"
+    const val TEMPLATE_ASSIGN_L = " = %L"
+    const val STR_MINUS_ONE_BREAK = "-1 -> break"
+    const val STR_MINUS_TWO_ARROW = "-2 ->"
+    const val STR_SKIP_VALUE = "reader.skipValue()"
+    const val STR_END_OBJECT = "reader.endObject()"
+    const val TEMPLATE_DESERIALIZE_T = "%T.deserialize(reader)"
+    const val TEMPLATE_DESERIALIZE_L = "%L.deserialize(reader)"
+    const val STR_NEXT_INT = "reader.nextInt()"
+    const val STR_NEXT_BOOLEAN = "reader.nextBoolean()"
+    const val STR_NEXT_LONG = "reader.nextLong()"
+
+    /**
+     * proto3 JSON mapping: int64/uint64 fields accept both bare numbers and quoted decimal
+     * strings on read. Temporarily flips `coerceStringsToNumbers` around the read — this works
+     * on every reader flavor (streaming, flat, string), not just GhostProtoJsonFlatReader.
+     */
+    const val STR_NEXT_LONG_PROTO_COERCED =
+        "run {\n" +
+            "  val savedCoerce = reader.coerceStringsToNumbers\n" +
+            "  reader.coerceStringsToNumbers = true\n" +
+            "  val parsed = reader.nextLong()\n" +
+            "  reader.coerceStringsToNumbers = savedCoerce\n" +
+            "  parsed\n" +
+            "}"
+
+    /** proto3 JSON/YAML mapping: full-range `uint64` via quoted decimal string (or coerced bare number). */
+    const val STR_NEXT_ULONG_PROTO_COERCED =
+        "run {\n" +
+            "  val savedCoerce = reader.coerceStringsToNumbers\n" +
+            "  reader.coerceStringsToNumbers = true\n" +
+            "  val parsed = reader.nextProtoUInt64()\n" +
+            "  reader.coerceStringsToNumbers = savedCoerce\n" +
+            "  parsed\n" +
+            "}"
+    const val STR_NEXT_DOUBLE = "reader.nextDouble()"
+    const val STR_NEXT_FLOAT = "reader.nextFloat()"
+    const val STR_NEXT_BYTE = "reader.nextInt().toByte()"
+    const val STR_NEXT_SHORT = "reader.nextInt().toShort()"
+    const val STR_NEXT_CHAR = "reader.nextChar()"
+    const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"
+    const val STR_NEXT_STRING = "reader.nextString()"
+    const val STR_NEXT_INT_OR_NULL = "reader.nextIntOrNull()"
+    const val STR_NEXT_BOOLEAN_OR_NULL = "reader.nextBooleanOrNull()"
+    const val STR_NEXT_LONG_OR_NULL = "reader.nextLongOrNull()"
+    const val STR_NEXT_ULONG = "reader.nextULong()"
+    const val STR_NEXT_ULONG_OR_NULL = "reader.nextULongOrNull()"
+    const val STR_NEXT_STRING_OR_NULL = "reader.nextStringOrNull()"
+    const val TEMPLATE_L_READER = "%T.%L(reader)"
+    const val TEMPLATE_NULL_CHECK_L =
+        "if (reader.isNextNullValue()) {\n  reader.consumeNull()\n  null\n} else {\n  %L\n}"
+    const val TEMPLATE_THROW_S = "reader.throwError(%S)"
+    const val STR_REQ_FIELD_1 = "Required field '"
+    const val STR_REQ_FIELD_2 = "' missing in JSON"
+    const val STR_COMMA_SPACE = ", "
+    const val STR_BANG_BANG = "!!"
+    const val TEMPLATE_RETURN_T_PAREN = "return %T("
+    const val STR_PAREN = ")"
+        const val TEMPLATE_VAL_RESULT = "val result = %T("
+    const val STR_OR = " || "
+    const val STR_RETURN_RESULT_COPY = "return result.copy("
+    const val STR_COMMA = ","
+    const val STR_EMPTY = ""
+    const val STR_ELSE = "else"
+    const val STR_RETURN_RESULT_FINAL = "return result"
+    const val STR_ERR_INVALID_ENUM_INDEX = "-1 -> reader.throwError(\"Invalid enum value\")"
+    const val STR_ERR_UNEXPECTED_INDEX = "else -> throw GhostJsonException(\"Unexpected index: \$index\")"
+    const val STR_FALLBACK_ANNOTATION = "GhostFallback"
+    const val STR_ELSE_BRANCH = "else ->"
+    const val STR_ENUM_SELECT_OPTIONS = "val index = reader.selectString(ENUM_OPTIONS)"
+    const val STR_ENUM_WHEN = "return when (index)"
+    const val TEMPLATE_ENUM_BRANCH = "%L -> %T.%L"
+    const val STR_MASK_INIT = "var mask%L = 0L"
+    const val STR_CTX_CLASS = "DecodingContext"
+    const val STR_DECODE_CHUNK_PREFIX = "decodeChunk"
+    const val STR_SERIALIZE_CHUNK_PREFIX = "serializeChunk"
+    const val STR_READER_VAR = "reader"
+    const val STR_CTX_VAR = "ctx"
+    const val STR_INDEX_VAR = "index"
+    const val STR_WHEN_INDEX_PLAIN = "when (index)"
+    const val STR_BIT_MASK_MIN_LONG = "Long.MIN_VALUE"
+    const val TEMPLATE_DECODE_RESILIENT = "reader.decodeResilient { %L }?.let"
+    const val TEMPLATE_CTX_FIELD_ASSIGN = "ctx.%L = %L"
+    const val TEMPLATE_CTX_FIELD_SET_IT = "ctx.%L = it"
+    const val TEMPLATE_CTX_MASK_OR = "ctx.mask%L = ctx.mask%L or %L"
+    const val STR_CTX_INIT = "val ctx = DecodingContext()"
+    const val TEMPLATE_CHUNK_CALL = "in %L..%L -> %L(reader, ctx, index)"
+    const val TEMPLATE_IF_MASK_MISSING = "if ((ctx.mask%L and %L) == 0L)"
+    const val TEMPLATE_ELSE_IF_MASK_MISSING = "else if ((ctx.mask%L and %L) == 0L)"
+    const val STR_READ_LIST_TEMPLATE = "reader.readList {\n  %L\n}"
+    const val STR_READ_SET_TEMPLATE = "reader.readSet {\n  %L\n}"
+    const val STR_READ_MAP_TEMPLATE = "reader.readMap({ reader.nextKey()!! }) {\n  %L\n}"
+    const val STR_MASK_BITWISE_OR = "mask%L = mask%L or %L"
+    const val STR_IF_OPEN = "if ("
+    const val TEMPLATE_IF_MASK_MATCH_BIT_F = "(ctx.mask%s and %s) != 0L"
+    const val STR_CLOSE_PAREN_FLOW = ")"
+    const val TEMPLATE_IF_MASK_NOT_MET = "if ((ctx.mask%L and %L) != %L)"
+    const val TEMPLATE_MASK_CHECK_MATCH = "(mask%s and %s) != 0L"
+    const val TEMPLATE_MASK_ALL_MET_SIMPLE = "(mask%s and %s) == %s"
+    const val STR_GHOST_PKG = "com.ghost.serialization"
+    const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
+    const val STR_GHOST_OBJ = "Ghost"
+    const val STR_GHOST_SERIALIZER = "GhostSerializer"
+    const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
+    val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
+    const val DEFAULT_DISCRIMINATOR_KEY = "key"
+ 
+    const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
+    const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
+    const val STR_WRITER_WRITE_NAME_VAL = "writer.writeNameRaw(%L)"
+    const val STR_WRITER_END_OBJ = "writer.endObject()"
+    const val STR_WRITER_BEGIN_ARR = "writer.beginArray()"
+    const val STR_WRITER_END_ARR = "writer.endArray()"
+    const val STR_PARAM_WRITER = "writer"
+    const val STR_PARAM_VALUE = "value"
+    const val TEMPLATE_CHUNK_CALL_WRITER = "%N(writer, value)"
+    const val STR_FUN_SERIALIZE = "serialize"
+    const val STR_WHEN_VALUE = "when (value)"
+    const val STR_SERIALIZER_SUFFIX = "Serializer"
+    const val TEMPLATE_CHUNK_FUN_NAME = "%s%s_%s"
+    const val TEMPLATE_DECODE_CHUNK_NAME = "%s%s"
+    const val STR_IS_T_ARROW_T_SERIALIZE = "is %T -> %T.serialize(writer, value)"
+    const val TEMPLATE_VAR_NAME = "%sValue"
+    const val TEMPLATE_RESULT_VAR = "result.%s"
+    const val TEMPLATE_MASK_VAR = "mask%s"
+    const val TEMPLATE_CTX_VAR = "ctx.%s"
+    const val TEMPLATE_CTX_MASK_VAR = "ctx.mask%s"
+    const val TEMPLATE_IF_MASK_RETURN = "if ((%s and %s) != 0L) %s else %s"
+    const val TEMPLATE_WRAP_TYPE = "%s(%s)"
+    const val STR_ANNOTATION_SERIALIZATION = "com.ghost.serialization.annotations.GhostSerialization"
+    const val STR_ANNOTATION_PROTO_SERIALIZATION = "com.ghost.serialization.annotations.GhostProtoSerialization"
+    const val STR_ANNOTATION_YAML_SERIALIZATION = "com.ghost.serialization.annotations.GhostYamlSerialization"
+    const val STR_GENERATED_PKG = "com.ghost.serialization.generated"
+    const val STR_REGISTRY_PREFIX = "GhostModuleRegistry"
+    const val STR_LOG_PREFIX = ">>> [GhostSerialization]"
+    const val OPTION_MODULE_NAME = "ghost.moduleName"
+    const val STR_DEFAULT_NAME = "Default"
+    const val STR_DASH = "-"
+    const val STR_LOG_OPTIMIZED = " Successfully optimized: "
+    const val STR_LOG_CRITICAL = " Critical error processing "
+    const val STR_COLON_SPACE = ": "
+    const val STR_REFLECT_PKG = "kotlin.reflect"
+    const val STR_KCLASS = "KClass"
+    const val STR_TYPE_T = "T"
+    const val STR_COLLECTIONS_PKG = "kotlin.collections"
+    const val STR_MAP = "Map"
+    const val STR_FORMAT_S = "%S"
+    const val STR_MAP_OF = "mapOf(\n"
+    const val STR_MAP_ENTRY = "    %T::class to %T"
+    const val STR_COMMA_NEWLINE = ",\n"
+    const val STR_PAREN_CLOSE = ")"
+    const val STR_PROP_SERIALIZERS_MAP = "serializersByClass"
+    const val STR_FUN_GET_SERIALIZER = "getSerializer"
+    const val STR_PARAM_CLAZZ = "clazz"
+    const val STR_UNCHECKED_CAST = "UNCHECKED_CAST"
+    const val STR_GHOST_REGISTRY = "GhostRegistry"
+    const val STR_FUN_PREWARM = "prewarm"
+    const val STR_SERIALIZERS_SIZE = "serializersByClass.size"
+    const val STR_FUN_REG_COUNT = "registeredCount"
+    const val STR_FUN_GET_ALL_SERIALIZERS = "getAllSerializers"
+    const val STR_RETURN_SERIALIZERS = "return serializersByClass"
+    const val STR_KDOC_REGISTRY = "Generated Registry for GhostSerialization.\nUses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers."
+    const val STR_INSTANCE = "INSTANCE"
+    const val STR_INIT_INSTANCE = "%T()"
+    const val STR_META_INF_PROGUARD = "META-INF.proguard"
+    const val STR_GHOST_SERIALIZATION_FILE = "ghost-serialization"
+    const val STR_EXT_PRO = "pro"
+    const val STR_LOG_PROGUARD_WARN = " Could not generate ProGuard rules: "
+    const val STR_SERVICE_REGISTRY = "com.ghost.serialization.contract.GhostRegistry"
+    const val STR_META_INF_SERVICES = "META-INF.services"
+    const val STR_LOG_SERVICE_WARN = " Could not generate ServiceLoader file: "
+    const val STR_LAZY_START = "lazy {\n"
+    const val STR_WHEN_CLAZZ_START = "return when (clazz) {\n"
+    const val STR_WHEN_ENTRY = "    %T::class -> %T\n"
+    const val STR_WHEN_ELSE_NULL = "    else -> null\n"
+    const val STR_WHEN_CLOSE_CAST = "} as %T\n"
+    const val PKG_PARSER_COMMON = "com.ghost.serialization.parser.common"
+    const val PKG_PARSER_BYTES = "com.ghost.serialization.parser.bytes"
+    const val PKG_PARSER_STRINGS = "com.ghost.serialization.parser.strings"
+    const val PKG_PARSER_STREAMING = "com.ghost.serialization.parser.streaming"
+    const val STR_RETURN_L = "return %L"
+    
+    const val REGISTRY_CHUNK_SIZE = 500
+    const val TEMPLATE_GET_SHARD_MAP_CALL = "getShardMap%L()"
+    const val STR_PLUS_SPACED = " + "
+    const val STR_NEWLINE_CLOSE_CURLY = "\n}"
+    const val TEMPLATE_GET_SHARD_CALL = "getShard%L(clazz)?.let { return it as %T }"
+    const val STR_RETURN_NULL = "return null"
+    const val TEMPLATE_SHARD_MAP_NAME = "getShardMap%d"
+    const val TEMPLATE_SHARD_NAME = "getShard%d"
+    
+    const val STR_LIST = "List"
+    const val STR_SET = "Set"
+    const val STR_DOUBLE = "Double"
+    const val STR_FLOAT = "Float"
+
+    const val TEMPLATE_PROGUARD_KEEP = """
+        # Ghost KSP module rules (registry + serializers for this compilation unit)
+        -keep class %1${'$'}s.** { *; }
+        -keep class %1${'$'}s.%2${'$'}s {
+            public static ** INSTANCE;
+            public *** getSerializer(...);
+        }
+        -keep class * implements com.ghost.serialization.contract.GhostSerializer {
+            *;
+        }
+        -keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer {
+            *;
+        }
+    """
+    const val STR_DOT = "."
+    const val STR_T_SERIALIZE_WRITER_ACC = "%T.serialize(writer, %L)"
+    const val STR_ENUM_MEMBER_VAL = "%T.%L -> writer.value(%S)"
+    const val STR_WRITER_VAL_ENUM_NAME = "writer.value(value.name)"
+    const val K_INT = "kotlin.Int"
+    const val K_LONG = "kotlin.Long"
+    const val K_ULONG = "kotlin.ULong"
+    const val K_UINT = "kotlin.UInt"
+    const val K_USHORT = "kotlin.UShort"
+    const val K_UBYTE = "kotlin.UByte"
+    const val K_STRING = "kotlin.String"
+    const val K_BOOLEAN = "kotlin.Boolean"
+    const val K_DOUBLE = "kotlin.Double"
+    const val K_FLOAT = "kotlin.Float"
+    const val K_BYTE = "kotlin.Byte"
+    const val K_SHORT = "kotlin.Short"
+    const val K_CHAR = "kotlin.Char"
+    const val K_UNIT = "kotlin.Unit"
+    const val K_NOTHING = "kotlin.Nothing"
+    const val K_ANY = "kotlin.Any"
+    const val K_BYTE_ARRAY = "kotlin.ByteArray"
+    const val K_RAW_JSON = "com.ghost.serialization.types.RawJson"
+    const val PKG_TYPES = "com.ghost.serialization.types"
+    const val STR_RAW_JSON_TYPE = "RawJson"
+    const val STR_RAW_JSON_FROM_CAPTURE = "reader.captureRawJson()"
+    const val STR_WRITER_RAW_VALUE_SLICE = "writer.rawValue(%L.storage, %L.storageOffset, %L.storageLength)"
+    const val STR_CAPTURE_RAW_JSON_BYTES = "reader.captureRawJsonBytes()"
+    const val STR_WRITER_RAW_VALUE_L = "writer.rawValue(%L)"
+    const val STR_KOTLIN_PREFIX = "kotlin."
+    const val STR_JAVA_PREFIX = "java."
+    const val STR_H_VAL_PREFIX = "H_"
+    const val STR_SERIALIZE_CALL = "%L.serialize(writer, %L)"
+    const val STR_WRITER_VAL_L = "writer.value(%L)"
+    const val STR_WRITER_VAL_FLOAT = "writer.value(%L)"
+
+    /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
+    const val STR_WRITER_VAL_LONG_AS_STRING = "writer.value(%L.toString())"
+
+    /** proto3 JSON mapping: `bytes` fields are Base64 strings on the wire, not inline raw JSON. */
+    const val STR_WRITER_VAL_BYTES_AS_BASE64 = "writer.value(encodeBase64String(%L))"
+    const val STR_DECODE_BASE64_STRING_CALL = "decodeBase64String(reader.nextString())"
+    const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"
+    const val STR_WRITE_NAME_RAW = "writer.writeNameRaw(%L)"
+    const val STR_WRITE_NAME_RAW_NULL = "writer.writeNameRaw(%L).nullValue()"
+    const val STR_CUSTOM_ENCODER_CALL = "%T.%L(writer, %L)"
+    const val STR_CONTEXTUAL_PREFIX = "contextual_"
+    
+    const val TEMPLATE_ENCODE_UTF8 = "%S.encodeUtf8()"
+    const val FMT_JSON_FIELD = "\"%s\":"
+    
+    // Analyzer Constants
+    const val STR_ERR_CLASS_1 = "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class', 'value class' or 'enum class'. "
+    const val STR_ERR_CLASS_2 = "Class '"
+    const val STR_ERR_CLASS_3 = "' is not supported."
+    const val STR_ERR_PRIV_1 = "GhostSerialization: Properties in @GhostSerialization classes cannot be private. "
+    const val STR_ERR_PRIV_2 = "Please remove 'private' modifier from properties in '"
+    const val STR_ERR_PRIV_3 = "'."
+    const val STR_ERR_DUP_1 = "GhostSerialization: Duplicate JSON name '"
+    const val STR_ERR_DUP_2 = "' found in class '"
+    const val STR_ERR_DUP_3 = "'. "
+    const val STR_ERR_DUP_4 = "Problematic properties: "
+    const val STR_ERR_MAP_1 = "GhostSerialization: Map key must be a String in property '"
+    const val STR_ERR_MAP_2 = "'. "
+    const val STR_ERR_MAP_3 = "JSON only supports string-keyed objects."
+    const val STR_ERR_YAML_ORPHAN =
+        "GhostYamlSerialization: @GhostYamlSerialization requires @GhostSerialization or @GhostProtoSerialization on the same class."
+    const val STR_ERR_YAML_RESILIENT =
+        "GhostYamlSerialization: @GhostResilient is JSON-only and cannot be combined with @GhostYamlSerialization."
+    const val STR_ERR_YAML_SEALED =
+        "GhostYamlSerialization: sealed classes are JSON-only and cannot use @GhostYamlSerialization."
+    const val STR_ERR_YAML_ENVELOPE =
+        "GhostYamlSerialization: @GhostJsonEnvelope is JSON-only and cannot use @GhostYamlSerialization."
+    const val STR_ERR_YAML_INFERRED =
+        "GhostYamlSerialization: inferred polymorphism is JSON-only and cannot use @GhostYamlSerialization."
+    const val STR_ERR_YAML_CUSTOM_CODEC =
+        "GhostYamlSerialization: @GhostDecoder/@GhostEncoder are JSON-only and cannot be used on YAML-enabled models."
+    const val STR_ERR_YAML_STRUCTURAL =
+        "GhostYamlSerialization: @GhostFlatten/@GhostWrap/@GhostWrappedKeys are JSON-only and cannot be used on YAML-enabled models."
+    const val STR_ERR_YAML_NESTED_GHOST =
+        "GhostYamlSerialization: nested @GhostSerialization types are not supported on YAML paths."
+    const val STR_ERR_YAML_RAW_JSON =
+        "GhostYamlSerialization: RawJson is JSON-only and cannot be used on YAML-enabled models."
+    const val STR_ERR_YAML_BYTE_ARRAY =
+        "GhostYamlSerialization: non-proto ByteArray is JSON-only; use @GhostProtoSerialization for Base64 YAML fields."
+    const val STR_KOTLIN_DOT = "kotlin."
+    const val STR_TYPE_INT_ARRAY = "kotlin.IntArray"
+    const val STR_TYPE_LONG_ARRAY = "kotlin.LongArray"
+    const val STR_TYPE_FLOAT_ARRAY = "kotlin.FloatArray"
+    const val STR_TYPE_DOUBLE_ARRAY = "kotlin.DoubleArray"
+    const val STR_TYPE_BOOLEAN_ARRAY = "kotlin.BooleanArray"
+    const val GHOST_IGNORE = "GhostIgnore"
+    const val GHOST_NAME = "GhostName"
+    const val SERIAL_NAME = "SerialName"
+    const val GHOST_SERIALIZATION = "GhostSerialization"
+    const val NAME_ARG = "name"
+    const val LIST_QUALIFIED = "kotlin.collections.List"
+    const val SET_QUALIFIED = "kotlin.collections.Set"
+    const val MAP_QUALIFIED = "kotlin.collections.Map"
+    const val STRING_QUALIFIED = "kotlin.String"
+    const val STR_VALUE_ARG = "value"
+    const val STR_SERIAL_NAME_SUFFIX = "SerialName"
+    const val GHOST_RESILIENT = "GhostResilient"
+    const val GHOST_DECODER = "GhostDecoder"
+    const val GHOST_ENCODER = "GhostEncoder"
+    const val PROVIDER_ARG = "provider"
+    const val FUNCTION_NAME_ARG = "functionName"
+    const val GHOST_FLATTEN = "GhostFlatten"
+    const val GHOST_WRAP = "GhostWrap"
+    const val GHOST_WRAPPED_KEYS = "GhostWrappedKeys"
+    const val KEYS_ARG = "keys"
+    const val OMIT_IF_EMPTY_ARG = "omitIfEmpty"
+    const val OMIT_IF_ABSENT_ARG = "omitIfAbsent"
+    const val PATH_ARG = "path"
+    const val NAME = "name"
+
+    // Generator-specific
+    const val PKG_WRITER_COMMON = "com.ghost.serialization.writer.common"
+    const val PKG_WRITER_BYTES = "com.ghost.serialization.writer.bytes"
+    const val PKG_WRITER_STRINGS = "com.ghost.serialization.writer.strings"
+    const val PKG_CONTRACT = "com.ghost.serialization.contract"
+    const val PKG_EXCEPTION = "com.ghost.serialization.exception"
+    const val PKG_GHOST = "com.ghost.serialization"
+    const val OKIO_PACKAGE = "okio"
+    const val DECODE_RESILIENT = "decodeResilient"
+    const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"
+    const val STR_GHOST_JSON_FLAT_WRITER = "GhostJsonFlatWriter"
+    const val STR_FLAT_BYTE_ARRAY_WRITER = "FlatByteArrayWriter"
+    const val STR_GHOST_JSON_STRING_WRITER = "GhostJsonStringWriter"
+    const val STR_GHOST_JSON_READER = "GhostJsonReader"
+    const val STR_GHOST_JSON_FLAT_READER = "GhostJsonFlatReader"
+    const val STR_GHOST_JSON_STRING_READER = "GhostJsonStringReader"
+    const val STR_GHOST_JSON_READER_QUALIFIED = "$PKG_PARSER_STREAMING.$STR_GHOST_JSON_READER"
+    const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = "$PKG_PARSER_BYTES.$STR_GHOST_JSON_FLAT_READER"
+    const val STR_GHOST_JSON_STRING_READER_QUALIFIED = "$PKG_PARSER_STRINGS.$STR_GHOST_JSON_STRING_READER"
+
+    // YAML codegen (runtime lives in ghost-serialization parser.yaml / writer.yaml)
+    const val STR_YAML_SERIALIZER_FQN = "com.ghost.serialization.yaml.contract.GhostYamlSerializer"
+    const val PKG_YAML_CONTRACT = "com.ghost.serialization.yaml.contract"
+    const val PKG_YAML_WRITER = "com.ghost.serialization.writer.yaml"
+    const val PKG_YAML_PARSER = "com.ghost.serialization.parser.yaml"
+    const val PKG_YAML_SERIALIZER = "com.ghost.serialization.yaml.serializer"
+    const val STR_GHOST_YAML_SERIALIZER = "GhostYamlSerializer"
+    const val STR_GHOST_YAML_WRITER = "GhostYamlWriter"
+    const val STR_GHOST_YAML_FLAT_WRITER = "GhostYamlFlatWriter"
+    const val STR_GHOST_YAML_FLAT_READER = "GhostYamlFlatReader"
+    const val STR_GHOST_YAML_PREFIX = "GhostYaml"
+    const val TEMPLATE_YAML_ARRAY_SERIALIZER = "GhostYaml%sSerializer"
+
+    const val STR_RESET_TOKEN_BYTE = "RESET_TOKEN_BYTE"
+    const val STR_ENSURE_UTF8_BYTES = "reader.ensureUtf8Bytes()"
+    const val STR_CHAR_POSITION_TO_BYTE_POSITION = "reader.charPositionToBytePosition"
+    const val STR_BYTE_POSITION_TO_CHAR_POSITION = "reader.bytePositionToCharPosition"
+    const val STR_OVERRIDE_DESERIALIZE_STRING_READER = "override fun deserialize(reader: GhostJsonStringReader)"
+    const val STR_OVERRIDE_SERIALIZE_FN = "override fun serialize"
+    const val STR_KT_SERIALIZER_FILE_SUFFIX = "Serializer.kt"
+    const val STR_TEST_CUSTOM_DECODER_FN = "decodeHex"
+    const val STR_TEST_DECODER_UTILS = "DecoderUtils"
+    const val STR_TEST_CUSTOM_FIELD_MODEL = "CustomFieldModel"
+    const val STR_TEST_BYTES_RESULT = "bytes"
+    const val STR_TEST_NATIVE_RESULT = "native"
+    const val OPTION_TEXT_CHANNEL = "ghost.textChannel"
+    const val STR_BEGIN_ARRAY = "beginArray"
+    const val STR_END_ARRAY = "endArray"
+    const val STR_READ_LIST = "readList"
+    const val STR_READ_SET = "readSet"
+    const val STR_READ_MAP = "readMap"
+    const val STR_NEXT_KEY = "nextKey"
+    const val STR_SELECT_STRING = "selectString"
+    const val STR_PEEK_STRING_FIELD = "peekStringField"
+    const val STR_GHOST_JSON_EXCEPTION = "GhostJsonException"
+    const val STR_BYTESTRING_IMPORT = "ByteString.Companion.encodeUtf8"
+    const val STR_KDOC_HIGH_PERF = "High-performance serializer for [%T].\n"
+    const val STR_KDOC_GENERATED = "Generated by GhostSerialization. Do not modify manually.\n"
+    const val STR_OPTIONS = "OPTIONS"
+    const val STR_OPTIONS_PREFIX = "OPTIONS_"
+    const val STR_OPTIONS_CLASS = "JsonReaderOptions"
+    const val STR_RESET_TOKEN_BYTE_CALL =
+        "    reader._setNextTokenByte($STR_GHOST_JSON_FLAT_READER_QUALIFIED.$STR_RESET_TOKEN_BYTE)\n"
+    const val STR_RUN_OPEN = "run {\n"
+    const val STR_CUSTOM_DECODER_TEMP_READER =
+        "    val temp = $STR_GHOST_JSON_READER_QUALIFIED(reader._getRawData())\n    temp._setPosition(reader._getPosition())\n"
+    const val STR_CUSTOM_DECODER_TEMP_READER_STRING =
+        "    val temp = $STR_GHOST_JSON_READER_QUALIFIED($STR_ENSURE_UTF8_BYTES)\n    temp._setPosition($STR_CHAR_POSITION_TO_BYTE_POSITION(reader.position))\n"
+    const val TEMPLATE_CUSTOM_DECODER_TEMP_CALL = "    val res = %T.%L(temp)\n"
+    const val STR_CUSTOM_DECODER_UPDATE_POS = "    reader._setPosition(temp._getPosition())\n"
+    const val STR_CUSTOM_DECODER_UPDATE_POS_STRING =
+        "    reader.position = $STR_BYTE_POSITION_TO_CHAR_POSITION(temp._getPosition())\n"
+    const val STR_CUSTOM_DECODER_RETURN_RES = "    res\n"
+    const val STR_RUN_CLOSE = "}"
+    const val STR_TRY = "try"
+    const val STR_CATCH_EXCEPTION = "catch (_: Exception)"
+    const val TEMPLATE_WARM_UP_READER_INIT = "val %L = %T(\n  %S.encodeToByteArray()\n)"
+    const val TEMPLATE_WARM_UP_STRING_READER_INIT = "val %L = %T(\n  %S\n)"
+    const val TEMPLATE_WARM_UP_DESERIALIZE = "deserialize(%L)"
+    const val STR_READER1 = "reader1"
+    const val STR_READER2 = "reader2"
+    const val STR_READER3 = "reader3"
+    
+    // Import names (raw function names)
+    const val STR_BEGIN_OBJECT_NAME = "beginObject"
+    const val STR_END_OBJECT_NAME = "endObject"
+    const val STR_SELECT_NAME_AND_CONSUME_NAME = "selectNameAndConsume"
+    const val STR_SKIP_VALUE_NAME = "skipValue"
+    const val STR_NEXT_INT_NAME = "nextInt"
+    const val STR_NEXT_LONG_NAME = "nextLong"
+    const val STR_NEXT_ULONG_NAME = "nextULong"
+    const val STR_NEXT_ULONG_OR_NULL_NAME = "nextULongOrNull"
+    const val STR_NEXT_PROTO_UINT64_NAME = "nextProtoUInt64"
+    const val STR_NEXT_STRING_NAME = "nextString"
+    const val STR_NEXT_DOUBLE_NAME = "nextDouble"
+    const val STR_NEXT_FLOAT_NAME = "nextFloat"
+    const val STR_NEXT_CHAR_NAME = "nextChar"
+    const val STR_NEXT_BOOLEAN_NAME = "nextBoolean"
+    const val STR_NEXT_INT_OR_NULL_NAME = "nextIntOrNull"
+    const val STR_NEXT_LONG_OR_NULL_NAME = "nextLongOrNull"
+    const val STR_NEXT_STRING_OR_NULL_NAME = "nextStringOrNull"
+    const val STR_NEXT_BOOLEAN_OR_NULL_NAME = "nextBooleanOrNull"
+    const val STR_CAPTURE_RAW_JSON_BYTES_NAME = "captureRawJsonBytes"
+    const val STR_CAPTURE_RAW_JSON_NAME = "captureRawJson"
+    const val STR_DECODE_BASE64_STRING_NAME = "decodeBase64String"
+    const val STR_ENCODE_BASE64_STRING_NAME = "encodeBase64String"
+    const val STR_BYTE_ARRAY_TYPE = "ByteArray"
+    const val STR_CONSUME_NULL_NAME = "consumeNull"
+    const val STR_IS_NEXT_NULL_VALUE_NAME = "isNextNullValue"
+    const val STR_ENUM_OPTIONS = "ENUM_OPTIONS"
+    const val STR_WARM_UP = "warmUp"
+    const val MARKER = "%S"
+    const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
+    const val ANNOTATION_GHOST_PROTO_SERIALIZATION = "GhostProtoSerialization"
+    const val ANNOTATION_GHOST_YAML_SERIALIZATION = "GhostYamlSerialization"
+
+    /** `@GhostSerialization(textChannel = …)` argument name. */
+    const val ARG_TEXT_CHANNEL = "textChannel"
+    const val ARG_DISCRIMINATOR = "discriminator"
+    const val ARG_INFERRED = "inferred"
+    const val STR_DEFAULT_DISCRIMINATOR = "type"
+    const val ARG_NAME = "name"
+    const val PKG_KOTLIN = "kotlin"
+    const val STR_OPT_IN = "OptIn"
+    const val STR_INTERNAL_GHOST_API = "InternalGhostApi"
+    const val STR_TYPE_NAME_PROP = "typeName"
+    const val HASH_MULTIPLIER_START = 31
+    const val HASH_MULTIPLIER_LIMIT = 15000
+    const val HASH_MULTIPLIER_STEP = 2
+    /** Polynomial multiplier for collision disambiguation. Must match COLLISION_HASH_MULTIPLIER in GhostJsonConstants. */
+    const val COLLISION_HASH_MULTIPLIER = 31
+    const val HASH_SHIFT_LIMIT = 16
+    /** Table size used when the field-name set is empty (no dispatch needed). */
+    const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
+    /** Candidate dispatch table sizes tried by [com.ghost.serialization.compiler.hash.PerfectHashFinder], ascending. */
+    val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)
+    const val BYTE_MASK = 0xFF
+    const val BIT_SHIFT_8 = 8
+    const val BIT_SHIFT_16 = 16
+    const val BIT_SHIFT_24 = 24
+    const val MARKER_CLASS = "%T::class"
+    const val STR_WRITER_NULL_VAL = "writer.nullValue()"
+    const val STR_ELIGIBILITY_MASK = "eligibilityMask"
+    const val STR_SEEN_MASK = "seenMask"
+    const val STR_REQ_MASK_PREFIX = "reqMask"
+    const val STR_INSTANCE_VAR = "instance"
+    const val STR_V_VAR_PREFIX = "v"
+    const val STR_INFERRED_ERROR_MSG =
+        "Could not infer subclass (\$eligibilityMask/\$seenMask)"
+    const val STR_REQUIRED_FIELD_MISSING = "Required field '%s' missing for %s"
+    const val STR_ERR_NO_SUBCLASSES = "Inferred polymorphism requested but no subclasses found."
+    const val STR_COPY = "copy"
+    const val STR_ONE_L = "1L"
+    const val STR_SHL = "shl"
+    const val STR_SPACE = " "
+    const val STR_L_SUFFIX = "L"
+    const val STR_IS_RESILIENT = "isResilient"
+    const val STR_IS_PROTO = "isProto"
+    const val STR_TRUE = "true"
+    
+    // Templates
+    const val TEMPLATE_VAR_NULL_DECL = "var %L%L: %T = %L"
+    const val TEMPLATE_VAR_LONG_INIT = "var %L = %L%L"
+    const val TEMPLATE_VAR_INIT = "var %L = %L"
+    const val TEMPLATE_WHEN_BRANCH = "%L ->"
+    const val TEMPLATE_VAR_ASSIGN = "%L%L = %L"
+    const val TEMPLATE_MASK_AND_ASSIGN = "%L = %L and %L%L"
+    const val TEMPLATE_MASK_OR_SHL_ASSIGN = "%L = %L or (%L %L %L)"
+    const val TEMPLATE_VAL_LONG_INIT = "val %L%L = %L%L"
+    const val TEMPLATE_RESULT_WHEN = "val result = when"
+    const val TEMPLATE_INFERRED_DECISION_BRANCH = "(%L and %L%L) != %L && (%L and %L) == %L ->"
+    const val TEMPLATE_REQUIRED_ARG = "%L = %L ?: throw %T(%S)"
+    const val TEMPLATE_OPTIONAL_ARG = "%L = %L"
+    const val TEMPLATE_DATA_CLASS_COPY_INIT = "var %L = %T(%L)"
+    const val TEMPLATE_IF_NOT_NULL_COPY = "if (%L != null) %L = %L.%L(%L = %L)"
+    const val TEMPLATE_THROW_EXCEPTION = "throw %T(%S)"
+    const val TEMPLATE_PEEK_STRING_FIELD = "val typeName = reader.peekStringField(%S)"
+    const val STR_IT = "it"
+    const val FMT_LONG_LITERAL = "%dL"
+    const val MASK_SIZE_BITS = 64L
+    const val MASK_SIZE_BITS_MINUS_ONE = 63
+    const val STR_NULL_VAL_CALL = "writer.nullValue()"
+    
+    // Control Flow Templates
+    const val TEMPLATE_IF_NULL = "if (%L == null)"
+    const val TEMPLATE_IF_NOT_NULL = "if (%L != null)"
+    const val TEMPLATE_IF_L = "if (%L)"
+    const val TEMPLATE_IS_INSTANCE = "%L is %T"
+    const val TEMPLATE_CAST = "(%L as %T)"
+    const val TEMPLATE_FOR_MAP = "for ((%L, %L) in %L)"
+
+    // proto3 default-value-omission conditions (guards a field write with "is not the zero value")
+    const val TEMPLATE_NEQ_ZERO_INT = "%L != 0"
+    const val TEMPLATE_NEQ_ZERO_LONG = "%L != 0L"
+    const val TEMPLATE_NEQ_ZERO_ULONG = "%L != 0uL"
+    const val TEMPLATE_NEQ_ZERO_DOUBLE = "%L != 0.0"
+    const val TEMPLATE_NEQ_ZERO_FLOAT = "%L != 0.0f"
+    const val TEMPLATE_NEQ_ZERO_SHORT = "%L != 0.toShort()"
+    const val TEMPLATE_NEQ_ZERO_BYTE = "%L != 0.toByte()"
+    const val TEMPLATE_IS_NOT_EMPTY = "%L.isNotEmpty()"
+    const val TEMPLATE_ACCESSOR_L = "%L"
+    
+    // Writer Templates
+    const val TEMPLATE_WRITER_VALUE = "writer.value(%L)"
+    const val TEMPLATE_WRITER_NAME = "writer.name(%L)"
+    
+    // Misc
+    const val STR_ITEM_PREFIX = "item"
+    const val STR_MAP_KEY_PREFIX = "mapKey"
+    const val STR_MAP_VAL_PREFIX = "mapVal"
+    const val GHOST_SIGNATURE = "GhostSignature"
+    const val STR_WARN_CUSTOM_CODER = "Detected custom coder for %s: D=%s, E=%s"
+    const val TEMPLATE_NAMED_ARG = "  %N = %L,"
+    const val TEMPLATE_ACCESSOR = "%L.%N"
+    const val TEMPLATE_VARIABLE = "%L"
+
+    const val PROPERTY_MAX_SIZE = 40
+
+    /**
+     * Maximum number of default-valued properties for which the compiler
+     * generates 2^N explicit constructor branches (zero `.copy()` allocations).
+     * 4 → up to 16 branches. More defaults fall back to `createInstance`
+     * (single-shot or required-ctor + `.copy()`).
+     */
+    const val MAX_DEFAULT_BRANCH_COUNT = 4
+
+    const val STR_SRC_TEST = "/src/test/"
+    const val STR_SRC_ANDROID_TEST = "/src/androidTest/"
+    const val STR_SRC_TEST_KSP = "/src/testKsp/"
+    const val STR_TEST_SUFFIX = "_Test"
+
+    const val STR_FUN_VALIDATE_FIELDS = "validateRequiredFields"
+    const val STR_PARAM_MASK0 = "mask0"
+    const val TEMPLATE_IF_MASK_ZERO_STMT = "if ((mask0 and %L) == 0L)"
+    const val TEMPLATE_IF_MASK_NOT_MET_STMT = "if ((mask0 and %L) != %L)"
+    const val TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW = "else if ((mask0 and %L) == 0L)"
+    const val TEMPLATE_VAR_VALUE_DECL = "var %LValue: %T = %L"
+    const val STR_MASK_INDEX_FMT = "mask%d"
+    const val STR_HS_PREFIX = "HS_"
+    const val TEMPLATE_CALL_VALIDATION = "%L(%L, %L)"
+    const val STR_MASK_PREFIX = "MASK_"
+    const val STR_MASK_REQUIRED_PREFIX = "MASK_REQUIRED_"
+    const val STR_MASK_REQUIRED_0 = "MASK_REQUIRED_0"
+    const val STR_MASK_OPTS_PREFIX = "MASK_OPTS_"
+    const val STR_MASK_DEFAULTS_PREFIX = "MASK_DEFAULTS_"
+    const val STR_FUN_CREATE_INSTANCE = "createInstance"
+    const val STR_NULLABLE_SUFFIX = "Nullable"
+    const val STR_ENUM_UNKNOWN = "UNKNOWN"
+    const val STR_TEMP_FLAT_WRITER = "bridgeFlatWriter"
+    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = "val %L = %T(\n"
+    const val TEMPLATE_TEMP_FLAT_WRITER_BUFFER = "%T()\n"
+    const val TEMPLATE_TEMP_FLAT_WRITER_CLOSE = ")\n"
+    const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = "%T.%L(%L, %L)"
+    const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
+        "writer.buffer.writeString(%L.buffer.toStringUtf8())"
+    const val TEMPLATE_ENUM_ELSE_FALLBACK = "else -> %T.%L"
+    const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
+        "Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class "
+    const val STR_ERR_FLATTEN_INFINITE_LOOP_2 = ": "
+    const val STR_ERR_SINGLE_SHOT_DEFAULT_1 = "single-shot requires defaultExpression for "
+    const val COMPACT_CALL_MAX_INLINE_LENGTH = 80
+    const val STR_SUB_INDEX_PREFIX = "subIndex"
+    const val TEMPLATE_L = "%L"
+    const val STR_ERR_PERFECT_HASH_COLLISION_1 = "Could not find a collision-free perfect hash configuration for fields: "
+    const val STR_ERR_PERFECT_HASH_COLLISION_2 = ". Please ensure there are no duplicate JSON names or conflicting field names."
+
+    // GhostJsonEnvelope
+    const val STR_GHOST_JSON_ENVELOPE = "GhostJsonEnvelope"
+    const val STR_GHOST_ENVELOPE_PAYLOAD = "GhostEnvelopePayload"
+    const val STR_GHOST_ENVELOPE_FALLBACK = "GhostEnvelopeFallback"
+    const val ARG_ENVELOPE_DISCRIMINATOR = "discriminator"
+    const val ARG_ENVELOPE_TIME_FIELD = "timeField"
+    const val ARG_ENVELOPE_DATA_FIELD = "dataField"
+    const val ARG_ENVELOPE_TARGET = "target"
+    const val STR_FUN_ROUTE_PAYLOAD = "routePayload"
+    const val STR_FUN_PARSE_PAYLOAD = "parsePayload"
+    const val STR_FUN_ROUTE_TYPED = "routeTyped"
+    const val STR_FUN_PARSE_TYPED = "parseTyped"
+    const val STR_PARAM_ENVELOPE = "envelope"
+    const val STR_PARAM_BYTES = "bytes"
+    const val STR_RAW_JSON_DECODE = "RawJsonDecode"
+    const val STR_GHOST = "Ghost"
+    const val STR_TYPE_ANY = "Any"
+    const val STR_ENVELOPE_RETURN_FIELD = "return envelope.%L"
+    const val STR_ENVELOPE_ROUTE_WHEN_OPEN = "return when (envelope.%L) {\n"
+    const val STR_ENVELOPE_ROUTE_CLOSE = "}"
+    const val STR_ENVELOPE_BRANCH = "%S -> %L\n"
+    const val STR_ENVELOPE_ELSE_NULL = "else -> null\n"
+    const val STR_ENVELOPE_ELSE_FALLBACK = "else -> envelope.%L\n"
+    const val STR_ENVELOPE_ELSE_GENERIC = "else -> envelope.%L\n"
+    const val STR_ENVELOPE_PARSE_BYTES_ROUTE = "val envelope = deserialize(%T(%L))\nreturn %L(envelope)"
+    const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = "TargetSerializer"
+    const val TEMPLATE_ENVELOPE_FIELD_ACCESS = "envelope.%L"
+    const val TEMPLATE_ENVELOPE_CACHED_SERIALIZER = "%T.getSerializer(%T::class)!!"
+    const val STR_KDOC_ROUTE_PAYLOAD = "Routes [%T] to its matching opaque JSON payload without re-parsing.\n"
+    const val STR_KDOC_PARSE_PAYLOAD = "Deserializes [%T] from bytes and routes to payload (zero-copy RawJson slice on flat reader).\n"
+    const val STR_KDOC_ROUTE_TYPED = "Routes [%T] and decodes annotated payload targets.\n"
+    const val STR_KDOC_PARSE_TYPED = "Deserializes [%T] from bytes and returns typed payload when configured.\n"
+    const val TEMPLATE_ENVELOPE_TYPED_SERIALIZER = "envelope.%L?.let { %T.decode(it, %L) }"
+    const val STR_ERR_ENVELOPE_DISC_1 = "GhostJsonEnvelope: discriminator field '"
+    const val STR_ERR_ENVELOPE_DISC_2 = "' not found on '"
+    const val STR_ERR_ENVELOPE_DISC_3 = "'."
+    const val STR_ERR_ENVELOPE_DISC_TYPE_1 = "GhostJsonEnvelope: discriminator property '"
+    const val STR_ERR_ENVELOPE_DISC_TYPE_2 = "' must be String."
+    const val STR_WARN_ENVELOPE_TIME_1 = "GhostJsonEnvelope: timeField '"
+    const val STR_WARN_ENVELOPE_TIME_2 = "' not found; ignoring."
+    const val STR_ERR_ENVELOPE_MULTI_FALLBACK = "GhostJsonEnvelope: at most one @GhostEnvelopeFallback property is allowed."
+    const val STR_ERR_ENVELOPE_DATA_1 = "GhostJsonEnvelope: dataField '"
+    const val STR_ERR_ENVELOPE_DATA_2 = "' not found on envelope class."
+    const val STR_WARN_ENVELOPE_UNTAGGED_1 = "GhostJsonEnvelope: opaque field '"
+    const val STR_WARN_ENVELOPE_UNTAGGED_2 = "' has no @GhostEnvelopePayload and will not be routed."
+    const val STR_ERR_ENVELOPE_NO_PAYLOADS = "GhostJsonEnvelope: no @GhostEnvelopePayload properties found (fat envelope mode)."
+    const val STR_ERR_ENVELOPE_DUP_VALUE_1 = "GhostJsonEnvelope: duplicate discriminator value '"
+    const val STR_ERR_ENVELOPE_DUP_VALUE_2 = "' on properties: "
+    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_1 = "GhostJsonEnvelope: payload property '"
+    const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_2 = "' must be nullable RawJson."
+    const val STR_ERR_ENVELOPE_PAYLOAD_VALUE = "GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value."
+
+    // @GhostWrappedKeys
+    const val STR_GHOST_WRAPPED_KEYS_CAPTURE = "GhostWrappedKeysCapture"
+    const val STR_CAPTURE_WRAPPED_KEY_NAME = "captureWrappedKey"
+    const val STR_WRAPPED_CAPTURE_PREFIX = "wrappedCapture"
+    const val STR_WRAPPED_KEY_LITERALS_PREFIX = "WRAPPED_KEY_LITERALS_"
+    const val STR_WRAPPED_OMIT_ABSENT_PREFIX = "WRAPPED_OMIT_ABSENT_"
+    const val STR_WRAPPED_JSON_VAR_PREFIX = "wrappedJson"
+    const val STR_JSON_KEY_QUOTE = "\""
+    const val STR_JSON_KEY_COLON_SUFFIX = "\":"
+    const val TEMPLATE_CHAINED_MEMBER = "%L.%L"
+    const val TEMPLATE_WRAPPED_CAPTURE_VAR = "val %L = %T(%L)"
+    const val TEMPLATE_CAPTURE_WRAPPED_KEY = "reader.captureWrappedKey(%L, %L)"
+    const val TEMPLATE_WRAPPED_JSON_MATERIALIZE =
+        "val %L = %L.materializeWrappedObject(\n  %L,\n  %L,\n  %L,\n)"
+    const val TEMPLATE_WRAPPED_JSON_IF_NOT_NULL = "if (%L != null)"
+    const val TEMPLATE_WRAPPED_READER_VAR = "val wrappedReader = %T(%L)"
+    // materializeWrappedObject always returns ByteArray (the synthetic object is assembled as
+    // UTF-8) — GhostJsonStringReader's constructor takes a String, so this target needs a
+    // decode step the byte/flat reader variants don't.
+    const val TEMPLATE_WRAPPED_STRING_READER_VAR =
+        "val wrappedReader = %T(%L.decodeToString())"
+    const val TEMPLATE_DESERIALIZE_WRAPPED_READER = "%T.deserialize(wrappedReader)"
+    const val TEMPLATE_NULL_ASSIGN = "%L = null"
+    const val TEMPLATE_ARRAY_OF_OPEN = "arrayOf(\n"
+    const val TEMPLATE_WRAPPED_KEY_LITERAL_BYTE = "    %S.encodeToByteArray()"
+    const val TEMPLATE_INT_ARRAY_OF = "intArrayOf(%L)"
+    const val STR_NEWLINE_CLOSE_PAREN = "\n)"
+    const val STR_ERR_WRAPPED_DUP_KEY_1 = "GhostWrappedKeys: duplicate wire key '"
+    const val STR_ERR_WRAPPED_DUP_KEY_2 = "' on "
+    const val STR_ERR_WRAPPED_DUP_KEY_3 = " (properties '"
+    const val STR_ERR_WRAPPED_DUP_KEY_4 = "' and '"
+    const val STR_ERR_WRAPPED_DUP_KEY_5 = "')."
+    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 = "GhostWrappedKeys: omitIfEmpty = true requires nullable property '"
+    const val STR_ERR_WRAPPED_OMIT_IF_EMPTY_2 = "'."
+    const val STR_ERR_WRAPPED_COMBINE_1 = "GhostWrappedKeys: property '"
+    const val STR_ERR_WRAPPED_COMBINE_2 = "' cannot combine @GhostWrappedKeys with @GhostFlatten or @GhostWrap."
+    const val STR_ERR_WRAPPED_KEY_CONFLICT_1 = "GhostWrappedKeys: wire key '"
+    const val STR_ERR_WRAPPED_KEY_CONFLICT_2 = "' is both a wrapped source and a regular JSON property on "
+    const val STR_ERR_WRAPPED_KEY_CONFLICT_3 = "."
+    const val STR_ERR_WRAPPED_EMPTY_KEYS_1 = "GhostWrappedKeys: keys must not be empty on property '"
+    const val STR_ERR_WRAPPED_EMPTY_KEYS_2 = "'."
+    const val STR_WARN_WRAPPED_UNMAPPED_1 = "GhostWrappedKeys: wire key '"
+    const val STR_WARN_WRAPPED_UNMAPPED_2 = "' does not map to a field on "
+
+    // GeneratedSourceTrimmer
+    const val STR_NEWLINE = "\n"
+    const val STR_EXT_KT = "kt"
+    const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
+        """^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$"""
+    /** Strips explicit `public` modifiers that KotlinPoet adds for Explicit API mode. */
+    const val REGEX_TRIM_REDUNDANT_PUBLIC =
+        """^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )"""
+
+    // DefaultExpressionExtractor — whitelisted ctor-default literals / escapes
+    const val STR_EMPTY_LIST_CALL = "emptyList()"
+    const val STR_EMPTY_SET_CALL = "emptySet()"
+    const val STR_EMPTY_MAP_CALL = "emptyMap()"
+    const val STR_LIST_OF_EMPTY_CALL = "listOf()"
+    const val STR_SET_OF_EMPTY_CALL = "setOf()"
+    const val STR_MAP_OF_EMPTY_CALL = "mapOf()"
+    const val STR_CHAR_ESC_QUOTE = "\\'"
+    const val STR_CHAR_ESC_BACKSLASH = "\\\\"
+    const val STR_CHAR_ESC_N = "\\n"
+    const val STR_CHAR_ESC_T = "\\t"
+    const val STR_CHAR_ESC_R = "\\r"
+    const val STR_CHAR_ESC_B = "\\b"
+    const val STR_CHAR_ESC_DOLLAR = "\\\$"
+    const val STR_UNICODE_ESC_PREFIX = "\\u"
+    const val STR_TRIPLE_QUOTE = "\"\"\""
+    const val DEFAULT_EXPR_MAX_PARAM_SEARCH_CHARS = 8_192
+    const val DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS = 512
+    const val DEFAULT_EXPR_UNICODE_ESC_LEN = 6
+    const val DEFAULT_EXPR_UNICODE_HEX_LEN = 4
+    const val DEFAULT_EXPR_MIN_CHAR_LITERAL_LEN = 3
+    const val DEFAULT_EXPR_MIN_STRING_LITERAL_LEN = 2
+    const val REGEX_DEFAULT_EXPR_NUMERIC =
+        """^-?(?:""" +
+            """(?:0|[1-9]\d*)(?:L|l)?|""" +
+            """(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?[fFdD]?|""" +
+            """(?:0|[1-9]\d*)(?:[eE][+-]?\d+)[fFdD]?|""" +
+            """(?:0|[1-9]\d*)[fFdD]""" +
+            """)$"""
+    const val REGEX_DEFAULT_EXPR_ENUM_REF =
+        """^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$"""
+
+    val DEFAULT_EXPR_EMPTY_COLLECTION_CALLS = setOf(
+        STR_EMPTY_LIST_CALL,
+        STR_EMPTY_SET_CALL,
+        STR_EMPTY_MAP_CALL,
+        STR_LIST_OF_EMPTY_CALL,
+        STR_SET_OF_EMPTY_CALL,
+        STR_MAP_OF_EMPTY_CALL,
+    )
+
+    val DEFAULT_EXPR_CHAR_ESCAPES = setOf(
+        STR_CHAR_ESC_QUOTE,
+        STR_CHAR_ESC_BACKSLASH,
+        STR_CHAR_ESC_N,
+        STR_CHAR_ESC_T,
+        STR_CHAR_ESC_R,
+        STR_CHAR_ESC_B,
+        STR_CHAR_ESC_DOLLAR,
+    )
+
+    val DEFAULT_EXPR_SCALAR_KEYWORDS = setOf(STR_NULL, STR_TRUE, STR_FALSE)
+}

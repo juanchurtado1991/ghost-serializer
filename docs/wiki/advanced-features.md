@@ -6,6 +6,59 @@ This page documents Ghost's advanced capabilities that have no equivalent in Gso
 
 ---
 
+## Format compatibility
+
+Ghost generates separate code paths for **JSON** (default via `@GhostSerialization`), **proto3 JSON** (`@GhostProtoSerialization`), and **YAML** (opt-in via `@GhostYamlSerialization` on the same class). Not every annotation applies to every format.
+
+### Cross-format (JSON + proto3 JSON + YAML when codegen runs)
+
+| Annotation / capability | Notes |
+|:---|:---|
+| `@GhostName` | Wire key override on all generated paths |
+| `@GhostIgnore` | Property skipped on read/write everywhere |
+| Plain scalars, enums, `List`/`Set`/`Map` of compatible types | YAML requires `@GhostYamlSerialization` + compatible shape |
+| `@GhostStrict` / `@GhostCoerce` | Runtime reader flags — JSON readers today; YAML reader supports coerce/strict fields where wired in adapters |
+
+### JSON-only (KSP error if combined with `@GhostYamlSerialization`)
+
+| Feature | Why |
+|:---|:---|
+| `@GhostResilient` | Uses `decodeResilient` on JSON readers only |
+| `@GhostJsonEnvelope` + payload annotations | Envelope/discriminator model is JSON-specific |
+| Sealed hierarchies + `@GhostFallback` | Discriminator polymorphism |
+| `@GhostSerialization(inferred = true)` | Field-presence polymorphism |
+| `@GhostFlatten` / `@GhostWrap` / `@GhostWrappedKeys` | JSON path navigation / proto oneof wiring |
+| `@GhostDecoder` / `@GhostEncoder` | Hand-written JSON reader/writer signatures |
+| Contextual serializers | Registry hooks tied to JSON codegen |
+| `RawJson` | Captures raw JSON bytes |
+| Non-proto `ByteArray` | Opaque JSON bytes (proto uses Base64 via `@GhostProtoSerialization`) |
+| Nested `@GhostSerialization` types in YAML graphs | YAML codegen supports flat DTOs only (including `@GhostSerialization` enums as properties) |
+
+### Proto3 JSON (`@GhostProtoSerialization`)
+
+Use **`@GhostProtoSerialization`** on the message class — not plain `@GhostSerialization` — so KSP emits proto3 JSON mapping (`GhostProtoJsonFlatReader`, quoted `int64`, Base64 `bytes`, default omission, `isProto = true`).
+
+| Annotation / capability | Proto3 JSON | With `@GhostYamlSerialization` |
+|:---|:---:|:---:|
+| `@GhostName` | ✅ | ✅ |
+| `@GhostIgnore` | ✅ | ✅ |
+| Plain scalars, enums, `List`/`Set`/`Map` | ✅ | ✅ when shape is YAML-flat |
+| `@GhostWrappedKeys` + nested `@GhostSerialization` (`inferred` oneof payloads) | ✅ see [Protobuf §4](usage-protobuf.md#4-oneof-mapping) | ❌ structural — KSP error |
+| `@GhostStrict` / `@GhostCoerce` | ✅ runtime reader flags | ✅ where adapters wire them |
+| `@GhostYamlSerialization` | — | ✅ opt-in YAML on same class |
+| `@GhostResilient` | ✅ JSON/proto readers (`decodeResilient`) | ❌ KSP error |
+| `@GhostJsonEnvelope` + payload annotations | ❌ JSON-only wire shape | ❌ |
+| `@GhostFlatten` / `@GhostWrap` | ❌ REST JSON paths, not proto3 JSON | ❌ |
+| Sealed + `@GhostFallback` / top-level `inferred` on the message | ❌ use `@GhostWrappedKeys` oneof instead | ❌ |
+| `@GhostDecoder` / `@GhostEncoder` | ❌ generated proto mapping instead | ❌ |
+| `RawJson` | ❌ | ❌ |
+| Non-proto `ByteArray` (opaque JSON bytes) | ❌ use proto `ByteArray` → Base64 | ❌ on non-proto bytes |
+| Nested `@GhostSerialization` graphs (beyond oneof) | ❌ not a proto message pattern | ❌ YAML flat DTOs only |
+
+→ **[YAML guide](usage-yaml.md)** · **[Protobuf guide](usage-protobuf.md)**
+
+---
+
 ## 1. Resilience & Anti-Explosion
 
 ### Polymorphic Fallbacks (`@GhostFallback`)
@@ -25,7 +78,7 @@ sealed class DeviceEvent {
 ```
 
 ### Field Resilience (`@GhostResilient`)
-Catch type mismatches or unknown enums and assign a safe default instead of failing:
+Catch type mismatches or unknown enums and assign a safe default instead of failing — **JSON readers only**. Not emitted for YAML; combining `@GhostResilient` with `@GhostYamlSerialization` is a compile-time error.
 
 ```kotlin
 @GhostSerialization

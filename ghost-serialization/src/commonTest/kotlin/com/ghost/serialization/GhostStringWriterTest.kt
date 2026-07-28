@@ -3,10 +3,19 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.writer.FlatCharArrayWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.strings.beginArray
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.writer.strings.FlatCharArrayWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
 
 class GhostStringWriterTest {
 

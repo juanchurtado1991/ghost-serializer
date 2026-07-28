@@ -1,13 +1,35 @@
 @file:OptIn(InternalGhostApi::class)
 
-package com.ghost.serialization.parser
+package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.consumeArraySeparator
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.isNextNullValue
+import com.ghost.serialization.parser.streaming.nextBooleanOrNull
+import com.ghost.serialization.parser.streaming.nextIntOrNull
+import com.ghost.serialization.parser.streaming.nextLongOrNull
+import com.ghost.serialization.parser.streaming.nextStringOrNull
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.beginArray
+import com.ghost.serialization.parser.strings.consumeArraySeparator
+import com.ghost.serialization.parser.strings.consumeNull
+import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.isNextNullValue
+import com.ghost.serialization.parser.strings.nextBooleanOrNull
+import com.ghost.serialization.parser.strings.nextIntOrNull
+import com.ghost.serialization.parser.strings.nextLongOrNull
+import com.ghost.serialization.parser.strings.nextStringOrNull
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+
 
 /**
  * Covers fused `nextXOrNull` readers used by KSP-generated nullable scalar fields.

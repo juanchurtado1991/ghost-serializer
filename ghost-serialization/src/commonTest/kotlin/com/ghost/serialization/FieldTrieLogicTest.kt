@@ -2,12 +2,15 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.JsonReaderOptions
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.selectString
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.selectString
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
 
 class FieldTrieLogicTest {
 

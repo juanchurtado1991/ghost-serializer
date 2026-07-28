@@ -17,6 +17,8 @@ open class GhostWebFluxAutoConfiguration : WebFluxConfigurer {
         with(configurer.customCodecs()) {
             register(GhostReactiveDecoder())
             register(GhostReactiveEncoder())
+            register(GhostYamlReactiveDecoder())
+            register(GhostYamlReactiveEncoder())
         }
     }
 }

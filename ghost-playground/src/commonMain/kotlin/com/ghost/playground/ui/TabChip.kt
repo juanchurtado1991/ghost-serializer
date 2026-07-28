@@ -25,7 +25,7 @@ import com.ghost.playground.ui.theme.Ink
 
 private const val TabChipHoverFillAlpha = 0.1f
 
-/** One top-level nav tab in the header. */
+/** Top-level navigation tab in the header. */
 @Composable
 internal fun TabChip(label: String, selected: Boolean, accent: Color, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }

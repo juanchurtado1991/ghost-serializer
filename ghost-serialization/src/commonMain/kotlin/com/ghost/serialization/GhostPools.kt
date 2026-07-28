@@ -1,6 +1,6 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonConstants.SCRATCH_BUFFER_SIZE
+import com.ghost.serialization.parser.common.GhostJsonConstants.SCRATCH_BUFFER_SIZE
 
 private const val TIER_SMALL = 1024
 private const val TIER_MEDIUM = 16384

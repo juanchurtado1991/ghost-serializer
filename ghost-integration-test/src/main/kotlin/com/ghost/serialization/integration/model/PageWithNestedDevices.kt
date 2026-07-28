@@ -4,7 +4,7 @@ import com.ghost.serialization.annotations.GhostName
 import com.ghost.serialization.annotations.GhostSerialization
 
 /**
- * Minimal sealed hierarchy mirroring SmartThings ViperPage wire shape:
+ * Minimal sealed hierarchy for SmartThings ViperPage wire shape:
  * nested `devices` array before custom `pageType` discriminator.
  */
 @GhostSerialization(discriminator = "pageType")

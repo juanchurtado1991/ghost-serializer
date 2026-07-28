@@ -21,7 +21,7 @@ import com.ghost.playground.ui.theme.CardBorder
 import com.ghost.playground.ui.theme.InkSoft
 import com.ghost.playground.ui.theme.Teal
 
-/** One "Drop-in" / "Coexists with kotlinx.serialization" / "Optimize only your hot paths" pill under the header. */
+/** Marketing pill shown under the header (for example, drop-in compatibility badges). */
 @Composable
 internal fun MarketingBadge(label: String, icon: PlaygroundIconKind) {
     Row(

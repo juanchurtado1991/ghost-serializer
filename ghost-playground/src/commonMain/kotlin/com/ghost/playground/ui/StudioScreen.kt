@@ -1,5 +1,6 @@
 package com.ghost.playground.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,9 +23,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ghost.playground.features.FeatureCatalog
+import com.ghost.playground.features.FeatureLab
+import com.ghost.playground.features.LabWireFormat
 import com.ghost.playground.hash.PerfectHashLab
 import com.ghost.playground.i18n.Lang
 import com.ghost.playground.i18n.Strings
+import com.ghost.playground.platform.openUrl
 import com.ghost.playground.ui.icons.PlaygroundIcon
 import com.ghost.playground.ui.icons.PlaygroundIconKind
 import com.ghost.playground.ui.theme.Coral
@@ -63,7 +67,11 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             activeStep = 1
             delay(PipelineStepDelay)
             output = out
-            explanation = if (lang == Lang.EN) selectedLab.explainEn(json, out) else selectedLab.explainEs(json, out)
+            explanation = if (lang == Lang.EN) {
+                selectedLab.explainEn(json, out)
+            } else {
+                selectedLab.explainEs(json, out)
+            }
             activeStep = 2
         } catch (e: Throwable) {
             runError = e.message ?: e.toString()
@@ -88,6 +96,16 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             style = MaterialTheme.typography.bodyLarge,
         )
 
+        selectedLab.wireFormatDocGuide(strings)?.let { (label, url) ->
+            Text(
+                label,
+                color = Teal,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable { openUrl(url) },
+            )
+        }
+
         VariantSelector(
             variants = selectedLab.variants,
             selected = selectedVariant,
@@ -103,7 +121,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             CodeArea(selectedLab.dtoSource)
         }
 
-        Card(title = strings.jsonInput, accent = Coral) {
+        Card(title = selectedLab.inputLabel(strings), accent = Coral) {
             CodeArea(selectedVariant.json)
         }
 
@@ -126,8 +144,8 @@ fun StudioScreen(strings: Strings, lang: Lang) {
                 PipelineRow(1, strings.pipelineStepReadTitle, strings.pipelineStepReadDetail, StepStatus.Done, true)
                 PipelineRow(
                     2,
-                    strings.pipelineStepRunTitle,
-                    if (activeStep >= 1) strings.pipelineStepRunDetail else strings.speedTestLoading,
+                    selectedLab.pipelineRunTitle(strings),
+                    if (activeStep >= 1) selectedLab.pipelineRunDetail(strings) else strings.speedTestLoading,
                     if (activeStep >= 1) StepStatus.Done else StepStatus.Active,
                     activeStep >= 1,
                 )
@@ -157,4 +175,10 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             }
         }
     }
+}
+
+private fun FeatureLab.wireFormatDocGuide(strings: Strings): Pair<String, String>? = when (wireFormat) {
+    LabWireFormat.PROTO_JSON -> strings.wikiUsageProtobuf to PlaygroundLinks.WIKI_USAGE_PROTOBUF
+    LabWireFormat.YAML -> strings.wikiUsageYaml to PlaygroundLinks.WIKI_USAGE_YAML
+    LabWireFormat.JSON -> null
 }

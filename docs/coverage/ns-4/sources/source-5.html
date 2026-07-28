@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > Ghost_jvmKt</title>
+  <title>GhostSerialization Coverage Report > GhostPropertyExtensionsKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,15 +19,18 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization</a>
+    <a href="../index.html">com.ghost.serialization.compiler.analysis</a>
 </div>
 
-<h1>Coverage Summary for Class: Ghost_jvmKt (com.ghost.serialization)</h1>
+<h1>Coverage Summary for Class: GhostPropertyExtensionsKt (com.ghost.serialization.compiler.analysis)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,122 +49,49 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">Ghost_jvmKt</td>
+  <td class="name">GhostPropertyExtensionsKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (18/18)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    19.8%
+    70%
   </span>
   <span class="absValue">
-    (25/126)
+    (7/10)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.7%
+    52.8%
   </span>
   <span class="absValue">
-    (104/120)
+    (57/108)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.3%
+    47.1%
   </span>
   <span class="absValue">
-    (735/832)
+    (57/121)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42.5%
+  </span>
+  <span class="absValue">
+    (390/917)
   </span>
 </td>
 </tr>
-  <tr>
-    <td class="name">Ghost_jvmKt$discoverRegistries$$inlined$Iterable$1</td>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/2)
-  </span>
-</td>
-    <td class="coverageStat"/>
-  </tr>
-  <tr>
-    <td class="name">Ghost_jvmKt$discoverRegistries$1$1</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    63.9%
-  </span>
-  <span class="absValue">
-    (23/36)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    86%
-  </span>
-  <span class="absValue">
-    (37/43)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    93.3%
-  </span>
-  <span class="absValue">
-    (168/180)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    91.3%
-  </span>
-  <span class="absValue">
-    (21/23)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    29.6%
-  </span>
-  <span class="absValue">
-    (48/162)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    86.5%
-  </span>
-  <span class="absValue">
-    (141/163)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    89.2%
-  </span>
-  <span class="absValue">
-    (903/1012)
-  </span>
-</td>
-</tr>
+
 </table>
 
 <br/>
@@ -169,224 +99,298 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.squareup.kotlinpoet.TypeName
 &nbsp;
-&nbsp;package com.ghost.serialization
 &nbsp;
-&nbsp;import com.ghost.serialization.contract.GhostRegistry
-&nbsp;import com.ghost.serialization.parser.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.prepareUtf8JsonSource
-&nbsp;import com.ghost.serialization.parser.withPreparedUtf8Json
-&nbsp;import com.ghost.serialization.writer.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.GhostJsonStringWriter
-&nbsp;import com.ghost.serialization.writer.WriterSinkPair
-&nbsp;import com.ghost.serialization.writer.FlatCharArrayWriter
-&nbsp;import okio.BufferedSource
-&nbsp;import java.util.ServiceLoader
-&nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;/**
+&nbsp; * Extension methods for [GhostPropertyModel] to facilitate code generation.
+&nbsp; *
+&nbsp; * These helpers encapsulate the logic for determining variable types, initial values,
+&nbsp; * and return expressions based on the property&#39;s metadata (e.g., nullability,
+&nbsp; * primitive types, value classes).
+&nbsp; */
 &nbsp;
-<b class="fc">&nbsp;private val readerPool = ThreadLocal&lt;GhostJsonReader&gt;()</b>
-<b class="fc">&nbsp;private val flatReaderPool = ThreadLocal&lt;GhostJsonFlatReader&gt;()</b>
-<b class="fc">&nbsp;private val stringReaderPool = ThreadLocal&lt;GhostJsonStringReader&gt;()</b>
-<b class="fc">&nbsp;private val sourceReaderPool = ThreadLocal&lt;GhostJsonReader&gt;()</b>
-<b class="fc">&nbsp;@PublishedApi</b>
-<b class="fc">&nbsp;internal val writerPool = ThreadLocal&lt;WriterSinkPair&gt;()</b>
-<b class="fc">&nbsp;</b>
-<b class="fc">&nbsp;actual fun &lt;T&gt; runSynchronized(lock: Any, block: () -&gt; T): T = synchronized(lock, block)</b>
+&nbsp;/**
+&nbsp; * Resolves the appropriate KotlinPoet [TypeName] to declare the local tracking variable
+&nbsp; * for this property. Handled cases include:
+&nbsp; * - Non-nullable primitives: mapped directly to their unboxed Kotlin/JVM types.
+&nbsp; * - Non-nullable inline/value classes: mapped to the underlying unboxed primitive type.
+&nbsp; * - Nullable/Object types: coerced to a nullable KotlinPoet type representation.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getVariableType(): TypeName {
+<b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
 &nbsp;
-<b class="fc">&nbsp;actual fun &lt;K, V&gt; createAtomicMap(): MutableMap&lt;K, V&gt; = ConcurrentHashMap()</b>
-&nbsp;
-<b class="fc">&nbsp;/**</b>
-&nbsp; * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
-&nbsp; * and returns it. The pair survives across calls so the underlying
-<b class="fc">&nbsp; * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.</b>
-<b class="fc">&nbsp; */</b>
-<b class="fc">&nbsp;@PublishedApi</b>
-&nbsp;internal fun acquireFlatWriterPair(): WriterSinkPair {
-<b class="fc">&nbsp;    val pair = writerPool.get()</b>
-<b class="fc">&nbsp;        ?: WriterSinkPair()</b>
-<b class="fc">&nbsp;            .also { writerPool.set(it) }</b>
-&nbsp;    
-<b class="pc">&nbsp;    pair.writer.reset()</b>
-<b class="fc">&nbsp;    pair.byteWriter.reset()</b>
-<b class="fc">&nbsp;    return pair</b>
-&nbsp;}
-<b class="pc">&nbsp;</b>
-<b class="nc">&nbsp;@PublishedApi</b>
-&nbsp;internal class WriterStringPair {
-<b class="pc">&nbsp;    val charWriter = FlatCharArrayWriter()</b>
-<b class="fc">&nbsp;    val writer = GhostJsonStringWriter(charWriter)</b>
-<b class="fc">&nbsp;}</b>
-&nbsp;
-<b class="pc">&nbsp;@PublishedApi</b>
-<b class="fc">&nbsp;internal val stringWriterPool = ThreadLocal&lt;WriterStringPair&gt;()</b>
-<b class="fc">&nbsp;</b>
-&nbsp;@PublishedApi
-&nbsp;internal fun acquireStringWriterPair(): WriterStringPair {
-<b class="fc">&nbsp;    val pair = stringWriterPool.get()</b>
-<b class="pc">&nbsp;        ?: WriterStringPair().also { stringWriterPool.set(it) }</b>
-<b class="pc">&nbsp;    pair.writer.reset()</b>
-<b class="fc">&nbsp;    pair.charWriter.reset()</b>
-<b class="pc">&nbsp;    return pair</b>
-<b class="nc">&nbsp;}</b>
-&nbsp;
-<b class="nc">&nbsp;@InternalGhostApi</b>
-&nbsp;actual inline fun ghostInternalEncodeToString(
-&nbsp;    crossinline block: (GhostJsonStringWriter) -&gt; Unit
-<b class="fc">&nbsp;): String {</b>
-<b class="fc">&nbsp;    val pair = acquireStringWriterPair()</b>
-<b class="fc">&nbsp;    block(pair.writer)</b>
-<b class="fc">&nbsp;    val result = String(</b>
-<b class="fc">&nbsp;        pair.charWriter.array,</b>
-<b class="fc">&nbsp;        0,</b>
-<b class="fc">&nbsp;        pair.charWriter.size</b>
-<b class="fc">&nbsp;    )</b>
-<b class="fc">&nbsp;    pair.charWriter.reset()</b>
-<b class="fc">&nbsp;    return result</b>
-<b class="fc">&nbsp;}</b>
-<b class="fc">&nbsp;</b>
-<b class="nc">&nbsp;@InternalGhostApi</b>
-<b class="nc">&nbsp;actual inline fun ghostInternalEncodeWithWriter(</b>
-<b class="nc">&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit</b>
-&nbsp;): ByteArray {
-<b class="pc">&nbsp;    val pair = acquireFlatWriterPair()</b>
-<b class="fc">&nbsp;    block(pair.writer)</b>
-<b class="fc">&nbsp;    val result = pair.byteWriter.toByteArray()</b>
-<b class="fc">&nbsp;    pair.byteWriter.reset()</b>
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;@InternalGhostApi
-&nbsp;actual inline fun ghostInternalEncodeAndDiscard(
-<b class="fc">&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit</b>
-<b class="pc">&nbsp;) {</b>
-<b class="pc">&nbsp;    val pair = acquireFlatWriterPair()</b>
-<b class="pc">&nbsp;    block(pair.writer)</b>
-<b class="fc">&nbsp;    pair.byteWriter.reset()</b>
-&nbsp;}
-&nbsp;
-<b class="fc">&nbsp;@InternalGhostApi</b>
-<b class="fc">&nbsp;actual inline fun ghostInternalEncodeAndDrainTo(</b>
-&nbsp;    sink: okio.BufferedSink,
-&nbsp;    crossinline block: (GhostJsonFlatWriter) -&gt; Unit
-&nbsp;) {
-<b class="fc">&nbsp;    val pair = acquireFlatWriterPair()</b>
-<b class="fc">&nbsp;    block(pair.writer)</b>
-<b class="fc">&nbsp;    sink.write(</b>
-<b class="fc">&nbsp;        pair.byteWriter.array,</b>
-<b class="fc">&nbsp;        0,</b>
-<b class="fc">&nbsp;        pair.byteWriter.size</b>
-<b class="pc">&nbsp;    )</b>
-<b class="fc">&nbsp;    pair.byteWriter.reset()</b>
-&nbsp;}
-&nbsp;
-<b class="fc">&nbsp;actual fun discoverRegistries(): Iterable&lt;GhostRegistry&gt; = Iterable {</b>
-<b class="fc">&nbsp;    object : Iterator&lt;GhostRegistry&gt; {</b>
-&nbsp;        private var fastRegistries: MutableList&lt;GhostRegistry&gt;? = null
-&nbsp;        private var fastIterator: Iterator&lt;GhostRegistry&gt;? = null
-&nbsp;        private var fastChecked = false
-&nbsp;        private var slow: Iterator&lt;GhostRegistry&gt;? = null
-&nbsp;
-&nbsp;        override fun hasNext(): Boolean {
-<b class="fc">&nbsp;            if (!fastChecked) {</b>
-<b class="fc">&nbsp;                fastChecked = true</b>
-<b class="fc">&nbsp;                val names = listOf(</b>
-<b class="pc">&nbsp;                    Ghost.DEFAULT_REGISTRY_NAME,</b>
-<b class="pc">&nbsp;                    Ghost.TEST_REGISTRY_NAME</b>
-<b class="nc">&nbsp;                )</b>
-<b class="fc">&nbsp;                fastRegistries = names.mapNotNull { name -&gt;</b>
-<b class="fc">&nbsp;                    runCatching {</b>
-<b class="fc">&nbsp;                        Class.forName(name)</b>
-<b class="pc">&nbsp;                            .getField(Ghost.INSTANCE_FIELD)</b>
-<b class="pc">&nbsp;                            .get(null) as GhostRegistry</b>
-<b class="fc">&nbsp;                    }.getOrNull()</b>
-<b class="fc">&nbsp;                }.toMutableList()</b>
-<b class="pc">&nbsp;                fastIterator = fastRegistries?.iterator()</b>
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        isPrimitive -&gt; typeName</b>
+<b class="fc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="fc">&nbsp;            val underlying = valueClassProperty!!</b>
+<b class="fc">&nbsp;            if (underlying.type.isPrimitive()) {</b>
+<b class="fc">&nbsp;                underlying.typeName</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                underlying.typeName.copy(nullable = true)</b>
 &nbsp;            }
-&nbsp;            
-<b class="pc">&nbsp;            if (fastIterator?.hasNext() == true) return true</b>
-<b class="fc">&nbsp;</b>
-<b class="fc">&nbsp;            if (slow == null) {</b>
-<b class="fc">&nbsp;                slow = runCatching {</b>
-&nbsp;                    ServiceLoader
-<b class="fc">&nbsp;                        .load(GhostRegistry::class.java)</b>
-<b class="fc">&nbsp;                        .iterator()</b>
-&nbsp;                }
-<b class="pc">&nbsp;                    .getOrDefault(</b>
-<b class="fc">&nbsp;                        emptyList&lt;GhostRegistry&gt;()</b>
-<b class="fc">&nbsp;                            .iterator()</b>
-<b class="pc">&nbsp;                    )</b>
-<b class="fc">&nbsp;            }</b>
-<b class="fc">&nbsp;            return slow!!.hasNext()</b>
 &nbsp;        }
-<b class="fc">&nbsp;</b>
-<b class="fc">&nbsp;        override fun next(): GhostRegistry {</b>
-<b class="pc">&nbsp;            if (!hasNext()) throw NoSuchElementException()</b>
-<b class="pc">&nbsp;            if (fastIterator?.hasNext() == true) return fastIterator!!.next()</b>
-<b class="fc">&nbsp;            return slow!!.next()</b>
-&nbsp;        }
-<b class="fc">&nbsp;    }</b>
-&nbsp;}
 &nbsp;
-&nbsp;actual fun &lt;T&gt; ghostInternalUseReader(
-&nbsp;    bytes: ByteArray,
-&nbsp;    block: (GhostJsonReader) -&gt; T
-<b class="fc">&nbsp;): T {</b>
-<b class="fc">&nbsp;    return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length -&gt;</b>
-<b class="pc">&nbsp;        val view = if (offset == 0) data else data.copyOfRange(offset, offset + length)</b>
-<b class="pc">&nbsp;        val viewLimit = if (offset == 0) length else view.size</b>
-<b class="pc">&nbsp;        val reader = readerPool.get()</b>
-<b class="fc">&nbsp;            ?: GhostJsonReader(view)</b>
-<b class="fc">&nbsp;                .also { readerPool.set(it) }</b>
-<b class="fc">&nbsp;</b>
-<b class="fc">&nbsp;        reader.reset(view, viewLimit)</b>
-<b class="fc">&nbsp;        block(reader)</b>
+<b class="fc">&nbsp;        else -&gt; typeName.copy(nullable = true)</b>
 &nbsp;    }
 &nbsp;}
 &nbsp;
-&nbsp;actual fun &lt;T&gt; ghostInternalUseFlatReader(
-&nbsp;    bytes: ByteArray,
-<b class="fc">&nbsp;    limit: Int,</b>
-<b class="fc">&nbsp;    block: (GhostJsonFlatReader) -&gt; T</b>
-<b class="fc">&nbsp;): T {</b>
-<b class="fc">&nbsp;    return withPreparedUtf8Json(bytes, limit) { data, offset, length -&gt;</b>
-<b class="pc">&nbsp;        val reader = flatReaderPool.get()</b>
-<b class="fc">&nbsp;            ?: GhostJsonFlatReader(data)</b>
-<b class="fc">&nbsp;                .also { flatReaderPool.set(it) }</b>
-<b class="fc">&nbsp;</b>
-<b class="fc">&nbsp;        reader.resetSlice(data, offset, length)</b>
-<b class="fc">&nbsp;        block(reader)</b>
+&nbsp;/**
+&nbsp; * Resolves the initial placeholder value literal representation for the tracking variable.
+&nbsp; * For example: `null` for objects, `0` for Int, `0L` for Long, `false` for Boolean.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getInitialValue(): String {
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+<b class="fc">&nbsp;    val targetProp = if (isUnboxedValueClass) valueClassProperty!! else this</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        isNullable -&gt; C.STR_NULL</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveInt() -&gt; C.STR_ZERO</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveLong() -&gt; C.STR_ZERO_L</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveULong() -&gt; &quot;0uL&quot;</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveDouble() -&gt; C.STR_ZERO_D</b>
+<b class="pc">&nbsp;        targetProp.type.isPrimitiveFloat() -&gt; C.STR_ZERO_F</b>
+<b class="pc">&nbsp;        targetProp.type.isPrimitiveByte() -&gt; C.STR_ZERO</b>
+<b class="pc">&nbsp;        targetProp.type.isPrimitiveShort() -&gt; C.STR_ZERO</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveChar() -&gt; C.STR_CHAR_NULL_LITERAL</b>
+<b class="fc">&nbsp;        targetProp.type.isPrimitiveBoolean() -&gt; C.STR_FALSE</b>
+<b class="fc">&nbsp;        else -&gt; C.STR_NULL</b>
 &nbsp;    }
 &nbsp;}
 &nbsp;
-&nbsp;actual fun &lt;T&gt; ghostInternalUseSource(
-&nbsp;    source: BufferedSource,
-<b class="fc">&nbsp;    block: (GhostJsonReader) -&gt; T</b>
-<b class="fc">&nbsp;): T {</b>
-<b class="fc">&nbsp;    // Separate pool from readerPool to prevent re-entrance corruption if the</b>
-<b class="fc">&nbsp;    // same thread nests a ByteArray read inside a streaming read.</b>
-<b class="fc">&nbsp;    val reader = sourceReaderPool.get()</b>
-<b class="fc">&nbsp;        ?: GhostJsonReader(source)</b>
-<b class="fc">&nbsp;            .also { sourceReaderPool.set(it) }</b>
+&nbsp;/**
+&nbsp; * Generates the expression string used to pass this property to the constructor
+&nbsp; * in the standard deserializer return statement. Appends a null-assertion operator `!!`
+&nbsp; * if the parameter is non-nullable but tracked as a nullable local variable.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getReturnExpression(): String {
+<b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+<b class="fc">&nbsp;    val varName = localValueName()</b>
 &nbsp;
-&nbsp;    // data in 8 KB segments on demand instead of loading the entire payload.
-<b class="fc">&nbsp;    reader.reset(prepareUtf8JsonSource(source))</b>
-<b class="fc">&nbsp;    return block(reader)</b>
-<b class="nc">&nbsp;}</b>
-<b class="nc">&nbsp;</b>
-<b class="nc">&nbsp;actual fun &lt;T&gt; ghostInternalUseStringReader(</b>
-&nbsp;    json: String,
-&nbsp;    block: (GhostJsonStringReader) -&gt; T
-&nbsp;): T {
-<b class="fc">&nbsp;    val reader = stringReaderPool.get()</b>
-<b class="fc">&nbsp;        ?: GhostJsonStringReader(json)</b>
-<b class="fc">&nbsp;            .also { stringReaderPool.set(it) }</b>
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        isPrimitive -&gt; varName</b>
+<b class="fc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="fc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="fc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="fc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$varName$bang&quot;)</b>
+&nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;    reader.reset(json)</b>
-<b class="fc">&nbsp;    return block(reader)</b>
-<b class="nc">&nbsp;}</b>
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            if (isNullable) {</b>
+<b class="fc">&nbsp;                varName</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                &quot;$varName${C.STR_BANG_BANG}&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the conditional fallback return expression when standard deserialization
+&nbsp; * supports default arguments. If the property mask bit is set, it resolves to the parsed variable,
+&nbsp; * otherwise it resolves to the copy-based result field value.
+&nbsp; *
+&nbsp; * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
+&nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getDefaultValueReturnExpression(
+&nbsp;    maskIdx: Int,
+&nbsp;    bitMaskStr: String
+&nbsp;): String {
+<b class="pc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="pc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;
+<b class="fc">&nbsp;    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)</b>
+<b class="fc">&nbsp;    val varName = localValueName()</b>
+<b class="fc">&nbsp;    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="pc">&nbsp;        isNullable || isPrimitive -&gt;</b>
+<b class="fc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)</b>
+&nbsp;
+<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="nc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                maskName,</b>
+<b class="nc">&nbsp;                bitMaskStr,</b>
+<b class="nc">&nbsp;                C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$varName$bang&quot;),</b>
+<b class="nc">&nbsp;                resultVar</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="nc">&nbsp;            val value = &quot;$varName${C.STR_BANG_BANG}&quot;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                maskName,</b>
+<b class="nc">&nbsp;                bitMaskStr,</b>
+<b class="nc">&nbsp;                value,</b>
+<b class="nc">&nbsp;                resultVar</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * True when this list of default properties is non-empty and every entry has a whitelisted
+&nbsp; * [GhostPropertyModel.defaultExpression]. Used to choose the single-ctor path over `.copy()`.
+&nbsp; */
+&nbsp;internal fun List&lt;GhostPropertyModel&gt;.allDefaultsHaveExpressions(): Boolean =
+<b class="pc">&nbsp;    isNotEmpty() &amp;&amp; all { it.defaultExpression != null }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * True when the whitelisted ctor default equals the local placeholder init
+&nbsp; * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed`.
+&nbsp; *
+&nbsp; * Safe because absent fields leave the local at its init value, which is already the
+&nbsp; * Kotlin default (`null` / `false` / `0` / `0L` / …).
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.defaultMatchesLocalInit(): Boolean {
+<b class="pc">&nbsp;    val expr = defaultExpression ?: return false</b>
+<b class="fc">&nbsp;    return expr == getInitialValue()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Single-ctor arg for a default property: parsed value when the mask bit is set, otherwise the
+&nbsp; * whitelisted source default expression.
+&nbsp; *
+&nbsp; * When [defaultMatchesLocalInit] is true, emits only the parsed local — the mask ternary is
+&nbsp; * redundant because an absent field already left the local at the Kotlin default.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
+&nbsp;    maskIdx: Int,
+&nbsp;    bitMaskStr: String
+&nbsp;): String {
+<b class="fc">&nbsp;    if (defaultMatchesLocalInit()) {</b>
+<b class="fc">&nbsp;        return getReturnExpression()</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val expression = defaultExpression</b>
+<b class="nc">&nbsp;        ?: error(C.STR_ERR_SINGLE_SHOT_DEFAULT_1 + kotlinName)</b>
+<b class="fc">&nbsp;    val maskName = C.TEMPLATE_MASK_VAR.format(maskIdx)</b>
+<b class="fc">&nbsp;    return C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="fc">&nbsp;        maskName,</b>
+<b class="fc">&nbsp;        bitMaskStr,</b>
+<b class="fc">&nbsp;        getReturnExpression(),</b>
+<b class="fc">&nbsp;        expression</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fragmented (ctx.*) variant of [getSingleShotDefaultArgExpression].
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
+&nbsp;    maskIdx: Int,
+&nbsp;    bitMaskStr: String
+&nbsp;): String {
+<b class="nc">&nbsp;    if (defaultMatchesLocalInit()) {</b>
+<b class="nc">&nbsp;        return getFragmentedReturnExpression()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    val expression = defaultExpression</b>
+<b class="nc">&nbsp;        ?: error(C.STR_ERR_SINGLE_SHOT_DEFAULT_1 + kotlinName)</b>
+<b class="nc">&nbsp;    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)</b>
+<b class="nc">&nbsp;    return C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;        maskName,</b>
+<b class="nc">&nbsp;        bitMaskStr,</b>
+<b class="nc">&nbsp;        getFragmentedReturnExpression(),</b>
+<b class="nc">&nbsp;        expression</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the return expression string pointing to the generated `DecodingContext`
+&nbsp; * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
+<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val ctxVar = C.TEMPLATE_CTX_VAR.format(localTrackingName())</b>
+&nbsp;
+<b class="nc">&nbsp;    return when {</b>
+<b class="nc">&nbsp;        isPrimitive -&gt; ctxVar</b>
+<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="nc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(typeName, &quot;$ctxVar$bang&quot;)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="nc">&nbsp;            if (isNullable) {</b>
+<b class="nc">&nbsp;                ctxVar</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                &quot;$ctxVar${C.STR_BANG_BANG}&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates the conditional fallback return expression when fragmented deserialization
+&nbsp; * supports default arguments. It maps tracking mask checks directly to the fields on
+&nbsp; * the `DecodingContext` instance.
+&nbsp; *
+&nbsp; * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
+&nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
+&nbsp; */
+&nbsp;internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
+&nbsp;    maskIdx: Int,
+&nbsp;    bitMaskStr: String
+&nbsp;): String {
+&nbsp;
+<b class="nc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
+<b class="nc">&nbsp;    val isUnboxedValueClass = isValueClass &amp;&amp; valueClassProperty != null &amp;&amp; !isNullable</b>
+&nbsp;
+<b class="nc">&nbsp;    val maskName = C.TEMPLATE_CTX_MASK_VAR.format(maskIdx)</b>
+<b class="nc">&nbsp;    val ctxVar = C.TEMPLATE_CTX_VAR.format(localTrackingName())</b>
+<b class="nc">&nbsp;    val resultVar = C.TEMPLATE_RESULT_VAR.format(kotlinName)</b>
+&nbsp;
+<b class="nc">&nbsp;    return when {</b>
+<b class="nc">&nbsp;        isNullable || isPrimitive -&gt;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)</b>
+&nbsp;
+<b class="nc">&nbsp;        isUnboxedValueClass -&gt; {</b>
+<b class="nc">&nbsp;            val bang = if (valueClassProperty!!.type.isPrimitive()) {</b>
+<b class="nc">&nbsp;                C.STR_EMPTY</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                C.STR_BANG_BANG</b>
+&nbsp;            }
+<b class="nc">&nbsp;            C.TEMPLATE_WRAP_TYPE.format(</b>
+<b class="nc">&nbsp;                typeName,</b>
+<b class="nc">&nbsp;                C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                    maskName,</b>
+<b class="nc">&nbsp;                    bitMaskStr,</b>
+<b class="nc">&nbsp;                    &quot;$ctxVar$bang&quot;,</b>
+<b class="nc">&nbsp;                    resultVar</b>
+&nbsp;                )
+&nbsp;
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="nc">&nbsp;            val value = &quot;$ctxVar${C.STR_BANG_BANG}&quot;</b>
+<b class="nc">&nbsp;            C.TEMPLATE_IF_MASK_RETURN.format(</b>
+<b class="nc">&nbsp;                maskName,</b>
+<b class="nc">&nbsp;                bitMaskStr,</b>
+<b class="nc">&nbsp;                value,</b>
+<b class="nc">&nbsp;                resultVar</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -410,7 +414,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 23:51</div>
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
 </div>
 </body>
 </html>

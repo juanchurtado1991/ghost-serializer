@@ -1,11 +1,13 @@
 @file:OptIn(InternalGhostApi::class)
 
-package com.ghost.serialization.parser
+package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+
 
 class GhostPolymorphicTest {
 

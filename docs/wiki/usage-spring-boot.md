@@ -18,8 +18,12 @@ dependencies {
 ```
 
 The starter registers these ahead of the default codecs:
-- `GhostHttpMessageConverter` for Spring MVC (WebMVC)
-- `GhostReactiveEncoder` + `GhostReactiveDecoder` for Spring WebFlux
+- `GhostHttpMessageConverter` for Spring MVC JSON (`application/json`)
+- `GhostYamlHttpMessageConverter` for Spring MVC YAML (`application/yaml`)
+- `GhostProtoHttpMessageConverter` for proto3 JSON (auto-detected via `isProto`)
+- `GhostReactiveEncoder` + `GhostReactiveDecoder` for Spring WebFlux JSON
+- `GhostYamlReactiveEncoder` + `GhostYamlReactiveDecoder` for WebFlux YAML
+- `GhostProtoReactiveEncoder` + `GhostProtoReactiveDecoder` for WebFlux proto3 JSON
 
 They accept DTOs backed by a generated Ghost serializer and decline other types, preserving Jackson as the fallback.
 
@@ -123,6 +127,23 @@ class ReactiveUserController(private val userService: ReactiveUserService) {
     }
 }
 ```
+
+---
+
+## 7. YAML endpoints
+
+Use `consumes` / `produces` when an endpoint should speak YAML:
+
+```kotlin
+@PostMapping("/config", consumes = ["application/yaml"], produces = ["application/yaml"])
+fun updateConfig(@RequestBody config: ConfigDto): ConfigDto = service.save(config)
+```
+
+When both JSON and YAML converters are registered, Ghost orders JSON ahead of YAML for content negotiation — constrain media types on mixed endpoints so Spring picks the format you intend.
+
+`@GhostStrict` and `@GhostCoerce` on `@RequestBody` apply to YAML bodies the same way they do for JSON.
+
+→ **[Full YAML guide →](usage-yaml.md)**
 
 ---
 

@@ -28,7 +28,7 @@ private const val EmptySlotFontSizeSp = 14
 private const val EmptySlotGlyph = "·"
 private const val DispatchCellMaxLines = 2
 
-/** One slot in the perfect-hash dispatch table preview — occupied slots show the field name that hashed there. */
+/** One cell in the perfect-hash dispatch table preview; occupied cells show the hashed field name. */
 @Composable
 internal fun DispatchCell(index: Int, field: String?, occupied: Boolean) {
     val bg = if (occupied) Teal.copy(OccupiedBgAlpha) else CardBorder.copy(EmptyBgAlpha)

@@ -3,21 +3,28 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.createByteArraySource
-import com.ghost.serialization.parser.nextDouble
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextString
-import com.ghost.serialization.parser.skipValue
+import com.ghost.serialization.parser.common.createByteArraySource
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.nextDouble
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.nextDouble
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.skipValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
+
 /**
- * Chaos Engineering Suite (TDD).
- * Target: Undetected crashes and spec violations.
+ * Chaos and stress scenarios for the JSON parser/writer.
+ * Targets undetected crashes and spec violations.
  */
 class GhostChaosTest {
 

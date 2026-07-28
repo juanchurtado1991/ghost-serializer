@@ -1,10 +1,12 @@
 package com.ghost.serialization.types
 
 /**
- * Zero-allocation scanners for [RawJson] JSON value classification and scalar coercion.
+ * Scanners for [com.ghost.serialization.types.RawJson] JSON value classification and scalar coercion.
  *
- * Operates directly on [RawJson.storage] / [RawJson.storageOffset] / [RawJson.storageLength]
- * without materializing [RawJson.bytes] unless a [String] result is required.
+ * Operates directly on [com.ghost.serialization.types.RawJson.storage],
+ * [com.ghost.serialization.types.RawJson.storageOffset], and
+ * [com.ghost.serialization.types.RawJson.storageLength] without materializing
+ * [com.ghost.serialization.types.RawJson.bytes] unless a [kotlin.String] result is required.
  */
 internal object RawJsonValueScanner {
 

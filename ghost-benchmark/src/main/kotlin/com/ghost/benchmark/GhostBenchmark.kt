@@ -31,17 +31,24 @@ import java.io.ByteArrayInputStream
 import java.lang.management.ManagementFactory
 import kotlin.math.sqrt
 
-// Synthetic harness, tables, and shared helpers — entry points live in [BenchmarkLauncher].
+/**
+ * Synthetic JSON harness: LIST / SYNC / WRITING workloads, cold-start timing, result tables,
+ * and shared measurement helpers used by [BenchmarkSuite.SYNTHETIC] and [BenchmarkSuite.FULL].
+ *
+ * CLI orchestration lives in [main] (`BenchmarkLauncher.kt`).
+ */
 
 // ============================================================================
 // Phase Executors
 // ============================================================================
 
+/** Runs and prints the one-shot cold-start parse table before global JIT warmup. */
 internal fun runAndPrintColdStart(smallBytes: ByteString, engines: BenchmarkEngines) {
     val coldMetrics = runColdStart(smallBytes)
     printColdStartTable("COLD START (first parse, before JUnit suite)", coldMetrics)
 }
 
+/** Global JIT warmup across string, bytes, and streaming channels for all three engines. */
 @Suppress("CheckResult")
 internal fun runWarmupPhase(
     engines: BenchmarkEngines,
@@ -85,6 +92,7 @@ internal fun runWarmupPhase(
     }
 }
 
+/** Executes LIST, SYNC, WRITING, stress, and failure synthetic suites; returns raw session lists. */
 internal fun runSyntheticBenchmarks(
     threadBean: ThreadMXBean,
     engines: BenchmarkEngines,
@@ -475,6 +483,7 @@ private fun averageBenchResult(list: List<BenchResult>): BenchResult {
 // Printing & Presentation
 // ============================================================================
 
+/** Prints aggregated synthetic tables (latency, GB/s, allocation) for every workload. */
 internal fun printFinalResults(finalResults: BenchmarkSessionResults, payloads: BenchmarkPayloads) {
     val sessions = BenchmarkStandard.SYNTHETIC_SESSIONS
     val samples = BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION
@@ -751,6 +760,7 @@ private fun printRankedTableBody(metrics: BenchmarkMetrics, payloadBytes: Long) 
 // Internal Utilities & Generation
 // ============================================================================
 
+/** Encodes [data] with KotlinX Serialization for neutral cross-engine JSON fixtures. */
 internal fun generateNeutralJson(data: Any): String {
     val json = Json { ignoreUnknownKeys = true }
     @Suppress("UNCHECKED_CAST")
@@ -761,6 +771,7 @@ internal fun generateNeutralJson(data: Any): String {
     }
 }
 
+/** Enables [ThreadMXBean] thread allocation tracking; returns `null` when unsupported. */
 internal fun initializePlatformDiagnostics(): ThreadMXBean? {
     val threadBean = ManagementFactory.getThreadMXBean() as ThreadMXBean
     if (!threadBean.isThreadAllocatedMemorySupported) {
@@ -771,6 +782,7 @@ internal fun initializePlatformDiagnostics(): ThreadMXBean? {
     return threadBean
 }
 
+/** Builds a synthetic [com.ghost.serialization.integration.model.ComplexResponse] with [count] users and fixed metadata. */
 internal fun generateComplexData(count: Int): ComplexResponse {
     val history = IntArray(1000) { it }
     val meta = ExtremeMetadata(
@@ -805,6 +817,7 @@ private inline fun measureAvgFailSpeed(block: () -> Unit): Long {
     return (System.nanoTime() - startTime) / 100
 }
 
+/** Builds a [com.ghost.serialization.integration.model.Category] tree [depth] levels deep for nesting stress tests. */
 internal fun createTree(d: Int): Category = if (d <= 0) {
     Category(name = "L")
 } else {
@@ -816,6 +829,8 @@ internal fun createTree(d: Int): Category = if (d <= 0) {
 
 @Volatile
 var blackHoleSink: Any? = null
+
+/** Prevents the JVM from dead-code-eliminating benchmark results. */
 fun consume(obj: Any?) {
     blackHoleSink = obj
 }

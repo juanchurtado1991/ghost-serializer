@@ -3,12 +3,17 @@ package com.ghost.benchmark
 /**
  * Progress logging for long-running benchmark loops.
  *
- * Prints at iteration 1, every [BenchmarkStandard.PROGRESS_INTERVAL] steps, and at completion.
+ * Emits a line at iteration 1, every [BenchmarkStandard.PROGRESS_INTERVAL] steps,
+ * and on the final iteration so silent multi-minute runs are easier to monitor.
  */
 internal object BenchmarkProgress {
 
     /**
      * Runs [block] [total] times, emitting progress lines for [label].
+     *
+     * @param label short identifier printed in brackets (for example `"Global Twitter"`).
+     * @param total number of iterations; no-op when `total <= 0`.
+     * @param block callback receiving the zero-based iteration index.
      */
     inline fun repeatWithProgress(label: String, total: Int, block: (Int) -> Unit) {
         if (total <= 0) {
@@ -23,10 +28,12 @@ internal object BenchmarkProgress {
         }
     }
 
+    /** Logs a numbered phase header such as `Phase 2/5: Global JIT warmup`. */
     fun logPhase(phase: Int, totalPhases: Int, title: String) {
         println("\n--- Phase $phase/$totalPhases: $title ---")
     }
 
+    /** Logs a single indented step within the current phase. */
     fun logStep(label: String) {
         println("  → $label")
     }

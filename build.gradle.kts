@@ -42,7 +42,7 @@ plugins {
 
 dependencies {
     // Aggregates coverage from the same JVM-testable modules as [ciTestJvmModules] below —
-    // keep both lists in sync. KMP modules (ghost-api/ghost-serialization/ghost-ktor/ghost-protobuf)
+    // keep both lists in sync. KMP modules (ghost-api/ghost-serialization/ghost-ktor)
     // only report JVM-target coverage; Kover doesn't measure Kotlin/Native (iOS) tests.
     kover(project(":ghost-api"))
     kover(project(":ghost-serialization"))
@@ -52,7 +52,6 @@ dependencies {
     kover(project(":ghost-retrofit"))
     kover(project(":ghost-spring-boot-starter"))
     kover(project(":ghost-gradle-plugin"))
-    kover(project(":ghost-protobuf"))
 }
 
 allprojects {
@@ -113,7 +112,6 @@ tasks.register("publishToGitHubPackages") {
 
     subprojects.forEach { subproject ->
         val isPublishable = subproject.name.startsWith("ghost") &&
-                           !subproject.name.contains("sample") &&
                            !subproject.name.contains("benchmark") &&
                            !subproject.name.contains("integration-test") &&
                            !subproject.name.contains("playground")
@@ -159,7 +157,7 @@ val ciTestJvmModules = listOf(
     ":ghost-retrofit:test",
     ":ghost-spring-boot-starter:test",
     ":ghost-gradle-plugin:test",
-    ":ghost-protobuf:jvmTest",
+    ":ghost-playground:jvmTest",
 )
 
 val ciTestJvm = tasks.register("ciTestJvm") {

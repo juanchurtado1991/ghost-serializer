@@ -6,17 +6,24 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextLong
-import com.ghost.serialization.parser.nextString
-import com.ghost.serialization.parser.skipValue
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextLong
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextLong
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.skipValue
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.mock.MockEngine
@@ -26,11 +33,12 @@ import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import kotlinx.coroutines.test.runTest
 import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.runTest
+
 
 // --- Mock proto-flavored model & hand-written stand-in for @GhostProtoSerialization codegen ---
 data class ProtoKtorEvent(val deviceId: Long, val label: String)

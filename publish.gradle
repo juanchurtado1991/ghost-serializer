@@ -34,7 +34,9 @@ if (isPublishable) {
             def displayName = rawName == "serialization" ? "Ghost Serialization" : "Ghost Serialization " + rawName.split("-").collect { it.capitalize() }.join(" ")
             
             name = displayName
-            description = "Production-ready, zero-allocation serialization engine for Kotlin Multiplatform."
+            description = project.name == "ghost-serialization"
+                ? "Production-ready, zero-allocation JSON, YAML, and Proto3 JSON serialization for Kotlin Multiplatform."
+                : "Production-ready, zero-allocation serialization engine for Kotlin Multiplatform."
             url = githubRepoUrl
             
             licenses {

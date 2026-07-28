@@ -38,8 +38,10 @@ cd ghost-serializer
 | `./gradlew verifyAndBenchmarkFast` | `allTests` then fast regression gate |
 | `./gradlew verifyAndBenchmark` | `allTests` then full regression gate |
 | `./gradlew :ghost-compiler:test` | KSP processor / emitter tests only |
-| `./gradlew :ghost-benchmark:benchmarkRegressionFast` | `allTests` first, then fast regression |
+| `./gradlew :ghost-benchmark:benchmarkRegressionFast` | `allTests` first, then fast regression (JSON gate + yaml/proto informational) |
 | `./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests` | Benchmark only — no test gate |
+| `./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests` | YAML parser/writer only (~30s) |
+| `./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests` | Proto3 JSON round-trip only (~30s) |
 | `./gradlew :ghost-benchmark:run` | `allTests` first, then full JVM benchmark harness |
 | `./gradlew :ghost-benchmark:run -PskipTests` | Benchmark only — no test gate |
 | `./gradlew koverHtmlReport` | Merged JVM/Android line/branch coverage across all Kover-enabled modules — `build/reports/kover/html/index.html` |
@@ -135,7 +137,7 @@ We do not require a CLA for Apache 2.0 contributions. You retain copyright and l
 | Android | `ghost-serialization` (AAR) | KSP on `commonMain` / variant metadata |
 | iOS | `ghost-serialization` (KMP) | XCFramework via consumer project |
 | JVM | `ghost-serialization`, adapters | Server, desktop |
-| Wasm | `ghost-api`, `ghost-serialization`, `ghost-protobuf`, `ghost-ktor` | Browser `wasmJs`; common and platform tests run via `wasmJsBrowserTest` in CI |
+| Wasm | `ghost-api`, `ghost-serialization`, `ghost-ktor` | Browser `wasmJs`; YAML + Proto ship in `ghost-serialization` |
 
 ---
 

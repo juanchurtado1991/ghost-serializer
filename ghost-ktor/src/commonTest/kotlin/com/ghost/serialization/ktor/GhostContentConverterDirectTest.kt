@@ -15,10 +15,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Direct unit tests for [GhostContentConverter] -- no Ktor client/server needed, since it's a
- * plain `ContentConverter`. [GhostKtorTest] only ever exercises it end-to-end through a real
- * `ContentNegotiation` pipeline with small payloads, so the null-return contract (both
- * directions) and the scratch-buffer growth path (payload > 512 KB) had no coverage.
+ * Direct unit tests for [GhostContentConverter] — null-return contract, scratch-buffer growth
+ * for payloads larger than the initial buffer, and round-trip deserialization without a Ktor
+ * client or server.
  */
 class GhostContentConverterDirectTest {
 

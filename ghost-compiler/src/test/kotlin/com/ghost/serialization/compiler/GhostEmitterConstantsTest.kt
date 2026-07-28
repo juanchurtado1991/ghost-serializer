@@ -1,5 +1,6 @@
 package com.ghost.serialization.compiler
 
+import com.ghost.serialization.compiler.internal.GhostEmitterConstants
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -24,6 +25,19 @@ class GhostEmitterConstantsTest {
         assertEquals("TargetSerializer", GhostEmitterConstants.STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX)
         assertTrue(GhostEmitterConstants.STR_ENVELOPE_PARSE_BYTES_ROUTE.contains("deserialize"))
         assertTrue(GhostEmitterConstants.TEMPLATE_ENVELOPE_FIELD_ACCESS.contains("envelope"))
+    }
+
+    @Test
+    fun yamlPackageConstants_matchRuntimeLayout() {
+        assertEquals(
+            "com.ghost.serialization.parser.yaml",
+            GhostEmitterConstants.PKG_YAML_PARSER
+        )
+        assertEquals(
+            "com.ghost.serialization.writer.yaml",
+            GhostEmitterConstants.PKG_YAML_WRITER
+        )
+        assertTrue(GhostEmitterConstants.STR_YAML_SERIALIZER_FQN.endsWith("GhostYamlSerializer"))
     }
 
     @Test

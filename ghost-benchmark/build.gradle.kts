@@ -89,18 +89,68 @@ registerBenchmarkTask(
     "rawjson",
     "Ghost-only RawJson byte vs string channels",
 )
+registerBenchmarkTask(
+    "benchmarkYaml",
+    "yaml",
+    "Ghost-only YAML round-trip (YamlBenchUser GhostYamlSerializer)",
+)
+registerBenchmarkTask(
+    "benchmarkYamlFast",
+    "yaml",
+    "YAML round-trip fast profile (~30s)",
+    profile = "fast",
+)
+registerBenchmarkTask(
+    "benchmarkProto",
+    "proto",
+    "Ghost-only proto3 JSON round-trip (ProtoBenchUser via GhostProto)",
+)
+registerBenchmarkTask(
+    "benchmarkProtoFast",
+    "proto",
+    "Proto3 JSON round-trip fast profile (~30s)",
+    profile = "fast",
+)
 
 tasks.register("benchmarkRegression") {
     group = "benchmark"
-    description = "Twitter + synthetic + special regression gates, full profile (~9 min); runs allTests first unless -PskipTests"
-    dependsOn("benchmarkTwitter", "benchmarkSynthetic", "benchmarkSpecial")
+    description = "Twitter + synthetic + special + yaml + proto regression gates, full profile (~9 min); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkTwitter", "benchmarkSynthetic", "benchmarkSpecial", "benchmarkYaml", "benchmarkProto")
     configureBenchmarkTestGate()
 }
 
 tasks.register("benchmarkRegressionFast") {
     group = "benchmark"
-    description = "Twitter + synthetic + special regression gates, fast profile (~1–2 min); runs allTests first unless -PskipTests"
-    dependsOn("benchmarkTwitterFast", "benchmarkSyntheticFast", "benchmarkSpecial")
+    description = "Twitter + synthetic + special + yaml + proto regression gates, fast profile (~1–2 min); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkTwitterFast", "benchmarkSyntheticFast", "benchmarkSpecial", "benchmarkYamlFast", "benchmarkProtoFast")
+    configureBenchmarkTestGate()
+}
+
+tasks.register("benchmarkYamlRegression") {
+    group = "benchmark"
+    description = "YAML round-trip gate, full profile; runs allTests first unless -PskipTests"
+    dependsOn("benchmarkYaml")
+    configureBenchmarkTestGate()
+}
+
+tasks.register("benchmarkYamlRegressionFast") {
+    group = "benchmark"
+    description = "YAML round-trip gate, fast profile (~30s); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkYamlFast")
+    configureBenchmarkTestGate()
+}
+
+tasks.register("benchmarkProtoRegression") {
+    group = "benchmark"
+    description = "Proto3 JSON round-trip gate, full profile; runs allTests first unless -PskipTests"
+    dependsOn("benchmarkProto")
+    configureBenchmarkTestGate()
+}
+
+tasks.register("benchmarkProtoRegressionFast") {
+    group = "benchmark"
+    description = "Proto3 JSON round-trip gate, fast profile (~30s); runs allTests first unless -PskipTests"
+    dependsOn("benchmarkProtoFast")
     configureBenchmarkTestGate()
 }
 
@@ -118,7 +168,6 @@ dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-serialization"))
     implementation(project(":ghost-integration-test"))
-    implementation(project(":ghost-protobuf"))
     implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)

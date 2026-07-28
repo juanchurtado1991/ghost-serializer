@@ -1,0 +1,460 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlConstants</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlConstants (com.ghost.serialization.yaml)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlConstants</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml
+&nbsp;
+&nbsp;/**
+&nbsp; * Byte-level constants for YAML control characters.
+&nbsp; *
+&nbsp; * Every control byte used by the YAML parser is declared here with a descriptive name.
+&nbsp; * Call sites should use these named constants instead of raw byte literals, and compare
+&nbsp; * bytes directly (Byte to Byte) rather than converting to [Char].
+&nbsp; */
+&nbsp;internal object GhostYamlConstants {
+&nbsp;
+&nbsp;    // ── Basic ASCII structure ──────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;:&#39; — key-value separator */
+&nbsp;    const val COLON_BYTE: Byte = 0x3A
+&nbsp;
+&nbsp;    /** &#39; &#39; — space (used after &#39;:&#39; and &#39;-&#39; as mandatory separator) */
+&nbsp;    const val SPACE_BYTE: Byte = 0x20
+&nbsp;
+&nbsp;    /** &#39;\n&#39; — line feed (primary line terminator) */
+&nbsp;    const val NEWLINE_BYTE: Byte = 0x0A
+&nbsp;
+&nbsp;    /** &#39;\r&#39; — carriage return (CRLF support) */
+&nbsp;    const val CR_BYTE: Byte = 0x0D
+&nbsp;
+&nbsp;    /** &#39;\t&#39; — horizontal tab (valid whitespace in YAML) */
+&nbsp;    const val TAB_BYTE: Byte = 0x09
+&nbsp;
+&nbsp;    /** &#39;#&#39; — comment start */
+&nbsp;    const val HASH_BYTE: Byte = 0x23
+&nbsp;
+&nbsp;    /** &#39;-&#39; — block sequence entry / negative number / block scalar chomp */
+&nbsp;    const val DASH_BYTE: Byte = 0x2D
+&nbsp;
+&nbsp;    /** &#39;.&#39; — document end marker start / float decimal point */
+&nbsp;    const val DOT_BYTE: Byte = 0x2E
+&nbsp;
+&nbsp;    // ── String delimiters ─────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;&quot;&#39; — double-quoted scalar start/end */
+&nbsp;    const val DOUBLE_QUOTE_BYTE: Byte = 0x22
+&nbsp;
+&nbsp;    /** &#39;\&#39;&#39; — single-quoted scalar start/end */
+&nbsp;    const val SINGLE_QUOTE_BYTE: Byte = 0x27
+&nbsp;
+&nbsp;    /** &#39;\\&#39; — escape character inside double-quoted scalars */
+&nbsp;    const val BACKSLASH_BYTE: Byte = 0x5C
+&nbsp;
+&nbsp;    // ── Block scalar indicators ───────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;|&#39; — literal block scalar indicator */
+&nbsp;    const val PIPE_BYTE: Byte = 0x7C
+&nbsp;
+&nbsp;    /** &#39;&gt;&#39; — folded block scalar indicator */
+&nbsp;    const val GT_BYTE: Byte = 0x3E
+&nbsp;
+&nbsp;    /** &#39;+&#39; — keep chomp indicator (after &#39;|&#39; or &#39;&gt;&#39;) */
+&nbsp;    const val PLUS_BYTE: Byte = 0x2B
+&nbsp;
+&nbsp;    // ── Flow style delimiters ─────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;{&#39; — flow mapping start */
+&nbsp;    const val LEFT_BRACE_BYTE: Byte = 0x7B
+&nbsp;
+&nbsp;    /** &#39;}&#39; — flow mapping end */
+&nbsp;    const val RIGHT_BRACE_BYTE: Byte = 0x7D
+&nbsp;
+&nbsp;    /** &#39;[&#39; — flow sequence start */
+&nbsp;    const val LEFT_BRACKET_BYTE: Byte = 0x5B
+&nbsp;
+&nbsp;    /** &#39;]&#39; — flow sequence end */
+&nbsp;    const val RIGHT_BRACKET_BYTE: Byte = 0x5D
+&nbsp;
+&nbsp;    /** &#39;,&#39; — flow collection item separator */
+&nbsp;    const val COMMA_BYTE: Byte = 0x2C
+&nbsp;
+&nbsp;    // ── Anchors, Aliases, Tags, Directives ───────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;&amp;&#39; — anchor definition start */
+&nbsp;    const val AMPERSAND_BYTE: Byte = 0x26
+&nbsp;
+&nbsp;    /** &#39;*&#39; — alias reference start */
+&nbsp;    const val ASTERISK_BYTE: Byte = 0x2A
+&nbsp;
+&nbsp;    /** &#39;!&#39; — tag indicator (e.g. !!str, !&lt;TypeName&gt;) */
+&nbsp;    const val EXCLAMATION_BYTE: Byte = 0x21
+&nbsp;
+&nbsp;    /** &#39;%&#39; — YAML directive start (%YAML, %TAG) */
+&nbsp;    const val PERCENT_BYTE: Byte = 0x25
+&nbsp;
+&nbsp;    /** &#39;&lt;&#39; — opening bracket in verbose tags !&lt;TypeName&gt; */
+&nbsp;    const val LT_BYTE: Byte = 0x3C
+&nbsp;
+&nbsp;    // ── Document markers ──────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;—&#39; first byte of document-start marker &#39;---&#39; */
+&nbsp;    // Same as DASH_BYTE. Marker is detected by checking 3 consecutive DASH_BYTE at column 0.
+&nbsp;
+&nbsp;    // ── Numeric helpers ───────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;0&#39; */
+&nbsp;    const val ZERO_BYTE: Byte = 0x30
+&nbsp;
+&nbsp;    /** &#39;9&#39; */
+&nbsp;    const val NINE_BYTE: Byte = 0x39
+&nbsp;
+&nbsp;    /** &#39;x&#39; */
+&nbsp;    const val LOWERCASE_X_BYTE: Byte = 0x78
+&nbsp;
+&nbsp;    /** &#39;X&#39; */
+&nbsp;    const val UPPERCASE_X_BYTE: Byte = 0x58
+&nbsp;
+&nbsp;    /** &#39;o&#39; */
+&nbsp;    const val LOWERCASE_O_BYTE: Byte = 0x6F
+&nbsp;
+&nbsp;    /** &#39;O&#39; */
+&nbsp;    const val UPPERCASE_O_BYTE: Byte = 0x4F
+&nbsp;
+&nbsp;    /** &#39;b&#39; */
+&nbsp;    const val LOWERCASE_B_BYTE: Byte = 0x62
+&nbsp;
+&nbsp;    /** &#39;B&#39; */
+&nbsp;    const val UPPERCASE_B_BYTE: Byte = 0x42
+&nbsp;
+&nbsp;    // ── Tag Character constants ──────────────────────────────────────────────
+&nbsp;    const val CHAR_A_BYTE: Byte = 0x61
+&nbsp;    const val CHAR_B_BYTE: Byte = 0x62
+&nbsp;    const val CHAR_E_BYTE: Byte = 0x65
+&nbsp;    const val CHAR_F_BYTE: Byte = 0x66
+&nbsp;    const val CHAR_I_BYTE: Byte = 0x69
+&nbsp;    const val CHAR_L_BYTE: Byte = 0x6C
+&nbsp;    const val CHAR_M_BYTE: Byte = 0x6D
+&nbsp;    const val CHAR_N_BYTE: Byte = 0x6E
+&nbsp;    const val CHAR_O_BYTE: Byte = 0x6F
+&nbsp;    const val CHAR_P_BYTE: Byte = 0x70
+&nbsp;    const val CHAR_Q_BYTE: Byte = 0x71
+&nbsp;    const val CHAR_R_BYTE: Byte = 0x72
+&nbsp;    const val CHAR_S_BYTE: Byte = 0x73
+&nbsp;    const val CHAR_T_BYTE: Byte = 0x74
+&nbsp;    const val CHAR_U_BYTE: Byte = 0x75
+&nbsp;    const val LOWERCASE_A_BYTE: Byte = 0x61
+&nbsp;    const val UPPERCASE_A_BYTE: Byte = 0x41
+&nbsp;    const val ONE_BYTE: Byte = 0x31
+&nbsp;    const val SEVEN_BYTE: Byte = 0x37
+&nbsp;
+&nbsp;    const val ESCAPE_SLASH_BYTE: Byte = 0x2F
+&nbsp;    const val LOWERCASE_E_BYTE: Byte = 0x65
+&nbsp;    const val UPPERCASE_E_BYTE: Byte = 0x45
+&nbsp;    const val LOWERCASE_L_BYTE: Byte = 0x6C
+&nbsp;    const val UPPERCASE_L_BYTE: Byte = 0x4C
+&nbsp;    const val LOWERCASE_R_BYTE: Byte = 0x72
+&nbsp;    const val LOWERCASE_U_BYTE: Byte = 0x75
+&nbsp;    const val UPPERCASE_U_BYTE: Byte = 0x55
+&nbsp;    const val LOWERCASE_V_BYTE: Byte = 0x76
+&nbsp;    const val UPPERCASE_P_BYTE: Byte = 0x50
+&nbsp;    const val UNDERSCORE_BYTE: Byte = 0x5F
+&nbsp;    const val LOWERCASE_S_BYTE: Byte = 0x73
+&nbsp;
+&nbsp;    // ── Boolean / null scalar first bytes ────────────────────────────────────
+&nbsp;
+&nbsp;    /** &#39;t&#39; — start of &#39;true&#39; */
+&nbsp;    const val LOWERCASE_T_BYTE: Byte = 0x74
+&nbsp;
+&nbsp;    /** &#39;T&#39; — start of &#39;True&#39; / &#39;TRUE&#39; */
+&nbsp;    const val UPPERCASE_T_BYTE: Byte = 0x54
+&nbsp;
+&nbsp;    /** &#39;f&#39; — start of &#39;false&#39; */
+&nbsp;    const val LOWERCASE_F_BYTE: Byte = 0x66
+&nbsp;
+&nbsp;    /** &#39;F&#39; — start of &#39;False&#39; / &#39;FALSE&#39; */
+&nbsp;    const val UPPERCASE_F_BYTE: Byte = 0x46
+&nbsp;
+&nbsp;    /** &#39;n&#39; — start of &#39;null&#39; / &#39;Null&#39; / &#39;NULL&#39; */
+&nbsp;    const val LOWERCASE_N_BYTE: Byte = 0x6E
+&nbsp;
+&nbsp;    /** &#39;N&#39; — start of &#39;Null&#39; / &#39;NULL&#39; */
+&nbsp;    const val UPPERCASE_N_BYTE: Byte = 0x4E
+&nbsp;
+&nbsp;    /** &#39;~&#39; — YAML null shorthand */
+&nbsp;    const val TILDE_BYTE: Byte = 0x7E
+&nbsp;
+&nbsp;    // ── Bitwise masks for hot-path validations ────────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Mask to check if a byte is an ASCII decimal digit (0-9).
+&nbsp;     *
+&nbsp;     * Usage: `(b.toInt() - 0x30) ushr 4 == 0` is cheaper but
+&nbsp;     * `b in ZERO_BYTE..NINE_BYTE` compiles to the same range check.
+&nbsp;     * For bitwise: `(b.toInt() and 0xF0) == 0x30` does NOT work for all digits.
+&nbsp;     * Correct fast check: `(b - 0x30).toUByte() &lt;= 9u`
+&nbsp;     */
+&nbsp;    const val DIGIT_LOWER_BOUND: Byte = ZERO_BYTE   // 0x30
+&nbsp;    const val DIGIT_UPPER_BOUND: Byte = NINE_BYTE   // 0x39
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Mask to convert lowercase ASCII letter to uppercase.
+&nbsp;     * Apply: `b.toInt() and ASCII_UPPER_MASK` on a known letter byte.
+&nbsp;     * Use only when the byte is confirmed to be alphabetic.
+&nbsp;     */
+&nbsp;    const val ASCII_TO_UPPER_MASK: Int = 0xDF
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Mask to convert uppercase ASCII letter to lowercase.
+&nbsp;     */
+&nbsp;    const val ASCII_TO_LOWER_MASK: Int = 0x20.inv().inv() or 0x20  // = 0x20 OR
+&nbsp;
+&nbsp;    // ── Scalar byte packing (same as JSON reader) ─────────────────────────────
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Maximum key length for perfect-hash dispatch.
+&nbsp;     * Keys longer than this use a fallback linear comparison.
+&nbsp;     */
+&nbsp;    const val MAX_PACKED_KEY_BYTES: Int = 8
+&nbsp;
+&nbsp;    // ── Indentation ───────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** Sentinel value for &quot;no indentation level set yet&quot;. */
+&nbsp;    const val INDENT_UNSET: Int = -1
+&nbsp;
+&nbsp;    /** Maximum supported nesting depth. */
+&nbsp;    const val MAX_DEPTH: Int = 64
+&nbsp;
+&nbsp;    // ── String literals / Control strings ──────────────────────────────────────
+&nbsp;    const val STR_TRUE = &quot;true&quot;
+&nbsp;    const val STR_FALSE = &quot;false&quot;
+&nbsp;    const val STR_DOT_INF = &quot;.inf&quot;
+&nbsp;    const val STR_PLUS_DOT_INF = &quot;+.inf&quot;
+&nbsp;    const val STR_MINUS_DOT_INF = &quot;-.inf&quot;
+&nbsp;    const val STR_DOT_NAN = &quot;.nan&quot;
+&nbsp;
+&nbsp;    const val ESCAPE_DOUBLE_QUOTE = &quot;\&quot;&quot;
+&nbsp;    const val ESCAPE_BACKSLASH = &quot;\\&quot;
+&nbsp;    const val ESCAPE_SLASH = &quot;/&quot;
+&nbsp;    const val ESCAPE_B = &quot;\b&quot;
+&nbsp;    const val ESCAPE_F = &quot;\u000C&quot;
+&nbsp;    const val ESCAPE_N = &quot;\n&quot;
+&nbsp;    const val ESCAPE_R = &quot;\r&quot;
+&nbsp;    const val ESCAPE_T = &quot;\t&quot;
+&nbsp;    const val ESCAPE_ZERO = &quot;\u0000&quot;
+&nbsp;    const val ESCAPE_A = &quot;\u0007&quot;
+&nbsp;    const val ESCAPE_V = &quot;\u000B&quot;
+&nbsp;    const val ESCAPE_E = &quot;\u001B&quot;
+&nbsp;    const val ESCAPE_NEXT_LINE = &quot;\u0085&quot;
+&nbsp;    const val ESCAPE_NBSP = &quot;\u00A0&quot;
+&nbsp;    const val ESCAPE_LINE_SEP = &quot;\u2028&quot;
+&nbsp;    const val ESCAPE_PARA_SEP = &quot;\u2029&quot;
+&nbsp;    const val STR_MERGE_KEY = &quot;&lt;&lt;&quot;
+&nbsp;    const val STR_TAG_KEY = &quot;_tag&quot;
+&nbsp;    const val STR_LT = &quot;&lt;&quot;
+&nbsp;    const val STR_GT = &quot;&gt;&quot;
+&nbsp;    const val STR_TAG_DIRECTIVE = &quot;TAG&quot;
+&nbsp;    const val STR_YAML_DIRECTIVE = &quot;YAML&quot;
+&nbsp;    const val STR_EXCLAMATION = &quot;!&quot;
+&nbsp;
+&nbsp;    // ── Bit shift constants for parsing numeric bases ──────────────────────────
+&nbsp;    const val HEX_SHIFT = 4
+&nbsp;    const val OCTAL_SHIFT = 3
+&nbsp;    const val BINARY_SHIFT = 1
+&nbsp;
+&nbsp;    // ── Int counterparts for control characters (Writer path) ──────────────────
+&nbsp;    const val SPACE_INT: Int = 0x20
+&nbsp;    const val DASH_INT: Int = 0x2D
+&nbsp;    const val NEWLINE_INT: Int = 0x0A
+&nbsp;    const val DOUBLE_QUOTE_INT: Int = 0x22
+&nbsp;    const val BACKSLASH_INT: Int = 0x5C
+&nbsp;    const val COLON_INT: Int = 0x3A
+&nbsp;    const val ZERO_INT: Int = 0x30
+&nbsp;    const val TILDE_INT: Int = 0x7E
+&nbsp;
+&nbsp;    const val CHAR_LF_INT: Int = 10
+&nbsp;    const val CHAR_CR_INT: Int = 13
+&nbsp;    const val CHAR_TAB_INT: Int = 9
+&nbsp;    const val CHAR_BS_INT: Int = 8
+&nbsp;    const val CHAR_FF_INT: Int = 12
+&nbsp;    const val CHAR_SPACE_INT: Int = 32
+&nbsp;
+&nbsp;    const val CHAR_N_INT: Int = 0x6E
+&nbsp;    const val CHAR_R_INT: Int = 0x72
+&nbsp;    const val CHAR_T_INT: Int = 0x74
+&nbsp;    const val CHAR_B_INT: Int = 0x62
+&nbsp;    const val CHAR_F_INT: Int = 0x66
+&nbsp;    const val CHAR_U_INT: Int = 0x75
+&nbsp;
+&nbsp;    const val STR_HEX_CHARS = &quot;0123456789abcdef&quot;
+&nbsp;    const val STR_NULL = &quot;null&quot;
+&nbsp;    const val STR_MIN_LONG_ABS = &quot;9223372036854775808&quot;
+&nbsp;
+<b class="nc">&nbsp;    val HEX_CHARS_ARR = STR_HEX_CHARS.encodeToByteArray()</b>
+&nbsp;
+&nbsp;    // ── Structural &amp; formatting helpers (Writer path) ──────────────────────────
+&nbsp;    const val SPACES_PER_LEVEL = 2
+&nbsp;    const val TYPE_ROOT = 0
+&nbsp;    const val TYPE_OBJECT = 1
+&nbsp;    const val TYPE_ARRAY = 2
+&nbsp;    const val PLAIN_ASCII_LIMIT = 64
+&nbsp;    const val SHIFT_12 = 12
+&nbsp;    const val SHIFT_8 = 8
+&nbsp;    const val SHIFT_4 = 4
+&nbsp;    const val HEX_MASK = 0x0F
+&nbsp;    const val TEN_LONG = 10L
+&nbsp;    const val ASCII_LIMIT = 128
+&nbsp;    // ── Pre-encoded JSON Header extraction constants ──────────────────────────
+&nbsp;    const val HEADER_MIN_SIZE = 3
+&nbsp;    const val HEADER_QUOTE_START_OFFSET = 0
+&nbsp;    const val HEADER_QUOTE_END_OFFSET_SUB = 2
+&nbsp;    const val HEADER_COLON_OFFSET_SUB = 1
+&nbsp;    const val SUBSTRING_START_OFFSET = 1
+&nbsp;
+&nbsp;    // ── UTF-8 and Escape code parsing constants (Reader path) ──────────────────
+&nbsp;    const val BUFFER_SCALE_FACTOR = 2
+&nbsp;    const val UTF8_1BYTE_MAX = 0x7F
+&nbsp;    const val UTF8_2BYTE_MAX = 0x7FF
+&nbsp;    const val UTF8_3BYTE_MAX = 0xFFFF
+&nbsp;    const val UTF8_2BYTE_PREFIX = 0xC0
+&nbsp;    const val UTF8_3BYTE_PREFIX = 0xE0
+&nbsp;    const val UTF8_4BYTE_PREFIX = 0xF0
+&nbsp;    const val UTF8_CONT_PREFIX = 0x80
+&nbsp;    const val UTF8_CONT_MASK = 0x3F
+&nbsp;    const val HEX_SHIFT_4 = 4
+&nbsp;    const val HEX_RADIX_10 = 10
+&nbsp;    const val SHIFT_12_BITS = 12
+&nbsp;    const val SHIFT_18_BITS = 18
+&nbsp;    const val SHIFT_6_BITS = 6
+&nbsp;
+&nbsp;    const val CODE_ZERO = 0
+&nbsp;    const val CODE_BEL = 7
+&nbsp;    const val CODE_BS = 8
+&nbsp;    const val CODE_TAB = 9
+&nbsp;    const val CODE_LF = 10
+&nbsp;    const val CODE_FF = 12
+&nbsp;    const val CODE_CR = 13
+&nbsp;    const val CODE_VTAB = 11
+&nbsp;    const val CODE_ESC = 27
+&nbsp;    const val CODE_NEXT_LINE = 133
+&nbsp;    const val CODE_NBSP = 160
+&nbsp;    const val CODE_LINE_SEP = 8232
+&nbsp;    const val CODE_PARA_SEP = 8233
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-27 23:18</div>
+</div>
+</body>
+</html>

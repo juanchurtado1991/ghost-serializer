@@ -19,7 +19,7 @@ import com.ghost.playground.ui.theme.CardBorder
 import com.ghost.playground.ui.theme.InkMuted
 import com.ghost.playground.ui.theme.Teal
 
-/** EN/ES switch in the header. */
+/** English/Spanish language toggle in the header. */
 @Composable
 internal fun LangToggle(label: String, on: Boolean, click: () -> Unit) {
     // Border matches the fill (instead of a light CardBorder over a near-black fill) — a 1dp

@@ -3,12 +3,12 @@ package com.ghost.serialization.types
 /**
  * Opaque JSON held as verbatim UTF-8 bytes of the wire representation.
  *
- * Ghost serializes and deserializes [RawJson] as an inline JSON value (object, array,
- * string, number, boolean, or null) using zero-copy capture when parsed from a
- * [ByteArray] source, without building an intermediate parse tree.
+ * Ghost serializes and deserializes [com.ghost.serialization.types.RawJson] as an inline JSON
+ * value (object, array, string, number, boolean, or null) using zero-copy capture when parsed
+ * from a [kotlin.ByteArray] source, without building an intermediate parse tree.
  *
- * Prefer [RawJson] over [kotlin.ByteArray] on public model fields: it documents intent
- * and provides value-based [equals] / [hashCode].
+ * Prefer [com.ghost.serialization.types.RawJson] over [kotlin.ByteArray] on public model fields:
+ * it documents intent and provides value-based [equals] / [hashCode].
  *
  * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength]
  * alias the parse input buffer until [bytes] is accessed (which materializes an
@@ -31,7 +31,7 @@ class RawJson internal constructor(
             storage.copyOfRange(storageOffset, storageOffset + storageLength)
         }
 
-    /** Decodes the captured UTF-8 JSON bytes as a [String] (wire form, including quotes for strings). */
+    /** Decodes the captured UTF-8 JSON bytes as a [kotlin.String] (wire form, including quotes for strings). */
     fun decodeToString(): String =
         storage.decodeToString(storageOffset, storageOffset + storageLength)
 
@@ -55,7 +55,7 @@ class RawJson internal constructor(
     /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
     fun asLongOrNull(): Long? = RawJsonValueScanner.asLongOrNull(this)
 
-    /** JSON number as [Double]; integer path is zero-allocation, fraction/exponent uses UTF-8 decode once. */
+    /** JSON number as [kotlin.Double]; integer path avoids extra allocation; fraction/exponent uses UTF-8 decode once. */
     fun asDoubleOrNull(): Double? = RawJsonValueScanner.asDoubleOrNull(this)
 
     /**
@@ -114,10 +114,10 @@ class RawJson internal constructor(
     override fun toString(): String = "RawJson(${decodeToString()})"
 
     companion object {
-        /** Initial accumulator for [contentHashCode]; matches [ByteArray.contentHashCode]. */
+        /** Initial accumulator for [contentHashCode]; matches `kotlin.collections.contentHashCode`. */
         private const val CONTENT_HASH_SEED = 1
 
-        /** Multiplier for [contentHashCode]; matches `java.util.Arrays.hashCode` and [String.hashCode]. */
+        /** Multiplier for [contentHashCode]; matches `java.util.Arrays.hashCode` and [kotlin.String.hashCode]. */
         private const val CONTENT_HASH_MULTIPLIER = 31
 
         /** Wraps an owned UTF-8 buffer exactly as it appears in JSON. */
@@ -127,7 +127,7 @@ class RawJson internal constructor(
         fun fromBufferSlice(buffer: ByteArray, offset: Int, length: Int): RawJson =
             RawJson(buffer, offset, length)
 
-        /** Encodes [json] to UTF-8 bytes. For round-trip tests, prefer wire capture. */
+        /** Encodes [json] to UTF-8 bytes. Prefer [fromBufferSlice] or reader capture when decoding parsed wire bytes. */
         fun fromString(json: String): RawJson = fromUtf8Bytes(json.encodeToByteArray())
     }
 }

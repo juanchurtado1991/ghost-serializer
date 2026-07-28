@@ -1,16 +1,17 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import okio.Buffer
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import okio.Buffer
+
 
 /**
  * Asserts semantic equality after serialize → deserialize on all three public channels.
  *
- * Streaming decode uses an Okio [Buffer] source (true [GhostJsonReader] path). Streaming
- * encode is verified separately because [Buffer] read positions are not rewound after
- * [Ghost.serialize] drains into the sink.
+ * Streaming decode uses an Okio [okio.Buffer] source ([GhostJsonReader] path). Streaming encode
+ * is checked separately because Buffer read positions are not rewound after Ghost drains the sink.
  */
 internal inline fun <reified T : Any> assertTriChannelRoundTrip(expected: T, value: T = expected) {
     val bytes = Ghost.encodeToBytes(value)

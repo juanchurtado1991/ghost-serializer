@@ -37,7 +37,7 @@ private const val PresetAnimationDurationMs = 120
 private const val PresetUnselectedFillAlpha = 0.4f
 private const val PresetUnselectedBorderAlpha = 0.3f
 
-/** A "Try a preset" pill in Studio — highlights when its lab is the active one. */
+/** Preset pill button in Studio; highlights when its lab is active. */
 @Composable
 internal fun PresetButton(label: String, selected: Boolean = false, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }

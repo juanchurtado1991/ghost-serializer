@@ -2,23 +2,34 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.captureRawJson
-import com.ghost.serialization.parser.captureRawJsonBytes
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextString
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.bytes.captureRawJson
+import com.ghost.serialization.parser.bytes.captureRawJsonBytes
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.captureRawJson
+import com.ghost.serialization.parser.streaming.captureRawJsonBytes
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.selectNameAndConsume
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.captureRawJson
+import com.ghost.serialization.parser.strings.captureRawJsonBytes
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.nextKey
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.selectNameAndConsume
 import com.ghost.serialization.types.RawJson
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import okio.Buffer
+
 
 class CaptureRawJsonTest {
 
@@ -39,7 +50,7 @@ class CaptureRawJsonTest {
         val reader = GhostJsonFlatReader(json)
         reader.beginObject()
         reader.selectNameAndConsume(
-            com.ghost.serialization.parser.JsonReaderOptions.of(0, 31, 128, true, "body")
+            com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "body")
         )
 
         val bytes = reader.captureRawJsonBytes()
@@ -52,7 +63,7 @@ class CaptureRawJsonTest {
         val reader = GhostJsonFlatReader(json)
         reader.beginObject()
         reader.selectNameAndConsume(
-            com.ghost.serialization.parser.JsonReaderOptions.of(0, 31, 128, true, "meta")
+            com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "meta")
         )
 
         val captured = reader.captureRawJson()
@@ -89,7 +100,7 @@ class CaptureRawJsonTest {
         }
         reader.beginObject()
         reader.selectNameAndConsume(
-            com.ghost.serialization.parser.JsonReaderOptions.of(0, 31, 128, true, "body")
+            com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "body")
         )
 
         val captured = reader.captureRawJson()
