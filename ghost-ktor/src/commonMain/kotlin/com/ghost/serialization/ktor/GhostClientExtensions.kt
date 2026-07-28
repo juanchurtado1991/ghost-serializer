@@ -4,6 +4,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import io.ktor.client.call.body
@@ -33,4 +34,12 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
     val bytes = this.body<ByteArray>()
     return GhostProto.deserialize(bytes, T::class)
+}
+
+/**
+ * YAML variant of [bodyGhost] for types whose serializer implements [GhostYamlSerializer].
+ */
+suspend inline fun <reified T : Any> HttpResponse.bodyGhostYaml(): T {
+    val bytes = this.body<ByteArray>()
+    return Ghost.decodeFromYaml(bytes)
 }
