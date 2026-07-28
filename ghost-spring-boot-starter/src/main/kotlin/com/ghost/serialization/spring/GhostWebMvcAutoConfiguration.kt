@@ -15,6 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 open class GhostWebMvcAutoConfiguration : WebMvcConfigurer {
     override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
         converters.add(0, GhostHttpMessageConverter())
+        converters.add(0, GhostYamlHttpMessageConverter())
     }
 
     @org.springframework.context.annotation.Bean
