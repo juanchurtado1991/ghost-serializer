@@ -301,13 +301,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    override val typeName: String
 &nbsp;        get() = &quot;List&lt;${itemSerializer.typeName}&gt;&quot;
 &nbsp;
-&nbsp;    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: List&lt;T&gt;) =
+&nbsp;    override fun serialize(
+&nbsp;        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+&nbsp;        value: List&lt;T&gt;
+&nbsp;    ) =
 &nbsp;        jsonList.serialize(writer, value)
 &nbsp;
-&nbsp;    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: List&lt;T&gt;) =
+&nbsp;    override fun serialize(
+&nbsp;        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+&nbsp;        value: List&lt;T&gt;
+&nbsp;    ) =
 &nbsp;        jsonList.serialize(writer, value)
 &nbsp;
-&nbsp;    override fun serialize(writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter, value: List&lt;T&gt;) =
+&nbsp;    override fun serialize(
+&nbsp;        writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter,
+&nbsp;        value: List&lt;T&gt;
+&nbsp;    ) =
 &nbsp;        jsonList.serialize(writer, value)
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostYamlWriter, value: List&lt;T&gt;) {
@@ -361,13 +370,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    override val typeName: String
 &nbsp;        get() = &quot;Map&lt;String, ${valueSerializer.typeName}&gt;&quot;
 &nbsp;
-&nbsp;    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonWriter, value: Map&lt;String, V&gt;) =
+&nbsp;    override fun serialize(
+&nbsp;        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) =
 &nbsp;        jsonMap.serialize(writer, value)
 &nbsp;
-&nbsp;    override fun serialize(writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter, value: Map&lt;String, V&gt;) =
+&nbsp;    override fun serialize(
+&nbsp;        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) =
 &nbsp;        jsonMap.serialize(writer, value)
 &nbsp;
-&nbsp;    override fun serialize(writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter, value: Map&lt;String, V&gt;) =
+&nbsp;    override fun serialize(
+&nbsp;        writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) =
 &nbsp;        jsonMap.serialize(writer, value)
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostYamlWriter, value: Map&lt;String, V&gt;) {
@@ -423,7 +441,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

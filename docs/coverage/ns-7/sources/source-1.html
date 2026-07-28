@@ -95,6 +95,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;ReplaceSizeCheckWithIsNotEmpty&quot;)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.hash
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 <b class="fc">&nbsp;internal data class PerfectHashConfig(</b>
@@ -145,10 +146,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                extendedKeyHash = false,
 &nbsp;            )
 &nbsp;        }
-&nbsp;        findPerfectHashInternal(names, useExtendedKeyHash = false)?.let { (shift, multiplier, tableSize) -&gt;
+&nbsp;        findPerfectHashInternal(
+&nbsp;            names,
+&nbsp;            useExtendedKeyHash = false
+&nbsp;        )?.let { (shift, multiplier, tableSize) -&gt;
 &nbsp;            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = false)
 &nbsp;        }
-&nbsp;        findPerfectHashInternal(names, useExtendedKeyHash = true)?.let { (shift, multiplier, tableSize) -&gt;
+&nbsp;        findPerfectHashInternal(
+&nbsp;            names,
+&nbsp;            useExtendedKeyHash = true
+&nbsp;        )?.let { (shift, multiplier, tableSize) -&gt;
 &nbsp;            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = true)
 &nbsp;        }
 &nbsp;        throw IllegalStateException(
@@ -201,10 +208,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        for (bytes in rawBytes) {
 &nbsp;            if (bytes.isNotEmpty()) {
 &nbsp;                var mask = 0L
-&nbsp;                if (bytes.size &gt;= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
-&nbsp;                if (bytes.size &gt;= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
-&nbsp;                if (bytes.size &gt;= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
-&nbsp;                if (bytes.size &gt;= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
+&nbsp;                if (bytes.size &gt;= C.VAL_ONE) mask =
+&nbsp;                    mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)
+&nbsp;                if (bytes.size &gt;= C.VAL_TWO) mask =
+&nbsp;                    mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)
+&nbsp;                if (bytes.size &gt;= C.VAL_THREE) mask =
+&nbsp;                    mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)
+&nbsp;                if (bytes.size &gt;= C.VAL_FOUR) mask =
+&nbsp;                    mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)
 &nbsp;                val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)
 &nbsp;                if (!seen.add(packed)) {
 &nbsp;                    return true
@@ -261,7 +272,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

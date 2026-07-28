@@ -79,15 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (18/18)
+    (19/19)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    46.2%
+    47.4%
   </span>
   <span class="absValue">
-    (36/78)
+    (37/78)
   </span>
 </td>
 </tr>
@@ -103,10 +103,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;
 &nbsp;private const val PROP_INITIAL_COLLECTION_CAPACITY = &quot;ghost.initialCollectionCapacity&quot;
 <b class="fc">&nbsp;private const val PROP_MAX_STRING_POOL_LENGTH = &quot;ghost.maxStringPoolLength&quot;</b>
 <b class="fc">&nbsp;private const val PROP_MAX_COLLECTION_SIZE = &quot;ghost.maxCollectionSize&quot;</b>
@@ -115,18 +111,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;private const val PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmCharWriteBufferCapacity&quot;</b>
 <b class="fc">&nbsp;</b>
 &nbsp;actual object GhostHeuristics {
-<b class="fc">&nbsp;    actual val initialCollectionCapacity: Int = </b>
+<b class="fc">&nbsp;    actual val initialCollectionCapacity: Int =</b>
 <b class="pc">&nbsp;        System.getProperty(PROP_INITIAL_COLLECTION_CAPACITY)?.toIntOrNull() ?: 10</b>
-<b class="fc">&nbsp;    actual val maxStringPoolLength: Int = </b>
+<b class="fc">&nbsp;    actual val maxStringPoolLength: Int =</b>
 <b class="pc">&nbsp;        System.getProperty(PROP_MAX_STRING_POOL_LENGTH)?.toIntOrNull() ?: 64</b>
-<b class="fc">&nbsp;    actual val maxCollectionSize: Int = </b>
+<b class="fc">&nbsp;    actual val maxCollectionSize: Int =</b>
 <b class="pc">&nbsp;        System.getProperty(PROP_MAX_COLLECTION_SIZE)?.toIntOrNull() ?: 1_000_000</b>
-<b class="fc">&nbsp;    actual val maxDiscriminatorPeekDistance: Int = </b>
+<b class="fc">&nbsp;    actual val maxDiscriminatorPeekDistance: Int =</b>
 <b class="pc">&nbsp;        System.getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)?.toIntOrNull() ?: 2048</b>
-<b class="fc">&nbsp;    actual val maxWarmWriteBufferCapacity: Int = </b>
+<b class="fc">&nbsp;    actual val maxWarmWriteBufferCapacity: Int =</b>
 <b class="pc">&nbsp;        System.getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (8 * 1024 * 1024)</b>
-<b class="fc">&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int = </b>
-<b class="pc">&nbsp;        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (2 * 1024 * 1024)</b>
+<b class="fc">&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull()</b>
+<b class="fc">&nbsp;            ?: (2 * 1024 * 1024)</b>
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +148,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

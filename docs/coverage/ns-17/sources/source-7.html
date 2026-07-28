@@ -106,18 +106,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.decodeBase64String
 &nbsp;import com.ghost.serialization.parser.common.encodeBase64String
 &nbsp;import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -125,7 +123,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `BytesValue` is JSON string.
 &nbsp; */
-&nbsp;@JvmInline value class ProtoBytesValue(val value: ByteArray)
+&nbsp;@JvmInline
+&nbsp;value class ProtoBytesValue(val value: ByteArray)
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoBytesValue].
@@ -135,17 +134,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
 <b class="nc">&nbsp;        writer.value(encodeBase64String(value.value))</b>
 &nbsp;    }
+&nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBytesValue) {
 <b class="fc">&nbsp;        writer.value(encodeBase64String(value.value))</b>
 &nbsp;    }
+&nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBytesValue) {
 <b class="nc">&nbsp;        writer.value(encodeBase64String(value.value))</b>
 &nbsp;    }
+&nbsp;
 &nbsp;    // Reader-agnostic: works on any reader flavor via nextString() + shared decoder, rather
 &nbsp;    // than requiring the pooled-scratch-buffer fast path on GhostProtoJsonFlatReader
 &nbsp;    // specifically.
 &nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
 <b class="fc">&nbsp;        ProtoBytesValue(decodeBase64String(reader.nextString()))</b>
+&nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
 <b class="fc">&nbsp;        if (reader is GhostProtoJsonFlatReader) {</b>
 <b class="fc">&nbsp;            return ProtoBytesValue(reader.nextProtoBytes())</b>
@@ -176,7 +179,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

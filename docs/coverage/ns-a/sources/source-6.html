@@ -103,7 +103,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     98%
   </span>
   <span class="absValue">
-    (98/100)
+    (100/102)
   </span>
 </td>
 <td class="coverageStat">
@@ -138,7 +138,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     97.5%
   </span>
   <span class="absValue">
-    (153/157)
+    (155/159)
   </span>
 </td>
 <td class="coverageStat">
@@ -158,6 +158,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.model
+&nbsp;
 &nbsp;import com.google.devtools.ksp.symbol.ClassKind
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.Modifier
@@ -258,7 +259,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;            val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)</b>
 <b class="fc">&nbsp;            val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||</b>
-<b class="fc">&nbsp;                classDeclaration.modifiers.contains(Modifier.INLINE)</b>
+<b class="fc">&nbsp;                    classDeclaration.modifiers.contains(Modifier.INLINE)</b>
 <b class="fc">&nbsp;            val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS</b>
 <b class="pc">&nbsp;            val isObject = classDeclaration.classKind == ClassKind.OBJECT</b>
 <b class="fc">&nbsp;            val isResilient =</b>
@@ -356,7 +357,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                flatReaderClass = ClassName(C.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),</b>
 <b class="fc">&nbsp;                stringReaderClass = ClassName(C.PKG_PARSER_STRINGS, C.STR_GHOST_JSON_STRING_READER),</b>
 <b class="fc">&nbsp;                hasYaml = hasYaml,</b>
-<b class="fc">&nbsp;                yamlSerializerInterface = ClassName(C.PKG_YAML_CONTRACT, C.STR_GHOST_YAML_SERIALIZER),</b>
+<b class="fc">&nbsp;                yamlSerializerInterface = ClassName(</b>
+<b class="fc">&nbsp;                    C.PKG_YAML_CONTRACT,</b>
+<b class="fc">&nbsp;                    C.STR_GHOST_YAML_SERIALIZER</b>
+&nbsp;                ),
 <b class="fc">&nbsp;                yamlWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_WRITER),</b>
 <b class="fc">&nbsp;                yamlFlatWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_FLAT_WRITER),</b>
 <b class="fc">&nbsp;                yamlFlatReaderClass = yamlFlatReaderClass,</b>
@@ -407,7 +411,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

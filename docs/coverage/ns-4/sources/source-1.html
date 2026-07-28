@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    64.5%
+    63.6%
   </span>
   <span class="absValue">
-    (140/217)
+    (140/220)
   </span>
 </td>
 <td class="coverageStat">
@@ -100,10 +100,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;import com.google.devtools.ksp.symbol.FileLocation
 &nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
 &nbsp;import java.io.File
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -230,7 +231,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        while (index &lt; source.length) {</b>
 <b class="nc">&nbsp;            index = skipTrivia(source, index)</b>
 <b class="nc">&nbsp;            if (index &gt;= source.length) break</b>
-<b class="nc">&nbsp;            if (source[index].isJavaIdentifierStart() &amp;&amp; matchesIdentifier(source, index, paramName)) {</b>
+<b class="nc">&nbsp;            if (source[index].isJavaIdentifierStart() &amp;&amp; matchesIdentifier(</b>
+<b class="nc">&nbsp;                    source,</b>
+<b class="nc">&nbsp;                    index,</b>
+<b class="nc">&nbsp;                    paramName</b>
+&nbsp;                )
+&nbsp;            ) {
 <b class="nc">&nbsp;                val afterName = skipTrivia(source, index + paramName.length)</b>
 <b class="nc">&nbsp;                if (afterName &lt; source.length &amp;&amp; source[afterName] == CHAR_COLON) {</b>
 <b class="nc">&nbsp;                    val eq = findDefaultEquals(source, afterName + 1)</b>
@@ -413,13 +419,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            when {</b>
 <b class="fc">&nbsp;                source[index].isWhitespace() -&gt; index++</b>
 <b class="pc">&nbsp;                index + 1 &lt; source.length &amp;&amp;</b>
-<b class="pc">&nbsp;                    source[index] == CHAR_SLASH &amp;&amp; source[index + 1] == CHAR_SLASH -&gt; {</b>
+<b class="pc">&nbsp;                        source[index] == CHAR_SLASH &amp;&amp; source[index + 1] == CHAR_SLASH -&gt; {</b>
 <b class="nc">&nbsp;                    index += 2</b>
 <b class="nc">&nbsp;                    while (index &lt; source.length &amp;&amp; source[index] != CHAR_NEWLINE) index++</b>
 &nbsp;                }
 &nbsp;
 <b class="pc">&nbsp;                index + 1 &lt; source.length &amp;&amp;</b>
-<b class="pc">&nbsp;                    source[index] == CHAR_SLASH &amp;&amp; source[index + 1] == CHAR_STAR -&gt; {</b>
+<b class="pc">&nbsp;                        source[index] == CHAR_SLASH &amp;&amp; source[index + 1] == CHAR_STAR -&gt; {</b>
 <b class="nc">&nbsp;                    index += 2</b>
 <b class="nc">&nbsp;                    while (index + 1 &lt; source.length &amp;&amp;</b>
 <b class="nc">&nbsp;                        !(source[index] == CHAR_STAR &amp;&amp; source[index + 1] == CHAR_SLASH)</b>
@@ -483,8 +489,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;            inner.length == 1 &amp;&amp; inner[0] != CHAR_BACKSLASH &amp;&amp; inner[0] != CHAR_SINGLE_QUOTE -&gt; true</b>
 <b class="pc">&nbsp;            inner in C.DEFAULT_EXPR_CHAR_ESCAPES -&gt; true</b>
 <b class="nc">&nbsp;            inner.startsWith(C.STR_UNICODE_ESC_PREFIX) &amp;&amp;</b>
-<b class="nc">&nbsp;                inner.length == C.DEFAULT_EXPR_UNICODE_ESC_LEN &amp;&amp;</b>
-<b class="nc">&nbsp;                isHexDigits(inner.substring(2)) -&gt; true</b>
+<b class="nc">&nbsp;                    inner.length == C.DEFAULT_EXPR_UNICODE_ESC_LEN &amp;&amp;</b>
+<b class="nc">&nbsp;                    isHexDigits(inner.substring(2)) -&gt; true</b>
 &nbsp;
 <b class="nc">&nbsp;            else -&gt; false</b>
 &nbsp;        }
@@ -505,7 +511,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                    when (value[index + 1]) {</b>
 &nbsp;                        CHAR_BACKSLASH, CHAR_DOUBLE_QUOTE, CHAR_N, CHAR_T, CHAR_R, CHAR_B,
 &nbsp;                        CHAR_DOLLAR, CHAR_SINGLE_QUOTE,
-<b class="nc">&nbsp;                        -&gt; index += 2</b>
+<b class="nc">&nbsp;                            -&gt; index += 2</b>
 &nbsp;
 &nbsp;                        CHAR_U -&gt; {
 <b class="nc">&nbsp;                            if (index + 5 &gt;= end) return false</b>
@@ -537,13 +543,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val parts = value.split(CHAR_DOT)</b>
 <b class="fc">&nbsp;        return parts.all { part -&gt;</b>
 <b class="fc">&nbsp;            part.first().isUpperCase() ||</b>
-<b class="pc">&nbsp;                part.all { it == CHAR_UNDERSCORE || it.isDigit() || it.isUpperCase() }</b>
+<b class="pc">&nbsp;                    part.all { it == CHAR_UNDERSCORE || it.isDigit() || it.isUpperCase() }</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun isHexDigits(value: String): Boolean =
 <b class="nc">&nbsp;        value.length == C.DEFAULT_EXPR_UNICODE_HEX_LEN &amp;&amp;</b>
-<b class="nc">&nbsp;            value.all { it.isDigit() || it in HEX_LOWER_A..HEX_LOWER_F || it in HEX_UPPER_A..HEX_UPPER_F }</b>
+<b class="nc">&nbsp;                value.all { it.isDigit() || it in HEX_LOWER_A..HEX_LOWER_F || it in HEX_UPPER_A..HEX_UPPER_F }</b>
 &nbsp;
 <b class="fc">&nbsp;    private val NUMERIC_REGEX = Regex(C.REGEX_DEFAULT_EXPR_NUMERIC)</b>
 <b class="fc">&nbsp;    private val ENUM_REF_REGEX = Regex(C.REGEX_DEFAULT_EXPR_ENUM_REF)</b>
@@ -602,7 +608,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

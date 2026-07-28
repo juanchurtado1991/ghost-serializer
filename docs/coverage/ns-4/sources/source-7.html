@@ -100,7 +100,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.google.devtools.ksp.symbol.ClassKind
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -114,6 +114,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.LONG
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
 &nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -205,14 +206,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;internal fun KSType.isPrimitive(): Boolean {
 <b class="fc">&nbsp;    return isPrimitiveInt() ||</b>
-<b class="fc">&nbsp;        isPrimitiveBoolean() ||</b>
-<b class="fc">&nbsp;        isPrimitiveLong() ||</b>
-<b class="fc">&nbsp;        isPrimitiveULong() ||</b>
-<b class="fc">&nbsp;        isPrimitiveDouble() ||</b>
-<b class="pc">&nbsp;        isPrimitiveFloat() ||</b>
-<b class="pc">&nbsp;        isPrimitiveByte() ||</b>
-<b class="pc">&nbsp;        isPrimitiveShort() ||</b>
-<b class="fc">&nbsp;        isPrimitiveChar()</b>
+<b class="fc">&nbsp;            isPrimitiveBoolean() ||</b>
+<b class="fc">&nbsp;            isPrimitiveLong() ||</b>
+<b class="fc">&nbsp;            isPrimitiveULong() ||</b>
+<b class="fc">&nbsp;            isPrimitiveDouble() ||</b>
+<b class="pc">&nbsp;            isPrimitiveFloat() ||</b>
+<b class="pc">&nbsp;            isPrimitiveByte() ||</b>
+<b class="pc">&nbsp;            isPrimitiveShort() ||</b>
+<b class="fc">&nbsp;            isPrimitiveChar()</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -361,7 +362,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

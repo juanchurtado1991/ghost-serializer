@@ -103,7 +103,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_END
@@ -126,6 +125,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_18
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_6
 &nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -353,8 +353,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    val lowSurrogate = text[sourceIndex + 1].code</b>
 <b class="pc">&nbsp;                    if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {</b>
 <b class="fc">&nbsp;                        val fullCodePoint = UNICODE_BASE +</b>
-<b class="fc">&nbsp;                            (((codePoint - HIGH_SURROGATE_START) shl SHIFT_10) or</b>
-<b class="fc">&nbsp;                                (lowSurrogate - LOW_SURROGATE_START))</b>
+<b class="fc">&nbsp;                                (((codePoint - HIGH_SURROGATE_START) shl SHIFT_10) or</b>
+<b class="fc">&nbsp;                                        (lowSurrogate - LOW_SURROGATE_START))</b>
 <b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
 <b class="fc">&nbsp;                            (UTF8_4BYTE_PREFIX or (fullCodePoint shr UTF8_SHIFT_18)).toByte()</b>
 <b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
@@ -397,6 +397,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                writeByte(UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6))</b>
 <b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))</b>
 &nbsp;            }
+&nbsp;
 &nbsp;            else -&gt; {
 <b class="nc">&nbsp;                writeByte(UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12))</b>
 <b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK))</b>
@@ -492,7 +493,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

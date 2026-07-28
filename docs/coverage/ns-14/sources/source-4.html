@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.5%
+    83.6%
   </span>
   <span class="absValue">
-    (375/449)
+    (377/451)
   </span>
 </td>
 <td class="coverageStat">
@@ -105,21 +105,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.parser.strings
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.bytes.readQuotedString
-&nbsp;import com.ghost.serialization.parser.bytes.skipNumber
-&nbsp;import com.ghost.serialization.parser.bytes.skipQuotedString
 &nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
-&nbsp;import com.ghost.serialization.parser.streaming.nextInt
-&nbsp;import com.ghost.serialization.parser.streaming.nextLong
-&nbsp;import com.ghost.serialization.parser.streaming.nextULong
-&nbsp;import com.ghost.serialization.parser.streaming.skipNumber
-&nbsp;import com.ghost.serialization.parser.streaming.readList
-&nbsp;import com.ghost.serialization.parser.streaming.readSet
-&nbsp;import com.ghost.serialization.parser.strings.readList
-&nbsp;import com.ghost.serialization.parser.strings.readSet
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;fun GhostJsonStringReader.beginObject() {
@@ -513,7 +502,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;fun GhostJsonStringReader.selectString(options: JsonReaderOptions): Int =
 <b class="fc">&nbsp;    internalSelect(options, consumeSeparator = false)</b>
 &nbsp;
-&nbsp;private fun GhostJsonStringReader.internalSelect(options: JsonReaderOptions, consumeSeparator: Boolean): Int {
+&nbsp;private fun GhostJsonStringReader.internalSelect(
+&nbsp;    options: JsonReaderOptions,
+&nbsp;    consumeSeparator: Boolean
+&nbsp;): Int {
 <b class="fc">&nbsp;    var token = peekNextToken()</b>
 <b class="fc">&nbsp;    if (token == C.CLOSE_OBJ_INT) {</b>
 <b class="fc">&nbsp;        return -1</b>
@@ -576,7 +568,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val key = computeKeyHash(start, length, options.hasCollisions)</b>
 &nbsp;
 <b class="fc">&nbsp;    val dispatchTable = options.stringDispatch</b>
-<b class="fc">&nbsp;    val hasIndex = ((key * options.multiplier + length) shr options.shift) and (dispatchTable.size - 1)</b>
+<b class="fc">&nbsp;    val hasIndex =</b>
+<b class="fc">&nbsp;        ((key * options.multiplier + length) shr options.shift) and (dispatchTable.size - 1)</b>
 <b class="fc">&nbsp;    val index = dispatchTable[hasIndex]</b>
 &nbsp;
 <b class="fc">&nbsp;    if (index != C.MATCH_END) {</b>
@@ -628,7 +621,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    return currentToken</b>
 &nbsp;}
 &nbsp;
-&nbsp;private fun GhostJsonStringReader.handleSelectNoMatch(start: Int, end: Int, length: Int, consumeSeparator: Boolean): Int {
+&nbsp;private fun GhostJsonStringReader.handleSelectNoMatch(
+&nbsp;    start: Int,
+&nbsp;    end: Int,
+&nbsp;    length: Int,
+&nbsp;    consumeSeparator: Boolean
+&nbsp;): Int {
 <b class="fc">&nbsp;    val newPos = end + 1</b>
 <b class="fc">&nbsp;    position = newPos</b>
 <b class="fc">&nbsp;    nextTokenByte = C.MATCH_END</b>
@@ -653,7 +651,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
 &nbsp;}
 &nbsp;
-&nbsp;private inline fun GhostJsonStringReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
+&nbsp;private inline fun GhostJsonStringReader.computeKeyHash(
+&nbsp;    start: Int,
+&nbsp;    length: Int,
+&nbsp;    hasCollisions: Boolean
+&nbsp;): Int {
 <b class="fc">&nbsp;    var key = 0</b>
 <b class="fc">&nbsp;    val chars = rawChars</b>
 <b class="fc">&nbsp;    if (length &gt;= 4) {</b>
@@ -664,7 +666,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        key = byte0 or (byte1 shl C.SHIFT_8) or (byte2 shl C.SHIFT_16) or (byte3 shl C.SHIFT_24)</b>
 <b class="fc">&nbsp;        if (hasCollisions) {</b>
 <b class="fc">&nbsp;            var ci = C.UNICODE_HEX_LENGTH</b>
-<b class="fc">&nbsp;            while (ci &lt; length) { key = key * C.COLLISION_HASH_MULTIPLIER + chars[start + ci].code; ci++ }</b>
+<b class="fc">&nbsp;            while (ci &lt; length) {</b>
+<b class="fc">&nbsp;                key = key * C.COLLISION_HASH_MULTIPLIER + chars[start + ci].code; ci++</b>
+&nbsp;            }
 &nbsp;        }
 &nbsp;    } else {
 <b class="pc">&nbsp;        if (length &gt;= 1) {</b>
@@ -758,12 +762,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        C.QUOTE_INT -&gt; {
 <b class="fc">&nbsp;            skipQuotedString()</b>
 &nbsp;        }
+&nbsp;
 &nbsp;        C.TRUE_CHAR_INT -&gt; {
 <b class="fc">&nbsp;            skipAndValidateLiteral(C.TRUE_BS)</b>
 &nbsp;        }
+&nbsp;
 &nbsp;        C.FALSE_CHAR_INT -&gt; {
 <b class="fc">&nbsp;            skipAndValidateLiteral(C.FALSE_BS)</b>
 &nbsp;        }
+&nbsp;
 &nbsp;        C.NULL_CHAR_INT -&gt; {
 <b class="fc">&nbsp;            skipAndValidateLiteral(C.NULL_BS)</b>
 &nbsp;        }
@@ -893,7 +900,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

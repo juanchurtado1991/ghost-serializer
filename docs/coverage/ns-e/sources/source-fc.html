@@ -152,16 +152,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostName
 &nbsp;import com.ghost.serialization.annotations.GhostFlatten
-&nbsp;import com.ghost.serialization.annotations.GhostWrap
 &nbsp;import com.ghost.serialization.annotations.GhostIgnore
-&nbsp;import com.ghost.serialization.annotations.GhostResilient
+&nbsp;import com.ghost.serialization.annotations.GhostName
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.annotations.GhostWrap
 &nbsp;import com.squareup.moshi.Json
 &nbsp;import com.squareup.moshi.JsonClass
-&nbsp;import kotlinx.serialization.Serializable
 &nbsp;import kotlinx.serialization.SerialName
+&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
 &nbsp;@JsonClass(generateAdapter = true)
 &nbsp;@Serializable
@@ -414,18 +413,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;@GhostSerialization
 &nbsp;data class TwitterSpecialTweet(
 <b class="fc">&nbsp;    val id: Long,</b>
-&nbsp;    
+&nbsp;
 &nbsp;    // 1. Flattening: extracts user screen_name directly from nested user object
 <b class="fc">&nbsp;    @GhostFlatten(&quot;user.screen_name&quot;)</b>
 <b class="fc">&nbsp;    val screenName: String,</b>
-&nbsp;    
+&nbsp;
 &nbsp;    // 2. Flattening 2 levels: extracts metadata result_type
 <b class="fc">&nbsp;    @GhostFlatten(&quot;metadata.result_type&quot;)</b>
 <b class="fc">&nbsp;    val resultType: String,</b>
-&nbsp;    
+&nbsp;
 &nbsp;    // 3. Regular text field (no GhostWrap so we can parse from original JSON)
 <b class="fc">&nbsp;    val text: String,</b>
-&nbsp;    
+&nbsp;
 &nbsp;    // 4. Ignored field: ignored during serialization
 <b class="fc">&nbsp;    @GhostIgnore</b>
 <b class="fc">&nbsp;    val source: String = &quot;&quot;</b>
@@ -467,7 +466,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

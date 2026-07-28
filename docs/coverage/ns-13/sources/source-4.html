@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     83.1%
   </span>
   <span class="absValue">
-    (369/444)
+    (370/445)
   </span>
 </td>
 <td class="coverageStat">
@@ -107,26 +107,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import com.ghost.serialization.parser.bytes.ghostReadLong8
-&nbsp;import com.ghost.serialization.parser.bytes.readQuotedString
-&nbsp;import com.ghost.serialization.parser.bytes.skipNumber
-&nbsp;import com.ghost.serialization.parser.bytes.skipQuotedString
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
 &nbsp;import com.ghost.serialization.parser.common.scanStringImpl
-&nbsp;import com.ghost.serialization.parser.strings.findClosingQuote
-&nbsp;import com.ghost.serialization.parser.strings.nextInt
-&nbsp;import com.ghost.serialization.parser.strings.nextLong
-&nbsp;import com.ghost.serialization.parser.strings.nextULong
-&nbsp;import com.ghost.serialization.parser.strings.skipNumber
-&nbsp;import com.ghost.serialization.parser.streaming.decodeResilient
-&nbsp;import com.ghost.serialization.parser.streaming.readList
-&nbsp;import com.ghost.serialization.parser.streaming.readSet
-&nbsp;import com.ghost.serialization.parser.strings.readList
-&nbsp;import com.ghost.serialization.parser.strings.readSet
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -827,7 +814,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                (byte3 shl C.SHIFT_24)</b>
 <b class="fc">&nbsp;        if (hasCollisions) {</b>
 <b class="fc">&nbsp;            var ci = C.UNICODE_HEX_LENGTH</b>
-<b class="fc">&nbsp;            while (ci &lt; length) { key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++ }</b>
+<b class="fc">&nbsp;            while (ci &lt; length) {</b>
+<b class="fc">&nbsp;                key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++</b>
+&nbsp;            }
 &nbsp;        }
 &nbsp;    } else {
 <b class="pc">&nbsp;        if (length &gt;= 1) key = key or getByte(start)</b>
@@ -1154,7 +1143,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

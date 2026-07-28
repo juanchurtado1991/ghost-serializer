@@ -253,6 +253,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            RawJsonKind.NUMBER,
 &nbsp;            RawJsonKind.BOOLEAN,
 <b class="fc">&nbsp;            RawJsonKind.NULL -&gt; raw.decodeToString()</b>
+&nbsp;
 &nbsp;            RawJsonKind.OBJECT,
 &nbsp;            RawJsonKind.ARRAY,
 <b class="fc">&nbsp;            RawJsonKind.INVALID -&gt; raw.decodeToString()</b>
@@ -264,25 +265,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    private fun RawJson.matchesTrueLiteral(): Boolean =
 <b class="pc">&nbsp;        storageLength == TRUE_LEN &amp;&amp;</b>
-<b class="fc">&nbsp;            storage[storageOffset].toInt() == TRUE_CHAR &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 1].toInt() == CHAR_R &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 2].toInt() == CHAR_U &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 3].toInt() == CHAR_E</b>
+<b class="fc">&nbsp;                storage[storageOffset].toInt() == TRUE_CHAR &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 1].toInt() == CHAR_R &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 2].toInt() == CHAR_U &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 3].toInt() == CHAR_E</b>
 &nbsp;
 &nbsp;    private fun RawJson.matchesFalseLiteral(): Boolean =
 <b class="pc">&nbsp;        storageLength == FALSE_LEN &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset].toInt() == FALSE_CHAR &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 1].toInt() == CHAR_A &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 2].toInt() == CHAR_L &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 3].toInt() == CHAR_S &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 4].toInt() == CHAR_E</b>
+<b class="pc">&nbsp;                storage[storageOffset].toInt() == FALSE_CHAR &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 1].toInt() == CHAR_A &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 2].toInt() == CHAR_L &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 3].toInt() == CHAR_S &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 4].toInt() == CHAR_E</b>
 &nbsp;
 &nbsp;    private fun RawJson.matchesNullLiteral(): Boolean =
 <b class="pc">&nbsp;        storageLength == NULL_LEN &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset].toInt() == NULL_CHAR &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 1].toInt() == CHAR_U &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 2].toInt() == CHAR_L &amp;&amp;</b>
-<b class="pc">&nbsp;            storage[storageOffset + 3].toInt() == CHAR_L</b>
+<b class="pc">&nbsp;                storage[storageOffset].toInt() == NULL_CHAR &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 1].toInt() == CHAR_U &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 2].toInt() == CHAR_L &amp;&amp;</b>
+<b class="pc">&nbsp;                storage[storageOffset + 3].toInt() == CHAR_L</b>
 &nbsp;
 &nbsp;    private fun RawJson.isJsonNumberToken(): Boolean {
 <b class="fc">&nbsp;        var index = 0</b>
@@ -331,6 +332,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                negative = true</b>
 <b class="fc">&nbsp;                index++</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            ZERO, in ONE..NINE -&gt; Unit</b>
 <b class="fc">&nbsp;            else -&gt; return null</b>
 &nbsp;        }
@@ -361,6 +363,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    value = next</b>
 <b class="fc">&nbsp;                    index++</b>
 &nbsp;                }
+&nbsp;
 <b class="pc">&nbsp;                DOT, EXP_LOWER, EXP_UPPER -&gt; return null</b>
 <b class="nc">&nbsp;                else -&gt; return null</b>
 &nbsp;            }
@@ -399,13 +402,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                            val lowSurrogate = readHex4(index + 2)</b>
 <b class="fc">&nbsp;                            index += 6</b>
 <b class="fc">&nbsp;                            val codePoint = UNICODE_BASE +</b>
-<b class="fc">&nbsp;                                ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +</b>
-<b class="fc">&nbsp;                                (lowSurrogate - LOW_SURROGATE_START)</b>
+<b class="fc">&nbsp;                                    ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +</b>
+<b class="fc">&nbsp;                                    (lowSurrogate - LOW_SURROGATE_START)</b>
 <b class="fc">&nbsp;                            appendCodePoint(builder, codePoint)</b>
 &nbsp;                        } else {
 <b class="fc">&nbsp;                            appendCodePoint(builder, hex)</b>
 &nbsp;                        }
 &nbsp;                    }
+&nbsp;
 <b class="fc">&nbsp;                    else -&gt; builder.append(escaped.toChar())</b>
 &nbsp;                }
 &nbsp;            } else {
@@ -467,7 +471,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

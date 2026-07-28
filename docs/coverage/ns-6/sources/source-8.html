@@ -100,9 +100,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
-&nbsp;import com.ghost.serialization.compiler.analysis.isEnum
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.analysis.serializerClassName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.squareup.kotlinpoet.ClassName
@@ -111,6 +110,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.KModifier
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -187,12 +187,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            isSealed -&gt; {</b>
 <b class="fc">&nbsp;                emitSealedDispatch(code)</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            isValue -&gt; {</b>
 <b class="fc">&nbsp;                emitValueUnboxing(code)</b>
 &nbsp;            }
+&nbsp;
 <b class="fc">&nbsp;            isEnum -&gt; {</b>
 <b class="fc">&nbsp;                emitEnumSerialization(code)</b>
 &nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            properties.size &gt; C.PROPERTY_MAX_SIZE -&gt; {</b>
 <b class="nc">&nbsp;                val fragmented = FragmentedSerializeEmitter(</b>
 <b class="nc">&nbsp;                    sortedProperties,</b>
@@ -207,6 +210,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                    sealedDiscriminatorKey</b>
 &nbsp;                )
 &nbsp;            }
+&nbsp;
 &nbsp;            else -&gt; {
 <b class="fc">&nbsp;                val standard = StandardSerializeEmitter(</b>
 <b class="fc">&nbsp;                    sortedProperties,</b>
@@ -317,7 +321,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

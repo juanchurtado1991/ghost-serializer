@@ -181,17 +181,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
-&nbsp;
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
-&nbsp;import com.ghost.serialization.releaseScratchBuffer
-&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
-&nbsp;import com.ghost.serialization.parser.streaming.readList
-&nbsp;import com.ghost.serialization.parser.streaming.readSet
-&nbsp;import com.ghost.serialization.parser.strings.readList
-&nbsp;import com.ghost.serialization.parser.strings.readSet
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -950,8 +945,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    val currentByte = localRawData[position]</b>
 <b class="fc">&nbsp;                    val isBaseDigit = when {</b>
 <b class="fc">&nbsp;                        isHex -&gt; isDigit(currentByte) ||</b>
-<b class="pc">&nbsp;                            currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||</b>
-<b class="pc">&nbsp;                            currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE</b>
+<b class="pc">&nbsp;                                currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||</b>
+<b class="pc">&nbsp;                                currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE</b>
+&nbsp;
 <b class="pc">&nbsp;                        isOctal -&gt; currentByte in C.ZERO_BYTE..C.SEVEN_BYTE</b>
 <b class="fc">&nbsp;                        else -&gt; currentByte == C.ZERO_BYTE || currentByte == C.ONE_BYTE</b>
 &nbsp;                    }
@@ -1797,7 +1793,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

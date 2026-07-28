@@ -65,10 +65,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.2%
+    96.3%
   </span>
   <span class="absValue">
-    (252/262)
+    (257/267)
   </span>
 </td>
 <td class="coverageStat">
@@ -104,10 +104,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.2%
+    96.3%
   </span>
   <span class="absValue">
-    (252/262)
+    (257/267)
   </span>
 </td>
 <td class="coverageStat">
@@ -169,8 +169,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    override val size: Int get() = Int.MAX_VALUE</b>
 &nbsp;
 <b class="fc">&nbsp;    private val bufferBytes = ByteArray(GhostJsonConstants.STREAMING_BUFFER_SIZE)</b>
+&nbsp;
 &nbsp;    /** Absolute start index of the bytes currently cached in [bufferBytes]. */
 <b class="fc">&nbsp;    private var bufferStart = -1</b>
+&nbsp;
 &nbsp;    /** Absolute end index (exclusive) of the bytes currently cached in [bufferBytes]. */
 <b class="fc">&nbsp;    private var bufferEnd = -1</b>
 &nbsp;
@@ -236,7 +238,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            i++</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val aligned = (retainFrom / GhostJsonConstants.STREAMING_BUFFER_SIZE) *</b>
-<b class="fc">&nbsp;            GhostJsonConstants.STREAMING_BUFFER_SIZE</b>
+<b class="fc">&nbsp;                GhostJsonConstants.STREAMING_BUFFER_SIZE</b>
 <b class="fc">&nbsp;        val toSkip = aligned - discarded</b>
 <b class="fc">&nbsp;        if (toSkip &lt; GhostJsonConstants.STREAMING_BUFFER_SIZE) return</b>
 &nbsp;
@@ -419,7 +421,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                        if (byte0 == localQuoteInt) return localPosition</b>
 <b class="nc">&nbsp;                        return -1</b>
 &nbsp;                    }
-<b class="fc">&nbsp;                    val byte1 = bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    val byte1 =</b>
+<b class="fc">&nbsp;                        bufferBytes[localPosition + 1 - segmentStart].toInt() and localByteMask</b>
 <b class="pc">&nbsp;                    if (byte1 &lt; localAsciiLimit &amp;&amp;</b>
 <b class="fc">&nbsp;                        (escapeMasks[byte1 shr localBitmaskShift] shr</b>
 <b class="fc">&nbsp;                                (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
@@ -427,7 +430,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                        if (byte1 == localQuoteInt) return localPosition + 1</b>
 <b class="nc">&nbsp;                        return -1</b>
 &nbsp;                    }
-<b class="fc">&nbsp;                    val byte2 = bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    val byte2 =</b>
+<b class="fc">&nbsp;                        bufferBytes[localPosition + 2 - segmentStart].toInt() and localByteMask</b>
 <b class="pc">&nbsp;                    if (byte2 &lt; localAsciiLimit &amp;&amp;</b>
 <b class="fc">&nbsp;                        (escapeMasks[byte2 shr localBitmaskShift] shr</b>
 <b class="fc">&nbsp;                                (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
@@ -435,7 +439,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                        if (byte2 == localQuoteInt) return localPosition + 2</b>
 <b class="nc">&nbsp;                        return -1</b>
 &nbsp;                    }
-<b class="fc">&nbsp;                    val byte3 = bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    val byte3 =</b>
+<b class="fc">&nbsp;                        bufferBytes[localPosition + 3 - segmentStart].toInt() and localByteMask</b>
 <b class="pc">&nbsp;                    if (byte3 &lt; localAsciiLimit &amp;&amp;</b>
 <b class="fc">&nbsp;                        (escapeMasks[byte3 shr localBitmaskShift] shr</b>
 <b class="fc">&nbsp;                                (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
@@ -447,7 +452,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 &nbsp;
 <b class="fc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
-<b class="fc">&nbsp;                    val singleByte = bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
+<b class="fc">&nbsp;                    val singleByte =</b>
+<b class="fc">&nbsp;                        bufferBytes[localPosition - segmentStart].toInt() and localByteMask</b>
 <b class="pc">&nbsp;                    if (singleByte &lt; localAsciiLimit &amp;&amp;</b>
 <b class="pc">&nbsp;                        (escapeMasks[singleByte shr localBitmaskShift] shr</b>
 <b class="fc">&nbsp;                                (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone</b>
@@ -577,7 +583,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                var localPosition = currentPosition</b>
 &nbsp;
 <b class="fc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
-<b class="fc">&nbsp;                    val byteValue = bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK</b>
+<b class="fc">&nbsp;                    val byteValue =</b>
+<b class="fc">&nbsp;                        bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK</b>
 <b class="fc">&nbsp;                    if (byteValue != str[localPosition - start].code) return false</b>
 <b class="fc">&nbsp;                    localPosition++</b>
 &nbsp;                }
@@ -618,7 +625,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.8%
+    85%
   </span>
   <span class="absValue">
-    (362/427)
+    (369/434)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    81%
+    81.2%
   </span>
   <span class="absValue">
-    (2240/2766)
+    (2240/2758)
   </span>
 </td>
 </tr>
@@ -132,18 +132,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.9%
+    85.2%
   </span>
   <span class="absValue">
-    (366/431)
+    (373/438)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    81.1%
+    81.3%
   </span>
   <span class="absValue">
-    (2257/2783)
+    (2257/2775)
   </span>
 </td>
 </tr>
@@ -157,8 +157,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(com.google.devtools.ksp.KspExperimental::class)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.analysis
+&nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;import com.ghost.serialization.compiler.model.CustomCoderModel
 &nbsp;import com.ghost.serialization.compiler.model.CustomCoderReaderKind
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -177,6 +177,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.google.devtools.ksp.symbol.Modifier
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
 &nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -227,7 +228,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        validatePropertyVisibility(classDeclaration, properties)</b>
 &nbsp;
 <b class="fc">&nbsp;        val enumValues = getEnumValues(classDeclaration, isEnum)</b>
-<b class="fc">&nbsp;        val propertyModels = resolvePropertyModels(classDeclaration, properties, parameters, isEnum, enumValues)</b>
+<b class="fc">&nbsp;        val propertyModels =</b>
+<b class="fc">&nbsp;            resolvePropertyModels(classDeclaration, properties, parameters, isEnum, enumValues)</b>
 &nbsp;
 <b class="fc">&nbsp;        val finalModels = resolveSealedSubclasses(classDeclaration, propertyModels, isSealed)</b>
 &nbsp;
@@ -334,10 +336,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                .ifEmpty {</b>
 <b class="fc">&nbsp;                    listOf(</b>
 <b class="fc">&nbsp;                        GhostPropertyModel(</b>
-<b class="fc">&nbsp;                            kotlinName = C.STR_EMPTY, jsonName = C.STR_EMPTY,</b>
+<b class="fc">&nbsp;                            kotlinName = C.STR_EMPTY,</b>
+<b class="fc">&nbsp;                            jsonName = C.STR_EMPTY,</b>
 <b class="fc">&nbsp;                            type = classDeclaration.asType(emptyList()),</b>
 <b class="fc">&nbsp;                            typeName = classDeclaration.toClassName(),</b>
-<b class="fc">&nbsp;                            isNullable = false, isGhost = false, isList = false, isSet = false, isEnum = false,</b>
+<b class="fc">&nbsp;                            isNullable = false,</b>
+<b class="fc">&nbsp;                            isGhost = false,</b>
+<b class="fc">&nbsp;                            isList = false,</b>
+<b class="fc">&nbsp;                            isSet = false,</b>
+<b class="fc">&nbsp;                            isEnum = false,</b>
 <b class="fc">&nbsp;                            inferredSubclasses = inferredSubclasses</b>
 &nbsp;                        )
 <b class="fc">&nbsp;                    )</b>
@@ -370,8 +377,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                if (owner != null &amp;&amp; owner != prop.kotlinName) {</b>
 <b class="nc">&nbsp;                    logger.error(</b>
 <b class="nc">&nbsp;                        C.STR_ERR_WRAPPED_DUP_KEY_1 + key + C.STR_ERR_WRAPPED_DUP_KEY_2 +</b>
-<b class="nc">&nbsp;                            clazz.simpleName.asString() + C.STR_ERR_WRAPPED_DUP_KEY_3 + owner +</b>
-<b class="nc">&nbsp;                            C.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + C.STR_ERR_WRAPPED_DUP_KEY_5,</b>
+<b class="nc">&nbsp;                                clazz.simpleName.asString() + C.STR_ERR_WRAPPED_DUP_KEY_3 + owner +</b>
+<b class="nc">&nbsp;                                C.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + C.STR_ERR_WRAPPED_DUP_KEY_5,</b>
 <b class="nc">&nbsp;                        clazz,</b>
 &nbsp;                    )
 &nbsp;                }
@@ -399,7 +406,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                if (properties.any { it.wrappedSourceKeys == null &amp;&amp; it.jsonName == key }) {</b>
 <b class="nc">&nbsp;                    logger.error(</b>
 <b class="nc">&nbsp;                        C.STR_ERR_WRAPPED_KEY_CONFLICT_1 + key + C.STR_ERR_WRAPPED_KEY_CONFLICT_2 +</b>
-<b class="nc">&nbsp;                            clazz.simpleName.asString() + C.STR_ERR_WRAPPED_KEY_CONFLICT_3,</b>
+<b class="nc">&nbsp;                                clazz.simpleName.asString() + C.STR_ERR_WRAPPED_KEY_CONFLICT_3,</b>
 <b class="nc">&nbsp;                        clazz,</b>
 &nbsp;                    )
 &nbsp;                }
@@ -470,16 +477,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;        val customDecoder = resolveCustomCoder(prop, C.GHOST_DECODER)</b>
 <b class="fc">&nbsp;        val customEncoder = resolveCustomCoder(prop, C.GHOST_ENCODER)</b>
-&nbsp; 
+&nbsp;
 <b class="fc">&nbsp;        val flattenPath = resolvePathAnnotation(prop, C.GHOST_FLATTEN)</b>
 <b class="fc">&nbsp;        val wrapPath = resolvePathAnnotation(prop, C.GHOST_WRAP)</b>
 <b class="fc">&nbsp;        val wrappedKeysConfig = resolveWrappedKeysAnnotation(prop)</b>
-&nbsp; 
+&nbsp;
 <b class="fc">&nbsp;        warnIfCustomCoder(prop.simpleName.asString(), customDecoder, customEncoder)</b>
-&nbsp; 
+&nbsp;
 <b class="pc">&nbsp;        val parentClass = prop.parentDeclaration as? KSClassDeclaration</b>
-<b class="pc">&nbsp;        val hasProto = parentClass?.annotations?.any { </b>
-<b class="fc">&nbsp;            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION </b>
+<b class="pc">&nbsp;        val hasProto = parentClass?.annotations?.any {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
 <b class="fc">&nbsp;        } == true</b>
 &nbsp;
 <b class="fc">&nbsp;        val serialNameAnnotation = prop.annotations.any {</b>
@@ -501,7 +508,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        } else {
 <b class="fc">&nbsp;            emptyList()</b>
 &nbsp;        }
-&nbsp; 
+&nbsp;
 <b class="fc">&nbsp;        return GhostPropertyModel(</b>
 <b class="fc">&nbsp;            kotlinName = prop.simpleName.asString(),</b>
 <b class="fc">&nbsp;            jsonName = jsonName,</b>
@@ -619,7 +626,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Resolves the custom decoder or encoder helper config model if declared.
 &nbsp;     */
-&nbsp;    private fun resolveCustomCoder(prop: KSPropertyDeclaration, annotationName: String): CustomCoderModel? {
+&nbsp;    private fun resolveCustomCoder(
+&nbsp;        prop: KSPropertyDeclaration,
+&nbsp;        annotationName: String
+&nbsp;    ): CustomCoderModel? {
 <b class="fc">&nbsp;        return prop.annotations.find {</b>
 <b class="fc">&nbsp;            it.shortName.asString() == annotationName</b>
 <b class="fc">&nbsp;        }?.let { ann -&gt;</b>
@@ -641,7 +651,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        provider: KSType,
 &nbsp;        functionName: String,
 &nbsp;    ): Set&lt;CustomCoderReaderKind&gt; {
-<b class="pc">&nbsp;        val declaration = provider.declaration as? KSClassDeclaration ?: return setOf(CustomCoderReaderKind.BYTES)</b>
+<b class="fc">&nbsp;        val declaration =</b>
+<b class="pc">&nbsp;            provider.declaration as? KSClassDeclaration ?: return setOf(CustomCoderReaderKind.BYTES)</b>
 <b class="fc">&nbsp;        val kinds = declaration.getAllFunctions()</b>
 <b class="fc">&nbsp;            .filter { it.simpleName.asString() == functionName }</b>
 <b class="fc">&nbsp;            .mapNotNull { fn -&gt;</b>
@@ -683,6 +694,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                        ?.let { wrappedKeysConfigFromAnnotation(it, annotated) }</b>
 <b class="pc">&nbsp;                        ?.let { return it }</b>
 &nbsp;                }
+&nbsp;
 <b class="pc">&nbsp;                is KSValueParameter -&gt; {</b>
 <b class="fc">&nbsp;                    annotated.getAnnotationsByType(GhostWrappedKeys::class)</b>
 <b class="fc">&nbsp;                        .firstOrNull()</b>
@@ -819,7 +831,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="nc">&nbsp;        logger.warn(</b>
 <b class="nc">&nbsp;            C.STR_WARN_WRAPPED_UNMAPPED_1 + wireKey + C.STR_WARN_WRAPPED_UNMAPPED_2 +</b>
-<b class="nc">&nbsp;                ownerType.declaration.simpleName.asString(),</b>
+<b class="nc">&nbsp;                    ownerType.declaration.simpleName.asString(),</b>
 &nbsp;        )
 <b class="nc">&nbsp;        return null</b>
 &nbsp;    }
@@ -862,7 +874,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Resolves the flatten/wrap key paths from annotations.
 &nbsp;     */
-&nbsp;    private fun resolvePathAnnotation(prop: KSPropertyDeclaration, annotationName: String): List&lt;String&gt;? {
+&nbsp;    private fun resolvePathAnnotation(
+&nbsp;        prop: KSPropertyDeclaration,
+&nbsp;        annotationName: String
+&nbsp;    ): List&lt;String&gt;? {
 <b class="fc">&nbsp;        return prop.annotations.find {</b>
 <b class="fc">&nbsp;            it.shortName.asString() == annotationName</b>
 <b class="fc">&nbsp;        }?.let { ann -&gt;</b>
@@ -950,7 +965,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Resolves the underlying property model for a value class type.
 &nbsp;     */
-<b class="nc">&nbsp;    private fun resolveValueClassProperty(type: KSType, isProto: Boolean = false): GhostPropertyModel? {</b>
+&nbsp;    private fun resolveValueClassProperty(
+&nbsp;        type: KSType,
+<b class="nc">&nbsp;        isProto: Boolean = false</b>
+&nbsp;    ): GhostPropertyModel? {
 <b class="pc">&nbsp;        val declaration = type.declaration as? KSClassDeclaration ?: return null</b>
 <b class="pc">&nbsp;        val primaryConstructor = declaration.primaryConstructor ?: return null</b>
 <b class="pc">&nbsp;        val param = primaryConstructor.parameters.firstOrNull() ?: return null</b>
@@ -1072,7 +1090,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

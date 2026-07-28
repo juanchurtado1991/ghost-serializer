@@ -48,10 +48,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;
 &nbsp;private const val PROP_INITIAL_COLLECTION_CAPACITY = &quot;ghost.initialCollectionCapacity&quot;
 &nbsp;private const val PROP_MAX_STRING_POOL_LENGTH = &quot;ghost.maxStringPoolLength&quot;
 &nbsp;private const val PROP_MAX_COLLECTION_SIZE = &quot;ghost.maxCollectionSize&quot;
@@ -60,18 +56,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;private const val PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmCharWriteBufferCapacity&quot;
 &nbsp;
 &nbsp;actual object GhostHeuristics {
-&nbsp;    actual val initialCollectionCapacity: Int = 
+&nbsp;    actual val initialCollectionCapacity: Int =
 &nbsp;        System.getProperty(PROP_INITIAL_COLLECTION_CAPACITY)?.toIntOrNull() ?: 10
-&nbsp;    actual val maxStringPoolLength: Int = 
+&nbsp;    actual val maxStringPoolLength: Int =
 &nbsp;        System.getProperty(PROP_MAX_STRING_POOL_LENGTH)?.toIntOrNull() ?: 64
-&nbsp;    actual val maxCollectionSize: Int = 
+&nbsp;    actual val maxCollectionSize: Int =
 &nbsp;        System.getProperty(PROP_MAX_COLLECTION_SIZE)?.toIntOrNull() ?: 1_000_000
-&nbsp;    actual val maxDiscriminatorPeekDistance: Int = 
+&nbsp;    actual val maxDiscriminatorPeekDistance: Int =
 &nbsp;        System.getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)?.toIntOrNull() ?: 2048
-&nbsp;    actual val maxWarmWriteBufferCapacity: Int = 
+&nbsp;    actual val maxWarmWriteBufferCapacity: Int =
 &nbsp;        System.getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (8 * 1024 * 1024)
-&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int = 
-&nbsp;        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (2 * 1024 * 1024)
+&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int =
+&nbsp;        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull()
+&nbsp;            ?: (2 * 1024 * 1024)
 &nbsp;}
 </code>
 </pre>
@@ -96,7 +93,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

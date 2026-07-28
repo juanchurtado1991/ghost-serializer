@@ -106,20 +106,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.parser.bytes.readQuotedString
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
 <b class="fc">&nbsp;    val decodedString = readQuotedString()</b>
 <b class="fc">&nbsp;    val lut = C.BASE64_LUT</b>
 <b class="fc">&nbsp;    val length = decodedString.length</b>
-&nbsp;    
+&nbsp;
 <b class="fc">&nbsp;    val outputBuffer = acquireScratchBuffer(length)</b>
 <b class="fc">&nbsp;    var outputPosition = 0</b>
 <b class="fc">&nbsp;    val chunk = IntArray(4)</b>
 <b class="fc">&nbsp;    var chunkIndex = 0</b>
-&nbsp;    
+&nbsp;
 &nbsp;    try {
 <b class="fc">&nbsp;        for (charIndex in 0 until length) {</b>
 <b class="fc">&nbsp;            val byteCode = decodedString[charIndex].code</b>
@@ -148,7 +148,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                chunkIndex = 0</b>
 &nbsp;            }
 &nbsp;        }
-&nbsp;        
+&nbsp;
 <b class="pc">&nbsp;        if (chunkIndex &gt; 0) {</b>
 <b class="nc">&nbsp;            while (chunkIndex &lt; 4) {</b>
 <b class="nc">&nbsp;                chunk[chunkIndex++] = C.EQUALS_INT</b>
@@ -165,7 +165,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
-&nbsp;        
+&nbsp;
 <b class="fc">&nbsp;        return outputBuffer.copyOf(outputPosition)</b>
 &nbsp;    } finally {
 <b class="fc">&nbsp;        releaseScratchBuffer(outputBuffer)</b>
@@ -194,7 +194,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

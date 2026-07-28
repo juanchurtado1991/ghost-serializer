@@ -108,7 +108,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import org.springframework.http.converter.HttpMessageConverter
 &nbsp;import org.springframework.web.bind.annotation.ControllerAdvice
 &nbsp;import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice
-&nbsp;import java.io.IOException
 &nbsp;import java.lang.reflect.Type
 &nbsp;
 <b class="fc">&nbsp;@ControllerAdvice</b>
@@ -120,7 +119,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        converterType: Class&lt;out HttpMessageConverter&lt;*&gt;&gt;
 &nbsp;    ): Boolean {
 <b class="fc">&nbsp;        return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType) ||</b>
-<b class="fc">&nbsp;            GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)</b>
+<b class="fc">&nbsp;                GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun beforeBodyRead(
@@ -190,7 +189,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -106,15 +106,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextLong
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextLong
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -122,7 +120,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `Int64Value` is JSON string.
 &nbsp; */
-&nbsp;@JvmInline value class ProtoInt64Value(val value: Long)
+&nbsp;@JvmInline
+&nbsp;value class ProtoInt64Value(val value: Long)
 &nbsp;
 &nbsp;// Helper to format a Long to String zero-allocation.
 &nbsp;// Operates in negative space throughout (never negates the full magnitude) so that
@@ -162,11 +161,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;object ProtoInt64ValueSerializer : GhostSerializer&lt;ProtoInt64Value&gt; {
 &nbsp;    override val typeName: String get() = C.WKT_INT64_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) { writer.value(formatLong(value.value)) }
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) { writer.value(formatLong(value.value)) }
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) { writer.value(formatLong(value.value)) }
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value = ProtoInt64Value(reader.nextLong())
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value = ProtoInt64Value(reader.nextLong())
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
+&nbsp;        writer.value(formatLong(value.value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
+&nbsp;        writer.value(formatLong(value.value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) {
+&nbsp;        writer.value(formatLong(value.value))
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value =
+&nbsp;        ProtoInt64Value(reader.nextLong())
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value =
+&nbsp;        ProtoInt64Value(reader.nextLong())
 &nbsp;}
 </code>
 </pre>
@@ -191,7 +202,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

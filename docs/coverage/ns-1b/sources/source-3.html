@@ -138,7 +138,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;inline fun &lt;reified T : Any&gt; RawJson.decodeAs(): T = RawJsonDecode.decode(this)</b>
 &nbsp;
 &nbsp;/** Parses this [RawJson] with an explicit [serializer]. */
-<b class="nc">&nbsp;fun &lt;T : Any&gt; RawJson.decodeAs(serializer: GhostSerializer&lt;T&gt;): T = RawJsonDecode.decode(this, serializer)</b>
+&nbsp;fun &lt;T : Any&gt; RawJson.decodeAs(serializer: GhostSerializer&lt;T&gt;): T =
+<b class="nc">&nbsp;    RawJsonDecode.decode(this, serializer)</b>
 </code>
 </pre>
 </div>
@@ -162,7 +163,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.7%
+    97.2%
   </span>
   <span class="absValue">
-    (59/61)
+    (69/71)
   </span>
 </td>
 <td class="coverageStat">
@@ -102,6 +102,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;ReplaceSizeCheckWithIsNotEmpty&quot;)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.hash
+&nbsp;
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;internal data class PerfectHashConfig(
@@ -152,10 +153,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                extendedKeyHash = false,</b>
 &nbsp;            )
 &nbsp;        }
-<b class="fc">&nbsp;        findPerfectHashInternal(names, useExtendedKeyHash = false)?.let { (shift, multiplier, tableSize) -&gt;</b>
+<b class="fc">&nbsp;        findPerfectHashInternal(</b>
+<b class="fc">&nbsp;            names,</b>
+<b class="fc">&nbsp;            useExtendedKeyHash = false</b>
+<b class="fc">&nbsp;        )?.let { (shift, multiplier, tableSize) -&gt;</b>
 <b class="fc">&nbsp;            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = false)</b>
 &nbsp;        }
-<b class="pc">&nbsp;        findPerfectHashInternal(names, useExtendedKeyHash = true)?.let { (shift, multiplier, tableSize) -&gt;</b>
+<b class="fc">&nbsp;        findPerfectHashInternal(</b>
+<b class="fc">&nbsp;            names,</b>
+<b class="fc">&nbsp;            useExtendedKeyHash = true</b>
+<b class="pc">&nbsp;        )?.let { (shift, multiplier, tableSize) -&gt;</b>
 <b class="fc">&nbsp;            return PerfectHashConfig(shift, multiplier, tableSize, extendedKeyHash = true)</b>
 &nbsp;        }
 <b class="nc">&nbsp;        throw IllegalStateException(</b>
@@ -208,10 +215,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        for (bytes in rawBytes) {</b>
 <b class="pc">&nbsp;            if (bytes.isNotEmpty()) {</b>
 <b class="fc">&nbsp;                var mask = 0L</b>
-<b class="pc">&nbsp;                if (bytes.size &gt;= C.VAL_ONE) mask = mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)</b>
-<b class="fc">&nbsp;                if (bytes.size &gt;= C.VAL_TWO) mask = mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)</b>
-<b class="fc">&nbsp;                if (bytes.size &gt;= C.VAL_THREE) mask = mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)</b>
-<b class="fc">&nbsp;                if (bytes.size &gt;= C.VAL_FOUR) mask = mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)</b>
+<b class="pc">&nbsp;                if (bytes.size &gt;= C.VAL_ONE) mask =</b>
+<b class="fc">&nbsp;                    mask or (bytes[C.VAL_ZERO].toLong() and C.LONG_BYTE_MASK)</b>
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.VAL_TWO) mask =</b>
+<b class="fc">&nbsp;                    mask or ((bytes[C.VAL_ONE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_8)</b>
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.VAL_THREE) mask =</b>
+<b class="fc">&nbsp;                    mask or ((bytes[C.VAL_TWO].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_16)</b>
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.VAL_FOUR) mask =</b>
+<b class="fc">&nbsp;                    mask or ((bytes[C.VAL_THREE].toLong() and C.LONG_BYTE_MASK) shl C.BIT_SHIFT_24)</b>
 <b class="fc">&nbsp;                val packed = mask or (bytes.size.toLong() shl C.BIT_SHIFT_32)</b>
 <b class="fc">&nbsp;                if (!seen.add(packed)) {</b>
 <b class="fc">&nbsp;                    return true</b>
@@ -268,7 +279,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

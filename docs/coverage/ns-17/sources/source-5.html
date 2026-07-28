@@ -99,15 +99,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextBoolean
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextBoolean
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -115,18 +113,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `BoolValue` is JSON boolean.
 &nbsp; */
-&nbsp;@JvmInline value class ProtoBoolValue(val value: Boolean)
+&nbsp;@JvmInline
+&nbsp;value class ProtoBoolValue(val value: Boolean)
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoBoolValue].
 &nbsp; */
 &nbsp;object ProtoBoolValueSerializer : GhostSerializer&lt;ProtoBoolValue&gt; {
 <b class="fc">&nbsp;    override val typeName: String get() = C.WKT_BOOL_VALUE_TYPE</b>
-<b class="nc">&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoBoolValue) { writer.value(value.value) }</b>
-<b class="nc">&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBoolValue) { writer.value(value.value) }</b>
-<b class="fc">&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBoolValue) { writer.value(value.value) }</b>
-<b class="nc">&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoBoolValue = ProtoBoolValue(reader.nextBoolean())</b>
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoBoolValue = ProtoBoolValue(reader.nextBoolean())</b>
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoBoolValue) {
+<b class="nc">&nbsp;        writer.value(value.value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBoolValue) {
+<b class="nc">&nbsp;        writer.value(value.value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBoolValue) {
+<b class="fc">&nbsp;        writer.value(value.value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoBoolValue =
+<b class="nc">&nbsp;        ProtoBoolValue(reader.nextBoolean())</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoBoolValue =
+<b class="fc">&nbsp;        ProtoBoolValue(reader.nextBoolean())</b>
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

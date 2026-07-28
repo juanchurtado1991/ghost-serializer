@@ -99,15 +99,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextDouble
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextDouble
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -115,18 +113,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `DoubleValue` is JSON number.
 &nbsp; */
-&nbsp;@JvmInline value class ProtoDoubleValue(val value: Double)
+&nbsp;@JvmInline
+&nbsp;value class ProtoDoubleValue(val value: Double)
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoDoubleValue].
 &nbsp; */
 &nbsp;object ProtoDoubleValueSerializer : GhostSerializer&lt;ProtoDoubleValue&gt; {
 <b class="fc">&nbsp;    override val typeName: String get() = C.WKT_DOUBLE_VALUE_TYPE</b>
-<b class="nc">&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoDoubleValue) { writer.value(value.value) }</b>
-<b class="nc">&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoDoubleValue) { writer.value(value.value) }</b>
-<b class="fc">&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoDoubleValue) { writer.value(value.value) }</b>
-<b class="nc">&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoDoubleValue = ProtoDoubleValue(reader.nextDouble())</b>
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoDoubleValue = ProtoDoubleValue(reader.nextDouble())</b>
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoDoubleValue) {
+<b class="nc">&nbsp;        writer.value(value.value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoDoubleValue) {
+<b class="nc">&nbsp;        writer.value(value.value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoDoubleValue) {
+<b class="fc">&nbsp;        writer.value(value.value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoDoubleValue =
+<b class="nc">&nbsp;        ProtoDoubleValue(reader.nextDouble())</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoDoubleValue =
+<b class="fc">&nbsp;        ProtoDoubleValue(reader.nextDouble())</b>
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

@@ -103,8 +103,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 &nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 &nbsp;import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 &nbsp;import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
@@ -143,9 +141,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    private fun isExcludedType(clazz: Class&lt;*&gt;): Boolean {
 <b class="fc">&nbsp;        return clazz == String::class.java ||</b>
-<b class="pc">&nbsp;            clazz == ByteArray::class.java ||</b>
-<b class="pc">&nbsp;            clazz.isPrimitive ||</b>
-<b class="fc">&nbsp;            clazz.name.startsWith(&quot;java.lang.&quot;)</b>
+<b class="pc">&nbsp;                clazz == ByteArray::class.java ||</b>
+<b class="pc">&nbsp;                clazz.isPrimitive ||</b>
+<b class="fc">&nbsp;                clazz.name.startsWith(&quot;java.lang.&quot;)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun canWrite(mediaType: MediaType?): Boolean {
@@ -240,7 +238,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>

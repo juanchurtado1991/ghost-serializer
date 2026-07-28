@@ -99,12 +99,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import okio.Buffer
 &nbsp;import okio.BufferedSource
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
@@ -142,14 +139,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            val utf8 = utf16ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = true)
 &nbsp;            block(utf8, 0, utf8.size)
 &nbsp;        }
+&nbsp;
 &nbsp;        JsonEncodingKind.UTF16_BE -&gt; {
 &nbsp;            val utf8 = utf16ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = false)
 &nbsp;            block(utf8, 0, utf8.size)
 &nbsp;        }
+&nbsp;
 &nbsp;        JsonEncodingKind.UTF32_LE -&gt; {
 &nbsp;            val utf8 = utf32ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = true)
 &nbsp;            block(utf8, 0, utf8.size)
 &nbsp;        }
+&nbsp;
 &nbsp;        JsonEncodingKind.UTF32_BE -&gt; {
 &nbsp;            val utf8 = utf32ToUtf8(bytes, payloadOffset, payloadLength, littleEndian = false)
 &nbsp;            block(utf8, 0, utf8.size)
@@ -204,7 +204,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val bomSize: Int</b>
 &nbsp;)
 &nbsp;
-&nbsp;internal fun detectJsonByteEncoding(bytes: ByteArray, offset: Int, length: Int): DetectedJsonEncoding {
+&nbsp;internal fun detectJsonByteEncoding(
+&nbsp;    bytes: ByteArray,
+&nbsp;    offset: Int,
+&nbsp;    length: Int
+&nbsp;): DetectedJsonEncoding {
 &nbsp;    if (length &lt;= 0) return DetectedJsonEncoding(JsonEncodingKind.UTF8, NO_BOM)
 &nbsp;
 &nbsp;    val b0 = bytes[offset].toInt() and C.BYTE_MASK
@@ -238,10 +242,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        when {
 &nbsp;            b0 == NUL_BYTE &amp;&amp; b1 == NUL_BYTE &amp;&amp; b2 == NUL_BYTE &amp;&amp; b3 != NUL_BYTE -&gt;
 &nbsp;                return DetectedJsonEncoding(JsonEncodingKind.UTF32_BE, NO_BOM)
+&nbsp;
 &nbsp;            b0 != NUL_BYTE &amp;&amp; b1 == NUL_BYTE &amp;&amp; b2 == NUL_BYTE &amp;&amp; b3 == NUL_BYTE -&gt;
 &nbsp;                return DetectedJsonEncoding(JsonEncodingKind.UTF32_LE, NO_BOM)
+&nbsp;
 &nbsp;            b0 == NUL_BYTE &amp;&amp; b1 != NUL_BYTE &amp;&amp; b2 == NUL_BYTE &amp;&amp; b3 != NUL_BYTE -&gt;
 &nbsp;                return DetectedJsonEncoding(JsonEncodingKind.UTF16_BE, NO_BOM)
+&nbsp;
 &nbsp;            b0 != NUL_BYTE &amp;&amp; b1 == NUL_BYTE &amp;&amp; b2 != NUL_BYTE &amp;&amp; b3 == NUL_BYTE -&gt;
 &nbsp;                return DetectedJsonEncoding(JsonEncodingKind.UTF16_LE, NO_BOM)
 &nbsp;        }
@@ -249,6 +256,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        when {
 &nbsp;            b0 == NUL_BYTE &amp;&amp; b1 != NUL_BYTE -&gt;
 &nbsp;                return DetectedJsonEncoding(JsonEncodingKind.UTF16_BE, NO_BOM)
+&nbsp;
 &nbsp;            b0 != NUL_BYTE &amp;&amp; b1 == NUL_BYTE -&gt;
 &nbsp;                return DetectedJsonEncoding(JsonEncodingKind.UTF16_LE, NO_BOM)
 &nbsp;        }
@@ -283,11 +291,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                    throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
 &nbsp;                }
 &nbsp;                SUPPLEMENTARY_PLANE_BASE +
-&nbsp;                    ((unit - C.HIGH_SURROGATE_START) shl SURROGATE_TO_CP_SHIFT) +
-&nbsp;                    (low - C.LOW_SURROGATE_START)
+&nbsp;                        ((unit - C.HIGH_SURROGATE_START) shl SURROGATE_TO_CP_SHIFT) +
+&nbsp;                        (low - C.LOW_SURROGATE_START)
 &nbsp;            }
+&nbsp;
 &nbsp;            unit in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -&gt;
 &nbsp;                throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+&nbsp;
 &nbsp;            else -&gt; unit
 &nbsp;        }
 &nbsp;        oi = writeUtf8CodePoint(out, oi, cp)
@@ -347,19 +357,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        cp &lt; C.UTF8_1BYTE_LIMIT -&gt; {
 &nbsp;            out[o++] = cp.toByte()
 &nbsp;        }
+&nbsp;
 &nbsp;        cp &lt; C.UTF8_2BYTE_LIMIT -&gt; {
 &nbsp;            out[o++] = (C.UTF8_2BYTE_PREFIX or (cp shr C.UTF8_SHIFT_6)).toByte()
 &nbsp;            out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
 &nbsp;        }
+&nbsp;
 &nbsp;        cp &lt; SUPPLEMENTARY_PLANE_BASE -&gt; {
 &nbsp;            out[o++] = (C.UTF8_3BYTE_PREFIX or (cp shr C.UTF8_SHIFT_12)).toByte()
-&nbsp;            out[o++] = (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+&nbsp;            out[o++] =
+&nbsp;                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
 &nbsp;            out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
 &nbsp;        }
+&nbsp;
 &nbsp;        else -&gt; {
 &nbsp;            out[o++] = (C.UTF8_4BYTE_PREFIX or (cp shr C.UTF8_SHIFT_18)).toByte()
-&nbsp;            out[o++] = (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-&nbsp;            out[o++] = (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+&nbsp;            out[o++] =
+&nbsp;                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
+&nbsp;            out[o++] =
+&nbsp;                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
 &nbsp;            out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
 &nbsp;        }
 &nbsp;    }
@@ -435,7 +451,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 17:11</div>
+    <div style="float:right;">generated on 2026-07-28 19:27</div>
 </div>
 </body>
 </html>
