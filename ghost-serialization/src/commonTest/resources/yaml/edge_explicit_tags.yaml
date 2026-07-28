@@ -1,0 +1,88 @@
+# Edge case: Explicit tags and implicit type detection
+# Covers: Group D - !!str, !!int, !!float, !!bool, !!null, dates, timestamps
+
+# Explicit string tags - force string even for numeric-looking values
+port_as_string: !!str 8080
+version_as_string: !!str 1.2.3
+boolean_as_string: !!str true
+null_as_string: !!str null
+hex_as_string: !!str 0xFF
+
+# Explicit integer tags
+explicit_int: !!int 42
+hex_int: !!int 0xFF
+octal_int: !!int 0o17
+binary_int: !!int 0b1010
+
+# Explicit float tags
+explicit_float: !!float 3.14
+sci_float: !!float 1.5e10
+infinity_pos: !!float .inf
+infinity_neg: !!float -.inf
+not_a_number: !!float .nan
+
+# Explicit boolean tags
+explicit_true: !!bool true
+explicit_false: !!bool false
+
+# Explicit null tag
+explicit_null: !!null null
+explicit_null2: !!null ~
+
+# Implicit type detection - dates (ISO 8601)
+date_simple: 2024-01-15
+date_with_time: 2024-01-15T10:30:00Z
+date_with_timezone: 2024-01-15T10:30:00+05:30
+date_with_millis: 2024-01-15T10:30:00.123Z
+
+# Implicit boolean detection (YAML 1.1 legacy - Ghost should treat as strings in strict mode)
+# These are strings in YAML 1.2 (only true/false are booleans)
+legacy_yes: "yes"
+legacy_no: "no"
+legacy_on: "on"
+legacy_off: "off"
+
+# True YAML 1.2 booleans
+real_true: true
+real_false: false
+capitalized_true: True
+capitalized_false: False
+uppercase_true: TRUE
+uppercase_false: FALSE
+
+# Null variants
+null_tilde: ~
+null_word: null
+null_Null: Null
+null_NULL: NULL
+optional_field: null
+
+# Numeric edge cases
+zero: 0
+negative: -42
+large_int: 9223372036854775807
+negative_large: -9223372036854775808
+float_zero: 0.0
+negative_float: -3.14
+scientific: 1.5e-10
+scientific_upper: 1.5E10
+
+# Explicit sequence and map tags
+explicit_seq: !!seq
+  - item1
+  - item2
+  - item3
+
+explicit_map: !!map
+  key1: value1
+  key2: value2
+
+# Mixed explicit and implicit in nested structure
+mixed_types:
+  count: !!int 10
+  ratio: !!float 0.75
+  label: !!str 123
+  enabled: !!bool true
+  created: 2024-06-24
+  notes: null
+  scores: [1, 2, 3, 4, 5]
