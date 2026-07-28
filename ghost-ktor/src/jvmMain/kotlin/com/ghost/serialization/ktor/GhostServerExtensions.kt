@@ -1,6 +1,6 @@
 package com.ghost.serialization.ktor
 
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -39,6 +39,6 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostProto(
     value: T,
     status: HttpStatusCode = HttpStatusCode.OK
 ) {
-    val bytes = GhostProtobuf.encodeToBytes(value)
+    val bytes = GhostProto.encodeToBytes(value)
     respond(ByteArrayContent(bytes, ContentType.Application.Json, status))
 }

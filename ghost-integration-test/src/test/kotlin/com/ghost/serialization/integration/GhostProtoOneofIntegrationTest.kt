@@ -1,6 +1,6 @@
 package com.ghost.serialization.integration
 
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.integration.model.OneofPayload
 import com.ghost.serialization.integration.model.ProtoOneofEvent
@@ -45,7 +45,7 @@ class GhostProtoOneofIntegrationTest {
 
     @Test
     fun worksThroughTheDedicatedProtobufEntryPointToo() {
-        val result = GhostProtobuf.deserialize<ProtoOneofEvent>("""{"id":"e3","code":9}""")
+        val result = GhostProto.deserialize<ProtoOneofEvent>("""{"id":"e3","code":9}""")
         assertEquals(ProtoOneofEvent(id = "e3", payload = OneofPayload.Code(9)), result)
     }
 

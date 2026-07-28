@@ -12,13 +12,13 @@ import com.ghost.serialization.integration.model.SmartHome
 import com.ghost.serialization.integration.model.SseEventEnvelopeSerializer
 import com.ghost.serialization.integration.model.TagsProbe
 import com.ghost.serialization.types.decodeAs
-import com.ghost.protobuf.wkt.ProtoDuration
-import com.ghost.protobuf.wkt.ProtoTimestamp
-import com.ghost.protobuf.wkt.ProtoStruct
-import com.ghost.protobuf.wkt.ProtoStructSerializer
-import com.ghost.protobuf.wkt.ProtoAny
-import com.ghost.protobuf.wkt.ProtoBytesValue
-import com.ghost.protobuf.wkt.ProtoValue
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
+import com.ghost.serialization.proto.wkt.ProtoStruct
+import com.ghost.serialization.proto.wkt.ProtoStructSerializer
+import com.ghost.serialization.proto.wkt.ProtoAny
+import com.ghost.serialization.proto.wkt.ProtoBytesValue
+import com.ghost.serialization.proto.wkt.ProtoValue
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
@@ -221,7 +221,7 @@ object GhostSpecialFeaturesBenchmark {
             threadBean,
             label = "Protobuf — Deserialize ProtoBytesValue",
             jsonSamples = listOf(jsonBytes1)
-        ) { json -> com.ghost.protobuf.GhostProtobuf.deserialize<ProtoBytesValue>(json) }
+        ) { json -> com.ghost.serialization.proto.GhostProto.deserialize<ProtoBytesValue>(json) }
 
         val bytesVal1 = ProtoBytesValue("abcd".encodeToByteArray())
         benchmarkFeature(

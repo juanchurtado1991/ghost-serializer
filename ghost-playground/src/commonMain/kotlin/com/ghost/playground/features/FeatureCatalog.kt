@@ -1,7 +1,7 @@
 package com.ghost.playground.features
 
 import com.ghost.playground.ui.icons.PlaygroundIconKind
-import com.ghost.protobuf.GhostProtobuf
+import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.Ghost
 
 object FeatureCatalog {
@@ -198,8 +198,8 @@ object FeatureCatalog {
                 LabVariant("restock", "Restock order", "Orden de reposición", """{"orderId":"5001","label":"restock","retries":0}"""),
             ),
             run = { json ->
-                val event = GhostProtobuf.deserialize<ProtoOrderEvent>(json)
-                GhostProtobuf.encodeToString(event)
+                val event = GhostProto.deserialize<ProtoOrderEvent>(json)
+                GhostProto.encodeToString(event)
             },
             explainEn = { _, out ->
                 "orderId stayed a quoted string (proto3 int64 convention) and retries=0 (the default) was dropped from the output: $out"

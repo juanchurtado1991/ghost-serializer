@@ -215,7 +215,7 @@ private fun Proto3ExplanationBanner() {
             SampleText(
                 text = "Real gRPC-Gateway APIs (YouTube viewCount, Google Cloud, Firebase) " +
                     "serialize int32/int64/double fields as quoted strings — e.g. \"pageCount\":\"312\" " +
-                    "instead of \"pageCount\":312. GhostProtobuf coerces these transparently. " +
+                    "instead of \"pageCount\":312. GhostProto coerces these transparently. " +
                     "Ghost JSON and KotlinX-Ser parse them as 0 or throw.",
                 fontSize = 11,
                 isSecondary = true
