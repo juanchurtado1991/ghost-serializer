@@ -28,6 +28,19 @@ class GhostEmitterConstantsTest {
     }
 
     @Test
+    fun yamlPackageConstants_matchRuntimeLayout() {
+        assertEquals(
+            "com.ghost.serialization.parser.yaml",
+            GhostEmitterConstants.PKG_YAML_PARSER
+        )
+        assertEquals(
+            "com.ghost.serialization.writer.yaml",
+            GhostEmitterConstants.PKG_YAML_WRITER
+        )
+        assertTrue(GhostEmitterConstants.STR_YAML_SERIALIZER_FQN.endsWith("GhostYamlSerializer"))
+    }
+
+    @Test
     fun customDecoderTemplates_useParserPackageConstants() {
         val constants = GhostEmitterConstants
         assertTrue(constants.STR_CUSTOM_DECODER_TEMP_READER.contains(constants.STR_GHOST_JSON_READER_QUALIFIED))

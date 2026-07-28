@@ -26,12 +26,14 @@ internal class GhostCodeGenerator(
     classDeclaration: KSClassDeclaration,
     textChannel: Boolean = false,
     envelopeModel: GhostEnvelopeModel? = null,
+    hasYaml: Boolean = false,
 ) {
     private val ctx = GhostSerializerContext.from(
         properties = properties,
         classDeclaration = classDeclaration,
         textChannel = textChannel,
         envelopeModel = envelopeModel,
+        hasYaml = hasYaml,
     )
     private val importResolver = SerializerImportResolver(ctx)
     private val setupEmitter = SerializerSetupEmitter(ctx)
@@ -126,6 +128,14 @@ internal class GhostCodeGenerator(
             .addKdoc(C.STR_KDOC_HIGH_PERF, ctx.originalClassName)
             .addKdoc(C.STR_KDOC_GENERATED)
             .addSuperinterface(ctx.serializerInterface.parameterizedBy(ctx.originalClassName))
+
+        if (ctx.hasYaml) {
+            typeSpecBuilder.addSuperinterface(
+                ctx.yamlSerializerInterface.parameterizedBy(ctx.originalClassName)
+            )
+        }
+
+        typeSpecBuilder
             .addProperty(
                 PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
                     .addModifiers(KModifier.OVERRIDE)
@@ -166,6 +176,24 @@ internal class GhostCodeGenerator(
             deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)
         }
 
+        if (ctx.hasYaml) {
+            val yamlDeserializeEmitterFlat = DeserializeCodeEmitter(
+                ctx.properties,
+                ctx.originalClassName,
+                ctx.yamlFlatReaderClass,
+                ctx.isSealed,
+                ctx.isValue,
+                ctx.isEnum,
+                ctx.sealedSubclasses,
+                ctx.sealedDiscriminatorKey,
+                ctx.isResilient,
+                ctx.isInferred,
+                ctx.isObject,
+                hasFallback = ctx.hasFallbackEnum
+            )
+            yamlDeserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
+        }
+
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
         ctx.envelopeModel?.let { envelope ->
@@ -182,6 +210,10 @@ internal class GhostCodeGenerator(
             .apply {
                 if (ctx.textChannel) {
                     addFunction(serializeEmitter.build(ctx.stringWriterClass, typeSpecBuilder))
+                }
+                if (ctx.hasYaml) {
+                    addFunction(serializeEmitter.build(ctx.yamlWriterClass, typeSpecBuilder))
+                    addFunction(serializeEmitter.build(ctx.yamlFlatWriterClass, typeSpecBuilder))
                 }
             }
             .addFunction(setupEmitter.buildWarmUpMethod())

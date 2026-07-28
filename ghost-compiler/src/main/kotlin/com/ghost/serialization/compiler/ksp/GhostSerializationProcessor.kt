@@ -138,6 +138,7 @@ class GhostSerializationProcessor(
                 classDeclaration = entry.declaration,
                 propertiesModel = entry.properties,
                 textChannel = textChannelByClass[entry.declaration] == true,
+                resolver = resolver,
             )
         }
 
@@ -159,6 +160,7 @@ class GhostSerializationProcessor(
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>,
         textChannel: Boolean,
+        resolver: Resolver,
     ) {
         val className = classDeclaration.simpleName.asString()
         try {
@@ -166,6 +168,7 @@ class GhostSerializationProcessor(
                 classDeclaration = classDeclaration,
                 propertiesModel = propertiesModel,
                 textChannel = textChannel,
+                resolver = resolver,
             ) ?: return
 
             registerSerializer(classDeclaration, serializerClassName)
@@ -196,12 +199,21 @@ class GhostSerializationProcessor(
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>,
         textChannel: Boolean,
+        resolver: Resolver,
     ): ClassName? {
+        val envelopeModel = envelopeAnalyzer.analyze(classDeclaration, propertiesModel)
+        val hasYaml = shouldGenerateYaml(
+            resolver = resolver,
+            classDeclaration = classDeclaration,
+            propertiesModel = propertiesModel,
+            envelopeModel = envelopeModel,
+        )
         val fileGenerator = GhostCodeGenerator(
             classDeclaration = classDeclaration,
             properties = propertiesModel,
             textChannel = textChannel,
-            envelopeModel = envelopeAnalyzer.analyze(classDeclaration, propertiesModel)
+            envelopeModel = envelopeModel,
+            hasYaml = hasYaml,
         )
 
         val fileSpec = fileGenerator.createSpec()
@@ -229,6 +241,43 @@ class GhostSerializationProcessor(
                 .joinToString(C.STR_UNDERSCORE)
                     + C.STR_SERIALIZER_SUFFIX
         )
+    }
+
+    private fun shouldGenerateYaml(
+        resolver: Resolver,
+        classDeclaration: KSClassDeclaration,
+        propertiesModel: List<GhostPropertyModel>,
+        envelopeModel: GhostEnvelopeModel?,
+    ): Boolean {
+        if (resolver.getClassDeclarationByName(
+                resolver.getKSNameFromString(C.STR_YAML_SERIALIZER_FQN)
+            ) == null
+        ) {
+            return false
+        }
+        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {
+            return false
+        }
+        if (envelopeModel != null) {
+            return false
+        }
+        return propertiesModel.none { propertyDisablesYamlCodegen(it) }
+    }
+
+    private fun propertyDisablesYamlCodegen(prop: GhostPropertyModel): Boolean {
+        if (prop.isContextual || prop.customDecoder != null || prop.customEncoder != null) {
+            return true
+        }
+        if (prop.wrappedSourceKeys != null || prop.flattenPath != null || prop.wrapPath != null) {
+            return true
+        }
+        if (prop.type.isRawJson()) {
+            return true
+        }
+        if (!prop.isProto && prop.type.isByteArray()) {
+            return true
+        }
+        return false
     }
 
     /**

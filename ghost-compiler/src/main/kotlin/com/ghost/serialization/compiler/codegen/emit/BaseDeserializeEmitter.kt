@@ -162,10 +162,17 @@ internal abstract class BaseDeserializeEmitter(
 
             prop.isPrimitiveArray -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
-                ClassName(
-                    C.STR_SERIALIZERS_PKG,
-                    "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
-                )
+                if (readerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
+                    ClassName(
+                        C.PKG_YAML_SERIALIZER,
+                        C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)
+                    )
+                } else {
+                    ClassName(
+                        C.STR_SERIALIZERS_PKG,
+                        "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
+                    )
+                }
             )
 
             prop.isContextual -> {
@@ -188,13 +195,21 @@ internal abstract class BaseDeserializeEmitter(
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
         // customDecoder is handled in [buildCall] before nullability — never reaches here.
         if (prop.isPrimitiveArray) {
+            val serializerClass = if (readerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
+                ClassName(
+                    C.PKG_YAML_SERIALIZER,
+                    C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)
+                )
+            } else {
+                ClassName(
+                    C.STR_SERIALIZERS_PKG,
+                    "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
+                )
+            }
             return nullGuarded(
                 CodeBlock.of(
                     C.TEMPLATE_DESERIALIZE_T,
-                    ClassName(
-                        C.STR_SERIALIZERS_PKG,
-                        "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
-                    )
+                    serializerClass
                 )
             )
         }
