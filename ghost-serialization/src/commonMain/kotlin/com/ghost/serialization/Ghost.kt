@@ -2,12 +2,19 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.writer.common.*
+import com.ghost.serialization.writer.strings.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.ByteSerializer
 import com.ghost.serialization.serializers.CharSerializer
@@ -22,8 +29,8 @@ import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import okio.BufferedSink
 import okio.BufferedSource
 import kotlin.reflect.KClass
@@ -448,7 +455,7 @@ object Ghost {
     /**
      * Serializes [value] to an in-memory JSON string.
      *
-     * Writes through the pooled [com.ghost.serialization.writer.GhostJsonStringWriter]
+     * Writes through the pooled [com.ghost.serialization.writer.strings.GhostJsonStringWriter]
      * (contiguous [CharArray]), avoiding Okio segments and an intermediate UTF-8 byte buffer.
      *
      * @param value The value to serialize.

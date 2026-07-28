@@ -1,8 +1,11 @@
 package com.ghost.serialization.spring
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostProtoJsonFlatReader
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
@@ -15,11 +18,11 @@ import kotlin.reflect.KClass
  * implementation that uses Ghost Serialization.
  *
  * **Read path:** Extracts the request body as a [ByteArray] and feeds it
- * directly to the pooled [com.ghost.serialization.parser.GhostJsonReader],
+ * directly to the pooled [com.ghost.serialization.parser.streaming.GhostJsonReader],
  * avoiding intermediate Okio wrappers.
  *
  * **Write path:** Serializes through the pooled monomorphic
- * [com.ghost.serialization.writer.GhostJsonFlatWriter] and writes the
+ * [com.ghost.serialization.writer.bytes.GhostJsonFlatWriter] and writes the
  * resulting [ByteArray] in a single bulk call to the output stream,
  * bypassing Okio sink wrapping entirely.
  */

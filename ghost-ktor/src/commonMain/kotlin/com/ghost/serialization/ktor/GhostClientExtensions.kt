@@ -1,5 +1,9 @@
 package com.ghost.serialization.ktor
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
 import com.ghost.protobuf.GhostProtobuf
 import com.ghost.serialization.Ghost
 import io.ktor.client.call.body
@@ -23,7 +27,7 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
 
 /**
  * Proto3-JSON variant of [bodyGhost] for `@GhostProtoSerialization` types — parses through
- * [com.ghost.serialization.parser.GhostProtoJsonFlatReader] (quoted-or-bare int64, lenient
+ * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] (quoted-or-bare int64, lenient
  * int32, quoted `NaN`/`Infinity`) instead of the plain flat reader.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {

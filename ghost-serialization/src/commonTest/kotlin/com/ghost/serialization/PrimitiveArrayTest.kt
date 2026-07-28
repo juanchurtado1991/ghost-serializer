@@ -2,13 +2,20 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
+import com.ghost.serialization.writer.common.*
+import com.ghost.serialization.writer.strings.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.writer.bytes.*
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.serializers.IntArraySerializer
 import com.ghost.serialization.serializers.LongArraySerializer
 import okio.Buffer
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals

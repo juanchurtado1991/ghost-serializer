@@ -1,6 +1,6 @@
 package com.ghost.serialization.serializers
 
-import com.ghost.serialization.parser.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * Highly optimized, zero-allocation internal list implementation for [Int] primitives.

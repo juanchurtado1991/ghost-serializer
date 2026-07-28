@@ -1,12 +1,16 @@
 package com.ghost.serialization.ktor
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent

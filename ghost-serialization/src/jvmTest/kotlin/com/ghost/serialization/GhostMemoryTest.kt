@@ -2,14 +2,18 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.writer.common.*
+import com.ghost.serialization.writer.strings.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.beginArray
-import com.ghost.serialization.parser.endArray
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.writer.GhostJsonWriter
-import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.BeforeTest

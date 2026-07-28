@@ -1,5 +1,9 @@
 package com.ghost.serialization.spring
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
@@ -20,7 +24,7 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
  * Reactive Decoder for Ghost Serialization.
  *
  * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
- * to the pooled [com.ghost.serialization.parser.GhostJsonReader], avoiding
+ * to the pooled [com.ghost.serialization.parser.streaming.GhostJsonReader], avoiding
  * intermediate Okio/InputStream wrappers entirely.
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(

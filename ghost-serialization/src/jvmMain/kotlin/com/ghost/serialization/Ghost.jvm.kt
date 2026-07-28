@@ -2,16 +2,21 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.writer.common.*
+import com.ghost.serialization.writer.strings.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.contract.GhostRegistry
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.prepareUtf8JsonSource
-import com.ghost.serialization.parser.withPreparedUtf8Json
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
-import com.ghost.serialization.writer.WriterSinkPair
-import com.ghost.serialization.writer.FlatCharArrayWriter
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import com.ghost.serialization.writer.bytes.WriterSinkPair
+import com.ghost.serialization.writer.strings.FlatCharArrayWriter
 import okio.BufferedSource
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
@@ -30,7 +35,7 @@ actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
 /**
  * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
  * and returns it. The pair survives across calls so the underlying
- * [com.ghost.serialization.writer.FlatByteArrayWriter] grows once and stays warm.
+ * [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] grows once and stays warm.
  */
 @PublishedApi
 internal fun acquireFlatWriterPair(): WriterSinkPair {

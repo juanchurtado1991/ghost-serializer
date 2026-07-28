@@ -1,5 +1,9 @@
 package com.ghost.serialization.ktor
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
@@ -17,7 +21,7 @@ import kotlin.test.assertNull
 /**
  * Direct unit tests for [GhostProtoContentConverter] -- mirrors
  * [GhostContentConverterDirectTest], since it shares the same structure (null-return contract,
- * scratch-buffer growth) but reads through [com.ghost.serialization.parser.GhostProtoJsonFlatReader]
+ * scratch-buffer growth) but reads through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader]
  * instead.
  */
 class GhostProtoContentConverterDirectTest {

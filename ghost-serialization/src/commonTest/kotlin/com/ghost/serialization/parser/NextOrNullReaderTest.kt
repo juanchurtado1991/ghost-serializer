@@ -1,7 +1,11 @@
 @file:OptIn(InternalGhostApi::class)
 
-package com.ghost.serialization.parser
+package com.ghost.serialization.parser.common
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import kotlin.test.Test
