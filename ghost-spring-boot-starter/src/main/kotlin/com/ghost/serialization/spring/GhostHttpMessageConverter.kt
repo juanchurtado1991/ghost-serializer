@@ -4,6 +4,7 @@ import com.ghost.serialization.parser.common.*
 import com.ghost.serialization.parser.bytes.*
 import com.ghost.serialization.parser.strings.*
 import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
 import org.springframework.http.HttpInputMessage
