@@ -38,6 +38,7 @@
 
 ### Removed
 - **Maven modules / artifacts**: `ghost-yaml`, `ghost-yaml-ktor`, `ghost-protobuf` (functionality merged into `ghost-serialization`).
+- **`:ghost-sample` module**: in-repo Compose demo removed; use [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/) plus the external test apps ([Android/Retrofit](https://github.com/juanchurtado1991/ghost-android-test-app), [Spring Boot](https://github.com/juanchurtado1991/ghost-spring-boot-test-app), [iOS](https://github.com/juanchurtado1991/ghost-ios-test-app)). Dropped the AGP 9 `android.builtInKotlin`/`android.newDsl` bypass that existed only for that module.
 - **Dead surface area**: unused escape-string constants, `writeNullValueRaw`, orphan `Package.swift`, unused sample/integration fixtures (`LargeStringData`, unused sample models), and other unreferenced helpers that only inflated the bytecode/API surface.
 - **ghost-compiler-lab (Next.js)**: removed in favor of the Compose wasm Ghost Playground; Next `_next/` artifacts purged from `docs/`.
 

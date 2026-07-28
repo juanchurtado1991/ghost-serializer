@@ -139,7 +139,6 @@ jobs:
           :ghost-api:wasmJsBrowserTest
           :ghost-serialization:wasmJsBrowserTest
           :ghost-ktor:wasmJsBrowserTest
-          :ghost-sample:compileKotlinWasmJs
           :ghost-playground:compileKotlinWasmJs
 
   publish-playground:

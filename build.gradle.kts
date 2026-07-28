@@ -112,7 +112,6 @@ tasks.register("publishToGitHubPackages") {
 
     subprojects.forEach { subproject ->
         val isPublishable = subproject.name.startsWith("ghost") &&
-                           !subproject.name.contains("sample") &&
                            !subproject.name.contains("benchmark") &&
                            !subproject.name.contains("integration-test") &&
                            !subproject.name.contains("playground")

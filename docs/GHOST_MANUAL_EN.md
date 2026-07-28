@@ -148,7 +148,7 @@ If `Ghost.deserialize` throws `NOT_FOUND`, it almost always means: missing annot
 | ghost-spring-boot-starter | Yes JVM | MVC + WebFlux |
 | ghost-integration-test | No | Compiler tests |
 | ghost-benchmark | No | JVM benchmark |
-| ghost-sample | No | Compose demo |
+| ghost-playground | No | Compose wasm/JVM site (GitHub Pages) |
 
 **Typical consumer dependency:** ghost plugin + ghost-serialization (via plugin) + ghost-compiler (KSP).
 
@@ -165,7 +165,15 @@ You do not ship the compiler in your final app as “business logic”; it only 
 
 - **ghost-integration-test:** internal regression suite (155 tests in `ciTestJvm` modules; full Linux `ciTest` is 642 — see section 23).
 - **ghost-benchmark:** Gson/Moshi/Kotlinx vs Ghost comparisons.
-- **ghost-sample:** Compose demo app.
+- **ghost-playground:** public interactive lab published to GitHub Pages (see [Playground](https://juanchurtado1991.github.io/ghost-serializer/)).
+
+### Integration examples (external repos)
+
+| Repo | What it validates |
+|:---|:---|
+| [ghost-android-test-app](https://github.com/juanchurtado1991/ghost-android-test-app) | Gson/Moshi/KSer vs Ghost, Retrofit, Ktor |
+| [ghost-spring-boot-test-app](https://github.com/juanchurtado1991/ghost-spring-boot-test-app) | Jackson vs Ghost WebFlux |
+| [ghost-ios-test-app](https://github.com/juanchurtado1991/ghost-ios-test-app) | XCFramework + GhostBridge + Codable |
 
 ---
 
@@ -1096,7 +1104,7 @@ GitHub jobs: JVM, Android testDebugUnitTest, iOS macos-14.
 | View generated KSP code | `./gradlew :ghost-integration-test:compileKotlin` |
 | Benchmark | `./gradlew :ghost-benchmark:run` |
 | Benchmark without tests | `./gradlew :ghost-benchmark:run -PskipTests` |
-| Sample Android | `./gradlew :ghost-sample:assembleDebug` |
+| Playground (local wasm) | `./gradlew :ghost-playground:wasmJsBrowserDevelopmentRun` |
 | Publish local | `./gradlew publishToMavenLocal -PskipTests` |
 | Maven Central (staging, manual review) | `./gradlew publishToMavenCentral` |
 | Maven Central (publish + auto-release) | `./gradlew publishAndReleaseToMavenCentral` |
@@ -1266,7 +1274,7 @@ Ghost.getSerializer(MyClass::class)
 Highlights since 1.2.7 (see `CHANGELOG.md` for the full list):
 
 - **Kotlin 2.4.0 / KSP 2.3.10 / Ktor 3.5.1** toolchain.
-- **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-ktor`, and `ghost-sample` (JSON, YAML, and Proto3 JSON share the unified `ghost-serialization` runtime).
+- **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-ktor`, and `ghost-playground` (JSON, YAML, and Proto3 JSON share the unified `ghost-serialization` runtime).
 - **Decode hot path**: in-order field prediction, SWAR whitespace/string scanning, deferred pool hash — string/bytes/streaming.
 - **`textChannel = true` by default** (native string reader/writer overloads).
 - **RFC 8259** UTF-8/UTF-16/UTF-32 input normalization on byte/streaming entrypoints.
