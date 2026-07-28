@@ -13,7 +13,7 @@ Track progress in [GitHub Issues](https://github.com/juanchurtado1991/ghost-seri
 ## Shipped in 1.3.0 (baseline)
 
 - Kotlin Multiplatform: Android, iOS, JVM, **wasmJs**
-- Framework adapters: Ktor, Retrofit, Spring Boot, Proto3 JSON
+- Framework adapters: Ktor, Retrofit, Spring Boot; **YAML** + Proto3 JSON in unified runtime
 - Maven Central, reproducible benchmarks, [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/), wiki docs
 - `textChannel = true` by default; CI regression gates for benchmarks
 

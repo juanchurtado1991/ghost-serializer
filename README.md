@@ -83,7 +83,7 @@ Step-by-step → **[Quick Start](docs/wiki/quick-start.md)**
 | **Published (Maven Central 1.3.0)** | Android · iOS · JVM · Wasm (`wasmJs`) |
 | **Toolchain** | Kotlin **2.4.0** · KSP **2.3.10** · Ktor **3.5.x** |
 
-Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), Proto3 JSON mapping.
+Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), YAML (`application/yaml`), Proto3 JSON mapping.
 
 Details → **[Modules](docs/wiki/modules.md)**
 
@@ -99,6 +99,7 @@ Details → **[Modules](docs/wiki/modules.md)**
 | [KMP & Ktor](docs/wiki/usage-kmp.md) | Shared module + client/server |
 | [iOS & Swift](docs/wiki/usage-ios.md) | XCFramework bridge |
 | [Spring Boot](docs/wiki/usage-spring-boot.md) | MVC / WebFlux + Jackson |
+| [YAML](docs/wiki/usage-yaml.md) | `decodeFromYaml`, Ktor/Spring/Retrofit adapters |
 | [Proto3 JSON](docs/wiki/usage-protobuf.md) | WKTs and mapping rules |
 | [Advanced Features](docs/wiki/advanced-features.md) | Resilience, flatten, RawJson |
 | [Architecture](docs/wiki/architecture.md) | Prediction, SWAR, hashed dispatch, pools |

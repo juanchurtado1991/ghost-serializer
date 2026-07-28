@@ -3,15 +3,25 @@
 ## [Unreleased]
 
 ### Added
-- **Docs: field-order pro tip** — Quick Start, Advanced Features, and Architecture now recommend aligning `data class` property order with the producer’s JSON key order so in-order field prediction stays on the hot path (hash fallback remains correct for shuffled keys).
+- **Unified runtime (JSON + YAML + Proto3 JSON)** in `ghost-serialization`: YAML parser/writer (`GhostYamlFlatReader`/`GhostYamlFlatWriter`), `Ghost.decodeFromYaml` / `encodeToYaml`, Proto3 JSON (`GhostProto`, WKTs under `com.ghost.serialization.proto.wkt`) — replaces separate `ghost-yaml`, `ghost-yaml-ktor`, and `ghost-protobuf` artifacts.
+- **KSP YAML codegen**: `GhostYamlSerializer` generation for eligible `@GhostSerialization` models; `ghost.generateYaml` KSP option and Gradle plugin `generateYaml` property (default `true`).
+- **Framework YAML adapters**: `ghostYaml()` / `bodyGhostYaml()` / `respondGhostYaml()` (Ktor), `GhostYamlConverterFactory` (Retrofit), `GhostYamlHttpMessageConverter` + reactive YAML codecs (Spring Boot).
+- **Benchmark**: `benchmarkYaml` / `benchmarkYamlRegression(Fast)` tasks for Ghost-only YAML round-trip on `BenchUser`.
+- **Docs**: new [Usage — YAML](docs/wiki/usage-yaml.md); wiki/README/CHANGELOG migration guide for 1.2.x → 1.3.0 unified runtime.
+- **Ghost Playground**: YAML round-trip lab preset and `GhostPlaygroundYamlRoundtripTest` / `GhostPlaygroundProtoRoundtripTest`.
+- **Docs: field-order pro tip** — Quick Start, Advanced Features, and Architecture recommend aligning `data class` property order with the producer’s JSON key order so in-order field prediction stays on the hot path (hash fallback remains correct for shuffled keys).
 - **Generated-serializer hygiene suite** (`ghost-compiler`): static checks and KSP regressions for unused imports, unused `MASK_*` constants, underscored local names, and lines longer than 120 characters (warm-up JSON literals excluded).
 - **Ghost Playground** (`:ghost-playground`): Compose Multiplatform (JVM desktop + wasmJs) site replacing the Next.js compiler lab, published to GitHub Pages from `docs/` via `publishToDocs` and an automated CI job (`publish-playground`, runs on push to `main` after `test-wasm` passes). Purple/violet theme throughout, a glowing ghost-mascot header badge (same hand-drawn `Canvas` path now also used for `readme-assets/ghost-mascot.svg` in this README), marketing pill badges ("Drop-in", "Coexists with kotlinx.serialization", "Optimize only your hot paths"), and a data-URI ghost favicon.
-- **Ghost Playground: Studio tab** — six curated presets (`@GhostSerialization`, `@GhostResilient`, `@GhostFlatten`, `@GhostFallback`, `RawJson`, `Proto-JSON`), each backed by a real KSP-compiled DTO (`GhostProtobuf`-compiled for `Proto-JSON`) — no live text editor or dynamic/interpreted serializer, so what runs is exactly the generated code. The four annotation-focused presets ship 5 real JSON variants apiece (e.g. `@GhostResilient`: wrong type in one field, the other, both, an explicit `null` for a non-nullable field, and the valid baseline), switchable via a `VariantSelector` dropdown. Runs animate through a "what Ghost just did" pipeline card and a live perfect-hash dispatch-table preview (`PerfectHashLab.dispatchPreview`, mirroring `ghost-compiler`'s `PerfectHashFinder`).
+- **Ghost Playground: Studio tab** — six curated presets (`@GhostSerialization`, `@GhostResilient`, `@GhostFlatten`, `@GhostFallback`, `RawJson`, `Proto-JSON`), each backed by a real KSP-compiled DTO (`GhostProto`-compiled for `Proto-JSON`) — no live text editor or dynamic/interpreted serializer, so what runs is exactly the generated code. The four annotation-focused presets ship 5 real JSON variants apiece (e.g. `@GhostResilient`: wrong type in one field, the other, both, an explicit `null` for a non-nullable field, and the valid baseline), switchable via a `VariantSelector` dropdown. Runs animate through a "what Ghost just did" pipeline card and a live perfect-hash dispatch-table preview (`PerfectHashLab.dispatchPreview`, mirroring `ghost-compiler`'s `PerfectHashFinder`).
 - **Ghost Playground: Speed Test tab** — a live, sequential (kser-then-Ghost, like a speedtest.net download/upload pair) ~30s benchmark on a trimmed real `twitter_macro.json` fixture (same dataset as `ghost-benchmark`'s `TwitterBenchmark`, dual-annotated `@GhostSerialization` + `@Serializable` under `com.ghost.playground.bench.model`, bundled via Compose resources), racing Ghost against `kotlinx.serialization`. Work runs in `BATCH_BUDGET`-bounded chunks with a real `delay(1)` between them — plain `yield()` only reorders Kotlin/Wasm's microtask queue and does *not* hand control back to the browser, so a tight loop of yields could still freeze the tab. Two `SpeedGauge` speedometer dials (hand-drawn `Canvas`, spring-animated needle + number) plus live round-trip/data-processed/memory stats, a winner banner, and a "drop Ghost into your hottest endpoint, keep `kotlinx.serialization` elsewhere" call to action.
 - **Ghost Playground: deeper "Why it's fast" content** — the 8 collapsible pillars (generated serializers, perfect-hash dispatch, byte-first UTF-8, native `textChannel`, in-order prediction, pooled readers/writers, fused nullables, precomputed write headers) now explain the actual mechanism (SWAR byte scanning, the perfect-hash search space, monomorphic codegen inlining, thread-local vs. single-instance pooling on Wasm) and name specific contrasts with Gson/Moshi/Jackson/`kotlinx.serialization`, instead of one-line summaries.
 - **Ghost Playground: one Kotlin file per widget/model** — the former `PlaygroundApp.kt`/`PlaygroundWidgets.kt` monoliths and multi-class `FeatureModels.kt`/`TwitterModel.kt` files are now one composable or one data class per file (`ui/Card.kt`, `ui/Header.kt`, `ui/StudioScreen.kt`, `features/PlaygroundUser.kt`, `bench/model/Tweet.kt`, etc.).
 
 ### Changed
+- **Breaking — Maven artifacts**: `ghost-yaml`, `ghost-yaml-ktor`, and `ghost-protobuf` removed; depend on `com.ghostserializer:ghost-serialization:1.3.0` only. Framework adapters remain `ghost-ktor`, `ghost-retrofit`, `ghost-spring-boot-starter`.
+- **Breaking — public API rename**: `GhostProtobuf` → `GhostProto`; package `com.ghost.protobuf.*` → `com.ghost.serialization.proto.*` (no typealiases).
+- **Gradle plugin**: removed `autoInjectProtobuf` / `autoInjectYaml`; Proto and YAML ship in the core runtime. Added `generateYaml` (default `true`) wired to KSP `ghost.generateYaml`.
+- **Spring MVC content negotiation**: JSON converter ordered ahead of YAML so mixed endpoints prefer `application/json` when both converters are registered.
 - **Leaner KSP output**: strip redundant explicit `public` modifiers; omit unused `MASK_REQUIRED_N` when a model has a single required field; invent camelCase locals (`idInternalValue`, `wrappedCaptureExtras`) instead of underscored names; format long `JsonReaderOptions.of` / `createInstance` / null-check / collection-reader call sites across multiple lines.
 - **Constants-first cleanup**: wire UTF-8 decode, Base64 errors, dispatch-table defaults, perfect-hash table ladders, Gradle `"api"` config, `DefaultExpressionExtractor` whitelist literals, and related hot-path ints/strings through `GhostJsonConstants` / `GhostEmitterConstants` (or file-local named consts in `ghost-api`, which stays dependency-free).
 - **README**: “Interactive Demo” link renamed to **Ghost Playground**.
@@ -26,8 +36,30 @@
 - **Ghost Playground: Speed Test could freeze the tab** — the benchmark loop checked its time budget only *between* full rounds of decode+encode; on a large payload a single round could run long enough to trigger Chrome's "Page Unresponsive" dialog. Trimmed the benchmark payload and bounded work into short batches with a real `delay(1)` between them.
 
 ### Removed
+- **Maven modules / artifacts**: `ghost-yaml`, `ghost-yaml-ktor`, `ghost-protobuf` (functionality merged into `ghost-serialization`).
 - **Dead surface area**: unused escape-string constants, `writeNullValueRaw`, orphan `Package.swift`, unused sample/integration fixtures (`LargeStringData`, unused sample models), and other unreferenced helpers that only inflated the bytecode/API surface.
 - **ghost-compiler-lab (Next.js)**: removed in favor of the Compose wasm Ghost Playground; Next `_next/` artifacts purged from `docs/`.
+
+### Migration 1.2.x → 1.3.0
+
+```kotlin
+// Before
+implementation("com.ghostserializer:ghost-yaml:1.2.x")
+implementation("com.ghostserializer:ghost-yaml-ktor:1.2.x")
+implementation("com.ghostserializer:ghost-protobuf:1.2.x")
+
+// After — one runtime artifact
+implementation("com.ghostserializer:ghost-serialization:1.3.0")
+implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto adapters
+```
+
+| Before | After |
+|:---|:---|
+| `com.ghost.protobuf.GhostProtobuf` | `com.ghost.serialization.proto.GhostProto` |
+| `com.ghost.protobuf.wkt.*` | `com.ghost.serialization.proto.wkt.*` |
+| `ghost-yaml-ktor` → `ghostYaml()` | `ghost-ktor` → `ghostYaml()` |
+| `autoInjectYaml` / `autoInjectProtobuf` | removed — core runtime always includes YAML + Proto |
+| opt-out YAML codegen | `ghost { generateYaml.set(false) }` or `ksp { arg("ghost.generateYaml", "false") }` |
 
 ## [1.3.0] - 2026-07-26
 
