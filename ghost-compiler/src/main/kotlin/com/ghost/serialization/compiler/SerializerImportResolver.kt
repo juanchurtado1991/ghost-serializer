@@ -14,7 +14,7 @@ internal class SerializerImportResolver(
     fun applyTo(fileBuilder: FileSpec.Builder) {
         if (ctx.needsObjectParsingImports()) {
             fileBuilder.addImport(
-                C.PKG_PARSER,
+                C.PKG_PARSER_STREAMING,
                 C.STR_BEGIN_OBJECT_NAME,
                 C.STR_END_OBJECT_NAME,
                 C.STR_SELECT_NAME_AND_CONSUME_NAME,
@@ -30,6 +30,7 @@ internal class SerializerImportResolver(
         }
     }
 
+    @Suppress("AssignedValueIsNeverRead")
     private fun resolveAllTypes(): Pair<List<String>, Boolean> {
         var hasNullable = ctx.properties.any { it.isNullable }
         val allTypes = ctx.properties.flatMap { prop ->
@@ -73,6 +74,7 @@ internal class SerializerImportResolver(
         allTypes: List<String>,
         hasNullable: Boolean,
     ) {
+        val byteArrayClassifications = classifyAllByteArrayUsages()
         val hasList = ctx.properties.any { it.isList } ||
             allTypes.any { it.contains(C.STR_LIST) }
         val hasSet = ctx.properties.any { it.isSet } ||
@@ -82,22 +84,34 @@ internal class SerializerImportResolver(
 
         if (hasList || hasSet) {
             fileBuilder.addImport(
-                C.PKG_PARSER,
+                C.PKG_PARSER_STREAMING,
                 C.STR_BEGIN_ARRAY,
                 C.STR_END_ARRAY
             )
+            mirrorStringChannelImports(
+                fileBuilder,
+                C.STR_BEGIN_ARRAY,
+                C.STR_END_ARRAY,
+            )
         }
         if (hasList) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_READ_LIST)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_READ_LIST)
+            mirrorStringChannelImports(fileBuilder, C.STR_READ_LIST)
         }
         if (hasSet) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_READ_SET)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_READ_SET)
+            mirrorStringChannelImports(fileBuilder, C.STR_READ_SET)
         }
         if (hasMap) {
             fileBuilder.addImport(
-                C.PKG_PARSER,
+                C.PKG_PARSER_STREAMING,
                 C.STR_READ_MAP,
                 C.STR_NEXT_KEY
+            )
+            mirrorStringChannelImports(
+                fileBuilder,
+                C.STR_READ_MAP,
+                C.STR_NEXT_KEY,
             )
         }
         if (hasNullable) {
@@ -146,59 +160,98 @@ internal class SerializerImportResolver(
                 nullableImports.add(C.STR_IS_NEXT_NULL_VALUE_NAME)
             }
             if (nullableImports.isNotEmpty()) {
-                fileBuilder.addImport(C.PKG_PARSER, *nullableImports.toTypedArray())
+                fileBuilder.addImport(C.PKG_PARSER_STREAMING, *nullableImports.toTypedArray())
+                mirrorStringChannelImports(fileBuilder, *nullableImports.toTypedArray())
             }
         }
         if (ctx.isSealed && !ctx.isInferred) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_PEEK_STRING_FIELD)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_PEEK_STRING_FIELD)
+            mirrorStringChannelImports(fileBuilder, C.STR_PEEK_STRING_FIELD)
         }
         if (ctx.isEnum) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_SELECT_STRING)
+            // Flat reader exposes selectString as a member; streaming/string channels use extensions.
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_SELECT_STRING)
+            mirrorStringChannelImports(fileBuilder, C.STR_SELECT_STRING)
         }
         if (ctx.properties.any { it.isResilient }) {
-            fileBuilder.addImport(C.PKG_PARSER, C.DECODE_RESILIENT)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.DECODE_RESILIENT)
         }
         if (ctx.properties.any { it.wrappedSourceKeys != null }) {
             fileBuilder.addImport(
-                C.PKG_PARSER,
+                C.PKG_PARSER_COMMON,
                 C.STR_GHOST_WRAPPED_KEYS_CAPTURE,
                 C.STR_CAPTURE_WRAPPED_KEY_NAME,
             )
         }
 
         val allTypeStrings = allTypes.joinToString()
-        // OrNull scalars must not pull in the non-null nextX import (`Int?` contains "Int").
+        val needsNextString = needsNextStringImport() ||
+            byteArrayClassifications.contains(ByteArrayCoverage.COVERED)
+        // Streaming reader extensions (GhostJsonReader.deserialize).
         if (needsNextIntImport()) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_INT_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_INT_NAME)
         }
         if (needsNextLongImport()) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_LONG_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_LONG_NAME)
         }
-        if (needsNextStringImport()) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_STRING_NAME)
+        if (needsNextString) {
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_STRING_NAME)
         }
         if (allTypeStrings.contains(C.STR_DOUBLE)) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_DOUBLE_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_DOUBLE_NAME)
         }
         if (allTypeStrings.contains(C.STR_FLOAT)) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_FLOAT_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_FLOAT_NAME)
         }
         if (allTypeStrings.contains(C.K_CHAR) ||
             ctx.properties.any { it.type.isPrimitiveChar() }
         ) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_CHAR_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_CHAR_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_NEXT_CHAR_NAME)
         }
         if (needsNextBooleanImport()) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_NEXT_BOOLEAN_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_BOOLEAN_NAME)
+        }
+        if (ctx.textChannel) {
+            if (needsNextIntImport()) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_INT_NAME)
+            }
+            if (needsNextLongImport()) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_LONG_NAME)
+            }
+            if (needsNextString) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_STRING_NAME)
+            }
+            if (allTypeStrings.contains(C.STR_DOUBLE)) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_DOUBLE_NAME)
+            }
+            if (allTypeStrings.contains(C.STR_FLOAT)) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_FLOAT_NAME)
+            }
+            if (allTypeStrings.contains(C.K_CHAR) ||
+                ctx.properties.any { it.type.isPrimitiveChar() }
+            ) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_CHAR_NAME)
+            }
+            if (needsNextBooleanImport()) {
+                fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_BOOLEAN_NAME)
+            }
+            if (ctx.needsObjectParsingImports()) {
+                fileBuilder.addImport(
+                    C.PKG_PARSER_STRINGS,
+                    C.STR_BEGIN_OBJECT_NAME,
+                    C.STR_END_OBJECT_NAME,
+                    C.STR_SELECT_NAME_AND_CONSUME_NAME,
+                    C.STR_SKIP_VALUE_NAME,
+                )
+            }
         }
 
-        val byteArrayClassifications = classifyAllByteArrayUsages()
         if (byteArrayClassifications.contains(ByteArrayCoverage.COVERED)) {
             fileBuilder.addImport(
-                C.PKG_PARSER,
+                C.PKG_PARSER_COMMON,
                 C.STR_DECODE_BASE64_STRING_NAME,
                 C.STR_ENCODE_BASE64_STRING_NAME,
-                C.STR_NEXT_STRING_NAME
             )
         }
 
@@ -207,10 +260,14 @@ internal class SerializerImportResolver(
         val needsCaptureRawJson = allTypeStrings.contains(C.K_RAW_JSON) ||
             allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
         if (needsCaptureRawJsonBytes) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
+            mirrorStringChannelImports(fileBuilder, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
         }
         if (needsCaptureRawJson) {
-            fileBuilder.addImport(C.PKG_PARSER, C.STR_CAPTURE_RAW_JSON_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_CAPTURE_RAW_JSON_NAME)
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_CAPTURE_RAW_JSON_NAME)
+            mirrorStringChannelImports(fileBuilder, C.STR_CAPTURE_RAW_JSON_NAME)
         }
         if (allTypeStrings.contains(C.K_RAW_JSON) ||
             allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
@@ -219,6 +276,15 @@ internal class SerializerImportResolver(
         }
         if (ctx.isEnum) {
             fileBuilder.addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
+        }
+    }
+
+    private fun mirrorStringChannelImports(
+        fileBuilder: FileSpec.Builder,
+        vararg names: String,
+    ) {
+        if (ctx.textChannel && names.isNotEmpty()) {
+            fileBuilder.addImport(C.PKG_PARSER_STRINGS, *names)
         }
     }
 

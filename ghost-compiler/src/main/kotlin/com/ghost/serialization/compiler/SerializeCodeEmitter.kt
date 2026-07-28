@@ -185,7 +185,7 @@ internal class SerializeCodeEmitter(
         val valueEmitter = StandardSerializeEmitter(
             properties,
             originalClassName,
-            ClassName(C.PKG_WRITER, C.STR_GHOST_JSON_WRITER)
+            ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER)
         )
         valueEmitter.emitValue(code, prop, accessor)
     }

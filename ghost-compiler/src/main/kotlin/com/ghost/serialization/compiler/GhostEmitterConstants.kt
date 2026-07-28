@@ -216,7 +216,12 @@ internal object GhostEmitterConstants {
     const val STR_WHEN_ENTRY = "    %T::class -> %T\n"
     const val STR_WHEN_ELSE_NULL = "    else -> null\n"
     const val STR_WHEN_CLOSE_CAST = "} as %T\n"
-    const val PKG_PARSER = "com.ghost.serialization.parser"
+    const val PKG_PARSER_COMMON = "com.ghost.serialization.parser.common"
+    const val PKG_PARSER_BYTES = "com.ghost.serialization.parser.bytes"
+    const val PKG_PARSER_STRINGS = "com.ghost.serialization.parser.strings"
+    const val PKG_PARSER_STREAMING = "com.ghost.serialization.parser.streaming"
+    /** @deprecated Use [PKG_PARSER_BYTES] or the channel-specific package. */
+    const val PKG_PARSER = PKG_PARSER_BYTES
     const val STR_RETURN_L = "return %L"
     
     const val REGISTRY_CHUNK_SIZE = 500
@@ -335,7 +340,11 @@ internal object GhostEmitterConstants {
     const val NAME = "name"
 
     // Generator-specific
-    const val PKG_WRITER = "com.ghost.serialization.writer"
+    const val PKG_WRITER_COMMON = "com.ghost.serialization.writer.common"
+    const val PKG_WRITER_BYTES = "com.ghost.serialization.writer.bytes"
+    const val PKG_WRITER_STRINGS = "com.ghost.serialization.writer.strings"
+    /** @deprecated Use [PKG_WRITER_BYTES] or the channel-specific package. */
+    const val PKG_WRITER = PKG_WRITER_BYTES
     const val PKG_CONTRACT = "com.ghost.serialization.contract"
     const val PKG_EXCEPTION = "com.ghost.serialization.exception"
     const val PKG_GHOST = "com.ghost.serialization"
@@ -348,9 +357,9 @@ internal object GhostEmitterConstants {
     const val STR_GHOST_JSON_READER = "GhostJsonReader"
     const val STR_GHOST_JSON_FLAT_READER = "GhostJsonFlatReader"
     const val STR_GHOST_JSON_STRING_READER = "GhostJsonStringReader"
-    const val STR_GHOST_JSON_READER_QUALIFIED = "$PKG_PARSER.$STR_GHOST_JSON_READER"
-    const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = "$PKG_PARSER.$STR_GHOST_JSON_FLAT_READER"
-    const val STR_GHOST_JSON_STRING_READER_QUALIFIED = "$PKG_PARSER.$STR_GHOST_JSON_STRING_READER"
+    const val STR_GHOST_JSON_READER_QUALIFIED = "$PKG_PARSER_STREAMING.$STR_GHOST_JSON_READER"
+    const val STR_GHOST_JSON_FLAT_READER_QUALIFIED = "$PKG_PARSER_BYTES.$STR_GHOST_JSON_FLAT_READER"
+    const val STR_GHOST_JSON_STRING_READER_QUALIFIED = "$PKG_PARSER_STRINGS.$STR_GHOST_JSON_STRING_READER"
     const val STR_RESET_TOKEN_BYTE = "RESET_TOKEN_BYTE"
     const val STR_ENSURE_UTF8_BYTES = "reader.ensureUtf8Bytes()"
     const val STR_CHAR_POSITION_TO_BYTE_POSITION = "reader.charPositionToBytePosition"
