@@ -101,10 +101,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.bytes
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.*
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
+&nbsp;import com.ghost.serialization.parser.common.GhostSource
+&nbsp;import com.ghost.serialization.parser.common.contentEqualsStringImpl
+&nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
+&nbsp;import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
+&nbsp;import com.ghost.serialization.parser.common.scanStringImpl
 &nbsp;import okio.ByteString
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * High-performance [GhostSource] backed by an in-memory [ByteArray].
@@ -173,7 +178,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

@@ -96,24 +96,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization
 &nbsp;
-&nbsp;import com.ghost.serialization.writer.common.*
-&nbsp;import com.ghost.serialization.writer.strings.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
-&nbsp;import com.ghost.serialization.parser.common.*
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.writer.bytes.*
 &nbsp;import com.ghost.serialization.contract.GhostRegistry
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.common.prepareUtf8JsonSource
+&nbsp;import com.ghost.serialization.parser.common.withPreparedUtf8Json
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.writer.bytes.WriterSinkPair
 &nbsp;import com.ghost.serialization.writer.strings.FlatCharArrayWriter
-&nbsp;import okio.BufferedSource
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import java.util.ServiceLoader
 &nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;import okio.BufferedSource
+&nbsp;
 &nbsp;
 &nbsp;private val readerPool = ThreadLocal&lt;GhostJsonReader&gt;()
 &nbsp;private val flatReaderPool = ThreadLocal&lt;GhostJsonFlatReader&gt;()
@@ -254,11 +250,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            if (!hasNext()) throw NoSuchElementException()
 &nbsp;            if (fastIterator?.hasNext() == true) return fastIterator!!.next()
 &nbsp;            return slow!!.next()
-<b class="fc">&nbsp;        }</b>
-&nbsp;    }
-<b class="fc">&nbsp;}</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
 <b class="fc">&nbsp;</b>
-&nbsp;actual fun &lt;T&gt; ghostInternalUseReader(
+<b class="fc">&nbsp;actual fun &lt;T&gt; ghostInternalUseReader(</b>
 &nbsp;    bytes: ByteArray,
 &nbsp;    block: (GhostJsonReader) -&gt; T
 &nbsp;): T {
@@ -338,7 +334,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

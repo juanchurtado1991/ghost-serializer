@@ -104,15 +104,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.strings
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
-&nbsp;import com.ghost.serialization.writer.strings.*
-&nbsp;import com.ghost.serialization.parser.common.*
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.parser.bytes.captureRawJsonBytes
+&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.parser.common.byteToCharPosition
+&nbsp;import com.ghost.serialization.parser.streaming.beginObject
+&nbsp;import com.ghost.serialization.parser.streaming.captureRawJsonBytes
+&nbsp;import com.ghost.serialization.parser.streaming.skipValue
+&nbsp;import com.ghost.serialization.writer.strings.copyRangeToCharArray
 &nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.parser.streaming.decodeResilient
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * High-performance JSON parser operating directly on Kotlin Strings.
@@ -571,7 +575,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Computes a cheap hash from the first four char code-points of the string content.
-&nbsp;     * Mirrors the hash used in [GhostJsonFlatReader] for byte sources.
+&nbsp;     * Uses the same algorithm as [GhostJsonFlatReader] for byte sources.
 &nbsp;     */
 &nbsp;    private fun computeStringPoolHash(start: Int, length: Int): Int {
 <b class="fc">&nbsp;        val chars = rawChars</b>
@@ -642,7 +646,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     *
 &nbsp;     * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
 &nbsp;     * cached array (used by custom-decoder bridges). Otherwise encodes only the range —
-&nbsp;     * avoids a full document UTF-8 pass for [captureRawJsonBytes] on large envelopes.
+&nbsp;     * avoids a full document UTF-8 pass for [com.ghost.serialization.parser.strings.captureRawJsonBytes] on large envelopes.
 &nbsp;     */
 &nbsp;    @InternalGhostApi
 &nbsp;    fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {
@@ -720,7 +724,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

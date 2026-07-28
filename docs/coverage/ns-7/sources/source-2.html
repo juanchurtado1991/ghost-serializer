@@ -119,8 +119,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     *
 &nbsp;     * ### How the Reader uses these parameters (Runtime Walkthrough):
 &nbsp;     *
-&nbsp;     * Suppose we have a field named **&quot;age&quot;** (3 bytes: &#39;a&#39;=97, &#39;g&#39;=103, &#39;e&#39;=101)
-&nbsp;     * and the optimizer chose `multiplier = 31` and `shift = 5`.
+&nbsp;     * For a field named **&quot;age&quot;** (3 bytes: &#39;a&#39;=97, &#39;g&#39;=103, &#39;e&#39;=101)
+&nbsp;     * and optimizer parameters `multiplier = 31` and `shift = 5`:
 &nbsp;     *
 &nbsp;     * | Step | Action | Description | Resulting Value |
 &nbsp;     * | :--- | :--- | :--- | :--- |
@@ -130,8 +130,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * | **4. Lookup** | Index | Access the dispatch table | `dispatch(hash)` -&gt; Returns index |
 &nbsp;     *
 &nbsp;     * #### Deep dive into &quot;Packing&quot; (Step 2):
-&nbsp;     * Imagine a 32-bit Integer as 4 empty boxes. We place each byte into a box,
-&nbsp;     * shifting them to the left so they don&#39;t overlap:
+&nbsp;     * A 32-bit integer is treated as four byte slots. Each input byte is placed in its slot,
+&nbsp;     * shifted left so the slots do not overlap:
 &nbsp;     *
 &nbsp;     * ```text
 &nbsp;     * Slot 4 (24-31) | Slot 3 (16-23) | Slot 2 (8-15) | Slot 1 (0-7)
@@ -268,7 +268,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

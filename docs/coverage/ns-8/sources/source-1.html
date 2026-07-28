@@ -326,8 +326,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val PKG_PARSER_BYTES = &quot;com.ghost.serialization.parser.bytes&quot;
 &nbsp;    const val PKG_PARSER_STRINGS = &quot;com.ghost.serialization.parser.strings&quot;
 &nbsp;    const val PKG_PARSER_STREAMING = &quot;com.ghost.serialization.parser.streaming&quot;
-&nbsp;    /** @deprecated Use [PKG_PARSER_BYTES] or the channel-specific package. */
-&nbsp;    const val PKG_PARSER = PKG_PARSER_BYTES
 &nbsp;    const val STR_RETURN_L = &quot;return %L&quot;
 &nbsp;    
 &nbsp;    const val REGISTRY_CHUNK_SIZE = 500
@@ -477,8 +475,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val PKG_WRITER_COMMON = &quot;com.ghost.serialization.writer.common&quot;
 &nbsp;    const val PKG_WRITER_BYTES = &quot;com.ghost.serialization.writer.bytes&quot;
 &nbsp;    const val PKG_WRITER_STRINGS = &quot;com.ghost.serialization.writer.strings&quot;
-&nbsp;    /** @deprecated Use [PKG_WRITER_BYTES] or the channel-specific package. */
-&nbsp;    const val PKG_WRITER = PKG_WRITER_BYTES
 &nbsp;    const val PKG_CONTRACT = &quot;com.ghost.serialization.contract&quot;
 &nbsp;    const val PKG_EXCEPTION = &quot;com.ghost.serialization.exception&quot;
 &nbsp;    const val PKG_GHOST = &quot;com.ghost.serialization&quot;
@@ -505,7 +501,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_GHOST_YAML_WRITER = &quot;GhostYamlWriter&quot;
 &nbsp;    const val STR_GHOST_YAML_FLAT_WRITER = &quot;GhostYamlFlatWriter&quot;
 &nbsp;    const val STR_GHOST_YAML_FLAT_READER = &quot;GhostYamlFlatReader&quot;
-&nbsp;    const val STR_GHOST_PROTO_YAML_FLAT_READER = &quot;GhostProtoYamlFlatReader&quot;
 &nbsp;    const val STR_GHOST_YAML_PREFIX = &quot;GhostYaml&quot;
 &nbsp;    const val TEMPLATE_YAML_ARRAY_SERIALIZER = &quot;GhostYaml%sSerializer&quot;
 &nbsp;
@@ -610,7 +605,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val HASH_SHIFT_LIMIT = 16
 &nbsp;    /** Table size used when the field-name set is empty (no dispatch needed). */
 &nbsp;    const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
-&nbsp;    /** Candidate dispatch table sizes tried by [PerfectHashFinder], ascending. */
+&nbsp;    /** Candidate dispatch table sizes tried by [com.ghost.serialization.compiler.hash.PerfectHashFinder], ascending. */
 <b class="fc">&nbsp;    val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)</b>
 &nbsp;    const val BYTE_MASK = 0xFF
 &nbsp;    const val BIT_SHIFT_8 = 8
@@ -843,7 +838,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_EXT_KT = &quot;kt&quot;
 &nbsp;    const val REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT =
 &nbsp;        &quot;&quot;&quot;^import kotlin\.(String|Int|Long|Boolean|Double|Float|Byte|Short|Char|Unit|Any|Nothing|Array|OptIn|Suppress)(\..*)?\s*$&quot;&quot;&quot;
-&nbsp;    /** KotlinPoet emits explicit `public` for Explicit API mode; serializers don&#39;t need it. */
+&nbsp;    /** Strips explicit `public` modifiers that KotlinPoet adds for Explicit API mode. */
 &nbsp;    const val REGEX_TRIM_REDUNDANT_PUBLIC =
 &nbsp;        &quot;&quot;&quot;^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )&quot;&quot;&quot;
 &nbsp;
@@ -923,7 +918,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

@@ -52,7 +52,7 @@ At compile time, Ghost emits calls to the registered serializer. If no serialize
 | Type / pattern | Why | Alternative |
 |:---|:---|:---|
 | `MutableSet<T>` (as declared field type) | Codegen targets `kotlin.collections.Set` | Declare `Set<T>` |
-| `Array<T>`, `IntArray`, other primitive arrays | Not a field type in codegen | `List<T>` or built-in `IntArray`/`LongArray` serializers via registry |
+| `Array<T>`, primitive arrays (`IntArray`, `LongArray`, `FloatArray`, `DoubleArray`, `BooleanArray`) | Supported via built-in JSON/YAML serializers | `List<T>` for generic element types |
 | `Map<K, V>` with `K != String` | Compile error | `Map<String, V>` or a `List` of key/value models |
 | `Map<String, Any>`, dynamic JSON tree | No untyped object model | `RawJson` or typed `@GhostSerialization` models |
 | Gson `JsonElement`, Moshi `JsonValue`, Jackson `JsonNode` | Foreign tree types | **`RawJson`** |

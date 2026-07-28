@@ -130,16 +130,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.*
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.bytes.captureRawJson
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.captureRawJson
 &nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Stack-scoped accumulator for [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
@@ -296,7 +296,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

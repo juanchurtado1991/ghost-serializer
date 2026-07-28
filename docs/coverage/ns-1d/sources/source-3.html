@@ -103,12 +103,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.writer.bytes
 &nbsp;
-&nbsp;import com.ghost.serialization.writer.common.*
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
@@ -138,11 +138,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.NULL_BS
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
@@ -151,12 +153,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 &nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.writer.common.GhostDoubleFormatter
 &nbsp;import okio.BufferedSink
 &nbsp;import okio.ByteString
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * A highly optimized, low-allocation JSON writer for Kotlin Multiplatform.
@@ -486,7 +487,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Writes raw JSON bytes directly into the stream without quoting or escaping.
 &nbsp;     * Use this to emit a pre-serialized JSON fragment captured via
-&nbsp;     * [com.ghost.serialization.parser.captureRawJsonBytes].
+&nbsp;     * [com.ghost.serialization.parser.bytes.captureRawJsonBytes].
 &nbsp;     */
 &nbsp;    fun rawValue(bytes: ByteArray): GhostJsonWriter {
 <b class="fc">&nbsp;        appendSeparator()</b>
@@ -963,7 +964,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

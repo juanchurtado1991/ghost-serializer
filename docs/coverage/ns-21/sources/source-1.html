@@ -98,8 +98,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Byte-level constants for YAML control characters.
 &nbsp; *
 &nbsp; * Every control byte used by the YAML parser is declared here with a descriptive name.
-&nbsp; * PROHIBITED: magic numbers in the hot path. Always use these constants.
-&nbsp; * PROHIBITED: .toChar() comparisons. Always compare Byte to Byte (these constants).
+&nbsp; * Call sites should use these named constants instead of raw byte literals, and compare
+&nbsp; * bytes directly (Byte to Byte) rather than converting to [Char].
 &nbsp; */
 &nbsp;internal object GhostYamlConstants {
 &nbsp;
@@ -289,7 +289,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Mask to convert lowercase ASCII letter to uppercase.
 &nbsp;     * Apply: `b.toInt() and ASCII_UPPER_MASK` on a known letter byte.
-&nbsp;     * PROHIBITED for unknown bytes — only use when byte is confirmed alphabetic.
+&nbsp;     * Use only when the byte is confirmed to be alphabetic.
 &nbsp;     */
 &nbsp;    const val ASCII_TO_UPPER_MASK: Int = 0xDF
 &nbsp;
@@ -454,7 +454,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

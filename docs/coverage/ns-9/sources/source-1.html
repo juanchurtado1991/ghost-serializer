@@ -147,10 +147,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.ksp
-&nbsp;import com.ghost.serialization.compiler.model.*
-&nbsp;import com.ghost.serialization.compiler.analysis.*
-&nbsp;import com.ghost.serialization.compiler.codegen.*
-&nbsp;import com.ghost.serialization.compiler.hash.*
+&nbsp;import com.ghost.serialization.compiler.analysis.EnvelopeAnalyzer
+&nbsp;import com.ghost.serialization.compiler.analysis.GhostAnalyzer
+&nbsp;import com.ghost.serialization.compiler.analysis.TextChannelPlanner
+&nbsp;import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
+&nbsp;import com.ghost.serialization.compiler.analysis.isByteArray
+&nbsp;import com.ghost.serialization.compiler.analysis.isRawJson
+&nbsp;import com.ghost.serialization.compiler.analysis.serializerClassName
+&nbsp;import com.ghost.serialization.compiler.codegen.GhostCodeGenerator
+&nbsp;import com.ghost.serialization.compiler.codegen.writeTrimmedTo
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.model.GhostEnvelopeModel
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.google.devtools.ksp.processing.CodeGenerator
 &nbsp;import com.google.devtools.ksp.processing.Dependencies
 &nbsp;import com.google.devtools.ksp.processing.KSPLogger
@@ -175,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.asClassName
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
 &nbsp;import kotlin.reflect.KClass
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Main KSP Processor for Ghost Serialization.
@@ -184,8 +192,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * specialized serializers, and builds a global registry mapping classes to serializers
 &nbsp; * to avoid reflection at runtime.
 &nbsp; *
-&nbsp; * @property codeGenerator The KSP [CodeGenerator] used to create new serializer and registry files.
-&nbsp; * @property logger The [KSPLogger] used to report compilation errors, warnings, and messages.
+&nbsp; * @property codeGenerator The KSP [com.google.devtools.ksp.processing.CodeGenerator] used to create new serializer and registry files.
+&nbsp; * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors, warnings, and messages.
 &nbsp; * @property options Map of key-value pairs representing processor options passed from build scripts.
 &nbsp; */
 &nbsp;class GhostSerializationProcessor(
@@ -246,7 +254,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Searches for `@GhostSerialization` annotated classes, generates their serializers,
 &nbsp;     * and compiles the final module registry if any class was successfully processed.
 &nbsp;     *
-&nbsp;     * @param resolver KSP [Resolver] used to query symbols and types.
+&nbsp;     * @param resolver KSP [com.google.devtools.ksp.processing.Resolver] used to query symbols and types.
 &nbsp;     * @return List of symbols that couldn&#39;t be processed in this round.
 &nbsp;     */
 &nbsp;    override fun process(resolver: Resolver): List&lt;KSAnnotated&gt; {
@@ -343,7 +351,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     *
 &nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
 &nbsp;     * @param propertiesModel The properties metadata model parsed from the declaration.
-&nbsp;     * @return The [ClassName] of the generated serializer class, or null if it was already processed.
+&nbsp;     * @return The [com.squareup.kotlinpoet.ClassName] of the generated serializer class, or null if it was already processed.
 &nbsp;     */
 &nbsp;    private fun generateSerializer(
 &nbsp;        classDeclaration: KSClassDeclaration,
@@ -532,7 +540,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * and recording originating files for incremental compilation.
 &nbsp;     *
 &nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
-&nbsp;     * @param serializerClassName The [ClassName] of the generated serializer.
+&nbsp;     * @param serializerClassName The [com.squareup.kotlinpoet.ClassName] of the generated serializer.
 &nbsp;     */
 &nbsp;    private fun registerSerializer(
 &nbsp;        classDeclaration: KSClassDeclaration,
@@ -777,7 +785,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Generates a KotlinPoet [CodeBlock] mapping class types to their serializer instances.
+&nbsp;     * Generates a KotlinPoet [com.squareup.kotlinpoet.CodeBlock] mapping class types to their serializer instances.
 &nbsp;     *
 &nbsp;     * @param entries Serializable class entry mappings.
 &nbsp;     * @return Pre-compiled registry map code block.
@@ -921,7 +929,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

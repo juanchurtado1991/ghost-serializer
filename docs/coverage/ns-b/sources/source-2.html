@@ -138,24 +138,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.contract
 &nbsp;
-&nbsp;import com.ghost.serialization.writer.common.*
-&nbsp;import com.ghost.serialization.writer.strings.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
-&nbsp;import com.ghost.serialization.parser.common.*
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.writer.bytes.*
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 &nbsp;import com.ghost.serialization.ghostInternalEncodeWithWriter
-&nbsp;import okio.BufferedSink
-&nbsp;import okio.BufferedSource
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.common.withPreparedUtf8Json
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import okio.BufferedSink
+&nbsp;import okio.BufferedSource
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Base contract for high-performance JSON serializers.
@@ -309,7 +304,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

@@ -101,13 +101,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.strings
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.bytes.*
-&nbsp;import com.ghost.serialization.parser.strings.*
-&nbsp;import com.ghost.serialization.parser.streaming.*
-&nbsp;import com.ghost.serialization.writer.strings.*
-&nbsp;import com.ghost.serialization.parser.common.*
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Captures the next complete JSON value as owned [RawJson] (UTF-16 source requires encoding).
@@ -121,7 +117,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Since [GhostJsonStringReader] operates on a UTF-16 [String], the captured char range is
 &nbsp; * converted to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes]: a range copy of the cached
 &nbsp; * UTF-8 view when present, otherwise an encode of that range only. Prefer
-&nbsp; * [GhostJsonFlatReader.captureRawJsonBytes] when starting from a [ByteArray] source.
+&nbsp; * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] when starting from a [ByteArray] source.
 &nbsp; */
 &nbsp;fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
 <b class="fc">&nbsp;    skipWhitespace()</b>
@@ -191,7 +187,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

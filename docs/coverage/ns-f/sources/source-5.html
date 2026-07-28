@@ -180,8 +180,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;internal const val ERROR_SUFFIX = &quot;. Make sure it is annotated with @GhostSerialization.&quot;
 &nbsp;
 &nbsp;/**
-&nbsp; * Serializes the [value] directly using Ghost Serializer and responds,
-&nbsp; * bypassing the ContentNegotiation pipeline entirely to maximize throughput.
+&nbsp; * Serializes [value] directly with Ghost and responds, bypassing Ktor Server&#39;s
+&nbsp; * ContentNegotiation pipeline.
 &nbsp; */
 <b class="fc">&nbsp;suspend inline fun &lt;reified T : Any&gt; ApplicationCall.respondGhost(</b>
 &nbsp;    value: T,
@@ -195,10 +195,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Proto3-JSON variant of [respondGhost] — named for discoverability alongside [respondGhost]
-&nbsp; * and `bodyGhostProto`. Encoding is identical either way: proto3 wire correctness (int64
-&nbsp; * quoting, Base64 bytes, default-value omission) is generated into the
-&nbsp; * `@GhostProtoSerialization` serializer&#39;s own `serialize()` method, not a separate writer.
+&nbsp; * Proto3-JSON variant of [respondGhost] for `@GhostProtoSerialization` types.
+&nbsp; * Encoding reuses [Ghost.encodeToBytes]; proto3 wire correctness is generated into the
+&nbsp; * serializer&#39;s own `serialize()` method. See also [bodyGhostProto].
 &nbsp; */
 <b class="fc">&nbsp;suspend inline fun &lt;reified T : Any&gt; ApplicationCall.respondGhostProto(</b>
 &nbsp;    value: T,
@@ -254,7 +253,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

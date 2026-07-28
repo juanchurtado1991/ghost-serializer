@@ -129,10 +129,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.types
 &nbsp;
 &nbsp;/**
-&nbsp; * Zero-allocation scanners for [RawJson] JSON value classification and scalar coercion.
+&nbsp; * Scanners for [com.ghost.serialization.types.RawJson] JSON value classification and scalar coercion.
 &nbsp; *
-&nbsp; * Operates directly on [RawJson.storage] / [RawJson.storageOffset] / [RawJson.storageLength]
-&nbsp; * without materializing [RawJson.bytes] unless a [String] result is required.
+&nbsp; * Operates directly on [com.ghost.serialization.types.RawJson.storage],
+&nbsp; * [com.ghost.serialization.types.RawJson.storageOffset], and
+&nbsp; * [com.ghost.serialization.types.RawJson.storageLength] without materializing
+&nbsp; * [com.ghost.serialization.types.RawJson.bytes] unless a [kotlin.String] result is required.
 &nbsp; */
 &nbsp;internal object RawJsonValueScanner {
 &nbsp;
@@ -465,7 +467,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

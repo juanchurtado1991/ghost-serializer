@@ -434,8 +434,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import org.gradle.api.provider.Provider
 &nbsp;import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 &nbsp;
+&nbsp;/**
+&nbsp; * Gradle plugin that wires Ghost Serialization into Android, JVM, and Kotlin Multiplatform projects.
+&nbsp; *
+&nbsp; * Apply with plugin id `com.ghostserializer.ghost`. The plugin:
+&nbsp; * - Adds `ghost-compiler` to KSP when the KSP plugin is present
+&nbsp; * - Adds `ghost-serialization` and `ghost-api` to the appropriate source set or configuration
+&nbsp; * - Optionally adds `ghost-ktor` or `ghost-retrofit` when matching network libraries are detected
+&nbsp; *
+&nbsp; * Configure behavior through the [GhostExtension] `ghost` block.
+&nbsp; */
 <b class="fc">&nbsp;class GhostPlugin : Plugin&lt;Project&gt; {</b>
 &nbsp;
+&nbsp;    /**
+&nbsp;     * Applies Ghost Serialization dependencies and KSP wiring to [project].
+&nbsp;     */
 &nbsp;    override fun apply(project: Project) {
 <b class="fc">&nbsp;        val extension = createExtension(project)</b>
 <b class="fc">&nbsp;        val ghostVersion = extension.version</b>
@@ -622,7 +635,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>

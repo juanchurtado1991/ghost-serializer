@@ -64,8 +64,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Reactive Encoder for Ghost Serialization.
 &nbsp; *
 &nbsp; * Serializes through the pooled [com.ghost.serialization.writer.bytes.GhostJsonFlatWriter]
-&nbsp; * to a [ByteArray] and wraps it with [DataBufferFactory.wrap], producing a
-&nbsp; * zero-copy [DataBuffer] backed by the serialized bytes directly.
+&nbsp; * to a [ByteArray], then wraps the bytes in a [DataBuffer] via [DataBufferFactory].
 &nbsp; */
 &nbsp;class GhostReactiveEncoder : AbstractEncoder&lt;Any&gt;(
 &nbsp;    MimeTypeUtils.APPLICATION_JSON,
@@ -141,7 +140,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-27 22:17</div>
+    <div style="float:right;">generated on 2026-07-27 23:10</div>
 </div>
 </body>
 </html>
