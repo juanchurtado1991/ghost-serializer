@@ -45,6 +45,50 @@ class GhostYamlGroupDTest {
     }
 
     @Test
+    fun `reads negative hex, octal, and binary scalars`() {
+        // readNumber()'s digit scanner used to stop right after the leading "-0", leaving
+        // "x10"/"o17"/"b1010" unconsumed and corrupting the next key. Regression test.
+        val yaml = """
+            hex_negative: -0x10
+            octal_negative: -0o17
+            binary_negative: -0b1010
+            next: 5
+        """.trimIndent()
+        val result = parseMap(yaml)
+        assertEquals(-16L, result["hex_negative"])
+        assertEquals(-15L, result["octal_negative"])
+        assertEquals(-10L, result["binary_negative"])
+        assertEquals(5L, result["next"])
+    }
+
+    @Test
+    fun `reads negative hex, octal, and binary in flow style and as array items`() {
+        // Same readNumber() code path as the block-mapping case above, but exercised through
+        // flow collections and block-sequence items to make sure the fix isn't accidentally
+        // scoped to just one caller.
+        val flow = parseMap("v: {a: -0x10, b: -0o17, c: -0b1010}")
+        @Suppress("UNCHECKED_CAST")
+        val flowMap = flow["v"] as Map<String, Any?>
+        assertEquals(-16L, flowMap["a"])
+        assertEquals(-15L, flowMap["b"])
+        assertEquals(-10L, flowMap["c"])
+
+        val flowSeq = parseMap("v: [-0x10, -0o17, -0b1010, 5]")
+        assertEquals(listOf(-16L, -15L, -10L, 5L), flowSeq["v"])
+
+        val blockSeq = parseMap(
+            """
+            v:
+              - -0x10
+              - -0o17
+              - -0b1010
+              - 5
+            """.trimIndent()
+        )
+        assertEquals(listOf(-16L, -15L, -10L, 5L), blockSeq["v"])
+    }
+
+    @Test
     fun `reads explicit collection tags`() {
         val yaml = """
             explicit_seq: !!seq
