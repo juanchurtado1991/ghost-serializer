@@ -1,5 +1,6 @@
 package com.ghost.playground.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,9 +23,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ghost.playground.features.FeatureCatalog
+import com.ghost.playground.features.FeatureLab
+import com.ghost.playground.features.LabWireFormat
 import com.ghost.playground.hash.PerfectHashLab
 import com.ghost.playground.i18n.Lang
 import com.ghost.playground.i18n.Strings
+import com.ghost.playground.platform.openUrl
 import com.ghost.playground.ui.icons.PlaygroundIcon
 import com.ghost.playground.ui.icons.PlaygroundIconKind
 import com.ghost.playground.ui.theme.Coral
@@ -91,6 +95,16 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             if (lang == Lang.EN) selectedLab.introEn else selectedLab.introEs,
             style = MaterialTheme.typography.bodyLarge,
         )
+
+        selectedLab.wireFormatDocGuide(strings)?.let { (label, url) ->
+            Text(
+                label,
+                color = Teal,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable { openUrl(url) },
+            )
+        }
 
         VariantSelector(
             variants = selectedLab.variants,
@@ -161,4 +175,10 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             }
         }
     }
+}
+
+private fun FeatureLab.wireFormatDocGuide(strings: Strings): Pair<String, String>? = when (wireFormat) {
+    LabWireFormat.PROTO_JSON -> strings.wikiUsageProtobuf to PlaygroundLinks.WIKI_USAGE_PROTOBUF
+    LabWireFormat.YAML -> strings.wikiUsageYaml to PlaygroundLinks.WIKI_USAGE_YAML
+    LabWireFormat.JSON -> null
 }

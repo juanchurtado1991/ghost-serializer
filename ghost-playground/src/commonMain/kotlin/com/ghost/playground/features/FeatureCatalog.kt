@@ -200,8 +200,8 @@ object FeatureCatalog {
             titleEn = "Proto-JSON",
             titleEs = "Proto-JSON",
             wireFormat = LabWireFormat.PROTO_JSON,
-            introEn = "@GhostProtoSerialization follows proto3 JSON rules: int64 fields round-trip as quoted strings, and fields left at their default are dropped from the output.",
-            introEs = "@GhostProtoSerialization sigue las reglas de proto3 JSON: los campos int64 van y vuelven como strings entre comillas, y los campos en su valor default se omiten del output.",
+            introEn = "@GhostProtoSerialization applies proto3 JSON rules (quoted int64, Base64 bytes, default omission). Works with @GhostName and @GhostIgnore; add @GhostYamlSerialization for YAML. Not compatible with @GhostFlatten, @GhostJsonEnvelope, RawJson, or sealed discriminators — use @GhostWrappedKeys for oneof.",
+            introEs = "@GhostProtoSerialization aplica reglas proto3 JSON (int64 entre comillas, bytes Base64, omisión de defaults). Compatible con @GhostName y @GhostIgnore; añade @GhostYamlSerialization para YAML. No combina con @GhostFlatten, @GhostJsonEnvelope, RawJson ni sealed con discriminador — usa @GhostWrappedKeys para oneof.",
             dtoSource = """
                 import com.ghost.serialization.annotations.GhostProtoSerialization
 
