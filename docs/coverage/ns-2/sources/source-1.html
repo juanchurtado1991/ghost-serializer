@@ -57,10 +57,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.1%
+    71.6%
   </span>
   <span class="absValue">
-    (94/134)
+    (96/134)
   </span>
 </td>
 <td class="coverageStat">
@@ -73,10 +73,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.4%
+    71.8%
   </span>
   <span class="absValue">
-    (758/1062)
+    (763/1062)
   </span>
 </td>
 </tr>
@@ -508,10 +508,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.1%
+    71.6%
   </span>
   <span class="absValue">
-    (94/134)
+    (96/134)
   </span>
 </td>
 <td class="coverageStat">
@@ -524,10 +524,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.9%
+    71.3%
   </span>
   <span class="absValue">
-    (796/1123)
+    (801/1123)
   </span>
 </td>
 </tr>
@@ -934,7 +934,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    ): GhostSerializer&lt;T&gt; {
 &nbsp;        // Fast path: serializerCache is populated at startup by addRegistry/prewarm.
 &nbsp;        // Safe for all types that were registered as KClass → serializer mappings.
-<b class="pc">&nbsp;        (serializerCache[kClass] as? GhostSerializer&lt;T&gt;)?.let { return it }</b>
+<b class="fc">&nbsp;        (serializerCache[kClass] as? GhostSerializer&lt;T&gt;)?.let { return it }</b>
 &nbsp;        // Slow path (first call for this KType): getSerializer(KType) internally
 &nbsp;        // caches the result in typeCache so subsequent calls are O(1).
 &nbsp;        // No write to serializerCache here — generic types (List&lt;T&gt;, Map&lt;K,V&gt;)
@@ -1452,7 +1452,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 06:15</div>
+    <div style="float:right;">generated on 2026-07-28 17:11</div>
 </div>
 </body>
 </html>
