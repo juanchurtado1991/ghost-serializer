@@ -2,29 +2,23 @@
 
 package com.ghost.serialization.serializers
 
+import com.ghost.serialization.writer.common.*
+import com.ghost.serialization.writer.strings.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_ARR
-import com.ghost.serialization.parser.GhostJsonConstants.CLOSE_OBJ
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonFlatReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.parser.beginArray
-import com.ghost.serialization.parser.beginObject
-import com.ghost.serialization.parser.consumeArraySeparator
-import com.ghost.serialization.parser.consumeKeySeparator
-import com.ghost.serialization.parser.decodeResilient
-import com.ghost.serialization.parser.endArray
-import com.ghost.serialization.parser.endObject
-import com.ghost.serialization.parser.hasNext
-import com.ghost.serialization.parser.nextInt
-import com.ghost.serialization.parser.nextKey
-import com.ghost.serialization.parser.nextLong
-import com.ghost.serialization.parser.readList
-import com.ghost.serialization.parser.readSet
-import com.ghost.serialization.writer.GhostJsonFlatWriter
-import com.ghost.serialization.writer.GhostJsonStringWriter
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR
+import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.collections.RandomAccess
 
 /**

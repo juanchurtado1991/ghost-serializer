@@ -1,5 +1,10 @@
 package com.ghost.protobuf.wkt
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -25,7 +30,7 @@ class ProtoWktStructsTest {
     }
 
     private fun ProtoEmptySerializer.parseTimestampForTesting(json: String): ProtoEmpty {
-        val reader = com.ghost.serialization.parser.GhostProtoJsonFlatReader(json.encodeToByteArray())
+        val reader = com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader(json.encodeToByteArray())
         return deserialize(reader)
     }
 }

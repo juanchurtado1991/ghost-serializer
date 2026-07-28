@@ -2,12 +2,17 @@
 
 package com.ghost.protobuf
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.GhostProtoJsonFlatReader
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
+import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import okio.BufferedSource
 import kotlin.reflect.KClass
 

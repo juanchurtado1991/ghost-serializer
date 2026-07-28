@@ -1,5 +1,10 @@
 package com.ghost.protobuf.wkt
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.ghost.protobuf.GhostProtobuf
 import kotlin.test.Test
 import kotlin.test.assertEquals

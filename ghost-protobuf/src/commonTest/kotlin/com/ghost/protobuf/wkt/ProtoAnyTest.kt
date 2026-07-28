@@ -1,5 +1,10 @@
 package com.ghost.protobuf.wkt
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.ghost.protobuf.GhostProtobuf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,8 +43,8 @@ class ProtoAnyTest {
         val parsed = GhostProtobuf.deserialize<ProtoAny>(json)
         assertEquals("{\"a\":1,\"b\":\"c\"}", parsed.value.decodeToString())
 
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(256)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(256)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoAnySerializer.serialize(writer, parsed)
         assertEquals(json, flatBuffer.toStringUtf8())
 

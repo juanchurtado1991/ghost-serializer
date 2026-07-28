@@ -1,5 +1,10 @@
 package com.ghost.protobuf.wkt
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
@@ -136,8 +141,8 @@ class ProtoJsonConformanceTest {
     @Test
     fun bytesValueMatchesReferenceImplementation() {
         val bytes = "abc+123".encodeToByteArray()
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoBytesValueSerializer.serialize(writer, ProtoBytesValue(bytes))
         assertEquals(
             printer.print(BytesValue.of(com.google.protobuf.ByteString.copyFrom(bytes))),
@@ -178,8 +183,8 @@ class ProtoJsonConformanceTest {
             )
             .build()
 
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(512)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(512)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoStructSerializer.serialize(writer, ghostStruct)
         assertEquals(printer.print(javaStruct), flatBuffer.toStringUtf8())
     }
@@ -188,8 +193,8 @@ class ProtoJsonConformanceTest {
 
     @Test
     fun emptyMatchesReferenceImplementation() {
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(16)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(16)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoEmptySerializer.serialize(writer, ProtoEmpty)
         assertEquals(printer.print(com.google.protobuf.Empty.getDefaultInstance()), flatBuffer.toStringUtf8())
     }

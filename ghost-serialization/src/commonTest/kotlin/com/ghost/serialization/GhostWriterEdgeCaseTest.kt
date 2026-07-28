@@ -2,8 +2,15 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.writer.common.*
+import com.ghost.serialization.writer.strings.*
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.writer.bytes.*
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.writer.GhostJsonWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -266,7 +273,7 @@ class GhostWriterEdgeCaseTest {
 
     @Test
     fun writesWithZeroCapacityWriter() {
-        val writer = com.ghost.serialization.writer.FlatByteArrayWriter(0)
+        val writer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(0)
         writer.writeByte('A'.code)
         assertEquals("A", writer.array.decodeToString(0, 1))
     }

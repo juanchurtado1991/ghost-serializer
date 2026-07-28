@@ -1,8 +1,13 @@
 package com.ghost.protobuf.wkt
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import com.ghost.serialization.parser.decodeBase64String
+import com.ghost.serialization.parser.common.decodeBase64String
 
 /**
  * Coverage-guided robustness fuzzing for `ghost-protobuf`'s hand-rolled, byte/char-level

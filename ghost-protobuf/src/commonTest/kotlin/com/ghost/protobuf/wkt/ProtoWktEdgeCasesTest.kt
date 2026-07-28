@@ -1,6 +1,10 @@
 package com.ghost.protobuf.wkt
 
-import com.ghost.serialization.parser.GhostProtoJsonFlatReader
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -44,8 +48,8 @@ class ProtoWktEdgeCasesTest {
         val formattedDuration = formatDuration(ProtoDuration(Long.MIN_VALUE, 0))
         assertEquals("-9223372036854775808s", formattedDuration)
 
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoInt64ValueSerializer.serialize(writer, ProtoInt64Value(Long.MIN_VALUE))
         assertEquals("\"-9223372036854775808\"", flatBuffer.toStringUtf8())
     }

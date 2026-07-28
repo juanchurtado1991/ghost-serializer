@@ -1,7 +1,11 @@
 package com.ghost.protobuf.wkt
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.ghost.protobuf.GhostProtobuf
-import com.ghost.serialization.parser.GhostProtoJsonFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -51,8 +55,8 @@ class ProtoWrappersTest {
         // base64 standard representation: "YWJj" for "abc"
         val bytes = "abc".encodeToByteArray()
         val wrapper = ProtoBytesValue(bytes)
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(1024)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(1024)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoBytesValueSerializer.serialize(writer, wrapper)
         val serializedJson = flatBuffer.toStringUtf8()
         assertEquals("\"YWJj\"", serializedJson)
@@ -68,13 +72,13 @@ class ProtoWrappersTest {
         // unless fed a GhostProtoJsonFlatReader specifically — reachable simply by calling
         // Ghost.deserialize/deserializeStreaming instead of GhostProtobuf.deserialize, even
         // though the same type was registered in the same global registry.
-        val streamingReader = com.ghost.serialization.parser.GhostJsonReader(
+        val streamingReader = com.ghost.serialization.parser.streaming.GhostJsonReader(
             "\"YWJj\"".encodeToByteArray()
         )
         val viaStreaming = ProtoBytesValueSerializer.deserialize(streamingReader)
         assertEquals("abc", viaStreaming.value.decodeToString())
 
-        val plainFlatReader = com.ghost.serialization.parser.GhostJsonFlatReader(
+        val plainFlatReader = com.ghost.serialization.parser.bytes.GhostJsonFlatReader(
             "\"YWJj\"".encodeToByteArray()
         )
         val viaPlainFlat = ProtoBytesValueSerializer.deserialize(plainFlatReader)
@@ -129,8 +133,8 @@ class ProtoWrappersTest {
         val parsed = GhostProtobuf.deserialize<ProtoUInt64Value>(maxUInt64Json)
         assertEquals(ULong.MAX_VALUE, parsed.value)
 
-        val flatBuffer = com.ghost.serialization.writer.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.GhostJsonFlatWriter(flatBuffer)
+        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
         ProtoUInt64ValueSerializer.serialize(writer, parsed)
         assertEquals(maxUInt64Json, flatBuffer.toStringUtf8())
     }

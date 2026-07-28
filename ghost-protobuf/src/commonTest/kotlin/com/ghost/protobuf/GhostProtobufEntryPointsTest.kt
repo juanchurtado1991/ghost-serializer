@@ -1,5 +1,10 @@
 package com.ghost.protobuf
 
+import com.ghost.serialization.parser.common.*
+import com.ghost.serialization.parser.bytes.*
+import com.ghost.serialization.parser.strings.*
+import com.ghost.serialization.parser.streaming.*
+import com.ghost.serialization.parser.proto.*
 import com.ghost.protobuf.wkt.ProtoDuration
 import com.ghost.protobuf.wkt.ProtoDurationSerializer
 import kotlin.test.Test
