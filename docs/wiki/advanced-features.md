@@ -36,7 +36,24 @@ Ghost generates separate code paths for **JSON** (default via `@GhostSerializati
 
 ### Proto3 JSON (`@GhostProtoSerialization`)
 
-Separate mapping rules (camelCase, omit defaults, quoted int64, Base64 bytes). YAML for proto models also requires `@GhostYamlSerialization` and uses `GhostProtoYamlFlatReader` for proto numeric/bytes rules inside YAML documents.
+Use **`@GhostProtoSerialization`** on the message class — not plain `@GhostSerialization` — so KSP emits proto3 JSON mapping (`GhostProtoJsonFlatReader`, quoted `int64`, Base64 `bytes`, default omission, `isProto = true`).
+
+| Annotation / capability | Proto3 JSON | With `@GhostYamlSerialization` |
+|:---|:---:|:---:|
+| `@GhostName` | ✅ | ✅ |
+| `@GhostIgnore` | ✅ | ✅ |
+| Plain scalars, enums, `List`/`Set`/`Map` | ✅ | ✅ when shape is YAML-flat |
+| `@GhostWrappedKeys` + nested `@GhostSerialization` (`inferred` oneof payloads) | ✅ see [Protobuf §4](usage-protobuf.md#4-oneof-mapping) | ❌ structural — KSP error |
+| `@GhostStrict` / `@GhostCoerce` | ✅ runtime reader flags | ✅ where adapters wire them |
+| `@GhostYamlSerialization` | — | ✅ opt-in YAML on same class |
+| `@GhostResilient` | ✅ JSON/proto readers (`decodeResilient`) | ❌ KSP error |
+| `@GhostJsonEnvelope` + payload annotations | ❌ JSON-only wire shape | ❌ |
+| `@GhostFlatten` / `@GhostWrap` | ❌ REST JSON paths, not proto3 JSON | ❌ |
+| Sealed + `@GhostFallback` / top-level `inferred` on the message | ❌ use `@GhostWrappedKeys` oneof instead | ❌ |
+| `@GhostDecoder` / `@GhostEncoder` | ❌ generated proto mapping instead | ❌ |
+| `RawJson` | ❌ | ❌ |
+| Non-proto `ByteArray` (opaque JSON bytes) | ❌ use proto `ByteArray` → Base64 | ❌ on non-proto bytes |
+| Nested `@GhostSerialization` graphs (beyond oneof) | ❌ not a proto message pattern | ❌ YAML flat DTOs only |
 
 → **[YAML guide](usage-yaml.md)** · **[Protobuf guide](usage-protobuf.md)**
 
