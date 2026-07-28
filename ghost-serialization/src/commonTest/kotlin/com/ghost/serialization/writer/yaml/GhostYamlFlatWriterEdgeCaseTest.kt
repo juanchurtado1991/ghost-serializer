@@ -249,12 +249,14 @@ class GhostYamlFlatWriterEdgeCaseTest {
 
     @Test
     fun writesEmptyObject() {
-        assertEquals("", writerToString { w -> w.beginObject().endObject() }.trim())
+        // Was "" (a dangling scope with no bytes at all, parsed back as null) until the
+        // empty-collection fix — see the "F. EMPTY COLLECTIONS" section below.
+        assertEquals("{}", writerToString { w -> w.beginObject().endObject() }.trim())
     }
 
     @Test
     fun writesEmptyArray() {
-        assertEquals("", writerToString { w -> w.beginArray().endArray() }.trim())
+        assertEquals("[]", writerToString { w -> w.beginArray().endArray() }.trim())
     }
 
     @Test
@@ -295,11 +297,110 @@ class GhostYamlFlatWriterEdgeCaseTest {
 
     @Test
     fun writerRespectsMaxDepth() {
-        assertFailsWith<Throwable> {
+        assertFailsWith<GhostYamlException> {
             val byteWriter = FlatByteArrayWriter()
             val writer = GhostYamlFlatWriter(byteWriter)
             repeat(65) { writer.beginObject().name("a") }
         }
+    }
+
+    @Test
+    fun writerFillsExactlyMaxDepthWithoutThrowing() {
+        // The 64th beginObject() (currentDepth 0..63) must succeed and stay in bounds;
+        // only the 65th (currentDepth == MAX_DEPTH) should throw. Regression test for the
+        // off-by-one that undersized the contexts/itemCounts arrays by one element.
+        val byteWriter = FlatByteArrayWriter()
+        val writer = GhostYamlFlatWriter(byteWriter)
+        repeat(64) { writer.beginObject().name("a") }
+        writer.value(1)
+    }
+
+    // ── F. EMPTY COLLECTIONS ─────────────────────────────────────────
+
+    @Test
+    fun emptyNestedObjectFieldRoundTripsAsEmptyMap() {
+        val yaml = writerToString { w ->
+            w.beginObject()
+            w.name("meta")
+            w.beginObject()
+            w.endObject()
+            w.endObject()
+        }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val result = reader.readDocument() as Map<*, *>
+        assertEquals(emptyMap<String, Any?>(), result["meta"])
+    }
+
+    @Test
+    fun emptyNestedArrayFieldRoundTripsAsEmptyList() {
+        val yaml = writerToString { w ->
+            w.beginObject()
+            w.name("tags")
+            w.beginArray()
+            w.endArray()
+            w.endObject()
+        }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val result = reader.readDocument() as Map<*, *>
+        assertEquals(emptyList<Any?>(), result["tags"])
+    }
+
+    @Test
+    fun emptyArrayItemRoundTripsAsEmptyList() {
+        val yaml = writerToString { w ->
+            w.beginArray()
+            w.beginArray()
+            w.endArray()
+            w.value(1)
+            w.endArray()
+        }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val result = reader.readDocument() as List<*>
+        assertEquals(listOf(emptyList<Any?>(), 1L), result)
+    }
+
+    @Test
+    fun emptyObjectItemRoundTripsAsEmptyMap() {
+        val yaml = writerToString { w ->
+            w.beginArray()
+            w.beginObject()
+            w.endObject()
+            w.endArray()
+        }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val result = reader.readDocument() as List<*>
+        assertEquals(listOf(emptyMap<String, Any?>()), result)
+    }
+
+    @Test
+    fun rootEmptyObjectRoundTripsAsEmptyMap() {
+        val yaml = writerToString { w -> w.beginObject().endObject() }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        assertEquals(emptyMap<String, Any?>(), reader.readDocument())
+    }
+
+    @Test
+    fun rootEmptyArrayRoundTripsAsEmptyList() {
+        val yaml = writerToString { w -> w.beginArray().endArray() }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        assertEquals(emptyList<Any?>(), reader.readDocument())
+    }
+
+    @Test
+    fun emptyObjectFieldFollowedBySiblingStaysWellFormed() {
+        val yaml = writerToString { w ->
+            w.beginObject()
+            w.name("meta")
+            w.beginObject()
+            w.endObject()
+            w.name("count")
+            w.value(2)
+            w.endObject()
+        }
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val result = reader.readDocument() as Map<*, *>
+        assertEquals(emptyMap<String, Any?>(), result["meta"])
+        assertEquals(2L, result["count"])
     }
 
     @Test

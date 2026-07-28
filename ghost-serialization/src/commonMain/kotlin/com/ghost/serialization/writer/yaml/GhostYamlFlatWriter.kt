@@ -102,6 +102,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     }
 
     fun endObject(): GhostYamlFlatWriter {
+        writeEmptyPlaceholderIfNeeded(C.LEFT_BRACE_INT, C.RIGHT_BRACE_INT)
         depth--
         justWroteDash = false
         return this
@@ -121,9 +122,27 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     }
 
     fun endArray(): GhostYamlFlatWriter {
+        writeEmptyPlaceholderIfNeeded(C.LEFT_BRACKET_INT, C.RIGHT_BRACKET_INT)
         depth--
         justWroteDash = false
         return this
+    }
+
+    /**
+     * beginObject()/beginArray() only emit bytes indirectly, via the first child's
+     * name()/prepareValue() call. An empty scope therefore leaves a dangling "key:" (parsed
+     * back as null) or nothing at all. When no child was written, backfill the YAML flow-style
+     * empty-collection form ("{}"/"[]") here, plus the separating space this scope's own
+     * prepareValue() call skipped when it assumed a child would supply the newline instead.
+     */
+    private fun writeEmptyPlaceholderIfNeeded(openInt: Int, closeInt: Int) {
+        val closingDepth = depth
+        if (itemCounts[closingDepth] != 0) return
+        val parentDepth = closingDepth - 1
+        if (parentDepth > 0 && contexts[parentDepth] == C.TYPE_OBJECT) {
+            buffer.writeByte(C.SPACE_INT)
+        }
+        buffer.write2Bytes(openInt, closeInt)
     }
 
     fun name(key: String): GhostYamlFlatWriter {

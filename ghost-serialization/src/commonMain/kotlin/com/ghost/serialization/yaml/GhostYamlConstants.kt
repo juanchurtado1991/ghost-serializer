@@ -266,6 +266,10 @@ internal object GhostYamlConstants {
     const val COLON_INT: Int = 0x3A
     const val ZERO_INT: Int = 0x30
     const val TILDE_INT: Int = 0x7E
+    const val LEFT_BRACE_INT: Int = 0x7B
+    const val RIGHT_BRACE_INT: Int = 0x7D
+    const val LEFT_BRACKET_INT: Int = 0x5B
+    const val RIGHT_BRACKET_INT: Int = 0x5D
 
     const val CHAR_LF_INT: Int = 10
     const val CHAR_CR_INT: Int = 13

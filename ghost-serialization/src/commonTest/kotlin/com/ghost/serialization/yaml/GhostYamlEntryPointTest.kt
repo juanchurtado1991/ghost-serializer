@@ -182,6 +182,48 @@ class GhostYamlEntryPointTest {
     }
 
     @Test
+    fun flatAndStreamingWritersAgreeOnEmptyNestedCollections() {
+        // GhostYamlFlatWriter has dedicated empty-collection regression coverage
+        // (GhostYamlFlatWriterEdgeCaseTest, section F); GhostYamlWriter shares the exact same
+        // beginObject/endObject/beginArray/endArray logic but had no coverage of its own.
+        // Confirm both writers stay byte-identical for the empty case too.
+        val flatBytes = ghostYamlInternalUseFlatWriter { writer ->
+            writer.beginObject()
+            writer.name("meta")
+            writer.beginObject()
+            writer.endObject()
+            writer.name("tags")
+            writer.beginArray()
+            writer.endArray()
+            writer.name("count")
+            writer.value(2)
+            writer.endObject()
+            writer.buffer.toByteArray()
+        }
+
+        val streamSink = Buffer()
+        val streamWriter = GhostYamlWriter(streamSink)
+        streamWriter.beginObject()
+        streamWriter.name("meta")
+        streamWriter.beginObject()
+        streamWriter.endObject()
+        streamWriter.name("tags")
+        streamWriter.beginArray()
+        streamWriter.endArray()
+        streamWriter.name("count")
+        streamWriter.value(2)
+        streamWriter.endObject()
+        streamWriter.flush()
+        val streamBytes = streamSink.readByteArray()
+
+        assertContentEquals(flatBytes, streamBytes)
+        val result = GhostYamlFlatReader(streamBytes).readDocument() as Map<*, *>
+        assertEquals(emptyMap<String, Any?>(), result["meta"])
+        assertEquals(emptyList<Any?>(), result["tags"])
+        assertEquals(2L, result["count"])
+    }
+
+    @Test
     fun encodeToYamlBytesProducesParseableDocument() {
         val value = YamlScalarBox("parseable", 1)
         val bytes = Ghost.encodeToYamlBytes(value)
