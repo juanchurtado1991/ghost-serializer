@@ -60,6 +60,12 @@ kotlin {
             implementation(libs.kotlin.test.junit5)
             implementation(libs.jazzer.junit)
             runtimeOnly(libs.junit.engine)
+            // Reference JSON tree used only to parse yaml-test-suite's in.json fixtures for the
+            // value-conformance check (GhostYamlTestSuiteConformanceTest) — JVM-only, test-only,
+            // not a Ghost runtime dependency.
+            implementation(libs.kotlinx.serialization.json)
+            // DynamicTest/TestFactory for the data-driven yaml-test-suite harness — JVM-only.
+            implementation(libs.junit.jupiter.api)
         }
     }
 }
