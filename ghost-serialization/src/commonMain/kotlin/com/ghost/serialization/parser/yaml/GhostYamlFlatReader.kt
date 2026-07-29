@@ -98,8 +98,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             skipDocumentStart()
             skipWhitespaceAndComments()
             if (position >= localLimit) break
+            val positionBeforeValue = position
             results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
             skipDocumentEnd()
+            if (position == positionBeforeValue) noProgressError()
         }
         return results
     }
@@ -119,10 +121,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             skipDocumentStart()
             skipWhitespaceAndComments()
             if (position >= localLimit) break
+            val positionBeforeValue = position
             prepareRootForCurrentDocument()
             results.add(deserializeDocument(this))
             clearAfterDocument()
             skipDocumentEnd()
+            if (position == positionBeforeValue) noProgressError()
         }
         return results
     }
@@ -1140,6 +1144,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     internal fun yamlError(message: String): Nothing {
         throw GhostYamlException("$message (position=$position)")
+    }
+
+    /** Thrown by both [readAllDocuments] overloads when a document consumed no input. */
+    private fun noProgressError(): Nothing {
+        yamlError("Parser made no progress at position $position — malformed content")
     }
 
     // ── Chomp style enum ──────────────────────────────────────────────────────
