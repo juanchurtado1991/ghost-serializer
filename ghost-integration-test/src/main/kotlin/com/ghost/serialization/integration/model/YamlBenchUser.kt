@@ -2,8 +2,10 @@ package com.ghost.serialization.integration.model
 
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.annotations.GhostYamlSerialization
+import kotlinx.serialization.Serializable
 
 /** Flat YAML benchmark fixture — no nested `@GhostSerialization` types. */
+@Serializable
 @GhostSerialization
 @GhostYamlSerialization
 data class YamlBenchUser(
