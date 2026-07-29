@@ -188,6 +188,7 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)
+    implementation(libs.kaml)
     implementation(libs.okio)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.test)

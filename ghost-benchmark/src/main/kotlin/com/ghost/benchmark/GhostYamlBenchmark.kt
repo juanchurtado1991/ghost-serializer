@@ -2,6 +2,7 @@
 
 package com.ghost.benchmark
 
+import com.charleskorn.kaml.Yaml
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.decodeFromYaml
@@ -12,10 +13,14 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Ghost-only YAML round-trip benchmark (no KSER/Moshi equivalent).
+ * Ghost-only YAML round-trip benchmark, plus a Ghost-vs-kaml decode/encode comparison.
  *
  * Exercises KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer] paths on the
  * integration fixture [com.ghost.serialization.integration.model.YamlBenchUser].
+ *
+ * The kaml comparison below is fixture-only (this file's `YAML_USER` sample) — it is NOT a run
+ * against the official yaml-test-suite / matrix.yaml.info spec-compliance matrix. Tracked
+ * separately: https://github.com/juanchurtado1991/ghost-serializer/issues/17
  */
 object GhostYamlBenchmark {
 
@@ -96,7 +101,142 @@ score: 100.0
         }
 
         println("════════════════════════════════════════════════════════════════\n")
+
+        runKamlComparison(threadBean)
+
         return true
+    }
+
+    /**
+     * Ghost vs kaml decode/encode comparison on the same [YamlBenchUser] fixture.
+     *
+     * Fixture-only — not a run against the yaml-test-suite / matrix.yaml.info matrix.
+     */
+    private fun runKamlComparison(threadBean: ThreadMXBean) {
+        val yamlText = YAML_USER.trimIndent()
+        val payloadBytes = yamlText.encodeToByteArray().size.toLong()
+        val serializer = YamlBenchUser.serializer()
+        val decodedForEncode = Ghost.decodeFromYaml<YamlBenchUser>(YAML_USER)
+
+        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) {
+            Ghost.decodeFromYaml<YamlBenchUser>(yamlText)
+            Yaml.default.decodeFromString(serializer, yamlText)
+            Ghost.encodeToYaml(decodedForEncode)
+            Yaml.default.encodeToString(serializer, decodedForEncode)
+        }
+
+        cleanHeap()
+        val ghostDecode = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            Ghost.decodeFromYaml<YamlBenchUser>(yamlText)
+        }
+        cleanHeap()
+        val kamlDecode = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            Yaml.default.decodeFromString(serializer, yamlText)
+        }
+
+        cleanHeap()
+        val ghostEncode = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            Ghost.encodeToYaml(decodedForEncode)
+        }
+        cleanHeap()
+        val kamlEncode = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+            Yaml.default.encodeToString(serializer, decodedForEncode)
+        }
+
+        printComparison(
+            payloadBytes = payloadBytes,
+            categories = listOf(
+                "Decode (String)" to listOf("GHOST" to ghostDecode, "KAML" to kamlDecode),
+                "Encode (String)" to listOf("GHOST" to ghostEncode, "KAML" to kamlEncode),
+            ),
+        )
+    }
+
+    private fun printComparison(
+        payloadBytes: Long,
+        categories: List<Pair<String, List<Pair<String, Triple<Double, Double, Double>>>>>,
+    ) {
+        println("\n--- Ghost vs kaml — YamlBenchUser fixture (fixture-only, NOT the yaml-test-suite matrix) ---")
+        println(
+            "  Payload: %d bytes → µs/op and decimal GB/s (ops/s × payload / 10⁹)".format(payloadBytes)
+        )
+        println("| Operation          | Engine | Throughput (GB/s) | Latency (µs/op) | Mem (KB/op) |")
+        println("|--------------------|--------|-------------------|-----------------|-------------|")
+        for ((label, scores) in categories) {
+            val sorted = scores.sortedByDescending { it.second.first }
+            for (res in sorted) {
+                val ops = res.second.first
+                val opsStdev = res.second.second
+                val micros = BenchmarkThroughput.opsPerSecToMicros(ops)
+                val microsStdev = if (ops <= 0.0) 0.0 else micros * (opsStdev / ops)
+                val gb = BenchmarkThroughput.opsPerSecToGbPerSec(ops, payloadBytes)
+                println(
+                    "| %-18s | %-6s | %17.3f | %7.1f ±%-5.1f | %11.1f |".format(
+                        label, res.first, gb, micros, microsStdev, res.second.third
+                    )
+                )
+            }
+            val winner = sorted[0]
+            val slowest = sorted.last()
+            val pct = ((winner.second.first - slowest.second.first) / slowest.second.first) * 100.0
+            println(
+                "   👉 WINNER for %s: %s (%.1f%% faster than %s)".format(
+                    label, winner.first, pct, slowest.first
+                )
+            )
+            println("|--------------------|--------|-------------------|-----------------|-------------|")
+        }
+    }
+
+    @Volatile
+    private var blackHoleSink: Any? = null
+    private fun consume(obj: Any?) {
+        blackHoleSink = obj
+    }
+
+    private fun cleanHeap() {
+        System.gc()
+        System.runFinalization()
+    }
+
+    private inline fun <T> measurePerf(
+        threadBean: ThreadMXBean,
+        runs: Int,
+        crossinline block: () -> T,
+    ): Triple<Double, Double, Double> {
+        val currentThreadId = Thread.currentThread().id
+        val startAllocatedBytes = threadBean.getThreadAllocatedBytes(currentThreadId)
+        val startTime = System.nanoTime()
+
+        val numBatches = if (runs >= 10) 10 else 1
+        val runsPerBatch = runs / numBatches
+        val batchThroughputs = DoubleArray(numBatches)
+        repeat(numBatches) { b ->
+            val start = System.nanoTime()
+            repeat(runsPerBatch) {
+                val res = block()
+                consume(res)
+            }
+            val elapsed = System.nanoTime() - start
+            batchThroughputs[b] = runsPerBatch / (elapsed.toDouble() / 1_000_000_000.0)
+        }
+
+        val elapsedNanos = System.nanoTime() - startTime
+        val endAllocatedBytes = threadBean.getThreadAllocatedBytes(currentThreadId)
+        val avgThroughput = runs / (elapsedNanos.toDouble() / 1_000_000_000.0)
+
+        val stdDev = if (numBatches > 1) {
+            val mean = batchThroughputs.average()
+            val variance = batchThroughputs.map { (it - mean) * (it - mean) }.sum() / (numBatches - 1)
+            kotlin.math.sqrt(variance)
+        } else {
+            0.0
+        }
+
+        val allocatedBytes = endAllocatedBytes - startAllocatedBytes
+        val kbPerOp = if (allocatedBytes > 0) (allocatedBytes.toDouble() / runs) / 1024.0 else 0.0
+
+        return Triple(avgThroughput, stdDev, kbPerOp)
     }
 
     private inline fun measureBytes(
