@@ -25,12 +25,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <h1>Coverage Summary for Class: YamlBenchUser (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -60,6 +57,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.8%
+  </span>
+  <span class="absValue">
+    (102/186)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">YamlBenchUser$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
     100%
   </span>
   <span class="absValue">
@@ -72,7 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (8/8)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,11 +104,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (43/43)
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    55.8%
+  </span>
+  <span class="absValue">
+    (106/190)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -96,9 +154,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;import com.ghost.serialization.annotations.GhostYamlSerialization
+&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
 &nbsp;/** Flat YAML benchmark fixture — no nested `@GhostSerialization` types. */
-<b class="fc">&nbsp;@GhostSerialization</b>
+<b class="pc">&nbsp;@Serializable</b>
+&nbsp;@GhostSerialization
 &nbsp;@GhostYamlSerialization
 &nbsp;data class YamlBenchUser(
 <b class="fc">&nbsp;    val id: Int,</b>
@@ -132,7 +192,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-28 19:27</div>
+    <div style="float:right;">generated on 2026-07-29 16:18</div>
 </div>
 </body>
 </html>
