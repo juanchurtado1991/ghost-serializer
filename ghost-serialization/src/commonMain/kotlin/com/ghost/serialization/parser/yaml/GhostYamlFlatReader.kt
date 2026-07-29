@@ -226,17 +226,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                             } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
                                 null
                             } else {
-                                val firstByte = localRawData[position]
-                                when {
-                                    firstByte == C.DASH_BYTE && isBlockSequenceEntry() ->
-                                        readBlockSequence(valueIndent)
-
-                                    firstByte == C.PIPE_BYTE || firstByte == C.GT_BYTE ->
-                                        readBlockScalar(firstByte)
-
-                                    else ->
-                                        readBlockMapping(valueIndent)
-                                }
+                                // Delegate to readValue's own dispatch rather than assuming a
+                                // nested mapping — it already distinguishes a bare scalar
+                                // continuation (e.g. "foo:\n  bar") from an actual "key: value"
+                                // pattern via readPlainScalarOrMapping, and handles dash-sequences
+                                // and block scalars too.
+                                readValue(valueIndent, inFlow = false)
                             }
                         }
                     }
@@ -305,8 +300,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         else {
                             val itemIndent = currentIndent
                             if (itemIndent < elementIndent) null
-                            else if (isBlockSequenceEntry()) readBlockSequence(itemIndent)
-                            else readBlockMapping(itemIndent)
+                            // Delegate to readValue's own dispatch — see the equivalent comment
+                            // in readBlockMapping for why (bare scalar vs. mapping vs. block
+                            // scalar, not just sequence-vs-mapping).
+                            else readValue(itemIndent, inFlow = false)
                         }
                     }
 
