@@ -1,10 +1,8 @@
 package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.JsonReaderOptions
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
@@ -32,6 +30,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     /** Current indentation column (0-based). Updated on every line. */
     internal var currentIndent: Int = 0
+
+    /**
+     * Whether a tab byte appears in the current line's leading whitespace, between the counted
+     * [currentIndent] spaces and the first non-whitespace byte. Tabs have no fixed column width,
+     * so the YAML spec forbids them in the indentation used to open or extend a block mapping/
+     * sequence — but they're harmless as ordinary whitespace once a scalar's own content has
+     * started. See the [currentIndent]-consuming checks in `readBlockMapping`/`readBlockSequence`.
+     */
+    internal var indentHasTab: Boolean = false
 
     /** Depth counter — guards against stack overflow on extreme nesting. */
     internal var depth: Int = 0
@@ -156,8 +163,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // tagged value
             C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow)    // anchor definition
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
-            C.DOUBLE_QUOTE_BYTE -> readDoubleQuotedString()
-            C.SINGLE_QUOTE_BYTE -> readSingleQuotedString()
+            C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readDoubleQuotedString() }
+            C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readSingleQuotedString() }
             C.DASH_BYTE -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
@@ -173,6 +180,30 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
             else -> readPlainScalarOrMapping(indent, inFlow, expectedTag)
         }
+    }
+
+    /**
+     * Reads a quoted scalar via [readQuoted], then checks whether a `:` (key separator) follows —
+     * a quoted string can be a mapping key, not just a value (e.g. `"400":` in `responses:` below
+     * a `- `/another key). [readPlainScalarOrMapping] already does this colon-scan for *bare* keys,
+     * but readValue's dispatch never reaches it for quoted content since [C.DOUBLE_QUOTE_BYTE] /
+     * [C.SINGLE_QUOTE_BYTE] are handled directly above — without this check, a quoted key's value
+     * would be silently misread as the quoted string itself, dropping everything nested under it.
+     */
+    private inline fun readQuotedScalarOrMappingKey(indent: Int, readQuoted: () -> String): Any? {
+        val startPosition = position
+        val text = readQuoted()
+        skipInlineWhitespace()
+        val localLimit = limit
+        val isMappingKey = position < localLimit && rawData[position] == C.COLON_BYTE &&
+            (position + 1 >= localLimit ||
+                rawData[position + 1] == C.SPACE_BYTE ||
+                rawData[position + 1] == C.NEWLINE_BYTE ||
+                rawData[position + 1] == C.CR_BYTE ||
+                rawData[position + 1] == C.TAB_BYTE)
+        if (!isMappingKey) return text
+        position = startPosition
+        return readBlockMapping(indent.coerceAtLeast(0))
     }
 
     // ── Block Mapping ──────────────────────────────────────────────────────────
@@ -421,375 +452,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         }
     }
 
-    // ── Scalar interpretation ──────────────────────────────────────────────────
-
-    /**
-     * Interprets raw bytes as the appropriate Kotlin type.
-     * Never allocates a String until we know it's needed.
-     *
-     * Type priority (YAML 1.2 core schema):
-     *   null → bool → int → float → string
-     */
-    private fun interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
-        val length = end - start
-        if (length == 0) return null
-
-        val firstByte = data[start]
-
-        if (expectedTag == GhostYamlTags.TAG_STR) {
-            return data.decodeToString(start, end)
-        }
-        if (expectedTag == GhostYamlTags.TAG_NULL) {
-            return null
-        }
-        if (expectedTag == GhostYamlTags.TAG_BOOL) {
-            if (isTrueLiteral(data, start, length)) return true
-            if (isFalseLiteral(data, start, length)) return false
-            return false
-        }
-        if (expectedTag == GhostYamlTags.TAG_INT) {
-            tryParseNumber(data, start, end)?.let {
-                if (it is Long) return it
-                if (it is Double) return it.toLong()
-            }
-            return data.decodeToString(start, end).toLongOrNull() ?: 0L
-        }
-        if (expectedTag == GhostYamlTags.TAG_FLOAT) {
-            tryParseNumber(data, start, end)?.let {
-                if (it is Double) return it
-                if (it is Long) return it.toDouble()
-            }
-            return data.decodeToString(start, end).toDoubleOrNull() ?: 0.0
-        }
-
-        // null: ~, null, Null, NULL
-        if (firstByte == C.TILDE_BYTE && length == 1) return null
-        if (isNullLiteral(data, start, length)) return null
-
-        // bool: true, True, TRUE, false, False, FALSE
-        if (isTrueLiteral(data, start, length)) return true
-        if (isFalseLiteral(data, start, length)) return false
-
-        // number: starts with digit, '-', or '.' (for .inf/.nan)
-        if (firstByte == C.DASH_BYTE || isDigit(firstByte) || firstByte == C.DOT_BYTE) {
-            tryParseNumber(data, start, end)?.let { return it }
-        }
-
-        // Fallback: string
-        return data.decodeToString(start, end)
-    }
-
-    // ── Quoted strings ─────────────────────────────────────────────────────────
-
-    internal fun readDoubleQuotedString(): String {
-        position++ // consume opening '"'
-        val startPosition = position
-        val localLimit = limit
-        val localRawData = rawData
-
-        var hasEscape = false
-        var scanPos = position
-        while (scanPos < localLimit) {
-            val byteVal = localRawData[scanPos]
-            if (byteVal == C.DOUBLE_QUOTE_BYTE) {
-                break
-            }
-            if (byteVal == C.BACKSLASH_BYTE) {
-                hasEscape = true
-                break
-            }
-            scanPos++
-        }
-
-        if (!hasEscape && scanPos < localLimit) {
-            position = scanPos + 1 // consume string and closing quote
-            return localRawData.decodeToString(startPosition, scanPos)
-        }
-
-        var outBuffer = acquireScratchBuffer(256)
-        var outPos = 0
-        try {
-            while (position < localLimit) {
-                val currentByte = localRawData[position]
-                if (currentByte == C.DOUBLE_QUOTE_BYTE) {
-                    position++
-                    return outBuffer.decodeToString(0, outPos)
-                } else if (currentByte == C.BACKSLASH_BYTE) {
-                    position++
-                    if (position >= localLimit) break
-                    val nextByte = localRawData[position]
-                    if (nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE) {
-                        if (nextByte == C.CR_BYTE && position + 1 < localLimit && localRawData[position + 1] == C.NEWLINE_BYTE) {
-                            position++
-                        }
-                        position++
-                        while (position < localLimit && (localRawData[position] == C.SPACE_BYTE || localRawData[position] == C.TAB_BYTE)) {
-                            position++
-                        }
-                    } else {
-                        val code = processEscapeSequence()
-                        if (code <= C.UTF8_1BYTE_MAX) {
-                            if (outPos + 1 > outBuffer.size) {
-                                val newBuffer =
-                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                                releaseScratchBuffer(outBuffer)
-                                outBuffer = newBuffer
-                            }
-                            outBuffer[outPos++] = code.toByte()
-                        } else if (code <= C.UTF8_2BYTE_MAX) {
-                            if (outPos + 2 > outBuffer.size) {
-                                val newBuffer =
-                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                                releaseScratchBuffer(outBuffer)
-                                outBuffer = newBuffer
-                            }
-                            outBuffer[outPos++] =
-                                (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                        } else if (code <= C.UTF8_3BYTE_MAX) {
-                            if (outPos + 3 > outBuffer.size) {
-                                val newBuffer =
-                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                                releaseScratchBuffer(outBuffer)
-                                outBuffer = newBuffer
-                            }
-                            outBuffer[outPos++] =
-                                (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                        } else {
-                            if (outPos + 4 > outBuffer.size) {
-                                val newBuffer =
-                                    acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                                outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                                releaseScratchBuffer(outBuffer)
-                                outBuffer = newBuffer
-                            }
-                            outBuffer[outPos++] =
-                                (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                        }
-                    }
-                } else {
-                    val startPos = position
-                    while (position < localLimit &&
-                        localRawData[position] != C.DOUBLE_QUOTE_BYTE &&
-                        localRawData[position] != C.BACKSLASH_BYTE
-                    ) {
-                        position++
-                    }
-                    val rangeLength = position - startPos
-                    if (outPos + rangeLength > outBuffer.size) {
-                        var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR
-                        while (outPos + rangeLength > newSize) {
-                            newSize *= C.BUFFER_SCALE_FACTOR
-                        }
-                        val newBuffer = acquireScratchBuffer(newSize)
-                        outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                        releaseScratchBuffer(outBuffer)
-                        outBuffer = newBuffer
-                    }
-                    localRawData.copyInto(outBuffer, outPos, startPos, position)
-                    outPos += rangeLength
-                }
-            }
-        } finally {
-            releaseScratchBuffer(outBuffer)
-        }
-        yamlError("Unterminated double-quoted string")
-    }
-
-    internal fun readSingleQuotedString(): String {
-        position++ // consume opening '\''
-        val startPosition = position
-        val localLimit = limit
-        val localRawData = rawData
-
-        var hasEscape = false
-        var scanPos = position
-        while (scanPos < localLimit) {
-            val byteVal = localRawData[scanPos]
-            if (byteVal == C.SINGLE_QUOTE_BYTE) {
-                if (scanPos + 1 < localLimit && localRawData[scanPos + 1] == C.SINGLE_QUOTE_BYTE) {
-                    hasEscape = true
-                    scanPos += 2
-                    continue
-                }
-                break
-            }
-            scanPos++
-        }
-
-        if (!hasEscape && scanPos < localLimit) {
-            position = scanPos + 1 // consume string and closing quote
-            return localRawData.decodeToString(startPosition, scanPos)
-        }
-
-        var outBuffer = acquireScratchBuffer(256)
-        var outPos = 0
-        try {
-            while (position < localLimit) {
-                val currentByte = localRawData[position]
-                if (currentByte == C.SINGLE_QUOTE_BYTE) {
-                    position++
-                    if (position < localLimit && localRawData[position] == C.SINGLE_QUOTE_BYTE) {
-                        if (outPos + 1 > outBuffer.size) {
-                            val newBuffer =
-                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-                            outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                            releaseScratchBuffer(outBuffer)
-                            outBuffer = newBuffer
-                        }
-                        outBuffer[outPos++] = C.SINGLE_QUOTE_BYTE
-                        position++
-                    } else {
-                        return outBuffer.decodeToString(0, outPos)
-                    }
-                } else {
-                    val startPos = position
-                    while (position < localLimit && localRawData[position] != C.SINGLE_QUOTE_BYTE) {
-                        position++
-                    }
-                    val rangeLength = position - startPos
-                    if (outPos + rangeLength > outBuffer.size) {
-                        var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR
-                        while (outPos + rangeLength > newSize) {
-                            newSize *= C.BUFFER_SCALE_FACTOR
-                        }
-                        val newBuffer = acquireScratchBuffer(newSize)
-                        outBuffer.copyInto(newBuffer, 0, 0, outPos)
-                        releaseScratchBuffer(outBuffer)
-                        outBuffer = newBuffer
-                    }
-                    localRawData.copyInto(outBuffer, outPos, startPos, position)
-                    outPos += rangeLength
-                }
-            }
-        } finally {
-            releaseScratchBuffer(outBuffer)
-        }
-        yamlError("Unterminated single-quoted string")
-    }
-
-    private fun processEscapeSequence(): Int {
-        val currentByte = rawData[position++]
-        val currentByteInt = currentByte.toInt()
-        val localLimit = limit
-        return when (currentByte) {
-            C.DOUBLE_QUOTE_BYTE -> currentByteInt
-            C.BACKSLASH_BYTE -> currentByteInt
-            C.ESCAPE_SLASH_BYTE -> currentByteInt
-            C.SPACE_BYTE -> currentByteInt
-            C.TAB_BYTE -> currentByteInt
-            C.LOWERCASE_B_BYTE -> C.CODE_BS
-            C.LOWERCASE_F_BYTE -> C.CODE_FF
-            C.LOWERCASE_N_BYTE -> C.CODE_LF
-            C.LOWERCASE_R_BYTE -> C.CODE_CR
-            C.LOWERCASE_T_BYTE -> C.CODE_TAB
-            C.LOWERCASE_U_BYTE -> {        // \uXXXX
-                if (position + 4 > localLimit) yamlError("Incomplete \\u escape")
-                val hexVal = parseHex(rawData, position, 4)
-                position += 4
-                hexVal
-            }
-
-            C.UPPERCASE_U_BYTE -> {        // \UXXXXXXXX
-                if (position + 8 > localLimit) yamlError("Incomplete \\U escape")
-                val hexVal = parseHex(rawData, position, 8)
-                position += 8
-                hexVal
-            }
-
-            C.ZERO_BYTE -> C.CODE_ZERO
-            C.LOWERCASE_A_BYTE -> C.CODE_BEL
-            C.LOWERCASE_V_BYTE -> C.CODE_VTAB
-            C.LOWERCASE_E_BYTE -> C.CODE_ESC
-            C.UPPERCASE_N_BYTE -> C.CODE_NEXT_LINE
-            C.UNDERSCORE_BYTE -> C.CODE_NBSP
-            C.UPPERCASE_L_BYTE -> C.CODE_LINE_SEP
-            C.UPPERCASE_P_BYTE -> C.CODE_PARA_SEP
-            else -> yamlError("Unknown escape: \\${currentByteInt.toChar()}")
-        }
-    }
-
-    private fun parseHex(data: ByteArray, start: Int, length: Int): Int {
-        var value = 0
-        var index = 0
-        while (index < length) {
-            val byteVal = data[start + index]
-            val digit = when {
-                byteVal in C.ZERO_BYTE..C.NINE_BYTE -> byteVal - C.ZERO_BYTE
-                byteVal in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> byteVal - C.LOWERCASE_A_BYTE + C.HEX_RADIX_10
-                byteVal in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> byteVal - C.UPPERCASE_A_BYTE + C.HEX_RADIX_10
-                else -> yamlError("Invalid hex char in escape sequence")
-            }
-            value = (value shl C.HEX_SHIFT_4) or digit
-            index++
-        }
-        return value
-    }
-
-    // ── Number parsing ─────────────────────────────────────────────────────────
-
-    private fun readNumber(): Any {
-        val startPosition = position
-        val localLimit = limit
-        val localRawData = rawData
-
-        // Negative hex/octal/binary ("-0x10", "-0o17", "-0b101") aren't plain decimal digits,
-        // so the digit-only loop below would stop right after the leading "-0". Scan their
-        // digit classes explicitly and hand the full token to tryParseNumber, which already
-        // knows how to parse (and negate) these bases — see the DASH_BYTE branch below.
-        var prefixPosition = position
-        if (prefixPosition < localLimit && localRawData[prefixPosition] == C.DASH_BYTE) {
-            prefixPosition++
-        }
-        if (prefixPosition + 1 < localLimit && localRawData[prefixPosition] == C.ZERO_BYTE) {
-            val baseByte = localRawData[prefixPosition + 1]
-            val isHex = baseByte == C.LOWERCASE_X_BYTE || baseByte == C.UPPERCASE_X_BYTE
-            val isOctal = baseByte == C.LOWERCASE_O_BYTE || baseByte == C.UPPERCASE_O_BYTE
-            val isBinary = baseByte == C.LOWERCASE_B_BYTE || baseByte == C.UPPERCASE_B_BYTE
-            if (isHex || isOctal || isBinary) {
-                position = prefixPosition + 2
-                while (position < localLimit) {
-                    val currentByte = localRawData[position]
-                    val isBaseDigit = when {
-                        isHex -> isDigit(currentByte) ||
-                                currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||
-                                currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE
-
-                        isOctal -> currentByte in C.ZERO_BYTE..C.SEVEN_BYTE
-                        else -> currentByte == C.ZERO_BYTE || currentByte == C.ONE_BYTE
-                    }
-                    if (!isBaseDigit) break
-                    position++
-                }
-                return tryParseNumber(localRawData, startPosition, position)
-                    ?: localRawData.decodeToString(startPosition, position)
-            }
-        }
-
-        while (position < localLimit) {
-            val currentByte = localRawData[position]
-            if (!isDigit(currentByte) && currentByte != C.DASH_BYTE && currentByte != C.PLUS_BYTE && currentByte != C.DOT_BYTE &&
-                currentByte != C.LOWERCASE_E_BYTE && currentByte != C.UPPERCASE_E_BYTE
-            ) break  // e, E for scientific
-            position++
-        }
-        return tryParseNumber(localRawData, startPosition, position)
-            ?: localRawData.decodeToString(startPosition, position)
-    }
+    // Scalar interpretation, quoted-string unescaping, and number parsing now live in
+    // GhostYamlScalarDecoding.kt (extension functions: interpretScalar, readDoubleQuotedString,
+    // readSingleQuotedString, readNumber, etc.) — same package, same pattern as the anchor/tag/
+    // flow-style/block-scalar subsystems below.
 
     // ── Scalar subsystems (block, flow, tags, anchors) ─────────────────────────
 
@@ -838,7 +504,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         recomputeCurrentIndent()
     }
 
-    /** Recomputes [currentIndent] by counting leading spaces on the current line. */
+    /**
+     * Recomputes [currentIndent] by counting leading spaces on the current line, and
+     * [indentHasTab] by checking whether a tab immediately follows those spaces (i.e. is part of
+     * the line's leading whitespace, before any real content).
+     */
     private fun recomputeCurrentIndent() {
         val localLimit = limit
         val localRawData = rawData
@@ -852,6 +522,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             spaces++; pointer++
         }
         currentIndent = spaces
+        indentHasTab = pointer < localLimit && localRawData[pointer] == C.TAB_BYTE
     }
 
     /** Advances [position] to the next newline (exclusive). */
@@ -988,154 +659,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     // ── Bitwise scalar type checks ─────────────────────────────────────────────
+    // isNullLiteral/isTrueLiteral/isFalseLiteral/tryParseNumber moved to
+    // GhostYamlScalarDecoding.kt alongside interpretScalar, their only caller. isDigit stays here
+    // — already internal and shared with GhostYamlBlockScalarSubsystem.kt.
 
     /** Bitwise digit check — no `.toChar()`, no range object allocation. */
     internal fun isDigit(currentByte: Byte): Boolean =
         (currentByte - C.DIGIT_LOWER_BOUND).toUByte() <= (C.DIGIT_UPPER_BOUND - C.DIGIT_LOWER_BOUND).toUByte()
-
-    /** Checks if bytes[start..start+len) match 'null', 'Null', or 'NULL'. */
-    private fun isNullLiteral(data: ByteArray, start: Int, length: Int): Boolean {
-        if (length != 4) return false
-        val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        return byte0 == C.LOWERCASE_N_BYTE && byte1 == C.LOWERCASE_U_BYTE && byte2 == C.LOWERCASE_L_BYTE && byte3 == C.LOWERCASE_L_BYTE  // n,u,l,l
-    }
-
-    /** Checks if bytes[start..start+len) match 'true', 'True', or 'TRUE'. */
-    private fun isTrueLiteral(data: ByteArray, start: Int, length: Int): Boolean {
-        if (length != 4) return false
-        val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        return byte0 == C.LOWERCASE_T_BYTE && byte1 == C.LOWERCASE_R_BYTE && byte2 == C.LOWERCASE_U_BYTE && byte3 == C.LOWERCASE_E_BYTE  // t,r,u,e
-    }
-
-    /** Checks if bytes[start..start+len) match 'false', 'False', or 'FALSE'. */
-    private fun isFalseLiteral(data: ByteArray, start: Int, length: Int): Boolean {
-        if (length != 5) return false
-        val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        val byte4 = (data[start + 4].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-        return byte0 == C.LOWERCASE_F_BYTE && byte1 == C.LOWERCASE_A_BYTE && byte2 == C.LOWERCASE_L_BYTE && byte3 == C.LOWERCASE_S_BYTE && byte4 == C.LOWERCASE_E_BYTE  // f,a,l,s,e
-    }
-
-    /**
-     * Attempts to parse [data] between [start] and [end] as a [Long] or [Double].
-     *
-     * Returns `null` when the slice is not a valid number. Parsing is performed incrementally
-     * over bytes; callers must not decode the entire range with [String.toInt] or [String.toDouble].
-     */
-    private fun tryParseNumber(data: ByteArray, start: Int, end: Int): Any? {
-        val length = end - start
-        if (length == 0) return null
-
-        var currentPosition = start
-        var isNegative = false
-
-        if (data[currentPosition] == C.DASH_BYTE) {
-            isNegative = true; currentPosition++
-        }
-        if (currentPosition >= end) return null
-
-        // Check for hex (0x), octal (0o), binary (0b)
-        if (end - currentPosition >= 3 && data[currentPosition] == C.ZERO_BYTE) {
-            val nextByte = data[currentPosition + 1]
-            if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X
-                var value = 0L
-                var idx = currentPosition + 2
-                while (idx < end) {
-                    val currentByte = data[idx]
-                    val digit = when {
-                        isDigit(currentByte) -> (currentByte - C.ZERO_BYTE).toLong()
-                        currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f
-                        currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F
-                        else -> return null
-                    }
-                    value = (value shl C.HEX_SHIFT) or digit
-                    idx++
-                }
-                return if (isNegative) -value else value
-            }
-            if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O
-                var value = 0L
-                var idx = currentPosition + 2
-                while (idx < end) {
-                    val currentByte = data[idx]
-                    if (currentByte < C.ZERO_BYTE || currentByte > C.SEVEN_BYTE) return null // 0-7
-                    val digit = (currentByte - C.ZERO_BYTE).toLong()
-                    value = (value shl C.OCTAL_SHIFT) or digit
-                    idx++
-                }
-                return if (isNegative) -value else value
-            }
-            if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B
-                var value = 0L
-                var idx = currentPosition + 2
-                while (idx < end) {
-                    val currentByte = data[idx]
-                    if (currentByte != C.ZERO_BYTE && currentByte != C.ONE_BYTE) return null // 0 or 1
-                    val digit = (currentByte - C.ZERO_BYTE).toLong()
-                    value = (value shl C.BINARY_SHIFT) or digit
-                    idx++
-                }
-                return if (isNegative) -value else value
-            }
-        }
-
-        // Check for .inf / .nan
-        if (data[currentPosition] == C.DOT_BYTE) {
-            val stringRepresentation = data.decodeToString(start, end)
-            return when (stringRepresentation.lowercase()) {
-                C.STR_DOT_INF, C.STR_PLUS_DOT_INF -> Double.POSITIVE_INFINITY
-                C.STR_MINUS_DOT_INF -> Double.NEGATIVE_INFINITY
-                C.STR_DOT_NAN -> Double.NaN
-                else -> null
-            }
-        }
-
-        // Parse integer part byte by byte
-        var accumulatedLongValue = 0L
-        var hasDigit = false
-        var isFloatingPoint = false
-
-        while (currentPosition < end) {
-            val currentByte = data[currentPosition]
-            when {
-                isDigit(currentByte) -> {
-                    hasDigit = true
-                    val digit = (currentByte - C.ZERO_BYTE).toLong()
-                    // Overflow check
-                    if (accumulatedLongValue > (Long.MAX_VALUE - digit) / 10) {
-                        isFloatingPoint = true
-                        break
-                    }
-                    accumulatedLongValue = accumulatedLongValue * 10 + digit
-                    currentPosition++
-                }
-
-                currentByte == C.DOT_BYTE || currentByte == C.LOWERCASE_E_BYTE || currentByte == C.UPPERCASE_E_BYTE -> {
-                    isFloatingPoint = true
-                    break
-                }
-
-                else -> return null
-            }
-        }
-
-        if (!hasDigit) return null
-
-        if (!isFloatingPoint && currentPosition == end) {
-            return if (isNegative) -accumulatedLongValue else accumulatedLongValue
-        }
-
-        val stringRepresentation = data.decodeToString(start, end)
-        return stringRepresentation.toDoubleOrNull()
-    }
 
     // ── Error handling ────────────────────────────────────────────────────────
 
@@ -1162,8 +692,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val listIterator: Iterator<Any?>?
     )
 
-    private var rootParsed = false
-    private var rootObject: Any? = null
+    internal var rootParsed = false
+    internal var rootObject: Any? = null
 
     // Stack for object/list traversal (stores state elements)
     @PublishedApi
@@ -1192,365 +722,61 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     var maxDepth: Int = C.MAX_DEPTH
     var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize
 
-    private val tokenEndObject = -1
-    private val tokenUnknownName = -2
+    @PublishedApi
+    internal val tokenEndObject = -1
 
-    private fun ensureRootParsed() {
-        if (!rootParsed) {
-            rootObject = readDocument()
-            nextValue = rootObject
-            rootParsed = true
-        }
-    }
+    @PublishedApi
+    internal val tokenUnknownName = -2
 
-    private fun prepareRootForCurrentDocument() {
-        traversalStack.clear()
-        currentMap = null
-        mapIterator = null
-        currentEntry = null
-        currentList = null
-        listIterator = null
-        nextValue = null
-        rootObject = readValue(indent = C.INDENT_UNSET, inFlow = false)
-        nextValue = rootObject
-        rootParsed = true
-    }
+    // Every method below is a thin delegate to an identically-named `xxxImpl` extension function
+    // in GhostYamlCursorTraversal.kt — see that file's header comment for why these stay real
+    // members here (public API consumed by KSP-generated code in other Gradle modules) instead of
+    // becoming extension functions the way the other subsystems below do.
 
-    private fun clearAfterDocument() {
-        traversalStack.clear()
-        currentMap = null
-        mapIterator = null
-        currentEntry = null
-        currentList = null
-        listIterator = null
-        nextValue = null
-        rootParsed = false
-        rootObject = null
-    }
-
-    fun beginObject() {
-        ensureRootParsed()
-        val map =
-            nextValue as? Map<*, *> ?: throw GhostYamlException("Expected Map but found $nextValue")
-
-        traversalStack.add(
-            StateFrame(
-                currentMap,
-                mapIterator,
-                currentEntry,
-                currentList,
-                listIterator
-            )
-        )
-
-        @Suppress("UNCHECKED_CAST")
-        currentMap = map as Map<String, Any?>
-        mapIterator = currentMap!!.entries.iterator()
-        currentEntry = null
-        currentList = null
-        listIterator = null
-        nextValue = null
-    }
-
-    fun endObject() {
-        if (traversalStack.isNotEmpty()) {
-            val frame = traversalStack.removeAt(traversalStack.size - 1)
-            currentMap = frame.map
-            mapIterator = frame.mapIterator
-            currentEntry = frame.entry
-            currentList = frame.list
-            listIterator = frame.listIterator
-        } else {
-            currentMap = null
-            mapIterator = null
-            currentEntry = null
-            currentList = null
-            listIterator = null
-        }
-        nextValue = null
-    }
-
-    fun selectNameAndConsume(options: JsonReaderOptions): Int {
-        val iterator = mapIterator ?: return tokenEndObject
-        if (!iterator.hasNext()) {
-            return tokenEndObject
-        }
-        val entry = iterator.next()
-        currentEntry = entry
-        nextValue = entry.value
-
-        val index = options.findOptionIndex(entry.key)
-        if (index >= 0) {
-            return index
-        }
-        return tokenUnknownName
-    }
-
-    fun selectString(options: JsonReaderOptions): Int {
-        val strValue = nextString()
-        val index = options.findOptionIndex(strValue)
-        if (index >= 0) {
-            return index
-        }
-        return tokenEndObject
-    }
-
-    fun skipValue() {
-        nextValue = null
-    }
-
-    fun isNextNullValue(): Boolean {
-        ensureRootParsed()
-        return nextValue == null
-    }
-
-    fun consumeNull() {
-        nextValue = null
-    }
+    fun beginObject() = beginObjectImpl()
+    fun endObject() = endObjectImpl()
+    fun selectNameAndConsume(options: JsonReaderOptions): Int = selectNameAndConsumeImpl(options)
+    fun selectString(options: JsonReaderOptions): Int = selectStringImpl(options)
+    fun skipValue() = skipValueImpl()
+    fun isNextNullValue(): Boolean = isNextNullValueImpl()
+    fun consumeNull() = consumeNullImpl()
 
     /** Reads a YAML string, or `null` when the next value is YAML null. */
-    fun nextStringOrNull(): String? {
-        if (isNextNullValue()) {
-            consumeNull()
-            return null
-        }
-        return nextString()
-    }
+    fun nextStringOrNull(): String? = nextStringOrNullImpl()
 
     /** Reads a YAML int, or `null` when the next value is YAML null. */
-    fun nextIntOrNull(): Int? {
-        if (isNextNullValue()) {
-            consumeNull()
-            return null
-        }
-        return nextInt()
-    }
+    fun nextIntOrNull(): Int? = nextIntOrNullImpl()
 
     /** Reads a YAML long, or `null` when the next value is YAML null. */
-    open fun nextLongOrNull(): Long? {
-        if (isNextNullValue()) {
-            consumeNull()
-            return null
-        }
-        return nextLong()
-    }
+    open fun nextLongOrNull(): Long? = nextLongOrNullImpl()
 
     /** Reads a YAML boolean, or `null` when the next value is YAML null. */
-    fun nextBooleanOrNull(): Boolean? {
-        if (isNextNullValue()) {
-            consumeNull()
-            return null
-        }
-        return nextBoolean()
-    }
+    fun nextBooleanOrNull(): Boolean? = nextBooleanOrNullImpl()
 
-    fun nextInt(): Int {
-        val value = nextValue
-        nextValue = null
-        if (value is Number) {
-            return value.toInt()
-        }
-        if (value is String) {
-            if (coerceStringsToNumbers) {
-                return value.toIntOrNull() ?: 0
-            }
-            return value.toInt()
-        }
-        throw GhostYamlException("Expected Int but found $value")
-    }
-
-    open fun nextLong(): Long {
-        val value = nextValue
-        nextValue = null
-        if (value is Number) {
-            return value.toLong()
-        }
-        if (value is String) {
-            if (coerceStringsToNumbers) {
-                return value.toLongOrNull() ?: 0L
-            }
-            return value.toLong()
-        }
-        throw GhostYamlException("Expected Long but found $value")
-    }
-
-    open fun nextProtoUInt64(): ULong {
-        val previous = coerceStringsToNumbers
-        coerceStringsToNumbers = true
-        return try {
-            nextString().toULong()
-        } finally {
-            coerceStringsToNumbers = previous
-        }
-    }
+    fun nextInt(): Int = nextIntImpl()
+    open fun nextLong(): Long = nextLongImpl()
+    open fun nextProtoUInt64(): ULong = nextProtoUInt64Impl()
 
     /** Plain YAML scalar `ULong` — accepts numeric or string scalars (full range via decimal string). */
-    open fun nextULong(): ULong {
-        val value = nextValue
-        nextValue = null
-        when (value) {
-            is Number -> return value.toLong().toULong()
-            is String -> {
-                if (coerceStringsToNumbers) {
-                    return value.toULongOrNull() ?: 0uL
-                }
-                return value.toULong()
-            }
-        }
-        throw GhostYamlException("Expected ULong but found $value")
-    }
-
-    open fun nextULongOrNull(): ULong? {
-        if (isNextNullValue()) {
-            consumeNull()
-            return null
-        }
-        return nextULong()
-    }
-
-    fun nextDouble(): Double {
-        val value = nextValue
-        nextValue = null
-        if (value is Number) {
-            return value.toDouble()
-        }
-        if (value is String) {
-            if (coerceStringsToNumbers) {
-                return value.toDoubleOrNull() ?: 0.0
-            }
-            return value.toDouble()
-        }
-        throw GhostYamlException("Expected Double but found $value")
-    }
-
-    fun nextFloat(): Float {
-        val value = nextValue
-        nextValue = null
-        if (value is Number) {
-            return value.toFloat()
-        }
-        if (value is String) {
-            if (coerceStringsToNumbers) {
-                return value.toFloatOrNull() ?: 0.0f
-            }
-            return value.toFloat()
-        }
-        throw GhostYamlException("Expected Float but found $value")
-    }
-
-    fun nextBoolean(): Boolean {
-        val value = nextValue
-        nextValue = null
-        if (value is Boolean) {
-            return value
-        }
-        if (value is String) {
-            if (coerceBooleans) {
-                return value.lowercase() == C.STR_TRUE
-            }
-            return value.toBoolean()
-        }
-        throw GhostYamlException("Expected Boolean but found $value")
-    }
+    open fun nextULong(): ULong = nextULongImpl()
+    open fun nextULongOrNull(): ULong? = nextULongOrNullImpl()
+    fun nextDouble(): Double = nextDoubleImpl()
+    fun nextFloat(): Float = nextFloatImpl()
+    fun nextBoolean(): Boolean = nextBooleanImpl()
 
     /** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
-    fun nextChar(): Char {
-        val text = nextString()
-        if (text.length != 1) {
-            throw GhostYamlException("Expected single-character string but found length ${text.length}")
-        }
-        return text[0]
-    }
+    fun nextChar(): Char = nextCharImpl()
 
-    fun nextString(): String {
-        val value = nextValue
-        nextValue = null
-        if (value == null) return ""
-        return value.toString()
-    }
-
-    fun beginArray() {
-        ensureRootParsed()
-        val list = nextValue as? List<*>
-            ?: throw GhostYamlException("Expected List but found $nextValue")
-
-        traversalStack.add(
-            StateFrame(
-                currentMap,
-                mapIterator,
-                currentEntry,
-                currentList,
-                listIterator
-            )
-        )
-
-        currentList = list
-        listIterator = currentList!!.iterator()
-        currentMap = null
-        mapIterator = null
-        currentEntry = null
-        nextValue = null
-    }
-
-    fun endArray() {
-        if (traversalStack.isNotEmpty()) {
-            val frame = traversalStack.removeAt(traversalStack.size - 1)
-            currentMap = frame.map
-            mapIterator = frame.mapIterator
-            currentEntry = frame.entry
-            currentList = frame.list
-            listIterator = frame.listIterator
-        } else {
-            currentMap = null
-            mapIterator = null
-            currentEntry = null
-            currentList = null
-            listIterator = null
-        }
-        nextValue = null
-    }
-
-    fun hasNext(): Boolean {
-        return mapIterator?.hasNext() == true
-    }
-
-    fun hasNextArrayElement(): Boolean {
-        val iterator = listIterator ?: return false
-        if (iterator.hasNext()) {
-            nextValue = iterator.next()
-            return true
-        }
-        return false
-    }
-
-    fun isNextCloseArray(): Boolean {
-        return listIterator == null || !listIterator!!.hasNext()
-    }
-
-    fun nextKey(): String? {
-        val iterator = mapIterator ?: return null
-        if (iterator.hasNext()) {
-            val entry = iterator.next()
-            currentEntry = entry
-            nextValue = entry.value
-            return entry.key
-        }
-        return null
-    }
-
-    fun consumeKeySeparator() {
-        // No-op for AST traversal
-    }
-
-    fun throwError(message: String): Nothing {
-        throw GhostYamlException(message)
-    }
-
-    fun peekStringField(name: String): String? {
-        ensureRootParsed()
-        val currentObj = nextValue as? Map<*, *> ?: return null
-        return currentObj[name]?.toString()
-    }
+    fun nextString(): String = nextStringImpl()
+    fun beginArray() = beginArrayImpl()
+    fun endArray() = endArrayImpl()
+    fun hasNext(): Boolean = hasNextImpl()
+    fun hasNextArrayElement(): Boolean = hasNextArrayElementImpl()
+    fun isNextCloseArray(): Boolean = isNextCloseArrayImpl()
+    fun nextKey(): String? = nextKeyImpl()
+    fun consumeKeySeparator() = consumeKeySeparatorImpl()
+    fun throwError(message: String): Nothing = throwErrorImpl(message)
+    fun peekStringField(name: String): String? = peekStringFieldImpl(name)
 
     inline fun <T> readList(crossinline itemParser: () -> T): List<T> {
         beginArray()
