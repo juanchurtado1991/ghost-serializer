@@ -157,7 +157,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
         val currentByte = rawData[position]
         return when (currentByte) {
-            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte)           // block scalar
+            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte, indent)           // block scalar
             C.LEFT_BRACE_BYTE -> readFlowMapping()            // flow mapping
             C.LEFT_BRACKET_BYTE -> readFlowSequence()           // flow sequence
             C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // tagged value
