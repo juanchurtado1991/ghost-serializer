@@ -228,6 +228,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 val lineIndent = currentIndent
                 if (result.isNotEmpty() && lineIndent < blockIndent) break  // dedented — end of this mapping
                 if (isDocumentMarker()) break
+                // A tab can't be part of the indentation opening or extending a block mapping —
+                // tabs have no fixed column width, so there's no way to compare this line's
+                // indentation against blockIndent/a sibling's. Harmless once inside an already-
+                // established scalar's own content (readValue never reaches this loop for that).
+                if (indentHasTab) yamlError("Tab character not allowed in block mapping indentation")
 
                 // Read key
                 val key = readKey() ?: break
@@ -309,6 +314,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 if (result.isNotEmpty() && lineIndent < seqIndent) break
                 if (!isBlockSequenceEntry()) break
                 if (isDocumentMarker()) break
+                // See the equivalent check in readBlockMapping — tabs can't be part of the
+                // indentation opening or extending a block sequence.
+                if (indentHasTab) yamlError("Tab character not allowed in block sequence indentation")
 
                 // Consume '-'
                 position++ // '-'
