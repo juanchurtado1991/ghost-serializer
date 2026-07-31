@@ -30,15 +30,14 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
 
     if (isDoubleExcl) {
         val tagStart = position
-        while (position < localLimit) {
-            val currByte = localRawData[position]
-            if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break
+        while (position < localLimit && !isTagNameTerminator(localRawData[position])) {
             position++
         }
         val tagLen = position - tagStart
         if (tagLen > 0) {
             tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
         }
+        requireTagFollowedByWhitespace()
     } else {
         // Custom tag
         if (position < localLimit && localRawData[position] == C.LT_BYTE) {
@@ -56,11 +55,10 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
         } else {
             // Short tag like !Circle or !m!Circle
             val tagStart = position
-            while (position < localLimit) {
-                val currByte = localRawData[position]
-                if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break
+            while (position < localLimit && !isTagNameTerminator(localRawData[position])) {
                 position++
             }
+            requireTagFollowedByWhitespace()
             val tagLen = position - tagStart
             if (tagLen > 0) {
                 val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)
@@ -78,6 +76,12 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
                 } else {
                     resolvedTag = rawTagName
                 }
+            } else {
+                // Bare "!" with nothing else on this token — YAML's "non-specific tag", which
+                // forces the scalar to resolve as a string rather than running the usual
+                // null/bool/int/float cascade (e.g. "! 12" must decode to the string "12", not
+                // the integer 12).
+                tagType = GhostYamlTags.TAG_STR
             }
         }
     }
@@ -127,6 +131,25 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
     }
 
     return value
+}
+
+/** Flow indicators (`,[]{}`) end a bare tag name the same way whitespace does — they're never
+ *  part of a tag, per spec — but unlike whitespace, a flow indicator touching a tag with no
+ *  separating whitespace means something is wrong, so [requireTagFollowedByWhitespace] rejects it.
+ */
+private fun isTagNameTerminator(currByte: Byte): Boolean =
+    currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||
+        currByte == C.COMMA_BYTE || currByte == C.LEFT_BRACE_BYTE || currByte == C.RIGHT_BRACE_BYTE ||
+        currByte == C.LEFT_BRACKET_BYTE || currByte == C.RIGHT_BRACKET_BYTE
+
+private fun GhostYamlFlatReader.requireTagFollowedByWhitespace() {
+    if (position >= limit) return
+    val currByte = rawData[position]
+    val isWhitespaceOrEol = currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE ||
+        currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE
+    if (!isWhitespaceOrEol) {
+        yamlError("Invalid character immediately after tag")
+    }
 }
 
 private fun GhostYamlFlatReader.matchDoubleExclamationTag(
