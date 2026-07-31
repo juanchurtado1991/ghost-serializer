@@ -6,8 +6,15 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * Subsystem for parsing YAML Block Scalars (Literal | and Folded > styles).
  */
 
-/** Parses block scalar values (literal `|` and folded `>` styles). */
-internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
+/**
+ * Parses block scalar values (literal `|` and folded `>` styles).
+ *
+ * @param indent The enclosing context's indentation, as passed to [GhostYamlFlatReader.readValue]
+ *   — [com.ghost.serialization.yaml.GhostYamlConstants.INDENT_UNSET] specifically means "this
+ *   scalar is the document root, no enclosing key/dash", which is the one case content is allowed
+ *   to sit at column 0 with no explicit indicator. See [detectBlockScalarIndent].
+ */
+internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): String {
     // Skip the indicator and any chomp/indent modifiers on the same line
     position++ // consume '|' or '>'
     val isFolded = indicator == C.GT_BYTE
@@ -35,11 +42,20 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
             }
 
             currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE -> position++
+            currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE -> break
+
             currByte == C.HASH_BYTE -> {
-                skipToEndOfLine(); break
+                // A comment must be preceded by whitespace, same rule as everywhere else in the
+                // reader — "># comment" isn't a comment, it's invalid trailing text.
+                if (position > 0 &&
+                    (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
+                ) {
+                    skipToEndOfLine(); break
+                }
+                yamlError("Comment after block scalar indicator must be preceded by whitespace")
             }
 
-            else -> break
+            else -> yamlError("Invalid text after block scalar indicator")
         }
     }
     // Skip to next line
@@ -50,17 +66,19 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte): String {
         if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
     }
 
-    // Determine block indentation from first non-empty line
+    // Determine block indentation from first non-empty line. An explicit indicator (e.g. the "1"
+    // in "|1") is relative to the parent node's indentation level, not an absolute column — using
+    // it standalone only happened to work when the parent sat at column 0.
     val blockIndent = if (explicitIndent >= 0) {
-        explicitIndent
+        currentIndent + explicitIndent
     } else {
-        detectBlockScalarIndent(currentIndent)
+        detectBlockScalarIndent(currentIndent, isDocumentRoot = indent == C.INDENT_UNSET)
     }
 
     return readBlockScalarContent(blockIndent, isFolded, chomp)
 }
 
-internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int): Int {
+internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDocumentRoot: Boolean): Int {
     var scannerPos = position
     val localRawData = rawData
     val localLimit = limit
@@ -77,7 +95,13 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int): Int
             spaces++; peekPos++
         }
         if (peekPos < localLimit && localRawData[peekPos] != C.NEWLINE_BYTE && localRawData[peekPos] != C.CR_BYTE) {
-            if (spaces <= parentIndent) {
+            // Only a genuine document-root scalar (no enclosing key/dash at all, e.g.
+            // "--- >\nline1\n...") may have content at or below the parent's own indentation —
+            // there's no sibling/key structure it could be mistaken for. Everywhere else (in
+            // particular: an empty block scalar immediately followed by the next key/comment at
+            // the same or shallower indentation) must fall back to parentIndent + 2 and let
+            // readBlockScalarContent's own de-indent check immediately end the scalar as empty.
+            if (spaces <= parentIndent && !isDocumentRoot) {
                 return parentIndent + 2
             }
             return spaces
