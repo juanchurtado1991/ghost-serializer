@@ -413,7 +413,84 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         // Extract the plain scalar bytes
         val endPosition = trimTrailingSpaces(startPosition, scanPosition)
         position = scanPosition
+
+        // Plain scalars can continue onto more-indented following lines (block context only —
+        // flow scalars/keys don't fold across lines here). Line-folding rule: a single newline
+        // between continuation lines becomes a space; a blank line (or N of them) becomes N
+        // newlines — same rule readBlockScalarContent applies for folded (">") block scalars.
+        if (!inFlow && position < localLimit &&
+            (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
+        ) {
+            val firstLine = localRawData.decodeToString(startPosition, endPosition)
+            val folded = foldPlainScalarContinuation(indent, firstLine)
+            if (folded != null) {
+                val foldedBytes = folded.encodeToByteArray()
+                return interpretScalar(foldedBytes, 0, foldedBytes.size, expectedTag)
+            }
+        }
         return interpretScalar(localRawData, startPosition, endPosition, expectedTag)
+    }
+
+    /**
+     * Consumes zero or more following lines that continue a plain scalar (each more indented than
+     * [indent], the enclosing block's own indentation), folding them onto [firstLine] per the
+     * usual YAML line-folding rule. Returns `null` (without moving [position]) if the very next
+     * line isn't actually a continuation, so the caller falls back to its single-line result.
+     */
+    private fun foldPlainScalarContinuation(indent: Int, firstLine: String): String? {
+        val localRawData = rawData
+        val localLimit = limit
+        val scalarEndPosition = position
+        var sb: StringBuilder? = null
+        var blankLines = 0
+
+        while (true) {
+            val beforeNewline = position
+            if (position < localLimit && localRawData[position] == C.CR_BYTE) position++
+            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
+
+            var spaces = 0
+            var peekPos = position
+            while (peekPos < localLimit && localRawData[peekPos] == C.SPACE_BYTE) {
+                spaces++; peekPos++
+            }
+
+            val atBlank = peekPos >= localLimit ||
+                localRawData[peekPos] == C.NEWLINE_BYTE || localRawData[peekPos] == C.CR_BYTE
+            if (atBlank) {
+                blankLines++
+                position = peekPos
+                if (position >= localLimit) break
+                continue
+            }
+
+            position = peekPos
+            if (spaces <= indent || isDocumentMarker()) {
+                // Not a continuation (dedented, sibling-level, or a new document). If we'd already
+                // folded at least one real continuation line, rewind just past it (trailing blank
+                // lines aren't part of the value). Otherwise rewind all the way to right after the
+                // first line, undoing any blank lines we tentatively scanned past too — the caller
+                // must see them again to reprocess this content correctly.
+                position = if (sb != null) beforeNewline else scalarEndPosition
+                break
+            }
+
+            val lineStart = position
+            while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
+                position++
+            }
+            val lineEnd = trimTrailingSpaces(lineStart, position)
+            val lineText = localRawData.decodeToString(lineStart, lineEnd)
+
+            if (sb == null) sb = StringBuilder(firstLine)
+            if (blankLines > 0) repeat(blankLines) { sb.append('\n') } else sb.append(' ')
+            sb.append(lineText)
+            blankLines = 0
+
+            if (position >= localLimit) break
+        }
+
+        return sb?.toString()
     }
 
     private fun readPlainScalar(
