@@ -27,6 +27,9 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
             position++
             break
         }
+        if (localRawData[position] == C.COMMA_BYTE) {
+            yamlError("Unexpected ',' in flow mapping — empty entries are not allowed")
+        }
 
         // Read key
         val key = readKey() ?: break
@@ -79,6 +82,9 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
         if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {
             position++
             break
+        }
+        if (localRawData[position] == C.COMMA_BYTE) {
+            yamlError("Unexpected ',' in flow sequence — empty entries are not allowed")
         }
 
         val item = readValue(indent = 0, inFlow = true)

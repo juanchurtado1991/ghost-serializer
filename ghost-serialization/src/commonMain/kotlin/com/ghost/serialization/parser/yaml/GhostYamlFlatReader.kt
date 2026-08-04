@@ -108,6 +108,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             if (!sawExplicitMarker && position >= localLimit) break
             results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
             skipDocumentEnd()
+            rejectTrailingGarbageAfterDocument()
             if (position == iterationStart) noProgressError()
         }
         return results
@@ -133,6 +134,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             results.add(deserializeDocument(this))
             clearAfterDocument()
             skipDocumentEnd()
+            rejectTrailingGarbageAfterDocument()
             if (position == iterationStart) noProgressError()
         }
         return results
@@ -566,6 +568,22 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     /** Thrown by both [readAllDocuments] overloads when a document consumed no input. */
     private fun noProgressError(): Nothing {
         yamlError("Parser made no progress at position $position — malformed content")
+    }
+
+    /**
+     * Called by both [readAllDocuments] overloads right after a document's value is read.
+     * What may legally follow a document's value is: end of input, a `---` document-start
+     * marker (the next document), or a `%` directive (the next document's directives) — anything
+     * else is leftover content that the value's own reader stopped in front of without
+     * understanding, e.g. a stray closing bracket or a bare word after a flow collection closed.
+     */
+    private fun rejectTrailingGarbageAfterDocument() {
+        skipWhitespaceAndComments()
+        if (position >= limit) return
+        val currentByte = rawData[position]
+        if (currentByte != C.DASH_BYTE && currentByte != C.PERCENT_BYTE) {
+            yamlError("Unexpected content after document value")
+        }
     }
 
     // ── Chomp style enum ──────────────────────────────────────────────────────
