@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostCoerce</title>
+  <title>GhostSerialization Coverage Report > GhostName</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostCoerce (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostName (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostCoerce</td>
+  <td class="name">GhostName</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,28 +47,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Enforces strict JSON syntax checking (missing or duplicate commas, trailing commas,
-&nbsp; * and unmapped fields) during deserialization for the annotated endpoint, parameter, or controller.
+&nbsp; * Customizes the wire key used for the annotated property during serialization and deserialization.
+&nbsp; *
+&nbsp; * By default, the serializer uses the property&#39;s Kotlin name. When this annotation is applied,
+&nbsp; * the serializer uses [name] instead on every generated path where the property is emitted:
+&nbsp; * **JSON**, **proto3 JSON** ([GhostProtoSerialization]), and **YAML** ([GhostYamlSerialization]).
+&nbsp; *
+&nbsp; * @property name The custom key name on the wire (JSON field name, YAML mapping key, proto JSON name).
 &nbsp; */
-&nbsp;@Target(
-&nbsp;    AnnotationTarget.FUNCTION,
-&nbsp;    AnnotationTarget.VALUE_PARAMETER,
-&nbsp;    AnnotationTarget.CLASS
-&nbsp;)
-&nbsp;@Retention(AnnotationRetention.RUNTIME)
-&nbsp;annotation class GhostStrict
-&nbsp;
-&nbsp;/**
-&nbsp; * Enables loose type coercion (automatic conversion of stringified numbers or booleans into
-&nbsp; * their primitive representations) during deserialization for the annotated endpoint, parameter, or controller.
-&nbsp; */
-&nbsp;@Target(
-&nbsp;    AnnotationTarget.FUNCTION,
-&nbsp;    AnnotationTarget.VALUE_PARAMETER,
-&nbsp;    AnnotationTarget.CLASS
-&nbsp;)
-&nbsp;@Retention(AnnotationRetention.RUNTIME)
-&nbsp;annotation class GhostCoerce
+&nbsp;@Target(AnnotationTarget.PROPERTY)
+&nbsp;@Retention(AnnotationRetention.SOURCE)
+&nbsp;annotation class GhostName(val name: String)
 </code>
 </pre>
 </div>
@@ -92,7 +81,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-29 16:18</div>
+    <div style="float:right;">generated on 2026-08-04 18:36</div>
 </div>
 </body>
 </html>

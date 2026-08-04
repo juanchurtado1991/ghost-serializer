@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlSerialization</title>
+  <title>GhostSerialization Coverage Report > GhostEnvelopeFallback</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlSerialization (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEnvelopeFallback (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlSerialization</td>
+  <td class="name">GhostEnvelopeFallback</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,26 +47,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Opt-in marker for YAML serializer generation on a model that already uses
-&nbsp; * [GhostSerialization] or [GhostProtoSerialization].
+&nbsp; * Marks the fallback payload field when an envelope discriminator is unknown.
 &nbsp; *
-&nbsp; * Without this annotation, KSP emits JSON (and proto3 JSON mapping when applicable) only.
-&nbsp; * With it, KSP also emits a [com.ghost.serialization.yaml.contract.GhostYamlSerializer]
-&nbsp; * companion when the model shape is YAML-compatible.
+&nbsp; * Must be a nullable [com.ghost.serialization.types.RawJson] (or [kotlin.ByteArray]) property.
+&nbsp; * At most one fallback property is allowed per envelope class.
 &nbsp; *
-&nbsp; * **Cross-format annotations** (also honored on YAML and proto3 JSON paths when codegen runs):
-&nbsp; * - [GhostName] — wire key override
-&nbsp; * - [GhostIgnore] — skip property on read/write
-&nbsp; *
-&nbsp; * **JSON-only features** (cannot be combined with this annotation — KSP error):
-&nbsp; * [GhostResilient], [GhostJsonEnvelope], [GhostFlatten], [GhostWrap], [GhostWrappedKeys],
-&nbsp; * sealed/`inferred` polymorphism, [GhostDecoder], [GhostEncoder], contextual serializers,
-&nbsp; * [com.ghost.serialization.types.RawJson], non-proto [kotlin.ByteArray], and nested Ghost types
-&nbsp; * that fail the YAML scan.
+&nbsp; * When no fallback is declared, unknown discriminators route to `null`.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostYamlSerialization
+&nbsp;annotation class GhostEnvelopeFallback
 </code>
 </pre>
 </div>
@@ -90,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-07-29 16:18</div>
+    <div style="float:right;">generated on 2026-08-04 18:36</div>
 </div>
 </body>
 </html>
