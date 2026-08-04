@@ -107,8 +107,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             skipWhitespaceAndComments()
             if (!sawExplicitMarker && position >= localLimit) break
             results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
-            skipDocumentEnd()
-            rejectTrailingGarbageAfterDocument()
+            if (!skipDocumentEnd()) rejectTrailingGarbageAfterDocument()
             if (position == iterationStart) noProgressError()
         }
         return results
@@ -133,8 +132,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             prepareRootForCurrentDocument()
             results.add(deserializeDocument(this))
             clearAfterDocument()
-            skipDocumentEnd()
-            rejectTrailingGarbageAfterDocument()
+            if (!skipDocumentEnd()) rejectTrailingGarbageAfterDocument()
             if (position == iterationStart) noProgressError()
         }
         return results
@@ -167,6 +165,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readSingleQuotedString() }
+            C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag)
             C.DASH_BYTE -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
@@ -229,7 +228,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
                 val lineIndent = currentIndent
                 if (result.isNotEmpty() && lineIndent < blockIndent) break  // dedented — end of this mapping
-                if (isDocumentMarker()) break
+                if (isDocumentMarker() || isDocumentEndMarker()) break
                 // A tab can't be part of the indentation opening or extending a block mapping —
                 // tabs have no fixed column width, so there's no way to compare this line's
                 // indentation against blockIndent/a sibling's. Harmless once inside an already-
@@ -467,7 +466,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             }
 
             position = peekPos
-            if (spaces <= indent || isDocumentMarker()) {
+            if (spaces <= indent || isDocumentMarker() || isDocumentEndMarker()) {
                 // Not a continuation (dedented, sibling-level, or a new document). If we'd already
                 // folded at least one real continuation line, rewind just past it (trailing blank
                 // lines aren't part of the value). Otherwise rewind all the way to right after the
