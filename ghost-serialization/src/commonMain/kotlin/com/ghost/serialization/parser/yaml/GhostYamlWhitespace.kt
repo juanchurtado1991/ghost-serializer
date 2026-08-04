@@ -195,8 +195,14 @@ private fun isYamlVersionToken(version: String): Boolean {
     return true
 }
 
-/** Skips a `...` document end marker if present. */
-internal fun GhostYamlFlatReader.skipDocumentEnd() {
+/**
+ * Skips a `...` document end marker if present, requiring only whitespace or a comment to
+ * follow on the same line. Returns true if a marker was consumed — after an explicit `...`,
+ * the *next* document is allowed to start without a `---` at all (per the YAML stream grammar),
+ * so callers should not apply trailing-content-after-a-document restrictions when this returns
+ * true.
+ */
+internal fun GhostYamlFlatReader.skipDocumentEnd(): Boolean {
     skipWhitespaceAndComments()
     val localLimit = limit
     val localRawData = rawData
@@ -206,8 +212,18 @@ internal fun GhostYamlFlatReader.skipDocumentEnd() {
         localRawData[position + 2] == C.DOT_BYTE
     ) {
         position += 3
-        skipToEndOfLine()
+        skipInlineWhitespace()
+        if (position < localLimit) {
+            val trailingByte = localRawData[position]
+            if (trailingByte == C.HASH_BYTE) {
+                skipToEndOfLine()
+            } else if (trailingByte != C.NEWLINE_BYTE && trailingByte != C.CR_BYTE) {
+                yamlError("Unexpected content after document-end marker")
+            }
+        }
+        return true
     }
+    return false
 }
 
 /** Returns true if current position is at a `---` marker at column 0. */
@@ -218,6 +234,21 @@ internal fun GhostYamlFlatReader.isDocumentMarker(): Boolean {
     return localRawData[position] == C.DASH_BYTE &&
             localRawData[position + 1] == C.DASH_BYTE &&
             localRawData[position + 2] == C.DASH_BYTE &&
+            (position + 3 >= localLimit ||
+                    localRawData[position + 3] == C.SPACE_BYTE ||
+                    localRawData[position + 3] == C.NEWLINE_BYTE ||
+                    localRawData[position + 3] == C.CR_BYTE ||
+                    localRawData[position + 3] == C.TAB_BYTE)
+}
+
+/** Returns true if current position is at a `...` marker at column 0. */
+internal fun GhostYamlFlatReader.isDocumentEndMarker(): Boolean {
+    val localLimit = limit
+    val localRawData = rawData
+    if (position + 2 >= localLimit) return false
+    return localRawData[position] == C.DOT_BYTE &&
+            localRawData[position + 1] == C.DOT_BYTE &&
+            localRawData[position + 2] == C.DOT_BYTE &&
             (position + 3 >= localLimit ||
                     localRawData[position + 3] == C.SPACE_BYTE ||
                     localRawData[position + 3] == C.NEWLINE_BYTE ||
