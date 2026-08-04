@@ -102,13 +102,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             tagDirectives.clear()
             skipWhitespaceAndComments()
             if (position >= localLimit) break
-            skipDocumentStart()
+            val iterationStart = position
+            val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
-            if (position >= localLimit) break
-            val positionBeforeValue = position
+            if (!sawExplicitMarker && position >= localLimit) break
             results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
             skipDocumentEnd()
-            if (position == positionBeforeValue) noProgressError()
+            if (position == iterationStart) noProgressError()
         }
         return results
     }
@@ -125,15 +125,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             tagDirectives.clear()
             skipWhitespaceAndComments()
             if (position >= localLimit) break
-            skipDocumentStart()
+            val iterationStart = position
+            val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
-            if (position >= localLimit) break
-            val positionBeforeValue = position
+            if (!sawExplicitMarker && position >= localLimit) break
             prepareRootForCurrentDocument()
             results.add(deserializeDocument(this))
             clearAfterDocument()
             skipDocumentEnd()
-            if (position == positionBeforeValue) noProgressError()
+            if (position == iterationStart) noProgressError()
         }
         return results
     }

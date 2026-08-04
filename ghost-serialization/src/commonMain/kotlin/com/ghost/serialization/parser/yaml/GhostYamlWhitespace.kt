@@ -94,15 +94,24 @@ internal fun GhostYamlFlatReader.advanceLine() {
     currentIndent = 0
 }
 
-/** Skips `%YAML` and `%TAG` directives at the top of a document. */
-internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart() {
+/**
+ * Skips `%YAML`/`%TAG` directives and an optional `---` document-start marker.
+ *
+ * Returns true if an explicit `---` marker was consumed. Callers need this to tell an
+ * explicit-but-empty document (`---` followed immediately by end of input, which is a valid
+ * document whose value is null) apart from genuinely having no more input to read.
+ */
+internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
     val localLimit = limit
     val localRawData = rawData
+    var sawDirective = false
+    var sawYamlDirective = false
     while (position < localLimit) {
         skipInlineWhitespace()
         if (position >= localLimit) break
         when (localRawData[position]) {
             C.PERCENT_BYTE -> {
+                sawDirective = true
                 position++ // consume '%'
                 val dirStart = position
                 while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE) {
@@ -110,27 +119,52 @@ internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart() {
                 }
                 val dirName = localRawData.decodeToString(dirStart, position)
                 skipInlineWhitespace()
-                if (dirName == C.STR_TAG_DIRECTIVE) {
-                    val handleStart = position
-                    while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE) {
-                        position++
+                when (dirName) {
+                    C.STR_TAG_DIRECTIVE -> {
+                        val handleStart = position
+                        while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE) {
+                            position++
+                        }
+                        val handle = localRawData.decodeToString(handleStart, position)
+                        skipInlineWhitespace()
+                        val prefixStart = position
+                        while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE &&
+                            localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE
+                        ) {
+                            position++
+                        }
+                        val prefix = localRawData.decodeToString(prefixStart, position)
+                        tagDirectives[handle] = prefix
                     }
-                    val handle = localRawData.decodeToString(handleStart, position)
-                    skipInlineWhitespace()
-                    val prefixStart = position
-                    while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE &&
-                        localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE
-                    ) {
-                        position++
+
+                    C.STR_YAML_DIRECTIVE -> {
+                        if (sawYamlDirective) yamlError("Duplicate %YAML directive")
+                        sawYamlDirective = true
+                        val versionStart = position
+                        while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE &&
+                            localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE
+                        ) {
+                            position++
+                        }
+                        val version = localRawData.decodeToString(versionStart, position)
+                        if (!isYamlVersionToken(version)) {
+                            yamlError("Malformed %YAML directive version: $version")
+                        }
+                        skipInlineWhitespace()
+                        if (position < localLimit) {
+                            val trailingByte = localRawData[position]
+                            if (trailingByte != C.NEWLINE_BYTE && trailingByte != C.CR_BYTE && trailingByte != C.HASH_BYTE) {
+                                yamlError("Unexpected content after %YAML directive")
+                            }
+                        }
                     }
-                    val prefix = localRawData.decodeToString(prefixStart, position)
-                    tagDirectives[handle] = prefix
                 }
                 skipToEndOfLine()
             }
 
             C.DASH_BYTE -> if (isDocumentMarker()) {
-                position += 3; break
+                position += 3
+                return true
             } else break
 
             C.NEWLINE_BYTE -> {
@@ -147,12 +181,18 @@ internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart() {
             else -> break
         }
     }
+    if (sawDirective) yamlError("Directives must be followed by a document-start marker (---)")
+    return false
 }
 
-/** Skips a `---` document start marker if present. */
-internal fun GhostYamlFlatReader.skipDocumentStart() {
-    skipWhitespaceAndComments()
-    if (isDocumentMarker()) position += 3
+/** True if [version] is a bare `major.minor` YAML version token, e.g. `"1.2"`. */
+private fun isYamlVersionToken(version: String): Boolean {
+    val dot = version.indexOf('.')
+    if (dot <= 0 || dot == version.length - 1) return false
+    for (i in version.indices) {
+        if (i != dot && version[i] !in '0'..'9') return false
+    }
+    return true
 }
 
 /** Skips a `...` document end marker if present. */
