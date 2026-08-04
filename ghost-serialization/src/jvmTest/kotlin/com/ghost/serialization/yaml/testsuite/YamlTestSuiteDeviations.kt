@@ -64,7 +64,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "6BFJ" because REASON_ANCHOR_ALIAS, // Mapping, key and flow sequence item anchors
     "6KGN" because REASON_ANCHOR_ALIAS, // Anchor for empty node
-    "6XDY" because REASON_DOC_MARKER, // Two document start markers
     "7LBH" because REASON_FLOW_IMPLICIT_KEY, // Multiline double quoted implicit keys
     "87E4" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.8. Single Quoted Implicit Keys
     "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
@@ -75,10 +74,8 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "9JBA" because REASON_FLOW_COLLECTION, // Invalid comment after end of flow sequence
     "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
     "9MAG" because REASON_FLOW_COLLECTION, // Flow sequence with invalid comma at the beginning
-    "9MMA" because REASON_DIRECTIVE, // Directive by itself with no document
     "9MMW" because REASON_FLOW_IMPLICIT_KEY, // Single Pair Implicit Entries
     "9MQT_01" because REASON_MISC, // Scalar doc with '...' in content
-    "B63P" because REASON_DIRECTIVE, // Directive without document
     "BD7L" because REASON_MISC, // Invalid mapping after sequence
     "BF9H" because REASON_MULTILINE_PLAIN_EDGE, // Trailing comment in multiline plain scalar
     "BS4K" because REASON_MULTILINE_PLAIN_EDGE, // Comment between plain scalar lines
@@ -102,7 +99,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "GDY7" because REASON_COMMENT, // Comment that looks like a mapping key
     "GT5M" because REASON_ANCHOR_ALIAS, // Node anchor in sequence
     "H7J7" because REASON_ANCHOR_ALIAS, // Node anchor not indented
-    "H7TQ" because REASON_DIRECTIVE, // Extra words on %YAML directive
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "J9HZ" because REASON_DOC_MARKER, // Spec Example 2.9. Single Document with Two Comments
@@ -116,7 +112,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "M29M" because REASON_BLOCK_SCALAR, // Literal Block Scalar
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
-    "MUS6_00" because REASON_DIRECTIVE, // Directive variants
     "MUS6_01" because REASON_DIRECTIVE, // Directive variants
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
@@ -138,7 +133,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "S4T7" because REASON_DOC_MARKER, // Document with footer
     "S98Z" because REASON_BLOCK_SCALAR, // Block scalar with more spaces than first content line
     "S9E8" because REASON_MISC, // Spec Example 5.3. Block Structure Indicators
-    "SF5V" because REASON_DIRECTIVE, // Duplicate YAML directive
     "SM9W_01" because REASON_DOC_MARKER, // Single character streams
     "SR86" because REASON_ANCHOR_ALIAS, // Anchor plus Alias
     "SU5Z" because REASON_COMMENT, // Comment without whitespace after doublequoted scalar
@@ -174,8 +168,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
 /** See [deviationsInOutcome]. */
 val deviationsInValue: Set<DeviationCase> = setOf(
     "26DV" because REASON_MISC, // Whitespace around colon in mappings
-    "27NA" because REASON_DIRECTIVE, // Spec Example 5.9. Directive Indicator
-    "2LFX" because REASON_DIRECTIVE, // Spec Example 6.13. Reserved Directives [1.3]
     "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
     "2XXW" because REASON_MISC, // Spec Example 2.25. Unordered Sets
     "35KP" because REASON_TAG, // Tags for Root Objects
@@ -193,14 +185,10 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "5NYZ" because REASON_COMMENT, // Spec Example 6.9. Separated Comment
     "5TYM" because REASON_TAG, // Spec Example 6.21. Local Tag Prefix
     "5WE3" because REASON_EXPLICIT_KEY, // Spec Example 8.17. Explicit Block Mapping Entries
-    "6CK3" because REASON_TAG, // Spec Example 6.26. Tag Shorthands
     "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
     "6KGN" because REASON_ANCHOR_ALIAS, // Anchor for empty node
-    "6LVF" because REASON_DIRECTIVE, // Spec Example 6.13. Reserved Directives
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
-    "6WLZ" because REASON_TAG, // Spec Example 6.18. Primary Tag Handle [1.3]
     "6WPF" because REASON_FLOW_COLLECTION, // Spec Example 6.8. Flow Folding [1.3]
-    "6XDY" because REASON_DOC_MARKER, // Two document start markers
     "6ZKB" because REASON_DOC_MARKER, // Spec Example 9.6. Stream
     "74H7" because REASON_TAG, // Tags in Implicit Mapping
     "7A4E" because REASON_MULTILINE_QUOTED, // Spec Example 7.6. Double Quoted Lines
@@ -218,12 +206,9 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "9MQT_00" because REASON_MISC, // Scalar doc with '...' in content
     "9SA2" because REASON_MULTILINE_QUOTED, // Multiline double quoted flow mapping key
     "9TFX" because REASON_MULTILINE_QUOTED, // Spec Example 7.6. Double Quoted Lines [1.3]
-    "9WXW" because REASON_TAG, // Spec Example 6.18. Primary Tag Handle
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
-    "BEC7" because REASON_DIRECTIVE, // Spec Example 6.14. "YAML" directive
     "C4HZ" because REASON_TAG, // Spec Example 2.24. Global Tags
-    "CC74" because REASON_TAG, // Spec Example 6.20. Tag Handles
     "CN3R" because REASON_ANCHOR_ALIAS, // Various location of anchors in flow sequence
     "CT4Q" because REASON_EXPLICIT_KEY, // Spec Example 7.20. Single Pair Explicit Entry
     "DC7X" because REASON_TAB, // Various trailing tabs
@@ -235,7 +220,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "DE56_05" because REASON_TAB, // Trailing tabs in double quoted
     "DK95_02" because REASON_TAB, // Tabs that look like indentation
     "DK95_05" because REASON_TAB, // Tabs that look like indentation
-    "DK95_07" because REASON_TAB, // Tabs that look like indentation
     "DK95_08" because REASON_TAB, // Tabs that look like indentation
     "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
@@ -261,11 +245,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "M7A3" because REASON_DOC_MARKER, // Spec Example 9.3. Bare Documents
     "MJS9" because REASON_BLOCK_SCALAR, // Spec Example 6.7. Block Folding
-    "MUS6_02" because REASON_DIRECTIVE, // Directive variants
-    "MUS6_03" because REASON_DIRECTIVE, // Directive variants
-    "MUS6_04" because REASON_DIRECTIVE, // Directive variants
-    "MUS6_05" because REASON_DIRECTIVE, // Directive variants
-    "MUS6_06" because REASON_DIRECTIVE, // Directive variants
     "NAT4" because REASON_MULTILINE_QUOTED, // Various empty or newline only quoted strings
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
@@ -273,7 +252,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "P76L" because REASON_TAG, // Spec Example 6.19. Secondary Tag Handle
     "P94K" because REASON_COMMENT, // Spec Example 6.11. Multi-Line Comments
     "PRH3" because REASON_MULTILINE_QUOTED, // Spec Example 7.9. Single Quoted Lines
-    "PUW8" because REASON_DOC_MARKER, // Document start on last line
     "Q8AD" because REASON_MULTILINE_QUOTED, // Spec Example 7.5. Double Quoted Line Breaks [1.3]
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
     "QT73" because REASON_DOC_MARKER, // Comment and document-end marker
@@ -287,7 +265,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "T4YY" because REASON_MULTILINE_QUOTED, // Spec Example 7.9. Single Quoted Lines [1.3]
     "TL85" because REASON_FLOW_COLLECTION, // Spec Example 6.8. Flow Folding
-    "U3C3" because REASON_DIRECTIVE, // Spec Example 6.16. "TAG" directive
     "U3XV" because REASON_ANCHOR_ALIAS, // Node and Mapping Key Anchors
     "U9NS" because REASON_MISC, // Spec Example 2.8. Play by Play Feed from a Game
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
@@ -299,6 +276,5 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "X8DW" because REASON_EXPLICIT_KEY, // Explicit key and value seperated by comment
     "XV9V" because REASON_EMPTY_MISSING, // Spec Example 6.5. Empty Lines [1.3]
     "Y79Y_010" because REASON_TAB, // Tabs in various contexts
-    "Z9M4" because REASON_TAG, // Spec Example 6.22. Global Tag Prefix
     "ZWK4" because REASON_EXPLICIT_KEY, // Key with anchor after missing explicit mapping value
 )
