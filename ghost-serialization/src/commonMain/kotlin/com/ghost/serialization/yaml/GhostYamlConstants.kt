@@ -32,6 +32,9 @@ internal object GhostYamlConstants {
     /** '-' — block sequence entry / negative number / block scalar chomp */
     const val DASH_BYTE: Byte = 0x2D
 
+    /** '?' — explicit block mapping key indicator */
+    const val QUESTION_BYTE: Byte = 0x3F
+
     /** '.' — document end marker start / float decimal point */
     const val DOT_BYTE: Byte = 0x2E
 

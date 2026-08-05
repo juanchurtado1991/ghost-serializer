@@ -175,6 +175,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readSingleQuotedString() }
             C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag)
+            C.QUESTION_BYTE ->
+                if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
+                else readPlainScalarOrMapping(indent, inFlow, expectedTag)
             C.DASH_BYTE -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
@@ -244,6 +247,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 // established scalar's own content (readValue never reaches this loop for that).
                 if (indentHasTab) yamlError("Tab character not allowed in block mapping indentation")
 
+                if (isExplicitKeyIndicator()) {
+                    val (key, value) = readExplicitKeyEntry(blockIndent)
+                    result[key] = value
+                    continue
+                }
+
                 // Read key
                 val key = readKey() ?: break
                 skipInlineWhitespace()
@@ -253,44 +262,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     yamlError("Expected ':' after key '$key' at position $position")
                 }
                 position++ // consume ':'
-
-                // After ':', determine if value is on the same line or next line. A same-line
-                // trailing comment (e.g. "key:    # Comment") isn't a value either — it must be
-                // skipped first so a real value indented on a later line (spec example 6.9's
-                // "key:    # Comment\n  value") is still found, not mistaken for "value is null"
-                // the moment a comment is seen.
-                skipInlineWhitespace()
-                if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
-                    skipToEndOfLine()
-                }
-                val value = when {
-                    position >= localLimit -> null
-                    localRawData[position] == C.NEWLINE_BYTE ||
-                            localRawData[position] == C.CR_BYTE -> {
-                        // Value is on next line(s) — block scalar, mapping, or sequence
-                        advanceLine()
-                        skipWhitespaceAndComments()
-                        if (position >= localLimit) null
-                        else {
-                            val valueIndent = currentIndent
-                            if (valueIndent < blockIndent) {
-                                // No actual indented content — treat as null
-                                null
-                            } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
-                                null
-                            } else {
-                                // Delegate to readValue's own dispatch rather than assuming a
-                                // nested mapping — it already distinguishes a bare scalar
-                                // continuation (e.g. "foo:\n  bar") from an actual "key: value"
-                                // pattern via readPlainScalarOrMapping, and handles dash-sequences
-                                // and block scalars too.
-                                readValue(valueIndent, inFlow = false)
-                            }
-                        }
-                    }
-
-                    else -> readValue(blockIndent, inFlow = false, strictDedent = true)
-                }
+                val value = resolveValueAfterColon(blockIndent)
 
                 if (key == C.STR_MERGE_KEY) {
                     mergeInto(result, value)
@@ -302,6 +274,42 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             depth--
         }
         return result
+    }
+
+    /**
+     * Called right after a mapping ':' has been consumed and inline whitespace skipped, to
+     * determine and read the value. Shared by [readBlockMapping]'s implicit ("key: value")
+     * entries and [readExplicitKeyEntry]'s explicit ("? key\n: value") entries — both need
+     * exactly the same "same line, next line indented, or no value at all" resolution.
+     */
+    internal fun resolveValueAfterColon(blockIndent: Int): Any? {
+        skipInlineWhitespace()
+        val localLimit = limit
+        val localRawData = rawData
+        if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
+            skipToEndOfLine()
+        }
+        return when {
+            position >= localLimit -> null
+            localRawData[position] == C.NEWLINE_BYTE ||
+                    localRawData[position] == C.CR_BYTE -> {
+                advanceLine()
+                skipWhitespaceAndComments()
+                if (position >= localLimit) null
+                else {
+                    val valueIndent = currentIndent
+                    if (valueIndent < blockIndent) {
+                        null
+                    } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
+                        null
+                    } else {
+                        readValue(valueIndent, inFlow = false)
+                    }
+                }
+            }
+
+            else -> readValue(blockIndent, inFlow = false, strictDedent = true)
+        }
     }
 
     // ── Block Sequence ─────────────────────────────────────────────────────────
@@ -573,7 +581,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 val endPosition = trimTrailingSpaces(startPosition, position)
                 if (endPosition == startPosition) {
                     if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
-                    return null
+                    // A bare ':' with nothing before it is a valid empty-string key (e.g.
+                    // ": value", or repeated ": a" / ": b" pairs) — the loop above breaks on
+                    // the very first byte in that case, without advancing. Anything else here
+                    // (a newline, EOF) really is "no more mapping to read".
+                    return if (position < localLimit && localRawData[position] == C.COLON_BYTE) "" else null
                 }
                 localRawData.decodeToString(startPosition, endPosition)
             }
