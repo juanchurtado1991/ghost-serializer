@@ -85,7 +85,9 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
         if (byteVal == C.DOUBLE_QUOTE_BYTE) {
             break
         }
-        if (byteVal == C.BACKSLASH_BYTE) {
+        if (byteVal == C.BACKSLASH_BYTE || byteVal == C.NEWLINE_BYTE || byteVal == C.CR_BYTE) {
+            // A line break needs folding, same as an escape sequence needs decoding — both force
+            // the slow path.
             hasEscape = true
             break
         }
@@ -172,11 +174,31 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
                             (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                     }
                 }
+            } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {
+                while (outPos > 0 && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
+                    outPos--
+                }
+                val breakCount = skipQuotedLineBreaks()
+                val toAppend = if (breakCount == 1) 1 else breakCount - 1
+                if (outPos + toAppend > outBuffer.size) {
+                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR
+                    while (outPos + toAppend > newSize) {
+                        newSize *= C.BUFFER_SCALE_FACTOR
+                    }
+                    val newBuffer = acquireScratchBuffer(newSize)
+                    outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                    releaseScratchBuffer(outBuffer)
+                    outBuffer = newBuffer
+                }
+                val fillByte = if (breakCount == 1) C.SPACE_BYTE else C.NEWLINE_BYTE
+                repeat(toAppend) { outBuffer[outPos++] = fillByte }
             } else {
                 val startPos = position
                 while (position < localLimit &&
                     localRawData[position] != C.DOUBLE_QUOTE_BYTE &&
-                    localRawData[position] != C.BACKSLASH_BYTE
+                    localRawData[position] != C.BACKSLASH_BYTE &&
+                    localRawData[position] != C.NEWLINE_BYTE &&
+                    localRawData[position] != C.CR_BYTE
                 ) {
                     position++
                 }
@@ -219,6 +241,12 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
             }
             break
         }
+        if (byteVal == C.NEWLINE_BYTE || byteVal == C.CR_BYTE) {
+            // A line break needs folding, same as a doubled '' needs unescaping — both force the
+            // slow path.
+            hasEscape = true
+            break
+        }
         scanPos++
     }
 
@@ -247,9 +275,31 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
                 } else {
                     return outBuffer.decodeToString(0, outPos)
                 }
+            } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {
+                while (outPos > 0 && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
+                    outPos--
+                }
+                val breakCount = skipQuotedLineBreaks()
+                val toAppend = if (breakCount == 1) 1 else breakCount - 1
+                if (outPos + toAppend > outBuffer.size) {
+                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR
+                    while (outPos + toAppend > newSize) {
+                        newSize *= C.BUFFER_SCALE_FACTOR
+                    }
+                    val newBuffer = acquireScratchBuffer(newSize)
+                    outBuffer.copyInto(newBuffer, 0, 0, outPos)
+                    releaseScratchBuffer(outBuffer)
+                    outBuffer = newBuffer
+                }
+                val fillByte = if (breakCount == 1) C.SPACE_BYTE else C.NEWLINE_BYTE
+                repeat(toAppend) { outBuffer[outPos++] = fillByte }
             } else {
                 val startPos = position
-                while (position < localLimit && localRawData[position] != C.SINGLE_QUOTE_BYTE) {
+                while (position < localLimit &&
+                    localRawData[position] != C.SINGLE_QUOTE_BYTE &&
+                    localRawData[position] != C.NEWLINE_BYTE &&
+                    localRawData[position] != C.CR_BYTE
+                ) {
                     position++
                 }
                 val rangeLength = position - startPos
@@ -271,6 +321,37 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
         releaseScratchBuffer(outBuffer)
     }
     yamlError("Unterminated single-quoted string")
+}
+
+/**
+ * Called with [GhostYamlFlatReader.position] at a line-break byte inside a quoted scalar. Folds
+ * it the same way plain and block-folded scalars do: a single line break becomes a space, N
+ * consecutive breaks (i.e. N-1 blank lines) become N-1 newlines. Each line's leading whitespace
+ * is fully skipped — quoted scalars have no block-style indentation to preserve, unlike literal
+ * block scalars. Leaves [GhostYamlFlatReader.position] at the first non-blank content (or the
+ * closing quote). Returns the number of line breaks folded.
+ */
+private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
+    val localRawData = rawData
+    val localLimit = limit
+    var breakCount = 0
+    while (position < localLimit) {
+        val currentByte = localRawData[position]
+        if (currentByte == C.CR_BYTE) {
+            position++
+            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
+        } else {
+            position++ // NEWLINE_BYTE
+        }
+        breakCount++
+        while (position < localLimit && (localRawData[position] == C.SPACE_BYTE || localRawData[position] == C.TAB_BYTE)) {
+            position++
+        }
+        if (position >= localLimit) break
+        val next = localRawData[position]
+        if (next != C.NEWLINE_BYTE && next != C.CR_BYTE) break
+    }
+    return breakCount
 }
 
 private fun GhostYamlFlatReader.processEscapeSequence(): Int {
