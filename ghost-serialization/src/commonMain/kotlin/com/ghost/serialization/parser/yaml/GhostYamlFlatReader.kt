@@ -523,6 +523,34 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val localLimit = limit
         val localRawData = rawData
         if (position >= localLimit) return null
+        // An anchor and/or tag may prefix a key (e.g. "&a5 !!str key5:", "!!str &a10 key10:") —
+        // JSON has no way to represent either on a key, so — same as an ordinary tagged value
+        // whose tag is simply dropped — both are skipped rather than becoming part of the key
+        // text itself. Skipping to the next whitespace is safe for a tag token in this position:
+        // none of the tag forms (verbatim "!<...>", shorthand "!!x"/"!ns!x", or bare "!") can
+        // contain a literal space.
+        val positionBeforePrefixes = position
+        while (position < localLimit &&
+            (localRawData[position] == C.AMPERSAND_BYTE || localRawData[position] == C.EXCLAMATION_BYTE)
+        ) {
+            while (position < localLimit) {
+                val prefixByte = localRawData[position]
+                if (prefixByte == C.SPACE_BYTE || prefixByte == C.TAB_BYTE ||
+                    prefixByte == C.NEWLINE_BYTE || prefixByte == C.CR_BYTE
+                ) break
+                position++
+            }
+            skipInlineWhitespace()
+        }
+        // Having consumed an anchor/tag prefix commits us to there being a real key afterward —
+        // unlike the "nothing here at all" case below, silently returning null having already
+        // eaten those bytes would let a genuinely invalid "dangling" anchor/tag (nothing valid
+        // following it) masquerade as "no more keys in this mapping" instead of erroring.
+        val hadPrefixes = position != positionBeforePrefixes
+        if (position >= localLimit) {
+            if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
+            return null
+        }
         return when (localRawData[position]) {
             C.DOUBLE_QUOTE_BYTE -> readDoubleQuotedString() as String
             C.SINGLE_QUOTE_BYTE -> readSingleQuotedString() as String
@@ -543,7 +571,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     position++
                 }
                 val endPosition = trimTrailingSpaces(startPosition, position)
-                if (endPosition == startPosition) return null
+                if (endPosition == startPosition) {
+                    if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
+                    return null
+                }
                 localRawData.decodeToString(startPosition, endPosition)
             }
         }
