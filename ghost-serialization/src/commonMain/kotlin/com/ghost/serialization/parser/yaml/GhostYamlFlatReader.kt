@@ -246,8 +246,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 }
                 position++ // consume ':'
 
-                // After ':', determine if value is on the same line or next line
+                // After ':', determine if value is on the same line or next line. A same-line
+                // trailing comment (e.g. "key:    # Comment") isn't a value either — it must be
+                // skipped first so a real value indented on a later line (spec example 6.9's
+                // "key:    # Comment\n  value") is still found, not mistaken for "value is null"
+                // the moment a comment is seen.
                 skipInlineWhitespace()
+                if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
+                    skipToEndOfLine()
+                }
                 val value = when {
                     position >= localLimit -> null
                     localRawData[position] == C.NEWLINE_BYTE ||
@@ -272,11 +279,6 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                                 readValue(valueIndent, inFlow = false)
                             }
                         }
-                    }
-
-                    localRawData[position] == C.HASH_BYTE -> {
-                        skipToEndOfLine()
-                        null
                     }
 
                     else -> readValue(blockIndent, inFlow = false, strictDedent = true)
