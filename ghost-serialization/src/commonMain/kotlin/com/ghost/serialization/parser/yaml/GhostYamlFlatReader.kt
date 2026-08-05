@@ -169,7 +169,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte, indent)           // block scalar
             C.LEFT_BRACE_BYTE -> readFlowMapping()            // flow mapping
             C.LEFT_BRACKET_BYTE -> readFlowSequence()           // flow sequence
-            C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // tagged value
+            C.EXCLAMATION_BYTE -> readTaggedValue(indent, inFlow)      // tagged value
             C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow, strictDedent)    // anchor definition
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readDoubleQuotedString() }

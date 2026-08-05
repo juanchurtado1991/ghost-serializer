@@ -13,7 +13,7 @@ internal object GhostYamlTags {
     const val TAG_MAP = 7
 }
 
-internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
+internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): Any? {
     position++ // consume '!'
     val localRawData = rawData
     val localLimit = limit
@@ -122,7 +122,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
         }
 
         else -> {
-            readValue(valueIndent, inFlow = false, expectedTag = tagType)
+            readValue(valueIndent, inFlow = inFlow, expectedTag = tagType)
         }
     }
 
