@@ -67,7 +67,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "8UDB" because REASON_FLOW_COLLECTION, // Spec Example 7.14. Flow Sequence Entries
     "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
-    "9HCY" because REASON_DIRECTIVE, // Need document footer before directives
     "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
     "9MMW" because REASON_FLOW_IMPLICIT_KEY, // Single Pair Implicit Entries
     "9MQT_01" because REASON_MISC, // Scalar doc with '...' in content
@@ -81,7 +80,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
-    "EB22" because REASON_DIRECTIVE, // Missing document-end marker before directive
     "EHF6" because REASON_TAG, // Tags for Flow Objects
     "EW3V" because REASON_INDENTATION, // Wrong indendation in mapping
     "FH7J" because REASON_TAG, // Tags on Empty Scalars
@@ -212,7 +210,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "W42U" because REASON_MISC, // Spec Example 8.15. Block Sequence Entry Types
-    "W4TN" because REASON_DIRECTIVE, // Spec Example 9.5. Directives Documents
     "WZ62" because REASON_EMPTY_MISSING, // Spec Example 7.2. Empty Content
     "X8DW" because REASON_EXPLICIT_KEY, // Explicit key and value seperated by comment
     "Y79Y_010" because REASON_TAB, // Tabs in various contexts
