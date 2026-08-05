@@ -1,5 +1,6 @@
 package com.ghost.serialization.yaml.testsuite
 
+import com.ghost.serialization.yaml.GhostYamlConstants
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -119,12 +120,18 @@ internal fun normalize(element: JsonElement): Any? = when (element) {
  * `Double`/`Boolean`/`null`) and a [normalize]d JSON value, with lenient Long/Double leaf
  * comparison so representational noise (YAML's typed core schema vs. JSON's schema-less numbers)
  * doesn't manufacture false mismatches — real ones get triaged into [deviationsInValue] instead.
+ *
+ * [GhostYamlConstants.STR_TAG_KEY] is excluded from a Ghost-decoded map's keys before comparing:
+ * it's Ghost's own synthetic field for preserving a custom YAML tag on a mapping (JSON has no way
+ * to represent tags at all), not a real divergence from the fixture's expected value.
  */
 internal fun deepEquals(ghostValue: Any?, jsonValue: Any?): Boolean {
     return when {
-        ghostValue is Map<*, *> && jsonValue is Map<*, *> ->
-            ghostValue.keys == jsonValue.keys &&
-                ghostValue.keys.all { key -> deepEquals(ghostValue[key], jsonValue[key]) }
+        ghostValue is Map<*, *> && jsonValue is Map<*, *> -> {
+            val ghostKeys = ghostValue.keys.filterTo(mutableSetOf()) { it != GhostYamlConstants.STR_TAG_KEY }
+            ghostKeys == jsonValue.keys &&
+                ghostKeys.all { key -> deepEquals(ghostValue[key], jsonValue[key]) }
+        }
 
         ghostValue is List<*> && jsonValue is List<*> ->
             ghostValue.size == jsonValue.size &&
