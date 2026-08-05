@@ -45,11 +45,8 @@ private const val REASON_TAG = "Tag resolution (handles, prefixes, shorthands, v
  *   match the case's `in.json` fixture.
  */
 val deviationsInOutcome: Set<DeviationCase> = setOf(
-    "26DV" because REASON_MISC, // Whitespace around colon in mappings
     "2CMS" because REASON_MULTILINE_PLAIN_EDGE, // Invalid mapping in plain multiline
-    "2JQS" because REASON_EXPLICIT_KEY, // Block Mapping with Missing Keys
     "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
-    "2XXW" because REASON_EXPLICIT_KEY, // Spec Example 2.25. Unordered Sets (explicit keys with no value)
     "35KP" because REASON_TAG, // Tags for Root Objects
     "4ABK" because REASON_FLOW_COLLECTION, // Flow Mapping Separate Values
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
@@ -57,7 +54,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
     "5TRB" because REASON_DOC_MARKER, // Invalid document-start marker in doublequoted tring
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
-    "5WE3" because REASON_EXPLICIT_KEY, // Spec Example 8.17. Explicit Block Mapping Entries
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "6BFJ" because REASON_ANCHOR_ALIAS, // Mapping, key and flow sequence item anchors
     "6KGN" because REASON_ANCHOR_ALIAS, // Anchor for empty node
@@ -81,7 +77,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "EW3V" because REASON_INDENTATION, // Wrong indendation in mapping
-    "FH7J" because REASON_TAG, // Tags on Empty Scalars
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "G5U8" because REASON_DOC_MARKER, // Plain dashes in flow sequence
     "GDY7" because REASON_COMMENT, // Comment that looks like a mapping key
@@ -89,7 +84,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JKF3" because REASON_MULTILINE_QUOTED, // Multiline unidented double quoted block key
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
-    "KK5P" because REASON_EXPLICIT_KEY, // Various combinations of explicit block mappings
     "L9U5" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.11. Plain Implicit Keys
     "LQZ7" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.4. Double Quoted Implicit Keys
     "LX3P" because REASON_FLOW_COLLECTION, // Implicit Flow Mapping Key on one line
@@ -98,29 +92,20 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "MUS6_01" because REASON_DIRECTIVE, // Directive variants
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
-    "NHX8" because REASON_DOC_MARKER, // Empty Lines at End of Document
     "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
-    "NKF9" because REASON_FLOW_COLLECTION, // Empty keys in block and flow mapping
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
-    "PW8X" because REASON_ANCHOR_ALIAS, // Anchors on Empty Scalars
     "Q9WF" because REASON_MISC, // Spec Example 6.12. Separation Spaces
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
-    "RR7F" because REASON_EXPLICIT_KEY, // Mixed Block Mapping (implicit to explicit)
     "RXY3" because REASON_MULTILINE_QUOTED, // Invalid document-end marker in single quoted string
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
-    "S3PD" because REASON_MISC, // Spec Example 8.18. Implicit Block Mapping Entries
-    "S9E8" because REASON_MISC, // Spec Example 5.3. Block Structure Indicators
-    "SM9W_01" because REASON_DOC_MARKER, // Single character streams
     "SU74" because REASON_ANCHOR_ALIAS, // Anchor and alias as mapping key
     "SY6V" because REASON_ANCHOR_ALIAS, // Anchor before sequence entry on same line
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
-    "UKK6_00" because REASON_MISC, // Syntax character edge cases
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
-    "V9D5" because REASON_MISC, // Spec Example 8.19. Compact Block Mappings
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
     "WZ62" because REASON_EMPTY_MISSING, // Spec Example 7.2. Empty Content
     "X38W" because REASON_ANCHOR_ALIAS, // Aliases in Flow Objects
@@ -132,28 +117,25 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "Y79Y_006" because REASON_TAB, // Tabs in various contexts
     "Y79Y_007" because REASON_TAB, // Tabs in various contexts
     "Y79Y_008" because REASON_TAB, // Tabs in various contexts
+    "Y79Y_009" because REASON_EXPLICIT_KEY, // Tabs in various contexts (explicit key with colon-terminated content)
     "YJV2" because REASON_FLOW_COLLECTION, // Dash in flow sequence
     "ZCZ6" because REASON_MISC, // Invalid mapping in plain single line value
     "ZL4Z" because REASON_MISC, // Invalid nested mapping
     "ZVH3" because REASON_INDENTATION, // Wrong indented sequence item
-    "ZWK4" because REASON_EXPLICIT_KEY, // Key with anchor after missing explicit mapping value
 )
 
 /** See [deviationsInOutcome]. */
 val deviationsInValue: Set<DeviationCase> = setOf(
     "26DV" because REASON_MISC, // Whitespace around colon in mappings
     "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
-    "2XXW" because REASON_MISC, // Spec Example 2.25. Unordered Sets
     "35KP" because REASON_TAG, // Tags for Root Objects
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4QFQ" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator [1.3]
     "4WA9" because REASON_BLOCK_SCALAR, // Literal scalars
-    "5WE3" because REASON_EXPLICIT_KEY, // Spec Example 8.17. Explicit Block Mapping Entries
     "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
     "6KGN" because REASON_ANCHOR_ALIAS, // Anchor for empty node
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
-    "7W2P" because REASON_EXPLICIT_KEY, // Block Mapping with Missing Values
     "87E4" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.8. Single Quoted Implicit Keys
     "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
     "8UDB" because REASON_FLOW_COLLECTION, // Spec Example 7.14. Flow Sequence Entries
@@ -172,15 +154,12 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
-    "GH63" because REASON_EXPLICIT_KEY, // Mixed Block Mapping (explicit to implicit)
     "H2RW" because REASON_MISC, // Blank lines
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HS5T" because REASON_MULTILINE_PLAIN_EDGE, // Spec Example 7.12. Plain Lines
     "HWV9" because REASON_DOC_MARKER, // Document-end marker
-    "JTV5" because REASON_MISC, // Block Mapping with Multiline Scalars
     "L24T_00" because REASON_MISC, // Trailing line of spaces
     "L24T_01" because REASON_MISC, // Trailing line of spaces
-    "L94M" because REASON_TAG, // Tags in Explicit Mapping
     "L9U5" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.11. Plain Implicit Keys
     "LE5A" because REASON_FLOW_COLLECTION, // Spec Example 7.24. Flow Nodes
     "LQZ7" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.4. Double Quoted Implicit Keys
@@ -193,9 +172,7 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
     "QT73" because REASON_DOC_MARKER, // Comment and document-end marker
     "R4YG" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator
-    "RR7F" because REASON_EXPLICIT_KEY, // Mixed Block Mapping (implicit to explicit)
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
-    "S9E8" because REASON_MISC, // Spec Example 5.3. Block Structure Indicators
     "SM9W_00" because REASON_DOC_MARKER, // Single character streams
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
@@ -203,7 +180,5 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "W42U" because REASON_MISC, // Spec Example 8.15. Block Sequence Entry Types
     "WZ62" because REASON_EMPTY_MISSING, // Spec Example 7.2. Empty Content
-    "X8DW" because REASON_EXPLICIT_KEY, // Explicit key and value seperated by comment
     "Y79Y_010" because REASON_TAB, // Tabs in various contexts
-    "ZWK4" because REASON_EXPLICIT_KEY, // Key with anchor after missing explicit mapping value
 )
