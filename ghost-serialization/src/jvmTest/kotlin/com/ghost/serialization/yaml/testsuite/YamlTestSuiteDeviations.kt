@@ -152,7 +152,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
     "6KGN" because REASON_ANCHOR_ALIAS, // Anchor for empty node
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
-    "7FWL" because REASON_TAG, // Spec Example 6.24. Verbatim Tags
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
     "7W2P" because REASON_EXPLICIT_KEY, // Block Mapping with Missing Values
     "87E4" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.8. Single Quoted Implicit Keys
@@ -161,7 +160,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
-    "C4HZ" because REASON_TAG, // Spec Example 2.24. Global Tags
     "CN3R" because REASON_ANCHOR_ALIAS, // Various location of anchors in flow sequence
     "CT4Q" because REASON_EXPLICIT_KEY, // Spec Example 7.20. Single Pair Explicit Entry
     "DC7X" because REASON_TAB, // Various trailing tabs
