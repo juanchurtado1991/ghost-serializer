@@ -47,8 +47,6 @@ private const val REASON_TAG = "Tag resolution (handles, prefixes, shorthands, v
 val deviationsInOutcome: Set<DeviationCase> = setOf(
     "26DV" because REASON_MISC, // Whitespace around colon in mappings
     "2CMS" because REASON_MULTILINE_PLAIN_EDGE, // Invalid mapping in plain multiline
-    "2G84_00" because REASON_BLOCK_SCALAR, // Literal modifers
-    "2G84_01" because REASON_BLOCK_SCALAR, // Literal modifers
     "2JQS" because REASON_EXPLICIT_KEY, // Block Mapping with Missing Keys
     "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
     "2XXW" because REASON_EXPLICIT_KEY, // Spec Example 2.25. Unordered Sets (explicit keys with no value)
@@ -57,7 +55,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4FJ6" because REASON_EXPLICIT_KEY, // Nested implicit complex keys
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
-    "5LLU" because REASON_BLOCK_SCALAR, // Block scalar with wrong indented line after spaces only
     "5NYZ" because REASON_COMMENT, // Spec Example 6.9. Separated Comment
     "5TRB" because REASON_DOC_MARKER, // Invalid document-start marker in doublequoted tring
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
@@ -123,7 +120,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "S3PD" because REASON_MISC, // Spec Example 8.18. Implicit Block Mapping Entries
-    "S98Z" because REASON_BLOCK_SCALAR, // Block scalar with more spaces than first content line
     "S9E8" because REASON_MISC, // Spec Example 5.3. Block Structure Indicators
     "SM9W_01" because REASON_DOC_MARKER, // Single character streams
     "SU5Z" because REASON_COMMENT, // Comment without whitespace after doublequoted scalar
@@ -136,7 +132,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "V9D5" because REASON_MISC, // Spec Example 8.19. Compact Block Mappings
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
-    "W9L4" because REASON_BLOCK_SCALAR, // Literal block scalar with more spaces in first line
     "WZ62" because REASON_EMPTY_MISSING, // Spec Example 7.2. Empty Content
     "X38W" because REASON_ANCHOR_ALIAS, // Aliases in Flow Objects
     "XW4D" because REASON_COMMENT, // Various Trailing Comments
