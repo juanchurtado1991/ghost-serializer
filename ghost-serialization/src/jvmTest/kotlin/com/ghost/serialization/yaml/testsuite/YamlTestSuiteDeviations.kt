@@ -80,7 +80,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
-    "EHF6" because REASON_TAG, // Tags for Flow Objects
     "EW3V" because REASON_INDENTATION, // Wrong indendation in mapping
     "FH7J" because REASON_TAG, // Tags on Empty Scalars
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
@@ -173,7 +172,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "DK95_05" because REASON_TAB, // Tabs that look like indentation
     "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
-    "EHF6" because REASON_TAG, // Tags for Flow Objects
     "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "GH63" because REASON_EXPLICIT_KEY, // Mixed Block Mapping (explicit to implicit)
