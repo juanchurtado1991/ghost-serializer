@@ -94,7 +94,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "G5U8" because REASON_DOC_MARKER, // Plain dashes in flow sequence
     "GDY7" because REASON_COMMENT, // Comment that looks like a mapping key
-    "H7J7" because REASON_ANCHOR_ALIAS, // Node anchor not indented
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "J9HZ" because REASON_DOC_MARKER, // Spec Example 2.9. Single Document with Two Comments
@@ -127,7 +126,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "S98Z" because REASON_BLOCK_SCALAR, // Block scalar with more spaces than first content line
     "S9E8" because REASON_MISC, // Spec Example 5.3. Block Structure Indicators
     "SM9W_01" because REASON_DOC_MARKER, // Single character streams
-    "SR86" because REASON_ANCHOR_ALIAS, // Anchor plus Alias
     "SU5Z" because REASON_COMMENT, // Comment without whitespace after doublequoted scalar
     "SU74" because REASON_ANCHOR_ALIAS, // Anchor and alias as mapping key
     "SY6V" because REASON_ANCHOR_ALIAS, // Anchor before sequence entry on same line
@@ -181,7 +179,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "6WPF" because REASON_FLOW_COLLECTION, // Spec Example 6.8. Flow Folding [1.3]
     "74H7" because REASON_TAG, // Tags in Implicit Mapping
     "7A4E" because REASON_MULTILINE_QUOTED, // Spec Example 7.6. Double Quoted Lines
-    "7BMT" because REASON_ANCHOR_ALIAS, // Node and Mapping Key Anchors [1.3]
     "7FWL" because REASON_TAG, // Spec Example 6.24. Verbatim Tags
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
     "7W2P" because REASON_EXPLICIT_KEY, // Block Mapping with Missing Values
@@ -249,7 +246,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "T4YY" because REASON_MULTILINE_QUOTED, // Spec Example 7.9. Single Quoted Lines [1.3]
     "TL85" because REASON_FLOW_COLLECTION, // Spec Example 6.8. Flow Folding
-    "U3XV" because REASON_ANCHOR_ALIAS, // Node and Mapping Key Anchors
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
