@@ -38,7 +38,14 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): 
             }
 
             isDigit(currByte) -> {
-                explicitIndent = (currByte - C.ZERO_BYTE); position++
+                if (explicitIndent >= 0) {
+                    yamlError("Block scalar indentation indicator must be a single digit")
+                }
+                explicitIndent = currByte - C.ZERO_BYTE
+                if (explicitIndent == 0) {
+                    yamlError("Block scalar indentation indicator must be between 1 and 9")
+                }
+                position++
             }
 
             currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE -> position++
@@ -82,6 +89,9 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
     var scannerPos = position
     val localRawData = rawData
     val localLimit = limit
+    // Widest indentation seen among leading empty lines, scanned past while looking for the
+    // first real content line below.
+    var maxLeadingEmptyLineIndent = 0
     while (scannerPos < localLimit) {
         val currByte = localRawData[scannerPos]
         if (currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) {
@@ -104,8 +114,15 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
             if (spaces <= parentIndent && !isDocumentRoot) {
                 return parentIndent + 2
             }
+            // A leading empty line more indented than the first real content line is ambiguous —
+            // there's no way to tell how much of its indentation was meant as content — and the
+            // spec rejects it outright rather than guessing.
+            if (maxLeadingEmptyLineIndent > spaces) {
+                yamlError("Leading empty line in block scalar is more indented than its first content line")
+            }
             return spaces
         }
+        if (spaces > maxLeadingEmptyLineIndent) maxLeadingEmptyLineIndent = spaces
         scannerPos = peekPos
     }
     return parentIndent + 2
