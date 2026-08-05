@@ -43,7 +43,20 @@ internal fun GhostYamlFlatReader.skipWhitespaceAndComments() {
                 currentIndent = 0
             }
 
-            currentByte == C.HASH_BYTE -> skipToEndOfLine()
+            currentByte == C.HASH_BYTE -> {
+                // A comment must be preceded by whitespace or be the first thing on its line —
+                // "c,#invalid" and "\"value\"#comment" aren't comments, they're invalid trailing
+                // text directly touching real content.
+                if (position > 0) {
+                    val previousByte = localRawData[position - 1]
+                    if (previousByte != C.SPACE_BYTE && previousByte != C.TAB_BYTE &&
+                        previousByte != C.NEWLINE_BYTE && previousByte != C.CR_BYTE
+                    ) {
+                        yamlError("Comment must be preceded by whitespace")
+                    }
+                }
+                skipToEndOfLine()
+            }
             else -> {
                 break
             }
