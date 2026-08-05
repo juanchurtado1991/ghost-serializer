@@ -97,17 +97,21 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     fun readAllDocuments(): List<Any?> {
         val results = mutableListOf<Any?>()
         val localLimit = limit
+        var previousDocumentExplicitlyEnded = true
         while (position < localLimit) {
             anchorTable.clear()
             tagDirectives.clear()
             skipWhitespaceAndComments()
             if (position >= localLimit) break
+            requireExplicitEndBeforeDirectives(previousDocumentExplicitlyEnded)
             val iterationStart = position
             val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
             if (!sawExplicitMarker && position >= localLimit) break
             results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
-            if (!skipDocumentEnd()) rejectTrailingGarbageAfterDocument()
+            val sawExplicitEnd = skipDocumentEnd()
+            if (!sawExplicitEnd) rejectTrailingGarbageAfterDocument()
+            previousDocumentExplicitlyEnded = sawExplicitEnd
             if (position == iterationStart) noProgressError()
         }
         return results
@@ -120,11 +124,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     fun <T> readAllDocuments(deserializeDocument: (GhostYamlFlatReader) -> T): List<T> {
         val results = mutableListOf<T>()
         val localLimit = limit
+        var previousDocumentExplicitlyEnded = true
         while (position < localLimit) {
             anchorTable.clear()
             tagDirectives.clear()
             skipWhitespaceAndComments()
             if (position >= localLimit) break
+            requireExplicitEndBeforeDirectives(previousDocumentExplicitlyEnded)
             val iterationStart = position
             val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
@@ -132,7 +138,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             prepareRootForCurrentDocument()
             results.add(deserializeDocument(this))
             clearAfterDocument()
-            if (!skipDocumentEnd()) rejectTrailingGarbageAfterDocument()
+            val sawExplicitEnd = skipDocumentEnd()
+            if (!sawExplicitEnd) rejectTrailingGarbageAfterDocument()
+            previousDocumentExplicitlyEnded = sawExplicitEnd
             if (position == iterationStart) noProgressError()
         }
         return results
@@ -585,6 +593,20 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val currentByte = rawData[position]
         if (currentByte != C.DASH_BYTE && currentByte != C.PERCENT_BYTE) {
             yamlError("Unexpected content after document value")
+        }
+    }
+
+    /**
+     * Called by both [readAllDocuments] overloads right before deciding whether the next thing
+     * is a directive. Directives only apply to a document that hasn't started yet — legal at the
+     * very start of the stream, or right after an explicit `...` — not merely because the
+     * previous document's content happened to end (e.g. right after an implicit `---`-to-`---`
+     * transition with no `...` in between).
+     */
+    private fun requireExplicitEndBeforeDirectives(previousDocumentExplicitlyEnded: Boolean) {
+        if (previousDocumentExplicitlyEnded) return
+        if (position < limit && rawData[position] == C.PERCENT_BYTE) {
+            yamlError("Directives must be preceded by an explicit document end marker (...)")
         }
     }
 

@@ -161,8 +161,10 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
             continue
         }
 
-        if (spaces < blockIndent) {
-            // De-indented content — end of block scalar
+        if (spaces < blockIndent || isDocumentMarker() || isDocumentEndMarker()) {
+            // De-indented content, or a "---"/"..." marker, ends the block scalar — markers are
+            // structural and terminate it unconditionally, even a root-level scalar with
+            // blockIndent 0 that would otherwise treat every line as still "indented enough".
             position = lineStart
             break
         }
