@@ -149,7 +149,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     internal fun readValue(
         indent: Int,
         inFlow: Boolean,
-        expectedTag: Int = GhostYamlTags.TAG_NONE
+        expectedTag: Int = GhostYamlTags.TAG_NONE,
+        strictDedent: Boolean = false
     ): Any? {
         skipInlineWhitespace()
         val localLimit = limit
@@ -161,7 +162,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.LEFT_BRACE_BYTE -> readFlowMapping()            // flow mapping
             C.LEFT_BRACKET_BYTE -> readFlowSequence()           // flow sequence
             C.EXCLAMATION_BYTE -> readTaggedValue(indent)      // tagged value
-            C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow)    // anchor definition
+            C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow, strictDedent)    // anchor definition
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readSingleQuotedString() }
@@ -278,7 +279,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         null
                     }
 
-                    else -> readValue(blockIndent, inFlow = false)
+                    else -> readValue(blockIndent, inFlow = false, strictDedent = true)
                 }
 
                 if (key == C.STR_MERGE_KEY) {
