@@ -107,7 +107,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "Q9WF" because REASON_MISC, // Spec Example 6.12. Separation Spaces
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
-    "QLJ7" because REASON_TAG, // Tag shorthand used in documents but only defined in the first
     "RR7F" because REASON_EXPLICIT_KEY, // Mixed Block Mapping (implicit to explicit)
     "RXY3" because REASON_MULTILINE_QUOTED, // Invalid document-end marker in single quoted string
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
@@ -154,7 +153,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
     "6KGN" because REASON_ANCHOR_ALIAS, // Anchor for empty node
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
-    "74H7" because REASON_TAG, // Tags in Implicit Mapping
     "7FWL" because REASON_TAG, // Spec Example 6.24. Verbatim Tags
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
     "7W2P" because REASON_EXPLICIT_KEY, // Block Mapping with Missing Values
@@ -162,7 +160,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
     "8UDB" because REASON_FLOW_COLLECTION, // Spec Example 7.14. Flow Sequence Entries
     "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
-    "9KAX" because REASON_TAG, // Various combinations of tags and anchors
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
     "C4HZ" because REASON_TAG, // Spec Example 2.24. Global Tags
@@ -197,7 +194,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "MJS9" because REASON_BLOCK_SCALAR, // Spec Example 6.7. Block Folding
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
-    "P76L" because REASON_TAG, // Spec Example 6.19. Secondary Tag Handle
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
     "QT73" because REASON_DOC_MARKER, // Comment and document-end marker
     "R4YG" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator
