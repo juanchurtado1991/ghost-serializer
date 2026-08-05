@@ -34,7 +34,13 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
             position++
         }
         val tagLen = position - tagStart
-        if (tagLen > 0) {
+        // A %TAG directive redefining the secondary handle ("!!") overrides the core schema —
+        // "!!int" under a redefined "!!" is that app's custom "int" tag, not YAML's actual
+        // integer type, so it must not be resolved (or type-coerced) as one.
+        val customSecondaryPrefix = tagDirectives[C.STR_EXCLAMATION + C.STR_EXCLAMATION]
+        if (customSecondaryPrefix != null) {
+            if (tagLen > 0) resolvedTag = customSecondaryPrefix + localRawData.decodeToString(tagStart, tagStart + tagLen)
+        } else if (tagLen > 0) {
             tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
         }
         requireTagFollowedByWhitespace()
@@ -68,11 +74,8 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
                     val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)
                     val suffix = rawTagName.substring(exclamationIdx + 1)
                     val prefix = tagDirectives[handle]
-                    resolvedTag = if (prefix != null) {
-                        prefix + suffix
-                    } else {
-                        rawTagName
-                    }
+                        ?: yamlError("Tag handle '$handle' is not defined by a %TAG directive in this document")
+                    resolvedTag = prefix + suffix
                 } else {
                     resolvedTag = rawTagName
                 }
