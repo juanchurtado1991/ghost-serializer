@@ -162,7 +162,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     ): Any? {
         skipInlineWhitespace()
         val localLimit = limit
-        if (position >= localLimit) return null
+        if (position >= localLimit) {
+            // A tag forcing string type (e.g. a bare "!!str" with nothing after it, even at
+            // end of input) still resolves to an empty string, not "no value at all" — same as
+            // it would if there were trailing whitespace/newline instead of EOF.
+            return if (expectedTag == GhostYamlTags.TAG_STR) "" else null
+        }
 
         val currentByte = rawData[position]
         return when (currentByte) {
