@@ -80,8 +80,13 @@ internal fun GhostYamlFlatReader.readAlias(): Any? {
     }
 
     val aliasName = localRawData.decodeToString(start, position)
-    val value = anchorTable[aliasName] ?: yamlError("Anchor '$aliasName' not found")
-    return value
+    // anchorTable[aliasName] ?: error(...) would be wrong here: a Map lookup returns null both
+    // when the key is absent *and* when it's present with a null value (e.g. an anchor on an
+    // empty node, "a: &anchor\nb: *anchor"), so the two cases must be told apart explicitly.
+    if (!anchorTable.containsKey(aliasName)) {
+        yamlError("Anchor '$aliasName' not found")
+    }
+    return anchorTable[aliasName]
 }
 
 internal fun GhostYamlFlatReader.mergeInto(target: MutableMap<String, Any?>, value: Any?) {
