@@ -488,6 +488,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val endPosition = trimTrailingSpaces(startPosition, scanPosition)
         position = scanPosition
 
+        // A bare "-" is only a valid plain-scalar start when followed by a "safe" character
+        // (ns-plain-first's rule for '-'/'?'/':') — in flow context that excludes flow indicators
+        // (",[]{}"), so a lone "-" immediately touching one, like the entries in "[-, -]" or
+        // "[-]", has nothing valid to be: it isn't the block sequence indicator (flow has no such
+        // thing) and it doesn't satisfy the plain-scalar exception either.
+        if (inFlow && endPosition - startPosition == 1 && localRawData[startPosition] == C.DASH_BYTE) {
+            yamlError("A lone '-' is not a valid plain scalar in flow context")
+        }
+
         // Plain scalars can continue onto following lines, both in block context (more-indented
         // lines) and in flow context (any line that isn't itself a flow terminator) — see
         // [foldPlainScalarContinuation] and [foldFlowPlainScalarContinuation] respectively.

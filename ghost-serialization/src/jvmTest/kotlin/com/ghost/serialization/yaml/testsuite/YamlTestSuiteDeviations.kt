@@ -63,7 +63,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "EW3V" because REASON_INDENTATION, // Wrong indendation in mapping
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
-    "G5U8" because REASON_DOC_MARKER, // Plain dashes in flow sequence
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JKF3" because REASON_MULTILINE_QUOTED, // Multiline unidented double quoted block key
@@ -92,7 +91,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "Y79Y_007" because REASON_TAB, // Tabs in various contexts
     "Y79Y_008" because REASON_TAB, // Tabs in various contexts
     "Y79Y_009" because REASON_EXPLICIT_KEY, // Tabs in various contexts (explicit key with colon-terminated content)
-    "YJV2" because REASON_FLOW_COLLECTION, // Dash in flow sequence
     "ZCZ6" because REASON_MISC, // Invalid mapping in plain single line value
     "ZL4Z" because REASON_MISC, // Invalid nested mapping
     "ZVH3" because REASON_INDENTATION, // Wrong indented sequence item
