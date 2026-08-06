@@ -658,12 +658,17 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 }
                 val endPosition = trimTrailingSpaces(startPosition, position)
                 if (endPosition == startPosition) {
-                    if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
                     // A bare ':' with nothing before it is a valid empty-string key (e.g.
                     // ": value", or repeated ": a" / ": b" pairs) — the loop above breaks on
-                    // the very first byte in that case, without advancing. Anything else here
-                    // (a newline, EOF) really is "no more mapping to read".
-                    return if (position < localLimit && localRawData[position] == C.COLON_BYTE) "" else null
+                    // the very first byte in that case, without advancing. A tag can be the
+                    // entire key by itself the same way (e.g. "!!str : bar" is an empty-string
+                    // key) — a prefix followed directly by ':' isn't "dangling", it's this same
+                    // empty-key shape with the tag already consumed. Anything else here (a
+                    // newline, EOF) really is "no more mapping to read" — or, if a prefix was
+                    // consumed first, a genuinely dangling one.
+                    if (position < localLimit && localRawData[position] == C.COLON_BYTE) return ""
+                    if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
+                    return null
                 }
                 localRawData.decodeToString(startPosition, endPosition)
             }
