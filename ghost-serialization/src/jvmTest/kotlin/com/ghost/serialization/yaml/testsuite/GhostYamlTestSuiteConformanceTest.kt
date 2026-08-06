@@ -1,6 +1,5 @@
 package com.ghost.serialization.yaml.testsuite
 
-import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.Test
@@ -113,25 +112,5 @@ class GhostYamlTestSuiteConformanceTest {
               Value:   $valuePass pass, $valueKnown known deviations, $valueUnexpected UNEXPECTED (of ${valueCases.size} checked)
             """.trimIndent()
         )
-    }
-
-    private fun parseThrew(case: YamlTestSuiteCase): Boolean {
-        return try {
-            GhostYamlFlatReader(case.inYamlBytes).readAllDocuments()
-            false
-        } catch (e: Exception) {
-            true
-        }
-    }
-
-    private fun valueMatches(case: YamlTestSuiteCase): Boolean {
-        val ghostDocs = try {
-            GhostYamlFlatReader(case.inYamlBytes).readAllDocuments()
-        } catch (e: Exception) {
-            return false
-        }
-        val jsonDocs = decodeJsonDocuments(case.inJsonText!!).map { normalize(it) }
-        return ghostDocs.size == jsonDocs.size &&
-            ghostDocs.indices.all { i -> deepEquals(ghostDocs[i], jsonDocs[i]) }
     }
 }
