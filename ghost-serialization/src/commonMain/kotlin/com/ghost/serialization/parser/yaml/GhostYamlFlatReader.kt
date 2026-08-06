@@ -419,9 +419,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
                 currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -> break
                 currentByte == C.HASH_BYTE -> {
-                    // Inline comment — the plain scalar ends before '#'
-                    // (only if preceded by a space)
-                    if (scanPosition > startPosition && localRawData[scanPosition - 1] == C.SPACE_BYTE) break
+                    // Inline comment — the plain scalar ends before '#' (only if preceded by
+                    // whitespace; "d#X" isn't a comment, "d\t#X"/"d #X" are).
+                    if (scanPosition > startPosition &&
+                        (localRawData[scanPosition - 1] == C.SPACE_BYTE || localRawData[scanPosition - 1] == C.TAB_BYTE)
+                    ) break
                     scanPosition++
                 }
 
