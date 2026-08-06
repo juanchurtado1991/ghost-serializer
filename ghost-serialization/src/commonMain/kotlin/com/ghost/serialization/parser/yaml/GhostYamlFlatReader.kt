@@ -300,7 +300,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 }
 
                 // Read key
-                val key = readKey() ?: break
+                val key = readKey(inFlow = false) ?: break
                 skipInlineWhitespace()
 
                 // Expect ':' after the key
@@ -709,7 +709,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * Reads a mapping key. Keys are plain scalars ending at ':'.
      * Quoted keys are supported.
      */
-    internal fun readKey(): String? {
+    internal fun readKey(inFlow: Boolean): String? {
         skipInlineWhitespace()
         val localLimit = limit
         val localRawData = rawData
@@ -765,6 +765,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     if (currentByte == C.HASH_BYTE && position > startPosition &&
                         (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
                     ) break
+                    if (inFlow && (currentByte == C.COMMA_BYTE || currentByte == C.RIGHT_BRACE_BYTE || currentByte == C.RIGHT_BRACKET_BYTE)) break
                     position++
                 }
                 val endPosition = trimTrailingSpaces(startPosition, position)
@@ -781,7 +782,18 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
                     return null
                 }
-                localRawData.decodeToString(startPosition, endPosition)
+                val firstLine = localRawData.decodeToString(startPosition, endPosition)
+                // A flow mapping key can fold across lines the same way any other flow plain
+                // scalar does (e.g. "{ matches\n% : 20 }" — the key is "matches %") — block-
+                // context keys never reach here still sitting on a newline, since a colon must
+                // follow on the same line there.
+                if (inFlow && position < localLimit &&
+                    (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
+                ) {
+                    foldFlowPlainScalarContinuation(firstLine) ?: firstLine
+                } else {
+                    firstLine
+                }
             }
         }
     }

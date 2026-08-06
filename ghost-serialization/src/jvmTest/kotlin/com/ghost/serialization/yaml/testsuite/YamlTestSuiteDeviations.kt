@@ -48,20 +48,16 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "2CMS" because REASON_MULTILINE_PLAIN_EDGE, // Invalid mapping in plain multiline
     "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
     "35KP" because REASON_TAG, // Tags for Root Objects
-    "4ABK" because REASON_FLOW_COLLECTION, // Flow Mapping Separate Values
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "7LBH" because REASON_FLOW_IMPLICIT_KEY, // Multiline double quoted implicit keys
-    "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
-    "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
     "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
     "BF9H" because REASON_MULTILINE_PLAIN_EDGE, // Trailing comment in multiline plain scalar
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line
     "D49Q" because REASON_FLOW_IMPLICIT_KEY, // Multiline single quoted implicit keys
-    "DFF7" because REASON_FLOW_COLLECTION, // Spec Example 7.16. Flow Mapping Entries
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
@@ -77,7 +73,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "MUS6_01" because REASON_DIRECTIVE, // Directive variants
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
-    "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
@@ -85,7 +80,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "SU74" because REASON_ANCHOR_ALIAS, // Anchor and alias as mapping key
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
-    "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
     "X38W" because REASON_ANCHOR_ALIAS, // Aliases in Flow Objects
@@ -115,8 +109,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
-    "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
-    "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
     "CT4Q" because REASON_EXPLICIT_KEY, // Spec Example 7.20. Single Pair Explicit Entry
@@ -136,12 +128,10 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "MJS9" because REASON_BLOCK_SCALAR, // Spec Example 6.7. Block Folding
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
-    "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
     "R4YG" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
-    "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "W42U" because REASON_MISC, // Spec Example 8.15. Block Sequence Entry Types
     "Y79Y_010" because REASON_TAB, // Tabs in various contexts
