@@ -378,6 +378,13 @@ private fun GhostYamlFlatReader.processEscapeSequence(): Int {
         C.LOWERCASE_N_BYTE -> C.CODE_LF
         C.LOWERCASE_R_BYTE -> C.CODE_CR
         C.LOWERCASE_T_BYTE -> C.CODE_TAB
+        C.LOWERCASE_X_BYTE -> {        // \xXX
+            if (position + 2 > localLimit) yamlError("Incomplete \\x escape")
+            val hexVal = parseHex(rawData, position, 2)
+            position += 2
+            hexVal
+        }
+
         C.LOWERCASE_U_BYTE -> {        // \uXXXX
             if (position + 4 > localLimit) yamlError("Incomplete \\u escape")
             val hexVal = parseHex(rawData, position, 4)
