@@ -752,8 +752,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             return null
         }
         return when (localRawData[position]) {
-            C.DOUBLE_QUOTE_BYTE -> readDoubleQuotedString() as String
-            C.SINGLE_QUOTE_BYTE -> readSingleQuotedString() as String
+            C.DOUBLE_QUOTE_BYTE -> readQuotedKeyRejectingMultiLine(inFlow) { readDoubleQuotedString() }
+            C.SINGLE_QUOTE_BYTE -> readQuotedKeyRejectingMultiLine(inFlow) { readSingleQuotedString() }
             else -> {
                 val startPosition = position
                 while (position < localLimit) {
@@ -805,6 +805,28 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 }
             }
         }
+    }
+
+    /**
+     * Reads a quoted key via [readQuoted], then — in block context only — rejects it if it
+     * spanned more than one line. An implicit block-mapping key (no `?` indicator) must fit on a
+     * single line, unlike a quoted scalar used as an ordinary value (which folds across lines
+     * fine); a flow-mapping key has no such restriction, since the surrounding brackets already
+     * give the parser an unambiguous boundary (confirmed by 9BXH/9SA2 expecting a folded multi-
+     * line flow key to succeed, vs. JKF3 expecting the equivalent block key to fail).
+     */
+    private inline fun readQuotedKeyRejectingMultiLine(inFlow: Boolean, readQuoted: () -> String): String {
+        val startPosition = position
+        val text = readQuoted()
+        if (inFlow) return text
+        var scanPosition = startPosition
+        while (scanPosition < position) {
+            if (rawData[scanPosition] == C.NEWLINE_BYTE || rawData[scanPosition] == C.CR_BYTE) {
+                yamlError("Implicit keys cannot span multiple lines")
+            }
+            scanPosition++
+        }
+        return text
     }
 
     // Scalar interpretation, quoted-string unescaping, and number parsing now live in

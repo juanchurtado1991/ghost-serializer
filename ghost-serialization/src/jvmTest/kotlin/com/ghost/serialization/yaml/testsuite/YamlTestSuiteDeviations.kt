@@ -52,12 +52,10 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
-    "7LBH" because REASON_FLOW_IMPLICIT_KEY, // Multiline double quoted implicit keys
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
     "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
     "BF9H" because REASON_MULTILINE_PLAIN_EDGE, // Trailing comment in multiline plain scalar
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line
-    "D49Q" because REASON_FLOW_IMPLICIT_KEY, // Multiline single quoted implicit keys
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
@@ -65,7 +63,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
-    "JKF3" because REASON_MULTILINE_QUOTED, // Multiline unidented double quoted block key
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
