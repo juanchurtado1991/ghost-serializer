@@ -351,6 +351,12 @@ private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
         val next = localRawData[position]
         if (next != C.NEWLINE_BYTE && next != C.CR_BYTE) break
     }
+    // A quoted scalar is still "open" here — the closing quote hasn't been seen yet — but a line
+    // that looks like a document marker is forbidden content inside it regardless (spec's
+    // c-forbidden production), not literal text to fold in.
+    if (position < localLimit && (isDocumentMarker() || isDocumentEndMarker())) {
+        yamlError("Document marker '${if (localRawData[position] == C.DASH_BYTE) "---" else "..."}' not allowed inside a quoted scalar")
+    }
     return breakCount
 }
 

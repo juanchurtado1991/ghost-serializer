@@ -52,7 +52,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4FJ6" because REASON_EXPLICIT_KEY, // Nested implicit complex keys
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
-    "5TRB" because REASON_DOC_MARKER, // Invalid document-start marker in doublequoted tring
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "6BFJ" because REASON_ANCHOR_ALIAS, // Mapping, key and flow sequence item anchors
@@ -64,7 +63,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
     "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
     "9MMW" because REASON_FLOW_IMPLICIT_KEY, // Single Pair Implicit Entries
-    "9MQT_01" because REASON_MISC, // Scalar doc with '...' in content
     "BF9H" because REASON_MULTILINE_PLAIN_EDGE, // Trailing comment in multiline plain scalar
     "CFD4" because REASON_FLOW_IMPLICIT_KEY, // Empty implicit key in single pair flow sequences
     "CN3R" because REASON_ANCHOR_ALIAS, // Various location of anchors in flow sequence
@@ -96,7 +94,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "Q9WF" because REASON_MISC, // Spec Example 6.12. Separation Spaces
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
-    "RXY3" because REASON_MULTILINE_QUOTED, // Invalid document-end marker in single quoted string
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "SU74" because REASON_ANCHOR_ALIAS, // Anchor and alias as mapping key
