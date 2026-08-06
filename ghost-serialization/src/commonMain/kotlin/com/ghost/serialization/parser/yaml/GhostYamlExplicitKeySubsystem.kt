@@ -101,7 +101,7 @@ private fun GhostYamlFlatReader.isExplicitValueIndicator(): Boolean {
  * Non-scalar keys (a sequence or mapping used as a key) have no clean string form; the
  * yaml-test-suite cases that use them don't have a JSON fixture to match against either.
  */
-private fun stringifyExplicitMappingKey(keyNode: Any?): String = when (keyNode) {
+internal fun stringifyExplicitMappingKey(keyNode: Any?): String = when (keyNode) {
     null -> ""
     is String -> keyNode
     else -> keyNode.toString()

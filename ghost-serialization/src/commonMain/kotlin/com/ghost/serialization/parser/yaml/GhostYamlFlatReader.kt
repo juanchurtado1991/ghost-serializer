@@ -190,8 +190,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.EXCLAMATION_BYTE -> readTaggedValue(indent, inFlow)      // tagged value
             C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow, strictDedent)    // anchor definition
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
-            C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readDoubleQuotedString() }
-            C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent) { readSingleQuotedString() }
+            C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }
+            C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }
             C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag)
             C.QUESTION_BYTE ->
                 if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
@@ -222,7 +222,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * [C.SINGLE_QUOTE_BYTE] are handled directly above — without this check, a quoted key's value
      * would be silently misread as the quoted string itself, dropping everything nested under it.
      */
-    private inline fun readQuotedScalarOrMappingKey(indent: Int, readQuoted: () -> String): Any? {
+    private inline fun readQuotedScalarOrMappingKey(indent: Int, inFlow: Boolean, readQuoted: () -> String): Any? {
         val startPosition = position
         val text = readQuoted()
         skipInlineWhitespace()
@@ -233,7 +233,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 rawData[position + 1] == C.NEWLINE_BYTE ||
                 rawData[position + 1] == C.CR_BYTE ||
                 rawData[position + 1] == C.TAB_BYTE)
-        if (!isMappingKey) return text
+        // Inside a flow collection there's no block mapping to redirect into — leave position
+        // right where readQuoted()/skipInlineWhitespace() left it (at a ':' or not) and let the
+        // caller (a flow sequence entry may be an implicit single-pair mapping) decide.
+        if (inFlow || !isMappingKey) return text
         position = startPosition
         return readBlockMapping(indent.coerceAtLeast(0))
     }
@@ -429,9 +432,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         localRawData[afterColon] == C.CR_BYTE ||
                         localRawData[afterColon] == C.TAB_BYTE
                     ) {
-                        // Rewind and parse as block mapping
-                        position = startPosition
-                        return readBlockMapping(indent.coerceAtLeast(0))
+                        if (!inFlow) {
+                            // Rewind and parse as block mapping
+                            position = startPosition
+                            return readBlockMapping(indent.coerceAtLeast(0))
+                        }
+                        // Inside a flow collection there's no block mapping to redirect into —
+                        // stop the scalar right here and let the caller (a flow sequence entry
+                        // may be an implicit single-pair mapping) decide what the colon means.
+                        break
                     }
                     scanPosition++
                 }
