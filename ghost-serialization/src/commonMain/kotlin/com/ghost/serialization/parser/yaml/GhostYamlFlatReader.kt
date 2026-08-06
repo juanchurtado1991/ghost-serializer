@@ -193,6 +193,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }
             C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag)
+            // '%' is reserved for directives and can never start a plain scalar (no "followed by
+            // a safe character" exception the way '-'/'?'/':' get) — a directive-shaped line
+            // appearing where a value is expected (e.g. after the "---" it should have preceded)
+            // is simply invalid, not a scalar that happens to start with '%'.
+            C.PERCENT_BYTE -> yamlError("A plain scalar cannot start with '%' — reserved for directives")
             C.QUESTION_BYTE ->
                 if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
                 else readPlainScalarOrMapping(indent, inFlow, expectedTag)
