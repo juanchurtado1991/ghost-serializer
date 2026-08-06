@@ -45,7 +45,6 @@ private const val REASON_TAG = "Tag resolution (handles, prefixes, shorthands, v
  *   match the case's `in.json` fixture.
  */
 val deviationsInOutcome: Set<DeviationCase> = setOf(
-    "2CMS" because REASON_MULTILINE_PLAIN_EDGE, // Invalid mapping in plain multiline
     "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
     "35KP" because REASON_TAG, // Tags for Root Objects
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
@@ -53,13 +52,10 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
-    "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
-    "BF9H" because REASON_MULTILINE_PLAIN_EDGE, // Trailing comment in multiline plain scalar
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
-    "EW3V" because REASON_INDENTATION, // Wrong indendation in mapping
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
