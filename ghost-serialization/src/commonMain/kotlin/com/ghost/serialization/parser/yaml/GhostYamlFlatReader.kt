@@ -584,10 +584,39 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             }
 
             val lineStart = position
+            var sawComment = false
             while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
+                val currentByte = localRawData[position]
+                // A comment ends this line's content the same way it ends a single-line plain
+                // scalar (only when preceded by whitespace) — and since a comment can't appear
+                // inside a still-open plain scalar's fold, it ends the whole scalar right here
+                // too, not just this one line (see BF9H: content after the comment needs its own
+                // valid token, it can't be folded in as if the comment weren't there).
+                if (currentByte == C.HASH_BYTE && position > lineStart &&
+                    (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
+                ) {
+                    sawComment = true
+                    break
+                }
                 position++
             }
             val lineEnd = trimTrailingSpaces(lineStart, position)
+            // A continuation line can't itself look like a mapping key ("word: ") — a plain
+            // scalar's fold can't contain what would otherwise be a nested key/value pair (see
+            // 2CMS: "invalid: x" on a continuation line is forbidden content, not literal text).
+            var colonScan = lineStart
+            while (colonScan < lineEnd) {
+                if (localRawData[colonScan] == C.COLON_BYTE) {
+                    val afterColon = colonScan + 1
+                    if (afterColon >= lineEnd ||
+                        localRawData[afterColon] == C.SPACE_BYTE ||
+                        localRawData[afterColon] == C.TAB_BYTE
+                    ) {
+                        yamlError("Plain scalar continuation cannot contain a mapping key indicator")
+                    }
+                }
+                colonScan++
+            }
             val lineText = localRawData.decodeToString(lineStart, lineEnd)
 
             if (sb == null) sb = StringBuilder(firstLine)
@@ -595,6 +624,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             sb.append(lineText)
             blankLines = 0
 
+            // Leave position sitting right at the '#' either way — consistent with how the
+            // initial single-line scan above also stops there without consuming it, letting the
+            // caller's own skipWhitespaceAndComments handle it afterward.
+            if (sawComment) break
             if (position >= localLimit) break
         }
 
