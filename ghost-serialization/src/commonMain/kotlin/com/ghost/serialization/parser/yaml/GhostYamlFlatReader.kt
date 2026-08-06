@@ -185,8 +185,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val currentByte = rawData[position]
         return when (currentByte) {
             C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte, indent)           // block scalar
-            C.LEFT_BRACE_BYTE -> readFlowMapping()            // flow mapping
-            C.LEFT_BRACKET_BYTE -> readFlowSequence()           // flow sequence
+            C.LEFT_BRACE_BYTE -> readFlowCollectionOrMappingKey(indent, inFlow) { readFlowMapping() }
+            C.LEFT_BRACKET_BYTE -> readFlowCollectionOrMappingKey(indent, inFlow) { readFlowSequence() }
             C.EXCLAMATION_BYTE -> readTaggedValue(indent, inFlow)      // tagged value
             C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow, strictDedent)    // anchor definition
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
@@ -237,6 +237,30 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         // right where readQuoted()/skipInlineWhitespace() left it (at a ':' or not) and let the
         // caller (a flow sequence entry may be an implicit single-pair mapping) decide.
         if (inFlow || !isMappingKey) return text
+        position = startPosition
+        return readBlockMapping(indent.coerceAtLeast(0))
+    }
+
+    /**
+     * Reads a flow collection ([readCollection], `{...}` or `[...]`) via [readValue]'s dispatch,
+     * then — mirroring [readQuotedScalarOrMappingKey] — checks whether a `:` follows: a flow
+     * collection can itself be a block-mapping key (e.g. `[flow]: block`), not just a value.
+     * Without this, `[flow]: block` at the top of a block context would read the `[flow]` list as
+     * a complete document value and then choke on the trailing `: block` as garbage.
+     */
+    private inline fun readFlowCollectionOrMappingKey(indent: Int, inFlow: Boolean, readCollection: () -> Any?): Any? {
+        val startPosition = position
+        val collection = readCollection()
+        if (inFlow) return collection
+        skipInlineWhitespace()
+        val localLimit = limit
+        val isMappingKey = position < localLimit && rawData[position] == C.COLON_BYTE &&
+            (position + 1 >= localLimit ||
+                rawData[position + 1] == C.SPACE_BYTE ||
+                rawData[position + 1] == C.NEWLINE_BYTE ||
+                rawData[position + 1] == C.CR_BYTE ||
+                rawData[position + 1] == C.TAB_BYTE)
+        if (!isMappingKey) return collection
         position = startPosition
         return readBlockMapping(indent.coerceAtLeast(0))
     }
