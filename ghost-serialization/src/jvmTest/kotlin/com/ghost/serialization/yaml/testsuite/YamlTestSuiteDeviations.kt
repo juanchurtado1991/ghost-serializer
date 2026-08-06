@@ -144,7 +144,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
     "CN3R" because REASON_ANCHOR_ALIAS, // Various location of anchors in flow sequence
     "CT4Q" because REASON_EXPLICIT_KEY, // Spec Example 7.20. Single Pair Explicit Entry
-    "DC7X" because REASON_TAB, // Various trailing tabs
     "DE56_00" because REASON_TAB, // Trailing tabs in double quoted
     "DE56_01" because REASON_TAB, // Trailing tabs in double quoted
     "DE56_02" because REASON_TAB, // Trailing tabs in double quoted
