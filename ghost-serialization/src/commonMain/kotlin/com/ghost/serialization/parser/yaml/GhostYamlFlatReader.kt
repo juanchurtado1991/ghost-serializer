@@ -400,6 +400,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     position++
                 }
 
+                // A comment directly after "- " (e.g. "- # Empty") leaves no inline value, same
+                // as it would after a mapping key's ':' (see resolveValueAfterColon) — without
+                // this, the comment text would be read as the item's own plain-scalar content.
+                if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
+                    skipToEndOfLine()
+                }
+
                 val item: Any? = when {
                     position >= localLimit -> null
                     localRawData[position] == C.NEWLINE_BYTE ||

@@ -56,7 +56,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
-    "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
@@ -107,7 +106,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
-    "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "H2RW" because REASON_MISC, // Blank lines
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "L24T_00" because REASON_MISC, // Trailing line of spaces
@@ -121,6 +119,5 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UV7Q" because REASON_TAB, // Legal tab after indentation
-    "W42U" because REASON_MISC, // Spec Example 8.15. Block Sequence Entry Types
     "Y79Y_010" because REASON_TAB, // Tabs in various contexts
 )
