@@ -158,7 +158,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "L24T_00" because REASON_MISC, // Trailing line of spaces
     "L24T_01" because REASON_MISC, // Trailing line of spaces
     "L9U5" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.11. Plain Implicit Keys
-    "LE5A" because REASON_FLOW_COLLECTION, // Spec Example 7.24. Flow Nodes
     "LQZ7" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.4. Double Quoted Implicit Keys
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
