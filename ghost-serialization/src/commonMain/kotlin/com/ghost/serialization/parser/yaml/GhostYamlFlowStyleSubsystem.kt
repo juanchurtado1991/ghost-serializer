@@ -20,44 +20,63 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
         return result
     }
 
-    while (position < localLimit) {
-        skipWhitespaceAndComments()
-        if (position >= localLimit) break
-        if (localRawData[position] == C.RIGHT_BRACE_BYTE) {
-            position++
-            break
-        }
-        if (localRawData[position] == C.COMMA_BYTE) {
-            yamlError("Unexpected ',' in flow mapping — empty entries are not allowed")
-        }
+    // Flow collections nest via ordinary recursive readValue calls the same way block ones do
+    // (a value can itself be another "{"/"["), so they need the same depth guard — without it,
+    // deeply nested flow input has no bound on Kotlin call-stack recursion at all.
+    if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
+    depth++
+    try {
+        while (position < localLimit) {
+            skipWhitespaceAndComments()
+            if (position >= localLimit) break
+            if (localRawData[position] == C.RIGHT_BRACE_BYTE) {
+                position++
+                break
+            }
+            if (localRawData[position] == C.COMMA_BYTE) {
+                yamlError("Unexpected ',' in flow mapping — empty entries are not allowed")
+            }
 
-        // Read key
-        val key = readKey() ?: break
-        skipWhitespaceAndComments()
+            // Read key. A nested flow collection used as a key (e.g. "[d, e]: f") has to go
+            // through readValue — readKey()'s bare-scalar scan has no notion of bracket nesting,
+            // so a comma inside it would look identical to the comma separating this entry from
+            // the next one.
+            val key = if (localRawData[position] == C.LEFT_BRACKET_BYTE || localRawData[position] == C.LEFT_BRACE_BYTE) {
+                stringifyExplicitMappingKey(readValue(indent = 0, inFlow = true))
+            } else {
+                readKey(inFlow = true) ?: break
+            }
+            skipWhitespaceAndComments()
 
-        if (position >= localLimit || localRawData[position] != C.COLON_BYTE) {
-            yamlError("Expected ':' after flow mapping key '$key'")
-        }
-        position++ // consume ':'
-        skipWhitespaceAndComments()
+            // A flow mapping entry can be just a key with no ':' at all (e.g. "{ a, b }") — same
+            // "e-node" empty-value shorthand as an explicit block key with nothing after it.
+            val value = if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
+                position++ // consume ':'
+                skipWhitespaceAndComments()
+                readValue(indent = 0, inFlow = true)
+            } else if (position < localLimit && (localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACE_BYTE)) {
+                null
+            } else {
+                yamlError("Expected ':' after flow mapping key '$key'")
+            }
+            if (key == C.STR_MERGE_KEY) {
+                mergeInto(result, value)
+            } else {
+                result[key] = value
+            }
 
-        // Read value
-        val value = readValue(indent = 0, inFlow = true)
-        if (key == C.STR_MERGE_KEY) {
-            mergeInto(result, value)
-        } else {
-            result[key] = value
+            skipWhitespaceAndComments()
+            if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
+                position++ // consume ','
+            } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
+                position++ // consume '}'
+                break
+            } else {
+                yamlError("Expected ',' or '}' in flow mapping")
+            }
         }
-
-        skipWhitespaceAndComments()
-        if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
-            position++ // consume ','
-        } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
-            position++ // consume '}'
-            break
-        } else {
-            yamlError("Expected ',' or '}' in flow mapping")
-        }
+    } finally {
+        depth--
     }
     return result
 }
@@ -76,29 +95,37 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
         return result
     }
 
-    while (position < localLimit) {
-        skipWhitespaceAndComments()
-        if (position >= localLimit) break
-        if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {
-            position++
-            break
-        }
-        if (localRawData[position] == C.COMMA_BYTE) {
-            yamlError("Unexpected ',' in flow sequence — empty entries are not allowed")
-        }
+    // See the matching guard in readFlowMapping — flow collections recurse into readValue the
+    // same way block ones do and need the same bound on nesting depth.
+    if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
+    depth++
+    try {
+        while (position < localLimit) {
+            skipWhitespaceAndComments()
+            if (position >= localLimit) break
+            if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {
+                position++
+                break
+            }
+            if (localRawData[position] == C.COMMA_BYTE) {
+                yamlError("Unexpected ',' in flow sequence — empty entries are not allowed")
+            }
 
-        val item = readFlowSequenceEntry()
-        result.add(item)
+            val item = readFlowSequenceEntry()
+            result.add(item)
 
-        skipWhitespaceAndComments()
-        if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
-            position++ // consume ','
-        } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
-            position++ // consume ']'
-            break
-        } else {
-            yamlError("Expected ',' or ']' in flow sequence")
+            skipWhitespaceAndComments()
+            if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
+                position++ // consume ','
+            } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
+                position++ // consume ']'
+                break
+            } else {
+                yamlError("Expected ',' or ']' in flow sequence")
+            }
         }
+    } finally {
+        depth--
     }
     return result
 }
