@@ -488,15 +488,17 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val endPosition = trimTrailingSpaces(startPosition, scanPosition)
         position = scanPosition
 
-        // Plain scalars can continue onto more-indented following lines (block context only —
-        // flow scalars/keys don't fold across lines here). Line-folding rule: a single newline
-        // between continuation lines becomes a space; a blank line (or N of them) becomes N
-        // newlines — same rule readBlockScalarContent applies for folded (">") block scalars.
-        if (!inFlow && position < localLimit &&
+        // Plain scalars can continue onto following lines, both in block context (more-indented
+        // lines) and in flow context (any line that isn't itself a flow terminator) — see
+        // [foldPlainScalarContinuation] and [foldFlowPlainScalarContinuation] respectively.
+        // Line-folding rule either way: a single newline between continuation lines becomes a
+        // space; a blank line (or N of them) becomes N newlines — same rule readBlockScalarContent
+        // applies for folded (">") block scalars.
+        if (position < localLimit &&
             (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
         ) {
             val firstLine = localRawData.decodeToString(startPosition, endPosition)
-            val folded = foldPlainScalarContinuation(indent, firstLine)
+            val folded = if (inFlow) foldFlowPlainScalarContinuation(firstLine) else foldPlainScalarContinuation(indent, firstLine)
             if (folded != null) {
                 val foldedBytes = folded.encodeToByteArray()
                 return interpretScalar(foldedBytes, 0, foldedBytes.size, expectedTag)
@@ -580,6 +582,115 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             blankLines = 0
 
             if (position >= localLimit) break
+        }
+
+        return sb?.toString()
+    }
+
+    /**
+     * Flow-context counterpart to [foldPlainScalarContinuation]: folds a plain scalar's
+     * continuation lines inside a flow collection (`[...]`/`{...}`). Unlike block context, a flow
+     * collection isn't indentation-bounded by its surroundings once opened (it's delimited by its
+     * own closing bracket/brace instead), so there's no indentation threshold to compare against
+     * here — continuation is decided purely by what the next line actually starts with, using the
+     * same terminators (`,`, `]`, `}`, a real `:` key separator, or a whitespace-preceded `#`
+     * comment) that already end a single-line flow scalar.
+     */
+    private fun foldFlowPlainScalarContinuation(firstLine: String): String? {
+        val localRawData = rawData
+        val localLimit = limit
+        val scalarEndPosition = position
+        var sb: StringBuilder? = null
+        var blankLines = 0
+
+        while (true) {
+            val beforeNewline = position
+            if (position < localLimit && localRawData[position] == C.CR_BYTE) position++
+            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
+
+            var blankScanPos = position
+            while (blankScanPos < localLimit &&
+                (localRawData[blankScanPos] == C.SPACE_BYTE || localRawData[blankScanPos] == C.TAB_BYTE)
+            ) {
+                blankScanPos++
+            }
+            val atBlank = blankScanPos >= localLimit ||
+                localRawData[blankScanPos] == C.NEWLINE_BYTE || localRawData[blankScanPos] == C.CR_BYTE
+            if (atBlank) {
+                blankLines++
+                position = blankScanPos
+                if (position >= localLimit) break
+                continue
+            }
+
+            // No indentation threshold to check here (see the KDoc above) — just skip this
+            // line's leading whitespace and look at what actually comes next.
+            position = blankScanPos
+            val lineStart = position
+            val leadByte = localRawData[position]
+            val leadIsColonSeparator = leadByte == C.COLON_BYTE && run {
+                val afterColon = position + 1
+                afterColon >= localLimit || localRawData[afterColon] == C.SPACE_BYTE ||
+                    localRawData[afterColon] == C.NEWLINE_BYTE || localRawData[afterColon] == C.CR_BYTE ||
+                    localRawData[afterColon] == C.TAB_BYTE
+            }
+            if (leadByte == C.COMMA_BYTE || leadByte == C.RIGHT_BRACE_BYTE || leadByte == C.RIGHT_BRACKET_BYTE ||
+                leadByte == C.HASH_BYTE || leadIsColonSeparator || isDocumentMarker() || isDocumentEndMarker()
+            ) {
+                // This line is nothing but the scalar's own terminator (or a comment) — not a
+                // continuation. A comment can't appear inside a still-open plain scalar's line-
+                // folding, so a comment-only line ends the scalar right here too, regardless of
+                // what follows it — same as it would outside any fold (see CML9: the line after
+                // a comment that interrupts a plain scalar needs its own comma, not a fold).
+                // Same rewind rule as the block version: undo blank lines tentatively scanned
+                // past, since the caller needs to see them fresh either way.
+                position = if (sb != null) beforeNewline else scalarEndPosition
+                break
+            }
+
+            // Scan this continuation line's own content with the same stop rules a single-line
+            // flow scalar already uses (mirrors the scan at the top of readPlainScalarOrMapping).
+            var scanPos = lineStart
+            while (scanPos < localLimit) {
+                val currentByte = localRawData[scanPos]
+                when {
+                    currentByte == C.COLON_BYTE -> {
+                        val afterColon = scanPos + 1
+                        if (afterColon >= localLimit ||
+                            localRawData[afterColon] == C.SPACE_BYTE ||
+                            localRawData[afterColon] == C.NEWLINE_BYTE ||
+                            localRawData[afterColon] == C.CR_BYTE ||
+                            localRawData[afterColon] == C.TAB_BYTE
+                        ) break
+                        scanPos++
+                    }
+
+                    currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -> break
+                    currentByte == C.HASH_BYTE -> {
+                        if (scanPos > lineStart &&
+                            (localRawData[scanPos - 1] == C.SPACE_BYTE || localRawData[scanPos - 1] == C.TAB_BYTE)
+                        ) break
+                        scanPos++
+                    }
+
+                    currentByte == C.COMMA_BYTE || currentByte == C.RIGHT_BRACE_BYTE || currentByte == C.RIGHT_BRACKET_BYTE -> break
+                    else -> scanPos++
+                }
+            }
+
+            val lineEnd = trimTrailingSpaces(lineStart, scanPos)
+            val lineText = localRawData.decodeToString(lineStart, lineEnd)
+
+            if (sb == null) sb = StringBuilder(firstLine)
+            if (blankLines > 0) repeat(blankLines) { sb.append('\n') } else sb.append(' ')
+            sb.append(lineText)
+            blankLines = 0
+
+            position = scanPos
+            if (position >= localLimit) break
+            // This line's own scan may have stopped at a mid-line terminator (not a newline) —
+            // if so the scalar is done, don't loop around expecting another continuation line.
+            if (localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) break
         }
 
         return sb?.toString()

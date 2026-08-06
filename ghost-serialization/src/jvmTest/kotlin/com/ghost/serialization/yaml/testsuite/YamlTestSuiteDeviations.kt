@@ -55,12 +55,10 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "7LBH" because REASON_FLOW_IMPLICIT_KEY, // Multiline double quoted implicit keys
     "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
-    "8UDB" because REASON_FLOW_COLLECTION, // Spec Example 7.14. Flow Sequence Entries
     "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
     "9KBC" because REASON_DOC_MARKER, // Mapping starting at --- line
     "BF9H" because REASON_MULTILINE_PLAIN_EDGE, // Trailing comment in multiline plain scalar
-    "CT4Q" because REASON_EXPLICIT_KEY, // Spec Example 7.20. Single Pair Explicit Entry
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line
     "D49Q" because REASON_FLOW_IMPLICIT_KEY, // Multiline single quoted implicit keys
     "DFF7" because REASON_FLOW_COLLECTION, // Spec Example 7.16. Flow Mapping Entries
@@ -118,7 +116,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
     "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
-    "8UDB" because REASON_FLOW_COLLECTION, // Spec Example 7.14. Flow Sequence Entries
     "9BXH" because REASON_MULTILINE_QUOTED, // Multiline doublequoted flow mapping key without value
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
