@@ -72,7 +72,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
-    "SU74" because REASON_ANCHOR_ALIAS, // Anchor and alias as mapping key
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UV7Q" because REASON_TAB, // Legal tab after indentation
