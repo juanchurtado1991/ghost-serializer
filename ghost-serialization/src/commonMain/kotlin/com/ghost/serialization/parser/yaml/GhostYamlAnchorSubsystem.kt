@@ -34,6 +34,11 @@ internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean,
     if (!inFlow && position < localLimit && localRawData[position] == C.ASTERISK_BYTE) {
         yamlError("Anchor '$anchorName' cannot be immediately followed by an alias")
     }
+    // Nor can a block sequence entry start inline right after it on the same line — "&anchor -
+    // item" isn't a valid way to anchor a sequence, the "-" needs its own line.
+    if (!inFlow && position < localLimit && localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry()) {
+        yamlError("Anchor '$anchorName' cannot be immediately followed by a block sequence entry on the same line")
+    }
 
     val positionBeforeLineBreak = position
     val value =
