@@ -53,7 +53,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
-    "6BFJ" because REASON_ANCHOR_ALIAS, // Mapping, key and flow sequence item anchors
     "7LBH" because REASON_FLOW_IMPLICIT_KEY, // Multiline double quoted implicit keys
     "8KB6" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key without value
     "8UDB" because REASON_FLOW_COLLECTION, // Spec Example 7.14. Flow Sequence Entries
@@ -76,7 +75,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JKF3" because REASON_MULTILINE_QUOTED, // Multiline unidented double quoted block key
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
-    "LX3P" because REASON_FLOW_COLLECTION, // Implicit Flow Mapping Key on one line
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "MUS6_01" because REASON_DIRECTIVE, // Directive variants
@@ -84,7 +82,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
-    "Q9WF" because REASON_MISC, // Spec Example 6.12. Separation Spaces
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
