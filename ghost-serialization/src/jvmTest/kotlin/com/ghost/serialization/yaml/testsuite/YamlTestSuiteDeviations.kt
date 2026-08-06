@@ -90,7 +90,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
-    "WZ62" because REASON_EMPTY_MISSING, // Spec Example 7.2. Empty Content
     "X38W" because REASON_ANCHOR_ALIAS, // Aliases in Flow Objects
     "XW4D" because REASON_COMMENT, // Various Trailing Comments
     "Y79Y_000" because REASON_TAB, // Tabs in various contexts
@@ -148,6 +147,5 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "W42U" because REASON_MISC, // Spec Example 8.15. Block Sequence Entry Types
-    "WZ62" because REASON_EMPTY_MISSING, // Spec Example 7.2. Empty Content
     "Y79Y_010" because REASON_TAB, // Tabs in various contexts
 )

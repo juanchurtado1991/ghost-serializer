@@ -43,7 +43,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
         } else if (tagLen > 0) {
             tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
         }
-        requireTagFollowedByWhitespace()
+        requireValidTagTerminator(inFlow)
     } else {
         // Custom tag
         if (position < localLimit && localRawData[position] == C.LT_BYTE) {
@@ -64,7 +64,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
             while (position < localLimit && !isTagNameTerminator(localRawData[position])) {
                 position++
             }
-            requireTagFollowedByWhitespace()
+            requireValidTagTerminator(inFlow)
             val tagLen = position - tagStart
             if (tagLen > 0) {
                 val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)
@@ -136,23 +136,26 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
     return value
 }
 
-/** Flow indicators (`,[]{}`) end a bare tag name the same way whitespace does — they're never
- *  part of a tag, per spec — but unlike whitespace, a flow indicator touching a tag with no
- *  separating whitespace means something is wrong, so [requireTagFollowedByWhitespace] rejects it.
+/** Flow indicators (`,[]{}`) end a tag name the same way whitespace does — a tag name can never
+ *  contain one, in either context — but *stopping* there is only valid inside an actual flow
+ *  collection (a tag-only entry like `!!str,`); in block context a tag directly touching one of
+ *  these with no separating whitespace is invalid, same as any other unexpected character.
  */
 private fun isTagNameTerminator(currByte: Byte): Boolean =
     currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||
         currByte == C.COMMA_BYTE || currByte == C.LEFT_BRACE_BYTE || currByte == C.RIGHT_BRACE_BYTE ||
         currByte == C.LEFT_BRACKET_BYTE || currByte == C.RIGHT_BRACKET_BYTE
 
-private fun GhostYamlFlatReader.requireTagFollowedByWhitespace() {
+private fun GhostYamlFlatReader.requireValidTagTerminator(inFlow: Boolean) {
     if (position >= limit) return
     val currByte = rawData[position]
     val isWhitespaceOrEol = currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE ||
         currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE
-    if (!isWhitespaceOrEol) {
-        yamlError("Invalid character immediately after tag")
-    }
+    if (isWhitespaceOrEol) return
+    val isFlowIndicator = currByte == C.COMMA_BYTE || currByte == C.LEFT_BRACE_BYTE ||
+        currByte == C.RIGHT_BRACE_BYTE || currByte == C.LEFT_BRACKET_BYTE || currByte == C.RIGHT_BRACKET_BYTE
+    if (inFlow && isFlowIndicator) return
+    yamlError("Invalid character immediately after tag")
 }
 
 private fun GhostYamlFlatReader.matchDoubleExclamationTag(

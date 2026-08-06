@@ -23,13 +23,16 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  */
 internal fun GhostYamlFlatReader.interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
     val length = end - start
+    // A tag forcing string type still resolves to "" on empty content (e.g. a flow-mapping
+    // entry whose value is just "!!str,") — same as it does at EOF in readValue — so this has
+    // to run before the untagged "empty content means null" default just below.
+    if (expectedTag == GhostYamlTags.TAG_STR) {
+        return data.decodeToString(start, end)
+    }
     if (length == 0) return null
 
     val firstByte = data[start]
 
-    if (expectedTag == GhostYamlTags.TAG_STR) {
-        return data.decodeToString(start, end)
-    }
     if (expectedTag == GhostYamlTags.TAG_NULL) {
         return null
     }
