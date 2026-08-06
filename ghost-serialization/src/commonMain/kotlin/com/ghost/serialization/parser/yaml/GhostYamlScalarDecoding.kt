@@ -104,6 +104,11 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
 
     var outBuffer = acquireScratchBuffer(256)
     var outPos = 0
+    // Trailing whitespace before a fold is normally trimmed (see below), but a *escaped*
+    // space/tab ("\ "/"\t"/"\<literal tab>") is real content the author deliberately protected
+    // from exactly that trimming — trimFloor marks how far back the trim loop is allowed to go,
+    // advanced to outPos after every escape write so it can never remove one.
+    var trimFloor = 0
     try {
         while (position < localLimit) {
             val currentByte = localRawData[position]
@@ -177,8 +182,11 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
                             (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
                     }
                 }
+                trimFloor = outPos
             } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {
-                while (outPos > 0 && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
+                // Trailing spaces/tabs are trimmed before the fold, but never past trimFloor —
+                // that would eat an escaped space/tab the author deliberately protected.
+                while (outPos > trimFloor && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
                     outPos--
                 }
                 val breakCount = skipQuotedLineBreaks()
@@ -279,6 +287,9 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
                     return outBuffer.decodeToString(0, outPos)
                 }
             } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {
+                // Single-quoted scalars have no backslash-escape mechanism at all, so — unlike
+                // the double-quoted reader — there's never a protected trailing space/tab to
+                // preserve here; trailing whitespace before a fold is always trimmed in full.
                 while (outPos > 0 && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
                     outPos--
                 }

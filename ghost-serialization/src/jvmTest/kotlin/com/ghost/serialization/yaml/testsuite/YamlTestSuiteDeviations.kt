@@ -99,10 +99,6 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
-    "DE56_00" because REASON_TAB, // Trailing tabs in double quoted
-    "DE56_01" because REASON_TAB, // Trailing tabs in double quoted
-    "DE56_02" because REASON_TAB, // Trailing tabs in double quoted
-    "DE56_03" because REASON_TAB, // Trailing tabs in double quoted
     "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
