@@ -149,14 +149,12 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "DE56_01" because REASON_TAB, // Trailing tabs in double quoted
     "DE56_02" because REASON_TAB, // Trailing tabs in double quoted
     "DE56_03" because REASON_TAB, // Trailing tabs in double quoted
-    "DK95_05" because REASON_TAB, // Tabs that look like indentation
     "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
     "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "H2RW" because REASON_MISC, // Blank lines
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
-    "HS5T" because REASON_MULTILINE_PLAIN_EDGE, // Spec Example 7.12. Plain Lines
     "HWV9" because REASON_DOC_MARKER, // Document-end marker
     "L24T_00" because REASON_MISC, // Trailing line of spaces
     "L24T_01" because REASON_MISC, // Trailing line of spaces
