@@ -134,7 +134,8 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
  * Reads one flow-sequence entry, which may be a plain value *or* an implicit single-pair
  * mapping (`[a: 1]` is really `[{a: 1}]`, per the "ns-flow-pair" production) — YAML lets a
  * sequence entry look like a bare "key: value" without its own `{ }`. An entry can also be an
- * empty-key pair (`[: value]`).
+ * empty-key pair (`[: value]`), or an *explicit* key/value pair (`[? key\n bar : value]`, the
+ * same `?`/`:` shape a block mapping key gets).
  *
  * The key may be a plain scalar, a quoted string, or a nested flow collection. For a plain
  * scalar, [GhostYamlFlatReader.readPlainScalarOrMapping] itself stops right before the ':' when
@@ -144,6 +145,10 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
 internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
     val localRawData = rawData
     val localLimit = limit
+
+    if (position < localLimit && localRawData[position] == C.QUESTION_BYTE && isExplicitKeyIndicator()) {
+        return readExplicitFlowSequenceKeyEntry()
+    }
 
     if (position < localLimit && localRawData[position] == C.COLON_BYTE && isFlowPairColon()) {
         position++ // consume ':'
@@ -164,6 +169,39 @@ internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
         return linkedMapOf(stringifyExplicitMappingKey(keyOrValue) to value)
     }
     return keyOrValue
+}
+
+/**
+ * Reads an explicit key/value flow-sequence entry (`? key\n bar : value`) — the same `?`/`:`
+ * shape a block mapping key gets ([GhostYamlFlatReader.readExplicitKeyEntry]), just without any
+ * indentation to track since it's inside a flow collection. The leading `?` has already been
+ * confirmed present via [isExplicitKeyIndicator] but not yet consumed.
+ */
+private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
+    position++ // consume '?'
+    skipWhitespaceAndComments() // the key may start on the next line
+
+    val localRawData = rawData
+    val localLimit = limit
+    val keyNode = if (position >= localLimit ||
+        localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACKET_BYTE ||
+        localRawData[position] == C.COLON_BYTE
+    ) {
+        null
+    } else {
+        readValue(indent = 0, inFlow = true)
+    }
+    val key = stringifyExplicitMappingKey(keyNode)
+
+    skipWhitespaceAndComments()
+    val value = if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
+        position++ // consume ':'
+        skipWhitespaceAndComments()
+        readValue(indent = 0, inFlow = true)
+    } else {
+        null
+    }
+    return linkedMapOf(key to value)
 }
 
 /**
