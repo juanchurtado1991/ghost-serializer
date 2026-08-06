@@ -108,6 +108,14 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
             if (!sawExplicitMarker && position >= localLimit) break
+            // A bare `...` with no preceding `---` isn't an empty document — it's the end
+            // marker for a document that was never started (e.g. after a comment, or another
+            // `...`). Consume it and loop rather than reading it as a null-valued document.
+            if (!sawExplicitMarker && isDocumentEndMarker()) {
+                skipDocumentEnd()
+                previousDocumentExplicitlyEnded = true
+                continue
+            }
             results.add(readValue(indent = C.INDENT_UNSET, inFlow = false))
             val sawExplicitEnd = skipDocumentEnd()
             if (!sawExplicitEnd) rejectTrailingGarbageAfterDocument()
@@ -135,6 +143,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
             if (!sawExplicitMarker && position >= localLimit) break
+            if (!sawExplicitMarker && isDocumentEndMarker()) {
+                skipDocumentEnd()
+                previousDocumentExplicitlyEnded = true
+                continue
+            }
             prepareRootForCurrentDocument()
             results.add(deserializeDocument(this))
             clearAfterDocument()
@@ -188,7 +201,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
                 when {
                     expectedTag != GhostYamlTags.TAG_STR && isDigit(nextByte) -> readNumber()
-                    nextByte == C.SPACE_BYTE || nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE ->
+                    nextByte == C.SPACE_BYTE || nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE ||
+                        position + 1 >= localLimit ->
                         readBlockSequence(indent)
 
                     isDocumentMarker() -> null  // document end

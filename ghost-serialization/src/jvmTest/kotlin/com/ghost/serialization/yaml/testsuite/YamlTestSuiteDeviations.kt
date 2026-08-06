@@ -151,22 +151,18 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "H2RW" because REASON_MISC, // Blank lines
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
-    "HWV9" because REASON_DOC_MARKER, // Document-end marker
     "L24T_00" because REASON_MISC, // Trailing line of spaces
     "L24T_01" because REASON_MISC, // Trailing line of spaces
     "L9U5" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.11. Plain Implicit Keys
     "LQZ7" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.4. Double Quoted Implicit Keys
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
-    "M7A3" because REASON_DOC_MARKER, // Spec Example 9.3. Bare Documents
     "MJS9" because REASON_BLOCK_SCALAR, // Spec Example 6.7. Block Folding
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "NJ66" because REASON_MULTILINE_PLAIN_EDGE, // Multiline plain flow mapping key
     "QF4Y" because REASON_FLOW_IMPLICIT_KEY, // Spec Example 7.19. Single Pair Flow Mappings
-    "QT73" because REASON_DOC_MARKER, // Comment and document-end marker
     "R4YG" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
-    "SM9W_00" because REASON_DOC_MARKER, // Single character streams
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
