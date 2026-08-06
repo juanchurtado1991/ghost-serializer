@@ -100,7 +100,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "SU74" because REASON_ANCHOR_ALIAS, // Anchor and alias as mapping key
-    "SY6V" because REASON_ANCHOR_ALIAS, // Anchor before sequence entry on same line
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UT92" because REASON_EXPLICIT_KEY, // Spec Example 9.4. Explicit Documents
