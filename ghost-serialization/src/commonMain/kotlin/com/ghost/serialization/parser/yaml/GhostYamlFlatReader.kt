@@ -469,19 +469,37 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             if (position < localLimit && localRawData[position] == C.CR_BYTE) position++
             if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
 
+            // Blank-ness is judged after skipping *all* leading whitespace (spaces and tabs) — a
+            // line that's purely whitespace is blank even if that whitespace includes a tab.
+            var blankScanPos = position
+            while (blankScanPos < localLimit &&
+                (localRawData[blankScanPos] == C.SPACE_BYTE || localRawData[blankScanPos] == C.TAB_BYTE)
+            ) {
+                blankScanPos++
+            }
+            val atBlank = blankScanPos >= localLimit ||
+                localRawData[blankScanPos] == C.NEWLINE_BYTE || localRawData[blankScanPos] == C.CR_BYTE
+            if (atBlank) {
+                blankLines++
+                position = blankScanPos
+                if (position >= localLimit) break
+                continue
+            }
+
+            // Not blank — how "indented" this line is (for the continuation-vs-dedent decision)
+            // is judged by real spaces only, the same as everywhere else a tab can't be part of
+            // establishing block-structure indentation (recomputeCurrentIndent/indentHasTab):
+            // otherwise a tab sitting right at a sibling key's indentation would silently read as
+            // "more indented, still a continuation" instead of surfacing as ambiguous/invalid.
+            // Once a real continuation is confirmed, any tab(s) right after those spaces are still
+            // ordinary leading whitespace to skip, same as the spaces themselves.
             var spaces = 0
             var peekPos = position
             while (peekPos < localLimit && localRawData[peekPos] == C.SPACE_BYTE) {
                 spaces++; peekPos++
             }
-
-            val atBlank = peekPos >= localLimit ||
-                localRawData[peekPos] == C.NEWLINE_BYTE || localRawData[peekPos] == C.CR_BYTE
-            if (atBlank) {
-                blankLines++
-                position = peekPos
-                if (position >= localLimit) break
-                continue
+            while (peekPos < localLimit && localRawData[peekPos] == C.TAB_BYTE) {
+                peekPos++
             }
 
             position = peekPos

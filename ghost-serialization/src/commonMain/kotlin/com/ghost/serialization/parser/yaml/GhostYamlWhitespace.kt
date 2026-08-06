@@ -286,6 +286,8 @@ internal fun GhostYamlFlatReader.isBlockSequenceEntry(): Boolean {
 internal fun GhostYamlFlatReader.trimTrailingSpaces(start: Int, end: Int): Int {
     val localRawData = rawData
     var endPos = end
-    while (endPos > start && localRawData[endPos - 1] == C.SPACE_BYTE) endPos--
+    while (endPos > start &&
+        (localRawData[endPos - 1] == C.SPACE_BYTE || localRawData[endPos - 1] == C.TAB_BYTE)
+    ) endPos--
     return endPos
 }
