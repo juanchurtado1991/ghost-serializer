@@ -70,7 +70,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "EW3V" because REASON_INDENTATION, // Wrong indendation in mapping
     "G4RS" because REASON_MISC, // Spec Example 2.17. Quoted Scalars
     "G5U8" because REASON_DOC_MARKER, // Plain dashes in flow sequence
-    "GDY7" because REASON_COMMENT, // Comment that looks like a mapping key
     "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JKF3" because REASON_MULTILINE_QUOTED, // Multiline unidented double quoted block key
