@@ -66,7 +66,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
-    "MUS6_01" because REASON_DIRECTIVE, // Directive variants
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
