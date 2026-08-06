@@ -728,23 +728,36 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val localLimit = limit
         val localRawData = rawData
         if (position >= localLimit) return null
+
+        // Alias as key: "*name" resolves immediately to the aliased node's own value, stringified
+        // the same way an explicit-key node would be (e.g. "*b : *a" below "&a a: &b b" — the
+        // key is whatever "&b" was bound to). Only recognized with no anchor/tag prefix before
+        // it; combining both isn't a case any test exercises and has no clear meaning anyway.
+        if (localRawData[position] == C.ASTERISK_BYTE) {
+            return stringifyExplicitMappingKey(readAlias())
+        }
+
         // An anchor and/or tag may prefix a key (e.g. "&a5 !!str key5:", "!!str &a10 key10:") —
-        // JSON has no way to represent either on a key, so — same as an ordinary tagged value
-        // whose tag is simply dropped — both are skipped rather than becoming part of the key
-        // text itself. Skipping to the next whitespace is safe for a tag token in this position:
-        // none of the tag forms (verbatim "!<...>", shorthand "!!x"/"!ns!x", or bare "!") can
-        // contain a literal space.
+        // a tag has no JSON representation on a key, so it's dropped the same way an ordinary
+        // tagged value's tag is; an anchor, though, still needs to end up bound to the key's own
+        // text once known, so later aliases can resolve it (e.g. "&a a: ..." then "*a" elsewhere).
+        var anchorName: String? = null
         val positionBeforePrefixes = position
         while (position < localLimit &&
             (localRawData[position] == C.AMPERSAND_BYTE || localRawData[position] == C.EXCLAMATION_BYTE)
         ) {
+            val isAnchor = localRawData[position] == C.AMPERSAND_BYTE
+            if (isAnchor) position++ // consume '&'
+            val prefixStart = position
             while (position < localLimit) {
                 val prefixByte = localRawData[position]
                 if (prefixByte == C.SPACE_BYTE || prefixByte == C.TAB_BYTE ||
-                    prefixByte == C.NEWLINE_BYTE || prefixByte == C.CR_BYTE
+                    prefixByte == C.NEWLINE_BYTE || prefixByte == C.CR_BYTE ||
+                    prefixByte == C.COMMA_BYTE || prefixByte == C.RIGHT_BRACE_BYTE || prefixByte == C.RIGHT_BRACKET_BYTE
                 ) break
                 position++
             }
+            if (isAnchor) anchorName = localRawData.decodeToString(prefixStart, position)
             skipInlineWhitespace()
         }
         // Having consumed an anchor/tag prefix commits us to there being a real key afterward —
@@ -756,7 +769,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
             return null
         }
-        return when (localRawData[position]) {
+        // An anchor can't wrap an alias reference here either — same rule readAnchoredValue
+        // already enforces for values (an alias points at an existing node, it isn't itself a
+        // node that a new anchor can attach to).
+        if (anchorName != null && localRawData[position] == C.ASTERISK_BYTE) {
+            yamlError("Anchor '$anchorName' cannot be immediately followed by an alias")
+        }
+        val key = when (localRawData[position]) {
             C.DOUBLE_QUOTE_BYTE -> readQuotedKeyRejectingMultiLine(inFlow) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedKeyRejectingMultiLine(inFlow) { readSingleQuotedString() }
             else -> {
@@ -792,24 +811,33 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     // empty-key shape with the tag already consumed. Anything else here (a
                     // newline, EOF) really is "no more mapping to read" — or, if a prefix was
                     // consumed first, a genuinely dangling one.
-                    if (position < localLimit && localRawData[position] == C.COLON_BYTE) return ""
-                    if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
-                    return null
-                }
-                val firstLine = localRawData.decodeToString(startPosition, endPosition)
-                // A flow mapping key can fold across lines the same way any other flow plain
-                // scalar does (e.g. "{ matches\n% : 20 }" — the key is "matches %") — block-
-                // context keys never reach here still sitting on a newline, since a colon must
-                // follow on the same line there.
-                if (inFlow && position < localLimit &&
-                    (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
-                ) {
-                    foldFlowPlainScalarContinuation(firstLine) ?: firstLine
+                    if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
+                        ""
+                    } else if (hadPrefixes) {
+                        yamlError("Anchor/tag prefix on a key must be followed by the key itself")
+                    } else {
+                        null
+                    }
                 } else {
-                    firstLine
+                    val firstLine = localRawData.decodeToString(startPosition, endPosition)
+                    // A flow mapping key can fold across lines the same way any other flow plain
+                    // scalar does (e.g. "{ matches\n% : 20 }" — the key is "matches %") — block-
+                    // context keys never reach here still sitting on a newline, since a colon
+                    // must follow on the same line there.
+                    if (inFlow && position < localLimit &&
+                        (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
+                    ) {
+                        foldFlowPlainScalarContinuation(firstLine) ?: firstLine
+                    } else {
+                        firstLine
+                    }
                 }
             }
         }
+        if (key != null && anchorName != null) {
+            anchorTable[anchorName] = key
+        }
+        return key
     }
 
     /**
