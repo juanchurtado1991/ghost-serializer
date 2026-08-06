@@ -115,5 +115,4 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UV7Q" because REASON_TAB, // Legal tab after indentation
-    "Y79Y_010" because REASON_TAB, // Tabs in various contexts
 )

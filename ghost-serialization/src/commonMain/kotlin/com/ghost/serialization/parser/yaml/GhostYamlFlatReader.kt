@@ -207,7 +207,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 when {
                     expectedTag != GhostYamlTags.TAG_STR && isDigit(nextByte) -> readNumber()
                     nextByte == C.SPACE_BYTE || nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE ||
-                        position + 1 >= localLimit ->
+                        nextByte == C.TAB_BYTE || position + 1 >= localLimit ->
                         readBlockSequence(indent)
 
                     isDocumentMarker() -> null  // document end
