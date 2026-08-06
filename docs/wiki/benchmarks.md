@@ -44,6 +44,9 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 ./gradlew :ghost-benchmark:benchmarkProto -PskipTests      # Proto3 JSON via GhostProto (full profile)
 ./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests
 
+# YAML spec-compliance report (not a perf benchmark — see below), fully offline
+./gradlew :ghost-serialization:yamlComplianceMatrix
+
 # Full README suite (cold start + all tables)
 ./gradlew :ghost-benchmark:run -PskipTests
 ./gradlew :ghost-benchmark:run -Pjit -PskipTests  # JIT log for JITWatch
@@ -198,6 +201,62 @@ Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-gener
 | Round-trip (minimal fixture, 49 B) | 1.78 | 1.852 | 0.027 |
 
 Prefer **`ByteArray`** inputs when your client already exposes bytes — avoids an intermediate `String` and matches the flat reader hot path.
+
+---
+
+## 👻 YAML Spec Compliance (Ghost-only)
+
+Not a performance benchmark — a **spec-conformance report** against the vendored
+[yaml-test-suite](https://github.com/yaml/yaml-test-suite) snapshot (`ghost-serialization/src/jvmTest/resources/yaml-test-suite`,
+pinned to commit `6ad3d2c6`, same tree as the official `data-2022-01-17` tag — see that directory's `README.md`). Runs entirely
+offline; every case is a local resource, so the report is fully reproducible by anyone who clones the repo.
+
+The **compliance %** is `value-pass / 279` — 279 is the count of valid (non-error) cases that ship an `in.json` fixture, the
+same denominator [matrix.yaml.info](https://matrix.yaml.info)'s own "json" column uses, so this number is directly comparable
+to that table.
+
+| Task | What it does |
+|:---|:---|
+| `yamlComplianceMatrix` | Prints the report below; exits non-zero if any case falls outside the tracked deviations |
+
+```bash
+./gradlew :ghost-serialization:yamlComplianceMatrix
+```
+
+```
+==============================================================================
+Ghost YAML Spec Compliance — vendored yaml-test-suite snapshot
+==============================================================================
+Cases loaded: 402  (279 valid, with in.json — the matrix.yaml.info-comparable denominator)
+
+Outcome (parses/rejects as the spec expects):
+  363 pass, 39 known gap(s), 0 UNEXPECTED
+Value (decoded tree matches in.json, of 268 checked):
+  252 pass, 16 known gap(s), 0 UNEXPECTED
+
+Compliance = value-pass / 279 valid cases:
+  252 / 279 = 90.32%
+
+Known gaps by category:
+  MISC                    13 case(s)
+  TAB                     10 case(s)
+  INDENTATION             10 case(s)
+  BLOCK_SCALAR             8 case(s)
+  ANCHOR_ALIAS             5 case(s)
+  FLOW_COLLECTION          3 case(s)
+  COMMENT                  2 case(s)
+  TAG                      1 case(s)
+  MULTILINE_PLAIN_EDGE     1 case(s)
+  EXPLICIT_KEY             1 case(s)
+  EMPTY_MISSING            1 case(s)
+==============================================================================
+No unexpected deviations — every known gap is tracked in YamlTestSuiteDeviations.kt
+```
+
+Every known gap is tracked by case ID with a category and reason in
+[`YamlTestSuiteDeviations.kt`](../../ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlTestSuiteDeviations.kt) —
+nothing here is silently skipped. `GhostYamlTestSuiteConformanceTest` (the JUnit source of truth this report reads) fails the
+build if a tracked case ever regresses or a stale entry survives a snapshot refresh, so the two can't quietly drift apart.
 
 ---
 

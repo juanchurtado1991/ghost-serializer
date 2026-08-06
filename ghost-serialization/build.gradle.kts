@@ -74,6 +74,14 @@ tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
 }
 
+tasks.register<JavaExec>("yamlComplianceMatrix") {
+    group = "verification"
+    description = "Prints Ghost's YAML spec-compliance report against the vendored yaml-test-suite snapshot"
+    dependsOn("jvmTestClasses")
+    classpath = tasks.named<Test>("jvmTest").get().classpath
+    mainClass.set("com.ghost.serialization.yaml.testsuite.YamlComplianceReportKt")
+}
+
 ksp { arg("ghost.moduleName", "ghost_serialization") }
 
 dependencies {

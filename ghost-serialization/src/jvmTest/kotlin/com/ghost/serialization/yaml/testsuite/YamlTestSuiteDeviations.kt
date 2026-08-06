@@ -12,21 +12,40 @@ infix fun String.because(reason: String): DeviationCase = DeviationCase(this, re
 // case counts. REASON_MISC is the honest exception — composite spec examples or single edge
 // cases that combine several of the above (or something not yet individually diagnosed) rather
 // than a clean single category.
-private const val REASON_ANCHOR_ALIAS = "Anchors/aliases in this position (flow collections, mapping keys, multiple anchors, or specific placements) not fully implemented"
-private const val REASON_BLOCK_SCALAR = "Block scalar (|/>) edge case beyond the indentation-indicator/root-indent/trailing-text fixes already landed"
-private const val REASON_COMMENT = "Comment-placement edge case (between continuation lines, immediately after specific tokens) not fully implemented"
-private const val REASON_DIRECTIVE = "YAML/TAG directives (%YAML, %TAG, reserved, duplicate, or document-boundary interaction with directives) not implemented"
-private const val REASON_DOC_MARKER = "Document marker (---/...) edge case — content directly on the marker line, stream/multi-document boundary interactions, or missing-marker validation — not fully implemented"
-private const val REASON_EMPTY_MISSING = "Empty/missing key or value edge case not fully implemented"
-private const val REASON_EXPLICIT_KEY = "Explicit/complex block-mapping keys (\"? key\" / \": value\" on separate lines, multi-line or nested complex keys) not implemented"
-private const val REASON_FLOW_COLLECTION = "Flow-collection edge case (malformed bracket/comma handling, nested anchors, multi-line spanning) not fully implemented"
-private const val REASON_FLOW_IMPLICIT_KEY = "Flow-collection implicit/single-pair mapping keys (bare \"[a: 1]\"-style entries, possibly multi-line) not implemented"
-private const val REASON_INDENTATION = "Block mapping/sequence indentation edge case (wrong/inconsistent indentation detection) not fully implemented"
-private const val REASON_MISC = "Composite/advanced YAML 1.2 spec case not yet individually triaged"
-private const val REASON_MULTILINE_PLAIN_EDGE = "Multi-line plain scalar edge case (comments between continuation lines, or as a flow-mapping key) beyond the basic folding already implemented"
-private const val REASON_MULTILINE_QUOTED = "Multi-line double/single-quoted scalar folding (line breaks, leading/trailing whitespace across lines) not implemented — different code path from plain-scalar folding"
-private const val REASON_TAB = "Tab handling in this position (outside block-mapping/sequence indentation, e.g. inside quoted-scalar folding or plain-scalar continuation) not yet implemented"
-private const val REASON_TAG = "Tag resolution (handles, prefixes, shorthands, verbatim, or tag/anchor combinations) not fully implemented"
+internal const val REASON_ANCHOR_ALIAS = "Anchors/aliases in this position (flow collections, mapping keys, multiple anchors, or specific placements) not fully implemented"
+internal const val REASON_BLOCK_SCALAR = "Block scalar (|/>) edge case beyond the indentation-indicator/root-indent/trailing-text fixes already landed"
+internal const val REASON_COMMENT = "Comment-placement edge case (between continuation lines, immediately after specific tokens) not fully implemented"
+internal const val REASON_DIRECTIVE = "YAML/TAG directives (%YAML, %TAG, reserved, duplicate, or document-boundary interaction with directives) not implemented"
+internal const val REASON_DOC_MARKER = "Document marker (---/...) edge case — content directly on the marker line, stream/multi-document boundary interactions, or missing-marker validation — not fully implemented"
+internal const val REASON_EMPTY_MISSING = "Empty/missing key or value edge case not fully implemented"
+internal const val REASON_EXPLICIT_KEY = "Explicit/complex block-mapping keys (\"? key\" / \": value\" on separate lines, multi-line or nested complex keys) not implemented"
+internal const val REASON_FLOW_COLLECTION = "Flow-collection edge case (malformed bracket/comma handling, nested anchors, multi-line spanning) not fully implemented"
+internal const val REASON_FLOW_IMPLICIT_KEY = "Flow-collection implicit/single-pair mapping keys (bare \"[a: 1]\"-style entries, possibly multi-line) not implemented"
+internal const val REASON_INDENTATION = "Block mapping/sequence indentation edge case (wrong/inconsistent indentation detection) not fully implemented"
+internal const val REASON_MISC = "Composite/advanced YAML 1.2 spec case not yet individually triaged"
+internal const val REASON_MULTILINE_PLAIN_EDGE = "Multi-line plain scalar edge case (comments between continuation lines, or as a flow-mapping key) beyond the basic folding already implemented"
+internal const val REASON_MULTILINE_QUOTED = "Multi-line double/single-quoted scalar folding (line breaks, leading/trailing whitespace across lines) not implemented — different code path from plain-scalar folding"
+internal const val REASON_TAB = "Tab handling in this position (outside block-mapping/sequence indentation, e.g. inside quoted-scalar folding or plain-scalar continuation) not yet implemented"
+internal const val REASON_TAG = "Tag resolution (handles, prefixes, shorthands, verbatim, or tag/anchor combinations) not fully implemented"
+
+/** Short display label per `REASON_*` category, for `YamlComplianceReport`'s grouped breakdown. */
+internal val REASON_LABELS: Map<String, String> = mapOf(
+    REASON_ANCHOR_ALIAS to "ANCHOR_ALIAS",
+    REASON_BLOCK_SCALAR to "BLOCK_SCALAR",
+    REASON_COMMENT to "COMMENT",
+    REASON_DIRECTIVE to "DIRECTIVE",
+    REASON_DOC_MARKER to "DOC_MARKER",
+    REASON_EMPTY_MISSING to "EMPTY_MISSING",
+    REASON_EXPLICIT_KEY to "EXPLICIT_KEY",
+    REASON_FLOW_COLLECTION to "FLOW_COLLECTION",
+    REASON_FLOW_IMPLICIT_KEY to "FLOW_IMPLICIT_KEY",
+    REASON_INDENTATION to "INDENTATION",
+    REASON_MISC to "MISC",
+    REASON_MULTILINE_PLAIN_EDGE to "MULTILINE_PLAIN_EDGE",
+    REASON_MULTILINE_QUOTED to "MULTILINE_QUOTED",
+    REASON_TAB to "TAB",
+    REASON_TAG to "TAG",
+)
 
 /**
  * Known, tracked gaps between Ghost's YAML decoding and the yaml-test-suite's expectations.

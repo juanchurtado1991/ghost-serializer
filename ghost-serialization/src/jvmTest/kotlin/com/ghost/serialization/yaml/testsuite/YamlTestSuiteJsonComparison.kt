@@ -1,5 +1,6 @@
 package com.ghost.serialization.yaml.testsuite
 
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.yaml.GhostYamlConstants
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -141,4 +142,30 @@ internal fun deepEquals(ghostValue: Any?, jsonValue: Any?): Boolean {
 
         else -> ghostValue == jsonValue
     }
+}
+
+/**
+ * True if parsing [case]'s YAML throws. Shared by [GhostYamlTestSuiteConformanceTest] (as JUnit
+ * assertions) and `YamlComplianceReport`'s standalone `main()` (as a plain CLI report) — a single
+ * source of truth for what "conformant" means so the two can never quietly drift apart.
+ */
+internal fun parseThrew(case: YamlTestSuiteCase): Boolean {
+    return try {
+        GhostYamlFlatReader(case.inYamlBytes).readAllDocuments()
+        false
+    } catch (e: Exception) {
+        true
+    }
+}
+
+/** True if [case]'s decoded tree matches its `in.json` fixture. See [parseThrew]. */
+internal fun valueMatches(case: YamlTestSuiteCase): Boolean {
+    val ghostDocs = try {
+        GhostYamlFlatReader(case.inYamlBytes).readAllDocuments()
+    } catch (e: Exception) {
+        return false
+    }
+    val jsonDocs = decodeJsonDocuments(case.inJsonText!!).map { normalize(it) }
+    return ghostDocs.size == jsonDocs.size &&
+        ghostDocs.indices.all { i -> deepEquals(ghostDocs[i], jsonDocs[i]) }
 }
