@@ -648,6 +648,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         ) break
                     }
                     if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) break
+                    // An inline comment ends the key the same way it ends a plain scalar value
+                    // (see readPlainScalarOrMapping) — only when preceded by whitespace, so
+                    // "a#b" stays one key while "a #b" ends the key at "a".
+                    if (currentByte == C.HASH_BYTE && position > startPosition &&
+                        (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
+                    ) break
                     position++
                 }
                 val endPosition = trimTrailingSpaces(startPosition, position)
