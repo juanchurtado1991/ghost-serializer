@@ -38,9 +38,8 @@ fun GhostJsonReader.nextFloat(): Float {
         precisionLimit = C.FLOAT_PRECISION_LIMIT,
         getPosition = { position },
         setPosition = { position = it },
-        getLimit = { limit },
+        limit = limit,
         getByte = { getByte(it) },
-        readDigitRun = { onDigit -> readNumericLoop(onDigit) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
@@ -74,9 +73,8 @@ fun GhostJsonReader.nextDouble(): Double {
         precisionLimit = C.DOUBLE_PRECISION_LIMIT,
         getPosition = { position },
         setPosition = { position = it },
-        getLimit = { limit },
+        limit = limit,
         getByte = { getByte(it) },
-        readDigitRun = { onDigit -> readNumericLoop(onDigit) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->

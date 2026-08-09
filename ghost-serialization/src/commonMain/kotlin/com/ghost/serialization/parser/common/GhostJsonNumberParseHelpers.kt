@@ -210,16 +210,15 @@ internal inline fun finalizeParsedDouble(
  * Parses the body of a JSON floating-point number (integer digits, optional fraction,
  * optional exponent) after the numeric header and leading-zero check.
  *
- * [readDigitRun] advances over a contiguous digit run; readers supply a monomorphic loop
- * (direct buffer walk or streaming [readNumericLoop]-style adapter).
+ * Digit runs are walked inside this core via [getByte]/[setPosition] (same allocation-safe
+ * shape as [parseIntDigitsCore]) — do not pass nested `readDigitRun` callbacks.
  */
 internal inline fun <R> parseJsonFloatingBodyCore(
     precisionLimit: Int,
     getPosition: () -> Int,
     setPosition: (Int) -> Unit,
-    getLimit: () -> Int,
+    limit: Int,
     getByte: (Int) -> Int,
-    readDigitRun: (onDigit: (Int) -> Unit) -> Unit,
     parseExponentValue: () -> Int,
     throwError: (String) -> Nothing,
     finish: (mantissa: Long, exponent: Int) -> R,
@@ -227,8 +226,11 @@ internal inline fun <R> parseJsonFloatingBodyCore(
     var mantissa = 0L
     var exponent = 0
     var digitCount = 0
+    var position = getPosition()
 
-    readDigitRun { byte ->
+    while (position < limit) {
+        val byte = getByte(position)
+        if (!isDigit(byte)) break
         val digit = byte - C.ZERO_INT
         if (digitCount < precisionLimit) {
             mantissa = mantissa * C.BASE_TEN + digit
@@ -236,33 +238,36 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         } else {
             exponent++
         }
+        position++
     }
 
     if (digitCount == 0) {
+        setPosition(position)
         throwError(C.ERR_EXPECTED_INT_PART)
     }
 
-    val pos = getPosition()
-    val lim = getLimit()
-    if (pos < lim && getByte(pos) == C.DOT_INT) {
-        val newPos = pos + 1
-        setPosition(newPos)
-        readDigitRun { byte ->
+    if (position < limit && getByte(position) == C.DOT_INT) {
+        position++
+        val fractionStart = position
+        while (position < limit) {
+            val byte = getByte(position)
+            if (!isDigit(byte)) break
             val digit = byte - C.ZERO_INT
             if (digitCount < precisionLimit) {
                 mantissa = mantissa * C.BASE_TEN + digit
                 digitCount++
                 exponent--
             }
+            position++
         }
-        if (getPosition() == newPos) {
+        if (position == fractionStart) {
+            setPosition(position)
             throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
         }
     }
 
-    val currentPos = getPosition()
-    val currentLimit = getLimit()
-    if (currentPos < currentLimit && isExponentMarker(getByte(currentPos))) {
+    setPosition(position)
+    if (position < limit && isExponentMarker(getByte(position))) {
         exponent += parseExponentValue()
     }
 
