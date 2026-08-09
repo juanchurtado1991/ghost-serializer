@@ -11,7 +11,8 @@ import com.squareup.kotlinpoet.ClassName
 internal object GhostEmitterConstants {
     const val STR_DESERIALIZE = "deserialize"
     const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
-    const val DEFAULT_CHUNK_SIZE = 40
+    const val PROPERTY_MAX_SIZE = 40
+    const val DEFAULT_CHUNK_SIZE = PROPERTY_MAX_SIZE
     const val STR_READER = "reader"
     const val TEMPLATE_PEEK_TYPE =
         "val typeName = reader.peekStringField(%S)\n  ?: reader.throwError(%S)"
@@ -120,7 +121,6 @@ internal object GhostEmitterConstants {
     const val STR_COMMA = ","
     const val STR_EMPTY = ""
     const val STR_ELSE = "else"
-    const val STR_RETURN_RESULT_FINAL = "return result"
     const val STR_ERR_INVALID_ENUM_INDEX = "-1 -> reader.throwError(\"Invalid enum value\")"
     const val STR_ERR_UNEXPECTED_INDEX =
         "else -> throw GhostJsonException(\"Unexpected index: \$index\")"
@@ -133,7 +133,6 @@ internal object GhostEmitterConstants {
     const val STR_CTX_CLASS = "DecodingContext"
     const val STR_DECODE_CHUNK_PREFIX = "decodeChunk"
     const val STR_SERIALIZE_CHUNK_PREFIX = "serializeChunk"
-    const val STR_READER_VAR = "reader"
     const val STR_CTX_VAR = "ctx"
     const val STR_INDEX_VAR = "index"
     const val STR_WHEN_INDEX_PLAIN = "when (index)"
@@ -156,15 +155,12 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_IF_MASK_NOT_MET = "if ((ctx.mask%L and %L) != %L)"
     const val TEMPLATE_MASK_CHECK_MATCH = "(mask%s and %s) != 0L"
     const val TEMPLATE_MASK_ALL_MET_SIMPLE = "(mask%s and %s) == %s"
-    const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
-    const val STR_GHOST_OBJ = "Ghost"
     const val STR_GHOST_SERIALIZER = "GhostSerializer"
     const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
     val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
 
     const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
     const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
-    const val STR_WRITER_WRITE_NAME_VAL = "writer.writeNameRaw(%L)"
     const val STR_WRITER_END_OBJ = "writer.endObject()"
     const val STR_WRITER_BEGIN_ARR = "writer.beginArray()"
     const val STR_WRITER_END_ARR = "writer.endArray()"
@@ -302,8 +298,6 @@ internal object GhostEmitterConstants {
     const val STR_JAVA_PREFIX = "java."
     const val STR_H_VAL_PREFIX = "H_"
     const val STR_SERIALIZE_CALL = "%L.serialize(writer, %L)"
-    const val STR_WRITER_VAL_L = "writer.value(%L)"
-    const val STR_WRITER_VAL_FLOAT = "writer.value(%L)"
     const val STR_WRITER_VAL_TO_INT = "writer.value(%L.toInt())"
 
     /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
@@ -366,8 +360,6 @@ internal object GhostEmitterConstants {
     const val GHOST_IGNORE = "GhostIgnore"
     const val GHOST_NAME = "GhostName"
     const val SERIAL_NAME = "SerialName"
-    const val GHOST_SERIALIZATION = "GhostSerialization"
-    const val NAME_ARG = "name"
     const val LIST_QUALIFIED = "kotlin.collections.List"
     const val SET_QUALIFIED = "kotlin.collections.Set"
     const val MAP_QUALIFIED = "kotlin.collections.Map"
@@ -500,7 +492,6 @@ internal object GhostEmitterConstants {
     const val STR_IS_NEXT_NULL_VALUE_NAME = "isNextNullValue"
     const val STR_ENUM_OPTIONS = "ENUM_OPTIONS"
     const val STR_WARM_UP = "warmUp"
-    const val MARKER = "%S"
     const val ANNOTATION_GHOST_SERIALIZATION = "GhostSerialization"
     const val ANNOTATION_GHOST_PROTO_SERIALIZATION = "GhostProtoSerialization"
     const val ANNOTATION_GHOST_YAML_SERIALIZATION = "GhostYamlSerialization"
@@ -510,7 +501,6 @@ internal object GhostEmitterConstants {
     const val ARG_DISCRIMINATOR = "discriminator"
     const val ARG_INFERRED = "inferred"
     const val STR_DEFAULT_DISCRIMINATOR = "type"
-    const val ARG_NAME = "name"
     const val PKG_KOTLIN = "kotlin"
     const val STR_OPT_IN = "OptIn"
     const val STR_INTERNAL_GHOST_API = "InternalGhostApi"
@@ -587,7 +577,6 @@ internal object GhostEmitterConstants {
     const val FMT_LONG_LITERAL = "%dL"
     const val MASK_SIZE_BITS = 64L
     const val MASK_SIZE_BITS_MINUS_ONE = 63
-    const val STR_NULL_VAL_CALL = "writer.nullValue()"
 
     // Control Flow Templates
     const val TEMPLATE_IF_NULL = "if (%L == null)"
@@ -606,7 +595,6 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_NEQ_ZERO_SHORT = "%L != 0.toShort()"
     const val TEMPLATE_NEQ_ZERO_BYTE = "%L != 0.toByte()"
     const val TEMPLATE_IS_NOT_EMPTY = "%L.isNotEmpty()"
-    const val TEMPLATE_ACCESSOR_L = "%L"
 
     // Writer Templates
     const val TEMPLATE_WRITER_VALUE = "writer.value(%L)"
@@ -620,9 +608,6 @@ internal object GhostEmitterConstants {
     const val STR_WARN_CUSTOM_CODER = "Detected custom coder for %s: D=%s, E=%s"
     const val TEMPLATE_NAMED_ARG = "  %N = %L,"
     const val TEMPLATE_ACCESSOR = "%L.%N"
-    const val TEMPLATE_VARIABLE = "%L"
-
-    const val PROPERTY_MAX_SIZE = 40
 
     /**
      * Maximum number of default-valued properties for which the compiler

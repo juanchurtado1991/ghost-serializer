@@ -859,7 +859,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         // 1. GhostName (Primary)
         val ghostName = annotations.find { it.shortName.asString() == C.GHOST_NAME }
         if (ghostName != null) {
-            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME_ARG }
+            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME }
                 ?: ghostName.arguments.firstOrNull()
             return arg?.value?.toString() ?: C.STR_EMPTY
         }
@@ -896,7 +896,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     private fun isGhostType(type: KSType): Boolean =
         type.declaration.annotations.any {
             val name = it.shortName.asString()
-            name == C.GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
+            name == C.ANNOTATION_GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
         }
 
     companion object {

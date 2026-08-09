@@ -303,7 +303,7 @@ internal class StandardEmitter(
                 C.TEMPLATE_CALL_VALIDATION,
                 C.STR_FUN_VALIDATE_FIELDS,
                 C.STR_PARAM_MASK0,
-                C.STR_READER_VAR
+                C.STR_READER
             )
         }
     }
@@ -325,7 +325,7 @@ internal class StandardEmitter(
         val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)
             .addModifiers(KModifier.PRIVATE)
             .addParameter(C.STR_PARAM_MASK0, com.squareup.kotlinpoet.LONG)
-            .addParameter(C.STR_READER_VAR, readerClass)
+            .addParameter(C.STR_READER, readerClass)
 
         val funBody = CodeBlock.builder()
         if (requiredProps.size == 1) {
@@ -591,7 +591,7 @@ internal class StandardEmitter(
             )
         }
         body.addStatement(C.STR_PAREN)
-        body.addStatement(C.STR_RETURN_RESULT_FINAL)
+        body.addStatement(C.STR_RETURN_RESULT)
     }
 
     /**
@@ -638,10 +638,10 @@ internal class StandardEmitter(
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
             body.endControlFlow()
         } else {
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
         }
     }
 }

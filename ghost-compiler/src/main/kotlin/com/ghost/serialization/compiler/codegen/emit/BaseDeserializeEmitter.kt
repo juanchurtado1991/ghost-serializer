@@ -587,7 +587,7 @@ internal abstract class BaseDeserializeEmitter(
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
         val ghostClass = ClassName(
             C.PKG_GHOST,
-            C.STR_GHOST_OBJ
+            C.STR_GHOST
         )
 
         contextualSerializers.forEach { (type, name) ->
