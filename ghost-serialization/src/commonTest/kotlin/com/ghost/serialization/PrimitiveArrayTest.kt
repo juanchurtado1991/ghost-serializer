@@ -12,6 +12,8 @@ import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 
 
 class PrimitiveArrayTest {
@@ -60,6 +62,18 @@ class PrimitiveArrayTest {
 
         val stringResult = LongArraySerializer.deserialize(GhostJsonStringReader(json))
         assertContentEquals(original, stringResult)
+    }
+
+    @Test
+    fun getSerializerResolvesIntArrayAndRoundTrips() {
+        val serializer = Ghost.getSerializer(IntArray::class)
+        assertNotNull(serializer)
+        assertSame(IntArraySerializer, serializer)
+
+        val original = intArrayOf(1, 2)
+        val bytes = Ghost.encodeToBytes(original)
+        assertEquals("[1,2]", bytes.decodeToString())
+        assertContentEquals(original, Ghost.deserialize<IntArray>(bytes))
     }
 
     @Test

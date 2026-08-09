@@ -46,12 +46,6 @@ object ProtoAnyRegistry {
         register(typeUrl, T::class)
     }
 
-    /** The `typeUrl` registered for [kClass], or `null` if none was registered. */
-    fun typeUrlFor(kClass: KClass<*>): String? = typeUrlByClass[kClass]
-
-    /** The [KClass] registered for [typeUrl], or `null` if none was registered. */
-    fun classFor(typeUrl: String): KClass<*>? = classByTypeUrl[typeUrl]
-
     /**
      * Serializes [message] and wraps it in a [ProtoAny] using the `typeUrl` registered for
      * [kClass] via [register].
@@ -109,7 +103,10 @@ object ProtoAnyRegistry {
         }
     }
 
-    /** Test-only: clears all registered typeUrl/KClass mappings. */
+    /**
+     * Test hook: clears all registered typeUrl/KClass mappings to prevent cross-test pollution.
+     * Not for production use.
+     */
     @InternalGhostApi
     fun resetForTest() {
         typeUrlByClass.clear()

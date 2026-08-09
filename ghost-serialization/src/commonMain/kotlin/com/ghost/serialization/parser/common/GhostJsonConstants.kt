@@ -559,7 +559,6 @@ object GhostJsonConstants {
     const val WKT_STRUCT_TYPE = "google.protobuf.Struct"
     const val WKT_VALUE_TYPE = "google.protobuf.Value"
     const val WKT_EMPTY_TYPE = "google.protobuf.Empty"
-    const val WKT_FIELDMASK_TYPE = "google.protobuf.FieldMask"
     const val WKT_TIMESTAMP_TYPE = "google.protobuf.Timestamp"
     const val WKT_DURATION_TYPE = "google.protobuf.Duration"
     const val WKT_BOOL_VALUE_TYPE = "google.protobuf.BoolValue"

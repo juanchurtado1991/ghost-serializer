@@ -47,6 +47,7 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostProto(
 /**
  * YAML variant of [respondGhost] — serializes through [GhostYamlSerializer] and responds with
  * `application/yaml`.
+ * Public API for frameworks — bypasses Ktor ContentNegotiation.
  */
 suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
     value: T,

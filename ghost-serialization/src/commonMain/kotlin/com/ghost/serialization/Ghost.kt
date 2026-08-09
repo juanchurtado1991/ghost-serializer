@@ -7,13 +7,18 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.serializers.BooleanArraySerializer
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.ByteSerializer
 import com.ghost.serialization.serializers.CharSerializer
+import com.ghost.serialization.serializers.DoubleArraySerializer
 import com.ghost.serialization.serializers.DoubleSerializer
+import com.ghost.serialization.serializers.FloatArraySerializer
 import com.ghost.serialization.serializers.FloatSerializer
+import com.ghost.serialization.serializers.IntArraySerializer
 import com.ghost.serialization.serializers.IntSerializer
 import com.ghost.serialization.serializers.ListSerializer
+import com.ghost.serialization.serializers.LongArraySerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.SetSerializer
@@ -303,6 +308,26 @@ object Ghost {
                 CharSerializer as GhostSerializer<T>
             }
 
+            IntArray::class -> {
+                IntArraySerializer as GhostSerializer<T>
+            }
+
+            LongArray::class -> {
+                LongArraySerializer as GhostSerializer<T>
+            }
+
+            FloatArray::class -> {
+                FloatArraySerializer as GhostSerializer<T>
+            }
+
+            DoubleArray::class -> {
+                DoubleArraySerializer as GhostSerializer<T>
+            }
+
+            BooleanArray::class -> {
+                BooleanArraySerializer as GhostSerializer<T>
+            }
+
             RawJson::class -> {
                 RawJsonSerializer as GhostSerializer<T>
             }
@@ -526,6 +551,8 @@ object Ghost {
      * Serializes [value] through the pooled [GhostJsonFlatWriter] and discards
      * the output. No [BufferedSink] allocation, no Okio wrapper objects.
      *
+     * Public API for frameworks / JIT warm-up; may not be referenced from this module.
+     *
      * @param value The value to serialize.
      */
     @Suppress("unused")
@@ -716,7 +743,7 @@ object Ghost {
 
     /**
      * Non-inline variant of [deserialize] that decodes a [ByteArray] into the specified [clazz].
-     * Useful in reflection or framework integration contexts where reified types are unavailable.
+     * Public API for frameworks (Spring, Retrofit) where reified types are unavailable.
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @param clazz The KClass of the target type to deserialize.
@@ -777,7 +804,8 @@ object Ghost {
 
     /**
      * Non-inline variant of [encodeToSink] for contexts where the type is known
-     * only as a [KClass] at runtime (e.g. Spring HttpMessageConverter, Retrofit adapters).
+     * only as a [KClass] at runtime.
+     * Public API for frameworks (Spring HttpMessageConverter, Retrofit adapters).
      *
      * @param sink The Okio sink to write the JSON payload to.
      * @param value The value to serialize.
@@ -882,7 +910,8 @@ object Ghost {
     const val NOT_FOUND = "No Ghost serializer found for"
 
     /**
-     * Test-only utility to clear global state and prevent test pollution.
+     * Test hook: clears registries and serializer caches to prevent cross-test pollution.
+     * Not for production use.
      */
     @InternalGhostApi
     fun resetForTest() {
