@@ -4,6 +4,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.withPreparedUtf8Json
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -113,7 +114,7 @@ interface GhostSerializer<T> {
         }
         val result = deserialize(delegatedReader)
         reader.position = delegatedReader.position
-        reader.nextTokenByte = -1
+        reader.nextTokenByte = C.RESET_TOKEN_BYTE
         return result
     }
 
@@ -132,7 +133,7 @@ interface GhostSerializer<T> {
         }
         val result = deserialize(flatReader)
         reader.position = reader.bytePositionToCharPosition(flatReader.position)
-        reader.nextTokenByte = -1
+        reader.nextTokenByte = C.RESET_TOKEN_BYTE
         return result
     }
 

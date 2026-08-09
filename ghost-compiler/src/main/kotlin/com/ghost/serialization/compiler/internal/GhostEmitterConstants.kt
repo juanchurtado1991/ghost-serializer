@@ -156,17 +156,11 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_IF_MASK_NOT_MET = "if ((ctx.mask%L and %L) != %L)"
     const val TEMPLATE_MASK_CHECK_MATCH = "(mask%s and %s) != 0L"
     const val TEMPLATE_MASK_ALL_MET_SIMPLE = "(mask%s and %s) == %s"
-    const val STR_GHOST_PKG = "com.ghost.serialization"
     const val STR_CONTRACT_PKG = "com.ghost.serialization.contract"
     const val STR_GHOST_OBJ = "Ghost"
     const val STR_GHOST_SERIALIZER = "GhostSerializer"
     const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
     val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
-    /**
-     * Default sealed-class discriminator JSON key.
-     * Must match [STR_DEFAULT_DISCRIMINATOR] and runtime `GhostJsonConstants.DEFAULT_DISCRIMINATOR_KEY`.
-     */
-    const val DEFAULT_DISCRIMINATOR_KEY = "type"
 
     const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
     const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
@@ -395,7 +389,6 @@ internal object GhostEmitterConstants {
     const val NAME = "name"
 
     // Generator-specific
-    const val PKG_WRITER_COMMON = "com.ghost.serialization.writer.common"
     const val PKG_WRITER_BYTES = "com.ghost.serialization.writer.bytes"
     const val PKG_WRITER_STRINGS = "com.ghost.serialization.writer.strings"
     const val PKG_CONTRACT = "com.ghost.serialization.contract"
@@ -458,7 +451,7 @@ internal object GhostEmitterConstants {
     const val STR_OPTIONS_PREFIX = "OPTIONS_"
     const val STR_OPTIONS_CLASS = "JsonReaderOptions"
     const val STR_RESET_TOKEN_BYTE_CALL =
-        "    reader._setNextTokenByte($STR_GHOST_JSON_FLAT_READER_QUALIFIED.$STR_RESET_TOKEN_BYTE)\n"
+        "    reader._setNextTokenByte($PKG_PARSER_COMMON.GhostJsonConstants.$STR_RESET_TOKEN_BYTE)\n"
     const val STR_RUN_OPEN = "run {\n"
     const val STR_CUSTOM_DECODER_TEMP_READER =
         "    val temp = $STR_GHOST_JSON_READER_QUALIFIED(reader._getRawData())\n    temp._setPosition(reader._getPosition())\n"

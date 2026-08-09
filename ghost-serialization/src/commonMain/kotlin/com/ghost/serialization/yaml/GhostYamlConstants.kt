@@ -232,26 +232,8 @@ internal object GhostYamlConstants {
     const val STR_MINUS_DOT_INF = "-.inf"
     const val STR_DOT_NAN = ".nan"
 
-    const val ESCAPE_DOUBLE_QUOTE = "\""
-    const val ESCAPE_BACKSLASH = "\\"
-    const val ESCAPE_SLASH = "/"
-    const val ESCAPE_B = "\b"
-    const val ESCAPE_F = "\u000C"
-    const val ESCAPE_N = "\n"
-    const val ESCAPE_R = "\r"
-    const val ESCAPE_T = "\t"
-    const val ESCAPE_ZERO = "\u0000"
-    const val ESCAPE_A = "\u0007"
-    const val ESCAPE_V = "\u000B"
-    const val ESCAPE_E = "\u001B"
-    const val ESCAPE_NEXT_LINE = "\u0085"
-    const val ESCAPE_NBSP = "\u00A0"
-    const val ESCAPE_LINE_SEP = "\u2028"
-    const val ESCAPE_PARA_SEP = "\u2029"
     const val STR_MERGE_KEY = "<<"
     const val STR_TAG_KEY = "_tag"
-    const val STR_LT = "<"
-    const val STR_GT = ">"
     const val STR_TAG_DIRECTIVE = "TAG"
     const val STR_YAML_DIRECTIVE = "YAML"
     const val STR_EXCLAMATION = "!"
@@ -297,7 +279,6 @@ internal object GhostYamlConstants {
 
     // ── Structural & formatting helpers (Writer path) ──────────────────────────
     const val SPACES_PER_LEVEL = 2
-    const val TYPE_ROOT = 0
     const val TYPE_OBJECT = 1
     const val TYPE_ARRAY = 2
     const val PLAIN_ASCII_LIMIT = 64
@@ -327,7 +308,6 @@ internal object GhostYamlConstants {
     const val UTF8_CONT_MASK = 0x3F
     const val HEX_SHIFT_4 = 4
     const val HEX_RADIX_10 = 10
-    const val SHIFT_12_BITS = 12
     const val SHIFT_18_BITS = 18
     const val SHIFT_6_BITS = 6
 
@@ -335,7 +315,6 @@ internal object GhostYamlConstants {
     const val CODE_BEL = 7
     const val CODE_BS = 8
     const val CODE_TAB = 9
-    const val CODE_LF = 10
     const val CODE_FF = 12
     const val CODE_CR = 13
     const val CODE_VTAB = 11

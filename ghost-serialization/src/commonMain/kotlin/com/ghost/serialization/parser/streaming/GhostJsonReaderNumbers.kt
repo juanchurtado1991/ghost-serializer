@@ -32,7 +32,7 @@ fun GhostJsonReader.nextFloat(): Float {
     var digitCount = 0
 
     // Integer part
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     readNumericLoop { byte ->
         val digit = byte - C.ZERO_INT
         if (digitCount < C.FLOAT_PRECISION_LIMIT) {
@@ -110,7 +110,7 @@ fun GhostJsonReader.nextDouble(): Double {
     var digitCount = 0
 
     // Integer part
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     readNumericLoop { byte ->
         val digit = byte - C.ZERO_INT
         if (digitCount < C.DOUBLE_PRECISION_LIMIT) {

@@ -19,7 +19,7 @@ fun GhostJsonReader.captureRawJson(): RawJson {
     streaming?.pin(start)
     try {
         captureReaderValueBytes()
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
         val length = position - start
         return if (streaming != null) {
             RawJson.fromUtf8Bytes(captureReaderRangeBytes(start, length))

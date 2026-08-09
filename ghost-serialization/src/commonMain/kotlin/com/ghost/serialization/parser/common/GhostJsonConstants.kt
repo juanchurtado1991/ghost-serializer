@@ -68,8 +68,6 @@ object GhostJsonConstants {
     const val EXPONENT_CLAMP_THRESHOLD = 1000
     const val ERR_EXPECTED_LITERAL = "Expected literal "
     const val LITERAL_NULL = "null"
-    const val LITERAL_TRUE = "true"
-    const val LITERAL_FALSE = "false"
     const val ERR_INVALID_UNICODE_AT = "Invalid unicode escape at "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
 
@@ -709,9 +707,6 @@ object GhostJsonConstants {
 
     /** Low 10 bits of a supplementary-plane offset when forming a UTF-16 surrogate pair. */
     const val SURROGATE_PAIR_MASK = 0x3FF
-
-    /** Unicode replacement character `U+FFFD`. */
-    const val UNICODE_REPLACEMENT = 0xFFFD
 
     /** Worst-case number of UTF-8 bytes for any BMP code point (3 + 1 trailing surrogate). */
     const val UTF8_MAX_BMP_BYTES = 4

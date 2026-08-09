@@ -32,7 +32,7 @@ fun GhostJsonFlatReader.nextFloatExtension(): Float {
     var digitCount = 0
 
     // Integer part
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     val data = rawData
     val localLimit = limit
     while (position < localLimit) {
@@ -121,7 +121,7 @@ fun GhostJsonFlatReader.nextDoubleExtension(): Double {
     var digitCount = 0
 
     // Integer part
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     val data = rawData
     val localLimit = limit
     while (position < localLimit) {
@@ -353,7 +353,7 @@ private fun GhostJsonFlatReader.parseIntDigits(isNegative: Boolean, startOfNumbe
     var accumulatedValue = 0
     var digitCount = 0
     var hasDigitsFound = false
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     var earlyExitResult: Int? = null
 
     val data = rawData
@@ -395,7 +395,7 @@ private fun GhostJsonFlatReader.parseLongDigits(isNegative: Boolean, startOfNumb
     var accumulatedValue = 0L
     var digitCount = 0
     var hasDigitsFound = false
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     var earlyExitResult: Long? = null
 
     val data = rawData
@@ -604,5 +604,5 @@ fun GhostJsonFlatReader.skipNumber() {
     if (isQuoted) {
         consumeNumericCoercionFooter()
     }
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
 }

@@ -178,11 +178,6 @@ internal fun KSType.isRawJson(): Boolean {
 }
 
 /**
- * Checks whether this type captures opaque JSON inline (ByteArray or RawJson).
- */
-internal fun KSType.isOpaqueJson(): Boolean = isByteArray() || isRawJson()
-
-/**
  * True when this type (recursively) uses JSON-only codegen features unsupported on YAML paths.
  */
 internal fun KSType.containsYamlIncompatibleType(isProto: Boolean): Boolean {

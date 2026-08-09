@@ -847,7 +847,7 @@ open class GhostJsonFlatReader(
             val endPos = start + length
             val newPos = endPos + 1
             position = newPos
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             if (consumeSeparator) {
                 if (newPos < limit) {
                     val colonToken = getByte(newPos)
@@ -1053,8 +1053,4 @@ open class GhostJsonFlatReader(
         }
     }
 
-    companion object {
-        @InternalGhostApi
-        const val RESET_TOKEN_BYTE: Int = -1
-    }
 }
