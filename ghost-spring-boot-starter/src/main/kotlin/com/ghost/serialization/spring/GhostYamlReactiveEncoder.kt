@@ -1,6 +1,7 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import org.reactivestreams.Publisher
@@ -18,9 +19,8 @@ class GhostYamlReactiveEncoder : AbstractEncoder<Any>(
     GhostSpringMediaTypes.MIME_TEXT_YAML,
 ) {
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-        val clazz = elementType.toClass()
-        val serializer = Ghost.getSerializer(clazz.kotlin)
-        return super.canEncode(elementType, mimeType) && serializer is GhostYamlSerializer<*>
+        return super.canEncode(elementType, mimeType) &&
+            GhostSpringTypeSerializers.getYamlSerializer(elementType) != null
     }
 
     override fun encode(
@@ -30,21 +30,28 @@ class GhostYamlReactiveEncoder : AbstractEncoder<Any>(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Flux<DataBuffer> {
+        val declaredSerializer = GhostSpringTypeSerializers.getYamlSerializer(elementType)
         return Flux.from(inputStream).map { value ->
-            encodeValue(value, bufferFactory)
+            encodeValue(value, bufferFactory, declaredSerializer)
         }
     }
 
-    private fun encodeValue(value: Any, bufferFactory: DataBufferFactory): DataBuffer {
-        @Suppress("UNCHECKED_CAST")
-        val kClass = value::class as KClass<Any>
-        val serializer = Ghost.getSerializer(kClass)
+    private fun encodeValue(
+        value: Any,
+        bufferFactory: DataBufferFactory,
+        declaredSerializer: GhostSerializer<Any>?
+    ): DataBuffer {
+        val serializer = declaredSerializer
+            ?: run {
+                @Suppress("UNCHECKED_CAST")
+                Ghost.getSerializer(value::class as KClass<Any>)
+            }
             ?: throw IllegalArgumentException(
-                "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}"
+                "${Ghost.NOT_FOUND} ${value::class.simpleName}. ${Ghost.MISSING_ANN}"
             )
         if (serializer !is GhostYamlSerializer<*>) {
             throw IllegalArgumentException(
-                "Serializer for ${kClass.simpleName} does not implement GhostYamlSerializer"
+                "Serializer for ${value::class.simpleName} does not implement GhostYamlSerializer"
             )
         }
 

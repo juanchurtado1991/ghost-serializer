@@ -1,6 +1,7 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.contract.GhostSerializer
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractEncoder
@@ -16,19 +17,16 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 /**
  * Reactive Encoder for Ghost Serialization.
  *
- * Serializes through the pooled `GhostJsonFlatWriter`
- * to a [ByteArray], then wraps the bytes in a [DataBuffer] via [DataBufferFactory].
- *
- * [canEncode] accepts types that have a serializer registered with [Ghost].
+ * [canEncode] / encode resolve serializers from the full [ResolvableType] so
+ * collection bodies use the declared generic serializer, not `value::class`.
  */
 class GhostReactiveEncoder : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
     GhostSpringMediaTypes.MIME_APPLICATION_X_NDJSON
 ) {
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-        val clazz = elementType.toClass()
         return super.canEncode(elementType, mimeType) &&
-                Ghost.getSerializer(clazz.kotlin) != null
+            GhostSpringTypeSerializers.getJsonSerializer(elementType) != null
     }
 
     override fun encode(
@@ -39,22 +37,26 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
         hints: MutableMap<String, Any>?
     ): Flux<DataBuffer> {
         val isNdJson = isNdJson(mimeType)
+        val declaredSerializer = GhostSpringTypeSerializers.getJsonSerializer(elementType)
 
         return Flux.from(inputStream).map { value ->
-            encodeValue(value, bufferFactory, isNdJson)
+            encodeValue(value, bufferFactory, isNdJson, declaredSerializer)
         }
     }
 
     private fun encodeValue(
         value: Any,
         bufferFactory: DataBufferFactory,
-        isNdJson: Boolean
+        isNdJson: Boolean,
+        declaredSerializer: GhostSerializer<Any>?
     ): DataBuffer {
-        @Suppress("UNCHECKED_CAST")
-        val kClass = value::class as KClass<Any>
-        val serializer = Ghost.getSerializer(kClass)
+        val serializer = declaredSerializer
+            ?: run {
+                @Suppress("UNCHECKED_CAST")
+                Ghost.getSerializer(value::class as KClass<Any>)
+            }
             ?: throw IllegalArgumentException(
-                "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}"
+                "${Ghost.NOT_FOUND} ${value::class.simpleName}. ${Ghost.MISSING_ANN}"
             )
 
         val encoded = Ghost.encodeToBytes(serializer, value)

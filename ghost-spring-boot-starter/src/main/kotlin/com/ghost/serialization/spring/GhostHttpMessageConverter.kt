@@ -7,73 +7,85 @@ import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
-import org.springframework.http.converter.AbstractHttpMessageConverter
-import java.util.concurrent.ConcurrentHashMap
+import org.springframework.http.converter.AbstractGenericHttpMessageConverter
+import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.http.converter.HttpMessageNotWritableException
+import java.lang.reflect.Type
 import kotlin.reflect.KClass
-
 
 /**
  * Spring `HttpMessageConverter` implementation that uses Ghost Serialization.
  *
+ * Resolves `List` / `Set` / `Map` generics via [GhostSpringTypeSerializers] (parity with
+ * Retrofit / Ktor). Read/write use the declared [Type], not only the erased [Class].
+ *
  * **Read path:** Extracts the request body as a [ByteArray] and feeds it
- * directly to the pooled `GhostJsonReader`,
- * avoiding intermediate Okio wrappers.
+ * directly to the pooled flat reader, avoiding intermediate Okio wrappers.
  *
  * **Write path:** Serializes through the pooled monomorphic
- * `GhostJsonFlatWriter` and writes the
- * resulting [ByteArray] in a single bulk call to the output stream,
- * bypassing Okio sink wrapping entirely.
+ * `GhostJsonFlatWriter` and writes the resulting [ByteArray] in a single bulk call.
  */
-class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
+class GhostHttpMessageConverter : AbstractGenericHttpMessageConverter<Any>(
     MediaType.APPLICATION_JSON,
     GhostSpringMediaTypes.APPLICATION_JSON_SUFFIX
 ) {
-    private val supportsCache = ConcurrentHashMap<Class<*>, Boolean>()
-    private val serializerCache = ConcurrentHashMap<Class<*>, GhostSerializer<Any>>()
 
-    override fun supports(clazz: Class<*>): Boolean {
-        val cached = supportsCache[clazz]
-        if (cached != null) return cached
+    override fun supports(clazz: Class<*>): Boolean =
+        GhostSpringTypeSerializers.getJsonSerializer(clazz) != null
 
-        val result = if (isExcludedType(clazz)) {
-            false
-        } else {
-            Ghost.getSerializer(clazz.kotlin) != null
-        }
-        supportsCache[clazz] = result
-        return result
-    }
+    override fun canRead(type: Type, contextClass: Class<*>?, mediaType: MediaType?): Boolean =
+        canRead(mediaType) && GhostSpringTypeSerializers.getJsonSerializer(type) != null
 
-    /**
-     * Excludes primitive and `java.lang` wrapper types so Spring falls back to its default
-     * converters (for example `StringHttpMessageConverter`)
-     * for text/plain, raw bytes, and scalar responses.
-     */
-    private fun isExcludedType(clazz: Class<*>): Boolean {
-        return clazz == String::class.java ||
-                clazz == ByteArray::class.java ||
-                clazz.isPrimitive ||
-                clazz.name.startsWith("java.lang.")
+    override fun canWrite(type: Type?, clazz: Class<*>, mediaType: MediaType?): Boolean =
+        canWrite(mediaType) &&
+            GhostSpringTypeSerializers.getJsonSerializer(type ?: clazz) != null
+
+    override fun read(
+        type: Type,
+        contextClass: Class<*>?,
+        inputMessage: HttpInputMessage
+    ): Any {
+        val serializer = GhostSpringTypeSerializers.getJsonSerializer(type)
+            ?: throw HttpMessageNotReadableException(
+                "${Ghost.NOT_FOUND} $type",
+                inputMessage
+            )
+        return deserialize(serializer, inputMessage.body.readBytes())
     }
 
     override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
-        val bytes = inputMessage.body.readBytes()
+        val serializer = GhostSpringTypeSerializers.getJsonSerializer(clazz)
+            ?: throw HttpMessageNotReadableException(
+                "${Ghost.NOT_FOUND} ${clazz.simpleName}",
+                inputMessage
+            )
+        return deserialize(serializer, inputMessage.body.readBytes())
+    }
+
+    override fun writeInternal(t: Any, type: Type?, outputMessage: HttpOutputMessage) {
+        val serializer = resolveWriteSerializer(t, type)
+        GhostStarterHelper.writeToStream(t, serializer, outputMessage.body)
+        outputMessage.body.flush()
+    }
+
+    private fun resolveWriteSerializer(t: Any, type: Type?): GhostSerializer<Any> {
+        type?.let { declared ->
+            GhostSpringTypeSerializers.getJsonSerializer(declared)?.let { return it }
+        }
+        @Suppress("UNCHECKED_CAST")
+        return GhostSpringTypeSerializers.getJsonSerializer(t.javaClass)
+            ?: Ghost.getSerializer(t::class as KClass<Any>)
+            ?: throw HttpMessageNotWritableException(
+                "${Ghost.NOT_FOUND} ${t.javaClass.simpleName}. ${Ghost.MISSING_ANN}"
+            )
+    }
+
+    private fun deserialize(serializer: GhostSerializer<Any>, bytes: ByteArray): Any {
         val isStrict = GhostSpringConfig.strict.get()
         val isCoerce = GhostSpringConfig.coerce.get()
 
-        @Suppress("UNCHECKED_CAST")
-        val targetClass = clazz as Class<Any>
-        var serializer = serializerCache[targetClass]
-        if (serializer == null) {
-            serializer = Ghost.getSerializer(targetClass.kotlin)
-                ?: Ghost.throwError("${Ghost.NOT_FOUND} ${targetClass.simpleName}")
-            serializerCache[targetClass] = serializer
-        }
-
-        // @GhostProtoSerialization classes need GhostProtoJsonFlatReader's proto3 leniency
-        // (quoted-or-bare int64/uint64, lenient int32, quoted NaN/Infinity). The annotation
-        // itself is BINARY-retained (invisible to reflection), so `serializer.isProto` is how
-        // this shared, globally-registered converter tells the two cases apart.
+        // @GhostProtoSerialization classes need GhostProtoJsonFlatReader's proto3 leniency.
+        // The annotation is BINARY-retained; `serializer.isProto` is the runtime signal.
         if (serializer.isProto) {
             return ghostProtoInternalUseFlatReader(bytes) { reader ->
                 reader.strictMode = isStrict
@@ -93,26 +105,5 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
             }
             serializer.deserialize(reader)
         }
-    }
-
-    override fun writeInternal(t: Any, outputMessage: HttpOutputMessage) {
-        val clazz = t.javaClass
-        var serializer = serializerCache[clazz]
-        if (serializer == null) {
-            @Suppress("UNCHECKED_CAST")
-            serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
-                ?: throw IllegalArgumentException(
-                    "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
-                )
-            serializerCache[clazz] = serializer
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        GhostStarterHelper.writeToStream(
-            t,
-            serializer,
-            outputMessage.body
-        )
-        outputMessage.body.flush()
     }
 }
