@@ -112,7 +112,12 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
             // the same or shallower indentation) must fall back to parentIndent + 2 and let
             // readBlockScalarContent's own de-indent check immediately end the scalar as empty.
             if (spaces <= parentIndent && !isDocumentRoot) {
-                return parentIndent + 2
+                // maxOf with maxLeadingEmptyLineIndent: any blank line already scanned past must
+                // stay <= this blockIndent, or readBlockScalarContent would (correctly, per its
+                // own leftover-space-is-content rule) treat it as having real content of its own
+                // — but there was never a genuine content line for this scalar at all, so none of
+                // its blank lines should either (see JEF9_01/JEF9_02).
+                return maxOf(parentIndent + 2, maxLeadingEmptyLineIndent)
             }
             // A leading empty line more indented than the first real content line is ambiguous —
             // there's no way to tell how much of its indentation was meant as content — and the
@@ -125,7 +130,9 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
         if (spaces > maxLeadingEmptyLineIndent) maxLeadingEmptyLineIndent = spaces
         scannerPos = peekPos
     }
-    return parentIndent + 2
+    // Reached EOF without ever finding a real content line — see the maxOf comment above, same
+    // reasoning applies here.
+    return maxOf(parentIndent + 2, maxLeadingEmptyLineIndent)
 }
 
 internal fun GhostYamlFlatReader.readBlockScalarContent(
@@ -149,8 +156,13 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
             spaces++; position++
         }
 
-        if (position >= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {
-            // Empty line
+        if ((position >= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) &&
+            spaces <= blockIndent
+        ) {
+            // Empty line — but only when it has no spaces *beyond* blockIndent. A line with more
+            // spaces than blockIndent (but nothing else) isn't blank: the leftover spaces are
+            // real content, and falling through to the normal content-line handling below
+            // preserves them (see DWX9/6FWR's expected " " line between two "empty" ones).
             trailingNewlines++
             skipToEndOfLine()
             if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
@@ -173,19 +185,22 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
         val effectiveSpaces = spaces - blockIndent
         val isIndented = effectiveSpaces > 0
 
-        // If we have accumulated trailing newlines, append them
+        // If we have accumulated trailing newlines, append them — including any that precede the
+        // very first real content line: leading blank lines inside a block scalar are real
+        // content (part of what detectBlockScalarIndent scanned past to find blockIndent), not
+        // just structural padding to discard (see DWX9/T26H/4QFQ/R4YG's expected "\n\n..." prefix).
         if (trailingNewlines > 0) {
-            if (!isFirstLine) {
-                if (trailingNewlines == 1) {
-                    if (isFolded && !isIndented && !lastLineWasIndented) {
-                        sb.append(' ')
-                    } else {
-                        sb.append('\n')
-                    }
+            if (isFirstLine) {
+                repeat(trailingNewlines) { sb.append('\n') }
+            } else if (trailingNewlines == 1) {
+                if (isFolded && !isIndented && !lastLineWasIndented) {
+                    sb.append(' ')
                 } else {
-                    val toAppend = if (isFolded) trailingNewlines - 1 else trailingNewlines
-                    repeat(toAppend) { sb.append('\n') }
+                    sb.append('\n')
                 }
+            } else {
+                val toAppend = if (isFolded) trailingNewlines - 1 else trailingNewlines
+                repeat(toAppend) { sb.append('\n') }
             }
             trailingNewlines = 0
         }
