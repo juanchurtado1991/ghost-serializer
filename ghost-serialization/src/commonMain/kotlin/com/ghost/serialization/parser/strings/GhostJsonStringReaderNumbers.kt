@@ -7,13 +7,14 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.accumulateIntWithOverflowCheck
 import com.ghost.serialization.parser.common.accumulateLongWithOverflowCheck
 import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
-import com.ghost.serialization.parser.common.getDoublePowerOfTen
-import com.ghost.serialization.parser.common.getFloatPowerOfTen
+import com.ghost.serialization.parser.common.finalizeParsedDouble
+import com.ghost.serialization.parser.common.finalizeParsedFloat
 import com.ghost.serialization.parser.common.isDigit
-import com.ghost.serialization.parser.common.isExponentMarker
 import com.ghost.serialization.parser.common.isNumericSeparator
 import com.ghost.serialization.parser.common.parseExponentValueCore
+import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
 import com.ghost.serialization.parser.common.prepareNumericHeaderCore
+import com.ghost.serialization.parser.common.skipNumberBodyCore
 import com.ghost.serialization.parser.common.validateLeadingZeroCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
@@ -67,69 +68,18 @@ fun GhostJsonStringReader.nextFloat(): Float {
 
     validateLeadingZero()
 
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
     nextTokenByte = C.RESET_TOKEN_BYTE
-    val localLimit = limit
-    val chars = rawChars
-    while (position < localLimit) {
-        val byte = chars[position].code
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-            } else {
-                exponent++
-            }
-            position++
-        } else {
-            break
-        }
-    }
-
-    if (digitCount == 0) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    if (position < localLimit && getByte(position) == C.DOT_INT) {
-        val newPos = position + 1
-        position = newPos
-        while (position < localLimit) {
-            val byte = chars[position].code
-            if (isDigit(byte)) {
-                val digit = byte - C.ZERO_INT
-                if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digit
-                    digitCount++
-                    exponent--
-                }
-                position++
-            } else {
-                break
-            }
-        }
-        if (position == newPos) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    if (position < localLimit && isExponentMarker(getByte(position))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toFloat()
-    if (exponent != 0) {
-        result *= getFloatPowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) {
-        result = -result
-    }
-    if (result.isInfinite() || result.isNaN()) {
-        throwError(C.ERR_NUMERIC_OVERFLOW)
+    val result = parseJsonFloatingBodyCore(
+        precisionLimit = C.FLOAT_PRECISION_LIMIT,
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        readDigitRun = { onDigit -> readDigitRun(onDigit) },
+        parseExponentValue = { parseExponentValue() },
+        throwError = { throwError(it) },
+    ) { mantissa, exponent ->
+        finalizeParsedFloat(mantissa, exponent, isNegativeValue) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -146,69 +96,18 @@ fun GhostJsonStringReader.nextDouble(): Double {
 
     validateLeadingZero()
 
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
     nextTokenByte = C.RESET_TOKEN_BYTE
-    val localLimit = limit
-    val chars = rawChars
-    while (position < localLimit) {
-        val byte = chars[position].code
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-            } else {
-                exponent++
-            }
-            position++
-        } else {
-            break
-        }
-    }
-
-    if (digitCount == 0) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    if (position < localLimit && getByte(position) == C.DOT_INT) {
-        val newPos = position + 1
-        position = newPos
-        while (position < localLimit) {
-            val byte = chars[position].code
-            if (isDigit(byte)) {
-                val digitValue = byte - C.ZERO_INT
-                if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                    mantissa = mantissa * C.BASE_TEN + digitValue
-                    digitCount++
-                    exponent--
-                }
-                position++
-            } else {
-                break
-            }
-        }
-        if (position == newPos) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    if (position < localLimit && isExponentMarker(getByte(position))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toDouble()
-    if (exponent != 0) {
-        result *= getDoublePowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) {
-        result = -result
-    }
-    if (result.isInfinite() || result.isNaN()) {
-        throwError(C.ERR_NUMERIC_OVERFLOW)
+    val result = parseJsonFloatingBodyCore(
+        precisionLimit = C.DOUBLE_PRECISION_LIMIT,
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        readDigitRun = { onDigit -> readDigitRun(onDigit) },
+        parseExponentValue = { parseExponentValue() },
+        throwError = { throwError(it) },
+    ) { mantissa, exponent ->
+        finalizeParsedDouble(mantissa, exponent, isNegativeValue) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -343,83 +242,31 @@ private fun GhostJsonStringReader.validateLeadingZero() {
     )
 }
 
+private inline fun GhostJsonStringReader.readDigitRun(onDigit: (Int) -> Unit) {
+    val localLimit = limit
+    val chars = rawChars
+    while (position < localLimit) {
+        val byte = chars[position].code
+        if (isDigit(byte)) {
+            onDigit(byte)
+            position++
+        } else {
+            break
+        }
+    }
+}
+
 fun GhostJsonStringReader.skipNumber() {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
 
-    var hasDigits = false
-
-    val numberPosition = position
-    val numberLimit = limit
-    val chars = rawChars
-    if (numberPosition < numberLimit && chars[numberPosition].code == C.ZERO_INT) {
-        val newPos = numberPosition + 1
-        position = newPos
-        hasDigits = true
-        if (newPos < numberLimit && isDigit(chars[newPos].code)) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    } else {
-        while (position < numberLimit) {
-            val byte = chars[position].code
-            if (isDigit(byte)) {
-                hasDigits = true
-                position++
-            } else {
-                break
-            }
-        }
-    }
-
-    if (!hasDigits) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    if (position < numberLimit && chars[position].code == C.DOT_INT) {
-        position++
-        var hasDecimalDigits = false
-        while (position < numberLimit) {
-            val byte = chars[position].code
-            if (isDigit(byte)) {
-                hasDecimalDigits = true
-                position++
-            } else {
-                break
-            }
-        }
-        if (!hasDecimalDigits) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    if (position < numberLimit) {
-        val byte = chars[position].code
-        if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {
-            var newPos = position + 1
-            position = newPos
-            if (newPos < numberLimit) {
-                val sign = chars[newPos].code
-                if (sign == C.PLUS_INT || sign == C.MINUS_INT) {
-                    newPos++
-                    position = newPos
-                }
-            }
-
-            var hasExpDigits = false
-            while (position < numberLimit) {
-                val byteCode = chars[position].code
-                if (isDigit(byteCode)) {
-                    hasExpDigits = true
-                    position++
-                } else {
-                    break
-                }
-            }
-            if (!hasExpDigits) {
-                throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)
-            }
-        }
-    }
+    skipNumberBodyCore(
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        getByte = { getByte(it) },
+        throwError = { throwError(it) },
+    )
 
     if (isQuoted) {
         consumeNumericCoercionFooter()
