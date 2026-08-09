@@ -166,7 +166,7 @@ internal class DeserializeCodeEmitter(
     private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
         val customName = subclass.annotations
             .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
-            ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String
+            ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String
         return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()
     }
 
@@ -538,7 +538,7 @@ internal class DeserializeCodeEmitter(
                     )
                 }
                 body.addStatement(
-                    C.TEMPLATE_VARIABLE,
+                    C.TEMPLATE_L,
                     C.STR_INSTANCE_VAR
                 )
             }

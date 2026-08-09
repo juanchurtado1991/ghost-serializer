@@ -120,7 +120,7 @@ internal abstract class BaseSerializeEmitter(
             C.K_FLOAT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, targetAccessor)
             C.K_SHORT -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, targetAccessor)
             C.K_BYTE -> CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, targetAccessor)
-            C.K_BOOLEAN -> CodeBlock.of(C.TEMPLATE_ACCESSOR_L, targetAccessor)
+            C.K_BOOLEAN -> CodeBlock.of(C.TEMPLATE_L, targetAccessor)
             C.K_STRING -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)
             C.K_BYTE_ARRAY -> CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)
             else -> null
@@ -434,7 +434,7 @@ internal abstract class BaseSerializeEmitter(
         val isNullable = type.isMarkedNullable
         if (isNullable && !skipNullCheck) {
             code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)
-            code.addStatement(C.STR_NULL_VAL_CALL)
+            code.addStatement(C.STR_WRITER_NULL_VAL)
             code.nextControlFlow(C.STR_ELSE)
         }
 
@@ -490,14 +490,14 @@ internal abstract class BaseSerializeEmitter(
             }
 
             typeName == C.K_INT -> {
-                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
             }
 
             typeName == C.K_LONG -> {
                 if (isProto) {
                     code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
                 } else {
-                    code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                    code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
                 }
             }
 
@@ -505,24 +505,24 @@ internal abstract class BaseSerializeEmitter(
                 if (isProto) {
                     code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)
                 } else {
-                    code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                    code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
                 }
             }
 
             typeName == C.K_STRING -> {
-                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
             }
 
             typeName == C.K_BOOLEAN -> {
-                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
             }
 
             typeName == C.K_DOUBLE -> {
-                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
             }
 
             typeName == C.K_FLOAT -> {
-                code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)
+                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
             }
 
             typeName == C.K_BYTE -> {
@@ -534,7 +534,7 @@ internal abstract class BaseSerializeEmitter(
             }
 
             typeName == C.K_CHAR -> {
-                code.addStatement(C.STR_WRITER_VAL_L, accessor)
+                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)
             }
 
             typeName == C.K_BYTE_ARRAY -> {
@@ -673,7 +673,7 @@ internal abstract class BaseSerializeEmitter(
      * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
      */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
-        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST_OBJ)
+        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST)
 
         contextualSerializers.forEach { (type, name) ->
             val nonNullableType = type.makeNotNullable()

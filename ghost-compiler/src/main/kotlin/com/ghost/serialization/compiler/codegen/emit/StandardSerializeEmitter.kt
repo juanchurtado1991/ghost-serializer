@@ -60,7 +60,7 @@ internal class StandardSerializeEmitter(
             // Open new objects in the target path
             targetPath.drop(currentPath.size).forEach { segment ->
                 code.addStatement(
-                    C.STR_WRITER_WRITE_NAME_VAL,
+                    C.STR_WRITE_NAME_RAW,
                     prefix + segment.uppercase()
                 )
                 code.addStatement(C.STR_WRITER_BEGIN_OBJ)

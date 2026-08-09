@@ -141,7 +141,7 @@ internal class GhostCodeGenerator(
             .addProperty(
                 PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer(C.MARKER, context.finalTypeName)
+                    .initializer(C.STR_FORMAT_S, context.finalTypeName)
                     .build()
             )
 

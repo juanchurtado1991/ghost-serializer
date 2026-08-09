@@ -414,7 +414,7 @@ class GhostSerializationProcessor(
      * Splitting the structure into chunks if there are many models to avoid JVM method limits.
      */
     private fun generateModuleRegistry() {
-        val serializerType = ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)
+        val serializerType = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
         val kClassType = ClassName(C.STR_REFLECT_PKG, C.STR_KCLASS)
         val type = TypeVariableName(C.STR_TYPE_T, Any::class)
         val mapType = ClassName(C.STR_COLLECTIONS_PKG, C.STR_MAP)
@@ -426,7 +426,7 @@ class GhostSerializationProcessor(
         val entries = classToSerializer.entries.toList().sortedBy { it.key.canonicalName }
         val registrySpec = TypeSpec.classBuilder(registryClassName)
             .addKdoc(C.STR_KDOC_REGISTRY)
-            .addSuperinterface(ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_REGISTRY))
+            .addSuperinterface(ClassName(C.PKG_CONTRACT, C.STR_GHOST_REGISTRY))
 
         val chunks = entries.chunked(C.REGISTRY_CHUNK_SIZE)
 
@@ -511,7 +511,7 @@ class GhostSerializationProcessor(
             .addModifiers(KModifier.OVERRIDE)
             .addAnnotation(
                 AnnotationSpec.builder(Suppress::class)
-                    .addMember(C.MARKER, C.STR_UNCHECKED_CAST)
+                    .addMember(C.STR_FORMAT_S, C.STR_UNCHECKED_CAST)
                     .build()
             )
 

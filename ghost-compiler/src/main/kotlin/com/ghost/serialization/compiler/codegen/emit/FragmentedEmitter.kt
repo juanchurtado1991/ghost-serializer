@@ -192,7 +192,7 @@ internal class FragmentedEmitter(
                     .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
             )
             .addModifiers(KModifier.PRIVATE)
-            .addParameter(C.STR_READER_VAR, readerClass)
+            .addParameter(C.STR_READER, readerClass)
             .addParameter(C.STR_CTX_VAR, contextClassName)
             .addParameter(C.STR_INDEX_VAR, INT)
 
@@ -236,7 +236,7 @@ internal class FragmentedEmitter(
                 C.TEMPLATE_CALL_VALIDATION,
                 C.STR_FUN_VALIDATE_FIELDS,
                 C.STR_CTX_VAR,
-                C.STR_READER_VAR
+                C.STR_READER
             )
         }
     }
@@ -260,7 +260,7 @@ internal class FragmentedEmitter(
         val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)
             .addModifiers(KModifier.PRIVATE)
             .addParameter(C.STR_CTX_VAR, contextClassName)
-            .addParameter(C.STR_READER_VAR, readerClass)
+            .addParameter(C.STR_READER, readerClass)
 
         val funBody = CodeBlock.builder()
         for (maskIdx in C.VAL_ZERO until maskCount) {
@@ -353,7 +353,7 @@ internal class FragmentedEmitter(
                 )
             }
             body.addStatement(C.STR_PAREN)
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
             return
         }
 
@@ -392,10 +392,10 @@ internal class FragmentedEmitter(
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
             body.endControlFlow()
         } else {
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
         }
     }
 }

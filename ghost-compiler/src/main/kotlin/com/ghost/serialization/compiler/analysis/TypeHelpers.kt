@@ -148,7 +148,7 @@ internal fun KSType.isString(): Boolean {
  */
 internal fun KSType.isGhost(): Boolean {
     return declaration.annotations.any {
-        it.shortName.asString() == C.GHOST_SERIALIZATION
+        it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION
     }
 }
 

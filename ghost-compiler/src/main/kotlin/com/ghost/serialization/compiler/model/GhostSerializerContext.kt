@@ -124,7 +124,7 @@ internal class GhostSerializerContext private constructor(
             val discriminator = if (parentSealedClass != null) {
                 val customName = classDeclaration.annotations
                     .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
-                    ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String
+                    ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String
                 if (!customName.isNullOrEmpty()) customName else classDeclaration.simpleName.asString()
             } else {
                 null
@@ -143,7 +143,7 @@ internal class GhostSerializerContext private constructor(
             val customTypeName = classDeclaration.annotations
                 .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
                 ?.arguments
-                ?.find { it.name?.asString() == C.ARG_NAME }
+                ?.find { it.name?.asString() == C.NAME }
                 ?.value as? String ?: C.STR_EMPTY
 
             val isInferred = (if (discriminator != null) {
