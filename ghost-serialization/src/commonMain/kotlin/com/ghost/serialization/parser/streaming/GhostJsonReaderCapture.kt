@@ -4,6 +4,7 @@ package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.types.RawJson
+import com.ghost.serialization.parser.common.captureJsonValueScan
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -41,41 +42,7 @@ fun GhostJsonReader.captureRawJson(): RawJson {
 fun GhostJsonReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes
 
 private fun GhostJsonReader.captureReaderValueBytes() {
-    val localLimit = limit
-    val first = getByte(position++)
-    when (first) {
-        C.OPEN_OBJ_INT, C.OPEN_ARR_INT -> {
-            var depth = 1
-            while (position < localLimit && depth > 0) {
-                when (getByte(position++)) {
-                    C.QUOTE_INT -> captureReaderSkipStringBytes(localLimit)
-                    C.OPEN_OBJ_INT, C.OPEN_ARR_INT -> depth++
-                    C.CLOSE_OBJ_INT, C.CLOSE_ARR_INT -> depth--
-                }
-            }
-        }
-
-        C.QUOTE_INT -> captureReaderSkipStringBytes(localLimit)
-        C.TRUE_CHAR_INT -> position += C.TRUE_TAIL_LEN
-        C.FALSE_CHAR_INT -> position += C.FALSE_TAIL_LEN
-        C.NULL_CHAR_INT -> position += C.NULL_TAIL_LEN
-        else -> {
-            while (position < localLimit) {
-                val tokenByte = getByte(position)
-                if (tokenByte == C.COMMA_INT || tokenByte == C.CLOSE_OBJ_INT || tokenByte == C.CLOSE_ARR_INT || tokenByte <= C.SPACE_INT) break
-                position++
-            }
-        }
-    }
-}
-
-private fun GhostJsonReader.captureReaderSkipStringBytes(localLimit: Int) {
-    while (position < localLimit) {
-        when (getByte(position++)) {
-            C.QUOTE_INT -> return
-            C.BACKSLASH_INT -> if (position < localLimit) position++
-        }
-    }
+    position = captureJsonValueScan(position, limit) { index -> getByte(index) }
 }
 
 private fun GhostJsonReader.captureReaderRangeBytes(start: Int, length: Int): ByteArray {

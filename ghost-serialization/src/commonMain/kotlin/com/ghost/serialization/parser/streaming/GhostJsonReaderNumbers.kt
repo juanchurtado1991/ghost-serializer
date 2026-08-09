@@ -4,6 +4,8 @@
 package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.accumulateIntWithOverflowCheck
+import com.ghost.serialization.parser.common.accumulateLongWithOverflowCheck
 import com.ghost.serialization.parser.common.getDoublePowerOfTen
 import com.ghost.serialization.parser.common.getFloatPowerOfTen
 import com.ghost.serialization.parser.common.isDigit
@@ -364,11 +366,9 @@ private fun GhostJsonReader.parseIntDigits(
             accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
                 accumulatedValue * C.BASE_TEN + digit
             } else {
-                calculateIntWithOverflowCheck(
-                    accumulatedValue,
-                    digit,
-                    isNegative
-                )
+                accumulateIntWithOverflowCheck(accumulatedValue, digit, isNegative) {
+                    throwError(C.ERR_INT_OVERFLOW)
+                }
             }
             digitCount++
             hasDigitsFound = true
@@ -406,11 +406,9 @@ private fun GhostJsonReader.parseLongDigits(
             accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
                 accumulatedValue * C.BASE_TEN + digit
             } else {
-                calculateLongWithOverflowCheck(
-                    accumulatedValue,
-                    digit,
-                    isNegative
-                )
+                accumulateLongWithOverflowCheck(accumulatedValue, digit, isNegative) {
+                    throwError(C.ERR_LONG_OVERFLOW)
+                }
             }
             digitCount++
             hasDigitsFound = true
@@ -439,48 +437,6 @@ private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
     }
     internalSkip(1)
     skipWhitespace()
-}
-
-/**
- * Accumulates and checks Int bounds to throw
- * `GhostJsonException` on overflow.
- */
-private inline fun GhostJsonReader.calculateIntWithOverflowCheck(
-    current: Int,
-    digitValue: Int,
-    isNegative: Boolean
-): Int {
-    if (current > C.INT_OVERFLOW_LIMIT ||
-        (current == C.INT_OVERFLOW_LIMIT &&
-                digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
-    ) {
-        throwError(C.ERR_INT_OVERFLOW)
-    }
-    return current * C.BASE_TEN + digitValue
-}
-
-/**
- * Accumulates and checks Long bounds to throw
- * `GhostJsonException` on overflow.
- */
-private inline fun GhostJsonReader.calculateLongWithOverflowCheck(
-    current: Long,
-    digitValue: Int,
-    isNegative: Boolean
-): Long {
-    if (current == Long.MIN_VALUE ||
-        current > C.LONG_OVERFLOW_LIMIT ||
-        (current == C.LONG_OVERFLOW_LIMIT &&
-                digitValue > C.LONG_MAX_LAST_DIGIT)
-    ) {
-        if (isNegative && current == C.LONG_OVERFLOW_LIMIT &&
-            digitValue == C.LONG_MIN_LAST_DIGIT
-        ) {
-            return Long.MIN_VALUE
-        }
-        throwError(C.ERR_LONG_OVERFLOW)
-    }
-    return current * C.BASE_TEN + digitValue
 }
 
 /**
