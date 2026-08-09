@@ -940,7 +940,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     // ── Error handling ────────────────────────────────────────────────────────
 
     internal fun yamlError(message: String): Nothing {
-        throw GhostYamlException("$message (position=$position)")
+        throw GhostYamlException(
+            "$message${C.ERR_AT_POSITION_PAREN_PREFIX}$position${C.ERR_AT_POSITION_PAREN_SUFFIX}"
+        )
     }
 
     /** Thrown by both [readAllDocuments] overloads when a document consumed no input. */
