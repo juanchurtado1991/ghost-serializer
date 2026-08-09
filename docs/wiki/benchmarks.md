@@ -44,8 +44,9 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 ./gradlew :ghost-benchmark:benchmarkProto -PskipTests      # Proto3 JSON via GhostProto (full profile)
 ./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests
 
-# YAML spec-compliance report (not a perf benchmark — see below), fully offline
+# YAML spec-compliance reports (not perf benchmarks — see below), fully offline
 ./gradlew :ghost-serialization:yamlComplianceMatrix
+./gradlew :ghost-serialization:yamlWriterComplianceMatrix
 
 # Full README suite (cold start + all tables)
 ./gradlew :ghost-benchmark:run -PskipTests
@@ -257,6 +258,54 @@ Every known gap is tracked by case ID with a category and reason in
 [`YamlTestSuiteDeviations.kt`](../../ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlTestSuiteDeviations.kt) —
 nothing here is silently skipped. `GhostYamlTestSuiteConformanceTest` (the JUnit source of truth this report reads) fails the
 build if a tracked case ever regresses or a stale entry survives a snapshot refresh, so the two can't quietly drift apart.
+
+---
+
+## 👻 YAML Writer Conformance (Ghost-only)
+
+The reader-side report above says nothing about the **writer** (`GhostYamlFlatWriter`). This report runs every
+vendored yaml-test-suite case the reader can decode through `decode -> encode -> decode` and checks two things:
+does it reproduce the original tree (**round-trip**), and does a second, independent parser
+([kaml](https://github.com/charleskorn/kaml)) accept Ghost's own re-encoded output (**kaml oracle**)? Same offline,
+reproducible-by-anyone-who-clones-the-repo shape as the reader report.
+
+| Task | What it does |
+|:---|:---|
+| `yamlWriterComplianceMatrix` | Prints the report below; exits non-zero if any case falls outside the tracked deviations |
+
+```bash
+./gradlew :ghost-serialization:yamlWriterComplianceMatrix
+```
+
+```
+==============================================================================
+Ghost YAML Writer Conformance — vendored yaml-test-suite snapshot
+==============================================================================
+Cases loaded: 319 reader-decodable (out of 402 total)
+
+Round-trip (decode -> encode -> decode reproduces the original tree):
+  309 pass, 10 known gap(s), 0 UNEXPECTED
+  309 / 319 = 96.87%
+
+kaml oracle (an independent second parser accepts Ghost's re-encoded output):
+  287 pass, 32 known gap(s), 0 UNEXPECTED
+  287 / 319 = 89.97%
+
+Known gaps by category:
+  KAML_COMPLEX_KEY_LIMITATION   22 case(s)
+  UNQUOTED_KEY                  10 case(s)
+==============================================================================
+No unexpected deviations — every known gap is tracked in YamlWriterDeviations.kt
+```
+
+The `UNQUOTED_KEY` gap is a real writer bug: `name(key: String)` writes mapping keys as bare, unquoted plain-scalar
+text (unlike `value()`, which always double-quotes) — a key containing structurally-significant bytes (`": "`, an
+embedded newline/tab, or the stringified text of a complex key the reader already collapsed to a `String`) can
+round-trip to a different structure. `KAML_COMPLEX_KEY_LIMITATION` is **not** a Ghost bug — kaml's own parser
+rejects any mapping key that isn't a simple scalar (flow-collection-shaped or bare/empty implicit keys), a
+kotlinx.serialization-property-name design choice on kaml's side, not a YAML spec violation; every one of those
+cases round-trips correctly through Ghost's own reader. Full detail, case-by-case, in
+[`YamlWriterDeviations.kt`](../../ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlWriterDeviations.kt).
 
 ---
 
