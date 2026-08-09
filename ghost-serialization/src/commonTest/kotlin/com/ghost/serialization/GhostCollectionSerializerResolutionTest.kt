@@ -4,8 +4,10 @@ import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.SetSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
 import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 import kotlin.test.Test
@@ -80,5 +82,39 @@ class GhostCollectionSerializerResolutionTest {
         val serializer = Ghost.getSerializer(typeOf<Map<String, JsonOnlyDto>>())
         assertNotNull(serializer)
         assertTrue(serializer is MapSerializer<*>)
+    }
+
+    @Test
+    fun getSerializer_setOfYamlCapableDtoUsesGhostYamlSetSerializer() {
+        Ghost.addRegistry(object : GhostRegistry {
+            override fun prewarm() {}
+            override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
+                mapOf(YamlCapableDto::class to YamlCapableDtoSerializer)
+
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+                if (clazz == YamlCapableDto::class) YamlCapableDtoSerializer as GhostSerializer<T> else null
+        })
+
+        val serializer = Ghost.getSerializer(typeOf<Set<YamlCapableDto>>())
+        assertNotNull(serializer)
+        assertTrue(serializer is GhostYamlSetSerializer<*>)
+    }
+
+    @Test
+    fun getSerializer_setOfJsonOnlyDtoUsesSetSerializer() {
+        Ghost.addRegistry(object : GhostRegistry {
+            override fun prewarm() {}
+            override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
+                mapOf(JsonOnlyDto::class to JsonOnlyDtoSerializer)
+
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+                if (clazz == JsonOnlyDto::class) JsonOnlyDtoSerializer as GhostSerializer<T> else null
+        })
+
+        val serializer = Ghost.getSerializer(typeOf<Set<JsonOnlyDto>>())
+        assertNotNull(serializer)
+        assertTrue(serializer is SetSerializer<*>)
     }
 }

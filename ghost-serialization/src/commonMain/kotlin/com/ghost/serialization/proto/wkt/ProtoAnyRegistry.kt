@@ -46,6 +46,12 @@ object ProtoAnyRegistry {
         register(typeUrl, T::class)
     }
 
+    /** The `typeUrl` registered for [kClass], or `null` if none was registered. */
+    fun typeUrlFor(kClass: KClass<*>): String? = typeUrlByClass[kClass]
+
+    /** The [KClass] registered for [typeUrl], or `null` if none was registered. */
+    fun classFor(typeUrl: String): KClass<*>? = classByTypeUrl[typeUrl]
+
     /**
      * Serializes [message] and wraps it in a [ProtoAny] using the `typeUrl` registered for
      * [kClass] via [register].
@@ -72,13 +78,31 @@ object ProtoAnyRegistry {
 
     /**
      * Decodes the payload captured in [any] as [kClass], using the [GhostSerializer] registered
-     * with [Ghost] for that type. Does not check [any]'s `typeUrl` against [kClass] — use
-     * [unpackDynamic] when the target type is only known from the wire.
+     * with [Ghost] for that type.
      *
-     * @throws IllegalArgumentException if [kClass] has no [GhostSerializer] registered with [Ghost].
+     * When [kClass] or [any]'s `typeUrl` is registered via [register], verifies that the wire
+     * `typeUrl` matches [kClass]; a mismatch throws. Use [unpackDynamic] when the target type is
+     * only known from the wire.
+     *
+     * @throws IllegalArgumentException if [kClass] has no [GhostSerializer] registered with [Ghost],
+     *   or if a registered `typeUrl` does not match [kClass].
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> unpack(any: ProtoAny, kClass: KClass<T>): T {
+        val expectedTypeUrl = typeUrlFor(kClass)
+        if (expectedTypeUrl != null && any.typeUrl != expectedTypeUrl) {
+            Ghost.throwError(
+                "ProtoAny typeUrl mismatch: expected '$expectedTypeUrl' for ${kClass.simpleName}, " +
+                        "got '${any.typeUrl}'"
+            )
+        }
+        val registeredClass = classFor(any.typeUrl)
+        if (registeredClass != null && registeredClass != kClass) {
+            Ghost.throwError(
+                "ProtoAny typeUrl '${any.typeUrl}' is registered for ${registeredClass.simpleName}, " +
+                        "not ${kClass.simpleName}"
+            )
+        }
         val serializer = Ghost.getSerializer(kClass) as? GhostSerializer<T>
             ?: Ghost.throwError("${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}")
         return ghostProtoInternalUseFlatReader(any.value) { reader ->
