@@ -16,6 +16,7 @@ import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.common.createSourceBridge
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
+import com.ghost.serialization.parser.common.growBuffer
 import com.ghost.serialization.parser.common.scanStringImpl
 import com.ghost.serialization.parser.strings.beginObject
 import com.ghost.serialization.releaseScratchBuffer
@@ -620,16 +621,6 @@ class GhostJsonReader(
                 (digitValue1 shl C.SHIFT_8) or
                 (digitValue2 shl C.SHIFT_4) or
                 digitValue3
-    }
-
-    /**
-     * Utility helper to grow a temporary byte array buffer.
-     */
-    private fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
-        val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-        outBuffer.copyInto(newBuffer, 0, 0, outPos)
-        releaseScratchBuffer(outBuffer)
-        return newBuffer
     }
 
     /**
