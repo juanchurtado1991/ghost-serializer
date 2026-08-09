@@ -356,3 +356,99 @@ internal inline fun skipNumberBodyCore(
 
     setPosition(position)
 }
+
+/**
+ * Accumulates an [Int] from a digit run with overflow checks and early-exit when a
+ * fractional/exponent separator appears (caller rewinds and parses as floating).
+ *
+ * [forEachNumericUnit] walks the buffer/stream: [onDigitByte] receives the raw digit
+ * code unit (`'0'..'9'`); [onNonDigit] is invoked once for the first non-digit.
+ */
+internal inline fun parseIntDigitsCore(
+    isNegative: Boolean,
+    resetNextTokenByte: () -> Unit,
+    forEachNumericUnit: (
+        onDigitByte: (Int) -> Unit,
+        onNonDigit: (Int) -> Unit,
+    ) -> Unit,
+    crossinline onNumericSeparator: () -> Int,
+    crossinline throwError: (String) -> Nothing,
+): Int {
+    var accumulatedValue = 0
+    var digitCount = 0
+    var hasDigitsFound = false
+    resetNextTokenByte()
+    var earlyExitResult: Int? = null
+
+    forEachNumericUnit(
+        { byte ->
+            val digit = byte - C.ZERO_INT
+            accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
+                accumulatedValue * C.BASE_TEN + digit
+            } else {
+                accumulateIntWithOverflowCheck(accumulatedValue, digit, isNegative) {
+                    throwError(C.ERR_INT_OVERFLOW)
+                }
+            }
+            digitCount++
+            hasDigitsFound = true
+        },
+        { byte ->
+            if (isNumericSeparator(byte)) {
+                earlyExitResult = onNumericSeparator()
+            }
+        },
+    )
+
+    earlyExitResult?.let { return it }
+    if (!hasDigitsFound) {
+        throwError(C.ERR_EXPECTED_INT_PART)
+    }
+    return accumulatedValue
+}
+
+/**
+ * Accumulates a [Long] from a digit run; same early-exit contract as [parseIntDigitsCore].
+ */
+internal inline fun parseLongDigitsCore(
+    isNegative: Boolean,
+    resetNextTokenByte: () -> Unit,
+    forEachNumericUnit: (
+        onDigitByte: (Int) -> Unit,
+        onNonDigit: (Int) -> Unit,
+    ) -> Unit,
+    crossinline onNumericSeparator: () -> Long,
+    crossinline throwError: (String) -> Nothing,
+): Long {
+    var accumulatedValue = 0L
+    var digitCount = 0
+    var hasDigitsFound = false
+    resetNextTokenByte()
+    var earlyExitResult: Long? = null
+
+    forEachNumericUnit(
+        { byte ->
+            val digit = byte - C.ZERO_INT
+            accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
+                accumulatedValue * C.BASE_TEN + digit
+            } else {
+                accumulateLongWithOverflowCheck(accumulatedValue, digit, isNegative) {
+                    throwError(C.ERR_LONG_OVERFLOW)
+                }
+            }
+            digitCount++
+            hasDigitsFound = true
+        },
+        { byte ->
+            if (isNumericSeparator(byte)) {
+                earlyExitResult = onNumericSeparator()
+            }
+        },
+    )
+
+    earlyExitResult?.let { return it }
+    if (!hasDigitsFound) {
+        throwError(C.ERR_EXPECTED_INT_PART)
+    }
+    return accumulatedValue
+}

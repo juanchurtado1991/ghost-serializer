@@ -4,15 +4,14 @@
 package com.ghost.serialization.parser.strings
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.accumulateIntWithOverflowCheck
-import com.ghost.serialization.parser.common.accumulateLongWithOverflowCheck
 import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.finalizeParsedDouble
 import com.ghost.serialization.parser.common.finalizeParsedFloat
 import com.ghost.serialization.parser.common.isDigit
-import com.ghost.serialization.parser.common.isNumericSeparator
 import com.ghost.serialization.parser.common.parseExponentValueCore
+import com.ghost.serialization.parser.common.parseIntDigitsCore
 import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
+import com.ghost.serialization.parser.common.parseLongDigitsCore
 import com.ghost.serialization.parser.common.prepareNumericHeaderCore
 import com.ghost.serialization.parser.common.skipNumberBodyCore
 import com.ghost.serialization.parser.common.validateLeadingZeroCore
@@ -139,85 +138,55 @@ private fun GhostJsonStringReader.prepareNumericHeader(): Int =
     )
 
 private fun GhostJsonStringReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
-    var accumulatedValue = 0
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    var earlyExitResult: Int? = null
-
-    val localLimit = limit
-    val chars = rawChars
-    while (position < localLimit) {
-        val byte = chars[position].code
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                accumulateIntWithOverflowCheck(accumulatedValue, digit, isNegative) {
-                    throwError(C.ERR_INT_OVERFLOW)
+    return parseIntDigitsCore(
+        isNegative = isNegative,
+        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
+        forEachNumericUnit = { onDigitByte, onNonDigit ->
+            val localLimit = limit
+            val chars = rawChars
+            while (position < localLimit) {
+                val byte = chars[position].code
+                if (isDigit(byte)) {
+                    onDigitByte(byte)
+                    position++
+                } else {
+                    onNonDigit(byte)
+                    break
                 }
             }
-            digitCount++
-            hasDigitsFound = true
-            position++
-        } else {
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toInt()
-            }
-            break
-        }
-    }
-
-    if (earlyExitResult != null) {
-        return earlyExitResult
-    }
-    if (!hasDigitsFound) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-    return accumulatedValue
+        },
+        onNumericSeparator = {
+            position = startOfNumber
+            nextDouble().toInt()
+        },
+        throwError = { throwError(it) },
+    )
 }
 
 private fun GhostJsonStringReader.parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
-    var accumulatedValue = 0L
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    var earlyExitResult: Long? = null
-
-    val localLimit = limit
-    val chars = rawChars
-    while (position < localLimit) {
-        val byte = chars[position].code
-        if (isDigit(byte)) {
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                accumulateLongWithOverflowCheck(accumulatedValue, digit, isNegative) {
-                    throwError(C.ERR_LONG_OVERFLOW)
+    return parseLongDigitsCore(
+        isNegative = isNegative,
+        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
+        forEachNumericUnit = { onDigitByte, onNonDigit ->
+            val localLimit = limit
+            val chars = rawChars
+            while (position < localLimit) {
+                val byte = chars[position].code
+                if (isDigit(byte)) {
+                    onDigitByte(byte)
+                    position++
+                } else {
+                    onNonDigit(byte)
+                    break
                 }
             }
-            digitCount++
-            hasDigitsFound = true
-            position++
-        } else {
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toLong()
-            }
-            break
-        }
-    }
-
-    if (earlyExitResult != null) {
-        return earlyExitResult
-    }
-    if (!hasDigitsFound) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-    return accumulatedValue
+        },
+        onNumericSeparator = {
+            position = startOfNumber
+            nextDouble().toLong()
+        },
+        throwError = { throwError(it) },
+    )
 }
 
 private inline fun GhostJsonStringReader.consumeNumericCoercionFooter() {
