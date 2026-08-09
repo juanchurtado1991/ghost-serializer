@@ -172,7 +172,16 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         inFlow: Boolean,
         expectedTag: Int = GhostYamlTags.TAG_NONE,
         strictDedent: Boolean = false,
-        allowMappingRedirect: Boolean = true
+        allowMappingRedirect: Boolean = true,
+        // Distinct from `indent`: if this value turns out to be a plain scalar, later lines only
+        // need to be indented more than *this* to keep folding into it — normally the same as
+        // `indent`, since a value read inline (same line as its key's ':') and an already-known
+        // nested-collection's own indent boundary coincide. The one case they diverge is a
+        // mapping value that starts on its own line (resolveValueAfterColon's newline branch):
+        // `indent` there is the *auto-detected column of this specific value* (needed unchanged
+        // if it turns out to be a nested block collection instead), but a plain scalar's fold
+        // boundary per the YAML spec is the *enclosing mapping's* own indent, not the value's.
+        foldIndent: Int = indent
     ): Any? {
         skipInlineWhitespace()
         val localLimit = limit
@@ -193,7 +202,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.ASTERISK_BYTE -> readAliasOrMappingKey(indent, inFlow)                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }
-            C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
+            C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)
             // '%' is reserved for directives and can never start a plain scalar (no "followed by
             // a safe character" exception the way '-'/'?'/':' get) — a directive-shaped line
             // appearing where a value is expected (e.g. after the "---" it should have preceded)
@@ -201,7 +210,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.PERCENT_BYTE -> yamlError("A plain scalar cannot start with '%' — reserved for directives")
             C.QUESTION_BYTE ->
                 if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
-                else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
+                else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)
             C.DASH_BYTE -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
@@ -216,7 +225,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 }
             }
 
-            else -> readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
+            else -> readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)
         }
     }
 
@@ -364,7 +373,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
                         null
                     } else {
-                        readValue(valueIndent, inFlow = false)
+                        // foldIndent = blockIndent (not valueIndent): if this value turns out to
+                        // be a plain scalar, later continuation lines only need to be indented
+                        // more than the *enclosing mapping's* indent to keep folding — matching
+                        // the inline-value case below — not more than this value's own
+                        // auto-detected column, which is typically the SAME indent every
+                        // continuation line also sits at (see 4CQQ/M5C3/NB6Z/RZT7/UGM3).
+                        readValue(valueIndent, inFlow = false, foldIndent = blockIndent)
                     }
                 }
             }
@@ -459,7 +474,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         indent: Int,
         inFlow: Boolean,
         expectedTag: Int = GhostYamlTags.TAG_NONE,
-        allowMappingRedirect: Boolean = true
+        allowMappingRedirect: Boolean = true,
+        foldIndent: Int = indent
     ): Any? {
         val startPosition = position
         val localLimit = limit
@@ -538,7 +554,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
         ) {
             val firstLine = localRawData.decodeToString(startPosition, endPosition)
-            val folded = if (inFlow) foldFlowPlainScalarContinuation(firstLine) else foldPlainScalarContinuation(indent, firstLine)
+            val folded = if (inFlow) foldFlowPlainScalarContinuation(firstLine) else foldPlainScalarContinuation(foldIndent, firstLine)
             if (folded != null) {
                 val foldedBytes = folded.encodeToByteArray()
                 return interpretScalar(foldedBytes, 0, foldedBytes.size, expectedTag)

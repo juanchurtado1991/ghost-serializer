@@ -65,7 +65,6 @@ internal val REASON_LABELS: Map<String, String> = mapOf(
  */
 val deviationsInOutcome: Set<DeviationCase> = setOf(
     "35KP" because REASON_TAG, // Tags for Root Objects
-    "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
     "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
@@ -73,19 +72,15 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
-    "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
-    "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
     "Q9WF" because REASON_FLOW_COLLECTION, // Spec Example 6.12. Separation Spaces (flow mapping used as an implicit block-mapping key: readKey has no bracket-depth tracking, so it breaks at the key's own first inner ':' instead of treating "{ first: Sammy, last: Sosa }" as one unit)
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
-    "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
-    "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UV7Q" because REASON_TAB, // Legal tab after indentation
     "V9D5" because REASON_EXPLICIT_KEY, // Spec Example 8.19. Compact Block Mappings (an explicit key's compact-notation nested mapping doesn't stop at the right place: it swallows the outer pair's own ": value" continuation line as a second entry of itself instead of returning control to readExplicitKeyEntry)
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
@@ -105,7 +100,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
 /** See [deviationsInOutcome]. */
 val deviationsInValue: Set<DeviationCase> = setOf(
     "35KP" because REASON_TAG, // Tags for Root Objects
-    "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4QFQ" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator [1.3]
     "4WA9" because REASON_BLOCK_SCALAR, // Literal scalars
     "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
@@ -121,10 +115,7 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "MJS9" because REASON_BLOCK_SCALAR, // Spec Example 6.7. Block Folding
-    "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "R4YG" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator
-    "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
-    "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UV7Q" because REASON_TAB, // Legal tab after indentation
 )
