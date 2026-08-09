@@ -9,6 +9,16 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Canonical fixture lives in ghost-benchmark; share via sourceSets (no project dep —
+// ghost-benchmark already depends on this module).
+sourceSets {
+    test {
+        resources.srcDir(
+            rootProject.layout.projectDirectory.dir("ghost-benchmark/src/main/resources"),
+        )
+    }
+}
+
 dependencies {
     implementation(project(":ghost-api"))
     implementation(project(":ghost-serialization"))
