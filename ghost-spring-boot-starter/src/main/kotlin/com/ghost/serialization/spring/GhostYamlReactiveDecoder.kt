@@ -12,7 +12,6 @@ import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.util.MimeType
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import kotlin.reflect.KClass
 
 class GhostYamlReactiveDecoder : AbstractDecoder<Any>(
     GhostSpringMediaTypes.MIME_APPLICATION_YAML,
@@ -20,9 +19,8 @@ class GhostYamlReactiveDecoder : AbstractDecoder<Any>(
     GhostSpringMediaTypes.MIME_TEXT_YAML,
 ) {
     override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-        val clazz = elementType.toClass()
-        val serializer = Ghost.getSerializer(clazz.kotlin)
-        return super.canDecode(elementType, mimeType) && serializer is GhostYamlSerializer<*>
+        return super.canDecode(elementType, mimeType) &&
+            GhostSpringTypeSerializers.getYamlSerializer(elementType) != null
     }
 
     override fun decode(
@@ -30,57 +28,44 @@ class GhostYamlReactiveDecoder : AbstractDecoder<Any>(
         elementType: ResolvableType,
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
-    ): Flux<Any> {
-        val clazz = elementType.toClass()
-        return decodeJoined(inputStream, clazz)
-    }
+    ): Flux<Any> = decodeJoined(inputStream, elementType)
 
     override fun decodeToMono(
         inputStream: Publisher<DataBuffer>,
         elementType: ResolvableType,
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
-    ): Mono<Any> {
-        val clazz = elementType.toClass()
-        return decodeJoined(inputStream, clazz).next()
-    }
+    ): Mono<Any> = decodeJoined(inputStream, elementType).next()
 
     private fun decodeJoined(
         inputStream: Publisher<DataBuffer>,
-        clazz: Class<*>
+        elementType: ResolvableType
     ): Flux<Any> = DataBufferUtils.join(inputStream).flatMapMany { buffer ->
         try {
-            Flux.just(deserializeBuffer(buffer, clazz))
+            val bytes = ByteArray(buffer.readableByteCount())
+            buffer.read(bytes)
+            Flux.just(deserializeBytes(bytes, elementType))
         } finally {
             DataBufferUtils.release(buffer)
         }
     }
 
-    private fun deserializeBuffer(buffer: DataBuffer, clazz: Class<*>): Any {
-        val bytes = ByteArray(buffer.readableByteCount())
-        buffer.read(bytes)
-        return deserializeBytes(bytes, clazz)
-    }
-
-    private fun deserializeBytes(bytes: ByteArray, clazz: Class<*>): Any {
+    private fun deserializeBytes(
+        bytes: ByteArray,
+        elementType: ResolvableType
+    ): Any {
         return try {
-            val serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
+            val serializer = GhostSpringTypeSerializers.getYamlSerializer(elementType)
                 ?: throw IllegalArgumentException(
-                    "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
+                    "${Ghost.NOT_FOUND} $elementType. ${Ghost.MISSING_ANN}"
                 )
-            if (serializer !is GhostYamlSerializer<*>) {
-                throw IllegalArgumentException(
-                    "Serializer for ${clazz.simpleName} does not implement GhostYamlSerializer"
-                )
-            }
-
             @Suppress("UNCHECKED_CAST")
             val yamlSerializer = serializer as GhostYamlSerializer<Any>
             ghostYamlInternalUseFlatReader(bytes) { reader ->
                 yamlSerializer.deserialize(reader)
             }
         } catch (e: Exception) {
-            throw GhostJsonException("$DECODE_ERROR ${clazz.simpleName}: ${e.message}")
+            throw GhostJsonException("$DECODE_ERROR $elementType: ${e.message}")
         }
     }
 
