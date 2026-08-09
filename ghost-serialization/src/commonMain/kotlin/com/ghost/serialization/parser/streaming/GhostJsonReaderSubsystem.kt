@@ -23,8 +23,11 @@ import com.ghost.serialization.parser.common.hasNextCore
 import com.ghost.serialization.parser.common.nextBooleanCore
 import com.ghost.serialization.parser.common.nextKeyCommaPreambleCore
 import com.ghost.serialization.parser.common.nextOrNullCore
+import com.ghost.serialization.parser.common.readListCore
+import com.ghost.serialization.parser.common.readSetCore
 import com.ghost.serialization.parser.common.scanStringImpl
 import com.ghost.serialization.parser.common.selectValidateCommasCore
+import com.ghost.serialization.parser.common.skipValueCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -658,49 +661,20 @@ fun GhostJsonReader.peekStringField(name: String): String? {
  * This is used to bypass unknown properties, maintaining reader alignment.
  */
 fun GhostJsonReader.skipValue() {
-    val token = peekNextToken()
-    when (token) {
-        C.OPEN_OBJ_INT -> {
-            beginObject()
-            while (hasNext()) {
-                if (peekNextToken() != C.QUOTE_INT) {
-                    throwError(C.ERR_EXPECTED_KEY)
-                }
-                skipQuotedString()
-                consumeKeySeparator()
-                skipValue()
-            }
-            endObject()
-        }
-
-        C.OPEN_ARR_INT -> {
-            beginArray()
-            while (hasNext()) {
-                skipValue()
-            }
-            endArray()
-        }
-
-        C.QUOTE_INT -> {
-            skipQuotedString()
-        }
-
-        C.TRUE_CHAR_INT -> {
-            skipAndValidateLiteral(C.TRUE_BS)
-        }
-
-        C.FALSE_CHAR_INT -> {
-            skipAndValidateLiteral(C.FALSE_BS)
-        }
-
-        C.NULL_CHAR_INT -> {
-            skipAndValidateLiteral(C.NULL_BS)
-        }
-
-        else -> {
-            skipNumber()
-        }
-    }
+    skipValueCore(
+        peekNextToken = { peekNextToken() },
+        beginObject = { beginObject() },
+        endObject = { endObject() },
+        beginArray = { beginArray() },
+        endArray = { endArray() },
+        hasNext = { hasNext() },
+        skipQuotedString = { skipQuotedString() },
+        consumeKeySeparator = { consumeKeySeparator() },
+        skipValue = { skipValue() },
+        skipAndValidateLiteral = { skipAndValidateLiteral(it) },
+        skipNumber = { skipNumber() },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -715,60 +689,36 @@ fun GhostJsonReader.skipValue() {
  * @param itemParser The parsing lambda to invoke for each array element.
  * @return A [List] containing the parsed items.
  */
-inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T> {
-    beginArray()
-    if (peekNextToken() == C.CLOSE_ARR_INT) {
-        endArray()
-        return emptyList()
-    }
-    val list = ArrayList<T>(initialCollectionCapacity)
-    val maxSize = maxCollectionSize
-
-    while (true) {
-        list.add(itemParser())
-        val next = nextNonWhitespace()
-        if (next == C.CLOSE_ARR_INT) {
-            depth--
-            break
-        }
-        if (next != C.COMMA_INT) {
-            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
-        }
-        if (list.size > maxSize) {
-            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-        }
-    }
-    return list
-}
+inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T> =
+    readListCore(
+        beginArray = { beginArray() },
+        endArray = { endArray() },
+        peekNextToken = { peekNextToken() },
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        initialCapacity = initialCollectionCapacity,
+        maxSize = maxCollectionSize,
+        itemParser = { itemParser() },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Reads a JSON array into a [Set] without an intermediate [List] allocation.
  */
-inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> {
-    beginArray()
-    if (peekNextToken() == C.CLOSE_ARR_INT) {
-        endArray()
-        return emptySet()
-    }
-    val set = HashSet<T>(initialCollectionCapacity)
-    val maxSize = maxCollectionSize
-
-    while (true) {
-        set.add(itemParser())
-        val next = nextNonWhitespace()
-        if (next == C.CLOSE_ARR_INT) {
-            depth--
-            break
-        }
-        if (next != C.COMMA_INT) {
-            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
-        }
-        if (set.size > maxSize) {
-            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-        }
-    }
-    return set
-}
+inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> =
+    readSetCore(
+        beginArray = { beginArray() },
+        endArray = { endArray() },
+        peekNextToken = { peekNextToken() },
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        initialCapacity = initialCollectionCapacity,
+        maxSize = maxCollectionSize,
+        itemParser = { itemParser() },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Decodes a JSON object into a [Map] of key-value pairs, using the provided [keyParser] and [valueParser] lambdas.

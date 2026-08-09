@@ -467,3 +467,163 @@ internal inline fun handleSelectNoMatchCore(
     }
     return C.MATCH_NONE
 }
+
+/**
+ * Shared skip-value orchestration for streaming and string JSON readers.
+ *
+ * Structural recursion goes through [skipValue] so each reader keeps a single
+ * entry point; adapters stay monomorphic after inlining into that entry point.
+ */
+internal inline fun skipValueCore(
+    peekNextToken: () -> Int,
+    beginObject: () -> Unit,
+    endObject: () -> Unit,
+    beginArray: () -> Unit,
+    endArray: () -> Unit,
+    hasNext: () -> Boolean,
+    skipQuotedString: () -> Unit,
+    consumeKeySeparator: () -> Unit,
+    skipValue: () -> Unit,
+    skipAndValidateLiteral: (ByteString) -> Unit,
+    skipNumber: () -> Unit,
+    throwError: (String) -> Nothing,
+) {
+    val token = peekNextToken()
+    when (token) {
+        C.OPEN_OBJ_INT -> {
+            beginObject()
+            while (hasNext()) {
+                if (peekNextToken() != C.QUOTE_INT) {
+                    throwError(C.ERR_EXPECTED_KEY)
+                }
+                skipQuotedString()
+                consumeKeySeparator()
+                skipValue()
+            }
+            endObject()
+        }
+
+        C.OPEN_ARR_INT -> {
+            beginArray()
+            while (hasNext()) {
+                skipValue()
+            }
+            endArray()
+        }
+
+        C.QUOTE_INT -> {
+            skipQuotedString()
+        }
+
+        C.TRUE_CHAR_INT -> {
+            skipAndValidateLiteral(C.TRUE_BS)
+        }
+
+        C.FALSE_CHAR_INT -> {
+            skipAndValidateLiteral(C.FALSE_BS)
+        }
+
+        C.NULL_CHAR_INT -> {
+            skipAndValidateLiteral(C.NULL_BS)
+        }
+
+        else -> {
+            skipNumber()
+        }
+    }
+}
+
+/**
+ * Shared array→[List] decode for streaming and string readers.
+ *
+ * Closing `]` decrements depth only when [getDepth] `> 0`, matching [endArrayCore]
+ * (safer than bare decrement if depth were already zero).
+ *
+ * `@PublishedApi` because public inline `readList` wrappers call this core.
+ */
+@PublishedApi
+internal inline fun <T> readListCore(
+    beginArray: () -> Unit,
+    endArray: () -> Unit,
+    peekNextToken: () -> Int,
+    nextNonWhitespace: () -> Int,
+    getDepth: () -> Int,
+    setDepth: (Int) -> Unit,
+    initialCapacity: Int,
+    maxSize: Int,
+    itemParser: () -> T,
+    throwError: (String) -> Nothing,
+): List<T> {
+    beginArray()
+    if (peekNextToken() == C.CLOSE_ARR_INT) {
+        endArray()
+        return emptyList()
+    }
+    val list = ArrayList<T>(initialCapacity)
+
+    while (true) {
+        list.add(itemParser())
+        val next = nextNonWhitespace()
+        if (next == C.CLOSE_ARR_INT) {
+            val depth = getDepth()
+            if (depth > 0) {
+                setDepth(depth - 1)
+            }
+            break
+        }
+        if (next != C.COMMA_INT) {
+            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
+        }
+        if (list.size > maxSize) {
+            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+        }
+    }
+    return list
+}
+
+/**
+ * Shared array→[Set] decode for streaming and string readers.
+ *
+ * Depth policy matches [readListCore] / [endArrayCore]: decrement only when depth `> 0`.
+ *
+ * `@PublishedApi` because public inline `readSet` wrappers call this core.
+ */
+@PublishedApi
+internal inline fun <T> readSetCore(
+    beginArray: () -> Unit,
+    endArray: () -> Unit,
+    peekNextToken: () -> Int,
+    nextNonWhitespace: () -> Int,
+    getDepth: () -> Int,
+    setDepth: (Int) -> Unit,
+    initialCapacity: Int,
+    maxSize: Int,
+    itemParser: () -> T,
+    throwError: (String) -> Nothing,
+): Set<T> {
+    beginArray()
+    if (peekNextToken() == C.CLOSE_ARR_INT) {
+        endArray()
+        return emptySet()
+    }
+    val set = HashSet<T>(initialCapacity)
+
+    while (true) {
+        set.add(itemParser())
+        val next = nextNonWhitespace()
+        if (next == C.CLOSE_ARR_INT) {
+            val depth = getDepth()
+            if (depth > 0) {
+                setDepth(depth - 1)
+            }
+            break
+        }
+        if (next != C.COMMA_INT) {
+            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
+        }
+        if (set.size > maxSize) {
+            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
+        }
+    }
+    return set
+}
