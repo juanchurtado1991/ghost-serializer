@@ -65,7 +65,7 @@ fun GhostJsonStringReader.nextFloat(): Float {
     var exponent = 0
     var digitCount = 0
 
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     val localLimit = limit
     val chars = rawChars
     while (position < localLimit) {
@@ -144,7 +144,7 @@ fun GhostJsonStringReader.nextDouble(): Double {
     var exponent = 0
     var digitCount = 0
 
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     val localLimit = limit
     val chars = rawChars
     while (position < localLimit) {
@@ -283,22 +283,11 @@ private fun GhostJsonStringReader.prepareNumericHeader(): Int {
     return header
 }
 
-private fun GhostJsonStringReader.handleLeadingZero() {
-    val nextCursor = position + 1
-    if (nextCursor < limit) {
-        val nextDigitByte = getByte(nextCursor)
-        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    }
-    internalSkip(1)
-}
-
 private fun GhostJsonStringReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
     var accumulatedValue = 0
     var digitCount = 0
     var hasDigitsFound = false
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     var earlyExitResult: Int? = null
 
     val localLimit = limit
@@ -337,7 +326,7 @@ private fun GhostJsonStringReader.parseLongDigits(isNegative: Boolean, startOfNu
     var accumulatedValue = 0L
     var digitCount = 0
     var hasDigitsFound = false
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
     var earlyExitResult: Long? = null
 
     val localLimit = limit
@@ -505,5 +494,5 @@ fun GhostJsonStringReader.skipNumber() {
     if (isQuoted) {
         consumeNumericCoercionFooter()
     }
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
 }

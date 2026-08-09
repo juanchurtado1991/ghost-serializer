@@ -48,7 +48,7 @@ class GhostEmitterConstantsTest {
         val constants = GhostEmitterConstants
         assertTrue(constants.STR_CUSTOM_DECODER_TEMP_READER.contains(constants.STR_GHOST_JSON_READER_QUALIFIED))
         assertTrue(constants.STR_CUSTOM_DECODER_TEMP_READER_STRING.contains(constants.STR_ENSURE_UTF8_BYTES))
-        assertTrue(constants.STR_RESET_TOKEN_BYTE_CALL.contains(constants.STR_GHOST_JSON_FLAT_READER_QUALIFIED))
+        assertTrue(constants.STR_RESET_TOKEN_BYTE_CALL.contains("${constants.PKG_PARSER_COMMON}.GhostJsonConstants"))
         assertTrue(constants.STR_CUSTOM_DECODER_UPDATE_POS_STRING.contains(constants.STR_BYTE_POSITION_TO_CHAR_POSITION))
     }
 }

@@ -159,7 +159,7 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
                             outBuffer = newBuffer
                         }
                         outBuffer[outPos++] =
-                            (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12_BITS)).toByte()
+                            (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12)).toByte()
                         outBuffer[outPos++] =
                             (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
                         outBuffer[outPos++] =
@@ -175,7 +175,7 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
                         outBuffer[outPos++] =
                             (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()
                         outBuffer[outPos++] =
-                            (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12_BITS) and C.UTF8_CONT_MASK)).toByte()
+                            (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
                         outBuffer[outPos++] =
                             (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()
                         outBuffer[outPos++] =
@@ -386,7 +386,7 @@ private fun GhostYamlFlatReader.processEscapeSequence(): Int {
         C.TAB_BYTE -> currentByteInt
         C.LOWERCASE_B_BYTE -> C.CODE_BS
         C.LOWERCASE_F_BYTE -> C.CODE_FF
-        C.LOWERCASE_N_BYTE -> C.CODE_LF
+        C.LOWERCASE_N_BYTE -> C.CHAR_LF_INT
         C.LOWERCASE_R_BYTE -> C.CODE_CR
         C.LOWERCASE_T_BYTE -> C.CODE_TAB
         C.LOWERCASE_X_BYTE -> {        // \xXX

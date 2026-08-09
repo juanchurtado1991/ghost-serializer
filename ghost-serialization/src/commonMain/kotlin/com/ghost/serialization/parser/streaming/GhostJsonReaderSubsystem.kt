@@ -353,12 +353,12 @@ fun GhostJsonReader.nextChar(): Char {
         val end = start + length
         if (length == C.SINGLE_CHAR_JSON_LENGTH && only7Bit) {
             position = end + 1
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             return getByte(start).toChar()
         }
         if (length == 0) {
             position = end + 1
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)
         }
     }
@@ -404,7 +404,7 @@ fun GhostJsonReader.consumeNull() {
         throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
     }
     position = p + 4
-    nextTokenByte = -1
+    nextTokenByte = C.RESET_TOKEN_BYTE
 }
 
 /** Reads a JSON string, or `null` when the next token is the `null` literal. */
@@ -573,7 +573,7 @@ private fun GhostJsonReader.internalSelect(
                 predictedFieldIndex = predicted + 1
                 val newPos = keyEnd + 1
                 position = newPos
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 if (consumeSeparator) {
                     val separator = when {
                         newPos >= lim -> C.MATCH_END
@@ -777,7 +777,7 @@ private fun GhostJsonReader.verifyKeyMatch(
         val endPos = start + length
         val newPos = endPos + 1
         position = newPos
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
         if (consumeSeparator) {
             val lim = limit
             if (newPos < lim) {

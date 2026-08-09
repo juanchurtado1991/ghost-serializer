@@ -210,7 +210,7 @@ class GhostJsonReader(
      */
     fun internalSkip(n: Int) {
         position += n
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
     /**
@@ -318,7 +318,7 @@ class GhostJsonReader(
         }
 
         position += size
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
     /**
@@ -350,13 +350,13 @@ class GhostJsonReader(
             val end = start + length
             if (length <= 0) {
                 position = end + 1
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 return ""
             }
             if (length > GhostHeuristics.maxStringPoolLength) {
                 val result = source.decodeJsonStringRange(start, end, only7Bit)
                 position = end + 1
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 return result
             }
 
@@ -376,7 +376,7 @@ class GhostJsonReader(
                 }
                 if (isMatch) {
                     position = end + 1
-                    nextTokenByte = -1
+                    nextTokenByte = C.RESET_TOKEN_BYTE
                     return cachedString
                 }
             }
@@ -386,7 +386,7 @@ class GhostJsonReader(
                 stringPool[poolBucketIndex] = decodedString
             }
             position = end + 1
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             return decodedString
         }
 
@@ -404,7 +404,7 @@ class GhostJsonReader(
                 val byteValue = getByte(pos++)
                 if (byteValue == C.QUOTE_INT) {
                     position = pos
-                    nextTokenByte = -1
+                    nextTokenByte = C.RESET_TOKEN_BYTE
                     return outBuffer.decodeToString(0, outPos)
                 }
 
@@ -569,7 +569,7 @@ class GhostJsonReader(
             val byteValue = getByte(pos++)
             if (byteValue == C.QUOTE_INT) {
                 position = pos
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 return
             }
 
@@ -661,7 +661,7 @@ class GhostJsonReader(
         this.rawData = newSource.rawSourceData
         this.position = 0
         this.limit = newLimit
-        this.nextTokenByte = -1
+        this.nextTokenByte = C.RESET_TOKEN_BYTE
         this.depth = 0
         this.needsCommaMask = 0L
         this.commaConsumedMask = 0L
