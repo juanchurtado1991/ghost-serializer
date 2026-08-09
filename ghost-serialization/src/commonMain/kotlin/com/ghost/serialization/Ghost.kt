@@ -7,6 +7,36 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.proto.wkt.ProtoAny
+import com.ghost.serialization.proto.wkt.ProtoAnySerializer
+import com.ghost.serialization.proto.wkt.ProtoBoolValue
+import com.ghost.serialization.proto.wkt.ProtoBoolValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoBytesValue
+import com.ghost.serialization.proto.wkt.ProtoBytesValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDoubleValue
+import com.ghost.serialization.proto.wkt.ProtoDoubleValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
+import com.ghost.serialization.proto.wkt.ProtoEmpty
+import com.ghost.serialization.proto.wkt.ProtoEmptySerializer
+import com.ghost.serialization.proto.wkt.ProtoFieldMask
+import com.ghost.serialization.proto.wkt.ProtoFieldMaskSerializer
+import com.ghost.serialization.proto.wkt.ProtoFloatValue
+import com.ghost.serialization.proto.wkt.ProtoFloatValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoInt32Value
+import com.ghost.serialization.proto.wkt.ProtoInt32ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoInt64Value
+import com.ghost.serialization.proto.wkt.ProtoInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoStringValue
+import com.ghost.serialization.proto.wkt.ProtoStringValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
+import com.ghost.serialization.proto.wkt.ProtoTimestampSerializer
+import com.ghost.serialization.proto.wkt.ProtoUInt32Value
+import com.ghost.serialization.proto.wkt.ProtoUInt32ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoUInt64Value
+import com.ghost.serialization.proto.wkt.ProtoUInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoValue
+import com.ghost.serialization.proto.wkt.ProtoValueSerializer
 import com.ghost.serialization.serializers.BooleanArraySerializer
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.ByteSerializer
@@ -28,6 +58,13 @@ import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import com.ghost.serialization.yaml.contract.GhostYamlSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlDoubleArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlFloatArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlIntArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlLongArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
 import okio.BufferedSink
 import okio.BufferedSource
 import kotlin.reflect.KClass
@@ -244,6 +281,8 @@ object Ghost {
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
         // Fast path for primitives
         getPrimitiveSerializer(clazz)?.let { return it }
+        // Built-in protobuf well-known types (idempotent with manual addRegistry)
+        getWktSerializer(clazz)?.let { return it }
 
         // Atomic lookup (Lock-free on JVM/Android)
         val cached = serializerCache[clazz] as? GhostSerializer<T>
@@ -339,6 +378,51 @@ object Ghost {
     }
 
     /**
+     * YAML entry-point lookup for primitive arrays. Kept separate from [getPrimitiveSerializer]
+     * so JSON resolution continues to return the JSON `*ArraySerializer` instances.
+     */
+    @PublishedApi
+    internal fun <T : Any> getYamlPrimitiveSerializer(
+        clazz: KClass<T>
+    ): GhostYamlSerializer<T>? {
+        return when (clazz) {
+            IntArray::class -> GhostYamlIntArraySerializer as GhostYamlSerializer<T>
+            LongArray::class -> GhostYamlLongArraySerializer as GhostYamlSerializer<T>
+            FloatArray::class -> GhostYamlFloatArraySerializer as GhostYamlSerializer<T>
+            DoubleArray::class -> GhostYamlDoubleArraySerializer as GhostYamlSerializer<T>
+            BooleanArray::class -> GhostYamlBooleanArraySerializer as GhostYamlSerializer<T>
+            else -> null
+        }
+    }
+
+    /**
+     * Built-in serializers for protobuf well-known types.
+     */
+    private fun <T : Any> getWktSerializer(
+        clazz: KClass<T>
+    ): GhostSerializer<T>? {
+        return when (clazz) {
+            ProtoTimestamp::class -> ProtoTimestampSerializer as GhostSerializer<T>
+            ProtoDuration::class -> ProtoDurationSerializer as GhostSerializer<T>
+            ProtoEmpty::class -> ProtoEmptySerializer as GhostSerializer<T>
+            ProtoFieldMask::class -> ProtoFieldMaskSerializer as GhostSerializer<T>
+            ProtoAny::class -> ProtoAnySerializer as GhostSerializer<T>
+            // ProtoStruct is a typealias for Map<String, ProtoValue> — KClass erases to Map.
+            ProtoValue::class -> ProtoValueSerializer as GhostSerializer<T>
+            ProtoBoolValue::class -> ProtoBoolValueSerializer as GhostSerializer<T>
+            ProtoStringValue::class -> ProtoStringValueSerializer as GhostSerializer<T>
+            ProtoBytesValue::class -> ProtoBytesValueSerializer as GhostSerializer<T>
+            ProtoDoubleValue::class -> ProtoDoubleValueSerializer as GhostSerializer<T>
+            ProtoFloatValue::class -> ProtoFloatValueSerializer as GhostSerializer<T>
+            ProtoInt32Value::class -> ProtoInt32ValueSerializer as GhostSerializer<T>
+            ProtoInt64Value::class -> ProtoInt64ValueSerializer as GhostSerializer<T>
+            ProtoUInt32Value::class -> ProtoUInt32ValueSerializer as GhostSerializer<T>
+            ProtoUInt64Value::class -> ProtoUInt64ValueSerializer as GhostSerializer<T>
+            else -> null
+        }
+    }
+
+    /**
      * Resolves a [GhostSerializer] instance for the specified type [type],
      * handling generic type arguments for parameterized classes like lists and maps.
      *
@@ -385,7 +469,11 @@ object Ghost {
                         val itemSerializer = getSerializer(itemType)
                             ?: return@runSynchronized null
 
-                        SetSerializer(itemSerializer)
+                        if (itemSerializer is GhostYamlSerializer<*>) {
+                            GhostYamlSetSerializer(itemSerializer)
+                        } else {
+                            SetSerializer(itemSerializer)
+                        }
                     }
 
                     Map::class -> {

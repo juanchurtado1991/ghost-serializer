@@ -170,6 +170,22 @@ class GhostYamlEntryPointTest {
     }
 
     @Test
+    fun encodeDecodeIntArrayViaYamlEntryPoints() {
+        val original = intArrayOf(1, 2, 3, -4)
+        val yaml = Ghost.encodeToYaml(original)
+        val restored = Ghost.decodeFromYaml<IntArray>(yaml)
+        assertContentEquals(original, restored)
+        assertContentEquals(original, Ghost.decodeFromYaml(Ghost.encodeToYamlBytes(original)))
+    }
+
+    @Test
+    fun encodeDecodeBooleanArrayViaYamlEntryPoints() {
+        val original = booleanArrayOf(true, false, true)
+        val yaml = Ghost.encodeToYaml(original)
+        assertContentEquals(original, Ghost.decodeFromYaml<BooleanArray>(yaml))
+    }
+
+    @Test
     fun decodeAllFromYamlStringAndBytesMatch() {
         val multi = """
             label: one
