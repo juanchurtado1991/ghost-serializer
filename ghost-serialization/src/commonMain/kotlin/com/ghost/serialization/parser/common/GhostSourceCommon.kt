@@ -261,13 +261,13 @@ internal inline fun swarHasZeroByte(v: Long): Long =
  * of the byte volume (long, never-pooled values) is never hashed.
  */
 internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long {
-    var p = start
+    var cursor = start
     var isPureAscii = true
     val matchEndLong = MATCH_END.toLong()
 
     // SWAR fast path: consume LONG_BYTES windows with no quote, backslash, or control byte.
-    while (p + LONG_BYTES <= limit) {
-        val w = ghostReadLong8(data, p)
+    while (cursor + LONG_BYTES <= limit) {
+        val w = ghostReadLong8(data, cursor)
         val hasQuote = swarHasZeroByte(w xor SWAR_QUOTES)
         val hasBackslash = swarHasZeroByte(w xor SWAR_BACKSLASHES)
         // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
@@ -278,25 +278,25 @@ internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long
         if ((w and SWAR_HIGHS) != RESULT_NONE) {
             isPureAscii = false
         }
-        p += LONG_BYTES
+        cursor += LONG_BYTES
     }
 
     // Byte tail: the window holding a boundary byte, plus the final < LONG_BYTES bytes.
     val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
     val asciiLimit = ASCII_LIMIT
-    while (p < limit) {
-        val b = data[p].toInt() and BYTE_MASK
-        if (b < asciiLimit &&
-            ((escapeMasks[b shr BITMASK_SHIFT] shr (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+    while (cursor < limit) {
+        val tokenByte = data[cursor].toInt() and BYTE_MASK
+        if (tokenByte < asciiLimit &&
+            ((escapeMasks[tokenByte shr BITMASK_SHIFT] shr (tokenByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
         ) {
-            if (b == QUOTE_INT) {
-                return packScanResult(p - start, SCAN_HASH_NONE, isPureAscii)
+            if (tokenByte == QUOTE_INT) {
+                return packScanResult(cursor - start, SCAN_HASH_NONE, isPureAscii)
             }
             return matchEndLong
-        } else if (b >= asciiLimit) {
+        } else if (tokenByte >= asciiLimit) {
             isPureAscii = false
         }
-        p++
+        cursor++
     }
     return matchEndLong
 }

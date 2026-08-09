@@ -70,6 +70,8 @@ object GhostJsonConstants {
     const val LITERAL_NULL = "null"
     const val ERR_INVALID_UNICODE_AT = "Invalid unicode escape at "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
+    /** Suffix glued onto parser error messages: `"$message$ERR_AT_POSITION_PREFIX$position"`. */
+    const val ERR_AT_POSITION_PREFIX = " at position "
 
     // --- Digit & Limit Constants ---
     const val MIN_SINGLE_DIGIT = 0
@@ -756,8 +758,8 @@ object GhostJsonConstants {
 
     @PublishedApi
     internal fun packScanResult(length: Int, hash: Int, is7Bit: Boolean): Long {
-        var res = (length.toLong() shl SCAN_LENGTH_SHIFT) or (hash.toLong() and SCAN_HASH_MASK)
-        if (is7Bit) res = res or SCAN_7BIT_BIT
-        return res
+        var result = (length.toLong() shl SCAN_LENGTH_SHIFT) or (hash.toLong() and SCAN_HASH_MASK)
+        if (is7Bit) result = result or SCAN_7BIT_BIT
+        return result
     }
 }

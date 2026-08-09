@@ -353,6 +353,9 @@ internal object GhostYamlConstants {
     const val ERR_MAX_NESTING_DEPTH_SUFFIX = ") exceeded"
     const val ERR_TAB_IN_BLOCK_MAPPING_INDENT =
         "Tab character not allowed in block mapping indentation"
+    /** YAML [GhostYamlException] position suffix: `"$message$ERR_AT_POSITION_PAREN_PREFIX$pos$ERR_AT_POSITION_PAREN_SUFFIX"`. */
+    const val ERR_AT_POSITION_PAREN_PREFIX = " (position="
+    const val ERR_AT_POSITION_PAREN_SUFFIX = ")"
     const val ERR_EXPECTED_COLON_AFTER_KEY_PREFIX = "Expected ':' after key '"
     const val ERR_EXPECTED_COLON_AFTER_KEY_MID = "' at position "
     const val ERR_TAB_IN_BLOCK_SEQUENCE_INDENT =

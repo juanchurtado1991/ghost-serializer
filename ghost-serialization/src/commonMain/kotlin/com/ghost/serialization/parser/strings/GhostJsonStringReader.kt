@@ -80,7 +80,7 @@ class GhostJsonStringReader(
         val errorEnd = if (errorPosition > limit) limit else errorPosition
 
         throw GhostJsonException(
-            baseMessage = "$message at position $errorPosition",
+            baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
             computeLineCol = {
                 var columnNumber = 0
                 var lineNumber = 0

@@ -548,9 +548,9 @@ private fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end:
         val nextByte = data[currentPosition + 1]
         if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X
             var value = 0L
-            var idx = currentPosition + 2
-            while (idx < end) {
-                val currentByte = data[idx]
+            var index = currentPosition + 2
+            while (index < end) {
+                val currentByte = data[index]
                 val digit = when {
                     isDigit(currentByte) -> (currentByte - C.ZERO_BYTE).toLong()
                     currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f
@@ -558,31 +558,31 @@ private fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end:
                     else -> return null
                 }
                 value = (value shl C.HEX_SHIFT) or digit
-                idx++
+                index++
             }
             return if (isNegative) -value else value
         }
         if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O
             var value = 0L
-            var idx = currentPosition + 2
-            while (idx < end) {
-                val currentByte = data[idx]
+            var index = currentPosition + 2
+            while (index < end) {
+                val currentByte = data[index]
                 if (currentByte < C.ZERO_BYTE || currentByte > C.SEVEN_BYTE) return null // 0-7
                 val digit = (currentByte - C.ZERO_BYTE).toLong()
                 value = (value shl C.OCTAL_SHIFT) or digit
-                idx++
+                index++
             }
             return if (isNegative) -value else value
         }
         if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B
             var value = 0L
-            var idx = currentPosition + 2
-            while (idx < end) {
-                val currentByte = data[idx]
+            var index = currentPosition + 2
+            while (index < end) {
+                val currentByte = data[index]
                 if (currentByte != C.ZERO_BYTE && currentByte != C.ONE_BYTE) return null // 0 or 1
                 val digit = (currentByte - C.ZERO_BYTE).toLong()
                 value = (value shl C.BINARY_SHIFT) or digit
-                idx++
+                index++
             }
             return if (isNegative) -value else value
         }

@@ -37,9 +37,10 @@ internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(indent: Int, inFl
     // `position` yet.
     var lookahead = startPosition + 1 // '&'
     while (lookahead < localLimit) {
-        val b = localRawData[lookahead]
-        if (b == C.SPACE_BYTE || b == C.TAB_BYTE || b == C.NEWLINE_BYTE || b == C.CR_BYTE ||
-            b == C.COMMA_BYTE || b == C.RIGHT_BRACE_BYTE || b == C.RIGHT_BRACKET_BYTE
+        val tokenByte = localRawData[lookahead]
+        if (tokenByte == C.SPACE_BYTE || tokenByte == C.TAB_BYTE || tokenByte == C.NEWLINE_BYTE ||
+            tokenByte == C.CR_BYTE || tokenByte == C.COMMA_BYTE ||
+            tokenByte == C.RIGHT_BRACE_BYTE || tokenByte == C.RIGHT_BRACKET_BYTE
         ) break
         lookahead++
     }
@@ -206,11 +207,11 @@ internal fun GhostYamlFlatReader.mergeInto(target: MutableMap<String, Any?>, val
         }
 
         is List<*> -> {
-            var idx = 0
+            var index = 0
             val size = value.size
-            while (idx < size) {
-                mergeInto(target, value[idx])
-                idx++
+            while (index < size) {
+                mergeInto(target, value[index])
+                index++
             }
         }
     }

@@ -1,5 +1,5 @@
 @file:OptIn(InternalGhostApi::class)
-@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION", "NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package com.ghost.serialization.parser.streaming
 
