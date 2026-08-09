@@ -7,7 +7,6 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.finalizeParsedDouble
 import com.ghost.serialization.parser.common.finalizeParsedFloat
-import com.ghost.serialization.parser.common.isDigit
 import com.ghost.serialization.parser.common.parseExponentValueCore
 import com.ghost.serialization.parser.common.parseIntDigitsCore
 import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
@@ -72,9 +71,8 @@ fun GhostJsonStringReader.nextFloat(): Float {
         precisionLimit = C.FLOAT_PRECISION_LIMIT,
         getPosition = { position },
         setPosition = { position = it },
-        getLimit = { limit },
+        limit = limit,
         getByte = { getByte(it) },
-        readDigitRun = { onDigit -> readDigitRun(onDigit) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
@@ -100,9 +98,8 @@ fun GhostJsonStringReader.nextDouble(): Double {
         precisionLimit = C.DOUBLE_PRECISION_LIMIT,
         getPosition = { position },
         setPosition = { position = it },
-        getLimit = { limit },
+        limit = limit,
         getByte = { getByte(it) },
-        readDigitRun = { onDigit -> readDigitRun(onDigit) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
@@ -189,20 +186,6 @@ private fun GhostJsonStringReader.validateLeadingZero() {
         getByte = { getByte(it) },
         throwError = { throwError(it) },
     )
-}
-
-private inline fun GhostJsonStringReader.readDigitRun(onDigit: (Int) -> Unit) {
-    val localLimit = limit
-    val chars = rawChars
-    while (position < localLimit) {
-        val byte = chars[position].code
-        if (isDigit(byte)) {
-            onDigit(byte)
-            position++
-        } else {
-            break
-        }
-    }
 }
 
 fun GhostJsonStringReader.skipNumber() {

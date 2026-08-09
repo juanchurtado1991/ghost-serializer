@@ -8,7 +8,6 @@ import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.finalizeParsedDouble
 import com.ghost.serialization.parser.common.finalizeParsedFloat
 import com.ghost.serialization.parser.common.handleLeadingZeroCore
-import com.ghost.serialization.parser.common.isDigit
 import com.ghost.serialization.parser.common.parseExponentValueCore
 import com.ghost.serialization.parser.common.parseIntDigitsCore
 import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
@@ -39,9 +38,8 @@ fun GhostJsonFlatReader.nextFloatExtension(): Float {
         precisionLimit = C.FLOAT_PRECISION_LIMIT,
         getPosition = { position },
         setPosition = { position = it },
-        getLimit = { limit },
+        limit = limit,
         getByte = { getByte(it) },
-        readDigitRun = { onDigit -> readDigitRun(onDigit) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
@@ -76,9 +74,8 @@ fun GhostJsonFlatReader.nextDoubleExtension(): Double {
         precisionLimit = C.DOUBLE_PRECISION_LIMIT,
         getPosition = { position },
         setPosition = { position = it },
-        getLimit = { limit },
+        limit = limit,
         getByte = { getByte(it) },
-        readDigitRun = { onDigit -> readDigitRun(onDigit) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
@@ -262,20 +259,6 @@ private fun GhostJsonFlatReader.validateLeadingZero() {
         getByte = { getByte(it) },
         throwError = { throwError(it) },
     )
-}
-
-private inline fun GhostJsonFlatReader.readDigitRun(onDigit: (Int) -> Unit) {
-    val data = rawData
-    val localLimit = limit
-    while (position < localLimit) {
-        val byte = data[position].toInt() and C.BYTE_MASK
-        if (isDigit(byte)) {
-            onDigit(byte)
-            position++
-        } else {
-            break
-        }
-    }
 }
 
 /**
