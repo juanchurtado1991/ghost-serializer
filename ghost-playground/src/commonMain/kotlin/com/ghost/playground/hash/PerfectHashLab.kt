@@ -8,8 +8,28 @@ object PerfectHashLab {
     private const val COLLISION_HASH_MULTIPLIER = 31
     private const val BYTE_MASK = 0xFF
     private const val BYTE_MASK_LONG = 0xFFL
-    private const val EMPTY_TABLE_SIZE = 128
-    private val TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)
+    private const val SHIFT_8 = 8
+    private const val SHIFT_16 = 16
+    private const val SHIFT_24 = 24
+    private const val SHIFT_32 = 32
+    private const val EMPTY_SLOT = -1
+    private const val TABLE_SIZE_128 = 128
+    private const val TABLE_SIZE_256 = 256
+    private const val TABLE_SIZE_512 = 512
+    private const val TABLE_SIZE_1024 = 1024
+    private const val TABLE_SIZE_2048 = 2048
+    private const val TABLE_SIZE_4096 = 4096
+    private const val TABLE_SIZE_8192 = 8192
+    private const val EMPTY_TABLE_SIZE = TABLE_SIZE_128
+    private val TABLE_SIZES = intArrayOf(
+        TABLE_SIZE_128,
+        TABLE_SIZE_256,
+        TABLE_SIZE_512,
+        TABLE_SIZE_1024,
+        TABLE_SIZE_2048,
+        TABLE_SIZE_4096,
+        TABLE_SIZE_8192,
+    )
 
     fun findPerfectHash(names: List<String>): PerfectHashConfig {
         if (names.isEmpty()) {
@@ -34,7 +54,7 @@ object PerfectHashLab {
                 EMPTY_TABLE_SIZE,
                 extendedKeyHash = false
             ) to
-                    IntArray(EMPTY_TABLE_SIZE) { -1 }
+                    IntArray(EMPTY_TABLE_SIZE) { EMPTY_SLOT }
         }
         findInternal(names, useExtendedKeyHash = false)?.let { return it.config to it.dispatch }
         findInternal(names, useExtendedKeyHash = true)?.let { return it.config to it.dispatch }
@@ -49,7 +69,7 @@ object PerfectHashLab {
     fun dispatchPreview(names: List<String>): Pair<List<DispatchSlot>, String> {
         val (cfg, table) = dispatchTable(names)
         val slots = List(cfg.tableSize) { slotIndex ->
-            val fieldIndex = table.getOrNull(slotIndex) ?: -1
+            val fieldIndex = table.getOrNull(slotIndex) ?: EMPTY_SLOT
             val name = if (fieldIndex >= 0) names[fieldIndex] else null
             DispatchSlot(slotIndex, name, name != null)
         }
@@ -75,7 +95,7 @@ object PerfectHashLab {
 
         override fun hashCode(): Int {
             var result = config.hashCode()
-            result = 31 * result + dispatch.contentHashCode()
+            result = COLLISION_HASH_MULTIPLIER * result + dispatch.contentHashCode()
             return result
         }
     }
@@ -87,14 +107,14 @@ object PerfectHashLab {
             val tableMask = tableSize - 1
             for (multiplier in HASH_MULTIPLIER_START..HASH_MULTIPLIER_LIMIT step HASH_MULTIPLIER_STEP) {
                 for (shift in 0..HASH_SHIFT_LIMIT) {
-                    val dispatch = IntArray(tableSize) { -1 }
+                    val dispatch = IntArray(tableSize) { EMPTY_SLOT }
                     var collision = false
                     for (index in rawBytes.indices) {
                         val bytes = rawBytes[index]
                         if (bytes.isEmpty()) continue
                         val key = computeDispatchKey(bytes, hasCollisions)
                         val hash = ((key * multiplier + bytes.size) shr shift) and tableMask
-                        if (dispatch[hash] == -1) {
+                        if (dispatch[hash] == EMPTY_SLOT) {
                             dispatch[hash] = index
                         } else {
                             collision = true
@@ -124,10 +144,10 @@ object PerfectHashLab {
             if (bytes.isEmpty()) continue
             var mask = 0L
             if (bytes.isNotEmpty()) mask = mask or (bytes[0].toLong() and BYTE_MASK_LONG)
-            if (bytes.size >= 2) mask = mask or ((bytes[1].toLong() and BYTE_MASK_LONG) shl 8)
-            if (bytes.size >= 3) mask = mask or ((bytes[2].toLong() and BYTE_MASK_LONG) shl 16)
-            if (bytes.size >= 4) mask = mask or ((bytes[3].toLong() and BYTE_MASK_LONG) shl 24)
-            val packed = mask or (bytes.size.toLong() shl 32)
+            if (bytes.size >= 2) mask = mask or ((bytes[1].toLong() and BYTE_MASK_LONG) shl SHIFT_8)
+            if (bytes.size >= 3) mask = mask or ((bytes[2].toLong() and BYTE_MASK_LONG) shl SHIFT_16)
+            if (bytes.size >= 4) mask = mask or ((bytes[3].toLong() and BYTE_MASK_LONG) shl SHIFT_24)
+            val packed = mask or (bytes.size.toLong() shl SHIFT_32)
             if (!seen.add(packed)) return true
         }
         return false
@@ -136,9 +156,9 @@ object PerfectHashLab {
     private fun computeDispatchKey(bytes: ByteArray, hasCollisions: Boolean): Int {
         var key = 0
         if (bytes.isNotEmpty()) key = key or (bytes[0].toInt() and BYTE_MASK)
-        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl 8)
-        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl 16)
-        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl 24)
+        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
+        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
+        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
         if (hasCollisions) {
             var ci = 4
             while (ci < bytes.size) {

@@ -9,8 +9,8 @@ import com.ghost.serialization.yaml.exception.GhostYamlException
  * Coverage-guided robustness fuzzing for [GhostYamlFlatReader] — a hand-rolled byte-level state
  * machine (block/flow collections, anchors, tags, block scalars, directives) with no generated
  * bounds-checking, the same class of code that already produced two real bugs in the proto WKT
- * parsers this session (see [com.ghost.serialization.proto.wkt.ProtoWktFuzzTest]). The goal here
- * is crash-safety, not correctness — [com.ghost.serialization.yaml.testsuite.GhostYamlTestSuiteConformanceTest]
+ * parsers this session (see `ProtoWktFuzzTest`). The goal here
+ * is crash-safety, not correctness — `GhostYamlTestSuiteConformanceTest`
  * already covers correctness against the yaml-test-suite reference for well-formed and
  * known-invalid input.
  *

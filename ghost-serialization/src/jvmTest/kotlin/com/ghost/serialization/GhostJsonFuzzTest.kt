@@ -11,7 +11,7 @@ import com.ghost.serialization.parser.streaming.skipValue
  * Coverage-guided robustness fuzzing for Ghost's two core JSON parsers —
  * [GhostJsonFlatReader] (in-memory `ByteArray`) and [GhostJsonReader] (streaming/`BufferedSource`,
  * genuinely separate hot-path implementations, not just a thin wrapper over the flat reader) —
- * mirroring [com.ghost.serialization.yaml.GhostYamlFuzzTest]'s approach for the YAML parser. Both
+ * mirroring `GhostYamlFuzzTest`'s approach for the YAML parser. Both
  * are hand-rolled byte-level state machines with no generated bounds-checking. The goal here is
  * crash-safety, not correctness — [GhostCrashProofTest] and friends already cover correctness
  * against known-good and known-malformed input.

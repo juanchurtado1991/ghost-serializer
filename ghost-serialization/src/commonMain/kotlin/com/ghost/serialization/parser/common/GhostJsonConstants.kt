@@ -37,6 +37,9 @@ object GhostJsonConstants {
     const val ERR_EXPECTED_COMMA_OR_CLOSE_ARR = "Expected ',' or ']'"
     const val ERR_EXPECTED_COMMA_OR_CLOSE_OBJ = "Expected ',' or '}'"
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
+    const val ERR_EXPECTED_CHAR_PREFIX = "Expected '"
+    const val ERR_EXPECTED_CHAR_MID = "' but found '"
+    const val ERR_EXPECTED_CHAR_SUFFIX = "'"
     const val ERR_INVALID_JSON_ENCODING =
         "Invalid JSON text encoding (RFC 8259 requires UTF-8, UTF-16, or UTF-32)"
     const val ERR_INDEX_BELOW_DISCARDED_PREFIX = "Index "
@@ -740,18 +743,6 @@ object GhostJsonConstants {
         0xBF.toByte(),
         0xBD.toByte()
     )
-
-    internal object FormatUtils {
-        val DIGIT_TENS = ByteArray(100)
-        val DIGIT_ONES = ByteArray(100)
-
-        init {
-            for (i in 0 until 100) {
-                DIGIT_TENS[i] = ((i / BASE_TEN) + ASCII_OFFSET).toByte()
-                DIGIT_ONES[i] = ((i % BASE_TEN) + ASCII_OFFSET).toByte()
-            }
-        }
-    }
 
     // --- Scan results packing (Long) ---
     /** Mask to extract the 32-bit hash from the scan result Long. */

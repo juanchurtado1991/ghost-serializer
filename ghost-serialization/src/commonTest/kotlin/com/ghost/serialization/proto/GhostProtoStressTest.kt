@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 
 /**
  * Stress and repeated round-trip coverage for proto3 JSON entry points,
- * with scope comparable to [com.ghost.serialization.GhostStressAuditTest] for JSON.
+ * with scope comparable to `GhostStressAuditTest` for JSON.
  */
 class GhostProtoStressTest {
 

@@ -1,5 +1,6 @@
 package com.ghost.serialization.writer.common
 
+import com.ghost.serialization.parser.common.GhostFormatUtils
 import com.ghost.serialization.writer.common.GhostDoubleFormatter.MAX_DECIMALS
 import com.ghost.serialization.writer.common.GhostDoubleFormatter.writeLongDirect
 import kotlin.math.roundToInt
@@ -14,7 +15,8 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  *
  * ### Thresholds and Precision Limits
  * - **Fast-Path Precision:** Supports up to [MAX_DECIMALS] (9) decimal places of precision.
- * - **Magnitude Limits:** Works with values within the range `[1e-9, 1e15]`.
+ * - **Magnitude Limits:** Works with values in `[1e-9, 1e9]`
+ *   ([MICROSCOPIC_DOUBLE_THRESHOLD] / [MASSIVE_DOUBLE_THRESHOLD]).
  * - **Fallback Mechanism:** Values outside this range, non-finite values (NaN, Infinity), or microscopic
  *   numbers are delegated to the provided [fallback] lambda (which usually wraps native platform formatters).
  *
@@ -314,13 +316,13 @@ internal object GhostDoubleFormatter {
             val quotient = localValue / C.BASE_HUNDRED
             val remainder = (localValue - (quotient * C.BASE_HUNDRED)).toInt()
             localValue = quotient
-            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]
-            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]
+            scratch[--end] = GhostFormatUtils.DIGIT_ONES[remainder]
+            scratch[--end] = GhostFormatUtils.DIGIT_TENS[remainder]
         }
         if (localValue >= C.BASE_TEN) {
             val remainder = localValue.toInt()
-            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]
-            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]
+            scratch[--end] = GhostFormatUtils.DIGIT_ONES[remainder]
+            scratch[--end] = GhostFormatUtils.DIGIT_TENS[remainder]
         } else {
             scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()
         }

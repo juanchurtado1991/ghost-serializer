@@ -21,7 +21,7 @@ private const val ESCAPE = '\\'
 
 /**
  * Parses yaml-test-suite's `in.json` fixture text into a list of top-level JSON values, one per
- * YAML document — mirrors [com.ghost.serialization.parser.yaml.GhostYamlFlatReader]'s
+ * YAML document — mirrors `GhostYamlFlatReader`'s
  * `readAllDocuments()` one-value-per-document semantics.
  *
  * Hand-rolled splitting rather than `Json.decodeToSequence(..., DecodeSequenceMode.WHITESPACE_SEPARATED)`:

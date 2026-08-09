@@ -24,8 +24,8 @@ import kotlin.test.assertTrue
 
 /**
  * Entry-point and tri-channel parity tests for YAML serializers.
- * Aligns with [com.ghost.serialization.FeatureTriChannelSerializerTest] and
- * [com.ghost.serialization.proto.GhostProtoEntryPointsTest].
+ * Aligns with `FeatureTriChannelSerializerTest` and
+ * `GhostProtoEntryPointsTest`.
  */
 class GhostYamlEntryPointTest {
 

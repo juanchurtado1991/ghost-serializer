@@ -15,7 +15,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** Integration coverage for [com.ghost.serialization.annotations.GhostJsonEnvelope] payload routing. */
+/** Integration coverage for `GhostJsonEnvelope` payload routing. */
 class GhostJsonEnvelopeIntegrationTest {
 
     @Test
