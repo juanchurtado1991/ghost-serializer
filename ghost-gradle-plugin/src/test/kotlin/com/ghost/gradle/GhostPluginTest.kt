@@ -26,12 +26,12 @@ class GhostPluginTest {
     }
 
     @Test
-    fun `plugin defaults ghost version to 1_3_0`() {
+    fun `plugin defaults ghost version from publish catalog`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(GhostPlugin::class.java)
 
         val extension = project.extensions.getByType(GhostExtension::class.java)
-        assertEquals("1.3.0", extension.version.get())
+        assertEquals(DEFAULT_VERSION, extension.version.get())
     }
 
     @Test

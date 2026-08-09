@@ -15,6 +15,30 @@ java {
     }
 }
 
+val generateGhostVersions by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/ghost")
+    val publishVersion = libs.versions.publish.version.get()
+    inputs.property("publishVersion", publishVersion)
+    outputs.dir(outputDir)
+    doLast {
+        val dir = outputDir.get().asFile
+        dir.mkdirs()
+        dir.resolve("GhostVersions.kt").writeText(
+            """
+            |package com.ghost.gradle
+            |
+            |internal const val DEFAULT_VERSION = "$publishVersion"
+            |
+            """.trimMargin()
+        )
+    }
+}
+
+sourceSets {
+    named("main") {
+        kotlin.srcDir(generateGhostVersions)
+    }
+}
 
 gradlePlugin {
     website.set("https://github.com/juanchurtado1991/ghost-serializer")
