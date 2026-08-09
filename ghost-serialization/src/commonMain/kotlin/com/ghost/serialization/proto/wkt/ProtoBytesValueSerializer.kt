@@ -10,6 +10,8 @@ import com.ghost.serialization.parser.common.encodeBase64String
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
@@ -50,4 +52,7 @@ object ProtoBytesValueSerializer : GhostSerializer<ProtoBytesValue> {
         }
         return ProtoBytesValue(decodeBase64String(reader.nextString()))
     }
+
+    override fun deserialize(reader: GhostJsonStringReader): ProtoBytesValue =
+        ProtoBytesValue(decodeBase64String(reader.nextString()))
 }
