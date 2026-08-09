@@ -39,11 +39,11 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): 
 
             isDigit(currByte) -> {
                 if (explicitIndent >= 0) {
-                    yamlError("Block scalar indentation indicator must be a single digit")
+                    yamlError(C.ERR_BLOCK_INDENT_INDICATOR_DIGIT)
                 }
                 explicitIndent = currByte - C.ZERO_BYTE
                 if (explicitIndent == 0) {
-                    yamlError("Block scalar indentation indicator must be between 1 and 9")
+                    yamlError(C.ERR_BLOCK_INDENT_RANGE_1_9)
                 }
                 position++
             }
@@ -59,10 +59,10 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): 
                 ) {
                     skipToEndOfLine(); break
                 }
-                yamlError("Comment after block scalar indicator must be preceded by whitespace")
+                yamlError(C.ERR_COMMENT_AFTER_BLOCK_INDICATOR_WS)
             }
 
-            else -> yamlError("Invalid text after block scalar indicator")
+            else -> yamlError(C.ERR_INVALID_TEXT_AFTER_BLOCK_INDICATOR)
         }
     }
     // Skip to next line
@@ -123,7 +123,7 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
             // there's no way to tell how much of its indentation was meant as content — and the
             // spec rejects it outright rather than guessing.
             if (maxLeadingEmptyLineIndent > spaces) {
-                yamlError("Leading empty line in block scalar is more indented than its first content line")
+                yamlError(C.ERR_LEADING_EMPTY_LINE_OVERINDENTED)
             }
             return spaces
         }

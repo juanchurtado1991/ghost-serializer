@@ -62,7 +62,7 @@ internal fun GhostYamlFlatReader.clearAfterDocument() {
 internal fun GhostYamlFlatReader.beginObjectImpl() {
     ensureRootParsed()
     val map =
-        nextValue as? Map<*, *> ?: throw GhostYamlException("Expected Map but found $nextValue")
+        nextValue as? Map<*, *> ?: throw GhostYamlException("${C.ERR_EXPECTED_MAP_PREFIX}$nextValue")
 
     traversalStack.add(
         GhostYamlFlatReader.StateFrame(
@@ -187,7 +187,7 @@ internal fun GhostYamlFlatReader.nextIntImpl(): Int {
         }
         return value.toInt()
     }
-    throw GhostYamlException("Expected Int but found $value")
+    throw GhostYamlException("${C.ERR_EXPECTED_INT_PREFIX}$value")
 }
 
 internal fun GhostYamlFlatReader.nextLongImpl(): Long {
@@ -202,7 +202,7 @@ internal fun GhostYamlFlatReader.nextLongImpl(): Long {
         }
         return value.toLong()
     }
-    throw GhostYamlException("Expected Long but found $value")
+    throw GhostYamlException("${C.ERR_EXPECTED_LONG_PREFIX}$value")
 }
 
 internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
@@ -228,7 +228,7 @@ internal fun GhostYamlFlatReader.nextULongImpl(): ULong {
             return value.toULong()
         }
     }
-    throw GhostYamlException("Expected ULong but found $value")
+    throw GhostYamlException("${C.ERR_EXPECTED_ULONG_PREFIX}$value")
 }
 
 internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? {
@@ -251,7 +251,7 @@ internal fun GhostYamlFlatReader.nextDoubleImpl(): Double {
         }
         return value.toDouble()
     }
-    throw GhostYamlException("Expected Double but found $value")
+    throw GhostYamlException("${C.ERR_EXPECTED_DOUBLE_PREFIX}$value")
 }
 
 internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
@@ -266,7 +266,7 @@ internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
         }
         return value.toFloat()
     }
-    throw GhostYamlException("Expected Float but found $value")
+    throw GhostYamlException("${C.ERR_EXPECTED_FLOAT_PREFIX}$value")
 }
 
 internal fun GhostYamlFlatReader.nextBooleanImpl(): Boolean {
@@ -281,14 +281,14 @@ internal fun GhostYamlFlatReader.nextBooleanImpl(): Boolean {
         }
         return value.toBoolean()
     }
-    throw GhostYamlException("Expected Boolean but found $value")
+    throw GhostYamlException("${C.ERR_EXPECTED_BOOLEAN_PREFIX}$value")
 }
 
 /** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
 internal fun GhostYamlFlatReader.nextCharImpl(): Char {
     val text = nextString()
     if (text.length != 1) {
-        throw GhostYamlException("Expected single-character string but found length ${text.length}")
+        throw GhostYamlException("${C.ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX}${text.length}")
     }
     return text[0]
 }
@@ -303,7 +303,7 @@ internal fun GhostYamlFlatReader.nextStringImpl(): String {
 internal fun GhostYamlFlatReader.beginArrayImpl() {
     ensureRootParsed()
     val list = nextValue as? List<*>
-        ?: throw GhostYamlException("Expected List but found $nextValue")
+        ?: throw GhostYamlException("${C.ERR_EXPECTED_LIST_PREFIX}$nextValue")
 
     traversalStack.add(
         GhostYamlFlatReader.StateFrame(

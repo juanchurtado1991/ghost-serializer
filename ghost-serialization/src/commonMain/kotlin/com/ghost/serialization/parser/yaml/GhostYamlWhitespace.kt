@@ -52,7 +52,7 @@ internal fun GhostYamlFlatReader.skipWhitespaceAndComments() {
                     if (previousByte != C.SPACE_BYTE && previousByte != C.TAB_BYTE &&
                         previousByte != C.NEWLINE_BYTE && previousByte != C.CR_BYTE
                     ) {
-                        yamlError("Comment must be preceded by whitespace")
+                        yamlError(C.ERR_COMMENT_NEEDS_WHITESPACE)
                     }
                 }
                 skipToEndOfLine()
@@ -151,7 +151,7 @@ internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
                     }
 
                     C.STR_YAML_DIRECTIVE -> {
-                        if (sawYamlDirective) yamlError("Duplicate %YAML directive")
+                        if (sawYamlDirective) yamlError(C.ERR_DUPLICATE_YAML_DIRECTIVE)
                         sawYamlDirective = true
                         val versionStart = position
                         while (position < localLimit && localRawData[position] != C.SPACE_BYTE && localRawData[position] != C.TAB_BYTE &&
@@ -161,13 +161,13 @@ internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
                         }
                         val version = localRawData.decodeToString(versionStart, position)
                         if (!isYamlVersionToken(version)) {
-                            yamlError("Malformed %YAML directive version: $version")
+                            yamlError("${C.ERR_MALFORMED_YAML_VERSION_PREFIX}$version")
                         }
                         skipInlineWhitespace()
                         if (position < localLimit) {
                             val trailingByte = localRawData[position]
                             if (trailingByte != C.NEWLINE_BYTE && trailingByte != C.CR_BYTE && trailingByte != C.HASH_BYTE) {
-                                yamlError("Unexpected content after %YAML directive")
+                                yamlError(C.ERR_UNEXPECTED_AFTER_YAML_DIRECTIVE)
                             }
                         }
                     }
@@ -176,7 +176,7 @@ internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
             }
 
             C.DASH_BYTE -> if (isDocumentMarker()) {
-                position += 3
+                position += C.DOC_MARKER_LEN
                 return true
             } else break
 
@@ -194,7 +194,7 @@ internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
             else -> break
         }
     }
-    if (sawDirective) yamlError("Directives must be followed by a document-start marker (---)")
+    if (sawDirective) yamlError(C.ERR_DIRECTIVES_NEED_DOC_START)
     return false
 }
 
@@ -224,14 +224,14 @@ internal fun GhostYamlFlatReader.skipDocumentEnd(): Boolean {
         localRawData[position + 1] == C.DOT_BYTE &&
         localRawData[position + 2] == C.DOT_BYTE
     ) {
-        position += 3
+        position += C.DOC_MARKER_LEN
         skipInlineWhitespace()
         if (position < localLimit) {
             val trailingByte = localRawData[position]
             if (trailingByte == C.HASH_BYTE) {
                 skipToEndOfLine()
             } else if (trailingByte != C.NEWLINE_BYTE && trailingByte != C.CR_BYTE) {
-                yamlError("Unexpected content after document-end marker")
+                yamlError(C.ERR_UNEXPECTED_AFTER_DOC_END)
             }
         }
         return true

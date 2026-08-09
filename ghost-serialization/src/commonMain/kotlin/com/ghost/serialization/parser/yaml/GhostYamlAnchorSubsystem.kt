@@ -106,12 +106,12 @@ internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean,
     // An anchor can't directly wrap an alias reference — anchoring applies to actual node
     // content, not to a reference to something else.
     if (!inFlow && position < localLimit && localRawData[position] == C.ASTERISK_BYTE) {
-        yamlError("Anchor '$anchorName' cannot be immediately followed by an alias")
+        yamlError("${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}")
     }
     // Nor can a block sequence entry start inline right after it on the same line — "&anchor -
     // item" isn't a valid way to anchor a sequence, the "-" needs its own line.
     if (!inFlow && position < localLimit && localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry()) {
-        yamlError("Anchor '$anchorName' cannot be immediately followed by a block sequence entry on the same line")
+        yamlError("${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX}")
     }
 
     val positionBeforeLineBreak = position
@@ -189,7 +189,7 @@ internal fun GhostYamlFlatReader.readAlias(): Any? {
     // when the key is absent *and* when it's present with a null value (e.g. an anchor on an
     // empty node, "a: &anchor\nb: *anchor"), so the two cases must be told apart explicitly.
     if (!anchorTable.containsKey(aliasName)) {
-        yamlError("Anchor '$aliasName' not found")
+        yamlError("${C.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${C.ERR_ANCHOR_NOT_FOUND_SUFFIX}")
     }
     return anchorTable[aliasName]
 }

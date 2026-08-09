@@ -28,7 +28,7 @@ class GhostYamlWriter(
     internal fun acquireScratch(): ByteArray {
         val currentScratch = scratch
         if (currentScratch != null) return currentScratch
-        val newScratch = acquireScratchBuffer(256)
+        val newScratch = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
         scratch = newScratch
         return newScratch
     }
@@ -95,7 +95,7 @@ class GhostYamlWriter(
     fun beginObject(): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth >= C.MAX_DEPTH) {
-            throw GhostYamlException("Max depth exceeded")
+            throw GhostYamlException(C.ERR_MAX_DEPTH_EXCEEDED)
         }
         prepareValue(isStructural = true)
         val nextDepth = currentDepth + 1
@@ -115,7 +115,7 @@ class GhostYamlWriter(
     fun beginArray(): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth >= C.MAX_DEPTH) {
-            throw GhostYamlException("Max depth exceeded")
+            throw GhostYamlException(C.ERR_MAX_DEPTH_EXCEEDED)
         }
         prepareValue(isStructural = true)
         val nextDepth = currentDepth + 1
@@ -153,7 +153,7 @@ class GhostYamlWriter(
     fun name(key: String): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth <= 0) {
-            throw GhostYamlException("Cannot write name outside of object scope")
+            throw GhostYamlException(C.ERR_NAME_OUTSIDE_OBJECT)
         }
         if (justWroteDash) {
             justWroteDash = false
@@ -177,7 +177,7 @@ class GhostYamlWriter(
     fun name(key: ByteString): GhostYamlWriter {
         val currentDepth = depth
         if (currentDepth <= 0) {
-            throw GhostYamlException("Cannot write name outside of object scope")
+            throw GhostYamlException(C.ERR_NAME_OUTSIDE_OBJECT)
         }
         if (justWroteDash) {
             justWroteDash = false

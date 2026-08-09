@@ -126,7 +126,7 @@ class StreamingGhostSource(
     private fun getSlow(index: Int): Int {
         if (index < discarded) {
             throw IndexOutOfBoundsException(
-                "Index $index is below discarded prefix ($discarded)"
+                "${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_PREFIX}$index${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_MID}$discarded${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_SUFFIX}"
             )
         }
         val relativeIndex = (index - discarded).toLong()
@@ -134,7 +134,7 @@ class StreamingGhostSource(
         val available = buffer.size
         if (relativeIndex >= available) {
             throw IndexOutOfBoundsException(
-                "Index $index is out of bounds (available absolute end: ${discarded + available})"
+                "${GhostJsonConstants.ERR_INDEX_OOB_PREFIX}$index${GhostJsonConstants.ERR_INDEX_OOB_MID}${discarded + available}${GhostJsonConstants.ERR_INDEX_OOB_SUFFIX}"
             )
         }
 
@@ -148,7 +148,7 @@ class StreamingGhostSource(
         val toCopy = (windowEnd - windowStart).toLong()
 
         if (toCopy <= 0L) {
-            throw IndexOutOfBoundsException("Index $index is out of bounds")
+            throw IndexOutOfBoundsException("${GhostJsonConstants.ERR_INDEX_OOB_PREFIX}$index${GhostJsonConstants.ERR_INDEX_OOB}")
         }
 
         buffer.copyTo(tempBuffer, windowStartRel, toCopy)
@@ -183,7 +183,7 @@ class StreamingGhostSource(
         }
         if (start < discarded) {
             throw IndexOutOfBoundsException(
-                "decodeToString start $start is below discarded prefix ($discarded)"
+                "${GhostJsonConstants.ERR_DECODE_START_BELOW_DISCARDED_PREFIX}$start${GhostJsonConstants.ERR_DECODE_START_BELOW_DISCARDED_MID}$discarded${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_SUFFIX}"
             )
         }
         val relativeEnd = (end - discarded).toLong()

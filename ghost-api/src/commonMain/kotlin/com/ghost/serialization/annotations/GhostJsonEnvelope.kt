@@ -8,7 +8,7 @@ package com.ghost.serialization.annotations
  * [GhostEnvelopePayload.target] is set.
  *
  * ### Fat envelope (SmartThings SSE)
- * One nullable [com.ghost.serialization.types.RawJson] field per event type, each tagged with
+ * One nullable `RawJson` field per event type, each tagged with
  * [GhostEnvelopePayload]:
  * ```kotlin
  * @GhostJsonEnvelope(discriminator = "eventType", timeField = "eventTime")

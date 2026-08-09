@@ -207,7 +207,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             // a safe character" exception the way '-'/'?'/':' get) — a directive-shaped line
             // appearing where a value is expected (e.g. after the "---" it should have preceded)
             // is simply invalid, not a scalar that happens to start with '%'.
-            C.PERCENT_BYTE -> yamlError("A plain scalar cannot start with '%' — reserved for directives")
+            C.PERCENT_BYTE -> yamlError(C.ERR_PLAIN_SCALAR_PERCENT)
             C.QUESTION_BYTE ->
                 if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
                 else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)
@@ -289,9 +289,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * @param blockIndent The indentation of the first key in this mapping.
      */
     internal fun readBlockMapping(blockIndent: Int): Map<String, Any?> {
-        if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
+        if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
         depth++
-        val result = LinkedHashMap<String, Any?>(8)
+        val result = LinkedHashMap<String, Any?>(C.DEFAULT_MAP_CAPACITY)
         val localLimit = limit
         val localRawData = rawData
         try {
@@ -306,7 +306,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 // tabs have no fixed column width, so there's no way to compare this line's
                 // indentation against blockIndent/a sibling's. Harmless once inside an already-
                 // established scalar's own content (readValue never reaches this loop for that).
-                if (indentHasTab) yamlError("Tab character not allowed in block mapping indentation")
+                if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_MAPPING_INDENT)
 
                 if (isExplicitKeyIndicator()) {
                     val (key, value) = readExplicitKeyEntry(blockIndent)
@@ -320,7 +320,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
                 // Expect ':' after the key
                 if (position >= localLimit || localRawData[position] != C.COLON_BYTE) {
-                    yamlError("Expected ':' after key '$key' at position $position")
+                    yamlError("${C.ERR_EXPECTED_COLON_AFTER_KEY_PREFIX}$key${C.ERR_EXPECTED_COLON_AFTER_KEY_MID}$position")
                 }
                 position++ // consume ':'
                 // An implicit "key: value" pair's value can't redirect into a nested block
@@ -396,7 +396,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * @param seqIndent Indentation of the '-' markers.
      */
     internal fun readBlockSequence(seqIndent: Int): List<Any?> {
-        if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
+        if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
         depth++
         val result = mutableListOf<Any?>()
         val localLimit = limit
@@ -412,7 +412,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 if (isDocumentMarker()) break
                 // See the equivalent check in readBlockMapping — tabs can't be part of the
                 // indentation opening or extending a block sequence.
-                if (indentHasTab) yamlError("Tab character not allowed in block sequence indentation")
+                if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_SEQUENCE_INDENT)
 
                 // Consume '-'
                 position++ // '-'
@@ -502,7 +502,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                                 // "a: b: c") — there's no fresh, more-indented line for a nested
                                 // mapping to start on here, so this shape is just ambiguous, not
                                 // a legal redirect. yaml-test-suite case ZCZ6.
-                                yamlError("Unexpected ':' — a nested mapping can't start inline on the same line as its enclosing key")
+                                yamlError(C.ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON)
                             }
                             // Rewind and parse as block mapping
                             position = startPosition
@@ -541,7 +541,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         // "[-]", has nothing valid to be: it isn't the block sequence indicator (flow has no such
         // thing) and it doesn't satisfy the plain-scalar exception either.
         if (inFlow && endPosition - startPosition == 1 && localRawData[startPosition] == C.DASH_BYTE) {
-            yamlError("A lone '-' is not a valid plain scalar in flow context")
+            yamlError(C.ERR_LONE_DASH_IN_FLOW)
         }
 
         // Plain scalars can continue onto following lines, both in block context (more-indented
@@ -654,7 +654,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         localRawData[afterColon] == C.SPACE_BYTE ||
                         localRawData[afterColon] == C.TAB_BYTE
                     ) {
-                        yamlError("Plain scalar continuation cannot contain a mapping key indicator")
+                        yamlError(C.ERR_PLAIN_CONTINUATION_MAPPING_KEY)
                     }
                 }
                 colonScan++
@@ -842,14 +842,14 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         // following it) masquerade as "no more keys in this mapping" instead of erroring.
         val hadPrefixes = position != positionBeforePrefixes
         if (position >= localLimit) {
-            if (hadPrefixes) yamlError("Anchor/tag prefix on a key must be followed by the key itself")
+            if (hadPrefixes) yamlError(C.ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY)
             return null
         }
         // An anchor can't wrap an alias reference here either — same rule readAnchoredValue
         // already enforces for values (an alias points at an existing node, it isn't itself a
         // node that a new anchor can attach to).
         if (anchorName != null && localRawData[position] == C.ASTERISK_BYTE) {
-            yamlError("Anchor '$anchorName' cannot be immediately followed by an alias")
+            yamlError("${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}")
         }
         val key = when (localRawData[position]) {
             C.DOUBLE_QUOTE_BYTE -> readQuotedKeyRejectingMultiLine(inFlow) { readDoubleQuotedString() }
@@ -890,7 +890,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
                         ""
                     } else if (hadPrefixes) {
-                        yamlError("Anchor/tag prefix on a key must be followed by the key itself")
+                        yamlError(C.ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY)
                     } else {
                         null
                     }
@@ -931,7 +931,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         var scanPosition = startPosition
         while (scanPosition < position) {
             if (rawData[scanPosition] == C.NEWLINE_BYTE || rawData[scanPosition] == C.CR_BYTE) {
-                yamlError("Implicit keys cannot span multiple lines")
+                yamlError(C.ERR_IMPLICIT_KEY_MULTILINE)
             }
             scanPosition++
         }
@@ -966,7 +966,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     /** Thrown by both [readAllDocuments] overloads when a document consumed no input. */
     private fun noProgressError(): Nothing {
-        yamlError("Parser made no progress at position $position — malformed content")
+        yamlError("${C.ERR_PARSER_NO_PROGRESS_PREFIX}$position${C.ERR_PARSER_NO_PROGRESS_SUFFIX}")
     }
 
     /**
@@ -981,7 +981,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         if (position >= limit) return
         val currentByte = rawData[position]
         if (currentByte != C.DASH_BYTE && currentByte != C.PERCENT_BYTE) {
-            yamlError("Unexpected content after document value")
+            yamlError(C.ERR_UNEXPECTED_AFTER_DOCUMENT_VALUE)
         }
     }
 
@@ -995,7 +995,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     private fun requireExplicitEndBeforeDirectives(previousDocumentExplicitlyEnded: Boolean) {
         if (previousDocumentExplicitlyEnded) return
         if (position < limit && rawData[position] == C.PERCENT_BYTE) {
-            yamlError("Directives must be preceded by an explicit document end marker (...)")
+            yamlError(C.ERR_DIRECTIVES_NEED_DOC_END)
         }
     }
 

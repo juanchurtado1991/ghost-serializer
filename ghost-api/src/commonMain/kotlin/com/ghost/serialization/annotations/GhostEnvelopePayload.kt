@@ -7,10 +7,10 @@ import kotlin.reflect.KClass
  *
  * The generated router selects this property when the envelope discriminator matches [value].
  * When [target] is set to a [GhostSerialization] model, `routeTyped` / `parseTyped` decode via
- * zero-copy [com.ghost.serialization.types.RawJson] slice parsing.
+ * zero-copy `RawJson` slice parsing.
  *
  * @param value Wire discriminator string (e.g. `"DEVICE_EVENT"`, `"invoice.paid"`).
- * @param target Typed model to decode into; default means return [com.ghost.serialization.types.RawJson] only.
+ * @param target Typed model to decode into; default means return `RawJson` only.
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)

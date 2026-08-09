@@ -165,7 +165,7 @@ internal fun utf16ToUtf8(
 ): ByteArray {
     if (length <= 0) return C.EMPTY_BYTES
     if (length % UTF16_UNIT_SIZE != 0) {
-        throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+        throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
     }
     val out = ByteArray(utf8MaxSizeFromUtf16(length))
     var oi = 0
@@ -176,11 +176,11 @@ internal fun utf16ToUtf8(
         i += UTF16_UNIT_SIZE
         val cp = when {
             unit in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END -> {
-                if (i >= end) throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+                if (i >= end) throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
                 val low = readUtf16Unit(bytes, i, littleEndian)
                 i += UTF16_UNIT_SIZE
                 if (low !in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
-                    throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+                    throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
                 }
                 SUPPLEMENTARY_PLANE_BASE +
                         ((unit - C.HIGH_SURROGATE_START) shl SURROGATE_TO_CP_SHIFT) +
@@ -188,7 +188,7 @@ internal fun utf16ToUtf8(
             }
 
             unit in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END ->
-                throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+                throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
 
             else -> unit
         }
@@ -205,7 +205,7 @@ internal fun utf32ToUtf8(
 ): ByteArray {
     if (length <= 0) return C.EMPTY_BYTES
     if (length % UTF32_UNIT_SIZE != 0) {
-        throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+        throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
     }
     val out = ByteArray((length / UTF32_UNIT_SIZE) * C.UTF8_4BYTE_SIZE)
     var oi = 0
@@ -217,7 +217,7 @@ internal fun utf32ToUtf8(
         if (cp !in 0..UNICODE_MAX_CODE_POINT ||
             cp in C.HIGH_SURROGATE_START..C.LOW_SURROGATE_END
         ) {
-            throw GhostJsonException(ERR_INVALID_JSON_ENCODING)
+            throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
         }
         oi = writeUtf8CodePoint(out, oi, cp)
     }
@@ -317,5 +317,3 @@ private const val SURROGATE_TO_CP_SHIFT = 10
 /** Largest valid Unicode code point (U+10FFFF). */
 private const val UNICODE_MAX_CODE_POINT = 0x10FFFF
 
-private const val ERR_INVALID_JSON_ENCODING =
-    "Invalid JSON text encoding (RFC 8259 requires UTF-8, UTF-16, or UTF-32)"

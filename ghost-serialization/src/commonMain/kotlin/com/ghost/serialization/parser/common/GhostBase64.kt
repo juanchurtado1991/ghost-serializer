@@ -55,7 +55,7 @@ fun decodeBase64String(value: String): ByteArray {
 
     if (chunkIndex > 0) {
         while (chunkIndex < 4) {
-            chunk[chunkIndex++] = '='.code
+            chunk[chunkIndex++] = C.EQUALS_INT
         }
         val value0 = if (chunk[0] < lut.size) lut[chunk[0]] else -1
         val value1 = if (chunk[1] < lut.size) lut[chunk[1]] else -1
