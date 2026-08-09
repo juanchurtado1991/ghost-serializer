@@ -100,22 +100,14 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
 /** See [deviationsInOutcome]. */
 val deviationsInValue: Set<DeviationCase> = setOf(
     "35KP" because REASON_TAG, // Tags for Root Objects
-    "4QFQ" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator [1.3]
     "4WA9" because REASON_BLOCK_SCALAR, // Literal scalars
-    "6FWR" because REASON_BLOCK_SCALAR, // Block Scalar Keep
     "6VJK" because REASON_BLOCK_SCALAR, // Spec Example 2.15. Folded newlines are preserved for "more indented" and blank lines
     "7T8X" because REASON_EMPTY_MISSING, // Spec Example 8.10. Folded Lines - 8.13. Final Empty Lines
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
-    "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
-    "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
-    "H2RW" because REASON_MISC, // Blank lines
-    "L24T_00" because REASON_MISC, // Trailing line of spaces
-    "L24T_01" because REASON_MISC, // Trailing line of spaces
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "MJS9" because REASON_BLOCK_SCALAR, // Spec Example 6.7. Block Folding
     "R4YG" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator
-    "T26H" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content [1.3]
     "UV7Q" because REASON_TAB, // Legal tab after indentation
 )
