@@ -6,6 +6,7 @@ import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import okio.ByteString
+import com.ghost.serialization.writer.common.GhostWriterLongDigits
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
@@ -428,12 +429,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
             remaining = -remaining
         }
         val scratchBuf = scratch ?: acquireScratch()
-        var pos = scratchBuf.size
-        while (remaining > 0L) {
-            val digit = (remaining % C.TEN_LONG).toInt()
-            scratchBuf[--pos] = (C.ZERO_INT + digit).toByte()
-            remaining /= C.TEN_LONG
-        }
+        val pos = GhostWriterLongDigits.writePositiveDigitsBytes(remaining, scratchBuf)
         buffer.write(scratchBuf, pos, scratchBuf.size - pos)
     }
 
