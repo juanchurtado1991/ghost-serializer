@@ -2,13 +2,6 @@
 
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.COLLISION_HASH_MULTIPLIER
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_16
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_24
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.common.GhostJsonConstants.SINGLE_CHAR_SIZE
-import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_HEX_LENGTH
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -76,19 +69,19 @@ class JsonReaderOptions(
         for (bytes in rawBytes) {
             if (bytes.isNotEmpty()) {
                 var key = 0L
-                if (bytes.size >= SINGLE_CHAR_SIZE) {
+                if (bytes.size >= C.SINGLE_CHAR_SIZE) {
                     key = key or (bytes[0].toLong() and C.LONG_BYTE_MASK)
                 }
                 if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
-                    key = key or ((bytes[1].toLong() and C.LONG_BYTE_MASK) shl SHIFT_8)
+                    key = key or ((bytes[1].toLong() and C.LONG_BYTE_MASK) shl C.SHIFT_8)
                 }
                 if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
-                    key = key or ((bytes[2].toLong() and C.LONG_BYTE_MASK) shl SHIFT_16)
+                    key = key or ((bytes[2].toLong() and C.LONG_BYTE_MASK) shl C.SHIFT_16)
                 }
-                if (bytes.size >= UNICODE_HEX_LENGTH) {
-                    key = key or ((bytes[3].toLong() and C.LONG_BYTE_MASK) shl SHIFT_24)
+                if (bytes.size >= C.UNICODE_HEX_LENGTH) {
+                    key = key or ((bytes[3].toLong() and C.LONG_BYTE_MASK) shl C.SHIFT_24)
                 }
-                val packed = key or (bytes.size.toLong() shl (SHIFT_24 + SHIFT_8))
+                val packed = key or (bytes.size.toLong() shl (C.SHIFT_24 + C.SHIFT_8))
                 if (!seen.add(packed)) {
                     detectedCollision = true
                     break
@@ -106,23 +99,23 @@ class JsonReaderOptions(
             val bytes = rawBytes[index]
             if (bytes.isNotEmpty()) {
                 var key = 0
-                if (bytes.size >= SINGLE_CHAR_SIZE) {
-                    key = key or (bytes[0].toInt() and BYTE_MASK)
+                if (bytes.size >= C.SINGLE_CHAR_SIZE) {
+                    key = key or (bytes[0].toInt() and C.BYTE_MASK)
                 }
                 if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
-                    key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
+                    key = key or ((bytes[1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)
                 }
                 if (bytes.size >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
-                    key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
+                    key = key or ((bytes[2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)
                 }
-                if (bytes.size >= UNICODE_HEX_LENGTH) {
-                    key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
+                if (bytes.size >= C.UNICODE_HEX_LENGTH) {
+                    key = key or ((bytes[3].toInt() and C.BYTE_MASK) shl C.SHIFT_24)
                 }
                 if (hasCollisions) {
-                    var ci = UNICODE_HEX_LENGTH
+                    var ci = C.UNICODE_HEX_LENGTH
                     while (ci < bytes.size) {
                         key =
-                            key * COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and BYTE_MASK); ci++
+                            key * C.COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and C.BYTE_MASK); ci++
                     }
                 }
 
@@ -144,23 +137,23 @@ class JsonReaderOptions(
             val keyString = rawStrings[index]
             if (keyString.isNotEmpty()) {
                 var key = 0
-                if (keyString.length >= SINGLE_CHAR_SIZE) {
-                    key = key or (keyString[0].code and BYTE_MASK)
+                if (keyString.length >= C.SINGLE_CHAR_SIZE) {
+                    key = key or (keyString[0].code and C.BYTE_MASK)
                 }
                 if (keyString.length >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
-                    key = key or ((keyString[1].code and BYTE_MASK) shl SHIFT_8)
+                    key = key or ((keyString[1].code and C.BYTE_MASK) shl C.SHIFT_8)
                 }
                 if (keyString.length >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
-                    key = key or ((keyString[2].code and BYTE_MASK) shl SHIFT_16)
+                    key = key or ((keyString[2].code and C.BYTE_MASK) shl C.SHIFT_16)
                 }
-                if (keyString.length >= UNICODE_HEX_LENGTH) {
-                    key = key or ((keyString[3].code and BYTE_MASK) shl SHIFT_24)
+                if (keyString.length >= C.UNICODE_HEX_LENGTH) {
+                    key = key or ((keyString[3].code and C.BYTE_MASK) shl C.SHIFT_24)
                 }
                 if (hasCollisions) {
-                    var ci = UNICODE_HEX_LENGTH
+                    var ci = C.UNICODE_HEX_LENGTH
                     while (ci < keyString.length) {
                         key =
-                            key * COLLISION_HASH_MULTIPLIER + (keyString[ci].code and BYTE_MASK); ci++
+                            key * C.COLLISION_HASH_MULTIPLIER + (keyString[ci].code and C.BYTE_MASK); ci++
                     }
                 }
 
@@ -180,21 +173,21 @@ class JsonReaderOptions(
 
         val len = name.length
         var key = 0
-        if (len >= SINGLE_CHAR_SIZE) {
-            key = key or (name[0].code and BYTE_MASK)
+        if (len >= C.SINGLE_CHAR_SIZE) {
+            key = key or (name[0].code and C.BYTE_MASK)
         }
         if (len >= C.UNICODE_ESCAPE_PREFIX_SIZE) {
-            key = key or ((name[1].code and BYTE_MASK) shl SHIFT_8)
+            key = key or ((name[1].code and C.BYTE_MASK) shl C.SHIFT_8)
         }
         if (len >= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {
-            key = key or ((name[2].code and BYTE_MASK) shl SHIFT_16)
+            key = key or ((name[2].code and C.BYTE_MASK) shl C.SHIFT_16)
         }
-        if (len >= UNICODE_HEX_LENGTH) {
-            key = key or ((name[3].code and BYTE_MASK) shl SHIFT_24)
+        if (len >= C.UNICODE_HEX_LENGTH) {
+            key = key or ((name[3].code and C.BYTE_MASK) shl C.SHIFT_24)
         }
-        if (hasCollisions && len >= UNICODE_HEX_LENGTH) {
-            key = key xor (name[len - SINGLE_CHAR_SIZE].code and BYTE_MASK)
-            key = key xor (name[len shr SINGLE_CHAR_SIZE].code and BYTE_MASK)
+        if (hasCollisions && len >= C.UNICODE_HEX_LENGTH) {
+            key = key xor (name[len - C.SINGLE_CHAR_SIZE].code and C.BYTE_MASK)
+            key = key xor (name[len shr C.SINGLE_CHAR_SIZE].code and C.BYTE_MASK)
         }
 
         val tableMask = tableSize - 1
@@ -210,7 +203,7 @@ class JsonReaderOptions(
 
     companion object {
         // Collision disambiguation uses polynomial accumulation inlined directly in init,
-        // buildStringDispatchTable, and each computeKeyHash. See COLLISION_HASH_MULTIPLIER.
+        // buildStringDispatchTable, and each computeKeyHash. See C.COLLISION_HASH_MULTIPLIER.
         // All five sites must stay identical; PerfectHashFinder (compiler-side) is the sixth.
 
         fun of(vararg names: String): JsonReaderOptions = of(

@@ -5,6 +5,7 @@ package com.ghost.serialization.writer.strings
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
@@ -388,7 +389,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     }
 
     /** Writes [raw] using its storage slice. */
-    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonStringWriter =
+    fun rawValue(raw: RawJson): GhostJsonStringWriter =
         rawValue(raw.storage, raw.storageOffset, raw.storageLength)
 
     @InternalGhostApi

@@ -2,12 +2,6 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.Ghost.deserialize
-import com.ghost.serialization.Ghost.deserializeStreaming
-import com.ghost.serialization.Ghost.encodeToSink
-import com.ghost.serialization.Ghost.encodeToString
-import com.ghost.serialization.Ghost.serialize
-import com.ghost.serialization.Ghost.serializerCache
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
@@ -54,19 +48,16 @@ expect fun discoverRegistries(): Iterable<GhostRegistry>
 /**
  * Runs a block of operations using a pooled [GhostJsonReader] instance.
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 
 /**
  * Runs a block of operations using a pooled [GhostJsonStringReader] instance.
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseStringReader(json: String, block: (GhostJsonStringReader) -> T): T
 
 /**
  * Runs a block of operations using a pooled [GhostJsonFlatReader] instance.
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
     limit: Int = bytes.size,
@@ -76,7 +67,6 @@ expect fun <T> ghostInternalUseFlatReader(
 /**
  * Runs a block of operations using a pooled [GhostJsonReader] reading from an Okio [BufferedSource].
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 /**
@@ -180,10 +170,8 @@ object Ghost {
         }
 
         // 2. Check discovered registries
-        if (_discoveredRegistries == null) {
-            _discoveredRegistries = discoverRegistries()
-        }
-        val disc = _discoveredRegistries!!
+        val disc = _discoveredRegistries
+            ?: discoverRegistries().also { _discoveredRegistries = it }
 
         for (registry in disc) {
             registry.getSerializer(clazz)?.let { return it }
@@ -596,7 +584,6 @@ object Ghost {
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or the structure is invalid.
      * @see deserializeStreaming for O(1)-memory streaming of large files.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
         source.request(Long.MAX_VALUE)
         val limit = source.buffer.size.toInt()
@@ -632,7 +619,6 @@ object Ghost {
      * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserializeStreaming(source: BufferedSource): T {
         return ghostInternalUseSource(source) { reader ->
             deserialize(reader)
@@ -658,7 +644,6 @@ object Ghost {
      * @throws com.ghost.serialization.exception.GhostJsonException
      * if the JSON payload is malformed or structure is invalid.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
         return ghostInternalUseFlatReader(bytes) { reader ->
             deserialize(reader)
@@ -685,7 +670,6 @@ object Ghost {
      * @param options A configuration lambda to set reader properties.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         json: String,
         crossinline options: (GhostJsonStringReader) -> Unit
@@ -703,7 +687,6 @@ object Ghost {
      * @param options A configuration lambda to set reader properties.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         source: BufferedSource,
         crossinline options: (GhostJsonReader) -> Unit
@@ -721,7 +704,6 @@ object Ghost {
      * @param options A configuration lambda to set reader properties.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         bytes: ByteArray,
         crossinline options: (GhostJsonReader) -> Unit
@@ -742,7 +724,6 @@ object Ghost {
      * @return A reconstructed instance of type [T].
      */
     @Suppress("unused")
-    @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>, limit: Int = bytes.size): T {
         return ghostInternalUseFlatReader(bytes, limit) { reader ->
             val serializer = getSerializer(clazz)
@@ -760,7 +741,6 @@ object Ghost {
      * @param clazz The KClass of the target type to deserialize.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
         source.request(Long.MAX_VALUE)
         val limit = source.buffer.size.toInt()
@@ -803,7 +783,6 @@ object Ghost {
      * @param value The value to serialize.
      * @param clazz The KClass of the target type to serialize.
      */
-    @OptIn(InternalGhostApi::class)
     @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
         val serializer = getSerializer(clazz)
@@ -816,7 +795,6 @@ object Ghost {
     /**
      * Helper deserialize routine for KSP generated serializers.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
@@ -825,7 +803,6 @@ object Ghost {
     /**
      * Helper deserialize routine for KSP generated serializers.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(reader: GhostJsonFlatReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)

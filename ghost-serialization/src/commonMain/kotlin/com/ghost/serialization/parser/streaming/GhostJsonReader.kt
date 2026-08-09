@@ -363,8 +363,8 @@ class GhostJsonReader(
             val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
             val cachedString = stringPool[poolBucketIndex]
 
-            val isMatch = if (only7Bit && cachedString != null) {
-                if (isStreaming) {
+            if (only7Bit && cachedString != null) {
+                val isMatch = if (isStreaming) {
                     source.contentEqualsString(start, length, cachedString)
                 } else {
                     val localData = rawData
@@ -374,14 +374,11 @@ class GhostJsonReader(
                         cachedString
                     ) { localData[it].toInt() and C.BYTE_MASK }
                 }
-            } else {
-                false
-            }
-
-            if (isMatch) {
-                position = end + 1
-                nextTokenByte = -1
-                return cachedString!!
+                if (isMatch) {
+                    position = end + 1
+                    nextTokenByte = -1
+                    return cachedString
+                }
             }
 
             val decodedString = source.decodeJsonStringRange(start, end, only7Bit)

@@ -5,6 +5,7 @@ package com.ghost.serialization.writer.bytes
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
@@ -389,7 +390,7 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     /**
      * Writes [raw] without copying when it aliases the parse input buffer.
      */
-    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonFlatWriter =
+    fun rawValue(raw: RawJson): GhostJsonFlatWriter =
         rawValue(raw.storage, raw.storageOffset, raw.storageLength)
 
     /**

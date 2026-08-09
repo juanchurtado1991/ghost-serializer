@@ -5,6 +5,7 @@ package com.ghost.serialization.writer.bytes
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
@@ -405,7 +406,7 @@ class GhostJsonWriter(
     }
 
     /** Writes [raw] without copying slice data when possible. */
-    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonWriter =
+    fun rawValue(raw: RawJson): GhostJsonWriter =
         rawValue(raw.storage, raw.storageOffset, raw.storageLength)
 
     /**

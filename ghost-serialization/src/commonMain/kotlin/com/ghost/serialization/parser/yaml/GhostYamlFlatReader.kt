@@ -53,27 +53,27 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * Resets the reader's state to process a new byte payload.
      */
     fun reset(newData: ByteArray) {
-        this.rawData = newData
-        this.position = 0
-        this.limit = newData.size
-        this.currentIndent = 0
-        this.depth = 0
-        this.anchorTable.clear()
-        this.tagDirectives.clear()
-        this.rootParsed = false
-        this.rootObject = null
-        this.traversalStack.clear()
-        this.currentMap = null
-        this.mapIterator = null
-        this.currentEntry = null
-        this.currentList = null
-        this.listIterator = null
-        this.nextValue = null
-        this.strictMode = false
-        this.coerceStringsToNumbers = false
-        this.coerceBooleans = false
-        this.maxDepth = C.MAX_DEPTH
-        this.maxCollectionSize = GhostHeuristics.maxCollectionSize
+        rawData = newData
+        position = 0
+        limit = newData.size
+        currentIndent = 0
+        depth = 0
+        anchorTable.clear()
+        tagDirectives.clear()
+        rootParsed = false
+        rootObject = null
+        traversalStack.clear()
+        currentMap = null
+        mapIterator = null
+        currentEntry = null
+        currentList = null
+        listIterator = null
+        nextValue = null
+        strictMode = false
+        coerceStringsToNumbers = false
+        coerceBooleans = false
+        maxDepth = C.MAX_DEPTH
+        maxCollectionSize = GhostHeuristics.maxCollectionSize
     }
 
     // ── Public API ─────────────────────────────────────────────────────────────

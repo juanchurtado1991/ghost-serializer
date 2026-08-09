@@ -1,11 +1,5 @@
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.packScanResult
-import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.pow
 
@@ -322,8 +316,8 @@ object GhostJsonConstants {
 
     /**
      * Streaming window size (bytes) copied out of the Okio buffer per
-     * [StreamingGhostSource] slow-path refill, and the sliding-consume retain margin
-     * (see [StreamingGhostSource.releaseBefore]).
+     * [com.ghost.serialization.parser.streaming.StreamingGhostSource] slow-path refill, and the sliding-consume retain margin
+     * (see [com.ghost.serialization.parser.streaming.StreamingGhostSource.releaseBefore]).
      * Kept at one Okio segment (8 KB): larger windows did not improve Decode(Streaming)
      * throughput and raised both allocated KB/op and peak retained Okio prefix
      * (retain = 1× window behind the reader).
@@ -441,7 +435,7 @@ object GhostJsonConstants {
     const val BMP_LIMIT = 0xFFFF
 
     // --- Scanning & Escape Identifiers ---
-    /** Number of bytes packed into a Long by [ghostReadLong8] for SWAR scanning. */
+    /** Number of bytes packed into a Long by [com.ghost.serialization.parser.bytes.ghostReadLong8] for SWAR scanning. */
     const val LONG_BYTES = 8
 
     /** A Long whose 8 bytes are all ASCII space (0x20); byte-order-independent (symmetric). */
@@ -465,7 +459,7 @@ object GhostJsonConstants {
     /** SWAR broadcast of [BACKSLASH_INT] (`'\\' * SWAR_ONES`); XOR then zero-byte detect finds escapes. */
     const val SWAR_BACKSLASHES = 0x5C5C5C5C5C5C5C5CL
 
-    /** Byte offsets within an 8-byte [ghostReadLong8] window (scalar platform assembly). */
+    /** Byte offsets within an 8-byte [com.ghost.serialization.parser.bytes.ghostReadLong8] window (scalar platform assembly). */
     const val LONG_BYTE_OFFSET_1 = 1
     const val LONG_BYTE_OFFSET_2 = 2
     const val LONG_BYTE_OFFSET_3 = 3
@@ -476,7 +470,7 @@ object GhostJsonConstants {
 
     /**
      * Initial / reset value for optimistic in-order field prediction
-     * ([GhostJsonFlatReader] `predictedFieldIndex`).
+     * ([com.ghost.serialization.parser.bytes.GhostJsonFlatReader] `predictedFieldIndex`).
      */
     const val FIELD_PREDICTION_START = 0
 

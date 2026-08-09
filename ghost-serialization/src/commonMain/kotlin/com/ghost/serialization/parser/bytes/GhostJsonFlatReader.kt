@@ -289,20 +289,20 @@ open class GhostJsonFlatReader(
      * Resets the reader to parse a sub-range of [buffer] without copying (zero-copy slice decode).
      */
     fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
-        this.rawData = buffer
+        rawData = buffer
         source.data = buffer
-        this.position = offset
-        this.limit = offset + length
-        this.nextTokenByte = C.RESET_TOKEN_BYTE
-        this.depth = 0
-        this.needsCommaMask = 0L
-        this.commaConsumedMask = 0L
-        this.strictMode = false
-        this.coerceStringsToNumbers = false
-        this.coerceBooleans = false
-        this.maxDepth = C.MAX_DEPTH
-        this.maxCollectionSize = GhostHeuristics.maxCollectionSize
-        this.lastScanContentWas7BitOnly = false
+        position = offset
+        limit = offset + length
+        nextTokenByte = C.RESET_TOKEN_BYTE
+        depth = 0
+        needsCommaMask = 0L
+        commaConsumedMask = 0L
+        strictMode = false
+        coerceStringsToNumbers = false
+        coerceBooleans = false
+        maxDepth = C.MAX_DEPTH
+        maxCollectionSize = GhostHeuristics.maxCollectionSize
+        lastScanContentWas7BitOnly = false
     }
 
     /**

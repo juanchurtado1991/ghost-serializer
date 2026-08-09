@@ -1,7 +1,6 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker.peek
 import com.ghost.serialization.parser.common.GhostHeuristics.maxDiscriminatorPeekDistance
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK

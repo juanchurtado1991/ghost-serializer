@@ -48,14 +48,14 @@ internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
     }
     try {
         if (hasDot) {
-            val d = this.nextDoubleExtension()
+            val d = nextDoubleExtension()
             val i = d.toInt()
             if (d != i.toDouble()) {
                 throwError(C.ERR_PROTO_FRACTIONAL_INT)
             }
             return i
         }
-        return this.nextIntExtension()
+        return nextIntExtension()
     } finally {
         coerceStringsToNumbers = prev
     }

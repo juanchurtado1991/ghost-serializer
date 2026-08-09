@@ -20,9 +20,8 @@ import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
 /**
- * Serializer implementation for standard Kotlin [List] collections.
+ * Serializer implementation for standard Kotlin [Set] collections.
  */
-@OptIn(InternalGhostApi::class)
 class SetSerializer<T>(
     private val itemSerializer: GhostSerializer<T>
 ) : GhostSerializer<Set<T>> {

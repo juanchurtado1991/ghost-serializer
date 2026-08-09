@@ -22,7 +22,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 /**
  * Serializer implementation for standard Kotlin [List] collections.
  */
-@OptIn(InternalGhostApi::class)
 class ListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>
 ) : GhostSerializer<List<T>> {

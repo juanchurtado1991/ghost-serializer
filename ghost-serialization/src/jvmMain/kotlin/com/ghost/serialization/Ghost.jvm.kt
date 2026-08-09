@@ -127,36 +127,36 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
                     Ghost.DEFAULT_REGISTRY_NAME,
                     Ghost.TEST_REGISTRY_NAME
                 )
-                fastRegistries = names.mapNotNull { name ->
+                val registries = names.mapNotNull { name ->
                     runCatching {
                         Class.forName(name)
                             .getField(Ghost.INSTANCE_FIELD)
                             .get(null) as GhostRegistry
                     }.getOrNull()
                 }.toMutableList()
-                fastIterator = fastRegistries?.iterator()
+                fastRegistries = registries
+                fastIterator = registries.iterator()
             }
 
             if (fastIterator?.hasNext() == true) return true
 
-            if (slow == null) {
-                slow = runCatching {
-                    ServiceLoader
-                        .load(GhostRegistry::class.java)
-                        .iterator()
-                }
-                    .getOrDefault(
-                        emptyList<GhostRegistry>()
-                            .iterator()
-                    )
+            val slowIterator = slow ?: runCatching {
+                ServiceLoader
+                    .load(GhostRegistry::class.java)
+                    .iterator()
             }
-            return slow!!.hasNext()
+                .getOrDefault(
+                    emptyList<GhostRegistry>()
+                        .iterator()
+                ).also { slow = it }
+            return slowIterator.hasNext()
         }
 
         override fun next(): GhostRegistry {
             if (!hasNext()) throw NoSuchElementException()
-            if (fastIterator?.hasNext() == true) return fastIterator!!.next()
-            return slow!!.next()
+            val fast = fastIterator
+            if (fast != null && fast.hasNext()) return fast.next()
+            return checkNotNull(slow).next()
         }
     }
 }
