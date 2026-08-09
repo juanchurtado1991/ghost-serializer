@@ -11,7 +11,6 @@ import com.ghost.serialization.parser.common.isExponentMarker
 import com.ghost.serialization.parser.common.isNumericSeparator
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-
 fun GhostJsonStringReader.nextInt(): Int {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0

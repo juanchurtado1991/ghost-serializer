@@ -15,8 +15,11 @@ internal class GhostIntList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTIO
      */
     fun add(value: Int) {
         if (currentSize == buffer.size) {
-            val newCapacity =
-                if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
+            val newCapacity = if (buffer.isEmpty()) {
+                C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY
+            } else {
+                (buffer.size * C.BUFFER_SCALE_FACTOR)
+            }
             buffer = buffer.copyOf(newCapacity)
         }
         buffer[currentSize++] = value
@@ -54,7 +57,11 @@ internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTI
     fun add(value: Long) {
         if (currentSize == buffer.size) {
             val newCapacity =
-                if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
+                if (buffer.isEmpty()) {
+                    C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY
+                } else {
+                    (buffer.size * C.BUFFER_SCALE_FACTOR)
+                }
             buffer = buffer.copyOf(newCapacity)
         }
         buffer[currentSize++] = value

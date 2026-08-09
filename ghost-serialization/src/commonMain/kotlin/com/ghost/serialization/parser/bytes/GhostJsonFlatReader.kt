@@ -26,7 +26,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
  */
 open class GhostJsonFlatReader(
-    public var rawData: ByteArray,
+    var rawData: ByteArray,
     var maxDepth: Int = C.MAX_DEPTH,
     /**
      * When true, enables strict JSON validation: rejects unknown/unmapped fields
@@ -54,11 +54,11 @@ open class GhostJsonFlatReader(
     internal val source: ByteArrayGhostSource =
         createByteArraySource(rawData) as ByteArrayGhostSource
 
-    public var limit: Int = rawData.size
+    var limit: Int = rawData.size
 
-    public var position: Int = 0
+    var position: Int = 0
 
-    public var nextTokenByte: Int = C.RESET_TOKEN_BYTE
+    var nextTokenByte: Int = C.RESET_TOKEN_BYTE
 
     @InternalGhostApi
     fun _getPosition(): Int = position
@@ -102,7 +102,7 @@ open class GhostJsonFlatReader(
      * Gets the byte at the specified index, masking it to a positive integer.
      */
     @Suppress("NOTHING_TO_INLINE")
-    public inline fun getByte(index: Int): Int {
+    inline fun getByte(index: Int): Int {
         return rawData[index].toInt() and C.BYTE_MASK
     }
 

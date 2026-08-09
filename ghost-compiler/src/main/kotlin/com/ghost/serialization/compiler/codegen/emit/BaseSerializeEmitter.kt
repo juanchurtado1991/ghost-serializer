@@ -173,7 +173,7 @@ internal abstract class BaseSerializeEmitter(
     }
 
     /**
-     * Unwraps a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+     * Unwraps a `@GhostWrappedKeys`
      * property by writing each wire field at the current JSON object level.
      */
     private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
@@ -526,11 +526,11 @@ internal abstract class BaseSerializeEmitter(
             }
 
             typeName == C.K_BYTE -> {
-                code.addStatement("writer.value(%L.toInt())", accessor)
+                code.addStatement(C.STR_WRITER_VAL_TO_INT, accessor)
             }
 
             typeName == C.K_SHORT -> {
-                code.addStatement("writer.value(%L.toInt())", accessor)
+                code.addStatement(C.STR_WRITER_VAL_TO_INT, accessor)
             }
 
             typeName == C.K_CHAR -> {
@@ -673,14 +673,14 @@ internal abstract class BaseSerializeEmitter(
      * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
      */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
-        val ghostClass = ClassName(C.STR_GHOST_PKG, C.STR_GHOST_OBJ)
+        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST_OBJ)
 
         contextualSerializers.forEach { (type, name) ->
             val nonNullableType = type.makeNotNullable()
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     name,
-                    ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)
+                    ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
                         .parameterizedBy(nonNullableType.toTypeName()),
                     KModifier.PRIVATE
                 )

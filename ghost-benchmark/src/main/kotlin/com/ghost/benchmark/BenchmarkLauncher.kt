@@ -7,10 +7,8 @@
 package com.ghost.benchmark
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.integration.model.ComplexResponse
 import com.sun.management.ThreadMXBean
 import kotlinx.serialization.ExperimentalSerializationApi
-import okio.ByteString.Companion.encodeUtf8
 import kotlin.system.exitProcess
 
 /**
@@ -36,10 +34,7 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     val suite = BenchmarkSuite.fromCliName(args.firstOrNull() ?: BenchmarkSuite.FULL.cliName)
     BenchmarkEnvironment.printConfigHeader(suite)
-    val threadBean = BenchmarkEnvironment.init()
-    if (threadBean == null) {
-        exitProcess(1)
-    }
+    val threadBean = BenchmarkEnvironment.init() ?: exitProcess(1)
 
     val engines = BenchmarkEngines()
     val ok = when (suite) {
@@ -60,7 +55,7 @@ private fun runFullSuite(threadBean: ThreadMXBean, engines: BenchmarkEngines): B
     val payloads = BenchmarkPayloads.create()
 
     BenchmarkProgress.logPhase(1, 5, "Cold start")
-    runAndPrintColdStart(payloads.smallBytes, engines)
+    runAndPrintColdStart(payloads.smallBytes)
 
     BenchmarkProgress.logPhase(
         2,
@@ -96,6 +91,7 @@ private fun runFullSuite(threadBean: ThreadMXBean, engines: BenchmarkEngines): B
     )
 }
 
+@Suppress("SameParameterValue")
 private fun runSyntheticSuite(
     threadBean: ThreadMXBean,
     engines: BenchmarkEngines,
@@ -164,53 +160,3 @@ private fun runRawJsonSuite(): Boolean {
 private fun runYamlSuite(): Boolean = GhostYamlBenchmark.run()
 
 private fun runProtoSuite(): Boolean = GhostProtoBenchmark.run()
-
-/**
- * Pre-generated JSON payloads reused across synthetic suites.
- *
- * @property smallComplex in-memory model for the smallest LIST workload (20 users).
- * @property smallBytes UTF-8 JSON for [smallComplex].
- * @property listMediumBytes JSON for a 200-user [com.ghost.serialization.integration.model.ComplexResponse] list.
- * @property syncLargeBytes JSON for a 2 000-user [com.ghost.serialization.integration.model.ComplexResponse] list.
- * @property writingComplex in-memory model for the WRITING encode workload (1 000 users).
- * @property writingBytes pre-encoded JSON for [writingComplex]; used for encode GB/s reporting.
- * @property stressTreeBytes deeply nested [com.ghost.serialization.integration.model.Category] JSON for stress parsing.
- * @property failureMalformed truncated JSON used to exercise error paths.
- * @property failureBytes UTF-8 bytes of [failureMalformed].
- */
-internal data class BenchmarkPayloads(
-    val smallComplex: ComplexResponse,
-    val smallBytes: okio.ByteString,
-    val listMediumBytes: okio.ByteString,
-    val syncLargeBytes: okio.ByteString,
-    val writingComplex: ComplexResponse,
-    val writingBytes: okio.ByteString,
-    val stressTreeBytes: okio.ByteString,
-    val failureMalformed: String,
-    val failureBytes: okio.ByteString,
-) {
-    companion object {
-        /** Builds every synthetic payload from generated in-memory models. */
-        fun create(): BenchmarkPayloads {
-            val smallComplex = generateComplexData(20)
-            val smallBytes = generateNeutralJson(smallComplex).encodeUtf8()
-            val listMediumBytes = generateNeutralJson(generateComplexData(200)).encodeUtf8()
-            val syncLargeBytes = generateNeutralJson(generateComplexData(2000)).encodeUtf8()
-            val writingComplex = generateComplexData(1000)
-            val writingBytes = generateNeutralJson(writingComplex).encodeUtf8()
-            val stressTreeBytes = generateNeutralJson(createTree(20)).encodeUtf8()
-            val failureMalformed = smallBytes.utf8().substring(0, smallBytes.size / 2)
-            return BenchmarkPayloads(
-                smallComplex = smallComplex,
-                smallBytes = smallBytes,
-                listMediumBytes = listMediumBytes,
-                syncLargeBytes = syncLargeBytes,
-                writingComplex = writingComplex,
-                writingBytes = writingBytes,
-                stressTreeBytes = stressTreeBytes,
-                failureMalformed = failureMalformed,
-                failureBytes = failureMalformed.encodeUtf8(),
-            )
-        }
-    }
-}

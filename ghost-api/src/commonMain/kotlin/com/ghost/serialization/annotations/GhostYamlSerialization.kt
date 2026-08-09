@@ -5,8 +5,8 @@ package com.ghost.serialization.annotations
  * [GhostSerialization] or [GhostProtoSerialization].
  *
  * Without this annotation, KSP emits JSON (and proto3 JSON mapping when applicable) only.
- * With it, KSP also emits a [com.ghost.serialization.yaml.contract.GhostYamlSerializer]
- * companion when the model shape is YAML-compatible.
+ * With it, KSP also emits a `GhostYamlSerializer` companion when the model shape is
+ * YAML-compatible.
  *
  * **Cross-format annotations** (also honored on YAML and proto3 JSON paths when codegen runs):
  * - [GhostName] — wire key override

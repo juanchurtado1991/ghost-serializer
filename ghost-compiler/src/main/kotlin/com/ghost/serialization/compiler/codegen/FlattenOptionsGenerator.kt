@@ -22,13 +22,12 @@ internal object FlattenOptionsGenerator {
      * @param typeSpecBuilder The target class builder to inject the options properties into.
      * @param properties The list of target properties.
      * @param fullPaths The pre-extracted paths for each property.
-     * @param readerClass The JSON reader class reference.
+     * @param textChannel Whether generated OPTIONS tables target the string channel.
      */
     fun generateNestedOptions(
         typeSpecBuilder: TypeSpec.Builder,
         properties: List<GhostPropertyModel>,
         fullPaths: List<List<String>>,
-        readerClass: ClassName,
         textChannel: Boolean
     ) {
         val rootNodes = mutableMapOf<String, FlattenNode>()
@@ -53,7 +52,6 @@ internal object FlattenOptionsGenerator {
                 properties = properties,
                 fullPaths = fullPaths,
                 node = node,
-                readerClass = readerClass,
                 parentPrefix = C.STR_EMPTY,
                 currentPath = listOf(node.segment),
                 textChannel = textChannel
@@ -68,7 +66,6 @@ internal object FlattenOptionsGenerator {
      * @param properties The list of target properties.
      * @param fullPaths The pre-extracted paths for each property.
      * @param node The current flattened node.
-     * @param readerClass The JSON reader class reference.
      * @param parentPrefix Prefix derived from parent segments.
      * @param currentPath Path segments list up to this node.
      */
@@ -77,7 +74,6 @@ internal object FlattenOptionsGenerator {
         properties: List<GhostPropertyModel>,
         fullPaths: List<List<String>>,
         node: FlattenNode,
-        readerClass: ClassName,
         parentPrefix: String,
         currentPath: List<String>,
         textChannel: Boolean
@@ -86,12 +82,11 @@ internal object FlattenOptionsGenerator {
             return
         }
 
-        val currentPrefix =
-            if (parentPrefix.isEmpty()) {
-                node.segment
-            } else {
-                parentPrefix + C.STR_UNDERSCORE + node.segment
-            }
+        val currentPrefix = if (parentPrefix.isEmpty()) {
+            node.segment
+        } else {
+            parentPrefix + C.STR_UNDERSCORE + node.segment
+        }
         val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
 
         val depth = currentPath.size
@@ -130,7 +125,6 @@ internal object FlattenOptionsGenerator {
                 properties = properties,
                 fullPaths = fullPaths,
                 node = child,
-                readerClass = readerClass,
                 parentPrefix = currentPrefix,
                 currentPath = currentPath + child.segment,
                 textChannel = textChannel

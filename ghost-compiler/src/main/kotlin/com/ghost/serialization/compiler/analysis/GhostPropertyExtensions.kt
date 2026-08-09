@@ -51,7 +51,7 @@ internal fun GhostPropertyModel.getInitialValue(): String {
         isNullable -> C.STR_NULL
         targetProp.type.isPrimitiveInt() -> C.STR_ZERO
         targetProp.type.isPrimitiveLong() -> C.STR_ZERO_L
-        targetProp.type.isPrimitiveULong() -> "0uL"
+        targetProp.type.isPrimitiveULong() -> C.STR_ZERO_UL
         targetProp.type.isPrimitiveDouble() -> C.STR_ZERO_D
         targetProp.type.isPrimitiveFloat() -> C.STR_ZERO_F
         targetProp.type.isPrimitiveByte() -> C.STR_ZERO

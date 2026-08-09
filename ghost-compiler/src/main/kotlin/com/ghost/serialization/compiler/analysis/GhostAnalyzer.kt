@@ -407,7 +407,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val len = str.length
         while (i < len) {
             val c = str[i]
-            if (c == '_') {
+            if (c == C.CHAR_UNDERSCORE) {
                 uppercaseNext = true
             } else {
                 if (uppercaseNext) {

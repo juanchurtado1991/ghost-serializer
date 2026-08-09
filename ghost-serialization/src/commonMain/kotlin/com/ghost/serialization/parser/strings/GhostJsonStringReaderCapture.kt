@@ -1,5 +1,6 @@
 package com.ghost.serialization.parser.strings
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
@@ -18,6 +19,7 @@ fun GhostJsonStringReader.captureRawJson(): RawJson =
  * UTF-8 view when present, otherwise an encode of that range only. Prefer
  * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] when starting from a [ByteArray] source.
  */
+@OptIn(InternalGhostApi::class)
 fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
     skipWhitespace()
     val start = position
