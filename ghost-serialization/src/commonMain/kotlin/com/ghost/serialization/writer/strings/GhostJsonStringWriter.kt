@@ -483,16 +483,13 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 value = number,
                 scratch = byteScratch,
                 offset = 0,
-                fallback = { fallbackNum ->
-                    if (!fallbackNum.isFinite()) {
-                        throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                    }
-                    buffer.writeString(fallbackNum.toString())
-                    -1
-                }
             )
-
-            if (bytesWrittenLength > 0) {
+            if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+                if (!number.isFinite()) {
+                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+                }
+                buffer.writeString(number.toString())
+            } else if (bytesWrittenLength > 0) {
                 // Write formatted bytes as chars
                 for (i in 0 until bytesWrittenLength) {
                     scratchBuf[i] = byteScratch[i].toInt().toChar()
@@ -522,16 +519,13 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 value = number,
                 scratch = byteScratch,
                 offset = 0,
-                fallback = { fallbackNum ->
-                    if (!fallbackNum.isFinite()) {
-                        throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                    }
-                    buffer.writeString(fallbackNum.toString())
-                    -1
-                }
             )
-
-            if (bytesWrittenLength > 0) {
+            if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+                if (!number.isFinite()) {
+                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+                }
+                buffer.writeString(number.toString())
+            } else if (bytesWrittenLength > 0) {
                 for (i in 0 until bytesWrittenLength) {
                     scratchBuf[i] = byteScratch[i].toInt().toChar()
                 }

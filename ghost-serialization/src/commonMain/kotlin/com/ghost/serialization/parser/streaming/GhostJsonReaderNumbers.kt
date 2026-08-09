@@ -8,12 +8,12 @@ import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.finalizeParsedDouble
 import com.ghost.serialization.parser.common.finalizeParsedFloat
 import com.ghost.serialization.parser.common.handleLeadingZeroCore
-import com.ghost.serialization.parser.common.isDigit
 import com.ghost.serialization.parser.common.parseExponentValueCore
 import com.ghost.serialization.parser.common.parseIntDigitsCore
 import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
 import com.ghost.serialization.parser.common.parseLongDigitsCore
 import com.ghost.serialization.parser.common.prepareNumericHeaderCore
+import com.ghost.serialization.parser.common.skipNumberBodyCore
 import com.ghost.serialization.parser.common.validateLeadingZeroCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
@@ -293,112 +293,16 @@ fun GhostJsonReader.skipNumber() {
     val header = prepareNumericHeader()
     val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
 
-    var hasDigits = false
-
-    // Integer part
-    val pos = position
-    val lim = limit
-    if (pos < lim && getByte(pos) == C.ZERO_INT) {
-        val newPos = pos + 1
-        position = newPos
-        hasDigits = true
-        if (
-            newPos < lim &&
-            isDigit(getByte(newPos))
-        ) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    } else {
-        readNumericLoop { hasDigits = true }
-    }
-
-    if (!hasDigits) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    // Decimal part
-    val decPos = position
-    val decLim = limit
-    if (
-        decPos < decLim &&
-        getByte(decPos) == C.DOT_INT
-    ) {
-        position = decPos + 1
-        var hasDecimalDigits = false
-        readNumericLoop { hasDecimalDigits = true }
-        if (!hasDecimalDigits) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    // Exponent part
-    val expPos = position
-    val expLim = limit
-    if (expPos < expLim) {
-        val byte = getByte(expPos)
-        if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {
-            var newPos = expPos + 1
-            position = newPos
-            if (newPos < expLim) {
-                val sign = getByte(newPos)
-                if (sign == C.PLUS_INT || sign == C.MINUS_INT) {
-                    newPos++
-                    position = newPos
-                }
-            }
-
-            var hasExpDigits = false
-            readNumericLoop { hasExpDigits = true }
-            if (!hasExpDigits) {
-                throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)
-            }
-        }
-    }
+    skipNumberBodyCore(
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        getByte = { getByte(it) },
+        throwError = { throwError(it) },
+    )
 
     if (isQuoted) {
         consumeNumericCoercionFooter()
     }
     nextTokenByte = C.RESET_TOKEN_BYTE
-}
-
-/**
- * Loops and consumes digits from the stream.
- */
-private inline fun GhostJsonReader.readNumericLoop(
-    crossinline onDigit: (byte: Int) -> Unit
-) {
-    readNumericLoop(onDigit) {}
-}
-
-/**
- * Loops and consumes digits from the stream, with optional break hook.
- */
-private inline fun GhostJsonReader.readNumericLoop(
-    crossinline onDigit: (byte: Int) -> Unit,
-    crossinline onBreak: (byte: Int) -> Unit
-) {
-    if (isStreaming) {
-        while (position < limit) {
-            val byte = source[position]
-            if (isDigit(byte)) {
-                onDigit(byte)
-                position++
-            } else {
-                onBreak(byte)
-                break
-            }
-        }
-    } else {
-        val data = rawData
-        while (position < limit) {
-            val byte = data[position].toInt() and C.BYTE_MASK
-            if (isDigit(byte)) {
-                onDigit(byte)
-                position++
-            } else {
-                onBreak(byte)
-                break
-            }
-        }
-    }
 }

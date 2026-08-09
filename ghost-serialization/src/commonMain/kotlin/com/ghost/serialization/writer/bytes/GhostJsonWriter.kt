@@ -514,16 +514,13 @@ class GhostJsonWriter(
             value = number,
             scratch = scratchBuf,
             offset = 0,
-            fallback = { fallbackNum ->
-                if (!fallbackNum.isFinite()) {
-                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                }
-                buffer.writeUtf8(fallbackNum.toString())
-                -1
-            }
         )
-
-        if (bytesWrittenLength > 0) {
+        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+            if (!number.isFinite()) {
+                throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+            }
+            buffer.writeUtf8(number.toString())
+        } else if (bytesWrittenLength > 0) {
             buffer.write(scratchBuf, 0, bytesWrittenLength)
         }
     }
@@ -545,16 +542,13 @@ class GhostJsonWriter(
             value = number,
             scratch = scratchBuf,
             offset = 0,
-            fallback = { fallbackNum ->
-                if (!fallbackNum.isFinite()) {
-                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                }
-                buffer.writeUtf8(fallbackNum.toString())
-                -1
-            }
         )
-
-        if (bytesWrittenLength > 0) {
+        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+            if (!number.isFinite()) {
+                throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+            }
+            buffer.writeUtf8(number.toString())
+        } else if (bytesWrittenLength > 0) {
             buffer.write(scratchBuf, 0, bytesWrittenLength)
         }
     }
