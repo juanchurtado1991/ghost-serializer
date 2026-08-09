@@ -30,6 +30,48 @@ internal inline fun isDigit(byteCode: Int): Boolean {
 }
 
 /**
+ * Accumulates one decimal digit into an Int, throwing via [onOverflow] past JVM Int bounds.
+ */
+internal inline fun accumulateIntWithOverflowCheck(
+    current: Int,
+    digitValue: Int,
+    isNegative: Boolean,
+    onOverflow: () -> Nothing,
+): Int {
+    if (current > C.INT_OVERFLOW_LIMIT ||
+        (current == C.INT_OVERFLOW_LIMIT &&
+                digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
+    ) {
+        onOverflow()
+    }
+    return current * C.BASE_TEN + digitValue
+}
+
+/**
+ * Accumulates one decimal digit into a Long, throwing via [onOverflow] past JVM Long bounds.
+ * Preserves the Long.MIN_VALUE edge case for negative overflow-limit + last digit.
+ */
+internal inline fun accumulateLongWithOverflowCheck(
+    current: Long,
+    digitValue: Int,
+    isNegative: Boolean,
+    onOverflow: () -> Nothing,
+): Long {
+    if (current == Long.MIN_VALUE ||
+        current > C.LONG_OVERFLOW_LIMIT ||
+        (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)
+    ) {
+        if (isNegative && current == C.LONG_OVERFLOW_LIMIT &&
+            digitValue == C.LONG_MIN_LAST_DIGIT
+        ) {
+            return Long.MIN_VALUE
+        }
+        onOverflow()
+    }
+    return current * C.BASE_TEN + digitValue
+}
+
+/**
  * Returns 10.0f raised to the power of exponent using a lookup table or pow fallback.
  */
 internal inline fun getFloatPowerOfTen(exponent: Int): Float {
