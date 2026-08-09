@@ -284,27 +284,27 @@ Ghost YAML Writer Conformance — vendored yaml-test-suite snapshot
 Cases loaded: 318 reader-decodable (out of 402 total)
 
 Round-trip (decode -> encode -> decode reproduces the original tree):
-  310 pass, 8 known gap(s), 0 UNEXPECTED
-  310 / 318 = 97.48%
+  318 pass, 0 known gap(s), 0 UNEXPECTED
+  318 / 318 = 100.00%
 
 kaml oracle (an independent second parser accepts Ghost's re-encoded output):
-  290 pass, 28 known gap(s), 0 UNEXPECTED
-  290 / 318 = 91.19%
+  306 pass, 12 known gap(s), 0 UNEXPECTED
+  306 / 318 = 96.23%
 
 Known gaps by category:
-  KAML_COMPLEX_KEY_LIMITATION   20 case(s)
-  UNQUOTED_KEY                   8 case(s)
+  KAML_COMPLEX_KEY_LIMITATION   12 case(s)
 ==============================================================================
 No unexpected deviations — every known gap is tracked in YamlWriterDeviations.kt
 ```
 
-The `UNQUOTED_KEY` gap is a real writer bug: `name(key: String)` writes mapping keys as bare, unquoted plain-scalar
-text (unlike `value()`, which always double-quotes) — a key containing structurally-significant bytes (`": "`, an
-embedded newline/tab, or the stringified text of a complex key the reader already collapsed to a `String`) can
-round-trip to a different structure. `KAML_COMPLEX_KEY_LIMITATION` is **not** a Ghost bug — kaml's own parser
-rejects any mapping key that isn't a simple scalar (flow-collection-shaped or bare/empty implicit keys), a
-kotlinx.serialization-property-name design choice on kaml's side, not a YAML spec violation; every one of those
-cases round-trips correctly through Ghost's own reader. Full detail, case-by-case, in
+`name(key: String)` used to write mapping keys as bare, unquoted plain-scalar text (unlike `value()`, which always
+double-quotes) — a key containing structurally-significant bytes (`": "`, an embedded newline/tab, a leading
+anchor/tag/alias/quote sigil, or a leading `[`/`{` from a stringified complex key) could round-trip to a different
+structure, or fail to re-parse at all. Fixed via a fast, single-pass `keyNeedsQuoting` check that quotes only when
+actually necessary (an ordinary key like `userId` stays bare) — round-trip is now 100%. `KAML_COMPLEX_KEY_LIMITATION`
+is **not** a Ghost bug — kaml's own parser rejects any mapping key that isn't a simple scalar (flow-collection-shaped
+or bare/empty implicit keys), a kotlinx.serialization-property-name design choice on kaml's side, not a YAML spec
+violation; every one of those cases round-trips correctly through Ghost's own reader. Full detail, case-by-case, in
 [`YamlWriterDeviations.kt`](../../ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlWriterDeviations.kt).
 
 ---
