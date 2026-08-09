@@ -441,6 +441,67 @@ class GhostYamlFlatWriterEdgeCaseTest {
         }
     }
 
+    // ── D2. KEY QUOTING (name() must quote/escape keys that aren't safe bare) ──
+
+    private fun readsKeyBackVerbatim(key: String, value: String = "v"): Boolean {
+        val yaml = writerToString { w -> w.beginObject(); w.name(key); w.value(value); w.endObject() }
+        val decoded = GhostYamlFlatReader(yaml.encodeToByteArray()).readDocument() as Map<*, *>
+        return decoded.size == 1 && decoded[key] == value
+    }
+
+    @Test
+    fun ordinaryKeyStaysUnquoted() {
+        val yaml = writerToString { w -> w.beginObject(); w.name("userId"); w.value(1); w.endObject() }
+        assertEquals("userId: 1", yaml.trim())
+    }
+
+    @Test
+    fun emptyKeyStaysUnquotedAndRoundTrips() {
+        val yaml = writerToString { w -> w.beginObject(); w.name(""); w.value("x"); w.endObject() }
+        assertEquals(": \"x\"", yaml.trim())
+        assertTrue(readsKeyBackVerbatim(""))
+    }
+
+    @Test
+    fun keyWithColonSpaceRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("foo: bar"))
+    }
+
+    @Test
+    fun keyWithEmbeddedNewlineRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("foo\nbar"))
+    }
+
+    @Test
+    fun keyStartingWithAnchorSigilRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("&notAnAnchor"))
+    }
+
+    @Test
+    fun keyStartingWithAliasSigilRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("*notAnAlias"))
+    }
+
+    @Test
+    fun keyStartingWithTagSigilRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("!notATag"))
+    }
+
+    @Test
+    fun bareQuestionMarkKeyRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("?"))
+    }
+
+    @Test
+    fun keyStartingWithBracketRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("[a, b]"))
+    }
+
+    @Test
+    fun keyStartingWithBraceRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("{a=b}"))
+    }
+
     // ── E. FUSED writeField(header, value) OVERLOADS ──────────────────
 
     @Test

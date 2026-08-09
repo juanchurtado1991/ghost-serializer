@@ -161,7 +161,11 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
                 writeIndentation(currentDepth - 1)
             }
         }
-        buffer.writeUtf8(key)
+        if (keyNeedsQuoting(key)) {
+            writeStringValueRaw(key)
+        } else {
+            buffer.writeUtf8(key)
+        }
         buffer.writeByte(C.COLON_INT)
         itemCounts[currentDepth]++
         pendingSpace = true
@@ -255,6 +259,52 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         prepareValue(isStructural = false)
         buffer.writeUtf8(C.STR_NULL)
         return this
+    }
+
+    /**
+     * True if [key] can't safely be written as bare plain-scalar text: it would either redirect
+     * into a nested mapping when re-read (an embedded ": " indistinguishable from the key/value
+     * separator), get silently truncated (an embedded newline — a bare implicit key's own scan
+     * stops at the first one), or be misread as something else entirely by the reader's own
+     * prefix dispatch. A leading '&'/'!'/'*' looks like an anchor/tag/alias to `readKey`, a
+     * leading '"'/'\'' looks like the start of a quoted key, and a bare '?' — or '?' followed by
+     * whitespace — looks like an explicit-key indicator. A leading '['/'{' is a different hazard:
+     * a *stringified complex key* (Ghost collapses a non-scalar key to its `toString()`, e.g.
+     * `"[a, b]"` or `"{k=v}"`) starting with one of these can end up read back through
+     * `readValue`'s full structural flow-collection dispatch instead of `readKey`'s plain-text
+     * scan — e.g. as a redirected implicit key or a block-sequence item's value — misparsing the
+     * stringified text as a real (and likely invalid, since it uses `=` not `:`) flow collection
+     * instead of treating it as opaque text. An empty key is fine bare: a lone ':' with nothing
+     * before it already round-trips to the empty string correctly.
+     */
+    private fun keyNeedsQuoting(key: String): Boolean {
+        val length = key.length
+        if (length == 0) return false
+        val first = key[0].code
+        if (first == C.AMPERSAND_BYTE.toInt() || first == C.ASTERISK_BYTE.toInt() ||
+            first == C.EXCLAMATION_BYTE.toInt() || first == C.DOUBLE_QUOTE_INT ||
+            first == C.SINGLE_QUOTE_BYTE.toInt() || first == C.LEFT_BRACKET_BYTE.toInt() ||
+            first == C.LEFT_BRACE_BYTE.toInt()
+        ) {
+            return true
+        }
+        if (first == C.QUESTION_BYTE.toInt() &&
+            (length == 1 || key[1].code == C.SPACE_INT || key[1].code == C.CHAR_TAB_INT)
+        ) {
+            return true
+        }
+        var index = 0
+        while (index < length) {
+            val code = key[index].code
+            if (code == C.CHAR_LF_INT || code == C.CHAR_CR_INT) return true
+            if (code == C.COLON_INT &&
+                (index + 1 == length || key[index + 1].code == C.SPACE_INT || key[index + 1].code == C.CHAR_TAB_INT)
+            ) {
+                return true
+            }
+            index++
+        }
+        return false
     }
 
     @InternalGhostApi
