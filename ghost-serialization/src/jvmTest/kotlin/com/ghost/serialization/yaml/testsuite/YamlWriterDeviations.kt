@@ -53,7 +53,6 @@ internal val writerKamlOracleDeviations: Set<DeviationCase> = setOf(
     "KK5P" because WRITER_REASON_UNQUOTED_KEY,
     "M2N8_01" because WRITER_REASON_UNQUOTED_KEY,
     // kaml-only: round-trip is otherwise correct, kaml itself just can't parse the key shape.
-    "26DV" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Whitespace around colon in mappings
     "2JQS" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Block Mapping with Missing Keys
     "6BFJ" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Mapping, key and flow sequence item anchors
     "6M2F" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Aliases in Explicit Block Mapping

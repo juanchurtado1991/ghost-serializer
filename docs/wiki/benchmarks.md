@@ -231,20 +231,20 @@ Ghost YAML Spec Compliance — vendored yaml-test-suite snapshot
 Cases loaded: 402  (279 valid, with in.json — the matrix.yaml.info-comparable denominator)
 
 Outcome (parses/rejects as the spec expects):
-  363 pass, 39 known gap(s), 0 UNEXPECTED
-Value (decoded tree matches in.json, of 268 checked):
-  252 pass, 16 known gap(s), 0 UNEXPECTED
+  366 pass, 36 known gap(s), 0 UNEXPECTED
+Value (decoded tree matches in.json, of 271 checked):
+  256 pass, 15 known gap(s), 0 UNEXPECTED
 
 Compliance = value-pass / 279 valid cases:
-  252 / 279 = 90.32%
+  256 / 279 = 91.76%
 
 Known gaps by category:
-  MISC                    13 case(s)
+  MISC                    10 case(s)
   TAB                     10 case(s)
   INDENTATION             10 case(s)
   BLOCK_SCALAR             8 case(s)
-  ANCHOR_ALIAS             5 case(s)
-  FLOW_COLLECTION          3 case(s)
+  FLOW_COLLECTION          4 case(s)
+  ANCHOR_ALIAS             3 case(s)
   COMMENT                  2 case(s)
   TAG                      1 case(s)
   MULTILINE_PLAIN_EDGE     1 case(s)
@@ -281,18 +281,18 @@ reproducible-by-anyone-who-clones-the-repo shape as the reader report.
 ==============================================================================
 Ghost YAML Writer Conformance — vendored yaml-test-suite snapshot
 ==============================================================================
-Cases loaded: 315 reader-decodable (out of 402 total)
+Cases loaded: 318 reader-decodable (out of 402 total)
 
 Round-trip (decode -> encode -> decode reproduces the original tree):
-  307 pass, 8 known gap(s), 0 UNEXPECTED
-  307 / 315 = 97.46%
+  310 pass, 8 known gap(s), 0 UNEXPECTED
+  310 / 318 = 97.48%
 
 kaml oracle (an independent second parser accepts Ghost's re-encoded output):
-  286 pass, 29 known gap(s), 0 UNEXPECTED
-  286 / 315 = 90.79%
+  290 pass, 28 known gap(s), 0 UNEXPECTED
+  290 / 318 = 91.19%
 
 Known gaps by category:
-  KAML_COMPLEX_KEY_LIMITATION   21 case(s)
+  KAML_COMPLEX_KEY_LIMITATION   20 case(s)
   UNQUOTED_KEY                   8 case(s)
 ==============================================================================
 No unexpected deviations — every known gap is tracked in YamlWriterDeviations.kt

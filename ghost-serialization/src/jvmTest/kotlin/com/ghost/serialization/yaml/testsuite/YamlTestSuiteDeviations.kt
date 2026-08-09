@@ -64,7 +64,6 @@ internal val REASON_LABELS: Map<String, String> = mapOf(
  *   match the case's `in.json` fixture.
  */
 val deviationsInOutcome: Set<DeviationCase> = setOf(
-    "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
     "35KP" because REASON_TAG, // Tags for Root Objects
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
@@ -74,8 +73,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line
     "DK95_01" because REASON_TAB, // Tabs that look like indentation
     "DMG6" because REASON_INDENTATION, // Wrong indendation in Map
-    "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
-    "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "HU3P" because REASON_MULTILINE_PLAIN_EDGE, // Invalid Mapping in plain scalar
     "JY7Z" because REASON_MISC, // Trailing content that looks like a mapping
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
@@ -107,8 +104,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
 
 /** See [deviationsInOutcome]. */
 val deviationsInValue: Set<DeviationCase> = setOf(
-    "26DV" because REASON_MISC, // Whitespace around colon in mappings
-    "2SXE" because REASON_ANCHOR_ALIAS, // Anchors With Colon in Name
     "35KP" because REASON_TAG, // Tags for Root Objects
     "4CQQ" because REASON_FLOW_COLLECTION, // Spec Example 2.18. Multi-line Flow Scalars
     "4QFQ" because REASON_INDENTATION, // Spec Example 8.2. Block Indentation Indicator [1.3]
@@ -119,10 +114,8 @@ val deviationsInValue: Set<DeviationCase> = setOf(
     "A2M4" because REASON_INDENTATION, // Spec Example 6.2. Indentation Indicators
     "AB8U" because REASON_INDENTATION, // Sequence entry that looks like two with wrong indentation
     "DWX9" because REASON_BLOCK_SCALAR, // Spec Example 8.8. Literal Content
-    "E76Z" because REASON_ANCHOR_ALIAS, // Aliases in Implicit Block Mapping
     "F6MC" because REASON_BLOCK_SCALAR, // More indented lines at the beginning of folded block scalars
     "H2RW" because REASON_MISC, // Blank lines
-    "HMQ5" because REASON_MISC, // Spec Example 6.23. Node Properties
     "L24T_00" because REASON_MISC, // Trailing line of spaces
     "L24T_01" because REASON_MISC, // Trailing line of spaces
     "M5C3" because REASON_BLOCK_SCALAR, // Spec Example 8.21. Block Scalar Nodes
