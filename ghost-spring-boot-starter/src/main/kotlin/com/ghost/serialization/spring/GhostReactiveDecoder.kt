@@ -1,7 +1,6 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import org.reactivestreams.Publisher
@@ -24,6 +23,8 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
  * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
  * to the pooled `GhostJsonReader`, avoiding
  * intermediate Okio/InputStream wrappers entirely.
+ *
+ * [canDecode] accepts types that have a serializer registered with [Ghost].
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
@@ -32,8 +33,7 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
     override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()
         return super.canDecode(elementType, mimeType) &&
-                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||
-                        Ghost.getSerializer(clazz.kotlin) != null)
+                Ghost.getSerializer(clazz.kotlin) != null
     }
 
     override fun decode(

@@ -2,10 +2,8 @@ package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.releaseScratchBuffer
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
@@ -13,7 +11,6 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
-import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
 
 
@@ -52,47 +49,11 @@ class GhostContentConverter(
             ?: Ghost.getSerializer(typeInfo.type as KClass<Any>)
             ?: return null
 
-        var scratch =
-            acquireScratchBuffer(BUFFER_SIZE)
-
-        try {
-            var offset = 0
-            while (true) {
-                if (offset == scratch.size) {
-                    val grown =
-                        acquireScratchBuffer(scratch.size * 2)
-
-                    scratch.copyInto(
-                        grown,
-                        0,
-                        0,
-                        offset
-                    )
-
-                    releaseScratchBuffer(scratch)
-                    scratch = grown
-                }
-
-                val read = content.readAvailable(
-                    scratch,
-                    offset,
-                    scratch.size - offset
-                )
-
-                if (read == -1) break
-                offset += read
-            }
-
-            return ghostInternalUseFlatReader(scratch, offset) { reader ->
+        return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
+            ghostInternalUseFlatReader(scratch, offset) { reader ->
                 configurer?.invoke(reader)
                 serializer.deserialize(reader)
             }
-        } finally {
-            releaseScratchBuffer(scratch)
         }
-    }
-
-    companion object {
-        private const val BUFFER_SIZE = 524288
     }
 }

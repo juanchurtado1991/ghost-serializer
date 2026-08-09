@@ -4,12 +4,10 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.annotations.GhostCoerce
 import com.ghost.serialization.annotations.GhostStrict
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalUseFlatReader
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import okhttp3.MediaType.Companion.toMediaType
@@ -56,37 +54,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
         return Converter { body ->
             body.use {
-                val stream = it.byteStream()
-                var scratch = acquireScratchBuffer(BUFFER_SIZE)
-                try {
-
-                    var offset = 0
-                    while (true) {
-                        if (offset == scratch.size) {
-                            val grown =
-                                acquireScratchBuffer(scratch.size * 2)
-
-                            scratch.copyInto(
-                                grown,
-                                0,
-                                0,
-                                offset
-                            )
-
-                            releaseScratchBuffer(scratch)
-                            scratch = grown
-                        }
-
-                        val read = stream.read(
-                            scratch,
-                            offset,
-                            scratch.size - offset
-                        )
-
-                        if (read == -1) break
-                        offset += read
-                    }
-
+                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset ->
                     ghostInternalUseFlatReader(
                         scratch, offset
                     ) { reader ->
@@ -102,8 +70,6 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                             serializer.deserialize(reader)
                         }
                     }
-                } finally {
-                    releaseScratchBuffer(scratch)
                 }
             }
         }
@@ -171,7 +137,6 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
     companion object {
         private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()
-        private const val BUFFER_SIZE = 524288
 
         fun create(): GhostConverterFactory = GhostConverterFactory()
     }
