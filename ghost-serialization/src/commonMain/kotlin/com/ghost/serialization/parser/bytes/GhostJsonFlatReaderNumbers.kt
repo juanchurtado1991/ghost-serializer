@@ -6,11 +6,15 @@ package com.ghost.serialization.parser.bytes
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.accumulateIntWithOverflowCheck
 import com.ghost.serialization.parser.common.accumulateLongWithOverflowCheck
+import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.getDoublePowerOfTen
 import com.ghost.serialization.parser.common.getFloatPowerOfTen
 import com.ghost.serialization.parser.common.isDigit
 import com.ghost.serialization.parser.common.isExponentMarker
 import com.ghost.serialization.parser.common.isNumericSeparator
+import com.ghost.serialization.parser.common.parseExponentValueCore
+import com.ghost.serialization.parser.common.prepareNumericHeaderCore
+import com.ghost.serialization.parser.common.validateLeadingZeroCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -194,39 +198,14 @@ fun GhostJsonFlatReader.nextDoubleExtension(): Double {
 /**
  * Helper to parse the exponent suffix value (e.g. e-5 or e+12) from a number.
  */
-private inline fun GhostJsonFlatReader.parseExponentValue(): Int {
-    position++
-    var isExpNegative = false
-    if (position < limit) {
-        val marker = getByte(position)
-        if (marker == C.MINUS_INT) {
-            isExpNegative = true
-            position++
-        } else if (marker == C.PLUS_INT) {
-            position++
-        }
-    }
-
-    var expValue = 0
-    var hasExpDigits = false
-    while (position < limit) {
-        val currentByteInt = getByte(position)
-        if (isDigit(currentByteInt)) {
-            if (expValue < C.EXPONENT_CLAMP_THRESHOLD) {
-                expValue = expValue * C.BASE_TEN + (currentByteInt - C.ZERO_INT)
-            }
-            hasExpDigits = true
-            position++
-        } else {
-            break
-        }
-    }
-
-    if (!hasExpDigits) {
-        throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)
-    }
-    return if (isExpNegative) -expValue else expValue
-}
+private inline fun GhostJsonFlatReader.parseExponentValue(): Int =
+    parseExponentValueCore(
+        startPosition = position,
+        limit = limit,
+        getByte = { getByte(it) },
+        setPosition = { position = it },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Parses and returns the next [Int] value from the JSON stream.
@@ -297,42 +276,17 @@ fun GhostJsonFlatReader.nextLongExtension(): Long {
 /**
  * Prepares the numeric header by checking negative signs and string coercion quotes.
  */
-private fun GhostJsonFlatReader.prepareNumericHeader(): Int {
-    if (nextTokenByte == C.RESET_TOKEN_BYTE) {
-        skipWhitespace()
-    }
-    if (position >= limit) {
-        throwError(C.ERR_EXPECTED_NUMBER)
-    }
-
-    var header = 0
-    var token = nextTokenByte
-
-    if (token == C.QUOTE_INT) {
-        if (!coerceStringsToNumbers) {
-            throwError(C.ERR_COERCION_DISABLED)
-        }
-        position++
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        skipWhitespace()
-        if (position >= limit) {
-            throwError(C.ERR_EXPECTED_NUMBER)
-        }
-        token = nextTokenByte
-        header = header or C.NUMERIC_HEADER_QUOTED
-    }
-
-    if (token == C.MINUS_INT) {
-        if (position + 1 >= limit) {
-            throwError(C.ERR_ISOLATED_MINUS)
-        }
-        position++
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        header = header or C.NUMERIC_HEADER_NEGATIVE
-    }
-
-    return header
-}
+private fun GhostJsonFlatReader.prepareNumericHeader(): Int =
+    prepareNumericHeaderCore(
+        getNextTokenByte = { nextTokenByte },
+        setNextTokenByte = { nextTokenByte = it },
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        coerceStringsToNumbers = coerceStringsToNumbers,
+        skipWhitespace = { skipWhitespace() },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Handles validation and skipping of a single leading zero.
@@ -440,25 +394,28 @@ private fun GhostJsonFlatReader.parseLongDigits(isNegative: Boolean, startOfNumb
  * Consumes the trailing quotation mark when parsing coerced numeric string values.
  */
 private inline fun GhostJsonFlatReader.consumeNumericCoercionFooter() {
-    if (position >= limit || getByte(position) != C.QUOTE_INT) {
-        throwError(C.ERR_EXPECTED_COERCION_QUOTE)
-    }
-    internalSkip(1)
-    skipWhitespace()
+    consumeNumericCoercionFooterCore(
+        position = position,
+        limit = limit,
+        getByte = { getByte(it) },
+        throwError = { throwError(it) },
+        afterQuote = {
+            internalSkip(1)
+            skipWhitespace()
+        },
+    )
 }
 
 /**
  * Validates leading zero presence for numbers.
  */
 private fun GhostJsonFlatReader.validateLeadingZero() {
-    if (position < limit && getByte(position) == C.ZERO_INT &&
-        position + 1 < limit
-    ) {
-        val nextDigitByte = getByte(position + 1)
-        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    }
+    validateLeadingZeroCore(
+        position = position,
+        limit = limit,
+        getByte = { getByte(it) },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
