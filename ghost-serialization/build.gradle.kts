@@ -66,6 +66,10 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             // DynamicTest/TestFactory for the data-driven yaml-test-suite harness — JVM-only.
             implementation(libs.junit.jupiter.api)
+            // Independent second YAML parser used as a validation oracle for
+            // GhostYamlFlatWriter's output (GhostYamlWriterConformanceTest) — JVM-only,
+            // test-only, not a Ghost runtime dependency.
+            implementation(libs.kaml)
         }
     }
 }
@@ -80,6 +84,14 @@ tasks.register<JavaExec>("yamlComplianceMatrix") {
     dependsOn("jvmTestClasses")
     classpath = tasks.named<Test>("jvmTest").get().classpath
     mainClass.set("com.ghost.serialization.yaml.testsuite.YamlComplianceReportKt")
+}
+
+tasks.register<JavaExec>("yamlWriterComplianceMatrix") {
+    group = "verification"
+    description = "Prints Ghost's YAML writer conformance report (round-trip + kaml oracle) against the vendored yaml-test-suite snapshot"
+    dependsOn("jvmTestClasses")
+    classpath = tasks.named<Test>("jvmTest").get().classpath
+    mainClass.set("com.ghost.serialization.yaml.testsuite.YamlWriterComplianceReportKt")
 }
 
 ksp { arg("ghost.moduleName", "ghost_serialization") }
