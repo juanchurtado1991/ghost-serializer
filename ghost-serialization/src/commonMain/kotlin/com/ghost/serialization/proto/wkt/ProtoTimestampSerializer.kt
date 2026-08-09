@@ -186,7 +186,9 @@ internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
         val tzSign = if (timestampString[nextIndex] == C.CHAR_HYPHEN) -1 else 1
         val tzHour = timestampString.parseDecimalAt(nextIndex + 1, nextIndex + 3)
         val tzMin = timestampString.parseDecimalAt(nextIndex + 4, nextIndex + 6)
-        offsetSec = tzSign * (tzHour * 3600 + tzMin * 60)
+        offsetSec = tzSign * (
+            tzHour * C.SECONDS_PER_HOUR.toInt() + tzMin * C.SECONDS_PER_MINUTE.toInt()
+        )
     }
 
     val epochSeconds = dateToEpochSeconds(year, month, day, hour, minute, second) - offsetSec
@@ -207,8 +209,8 @@ internal fun dateToEpochSeconds(
     val era =
         (if (yearAdjustment >= 0) yearAdjustment else yearAdjustment - (C.HINNANT_ERA_YEARS - 1)) / C.HINNANT_ERA_YEARS
     val yearOfEra = yearAdjustment - era * C.HINNANT_ERA_YEARS
-    val dayOfYear = (153 * (monthAdjustment - 3) + 2) / 5 + day - 1
-    val dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
+    val dayOfYear = (C.HINNANT_MONTH_COEFF * (monthAdjustment - 3) + 2) / 5 + day - 1
+    val dayOfEra = yearOfEra * C.DAYS_PER_YEAR + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
     val days = era * C.HINNANT_DAYS_PER_ERA + dayOfEra - C.HINNANT_EPOCH_OFFSET
     return days * C.SECONDS_PER_DAY + hour * C.SECONDS_PER_HOUR + minute * C.SECONDS_PER_MINUTE + second
 }
@@ -232,11 +234,11 @@ internal fun formatTimestamp(timestamp: ProtoTimestamp): String {
         (if (zeroDay >= 0) zeroDay else zeroDay - C.HINNANT_DAYS_CYCLE_ERA) / C.HINNANT_DAYS_PER_ERA
     val dayOfEra = (zeroDay - era * C.HINNANT_DAYS_PER_ERA).toInt()
     val yearOfEra =
-        (dayOfEra - dayOfEra / C.HINNANT_DAYS_CYCLE_4 + dayOfEra / C.HINNANT_DAYS_CYCLE_100 - dayOfEra / C.HINNANT_DAYS_CYCLE_ERA) / 365
+        (dayOfEra - dayOfEra / C.HINNANT_DAYS_CYCLE_4 + dayOfEra / C.HINNANT_DAYS_CYCLE_100 - dayOfEra / C.HINNANT_DAYS_CYCLE_ERA) / C.DAYS_PER_YEAR
     val y = yearOfEra + era * C.HINNANT_ERA_YEARS
-    val dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
-    val monthPosition = (5 * dayOfYear + 2) / 153
-    val day = dayOfYear - (153 * monthPosition + 2) / 5 + 1
+    val dayOfYear = dayOfEra - (C.DAYS_PER_YEAR * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
+    val monthPosition = (5 * dayOfYear + 2) / C.HINNANT_MONTH_COEFF
+    val day = dayOfYear - (C.HINNANT_MONTH_COEFF * monthPosition + 2) / 5 + 1
     val month = if (monthPosition < 10) monthPosition + 3 else monthPosition - 9
     val year = (if (month <= 2) y + 1 else y).toInt()
 

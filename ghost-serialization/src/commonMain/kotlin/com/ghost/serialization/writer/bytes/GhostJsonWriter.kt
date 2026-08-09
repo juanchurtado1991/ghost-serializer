@@ -385,7 +385,7 @@ class GhostJsonWriter(
     /**
      * Writes raw JSON bytes directly into the stream without quoting or escaping.
      * Use this to emit a pre-serialized JSON fragment captured via
-     * [com.ghost.serialization.parser.bytes.captureRawJsonBytes].
+     * `captureRawJsonBytes`.
      */
     fun rawValue(bytes: ByteArray): GhostJsonWriter {
         appendSeparator()

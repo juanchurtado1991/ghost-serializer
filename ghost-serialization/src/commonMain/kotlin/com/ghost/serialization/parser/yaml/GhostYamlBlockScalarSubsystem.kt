@@ -10,7 +10,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * Parses block scalar values (literal `|` and folded `>` styles).
  *
  * @param indent The enclosing context's indentation, as passed to [GhostYamlFlatReader.readValue]
- *   — [com.ghost.serialization.yaml.GhostYamlConstants.INDENT_UNSET] specifically means "this
+ *   — `GhostYamlConstants.INDENT_UNSET` specifically means "this
  *   scalar is the document root, no enclosing key/dash", which is the one case content is allowed
  *   to sit at column 0 with no explicit indicator. See [detectBlockScalarIndent].
  */

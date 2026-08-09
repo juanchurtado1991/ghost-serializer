@@ -6,8 +6,8 @@ import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 /**
  * Runs [block] with a pooled [GhostProtoJsonFlatReader] on the current thread.
  *
- * Uses the same thread-local pooling pattern as [com.ghost.serialization.ghostInternalUseFlatReader]
- * for JSON and [com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader] for YAML.
+ * Uses the same thread-local pooling pattern as `ghostInternalUseFlatReader`
+ * for JSON and `ghostYamlInternalUseFlatReader` for YAML.
  */
 @InternalGhostApi
 expect fun <T> ghostProtoInternalUseFlatReader(

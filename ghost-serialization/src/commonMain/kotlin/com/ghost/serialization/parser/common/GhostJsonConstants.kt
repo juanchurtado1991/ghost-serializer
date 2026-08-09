@@ -296,7 +296,7 @@ object GhostJsonConstants {
     const val WRITER_SCRATCH_SIZE = 512
 
     /**
-     * Initial capacity of [com.ghost.serialization.parser.strings.GhostJsonStringReader.slowPathChars]
+     * Initial capacity of `GhostJsonStringReader.slowPathChars`
      * for decoding escaped JSON strings. Grows on demand; kept as a constant (not a heuristic)
      * because escape decode is rare and the size only amortizes the first few escapes.
      */
@@ -521,9 +521,31 @@ object GhostJsonConstants {
     const val HINNANT_DAYS_CYCLE_4 = 1460
     const val HINNANT_DAYS_CYCLE_100 = 36524
     const val HINNANT_DAYS_CYCLE_ERA = 146096
+    /** Coefficient in Howard Hinnant's civil-from-days / days-from-civil month arithmetic. */
+    const val HINNANT_MONTH_COEFF = 153
+    const val DAYS_PER_YEAR = 365
     const val SECONDS_PER_DAY = 86400L
     const val SECONDS_PER_HOUR = 3600L
     const val SECONDS_PER_MINUTE = 60L
+
+    const val TYPE_NAME_STRING = "String"
+    const val TYPE_NAME_INT = "Int"
+    const val TYPE_NAME_LONG = "Long"
+    const val TYPE_NAME_FLOAT = "Float"
+    const val TYPE_NAME_DOUBLE = "Double"
+    const val TYPE_NAME_BOOLEAN = "Boolean"
+    const val TYPE_NAME_BYTE = "Byte"
+    const val TYPE_NAME_SHORT = "Short"
+    const val TYPE_NAME_CHAR = "Char"
+    const val TYPE_NAME_INT_ARRAY = "IntArray"
+    const val TYPE_NAME_LONG_ARRAY = "LongArray"
+    const val TYPE_NAME_FLOAT_ARRAY = "FloatArray"
+    const val TYPE_NAME_DOUBLE_ARRAY = "DoubleArray"
+    const val TYPE_NAME_BOOLEAN_ARRAY = "BooleanArray"
+    const val TYPE_NAME_LIST_PREFIX = "List<"
+    const val TYPE_NAME_SET_PREFIX = "Set<"
+    const val TYPE_NAME_MAP_STRING_PREFIX = "Map<String, "
+    const val TYPE_NAME_GENERIC_SUFFIX = ">"
 
     const val WKT_ANY_TYPE = "google.protobuf.Any"
     const val WKT_STRUCT_TYPE = "google.protobuf.Struct"

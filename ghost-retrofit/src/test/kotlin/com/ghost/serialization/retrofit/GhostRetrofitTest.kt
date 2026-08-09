@@ -11,33 +11,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import retrofit2.Retrofit
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 // --- Retrofit API Definition ---
-interface MockApiService {
-    @GET("/user")
-    suspend fun getUser(): RetrofitUser
-
-    @GET("/users")
-    suspend fun getUsers(): List<RetrofitUser>
-
-    @GET("/metadata")
-    suspend fun getMetadata(): Map<String, Int>
-
-    @POST("/user")
-    suspend fun createUser(
-        @Body user: RetrofitUser
-    ): RetrofitUser
-
-    @GET("/primitive")
-    suspend fun getPrimitive(): Int
-}
-
 class GhostRetrofitTest {
 
     private lateinit var mockWebServer: MockWebServer

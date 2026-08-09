@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.serializers
 
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
@@ -32,7 +33,7 @@ class MapSerializer<V>(
 
     override val typeName: String
         get() =
-            "Map<String, ${valueSerializer.typeName}>"
+            "${C.TYPE_NAME_MAP_STRING_PREFIX}${valueSerializer.typeName}${C.TYPE_NAME_GENERIC_SUFFIX}"
 
     override fun serialize(
         writer: GhostJsonWriter,

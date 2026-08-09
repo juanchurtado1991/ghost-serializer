@@ -12,7 +12,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  *
  * ## Design
  * - Compare bytes directly; avoid `.toChar()` in performance-sensitive paths.
- * - All control bytes are defined in [com.ghost.serialization.yaml.GhostYamlConstants].
+ * - All control bytes are defined in `GhostYamlConstants`.
  * - Validations use bitwise operations for digits, whitespace, and alphabetic characters.
  * - Field matching operates on raw bytes; string decoding is deferred until final value extraction.
  * - Extension hooks for block scalars, flow style, tags, and anchors are wired at construction time.
@@ -349,7 +349,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * exactly the same "same line, next line indented, or no value at all" resolution, but differ
      * on whether an *inline* value may itself redirect into a nested block mapping: explicit
      * entries get YAML's "compact notation" allowance (see the comment at
-     * [com.ghost.serialization.parser.yaml.readExplicitKeyEntry]'s call site), implicit ones
+     * [readExplicitKeyEntry]'s call site), implicit ones
      * don't — [allowMappingRedirect] lets each caller opt in/out.
      */
     internal fun resolveValueAfterColon(blockIndent: Int, allowMappingRedirect: Boolean = true): Any? {

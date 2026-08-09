@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.serializers
 
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
@@ -27,7 +28,7 @@ class SetSerializer<T>(
 ) : GhostSerializer<Set<T>> {
 
     override val typeName: String
-        get() = "Set<${itemSerializer.typeName}>"
+        get() = "${C.TYPE_NAME_SET_PREFIX}${itemSerializer.typeName}${C.TYPE_NAME_GENERIC_SUFFIX}"
 
     override fun serialize(
         writer: GhostJsonWriter,

@@ -34,7 +34,7 @@ fun GhostJsonReader.captureRawJson(): RawJson {
 /**
  * Captures the next complete JSON value as a raw [ByteArray] without decoding.
  *
- * Same semantics as [com.ghost.serialization.parser.bytes.captureRawJsonBytes] but operates on the
+ * Same semantics as `parser.bytes.captureRawJsonBytes` but operates on the
  * [GhostJsonReader] (non-flat) byte-array source. The reader must be positioned at
  * (or before) the first non-whitespace byte of the value.
  */

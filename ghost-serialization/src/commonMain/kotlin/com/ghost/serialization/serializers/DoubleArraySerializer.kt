@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.serializers
 
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
@@ -30,7 +31,7 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
  */
 object DoubleArraySerializer : GhostSerializer<DoubleArray> {
 
-    override val typeName: String = "DoubleArray"
+    override val typeName: String = C.TYPE_NAME_DOUBLE_ARRAY
 
     override fun serialize(writer: GhostJsonWriter, value: DoubleArray) {
         writer.beginArray()

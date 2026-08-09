@@ -1,19 +1,9 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
-
-@GhostSerialization
-data class SyntaxModel(
-    val id: Int,
-    val name: String,
-    val tags: List<String> = emptyList(),
-    val scores: IntArray = intArrayOf()
-)
 
 @OptIn(InternalGhostApi::class)
 class GeneratedSyntaxTest {

@@ -447,7 +447,7 @@ private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
 
 /**
  * Accumulates and checks Int bounds to throw
- * [com.ghost.serialization.exception.GhostJsonException] on overflow.
+ * `GhostJsonException` on overflow.
  */
 private inline fun GhostJsonReader.calculateIntWithOverflowCheck(
     current: Int,
@@ -465,7 +465,7 @@ private inline fun GhostJsonReader.calculateIntWithOverflowCheck(
 
 /**
  * Accumulates and checks Long bounds to throw
- * [com.ghost.serialization.exception.GhostJsonException] on overflow.
+ * `GhostJsonException` on overflow.
  */
 private inline fun GhostJsonReader.calculateLongWithOverflowCheck(
     current: Long,

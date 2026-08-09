@@ -10,28 +10,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import retrofit2.Retrofit
-import retrofit2.http.GET
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-
-interface ExpandedApiService {
-    @GET("/empty")
-    suspend fun getEmpty(): retrofit2.Response<RetrofitUser?>
-
-    @GET("/no_content")
-    suspend fun getNoContent(): Unit
-
-    @com.ghost.serialization.annotations.GhostStrict
-    @GET("/strict")
-    suspend fun getStrictUser(): RetrofitUser
-
-    @com.ghost.serialization.annotations.GhostCoerce
-    @GET("/coerce")
-    suspend fun getCoercedUser(): RetrofitUser
-
-    @GET("/lenient")
-    suspend fun getLenientUser(): RetrofitUser
-}
 
 @OptIn(InternalGhostApi::class)
 class GhostRetrofitExpansionTest {

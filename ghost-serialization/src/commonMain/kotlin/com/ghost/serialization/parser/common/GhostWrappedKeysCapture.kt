@@ -14,7 +14,7 @@ import com.ghost.serialization.types.RawJson
 
 
 /**
- * Stack-scoped accumulator for [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+ * Stack-scoped accumulator for `@GhostWrappedKeys`
  * deserialization.
  *
  * Each slot stores a zero-copy [RawJson] slice for one wire key. [materializeWrappedObject] builds

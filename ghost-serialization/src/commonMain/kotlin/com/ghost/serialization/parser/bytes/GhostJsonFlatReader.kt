@@ -250,7 +250,7 @@ open class GhostJsonFlatReader(
 
     /**
      * proto3 `uint64` scalar — quoted decimal string on the wire; bare JSON numbers accepted
-     * on read when they fit in [Long]. Subclasses (e.g. [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader])
+     * on read when they fit in [Long]. Subclasses (e.g. `GhostProtoJsonFlatReader`)
      * override for full [ULong] range.
      */
     open fun nextProtoUInt64(): ULong {
@@ -561,7 +561,7 @@ open class GhostJsonFlatReader(
      * Consumes the null value literal from the stream.
      *
      * After [peekNextToken] has already positioned on `'n'`, validates the remaining
-     * `ull` bytes inline — avoids [okio.ByteString.rangeEquals] on the hot nullable path.
+     * `ull` bytes inline — avoids `okio.ByteString.rangeEquals` on the hot nullable path.
      */
     fun consumeNull() {
         val p = position
