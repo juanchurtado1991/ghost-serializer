@@ -10,6 +10,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.SetSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -26,7 +27,7 @@ import kotlin.reflect.KClass
  * (`@GhostSerialization`).
  *
  * Honors `@GhostStrict` and `@GhostCoerce` on endpoint methods.
- * Unwraps `List<T>` / `Map<String, V>` when element serializers are registered.
+ * Unwraps `List<T>` / `Set<T>` / `Map<String, V>` when element serializers are registered.
  *
  * ```kotlin
  * Retrofit.Builder()
@@ -119,6 +120,16 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                     ?: return null
 
                 return ListSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
+            if (Set::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull()
+                    ?: return null
+
+                val itemSerializer = getSerializerWithCache(arg)
+                    ?: return null
+
+                return SetSerializer(itemSerializer) as GhostSerializer<Any>
             }
 
             if (Map::class.java.isAssignableFrom(rawType)) {

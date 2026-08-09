@@ -8,6 +8,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.SetSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -33,9 +34,9 @@ import kotlin.reflect.KClass
  * `@GhostProtoSerialization`
  * serializer's own `serialize()` method.
  *
- * Also unwraps `List<T>`/`Map<String, V>` request/response bodies when the element/value
- * serializer is registered — same pattern as [GhostConverterFactory], still using
- * `GhostProtoJsonFlatReader` on the read path.
+ * Also unwraps `List<T>`/`Set<T>`/`Map<String, V>` request/response bodies when the
+ * element/value serializer is registered — same pattern as [GhostConverterFactory], still
+ * using `GhostProtoJsonFlatReader` on the read path.
  *
  * ```kotlin
  * Retrofit.Builder()
@@ -110,6 +111,12 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
                 val arg = type.actualTypeArguments.firstOrNull() ?: return null
                 val itemSerializer = getSerializerWithCache(arg) ?: return null
                 return ListSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
+            if (Set::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull() ?: return null
+                val itemSerializer = getSerializerWithCache(arg) ?: return null
+                return SetSerializer(itemSerializer) as GhostSerializer<Any>
             }
 
             if (Map::class.java.isAssignableFrom(rawType)) {

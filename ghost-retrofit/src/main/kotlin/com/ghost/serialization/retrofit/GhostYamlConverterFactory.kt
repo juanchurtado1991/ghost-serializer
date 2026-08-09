@@ -10,6 +10,7 @@ import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -100,6 +101,13 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
                 val itemSerializer = getSerializerWithCache(arg) ?: return null
                 if (itemSerializer !is GhostYamlSerializer<*>) return null
                 return GhostYamlListSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
+            if (Set::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull() ?: return null
+                val itemSerializer = getSerializerWithCache(arg) ?: return null
+                if (itemSerializer !is GhostYamlSerializer<*>) return null
+                return GhostYamlSetSerializer(itemSerializer) as GhostSerializer<Any>
             }
 
             if (Map::class.java.isAssignableFrom(rawType)) {

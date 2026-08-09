@@ -79,4 +79,14 @@ class GhostContentConverterDirectTest {
 
         assertEquals(KtorUser(1, longName, false), result)
     }
+
+    @Test
+    fun deserialize_parsesSetBodyViaKotlinType() = runTest {
+        val converter = GhostContentConverter()
+        val channel = ByteReadChannel("""[{"id":1,"name":"a"}]""".encodeToByteArray())
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.deserialize(Charsets.UTF_8, typeInfo<Set<KtorUser>>(), channel)
+            as Set<KtorUser>
+        assertEquals(setOf(KtorUser(1, "a", false)), result)
+    }
 }

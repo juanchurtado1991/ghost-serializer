@@ -25,8 +25,14 @@ class GhostConverterFactoryDirectTest {
     private lateinit var retrofit: Retrofit
     private lateinit var factory: GhostConverterFactory
 
-    private interface UnsupportedGenericHolder {
+    private interface SetGenericHolder {
         fun set(): Set<RetrofitUser>
+    }
+
+    private class UnsupportedHolder<T>
+
+    private interface UnsupportedGenericHolder {
+        fun holder(): UnsupportedHolder<RetrofitUser>
     }
 
     private data class Unregistered(val x: Int)
@@ -57,9 +63,21 @@ class GhostConverterFactoryDirectTest {
     }
 
     @Test
-    fun responseBodyConverter_returnsNullForUnsupportedGenericType() {
-        // Set<T> is neither List nor Map -- getSerializerForType has no branch for it.
-        val genericType = UnsupportedGenericHolder::class.java.getMethod("set").genericReturnType
+    fun responseBodyConverter_resolvesSetGenericType() {
+        val genericType = SetGenericHolder::class.java.getMethod("set").genericReturnType
+        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+            ?: error("Expected a converter for Set<RetrofitUser>")
+
+        val body = """[{"id":1,"name":"a","isActive":true}]"""
+            .toResponseBody("application/json; charset=UTF-8".toMediaType())
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.convert(body) as Set<RetrofitUser>
+        assertEquals(setOf(RetrofitUser(1, "a", true)), result)
+    }
+
+    @Test
+    fun responseBodyConverter_returnsNullForUnsupportedNestedGenericType() {
+        val genericType = UnsupportedGenericHolder::class.java.getMethod("holder").genericReturnType
         val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
         assertNull(converter)
     }
