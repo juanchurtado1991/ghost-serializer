@@ -10,10 +10,12 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.decodeResilient
 import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.hasNext
 import com.ghost.serialization.parser.streaming.readSet
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginArray
 import com.ghost.serialization.parser.strings.endArray
+import com.ghost.serialization.parser.strings.hasNext
 import com.ghost.serialization.parser.strings.readSet
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
@@ -78,11 +80,16 @@ class SetSerializer<T>(
         reader: GhostJsonReader
     ): Set<T> {
         return if (itemSerializer.isResilient) {
-            reader.readSet {
-                reader.decodeResilient {
+            val result = LinkedHashSet<T>()
+            reader.beginArray()
+            while (reader.hasNext()) {
+                val item = reader.decodeResilient {
                     itemSerializer.deserialize(reader)
                 }
-            }.filterNotNull().toSet()
+                if (item != null) result.add(item)
+            }
+            reader.endArray()
+            result
         } else {
             reader.readSet {
                 itemSerializer.deserialize(reader)
@@ -94,11 +101,16 @@ class SetSerializer<T>(
         reader: GhostJsonFlatReader
     ): Set<T> {
         return if (itemSerializer.isResilient) {
-            reader.readSet {
-                reader.decodeResilient {
+            val result = LinkedHashSet<T>()
+            reader.beginArray()
+            while (reader.hasNext()) {
+                val item = reader.decodeResilient {
                     itemSerializer.deserialize(reader)
                 }
-            }.filterNotNull().toSet()
+                if (item != null) result.add(item)
+            }
+            reader.endArray()
+            result
         } else {
             reader.readSet {
                 itemSerializer.deserialize(reader)
@@ -110,11 +122,16 @@ class SetSerializer<T>(
         reader: GhostJsonStringReader
     ): Set<T> {
         return if (itemSerializer.isResilient) {
-            reader.readSet {
-                reader.decodeResilient {
+            val result = LinkedHashSet<T>()
+            reader.beginArray()
+            while (reader.hasNext()) {
+                val item = reader.decodeResilient {
                     itemSerializer.deserialize(reader)
                 }
-            }.filterNotNull().toSet()
+                if (item != null) result.add(item)
+            }
+            reader.endArray()
+            result
         } else {
             reader.readSet {
                 itemSerializer.deserialize(reader)
