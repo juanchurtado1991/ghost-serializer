@@ -47,12 +47,12 @@ internal fun GhostProtoJsonFlatReader.nextProtoFloat(): Float {
         val prev = coerceStringsToNumbers
         coerceStringsToNumbers = true
         try {
-            return this.nextFloatExtension()
+            return nextFloatExtension()
         } finally {
             coerceStringsToNumbers = prev
         }
     }
-    return this.nextFloatExtension()
+    return nextFloatExtension()
 }
 
 internal fun GhostProtoJsonFlatReader.nextProtoDouble(): Double {
@@ -91,12 +91,12 @@ internal fun GhostProtoJsonFlatReader.nextProtoDouble(): Double {
         val prev = coerceStringsToNumbers
         coerceStringsToNumbers = true
         try {
-            return this.nextDoubleExtension()
+            return nextDoubleExtension()
         } finally {
             coerceStringsToNumbers = prev
         }
     }
-    return this.nextDoubleExtension()
+    return nextDoubleExtension()
 }
 
 private fun GhostProtoJsonFlatReader.matchInfinityBytes(start: Int): Boolean {
@@ -117,12 +117,12 @@ internal fun GhostProtoJsonFlatReader.nextProtoInt64(): Long {
         val prev = coerceStringsToNumbers
         coerceStringsToNumbers = true
         try {
-            this.nextLongExtension()
+            nextLongExtension()
         } finally {
             coerceStringsToNumbers = prev
         }
     } else {
-        this.nextDoubleExtension().toLong()
+        nextDoubleExtension().toLong()
     }
 }
 

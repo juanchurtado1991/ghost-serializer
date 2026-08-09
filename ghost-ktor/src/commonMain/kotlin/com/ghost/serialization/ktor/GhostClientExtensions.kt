@@ -18,7 +18,7 @@ internal const val CLIENT_ERROR_SUFFIX = ". Make sure it is annotated with @Ghos
  * ContentNegotiation pipeline.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
-    val bytes = this.body<ByteArray>()
+    val bytes = body<ByteArray>()
     val serializer = Ghost.getSerializer(T::class)
         ?: throw IllegalArgumentException("$CLIENT_ERROR_PREFIX${T::class.simpleName}$CLIENT_ERROR_SUFFIX")
     return Ghost.deserialize(serializer, bytes)
@@ -30,7 +30,7 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
  * int32, quoted `NaN`/`Infinity`) instead of the plain flat reader.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
-    val bytes = this.body<ByteArray>()
+    val bytes = body<ByteArray>()
     return GhostProto.deserialize(bytes, T::class)
 }
 
@@ -39,6 +39,6 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
  * `GhostYamlSerializer`.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostYaml(): T {
-    val bytes = this.body<ByteArray>()
+    val bytes = body<ByteArray>()
     return Ghost.decodeFromYaml(bytes)
 }

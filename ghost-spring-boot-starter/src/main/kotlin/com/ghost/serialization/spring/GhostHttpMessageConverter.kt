@@ -2,6 +2,7 @@ package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
@@ -84,7 +85,7 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
             }
         }
 
-        return com.ghost.serialization.ghostInternalUseFlatReader(bytes) { reader ->
+        return ghostInternalUseFlatReader(bytes) { reader ->
             reader.strictMode = isStrict
             if (isCoerce) {
                 reader.coerceStringsToNumbers = true
@@ -99,7 +100,7 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         var serializer = serializerCache[clazz]
         if (serializer == null) {
             @Suppress("UNCHECKED_CAST")
-            serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>) as GhostSerializer<Any>?
+            serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
                 ?: throw IllegalArgumentException(
                     "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
                 )

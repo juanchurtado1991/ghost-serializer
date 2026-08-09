@@ -75,8 +75,9 @@ internal fun GhostYamlFlatReader.beginObjectImpl() {
     )
 
     @Suppress("UNCHECKED_CAST")
-    currentMap = map as Map<String, Any?>
-    mapIterator = currentMap!!.entries.iterator()
+    val typedMap = map as Map<String, Any?>
+    currentMap = typedMap
+    mapIterator = typedMap.entries.iterator()
     currentEntry = null
     currentList = null
     listIterator = null
@@ -316,7 +317,7 @@ internal fun GhostYamlFlatReader.beginArrayImpl() {
     )
 
     currentList = list
-    listIterator = currentList!!.iterator()
+    listIterator = list.iterator()
     currentMap = null
     mapIterator = null
     currentEntry = null
@@ -355,7 +356,8 @@ internal fun GhostYamlFlatReader.hasNextArrayElementImpl(): Boolean {
 }
 
 internal fun GhostYamlFlatReader.isNextCloseArrayImpl(): Boolean {
-    return listIterator == null || !listIterator!!.hasNext()
+    val iterator = listIterator
+    return iterator == null || !iterator.hasNext()
 }
 
 internal fun GhostYamlFlatReader.nextKeyImpl(): String? {

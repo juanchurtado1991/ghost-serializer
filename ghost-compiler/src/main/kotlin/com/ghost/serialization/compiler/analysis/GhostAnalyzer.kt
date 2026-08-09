@@ -1,4 +1,4 @@
-@file:OptIn(com.google.devtools.ksp.KspExperimental::class)
+@file:OptIn(KspExperimental::class)
 
 package com.ghost.serialization.compiler.analysis
 
@@ -8,6 +8,7 @@ import com.ghost.serialization.compiler.model.CustomCoderReaderKind
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.InferredSubclassModel
 import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
@@ -852,7 +853,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     /**
      * Resolves the serialized name for an annotated element, checking GhostName or kotlinx SerialName.
      */
-    internal fun getSerialName(declaration: KSAnnotated): String {
+    private fun getSerialName(declaration: KSAnnotated): String {
         val annotations = declaration.annotations.toList()
 
         // 1. GhostName (Primary)

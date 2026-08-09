@@ -91,7 +91,7 @@ class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         val clazz = t.javaClass
         val serializer = serializerCache.getOrPut(clazz) {
             @Suppress("UNCHECKED_CAST")
-            val resolved = Ghost.getSerializer(clazz.kotlin as KClass<Any>) as GhostSerializer<Any>?
+            val resolved = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
                 ?: throw IllegalArgumentException(
                     "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
                 )

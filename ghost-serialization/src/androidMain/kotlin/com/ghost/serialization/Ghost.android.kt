@@ -46,13 +46,12 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             if (index < fast.size) {
                 return true
             }
-            if (slow == null) {
-                slow = runCatching {
-                    ServiceLoader.load(GhostRegistry::class.java).iterator()
-                }
-                    .getOrDefault(emptyList<GhostRegistry>().iterator())
+            val slowIterator = slow ?: runCatching {
+                ServiceLoader.load(GhostRegistry::class.java).iterator()
             }
-            return slow!!.hasNext()
+                .getOrDefault(emptyList<GhostRegistry>().iterator())
+                .also { slow = it }
+            return slowIterator.hasNext()
         }
 
         override fun next(): GhostRegistry {
@@ -62,7 +61,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             return if (index < fast.size) {
                 fast[index++]
             } else {
-                slow!!.next()
+                checkNotNull(slow).next()
             }
         }
     }

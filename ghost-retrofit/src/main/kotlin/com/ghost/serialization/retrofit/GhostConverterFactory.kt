@@ -5,6 +5,8 @@ package com.ghost.serialization.retrofit
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.annotations.GhostCoerce
+import com.ghost.serialization.annotations.GhostStrict
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalUseFlatReader
 import com.ghost.serialization.releaseScratchBuffer
@@ -49,8 +51,8 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
         val serializer = getSerializerWithCache(type)
             ?: return null
 
-        val isStrict = annotations.any { it is com.ghost.serialization.annotations.GhostStrict }
-        val isCoerce = annotations.any { it is com.ghost.serialization.annotations.GhostCoerce }
+        val isStrict = annotations.any { it is GhostStrict }
+        val isCoerce = annotations.any { it is GhostCoerce }
 
         return Converter { body ->
             body.use {

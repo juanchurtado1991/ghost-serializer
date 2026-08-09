@@ -6,7 +6,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
@@ -23,9 +22,6 @@ import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Serializer implementation for standard Kotlin [List] collections.
- */
 /**
  * Serializer implementation for primitive [FloatArray].
  */
@@ -62,7 +58,7 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
 
     override fun deserialize(reader: GhostJsonReader): FloatArray {
         reader.beginArray()
-        if (reader.peekByte() == CLOSE_ARR) {
+        if (reader.peekByte() == C.CLOSE_ARR) {
             reader.endArray()
             return FloatArray(0)
         }
@@ -79,7 +75,7 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
 
     override fun deserialize(reader: GhostJsonFlatReader): FloatArray {
         reader.beginArray()
-        if (reader.peekByte() == CLOSE_ARR) {
+        if (reader.peekByte() == C.CLOSE_ARR) {
             reader.endArray()
             return FloatArray(0)
         }
@@ -96,7 +92,7 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
 
     override fun deserialize(reader: GhostJsonStringReader): FloatArray {
         reader.beginArray()
-        if (reader.peekByte() == CLOSE_ARR) {
+        if (reader.peekByte() == C.CLOSE_ARR) {
             reader.endArray()
             return FloatArray(0)
         }

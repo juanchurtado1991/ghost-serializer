@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.ghost.serialization.yaml.serializer
 
 import com.ghost.serialization.contract.GhostSerializer
@@ -17,14 +15,13 @@ class GhostYamlListSerializer<T>(
     private val itemSerializer: GhostSerializer<T>,
 ) : GhostSerializer<List<T>>, GhostYamlSerializer<List<T>> {
 
-    init {
+    @Suppress("UNCHECKED_CAST")
+    private val yamlItem: GhostYamlSerializer<T> = run {
         require(itemSerializer is GhostYamlSerializer<*>) {
             "GhostYamlListSerializer requires a GhostYamlSerializer item serializer, got ${itemSerializer.typeName}"
         }
+        itemSerializer as GhostYamlSerializer<T>
     }
-
-    private val yamlItem: GhostYamlSerializer<T>
-        get() = itemSerializer as GhostYamlSerializer<T>
 
     private val jsonList = ListSerializer(itemSerializer)
 

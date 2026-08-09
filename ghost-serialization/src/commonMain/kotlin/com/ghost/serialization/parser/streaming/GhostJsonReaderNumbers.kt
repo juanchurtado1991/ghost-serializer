@@ -381,9 +381,7 @@ private fun GhostJsonReader.parseIntDigits(
         }
     )
 
-    if (earlyExitResult != null) {
-        return earlyExitResult!!
-    }
+    earlyExitResult?.let { return it }
     if (!hasDigitsFound) {
         throwError(C.ERR_EXPECTED_INT_PART)
     }
@@ -425,9 +423,7 @@ private fun GhostJsonReader.parseLongDigits(
         }
     )
 
-    if (earlyExitResult != null) {
-        return earlyExitResult!!
-    }
+    earlyExitResult?.let { return it }
     if (!hasDigitsFound) {
         throwError(C.ERR_EXPECTED_INT_PART)
     }

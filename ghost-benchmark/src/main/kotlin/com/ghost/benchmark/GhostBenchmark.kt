@@ -548,16 +548,6 @@ private fun printRankedSubTable(label: String, metrics: BenchmarkMetrics, payloa
     printRankedTableBody(metrics, payloadBytes)
 }
 
-private fun printRankedTable(title: String, metrics: BenchmarkMetrics, payloadBytes: Long) {
-    println("\n========================================================")
-    println("BENCHMARK: $title")
-    println("========================================================")
-    println(
-        "  Payload: %d bytes → µs/op and decimal GB/s (payload / seconds / 10⁹)".format(payloadBytes)
-    )
-    printRankedTableBody(metrics, payloadBytes)
-}
-
 /**
  * Cold start measures one-time initialization latency, not sustained throughput.
  *

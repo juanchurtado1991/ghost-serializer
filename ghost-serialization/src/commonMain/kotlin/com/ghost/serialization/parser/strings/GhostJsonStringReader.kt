@@ -168,21 +168,21 @@ class GhostJsonStringReader(
 
     @Suppress("StringReferentialEquality")
     fun reset(newData: String, newLimit: Int = newData.length) {
-        val oldData = this.rawData
-        this.rawData = newData
-        this.position = 0
-        this.limit = newLimit
-        this.nextTokenByte = C.RESET_TOKEN_BYTE
-        this.depth = 0
-        this.needsCommaMask = 0L
-        this.commaConsumedMask = 0L
-        this.strictMode = false
-        this.coerceStringsToNumbers = false
-        this.coerceBooleans = false
-        this.maxDepth = C.MAX_DEPTH
-        this.maxCollectionSize = GhostHeuristics.maxCollectionSize
-        this.lastScanContentWas7BitOnly = false
-        this.predictedFieldIndex = C.FIELD_PREDICTION_START
+        val oldData = rawData
+        rawData = newData
+        position = 0
+        limit = newLimit
+        nextTokenByte = C.RESET_TOKEN_BYTE
+        depth = 0
+        needsCommaMask = 0L
+        commaConsumedMask = 0L
+        strictMode = false
+        coerceStringsToNumbers = false
+        coerceBooleans = false
+        maxDepth = C.MAX_DEPTH
+        maxCollectionSize = GhostHeuristics.maxCollectionSize
+        lastScanContentWas7BitOnly = false
+        predictedFieldIndex = C.FIELD_PREDICTION_START
         invalidateUtf8Cache()
 
         if (newData !== oldData) {
