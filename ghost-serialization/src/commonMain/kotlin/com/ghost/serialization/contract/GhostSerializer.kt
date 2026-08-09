@@ -101,7 +101,13 @@ interface GhostSerializer<T> {
     /** Deserializes a new instance of [T] using a specialized streaming [reader]. */
     fun deserialize(reader: GhostJsonReader): T
 
-    /** Deserializes a new instance of [T] using a specialized flat in-memory [reader]. */
+    /**
+     * Deserializes a new instance of [T] using a specialized flat in-memory [reader].
+     *
+     * **Compatibility bridge:** the default wraps [reader] in a streaming [GhostJsonReader]
+     * (allocates, loses flat monomorphy). KSP-generated serializers always override this.
+     * Hand-written serializers on the hot path must override it too.
+     */
     fun deserialize(reader: GhostJsonFlatReader): T {
         val delegatedReader = GhostJsonReader(reader.rawData).also {
             it.position = reader.position
@@ -118,7 +124,13 @@ interface GhostSerializer<T> {
         return result
     }
 
-    /** Deserializes a new instance of [T] using a specialized string [reader]. */
+    /**
+     * Deserializes a new instance of [T] using a specialized string [reader].
+     *
+     * **Compatibility bridge:** the default UTF-8-encodes via [GhostJsonStringReader.ensureUtf8Bytes]
+     * and re-enters [deserialize] on a [GhostJsonFlatReader]. Override for `textChannel` hot paths
+     * (WKT wrappers and generated string dispatch already do).
+     */
     fun deserialize(reader: GhostJsonStringReader): T {
         val bytes = reader.ensureUtf8Bytes()
         val flatReader = GhostJsonFlatReader(bytes).also {
