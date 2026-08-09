@@ -757,8 +757,7 @@ object Ghost {
     /**
      * Deserializes the JSON [bytes] array into an instance of type [T].
      *
-     * Uses the flat reader ([GhostJsonFlatReader]). The options overload
-     * `deserialize(bytes) { … }` uses the streaming reader instead — not unified.
+     * Uses the flat reader ([GhostJsonFlatReader]), same engine as the options overload.
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @return A reconstructed instance of type [T].
@@ -821,18 +820,19 @@ object Ghost {
     /**
      * Advanced: Deserializes the JSON [bytes] array using custom parser settings.
      *
-     * Debt: uses the streaming [GhostJsonReader] path; plain [deserialize] `(bytes)`
-     * uses the flat reader. Prefer the no-options overload for the hot path.
+     * Uses the same flat reader as [deserialize] `(bytes)` so `strictMode` /
+     * `coerceStringsToNumbers` apply on the hot path. For true streaming from a
+     * [BufferedSource], use [deserializeStreaming] or the source+options overload.
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
-     * @param options A configuration lambda to set reader properties.
+     * @param options A configuration lambda to set [GhostJsonFlatReader] properties.
      * @return A reconstructed instance of type [T].
      */
     inline fun <reified T : Any> deserialize(
         bytes: ByteArray,
-        crossinline options: (GhostJsonReader) -> Unit
+        crossinline options: (GhostJsonFlatReader) -> Unit
     ): T {
-        return ghostInternalUseReader(bytes) { reader ->
+        return ghostInternalUseFlatReader(bytes) { reader ->
             options(reader)
             deserialize(reader)
         }
