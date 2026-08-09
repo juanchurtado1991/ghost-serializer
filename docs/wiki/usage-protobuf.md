@@ -172,7 +172,6 @@ All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, 
 
 Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
 
-- `Set<T>` top-level request/response bodies in Retrofit, Ktor, and Spring Boot (MVC + WebFlux) proto converters (`List<T>` and `Map<String, V>` are supported)
 - Binary protobuf wire format (varint encoding) — Ghost only implements proto3 **JSON** mapping
 
 ## 9. Proto models in YAML

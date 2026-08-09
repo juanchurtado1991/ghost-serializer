@@ -14,8 +14,13 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
- * High-performance JSON parser operating directly on Kotlin Strings.
- * Bypasses encodeToByteArray UTF-8 conversion overhead.
+ * Flat JSON parser for in-memory [String] payloads (the default `textChannel` path).
+ *
+ * Indexes a reused [CharArray] of UTF-16 code units — hot structure/select/number work never
+ * UTF-8-encodes the document. Bridge helpers ([ensureUtf8Bytes], [sliceUtf8Bytes],
+ * [captureRawJsonBytes]) encode lazily once per [reset] when a byte-oriented API is needed.
+ *
+ * Sibling of the byte flat reader (`GhostJsonFlatReader`) and the streaming `GhostJsonReader`.
  */
 class GhostJsonStringReader(
     var rawData: String,
@@ -35,8 +40,8 @@ class GhostJsonStringReader(
 
     /**
      * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
-     * fields in declaration order. Reset to 0 on [beginObject]; mispredictions fall back to
-     * hashed dispatch, so this never affects correctness.
+     * fields in declaration order. Reset to `FIELD_PREDICTION_START` on [beginObject];
+     * mispredictions fall back to hashed dispatch, so this never affects correctness.
      */
     internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 
@@ -49,7 +54,7 @@ class GhostJsonStringReader(
     /** Char-index → UTF-8 byte offset, built once per [reset] cycle. */
     private var charToByteOffsets: IntArray? = null
 
-    /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
+    /** Cross-call string intern pool — same design as the byte flat reader's `stringPool`. */
     val stringPool: Array<String?> = arrayOfNulls(C.STR_POOL_SIZE)
     val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
 
@@ -470,7 +475,7 @@ class GhostJsonStringReader(
 
     /**
      * Computes a cheap hash from the first four char code-points of the string content.
-     * Uses the same algorithm as [GhostJsonFlatReader] for byte sources.
+     * Uses the same algorithm as the byte flat reader for byte sources.
      */
     private fun computeStringPoolHash(start: Int, length: Int): Int {
         val chars = rawChars

@@ -268,7 +268,15 @@ ksp { arg("ghost.textChannel", "false") }
 
 Keep the default when models regularly cross a `String` API boundary, such as database text columns, caches, files already decoded by another library, or large in-memory JSON documents.
 
-Set `textChannel = false` when all hot paths already provide `ByteArray` or Okio sources and the additional generated code matters more than occasional `String` conversion. For HTTP clients, still prefer `Ghost.deserialize(bytes)` even when the native string channel is available.
+Set `textChannel = false` when all hot paths already provide `ByteArray` or Okio sources and the additional generated code matters more than occasional `String` conversion.
+
+**HTTP adapters (Retrofit, Ktor, Spring MVC/WebFlux)** are byte-first — prefer module-wide:
+
+```kotlin
+ksp { arg("ghost.textChannel", "false") }
+```
+
+in Android/network modules that only deserialize response bodies / encode request bodies. Keep the default `true` for shared KMP models that also parse large in-memory `String`s.
 
 > [!NOTE]
 > `Ghost.deserialize(json: String)` continues to work after opting out. It UTF-8-encodes the string once and delegates to the byte reader.
