@@ -114,7 +114,6 @@ data class ConfigDto(val id: Long, val name: String)
 
 Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
 
-- `Set<T>` top-level HTTP request/response bodies in Retrofit, Ktor, and Spring Boot (MVC + WebFlux) YAML converters (parity with [Proto §8](usage-protobuf.md#8-known-gaps-not-yet-implemented))
 - Binary protobuf wire format (varint encoding) — YAML/JSON paths are for config/API documents, not gRPC binary
 
 Structural JSON-only features (`@GhostResilient`, `@GhostFlatten`, sealed polymorphism, etc.) remain blocked at compile time with `@GhostYamlSerialization` — see [§2](#2-supported-annotations-on-yaml-paths).

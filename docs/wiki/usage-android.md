@@ -20,7 +20,9 @@ plugins {
     id("com.ghostserializer.ghost") version "1.3.0"
 }
 
-// Optional for byte-only apps: omit native String reader/writer generation.
+// Recommended for Retrofit/OkHttp/Ktor byte-first modules: omit native String
+// reader/writer generation (~4 KB smaller per DTO). Keep default true if models
+// also parse large in-memory Strings. See Advanced Features §5.
 ksp {
     arg("ghost.textChannel", "false")
 }

@@ -93,7 +93,7 @@ Items intentionally deferred (parity across YAML and Proto3 JSON adapters):
 
 | Gap | Notes | Status |
 |:---|:---|:---:|
-| **`Set<T>` HTTP bodies** | Top-level `Set<T>` request/response unwrapping in **Retrofit, Ktor, and Spring Boot** (MVC + WebFlux) for proto **and** YAML codecs — same gap as JSON adapters that only unwrap `List`/`Map` generics. `List<T>` and `Map<String, V>` are supported when element/value serializers are registered. | Planned |
+| **`Set<T>` HTTP bodies** | Top-level `Set<T>` unwrap in Retrofit / Spring (JSON + YAML + Proto factories/converters); Ktor via `Ghost.getSerializer(KType)`. | Shipped |
 | **Binary protobuf wire** | Varint-encoded gRPC/protobuf binary — Ghost implements proto3 **JSON** mapping only (plus YAML documents for config/API). | Planned |
 | **JSON-only structural features on YAML** | `@GhostResilient`, `@GhostFlatten`, sealed/`@GhostFallback`, `@GhostDecoder`/`@GhostEncoder` — compile-time blocked on `@GhostYamlSerialization`; no runtime fallback. | By design |
 

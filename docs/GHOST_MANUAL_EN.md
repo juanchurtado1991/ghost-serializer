@@ -848,7 +848,7 @@ fun reset() {
 |:---|:---|
 | `List<T>` | Yes — `ListSerializer` via `getSerializer(KType)` |
 | `Map<String, V>` | Yes — `MapSerializer` |
-| `Set<T>` | No `SetSerializer` in `ghost-serialization`; the README mentions it but the current runtime only resolves List/Map besides primitives and @GhostSerialization models |
+| `Set<T>` | Yes — `SetSerializer` via `getSerializer(KType)`; HTTP adapters unwrap top-level `Set<T>` (Retrofit / Spring / Ktor) |
 
 ## 15. Primitive and collection serializers {#cap-15--serializers-de-primitivos-y-colecciones}
 
@@ -2158,8 +2158,7 @@ This manual was cross-checked against the `ghost-serializer` repository on the l
 | Ktor 3.5.1 | `gradle/libs.versions.toml` `ktor = "3.5.1"` |
 | iOS without ServiceLoader | `Ghost.ios.kt` → `discoverRegistries() = emptyList()` |
 | JVM registry fast-path | `Ghost.jvm.kt` → `Class.forName` + `ServiceLoader` |
-| List/Map at runtime | `Ghost.kt` → `ListSerializer`, `MapSerializer` |
-| Set not at runtime | no `SetSerializer` in `ghost-serialization` (README may mention Set; verify release notes) |
+| List/Map/Set at runtime | `Ghost.kt` → `ListSerializer`, `MapSerializer`, `SetSerializer` |
 
 If you upgrade the Ghost version, cross-check these files again before trusting exact numbers.
 
