@@ -128,6 +128,7 @@ inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
 
 /**
  * Serializes [values] as a multi-document YAML UTF-8 byte stream (`---` between documents).
+ * Public API for frameworks that prefer byte payloads over [String].
  */
 inline fun <reified T : Any> Ghost.encodeAllToYamlBytes(values: List<T>): ByteArray {
     return encodeAllToYaml(values).encodeToByteArray()

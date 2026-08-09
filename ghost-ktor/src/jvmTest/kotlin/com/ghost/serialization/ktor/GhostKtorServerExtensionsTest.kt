@@ -14,9 +14,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Integration tests for [respondGhost] and [respondGhostProto] — server-side bypass extensions
- * that serialize and respond without Ktor's `ContentNegotiation` pipeline. JVM-only because
- * `ktor-server-test-host` is not available on Kotlin/Native targets.
+ * Integration tests for [respondGhost], [respondGhostProto], and [respondGhostYaml] — server-side
+ * bypass extensions that serialize and respond without Ktor's `ContentNegotiation` pipeline.
+ * JVM-only because `ktor-server-test-host` is not available on Kotlin/Native targets.
  */
 class GhostKtorServerExtensionsTest {
 
@@ -26,7 +26,8 @@ class GhostKtorServerExtensionsTest {
             override fun prewarm() {}
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = mapOf(
                 KtorUser::class to KtorUserSerializer,
-                ProtoKtorEvent::class to ProtoKtorEventSerializer
+                ProtoKtorEvent::class to ProtoKtorEventSerializer,
+                YamlKtorUser::class to YamlKtorUserSerializer,
             )
 
             @Suppress("UNCHECKED_CAST")
@@ -34,6 +35,7 @@ class GhostKtorServerExtensionsTest {
                 when (clazz) {
                     KtorUser::class -> KtorUserSerializer as GhostSerializer<T>
                     ProtoKtorEvent::class -> ProtoKtorEventSerializer as GhostSerializer<T>
+                    YamlKtorUser::class -> YamlKtorUserSerializer as GhostSerializer<T>
                     else -> null
                 }
         })
@@ -104,5 +106,22 @@ class GhostKtorServerExtensionsTest {
             """{"deviceId":"9223372036854775807","label":"sensor-1"}""",
             response.bodyAsText()
         )
+    }
+
+    @Test
+    fun respondGhostYaml_writesYamlBodyWithYamlContentType() = testApplication {
+        routing {
+            get("/user") {
+                call.respondGhostYaml(YamlKtorUser(id = 42, name = "John", isActive = true))
+            }
+        }
+
+        val response = client.get("/user")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("application/yaml", response.headers["Content-Type"]?.substringBefore(";"))
+        val body = response.bodyAsText()
+        assertEquals(true, body.contains("id: 42"))
+        assertEquals(true, body.contains("name: John") || body.contains("name: \"John\""))
     }
 }

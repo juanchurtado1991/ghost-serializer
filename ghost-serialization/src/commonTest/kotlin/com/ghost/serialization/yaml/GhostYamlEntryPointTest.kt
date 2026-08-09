@@ -9,6 +9,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.decodeAllFromYaml
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeAllToYaml
+import com.ghost.serialization.encodeAllToYamlBytes
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.encodeToYamlBytes
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
@@ -154,6 +155,18 @@ class GhostYamlEntryPointTest {
     @Test
     fun encodeAllToYamlEmptyListReturnsEmptyString() {
         assertEquals("", Ghost.encodeAllToYaml<YamlScalarBox>(emptyList()))
+    }
+
+    @Test
+    fun encodeAllToYamlBytesMatchesStringEncoding() {
+        val values = listOf(
+            YamlScalarBox("one", 1),
+            YamlScalarBox("two", 2),
+        )
+        val asString = Ghost.encodeAllToYaml(values)
+        val asBytes = Ghost.encodeAllToYamlBytes(values)
+        assertContentEquals(asString.encodeToByteArray(), asBytes)
+        assertEquals(2, Ghost.decodeAllFromYaml<YamlScalarBox>(asBytes).size)
     }
 
     @Test

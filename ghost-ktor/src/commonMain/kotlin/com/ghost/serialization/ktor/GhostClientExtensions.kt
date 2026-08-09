@@ -37,6 +37,7 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
 /**
  * YAML variant of [bodyGhost] for types whose serializer implements
  * `GhostYamlSerializer`.
+ * Public API for frameworks — bypasses Ktor ContentNegotiation.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostYaml(): T {
     val bytes = body<ByteArray>()

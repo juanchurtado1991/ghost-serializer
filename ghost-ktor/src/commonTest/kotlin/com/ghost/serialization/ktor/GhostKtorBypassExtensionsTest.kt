@@ -22,8 +22,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Direct unit tests for [bodyGhost] and [bodyGhostProto] — client bypass extensions that
- * deserialize response bodies without Ktor's `ContentNegotiation` pipeline.
+ * Direct unit tests for [bodyGhost], [bodyGhostProto], and [bodyGhostYaml] — client bypass
+ * extensions that deserialize response bodies without Ktor's `ContentNegotiation` pipeline.
  */
 class GhostKtorBypassExtensionsTest {
 
@@ -33,7 +33,8 @@ class GhostKtorBypassExtensionsTest {
             override fun prewarm() {}
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = mapOf(
                 KtorUser::class to KtorUserSerializer,
-                ProtoKtorEvent::class to ProtoKtorEventSerializer
+                ProtoKtorEvent::class to ProtoKtorEventSerializer,
+                YamlKtorUser::class to YamlKtorUserSerializer,
             )
 
             @Suppress("UNCHECKED_CAST")
@@ -41,6 +42,7 @@ class GhostKtorBypassExtensionsTest {
                 when (clazz) {
                     KtorUser::class -> KtorUserSerializer as GhostSerializer<T>
                     ProtoKtorEvent::class -> ProtoKtorEventSerializer as GhostSerializer<T>
+                    YamlKtorUser::class -> YamlKtorUserSerializer as GhostSerializer<T>
                     else -> null
                 }
         })
@@ -99,5 +101,27 @@ class GhostKtorBypassExtensionsTest {
         }
         assertTrue(error.message!!.contains(Ghost.NOT_FOUND))
         assertTrue(error.message!!.contains("UnregisteredUser"))
+    }
+
+    @Test
+    fun bodyGhostYaml_deserializesWithoutContentNegotiationInstalled() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = """
+                    id: 7
+                    name: "Zoe"
+                    isActive: true
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/yaml")
+            )
+        }
+
+        val client = HttpClient(mockEngine)
+        val response = client.get("/user").bodyGhostYaml<YamlKtorUser>()
+
+        assertEquals(7, response.id)
+        assertEquals("Zoe", response.name)
+        assertTrue(response.isActive)
     }
 }
