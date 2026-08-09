@@ -7,12 +7,13 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.accumulateIntWithOverflowCheck
 import com.ghost.serialization.parser.common.accumulateLongWithOverflowCheck
 import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
-import com.ghost.serialization.parser.common.getDoublePowerOfTen
-import com.ghost.serialization.parser.common.getFloatPowerOfTen
+import com.ghost.serialization.parser.common.finalizeParsedDouble
+import com.ghost.serialization.parser.common.finalizeParsedFloat
+import com.ghost.serialization.parser.common.handleLeadingZeroCore
 import com.ghost.serialization.parser.common.isDigit
-import com.ghost.serialization.parser.common.isExponentMarker
 import com.ghost.serialization.parser.common.isNumericSeparator
 import com.ghost.serialization.parser.common.parseExponentValueCore
+import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
 import com.ghost.serialization.parser.common.prepareNumericHeaderCore
 import com.ghost.serialization.parser.common.validateLeadingZeroCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -33,61 +34,19 @@ fun GhostJsonReader.nextFloat(): Float {
 
     validateLeadingZero()
 
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
-    // Integer part
     nextTokenByte = C.RESET_TOKEN_BYTE
-    readNumericLoop { byte ->
-        val digit = byte - C.ZERO_INT
-        if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-            mantissa = mantissa * C.BASE_TEN + digit
-            digitCount++
-        } else {
-            exponent++
-        }
+    val result = parseJsonFloatingBodyCore(
+        precisionLimit = C.FLOAT_PRECISION_LIMIT,
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        readDigitRun = { onDigit -> readNumericLoop(onDigit) },
+        parseExponentValue = { parseExponentValue() },
+        throwError = { throwError(it) },
+    ) { mantissa, exponent ->
+        finalizeParsedFloat(mantissa, exponent, isNegativeValue) { throwError(it) }
     }
-
-    if (digitCount == 0) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    // Decimal part
-    val pos = position
-    val lim = limit
-    if (pos < lim && getByte(pos) == C.DOT_INT) {
-        val newPos = pos + 1
-        position = newPos
-        readNumericLoop { byte ->
-            val digit = byte - C.ZERO_INT
-            if (digitCount < C.FLOAT_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digit
-                digitCount++
-                exponent--
-            }
-        }
-        if (position == newPos) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    // Exponent part
-    val currentPos = position
-    val currentLimit = limit
-    if (currentPos < currentLimit && isExponentMarker(getByte(currentPos))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toFloat()
-    if (exponent != 0) {
-        result *= getFloatPowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) {
-        result = -result
-    }
-    validateNumericRangeFloat(result)
 
     if (isQuoted) {
         consumeNumericCoercionFooter()
@@ -111,61 +70,19 @@ fun GhostJsonReader.nextDouble(): Double {
 
     validateLeadingZero()
 
-    var mantissa = 0L
-    var exponent = 0
-    var digitCount = 0
-
-    // Integer part
     nextTokenByte = C.RESET_TOKEN_BYTE
-    readNumericLoop { byte ->
-        val digit = byte - C.ZERO_INT
-        if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-            mantissa = mantissa * C.BASE_TEN + digit
-            digitCount++
-        } else {
-            exponent++
-        }
+    val result = parseJsonFloatingBodyCore(
+        precisionLimit = C.DOUBLE_PRECISION_LIMIT,
+        getPosition = { position },
+        setPosition = { position = it },
+        getLimit = { limit },
+        getByte = { getByte(it) },
+        readDigitRun = { onDigit -> readNumericLoop(onDigit) },
+        parseExponentValue = { parseExponentValue() },
+        throwError = { throwError(it) },
+    ) { mantissa, exponent ->
+        finalizeParsedDouble(mantissa, exponent, isNegativeValue) { throwError(it) }
     }
-
-    if (digitCount == 0) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-
-    // Decimal part
-    val pos = position
-    val lim = limit
-    if (pos < lim && getByte(pos) == C.DOT_INT) {
-        val newPos = pos + 1
-        position = newPos
-        readNumericLoop { byte ->
-            val digitValue = byte - C.ZERO_INT
-            if (digitCount < C.DOUBLE_PRECISION_LIMIT) {
-                mantissa = mantissa * C.BASE_TEN + digitValue
-                digitCount++
-                exponent--
-            }
-        }
-        if (position == newPos) {
-            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)
-        }
-    }
-
-    // Exponent part
-    val currentPos = position
-    val currentLimit = limit
-    if (currentPos < currentLimit && isExponentMarker(getByte(currentPos))) {
-        exponent += parseExponentValue()
-    }
-
-    var result = mantissa.toDouble()
-    if (exponent != 0) {
-        result *= getDoublePowerOfTen(exponent)
-    }
-
-    if (isNegativeValue) {
-        result = -result
-    }
-    validateNumericRange(result)
 
     if (isQuoted) {
         consumeNumericCoercionFooter()
@@ -290,14 +207,13 @@ private fun GhostJsonReader.prepareNumericHeader(): Int =
  * Validates and consumes a leading zero.
  */
 private fun GhostJsonReader.handleLeadingZero() {
-    val nextCursor = position + 1
-    if (nextCursor < limit) {
-        val nextDigitByte = getByte(nextCursor)
-        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {
-            throwError(C.ERR_LEADING_ZEROS)
-        }
-    }
-    internalSkip(1)
+    handleLeadingZeroCore(
+        position = position,
+        limit = limit,
+        getByte = { getByte(it) },
+        throwError = { throwError(it) },
+        consumeOne = { internalSkip(1) },
+    )
 }
 
 /**
@@ -406,25 +322,6 @@ private fun GhostJsonReader.validateLeadingZero() {
         getByte = { getByte(it) },
         throwError = { throwError(it) },
     )
-}
-
-/**
- * Verifies that parsed Float values are finite numbers.
- */
-private fun GhostJsonReader.validateNumericRangeFloat(valueToValidate: Float) {
-    if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {
-        throwError(C.ERR_NUMERIC_OVERFLOW)
-    }
-}
-
-
-/**
- * Verifies that parsed Double values are finite numbers.
- */
-private fun GhostJsonReader.validateNumericRange(valueToValidate: Double) {
-    if (valueToValidate.isInfinite() || valueToValidate.isNaN()) {
-        throwError(C.ERR_NUMERIC_OVERFLOW)
-    }
 }
 
 /**
