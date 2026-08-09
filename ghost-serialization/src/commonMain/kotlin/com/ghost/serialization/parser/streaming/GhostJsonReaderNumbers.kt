@@ -4,16 +4,15 @@
 package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.accumulateIntWithOverflowCheck
-import com.ghost.serialization.parser.common.accumulateLongWithOverflowCheck
 import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.finalizeParsedDouble
 import com.ghost.serialization.parser.common.finalizeParsedFloat
 import com.ghost.serialization.parser.common.handleLeadingZeroCore
 import com.ghost.serialization.parser.common.isDigit
-import com.ghost.serialization.parser.common.isNumericSeparator
 import com.ghost.serialization.parser.common.parseExponentValueCore
+import com.ghost.serialization.parser.common.parseIntDigitsCore
 import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
+import com.ghost.serialization.parser.common.parseLongDigitsCore
 import com.ghost.serialization.parser.common.prepareNumericHeaderCore
 import com.ghost.serialization.parser.common.validateLeadingZeroCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -223,37 +222,18 @@ private fun GhostJsonReader.parseIntDigits(
     isNegative: Boolean,
     startOfNumber: Int
 ): Int {
-    var accumulatedValue = 0
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    var earlyExitResult: Int? = null
-    readNumericLoop(
-        { byte ->
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                accumulateIntWithOverflowCheck(accumulatedValue, digit, isNegative) {
-                    throwError(C.ERR_INT_OVERFLOW)
-                }
-            }
-            digitCount++
-            hasDigitsFound = true
+    return parseIntDigitsCore(
+        isNegative = isNegative,
+        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
+        forEachNumericUnit = { onDigitByte, onNonDigit ->
+            readNumericLoop(onDigitByte, onNonDigit)
         },
-        { byte ->
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toInt()
-            }
-        }
+        onNumericSeparator = {
+            position = startOfNumber
+            nextDouble().toInt()
+        },
+        throwError = { throwError(it) },
     )
-
-    earlyExitResult?.let { return it }
-    if (!hasDigitsFound) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-    return accumulatedValue
 }
 
 /**
@@ -263,37 +243,18 @@ private fun GhostJsonReader.parseLongDigits(
     isNegative: Boolean,
     startOfNumber: Int
 ): Long {
-    var accumulatedValue = 0L
-    var digitCount = 0
-    var hasDigitsFound = false
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    var earlyExitResult: Long? = null
-    readNumericLoop(
-        { byte ->
-            val digit = byte - C.ZERO_INT
-            accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
-                accumulatedValue * C.BASE_TEN + digit
-            } else {
-                accumulateLongWithOverflowCheck(accumulatedValue, digit, isNegative) {
-                    throwError(C.ERR_LONG_OVERFLOW)
-                }
-            }
-            digitCount++
-            hasDigitsFound = true
+    return parseLongDigitsCore(
+        isNegative = isNegative,
+        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
+        forEachNumericUnit = { onDigitByte, onNonDigit ->
+            readNumericLoop(onDigitByte, onNonDigit)
         },
-        { byte ->
-            if (isNumericSeparator(byte)) {
-                position = startOfNumber
-                earlyExitResult = nextDouble().toLong()
-            }
-        }
+        onNumericSeparator = {
+            position = startOfNumber
+            nextDouble().toLong()
+        },
+        throwError = { throwError(it) },
     )
-
-    earlyExitResult?.let { return it }
-    if (!hasDigitsFound) {
-        throwError(C.ERR_EXPECTED_INT_PART)
-    }
-    return accumulatedValue
 }
 
 /**
