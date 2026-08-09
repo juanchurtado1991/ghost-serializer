@@ -56,6 +56,12 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
         // Nothing between '?' and ':' (e.g. "? : x") — an empty/null key.
         null
     } else {
+        // Unlike an implicit "key: value" pair's value, explicit-key content (and its ": value"
+        // counterpart below) legitimately supports YAML's "compact notation" — a nested block
+        // mapping/sequence starting inline right after "?"/":", not just on a fresh indented line
+        // (spec example 8.19, "Compact Block Mappings" — see V9D5). allowMappingRedirect stays at
+        // its default (true) here; only an *implicit* pair's inline value forbids it (see
+        // GhostYamlFlatReader.resolveValueAfterColon).
         readValue(blockIndent, inFlow = false, strictDedent = true)
     }
     val key = stringifyExplicitMappingKey(keyNode)

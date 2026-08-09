@@ -38,8 +38,6 @@ internal val writerRoundTripDeviations: Set<DeviationCase> = setOf(
     "FRK4" because WRITER_REASON_UNQUOTED_KEY, // Spec Example 7.3. Completely Empty Flow Nodes
     "KK5P" because WRITER_REASON_UNQUOTED_KEY, // Various combinations of explicit block mappings
     "M2N8_01" because WRITER_REASON_UNQUOTED_KEY, // Question mark edge cases
-    "V9D5" because WRITER_REASON_UNQUOTED_KEY, // Spec Example 8.19. Compact Block Mappings
-    "Y79Y_009" because WRITER_REASON_UNQUOTED_KEY, // Tabs in various contexts
 )
 
 /** See [GhostYamlWriterConformanceTest.kamlOracleConformance]. */
@@ -54,8 +52,6 @@ internal val writerKamlOracleDeviations: Set<DeviationCase> = setOf(
     "FRK4" because WRITER_REASON_UNQUOTED_KEY,
     "KK5P" because WRITER_REASON_UNQUOTED_KEY,
     "M2N8_01" because WRITER_REASON_UNQUOTED_KEY,
-    "V9D5" because WRITER_REASON_UNQUOTED_KEY,
-    "Y79Y_009" because WRITER_REASON_UNQUOTED_KEY,
     // kaml-only: round-trip is otherwise correct, kaml itself just can't parse the key shape.
     "26DV" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Whitespace around colon in mappings
     "2JQS" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Block Mapping with Missing Keys
@@ -70,7 +66,6 @@ internal val writerKamlOracleDeviations: Set<DeviationCase> = setOf(
     "M5DY" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Spec Example 2.11. Mapping between Sequences
     "NHX8" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Empty Lines at End of Document
     "PW8X" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Anchors on Empty Scalars
-    "Q9WF" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Spec Example 6.12. Separation Spaces
     "S3PD" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Spec Example 8.18. Implicit Block Mapping Entries
     "SBG9" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Flow Sequence in Flow Mapping
     "SM9W_01" because WRITER_REASON_KAML_COMPLEX_KEY_LIMITATION, // Single character streams

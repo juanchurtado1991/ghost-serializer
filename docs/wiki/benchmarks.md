@@ -281,19 +281,19 @@ reproducible-by-anyone-who-clones-the-repo shape as the reader report.
 ==============================================================================
 Ghost YAML Writer Conformance — vendored yaml-test-suite snapshot
 ==============================================================================
-Cases loaded: 319 reader-decodable (out of 402 total)
+Cases loaded: 315 reader-decodable (out of 402 total)
 
 Round-trip (decode -> encode -> decode reproduces the original tree):
-  309 pass, 10 known gap(s), 0 UNEXPECTED
-  309 / 319 = 96.87%
+  307 pass, 8 known gap(s), 0 UNEXPECTED
+  307 / 315 = 97.46%
 
 kaml oracle (an independent second parser accepts Ghost's re-encoded output):
-  287 pass, 32 known gap(s), 0 UNEXPECTED
-  287 / 319 = 89.97%
+  286 pass, 29 known gap(s), 0 UNEXPECTED
+  286 / 315 = 90.79%
 
 Known gaps by category:
-  KAML_COMPLEX_KEY_LIMITATION   22 case(s)
-  UNQUOTED_KEY                  10 case(s)
+  KAML_COMPLEX_KEY_LIMITATION   21 case(s)
+  UNQUOTED_KEY                   8 case(s)
 ==============================================================================
 No unexpected deviations — every known gap is tracked in YamlWriterDeviations.kt
 ```

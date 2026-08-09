@@ -171,7 +171,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         indent: Int,
         inFlow: Boolean,
         expectedTag: Int = GhostYamlTags.TAG_NONE,
-        strictDedent: Boolean = false
+        strictDedent: Boolean = false,
+        allowMappingRedirect: Boolean = true
     ): Any? {
         skipInlineWhitespace()
         val localLimit = limit
@@ -192,7 +193,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.ASTERISK_BYTE -> readAlias()                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }
-            C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag)
+            C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
             // '%' is reserved for directives and can never start a plain scalar (no "followed by
             // a safe character" exception the way '-'/'?'/':' get) — a directive-shaped line
             // appearing where a value is expected (e.g. after the "---" it should have preceded)
@@ -200,7 +201,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.PERCENT_BYTE -> yamlError("A plain scalar cannot start with '%' — reserved for directives")
             C.QUESTION_BYTE ->
                 if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
-                else readPlainScalarOrMapping(indent, inFlow, expectedTag)
+                else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
             C.DASH_BYTE -> {
                 // Either: negative number "-42", block sequence "- item", or doc separator "---"
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
@@ -211,11 +212,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         readBlockSequence(indent)
 
                     isDocumentMarker() -> null  // document end
-                    else -> readPlainScalar(indent, inFlow, expectedTag)
+                    else -> readPlainScalar(indent, inFlow, expectedTag, allowMappingRedirect)
                 }
             }
 
-            else -> readPlainScalarOrMapping(indent, inFlow, expectedTag)
+            else -> readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
         }
     }
 
@@ -313,7 +314,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     yamlError("Expected ':' after key '$key' at position $position")
                 }
                 position++ // consume ':'
-                val value = resolveValueAfterColon(blockIndent)
+                // An implicit "key: value" pair's value can't redirect into a nested block
+                // mapping while still inline on the same physical line as this ':' (that shape is
+                // only legal via YAML's "compact notation", reserved for explicit "?"/":" entries
+                // — see resolveValueAfterColon's KDoc). Without this, "a: b: c: d" silently parsed
+                // as {"a": {"b": {"c": "d"}}} instead of being rejected (yaml-test-suite ZCZ6).
+                val value = resolveValueAfterColon(blockIndent, allowMappingRedirect = false)
 
                 if (key == C.STR_MERGE_KEY) {
                     mergeInto(result, value)
@@ -331,9 +337,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
      * Called right after a mapping ':' has been consumed and inline whitespace skipped, to
      * determine and read the value. Shared by [readBlockMapping]'s implicit ("key: value")
      * entries and [readExplicitKeyEntry]'s explicit ("? key\n: value") entries — both need
-     * exactly the same "same line, next line indented, or no value at all" resolution.
+     * exactly the same "same line, next line indented, or no value at all" resolution, but differ
+     * on whether an *inline* value may itself redirect into a nested block mapping: explicit
+     * entries get YAML's "compact notation" allowance (see the comment at
+     * [com.ghost.serialization.parser.yaml.readExplicitKeyEntry]'s call site), implicit ones
+     * don't — [allowMappingRedirect] lets each caller opt in/out.
      */
-    internal fun resolveValueAfterColon(blockIndent: Int): Any? {
+    internal fun resolveValueAfterColon(blockIndent: Int, allowMappingRedirect: Boolean = true): Any? {
         skipInlineWhitespace()
         val localLimit = limit
         val localRawData = rawData
@@ -359,7 +369,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 }
             }
 
-            else -> readValue(blockIndent, inFlow = false, strictDedent = true)
+            else -> readValue(blockIndent, inFlow = false, strictDedent = true, allowMappingRedirect = allowMappingRedirect)
         }
     }
 
@@ -448,7 +458,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     internal fun readPlainScalarOrMapping(
         indent: Int,
         inFlow: Boolean,
-        expectedTag: Int = GhostYamlTags.TAG_NONE
+        expectedTag: Int = GhostYamlTags.TAG_NONE,
+        allowMappingRedirect: Boolean = true
     ): Any? {
         val startPosition = position
         val localLimit = limit
@@ -469,6 +480,14 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         localRawData[afterColon] == C.TAB_BYTE
                     ) {
                         if (!inFlow) {
+                            if (!allowMappingRedirect) {
+                                // This colon is being read as an *inline* value/key-node on the
+                                // same line as an enclosing key's own ':' (e.g. the "b: c" in
+                                // "a: b: c") — there's no fresh, more-indented line for a nested
+                                // mapping to start on here, so this shape is just ambiguous, not
+                                // a legal redirect. yaml-test-suite case ZCZ6.
+                                yamlError("Unexpected ':' — a nested mapping can't start inline on the same line as its enclosing key")
+                            }
                             // Rewind and parse as block mapping
                             position = startPosition
                             return readBlockMapping(indent.coerceAtLeast(0))
@@ -753,9 +772,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     private fun readPlainScalar(
         indent: Int,
         inFlow: Boolean,
-        expectedTag: Int = GhostYamlTags.TAG_NONE
+        expectedTag: Int = GhostYamlTags.TAG_NONE,
+        allowMappingRedirect: Boolean = true
     ): Any? =
-        readPlainScalarOrMapping(indent, inFlow, expectedTag)
+        readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
 
     // ── Key reading ────────────────────────────────────────────────────────────
 

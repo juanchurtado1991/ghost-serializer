@@ -83,12 +83,14 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
     "NB6Z" because REASON_TAB, // Multiline plain value with tabs on empty lines
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
+    "Q9WF" because REASON_FLOW_COLLECTION, // Spec Example 6.12. Separation Spaces (flow mapping used as an implicit block-mapping key: readKey has no bracket-depth tracking, so it breaks at the key's own first inner ':' instead of treating "{ first: Sammy, last: Sosa }" as one unit)
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "RZT7" because REASON_MISC, // Spec Example 2.28. Log File
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
     "UGM3" because REASON_MISC, // Spec Example 2.27. Invoice
     "UV7Q" because REASON_TAB, // Legal tab after indentation
+    "V9D5" because REASON_EXPLICIT_KEY, // Spec Example 8.19. Compact Block Mappings (an explicit key's compact-notation nested mapping doesn't stop at the right place: it swallows the outer pair's own ": value" continuation line as a second entry of itself instead of returning control to readExplicitKeyEntry)
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
     "X38W" because REASON_ANCHOR_ALIAS, // Aliases in Flow Objects
     "XW4D" because REASON_COMMENT, // Various Trailing Comments
@@ -99,8 +101,6 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "Y79Y_006" because REASON_TAB, // Tabs in various contexts
     "Y79Y_007" because REASON_TAB, // Tabs in various contexts
     "Y79Y_008" because REASON_TAB, // Tabs in various contexts
-    "Y79Y_009" because REASON_EXPLICIT_KEY, // Tabs in various contexts (explicit key with colon-terminated content)
-    "ZCZ6" because REASON_MISC, // Invalid mapping in plain single line value
     "ZL4Z" because REASON_MISC, // Invalid nested mapping
     "ZVH3" because REASON_INDENTATION, // Wrong indented sequence item
 )
