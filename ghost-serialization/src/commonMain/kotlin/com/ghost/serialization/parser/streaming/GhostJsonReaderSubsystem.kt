@@ -12,11 +12,13 @@ import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.beginArrayCore
 import com.ghost.serialization.parser.common.beginObjectCore
+import com.ghost.serialization.parser.common.computeKeyHashCore
 import com.ghost.serialization.parser.common.consumeArraySeparatorCore
 import com.ghost.serialization.parser.common.consumeKeySeparatorCore
 import com.ghost.serialization.parser.common.endArrayCore
 import com.ghost.serialization.parser.common.endObjectCore
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
+import com.ghost.serialization.parser.common.handleSelectNoMatchCore
 import com.ghost.serialization.parser.common.hasNextCore
 import com.ghost.serialization.parser.common.nextBooleanCore
 import com.ghost.serialization.parser.common.nextKeyCommaPreambleCore
@@ -517,7 +519,7 @@ private fun GhostJsonReader.internalSelect(
         }
     }
 
-    return handleSelectNoMatch(start, end, length, consumeSeparator)
+    return handleSelectNoMatch(start, end, consumeSeparator)
 }
 
 private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int =
@@ -538,24 +540,21 @@ private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: B
 private fun GhostJsonReader.handleSelectNoMatch(
     start: Int,
     end: Int,
-    length: Int,
-    consumeSeparator: Boolean
-): Int {
-    val newPos = end + 1
-    position = newPos
-    nextTokenByte = C.MATCH_END
-    if (consumeSeparator) {
-        if (newPos < limit && getByte(newPos) == C.COLON_INT) {
-            position = newPos + 1
-        } else {
-            consumeKeySeparator()
-        }
-    } else if (strictMode) {
-        val unknownKey = source.decodeToString(start, end)
-        throwError("${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey")
-    }
-    return C.MATCH_NONE
-}
+    consumeSeparator: Boolean,
+): Int =
+    handleSelectNoMatchCore(
+        start = start,
+        end = end,
+        consumeSeparator = consumeSeparator,
+        strictMode = strictMode,
+        limit = limit,
+        getByte = { getByte(it) },
+        setPosition = { position = it },
+        setNextTokenByte = { nextTokenByte = it },
+        consumeKeySeparator = { consumeKeySeparator() },
+        decodeUnknownKey = { s, e -> source.decodeToString(s, e) },
+        throwError = { throwError(it) },
+    )
 
 private fun GhostJsonReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
     throwError(if (consumeSeparator) C.ERR_EXPECTED_KEY else C.ERR_EXPECTED_STRING)
@@ -565,41 +564,8 @@ private fun GhostJsonReader.throwUnterminatedStringError() {
     throwError(C.UNTERMINATED_STRING_ERROR)
 }
 
-/**
- * Computes a fast, collision-reducing 32-bit hash value from a raw slice of the JSON buffer.
- *
- * Optimization:
- * - Packs the first 4 bytes directly into a single Int value using bitwise shifts and OR operations.
- * - This avoids allocating any temporary byte arrays or strings, allowing hardware-level key hashing.
- *
- * @param start The absolute 0-based byte position in the buffer.
- * @param length The length of the key.
- * @return The packed 32-bit hash key.
- */
-private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
-    var key = 0
-    if (length >= 4) {
-        val byte0 = getByte(start)
-        val byte1 = getByte(start + 1)
-        val byte2 = getByte(start + 2)
-        val byte3 = getByte(start + 3)
-        key = byte0 or
-                (byte1 shl C.SHIFT_8) or
-                (byte2 shl C.SHIFT_16) or
-                (byte3 shl C.SHIFT_24)
-        if (hasCollisions) {
-            var ci = C.UNICODE_HEX_LENGTH
-            while (ci < length) {
-                key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++
-            }
-        }
-    } else {
-        if (length >= 1) key = key or getByte(start)
-        if (length >= 2) key = key or (getByte(start + 1) shl C.SHIFT_8)
-        if (length >= 3) key = key or (getByte(start + 2) shl C.SHIFT_16)
-    }
-    return key
-}
+private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int =
+    computeKeyHashCore(start, length, hasCollisions) { getByte(it) }
 
 /**
  * Verifies that the candidate key matched in the dispatch table corresponds exactly to the expected key bytes.

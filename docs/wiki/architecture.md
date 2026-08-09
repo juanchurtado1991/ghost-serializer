@@ -143,7 +143,9 @@ Short notes for maintainers; details live in KDoc on the linked APIs.
 
 - **`Ghost.deserialize(bytes)` vs options overload** — plain bytes uses the flat reader; `deserialize(bytes) { options }` uses the streaming reader.
 - **`GhostHeuristics` / discovery** — `maxCollectionSize` (and related caps) differ by platform actual; iOS/Wasm `discoverRegistries()` is empty (manual `Ghost.addRegistry`).
-- **Gradle plugin `DEFAULT_VERSION`** — must stay in sync with `libs.versions.toml` `publish-version`.
+- **Triple JSON stacks** — structure/comma/number/escape kernels are shared; `internalSelect` / `verifyKeyMatch` / quote scanners stay ByteArray- vs CharArray-specific.
+- **Twitter fixtures** — JVM SSOT in `ghost-integration-test` (also used by `ghost-benchmark`); playground keeps `bench/model` (KMP Ghost+kotlinx) and `bench/moshi` (JVM Moshi) on purpose — do not pull Moshi into commonMain.
+- **`publish-version` SSOT** — `libs.versions.toml` feeds generated `GhostVersions` / `GhostPlaygroundVersions` and the PDF script; bump only the catalog.
 
 ---
 
