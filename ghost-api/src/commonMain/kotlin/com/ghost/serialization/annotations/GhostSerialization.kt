@@ -14,7 +14,7 @@ package com.ghost.serialization.annotations
  *   Has no effect on non-sealed classes.
  * @param inferred Whether the type should be inferred automatically.
  * @param textChannel When `true` (the default), generates native
- *   [com.ghost.serialization.parser.strings.GhostJsonStringReader] deserialize/serialize overloads for
+ *   `GhostJsonStringReader` deserialize/serialize overloads for
  *   this model and any nested `@GhostSerialization` types reachable from its property graph.
  *   Without a native string-channel overload, decoding from a `String` (e.g.
  *   `Ghost.deserialize<T>(json: String)`) falls back to re-encoding the whole document to UTF-8

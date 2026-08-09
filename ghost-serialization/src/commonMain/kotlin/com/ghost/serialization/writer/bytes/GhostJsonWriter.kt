@@ -55,7 +55,6 @@ import com.ghost.serialization.writer.common.GhostDoubleFormatter
 import okio.BufferedSink
 import okio.ByteString
 
-
 /**
  * A highly optimized, low-allocation JSON writer for Kotlin Multiplatform.
  */

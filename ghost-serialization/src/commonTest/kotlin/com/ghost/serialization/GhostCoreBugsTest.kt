@@ -20,6 +20,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
+@OptIn(InternalGhostApi::class)
 class GhostCoreBugsTest {
 
     @Test

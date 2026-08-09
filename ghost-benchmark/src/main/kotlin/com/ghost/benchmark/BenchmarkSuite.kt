@@ -23,13 +23,13 @@ internal enum class BenchmarkSuite(
     /** Ghost-only special features (polymorphism, RawJson envelope, protobuf WKTs, etc.). */
     SPECIAL("special", regressionGate = false),
 
-    /** Ghost-only [com.ghost.serialization.types.RawJson] byte vs string channels. */
+    /** Ghost-only `RawJson` byte vs string channels. */
     RAWJSON("rawjson", regressionGate = false),
 
-    /** Ghost-only YAML round-trip on KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer]. */
+    /** Ghost-only YAML round-trip on KSP-generated `GhostYamlSerializer`. */
     YAML("yaml", regressionGate = false),
 
-    /** Ghost-only proto3 JSON round-trip via [com.ghost.serialization.proto.GhostProto]. */
+    /** Ghost-only proto3 JSON round-trip via `GhostProto`. */
     PROTO("proto", regressionGate = false),
     ;
 

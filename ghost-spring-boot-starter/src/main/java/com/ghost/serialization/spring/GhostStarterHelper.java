@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public final class GhostStarterHelper {
-    @SuppressWarnings("unchecked")
     public static void writeToStream(Object value, GhostSerializer<Object> serializer, OutputStream out) throws IOException {
         WriterSinkPair pair = Ghost_jvmKt.acquireFlatWriterPair();
         try {

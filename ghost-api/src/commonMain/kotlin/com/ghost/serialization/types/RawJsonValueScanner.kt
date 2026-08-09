@@ -1,12 +1,10 @@
 package com.ghost.serialization.types
 
 /**
- * Scanners for [com.ghost.serialization.types.RawJson] JSON value classification and scalar coercion.
+ * Scanners for [RawJson] JSON value classification and scalar coercion.
  *
- * Operates directly on [com.ghost.serialization.types.RawJson.storage],
- * [com.ghost.serialization.types.RawJson.storageOffset], and
- * [com.ghost.serialization.types.RawJson.storageLength] without materializing
- * [com.ghost.serialization.types.RawJson.bytes] unless a [kotlin.String] result is required.
+ * Operates directly on [RawJson.storage], [RawJson.storageOffset], and [RawJson.storageLength]
+ * without materializing [RawJson.bytes] unless a [String] result is required.
  */
 internal object RawJsonValueScanner {
 
@@ -118,19 +116,11 @@ internal object RawJsonValueScanner {
         return raw.storage.decodeToString(contentStart, contentEnd)
     }
 
-    fun asDisplayString(raw: RawJson): String {
-        val classified = kind(raw)
-        return when (classified) {
+    fun asDisplayString(raw: RawJson): String =
+        when (kind(raw)) {
             RawJsonKind.STRING -> asStringOrNull(raw) ?: raw.decodeToString()
-            RawJsonKind.NUMBER,
-            RawJsonKind.BOOLEAN,
-            RawJsonKind.NULL -> raw.decodeToString()
-
-            RawJsonKind.OBJECT,
-            RawJsonKind.ARRAY,
-            RawJsonKind.INVALID -> raw.decodeToString()
+            else -> raw.decodeToString()
         }
-    }
 
     private fun RawJson.byteAt(relativeIndex: Int): Int =
         storage[storageOffset + relativeIndex].toInt() and BYTE_MASK
@@ -221,7 +211,7 @@ internal object RawJsonValueScanner {
                     in ZERO..NINE -> return null
                 }
             }
-            return if (negative) 0L else 0L
+            return 0L
         }
 
         while (index < storageLength) {

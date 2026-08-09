@@ -7,7 +7,7 @@ import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
 import com.ghost.serialization.compiler.analysis.isByteArray
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.codegen.GhostCodeGenerator
-import com.ghost.serialization.compiler.codegen.writeTrimmedTo
+import com.ghost.serialization.compiler.codegen.GeneratedSourceTrimmer
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -44,8 +44,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
  * specialized serializers, and builds a global registry mapping classes to serializers
  * to avoid reflection at runtime.
  *
- * @property codeGenerator The KSP [com.google.devtools.ksp.processing.CodeGenerator] used to create new serializer and registry files.
- * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors, warnings, and messages.
+ * @property codeGenerator KSP `CodeGenerator` used to create serializer and registry files.
+ * @property logger KSP `KSPLogger` used to report compilation errors, warnings, and messages.
  * @property options Map of key-value pairs representing processor options passed from build scripts.
  */
 class GhostSerializationProcessor(
@@ -235,7 +235,8 @@ class GhostSerializationProcessor(
         }
         processedFiles.add(fullFileName)
 
-        fileSpec.writeTrimmedTo(
+        GeneratedSourceTrimmer.write(
+            fileSpec = fileSpec,
             codeGenerator = codeGenerator,
             dependencies = Dependencies(
                 aggregating = false,
@@ -627,13 +628,13 @@ class GhostSerializationProcessor(
      * @param registrySpec The built registry type specification.
      */
     private fun writeRegistryFile(registrySpec: TypeSpec) {
-        FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
-            .addType(registrySpec)
-            .build()
-            .writeTrimmedTo(
-                codeGenerator,
-                Dependencies(aggregating = true, *originatingFiles.toTypedArray())
-            )
+        GeneratedSourceTrimmer.write(
+            fileSpec = FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
+                .addType(registrySpec)
+                .build(),
+            codeGenerator = codeGenerator,
+            dependencies = Dependencies(aggregating = true, *originatingFiles.toTypedArray()),
+        )
     }
 
     /**

@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.ghost.serialization.compiler.codegen.emit
 
 import com.ghost.serialization.compiler.analysis.DispatchNamesResolver

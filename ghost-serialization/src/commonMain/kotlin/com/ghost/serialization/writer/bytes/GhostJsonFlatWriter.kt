@@ -56,7 +56,6 @@ import okio.ByteString
  * [FlatByteArrayWriter] instead of the segmented [okio.Buffer] used by the
  * streaming path.
  */
-@Suppress("CascadeIf")
 class GhostJsonFlatWriter @InternalGhostApi constructor(
     @InternalGhostApi val buffer: FlatByteArrayWriter
 ) {

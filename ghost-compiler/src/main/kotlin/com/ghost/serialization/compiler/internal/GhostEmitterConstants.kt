@@ -26,6 +26,7 @@ internal object GhostEmitterConstants {
     const val STR_NULL = "null"
     const val STR_ZERO = "0"
     const val STR_ZERO_L = "0L"
+    const val STR_ZERO_UL = "0uL"
     const val STR_ZERO_D = "0.0"
     const val STR_ZERO_F = "0.0f"
     const val STR_CHAR_NULL_LITERAL = "'\\u0000'"
@@ -55,6 +56,7 @@ internal object GhostEmitterConstants {
     const val STR_WHEN_SUB_INDEX = "when (%L)"
     const val STR_ARROW = " ->"
     const val STR_UNDERSCORE = "_"
+    const val CHAR_UNDERSCORE = '_'
     const val TEMPLATE_ASSIGN_L = " = %L"
     const val STR_MINUS_ONE_BREAK = "-1 -> break"
     const val STR_MINUS_TWO_ARROW = "-2 ->"
@@ -160,7 +162,11 @@ internal object GhostEmitterConstants {
     const val STR_GHOST_SERIALIZER = "GhostSerializer"
     const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
     val BYTE_STRING_CLASS = ClassName("okio", "ByteString")
-    const val DEFAULT_DISCRIMINATOR_KEY = "key"
+    /**
+     * Default sealed-class discriminator JSON key.
+     * Must match [STR_DEFAULT_DISCRIMINATOR] and runtime `GhostJsonConstants.DEFAULT_DISCRIMINATOR_KEY`.
+     */
+    const val DEFAULT_DISCRIMINATOR_KEY = "type"
 
     const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
     const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
@@ -304,6 +310,7 @@ internal object GhostEmitterConstants {
     const val STR_SERIALIZE_CALL = "%L.serialize(writer, %L)"
     const val STR_WRITER_VAL_L = "writer.value(%L)"
     const val STR_WRITER_VAL_FLOAT = "writer.value(%L)"
+    const val STR_WRITER_VAL_TO_INT = "writer.value(%L.toInt())"
 
     /** proto3 JSON mapping: int64/uint64 fields are quoted decimal strings on the wire. */
     const val STR_WRITER_VAL_LONG_AS_STRING = "writer.value(%L.toString())"
@@ -653,6 +660,18 @@ internal object GhostEmitterConstants {
     const val STR_ERR_FLATTEN_INFINITE_LOOP_2 = ": "
     const val STR_ERR_SINGLE_SHOT_DEFAULT_1 = "single-shot requires defaultExpression for "
     const val COMPACT_CALL_MAX_INLINE_LENGTH = 80
+    /** Empty call: `name()`. */
+    const val TEMPLATE_INVOKE_EMPTY = "%L()"
+    /** Compact single-arg call: `name(arg)`. */
+    const val TEMPLATE_INVOKE_ONE = "%L(%L)"
+    /** Multiline call open: `name(\n`. */
+    const val TEMPLATE_INVOKE_OPEN = "%L(\n"
+    /** Multiline typed factory open: `Type.of(\n`. */
+    const val TEMPLATE_TYPED_OF_OPEN = "%T.of(\n"
+    /** One positional/boolean arg per line with trailing comma. */
+    const val TEMPLATE_ARG_LINE = "%L,\n"
+    /** One string literal arg per line with trailing comma. */
+    const val TEMPLATE_STRING_ARG_LINE = "%S,\n"
     const val STR_SUB_INDEX_PREFIX = "subIndex"
     const val TEMPLATE_L = "%L"
     const val STR_ERR_PERFECT_HASH_COLLISION_1 =
@@ -683,7 +702,6 @@ internal object GhostEmitterConstants {
     const val STR_ENVELOPE_BRANCH = "%S -> %L\n"
     const val STR_ENVELOPE_ELSE_NULL = "else -> null\n"
     const val STR_ENVELOPE_ELSE_FALLBACK = "else -> envelope.%L\n"
-    const val STR_ENVELOPE_ELSE_GENERIC = "else -> envelope.%L\n"
     const val STR_ENVELOPE_PARSE_BYTES_ROUTE =
         "val envelope = deserialize(%T(%L))\nreturn %L(envelope)"
     const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = "TargetSerializer"
@@ -779,6 +797,9 @@ internal object GhostEmitterConstants {
     const val REGEX_TRIM_REDUNDANT_PUBLIC =
         """^(\s*)public (?=object |class |interface |fun |val |var |override |companion |data |enum |suspend |inline |operator |expect |actual )"""
 
+    /** Replacement for [REGEX_TRIM_REDUNDANT_PUBLIC]: keep the leading indent capture group. */
+    const val STR_REGEX_GROUP_1 = $$"$1"
+
     // DefaultExpressionExtractor — whitelisted ctor-default literals / escapes
     const val STR_EMPTY_LIST_CALL = "emptyList()"
     const val STR_EMPTY_SET_CALL = "emptySet()"
@@ -792,7 +813,7 @@ internal object GhostEmitterConstants {
     const val STR_CHAR_ESC_T = "\\t"
     const val STR_CHAR_ESC_R = "\\r"
     const val STR_CHAR_ESC_B = "\\b"
-    const val STR_CHAR_ESC_DOLLAR = "\\\$"
+    const val STR_CHAR_ESC_DOLLAR = "\\$"
     const val STR_UNICODE_ESC_PREFIX = "\\u"
     const val STR_TRIPLE_QUOTE = "\"\"\""
     const val DEFAULT_EXPR_MAX_PARAM_SEARCH_CHARS = 8_192
