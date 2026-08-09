@@ -22,12 +22,12 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
  * Reactive Decoder for Ghost Serialization.
  *
  * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
- * to the pooled [com.ghost.serialization.parser.streaming.GhostJsonReader], avoiding
+ * to the pooled `GhostJsonReader`, avoiding
  * intermediate Okio/InputStream wrappers entirely.
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
-    MimeType("application", "x-ndjson")
+    GhostSpringMediaTypes.MIME_APPLICATION_X_NDJSON
 ) {
     override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()
@@ -145,7 +145,7 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
     }
 
     private fun isNdJson(mimeType: MimeType?): Boolean {
-        return mimeType?.subtype?.contains("ndjson") == true
+        return mimeType?.subtype?.contains(GhostSpringMediaTypes.SUBTYPE_NDJSON_TOKEN) == true
     }
 
     companion object {

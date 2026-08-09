@@ -6,13 +6,6 @@ import com.ghost.serialization.types.RawJson
 
 /** Large opaque metadata payload for capture benchmarks. */
 @GhostSerialization
-data class OpaqueMetadataEnvelope(
-    val id: String,
-    @GhostName("metadata") val metadata: RawJson
-)
-
-/** ByteArray control model for capture benchmarks. */
-@GhostSerialization
 data class OpaqueMetadataByteEnvelope(
     val id: String,
     @GhostName("metadata") val metadata: ByteArray,
@@ -34,3 +27,5 @@ data class OpaqueMetadataByteEnvelope(
         return result
     }
 }
+
+/** ByteArray control model for capture benchmarks. */

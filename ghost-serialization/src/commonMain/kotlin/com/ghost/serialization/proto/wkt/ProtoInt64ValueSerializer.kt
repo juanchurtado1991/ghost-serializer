@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import kotlin.jvm.JvmInline
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 

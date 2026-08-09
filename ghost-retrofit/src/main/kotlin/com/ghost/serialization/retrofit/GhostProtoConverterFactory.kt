@@ -23,21 +23,21 @@ import kotlin.reflect.KClass
 
 /**
  * Retrofit `Converter.Factory` for proto3 JSON mapping
- * ([@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]).
+ * (`@GhostProtoSerialization`).
  *
  * Differs from [GhostConverterFactory] only on the read path: response bodies are parsed
- * through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader], which additionally
+ * through `GhostProtoJsonFlatReader`, which additionally
  * accepts quoted-or-bare int64/uint64, lenient int32 (rejects fractional values), and quoted
  * `"NaN"`/`"Infinity"` literals per proto3 JSON rules — required for round-tripping payloads
  * produced by real protobuf/JSON libraries. Encoding (`requestBodyConverter`) reuses
- * [com.ghost.serialization.Ghost.encodeToBytes] since proto3 wire correctness (int64 quoting,
+ * `Ghost.encodeToBytes` since proto3 wire correctness (int64 quoting,
  * Base64 `bytes`, default-value omission) is generated directly into the
- * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]
+ * `@GhostProtoSerialization`
  * serializer's own `serialize()` method.
  *
  * Also unwraps `List<T>`/`Map<String, V>` request/response bodies when the element/value
  * serializer is registered — same pattern as [GhostConverterFactory], still using
- * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] on the read path.
+ * `GhostProtoJsonFlatReader` on the read path.
  *
  * ```kotlin
  * Retrofit.Builder()

@@ -65,5 +65,5 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
         yamlSerializer.serialize(writer, value)
         writer.buffer.toByteArray()
     }
-    respond(ByteArrayContent(bytes, ContentType("application", "yaml"), status))
+    respond(ByteArrayContent(bytes, ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML), status))
 }

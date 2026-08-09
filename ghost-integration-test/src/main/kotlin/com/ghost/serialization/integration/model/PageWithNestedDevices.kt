@@ -14,8 +14,3 @@ sealed class PageWithNestedDevices {
         val name: String = "",
     ) : PageWithNestedDevices()
 }
-
-@GhostSerialization
-data class NestedDeviceStub(
-    val id: String,
-)

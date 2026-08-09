@@ -3,7 +3,6 @@ package com.ghost.serialization.yaml.serializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.serializers.ListSerializer
-import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
