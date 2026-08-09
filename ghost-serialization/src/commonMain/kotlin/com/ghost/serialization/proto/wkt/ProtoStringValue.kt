@@ -21,27 +21,3 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  */
 @JvmInline
 value class ProtoStringValue(val value: String)
-
-/**
- * Serializer for [ProtoStringValue].
- */
-object ProtoStringValueSerializer : GhostSerializer<ProtoStringValue> {
-    override val typeName: String get() = C.WKT_STRING_VALUE_TYPE
-    override fun serialize(writer: GhostJsonWriter, value: ProtoStringValue) {
-        writer.value(value.value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoStringValue) {
-        writer.value(value.value)
-    }
-
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoStringValue) {
-        writer.value(value.value)
-    }
-
-    override fun deserialize(reader: GhostJsonReader): ProtoStringValue =
-        ProtoStringValue(reader.nextString())
-
-    override fun deserialize(reader: GhostJsonFlatReader): ProtoStringValue =
-        ProtoStringValue(reader.nextString())
-}
