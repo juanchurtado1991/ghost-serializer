@@ -54,8 +54,9 @@ venv/
 env/
 ENV/
 
-# Scripts
-scripts/
+# Scripts (keep the tracked PDF build helper)
+scripts/*
+!scripts/build_ghost_manual_pdf.py
 
 # Python Cache
 __pycache__/

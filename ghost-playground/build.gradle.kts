@@ -102,6 +102,7 @@ tasks.register("publishToDocs") {
             "wiki",
             "coverage",
             "GHOST_MANUAL_EN.md",
+            // Filename version must match libs.versions.publish-version (do not rename the PDF here).
             "Ghost-Serialization-Manual-1.3.0.pdf",
             ".nojekyll",
         )
