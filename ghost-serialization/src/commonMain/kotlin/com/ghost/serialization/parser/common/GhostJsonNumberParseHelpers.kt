@@ -361,27 +361,28 @@ internal inline fun skipNumberBodyCore(
  * Accumulates an [Int] from a digit run with overflow checks and early-exit when a
  * fractional/exponent separator appears (caller rewinds and parses as floating).
  *
- * [forEachNumericUnit] walks the buffer/stream: [onDigitByte] receives the raw digit
- * code unit (`'0'..'9'`); [onNonDigit] is invoked once for the first non-digit.
+ * The digit walk lives in this core (same shape as [skipNumberBodyCore]) so call sites
+ * stay monomorphic after inlining — avoid nested function-type callbacks that can allocate.
  */
 internal inline fun parseIntDigitsCore(
     isNegative: Boolean,
     resetNextTokenByte: () -> Unit,
-    forEachNumericUnit: (
-        onDigitByte: (Int) -> Unit,
-        onNonDigit: (Int) -> Unit,
-    ) -> Unit,
-    crossinline onNumericSeparator: () -> Int,
-    crossinline throwError: (String) -> Nothing,
+    getPosition: () -> Int,
+    setPosition: (Int) -> Unit,
+    limit: Int,
+    getByte: (Int) -> Int,
+    onNumericSeparator: () -> Int,
+    throwError: (String) -> Nothing,
 ): Int {
     var accumulatedValue = 0
     var digitCount = 0
     var hasDigitsFound = false
     resetNextTokenByte()
-    var earlyExitResult: Int? = null
+    var position = getPosition()
 
-    forEachNumericUnit(
-        { byte ->
+    while (position < limit) {
+        val byte = getByte(position)
+        if (isDigit(byte)) {
             val digit = byte - C.ZERO_INT
             accumulatedValue = if (digitCount < C.INT_SAFE_DIGITS) {
                 accumulatedValue * C.BASE_TEN + digit
@@ -392,15 +393,16 @@ internal inline fun parseIntDigitsCore(
             }
             digitCount++
             hasDigitsFound = true
-        },
-        { byte ->
+            position++
+        } else {
+            setPosition(position)
             if (isNumericSeparator(byte)) {
-                earlyExitResult = onNumericSeparator()
+                return onNumericSeparator()
             }
-        },
-    )
-
-    earlyExitResult?.let { return it }
+            break
+        }
+    }
+    setPosition(position)
     if (!hasDigitsFound) {
         throwError(C.ERR_EXPECTED_INT_PART)
     }
@@ -413,21 +415,22 @@ internal inline fun parseIntDigitsCore(
 internal inline fun parseLongDigitsCore(
     isNegative: Boolean,
     resetNextTokenByte: () -> Unit,
-    forEachNumericUnit: (
-        onDigitByte: (Int) -> Unit,
-        onNonDigit: (Int) -> Unit,
-    ) -> Unit,
-    crossinline onNumericSeparator: () -> Long,
-    crossinline throwError: (String) -> Nothing,
+    getPosition: () -> Int,
+    setPosition: (Int) -> Unit,
+    limit: Int,
+    getByte: (Int) -> Int,
+    onNumericSeparator: () -> Long,
+    throwError: (String) -> Nothing,
 ): Long {
     var accumulatedValue = 0L
     var digitCount = 0
     var hasDigitsFound = false
     resetNextTokenByte()
-    var earlyExitResult: Long? = null
+    var position = getPosition()
 
-    forEachNumericUnit(
-        { byte ->
+    while (position < limit) {
+        val byte = getByte(position)
+        if (isDigit(byte)) {
             val digit = byte - C.ZERO_INT
             accumulatedValue = if (digitCount < C.LONG_SAFE_DIGITS) {
                 accumulatedValue * C.BASE_TEN + digit
@@ -438,15 +441,16 @@ internal inline fun parseLongDigitsCore(
             }
             digitCount++
             hasDigitsFound = true
-        },
-        { byte ->
+            position++
+        } else {
+            setPosition(position)
             if (isNumericSeparator(byte)) {
-                earlyExitResult = onNumericSeparator()
+                return onNumericSeparator()
             }
-        },
-    )
-
-    earlyExitResult?.let { return it }
+            break
+        }
+    }
+    setPosition(position)
     if (!hasDigitsFound) {
         throwError(C.ERR_EXPECTED_INT_PART)
     }

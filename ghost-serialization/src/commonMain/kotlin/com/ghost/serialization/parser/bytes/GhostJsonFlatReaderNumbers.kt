@@ -205,20 +205,10 @@ private fun GhostJsonFlatReader.parseIntDigits(isNegative: Boolean, startOfNumbe
     return parseIntDigitsCore(
         isNegative = isNegative,
         resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
-        forEachNumericUnit = { onDigitByte, onNonDigit ->
-            val data = rawData
-            val localLimit = limit
-            while (position < localLimit) {
-                val byte = data[position].toInt() and C.BYTE_MASK
-                if (isDigit(byte)) {
-                    onDigitByte(byte)
-                    position++
-                } else {
-                    onNonDigit(byte)
-                    break
-                }
-            }
-        },
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        getByte = { getByte(it) },
         onNumericSeparator = {
             position = startOfNumber
             nextDouble().toInt()
@@ -234,20 +224,10 @@ private fun GhostJsonFlatReader.parseLongDigits(isNegative: Boolean, startOfNumb
     return parseLongDigitsCore(
         isNegative = isNegative,
         resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
-        forEachNumericUnit = { onDigitByte, onNonDigit ->
-            val data = rawData
-            val localLimit = limit
-            while (position < localLimit) {
-                val byte = data[position].toInt() and C.BYTE_MASK
-                if (isDigit(byte)) {
-                    onDigitByte(byte)
-                    position++
-                } else {
-                    onNonDigit(byte)
-                    break
-                }
-            }
-        },
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        getByte = { getByte(it) },
         onNumericSeparator = {
             position = startOfNumber
             nextDouble().toLong()
