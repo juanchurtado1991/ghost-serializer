@@ -3,6 +3,8 @@ package com.ghost.serialization.writer.yaml
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.common.GhostWriterLongDigits
+import com.ghost.serialization.yaml.exception.GhostYamlException
+import okio.ByteString
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
@@ -10,11 +12,14 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * [GhostYamlFlatWriter] (FlatByteArrayWriter).
  *
  * Sink flushes stay at call sites via inlined lambdas so both backends keep
- * monomorphic writes. Mutable layout state (prepareValue, name indent, etc.)
- * stays on each writer — those paths diverge slightly (e.g. key quoting,
- * write2Bytes) and are not worth a shared state machine.
+ * monomorphic writes. Flat-only key quoting stays on [GhostYamlFlatWriter].
  */
 internal object GhostYamlWriterHelpers {
+
+    /** Packed [prepareValue] result: bit0 justWroteDash, bit1 pendingSpace, bit2 incrementItemCount. */
+    const val PREPARE_JUST_WROTE_DASH = 1
+    const val PREPARE_PENDING_SPACE = 2
+    const val PREPARE_INCREMENT_ITEM = 4
 
     fun newScratch(): ByteArray = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
 
@@ -22,6 +27,116 @@ internal object GhostYamlWriterHelpers {
         if (current != null) {
             releaseScratchBuffer(current)
         }
+    }
+
+    fun extractKey(header: ByteString): String {
+        val size = header.size
+        if (size >= C.HEADER_MIN_SIZE &&
+            header[C.HEADER_QUOTE_START_OFFSET] == C.DOUBLE_QUOTE_BYTE &&
+            header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &&
+            header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE
+        ) {
+            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB)
+                .utf8()
+        }
+        return header.utf8()
+    }
+
+    inline fun writeIndentation(
+        level: Int,
+        writeByte: (Int) -> Unit,
+    ) {
+        val spacesCount = level * C.SPACES_PER_LEVEL
+        var count = 0
+        while (count < spacesCount) {
+            writeByte(C.SPACE_INT)
+            count++
+        }
+    }
+
+    /**
+     * Emits array-item dashes / pending key→value spaces.
+     *
+     * @return packed flags: [PREPARE_JUST_WROTE_DASH], [PREPARE_PENDING_SPACE],
+     *   [PREPARE_INCREMENT_ITEM] (caller applies to writer fields / itemCounts).
+     */
+    inline fun prepareValue(
+        isStructural: Boolean,
+        depth: Int,
+        contextAtDepth: Int,
+        justWroteDash: Boolean,
+        pendingSpace: Boolean,
+        writeByte: (Int) -> Unit,
+    ): Int {
+        var dash = justWroteDash
+        var space = pendingSpace
+        var increment = false
+        if (depth > 0 && contextAtDepth == C.TYPE_ARRAY) {
+            if (justWroteDash) {
+                writeByte(C.DASH_INT)
+                writeByte(C.SPACE_INT)
+            } else {
+                writeByte(C.NEWLINE_INT)
+                writeIndentation(depth - 1, writeByte)
+                writeByte(C.DASH_INT)
+                writeByte(C.SPACE_INT)
+            }
+            increment = true
+            dash = isStructural
+        } else {
+            if (isStructural) {
+                space = false
+            } else if (space) {
+                writeByte(C.SPACE_INT)
+                space = false
+            }
+        }
+        var flags = 0
+        if (dash) flags = flags or PREPARE_JUST_WROTE_DASH
+        if (space) flags = flags or PREPARE_PENDING_SPACE
+        if (increment) flags = flags or PREPARE_INCREMENT_ITEM
+        return flags
+    }
+
+    /**
+     * Shared name() layout: validates depth, clears justWroteDash, writes newline+indent when needed.
+     * Key bytes and Flat-only quoting stay at the call site.
+     *
+     * @return [depth] for the caller to index itemCounts after writing the key.
+     */
+    inline fun prepareNameLayout(
+        depth: Int,
+        itemCountAtDepth: Int,
+        justWroteDash: Boolean,
+        writeByte: (Int) -> Unit,
+    ): Int {
+        if (depth <= 0) {
+            throw GhostYamlException(C.ERR_NAME_OUTSIDE_OBJECT)
+        }
+        if (!justWroteDash) {
+            if (itemCountAtDepth > 0 || depth > 1) {
+                writeByte(C.NEWLINE_INT)
+                writeIndentation(depth - 1, writeByte)
+            }
+        }
+        return depth
+    }
+
+    inline fun writeEmptyPlaceholderIfNeeded(
+        depth: Int,
+        itemCountAtDepth: Int,
+        parentContext: Int,
+        openInt: Int,
+        closeInt: Int,
+        writeByte: (Int) -> Unit,
+        writeOpenClose: (Int, Int) -> Unit,
+    ) {
+        if (itemCountAtDepth != 0) return
+        val parentDepth = depth - 1
+        if (parentDepth > 0 && parentContext == C.TYPE_OBJECT) {
+            writeByte(C.SPACE_INT)
+        }
+        writeOpenClose(openInt, closeInt)
     }
 
     inline fun writeUnicodeHex(
