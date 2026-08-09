@@ -114,10 +114,6 @@ class GhostPlugin : Plugin<Project> {
         project.dependencies.add(CONFIG_IMPL, apiDep)
     }
 
-    private fun isMultiplatform(project: Project): Boolean {
-        return project.pluginManager.hasPlugin(PLUGIN_KMP)
-    }
-
     private fun hasKtorDependency(project: Project): Boolean {
         return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)

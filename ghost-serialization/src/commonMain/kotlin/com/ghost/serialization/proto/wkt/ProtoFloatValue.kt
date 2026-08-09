@@ -21,27 +21,3 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  */
 @JvmInline
 value class ProtoFloatValue(val value: Float)
-
-/**
- * Serializer for [ProtoFloatValue].
- */
-object ProtoFloatValueSerializer : GhostSerializer<ProtoFloatValue> {
-    override val typeName: String get() = C.WKT_FLOAT_VALUE_TYPE
-    override fun serialize(writer: GhostJsonWriter, value: ProtoFloatValue) {
-        writer.value(value.value.toDouble())
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFloatValue) {
-        writer.value(value.value.toDouble())
-    }
-
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoFloatValue) {
-        writer.value(value.value.toDouble())
-    }
-
-    override fun deserialize(reader: GhostJsonReader): ProtoFloatValue =
-        ProtoFloatValue(reader.nextFloat())
-
-    override fun deserialize(reader: GhostJsonFlatReader): ProtoFloatValue =
-        ProtoFloatValue(reader.nextFloat())
-}

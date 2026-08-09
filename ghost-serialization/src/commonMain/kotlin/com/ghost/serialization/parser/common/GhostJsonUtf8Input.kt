@@ -9,7 +9,6 @@ import okio.Buffer
 import okio.BufferedSource
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-
 /**
  * RFC 8259 §8.1: JSON text may be UTF-8, UTF-16, or UTF-32 (with or without BOM).
  * Ghost's parsers consume UTF-8 only; this layer normalizes at the byte entrypoint.
@@ -96,19 +95,6 @@ internal fun prepareUtf8JsonSource(source: BufferedSource): BufferedSource {
         }
     )
 }
-
-internal enum class JsonEncodingKind {
-    UTF8,
-    UTF16_LE,
-    UTF16_BE,
-    UTF32_LE,
-    UTF32_BE
-}
-
-internal class DetectedJsonEncoding(
-    val kind: JsonEncodingKind,
-    val bomSize: Int
-)
 
 internal fun detectJsonByteEncoding(
     bytes: ByteArray,
@@ -228,8 +214,7 @@ internal fun utf32ToUtf8(
     while (i < end) {
         val cp = readUtf32CodePoint(bytes, i, littleEndian)
         i += UTF32_UNIT_SIZE
-        if (cp < 0 ||
-            cp > UNICODE_MAX_CODE_POINT ||
+        if (cp !in 0..UNICODE_MAX_CODE_POINT ||
             cp in C.HIGH_SURROGATE_START..C.LOW_SURROGATE_END
         ) {
             throw GhostJsonException(ERR_INVALID_JSON_ENCODING)

@@ -21,27 +21,3 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  */
 @JvmInline
 value class ProtoUInt32Value(val value: Long)
-
-/**
- * Serializer for [ProtoUInt32Value].
- */
-object ProtoUInt32ValueSerializer : GhostSerializer<ProtoUInt32Value> {
-    override val typeName: String get() = C.WKT_UINT32_VALUE_TYPE
-    override fun serialize(writer: GhostJsonWriter, value: ProtoUInt32Value) {
-        writer.value(value.value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoUInt32Value) {
-        writer.value(value.value)
-    }
-
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoUInt32Value) {
-        writer.value(value.value)
-    }
-
-    override fun deserialize(reader: GhostJsonReader): ProtoUInt32Value =
-        ProtoUInt32Value(reader.nextLong())
-
-    override fun deserialize(reader: GhostJsonFlatReader): ProtoUInt32Value =
-        ProtoUInt32Value(reader.nextLong())
-}
