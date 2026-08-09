@@ -15,6 +15,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.BS_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
+import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_ESCAPE_LENGTH
 import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_INT
@@ -807,7 +808,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
         scratchBuf[5] = hexChars[code and HEX_MASK]
 
-        buffer.write(scratchBuf, 0, 6)
+        buffer.write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)
     }
 
     /**

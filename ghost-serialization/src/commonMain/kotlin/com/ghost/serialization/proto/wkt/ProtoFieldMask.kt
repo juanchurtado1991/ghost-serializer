@@ -11,14 +11,14 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  */
 data class ProtoFieldMask(val paths: List<String>)
 
-internal fun parseFieldMask(str: String): ProtoFieldMask {
-    if (str.isEmpty()) return ProtoFieldMask(emptyList())
+internal fun parseFieldMask(pathsText: String): ProtoFieldMask {
+    if (pathsText.isEmpty()) return ProtoFieldMask(emptyList())
     val paths = mutableListOf<String>()
     val stringBuilder = StringBuilder()
     var charIndex = 0
-    val stringLength = str.length
+    val stringLength = pathsText.length
     while (charIndex < stringLength) {
-        val character = str[charIndex]
+        val character = pathsText[charIndex]
         if (character == C.CHAR_COMMA) {
             paths.add(stringBuilder.toString())
             stringBuilder.clear()

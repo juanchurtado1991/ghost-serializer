@@ -11,6 +11,7 @@ import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 /**
@@ -24,7 +25,7 @@ class GhostYamlMapSerializer<V>(
     @Suppress("UNCHECKED_CAST")
     private val yamlValue: GhostYamlSerializer<V> = run {
         require(valueSerializer is GhostYamlSerializer<*>) {
-            "GhostYamlMapSerializer requires a GhostYamlSerializer value serializer, got ${valueSerializer.typeName}"
+            C.ERR_YAML_MAP_NEEDS_YAML_VALUE_PREFIX + valueSerializer.typeName
         }
         valueSerializer as GhostYamlSerializer<V>
     }

@@ -66,16 +66,16 @@ class GhostJsonReader(
     fun _getPosition(): Int = position
 
     @InternalGhostApi
-    fun _setPosition(p: Int) {
-        position = p
+    fun _setPosition(position: Int) {
+        this.position = position
     }
 
     @InternalGhostApi
     fun _getRawData(): ByteArray = rawData
 
     @InternalGhostApi
-    fun _setNextTokenByte(t: Int) {
-        nextTokenByte = t
+    fun _setNextTokenByte(tokenByte: Int) {
+        nextTokenByte = tokenByte
     }
 
     internal val stringPool = arrayOfNulls<String>(C.STR_POOL_SIZE)
@@ -206,10 +206,10 @@ class GhostJsonReader(
     }
 
     /**
-     * Skips [n] bytes and resets the cached [nextTokenByte].
+     * Skips [byteCount] bytes and resets the cached [nextTokenByte].
      */
-    fun internalSkip(n: Int) {
-        position += n
+    fun internalSkip(byteCount: Int) {
+        position += byteCount
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 

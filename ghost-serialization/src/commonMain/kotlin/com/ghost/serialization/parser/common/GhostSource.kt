@@ -80,7 +80,7 @@ interface GhostSource {
      * It allows checking if a pool-cached string matches the source bytes WITHOUT
      * allocating a new [String] for the comparison.
      */
-    fun contentEqualsString(start: Int, length: Int, str: String): Boolean
+    fun contentEqualsString(start: Int, length: Int, expected: String): Boolean
 }
 
 @InternalGhostApi

@@ -9,10 +9,10 @@ object GhostYamlLongArraySerializer : GhostYamlSerializer<LongArray> {
     override fun serialize(writer: GhostYamlWriter, value: LongArray) {
         writer.beginArray()
         val size = value.size
-        var idx = 0
-        while (idx < size) {
-            writer.value(value[idx])
-            idx++
+        var index = 0
+        while (index < size) {
+            writer.value(value[index])
+            index++
         }
         writer.endArray()
     }
@@ -20,10 +20,10 @@ object GhostYamlLongArraySerializer : GhostYamlSerializer<LongArray> {
     override fun serialize(writer: GhostYamlFlatWriter, value: LongArray) {
         writer.beginArray()
         val size = value.size
-        var idx = 0
-        while (idx < size) {
-            writer.value(value[idx])
-            idx++
+        var index = 0
+        while (index < size) {
+            writer.value(value[index])
+            index++
         }
         writer.endArray()
     }

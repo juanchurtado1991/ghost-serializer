@@ -573,7 +573,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val localRawData = rawData
         val localLimit = limit
         val scalarEndPosition = position
-        var sb: StringBuilder? = null
+        var folded: StringBuilder? = null
         var blankLines = 0
 
         while (true) {
@@ -621,7 +621,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 // lines aren't part of the value). Otherwise rewind all the way to right after the
                 // first line, undoing any blank lines we tentatively scanned past too — the caller
                 // must see them again to reprocess this content correctly.
-                position = if (sb != null) beforeNewline else scalarEndPosition
+                position = if (folded != null) beforeNewline else scalarEndPosition
                 break
             }
 
@@ -661,9 +661,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             }
             val lineText = localRawData.decodeToString(lineStart, lineEnd)
 
-            if (sb == null) sb = StringBuilder(firstLine)
-            if (blankLines > 0) repeat(blankLines) { sb.append('\n') } else sb.append(' ')
-            sb.append(lineText)
+            if (folded == null) folded = StringBuilder(firstLine)
+            if (blankLines > 0) repeat(blankLines) { folded.append('\n') } else folded.append(' ')
+            folded.append(lineText)
             blankLines = 0
 
             // Leave position sitting right at the '#' either way — consistent with how the
@@ -673,7 +673,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             if (position >= localLimit) break
         }
 
-        return sb?.toString()
+        return folded?.toString()
     }
 
     /**
@@ -689,7 +689,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val localRawData = rawData
         val localLimit = limit
         val scalarEndPosition = position
-        var sb: StringBuilder? = null
+        var folded: StringBuilder? = null
         var blankLines = 0
 
         while (true) {
@@ -733,7 +733,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 // a comment that interrupts a plain scalar needs its own comma, not a fold).
                 // Same rewind rule as the block version: undo blank lines tentatively scanned
                 // past, since the caller needs to see them fresh either way.
-                position = if (sb != null) beforeNewline else scalarEndPosition
+                position = if (folded != null) beforeNewline else scalarEndPosition
                 break
             }
 
@@ -770,9 +770,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             val lineEnd = trimTrailingSpaces(lineStart, scanPos)
             val lineText = localRawData.decodeToString(lineStart, lineEnd)
 
-            if (sb == null) sb = StringBuilder(firstLine)
-            if (blankLines > 0) repeat(blankLines) { sb.append('\n') } else sb.append(' ')
-            sb.append(lineText)
+            if (folded == null) folded = StringBuilder(firstLine)
+            if (blankLines > 0) repeat(blankLines) { folded.append('\n') } else folded.append(' ')
+            folded.append(lineText)
             blankLines = 0
 
             position = scanPos
@@ -782,7 +782,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             if (localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) break
         }
 
-        return sb?.toString()
+        return folded?.toString()
     }
 
     private fun readPlainScalar(

@@ -442,10 +442,10 @@ class StreamingGhostSource(
     override fun contentEqualsString(
         start: Int,
         length: Int,
-        str: String
+        expected: String
     ): Boolean {
         var currentPosition = start
-        if (str.length != length) return false
+        if (expected.length != length) return false
 
         while (true) {
             val segmentStart = bufferStart
@@ -457,7 +457,7 @@ class StreamingGhostSource(
                 while (localPosition < segmentLimit) {
                     val byteValue =
                         bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byteValue != str[localPosition - start].code) return false
+                    if (byteValue != expected[localPosition - start].code) return false
                     localPosition++
                 }
 

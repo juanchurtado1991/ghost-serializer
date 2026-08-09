@@ -140,7 +140,7 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
     isFolded: Boolean,
     chomp: GhostYamlFlatReader.ChompStyle
 ): String {
-    val sb = StringBuilder()
+    val contentBuilder = StringBuilder()
     var trailingNewlines = 0
     var isFirstLine = true
     var lastLineWasIndented = false
@@ -191,16 +191,16 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
         // just structural padding to discard (see DWX9/T26H/4QFQ/R4YG's expected "\n\n..." prefix).
         if (trailingNewlines > 0) {
             if (isFirstLine) {
-                repeat(trailingNewlines) { sb.append('\n') }
+                repeat(trailingNewlines) { contentBuilder.append('\n') }
             } else if (trailingNewlines == 1) {
                 if (isFolded && !isIndented && !lastLineWasIndented) {
-                    sb.append(' ')
+                    contentBuilder.append(' ')
                 } else {
-                    sb.append('\n')
+                    contentBuilder.append('\n')
                 }
             } else {
                 val toAppend = if (isFolded) trailingNewlines - 1 else trailingNewlines
-                repeat(toAppend) { sb.append('\n') }
+                repeat(toAppend) { contentBuilder.append('\n') }
             }
             trailingNewlines = 0
         }
@@ -208,14 +208,14 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
         lastLineWasIndented = isIndented
 
         // Append remaining spaces (effectiveSpaces)
-        repeat(effectiveSpaces) { sb.append(' ') }
+        repeat(effectiveSpaces) { contentBuilder.append(' ') }
 
         // Append line content
         val contentStart = position
         while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
             position++
         }
-        sb.append(localRawData.decodeToString(contentStart, position))
+        contentBuilder.append(localRawData.decodeToString(contentStart, position))
 
         // Consume the newline
         skipToEndOfLine()
@@ -229,7 +229,7 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
     }
 
     // Apply chomping style on the final string
-    val content = sb.toString()
+    val content = contentBuilder.toString()
     return when (chomp) {
         GhostYamlFlatReader.ChompStyle.STRIP -> {
             // Strip all trailing newlines

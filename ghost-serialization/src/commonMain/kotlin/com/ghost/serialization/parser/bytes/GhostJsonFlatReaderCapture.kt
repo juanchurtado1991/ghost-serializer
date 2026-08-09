@@ -59,14 +59,14 @@ private fun GhostJsonFlatReader.captureJsonValueBytes() {
         }
 
         C.QUOTE_INT -> captureSkipStringBytes(data, localLimit)
-        C.TRUE_CHAR_INT -> position += 3   // "rue" (the 't' was already consumed)
-        C.FALSE_CHAR_INT -> position += 4  // "alse"
-        C.NULL_CHAR_INT -> position += 3   // "ull"
+        C.TRUE_CHAR_INT -> position += C.TRUE_TAIL_LEN
+        C.FALSE_CHAR_INT -> position += C.FALSE_TAIL_LEN
+        C.NULL_CHAR_INT -> position += C.NULL_TAIL_LEN
         else -> {
             // Number: advance until a JSON structural delimiter or whitespace
             while (position < localLimit) {
-                val b = data[position].toInt() and C.BYTE_MASK
-                if (b == C.COMMA_INT || b == C.CLOSE_OBJ_INT || b == C.CLOSE_ARR_INT || b <= C.SPACE_INT) break
+                val tokenByte = data[position].toInt() and C.BYTE_MASK
+                if (tokenByte == C.COMMA_INT || tokenByte == C.CLOSE_OBJ_INT || tokenByte == C.CLOSE_ARR_INT || tokenByte <= C.SPACE_INT) break
                 position++
             }
         }

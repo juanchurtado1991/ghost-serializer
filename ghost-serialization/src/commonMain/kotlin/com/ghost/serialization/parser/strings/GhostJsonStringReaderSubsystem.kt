@@ -250,17 +250,17 @@ fun GhostJsonStringReader.nextChar(): Char {
 fun GhostJsonStringReader.isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
 fun GhostJsonStringReader.consumeNull() {
-    val p = position
+    val cursor = position
     val chars = rawChars
-    if (p + 4 > limit ||
-        chars[p].code != C.NULL_CHAR_INT ||
-        chars[p + 1].code != C.U_BYTE_INT ||
-        chars[p + 2].code != C.L_BYTE_INT ||
-        chars[p + 3].code != C.L_BYTE_INT
+    if (cursor + 4 > limit ||
+        chars[cursor].code != C.NULL_CHAR_INT ||
+        chars[cursor + 1].code != C.U_BYTE_INT ||
+        chars[cursor + 2].code != C.L_BYTE_INT ||
+        chars[cursor + 3].code != C.L_BYTE_INT
     ) {
         throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
     }
-    position = p + 4
+    position = cursor + 4
     nextTokenByte = C.RESET_TOKEN_BYTE
 }
 
@@ -309,7 +309,7 @@ fun GhostJsonStringReader.nextBooleanOrNull(): Boolean? {
     return nextBoolean()
 }
 
-internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int): Int {
+internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, limit: Int): Int {
     var currentPosition = start
     val chars = rawChars
     val escapeMasks = C.ESCAPE_MASKS
@@ -326,7 +326,7 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
     val localQuoteInt = C.QUOTE_INT
     val localMatchEnd = C.MATCH_END
 
-    while (currentPosition + indexOffset3 < lim) {
+    while (currentPosition + indexOffset3 < limit) {
         val byte0 = chars[currentPosition].code
         if (byte0 < localAsciiLimit &&
             ((escapeMasks[byte0 shr localBitmaskShift] shr
@@ -362,7 +362,7 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, lim: Int)
         currentPosition += unrollStep
     }
 
-    while (currentPosition < lim) {
+    while (currentPosition < limit) {
         val singleByte = chars[currentPosition].code
         if (singleByte < localAsciiLimit &&
             ((escapeMasks[singleByte shr localBitmaskShift] shr

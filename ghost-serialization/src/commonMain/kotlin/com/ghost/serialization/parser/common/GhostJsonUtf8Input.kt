@@ -168,13 +168,13 @@ internal fun utf16ToUtf8(
         throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
     }
     val out = ByteArray(utf8MaxSizeFromUtf16(length))
-    var oi = 0
+    var outIndex = 0
     var i = offset
     val end = offset + length
     while (i < end) {
         val unit = readUtf16Unit(bytes, i, littleEndian)
         i += UTF16_UNIT_SIZE
-        val cp = when {
+        val codePoint = when {
             unit in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END -> {
                 if (i >= end) throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
                 val low = readUtf16Unit(bytes, i, littleEndian)
@@ -192,9 +192,9 @@ internal fun utf16ToUtf8(
 
             else -> unit
         }
-        oi = writeUtf8CodePoint(out, oi, cp)
+        outIndex = writeUtf8CodePoint(out, outIndex, codePoint)
     }
-    return if (oi == out.size) out else out.copyOf(oi)
+    return if (outIndex == out.size) out else out.copyOf(outIndex)
 }
 
 internal fun utf32ToUtf8(
@@ -208,20 +208,20 @@ internal fun utf32ToUtf8(
         throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
     }
     val out = ByteArray((length / UTF32_UNIT_SIZE) * C.UTF8_4BYTE_SIZE)
-    var oi = 0
+    var outIndex = 0
     var i = offset
     val end = offset + length
     while (i < end) {
-        val cp = readUtf32CodePoint(bytes, i, littleEndian)
+        val codePoint = readUtf32CodePoint(bytes, i, littleEndian)
         i += UTF32_UNIT_SIZE
-        if (cp !in 0..UNICODE_MAX_CODE_POINT ||
-            cp in C.HIGH_SURROGATE_START..C.LOW_SURROGATE_END
+        if (codePoint !in 0..UNICODE_MAX_CODE_POINT ||
+            codePoint in C.HIGH_SURROGATE_START..C.LOW_SURROGATE_END
         ) {
             throw GhostJsonException(C.ERR_INVALID_JSON_ENCODING)
         }
-        oi = writeUtf8CodePoint(out, oi, cp)
+        outIndex = writeUtf8CodePoint(out, outIndex, codePoint)
     }
-    return if (oi == out.size) out else out.copyOf(oi)
+    return if (outIndex == out.size) out else out.copyOf(outIndex)
 }
 
 private inline fun readUtf16Unit(bytes: ByteArray, index: Int, littleEndian: Boolean): Int {
@@ -242,35 +242,35 @@ private inline fun readUtf32CodePoint(bytes: ByteArray, index: Int, littleEndian
     }
 }
 
-private fun writeUtf8CodePoint(out: ByteArray, offset: Int, cp: Int): Int {
-    var o = offset
+private fun writeUtf8CodePoint(out: ByteArray, offset: Int, codePoint: Int): Int {
+    var writeOffset = offset
     when {
-        cp < C.UTF8_1BYTE_LIMIT -> {
-            out[o++] = cp.toByte()
+        codePoint < C.UTF8_1BYTE_LIMIT -> {
+            out[writeOffset++] = codePoint.toByte()
         }
 
-        cp < C.UTF8_2BYTE_LIMIT -> {
-            out[o++] = (C.UTF8_2BYTE_PREFIX or (cp shr C.UTF8_SHIFT_6)).toByte()
-            out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
+        codePoint < C.UTF8_2BYTE_LIMIT -> {
+            out[writeOffset++] = (C.UTF8_2BYTE_PREFIX or (codePoint shr C.UTF8_SHIFT_6)).toByte()
+            out[writeOffset++] = (C.UTF8_CONT_PREFIX or (codePoint and C.UTF8_CONT_MASK)).toByte()
         }
 
-        cp < SUPPLEMENTARY_PLANE_BASE -> {
-            out[o++] = (C.UTF8_3BYTE_PREFIX or (cp shr C.UTF8_SHIFT_12)).toByte()
-            out[o++] =
-                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-            out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
+        codePoint < SUPPLEMENTARY_PLANE_BASE -> {
+            out[writeOffset++] = (C.UTF8_3BYTE_PREFIX or (codePoint shr C.UTF8_SHIFT_12)).toByte()
+            out[writeOffset++] =
+                (C.UTF8_CONT_PREFIX or ((codePoint shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+            out[writeOffset++] = (C.UTF8_CONT_PREFIX or (codePoint and C.UTF8_CONT_MASK)).toByte()
         }
 
         else -> {
-            out[o++] = (C.UTF8_4BYTE_PREFIX or (cp shr C.UTF8_SHIFT_18)).toByte()
-            out[o++] =
-                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-            out[o++] =
-                (C.UTF8_CONT_PREFIX or ((cp shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-            out[o++] = (C.UTF8_CONT_PREFIX or (cp and C.UTF8_CONT_MASK)).toByte()
+            out[writeOffset++] = (C.UTF8_4BYTE_PREFIX or (codePoint shr C.UTF8_SHIFT_18)).toByte()
+            out[writeOffset++] =
+                (C.UTF8_CONT_PREFIX or ((codePoint shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
+            out[writeOffset++] =
+                (C.UTF8_CONT_PREFIX or ((codePoint shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
+            out[writeOffset++] = (C.UTF8_CONT_PREFIX or (codePoint and C.UTF8_CONT_MASK)).toByte()
         }
     }
-    return o
+    return writeOffset
 }
 
 private fun utf8MaxSizeFromUtf16(utf16ByteLength: Int): Int {

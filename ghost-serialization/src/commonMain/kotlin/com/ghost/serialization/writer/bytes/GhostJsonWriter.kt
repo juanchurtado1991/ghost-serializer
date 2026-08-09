@@ -46,6 +46,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
+import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_ESCAPE_LENGTH
 import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
@@ -839,6 +840,6 @@ class GhostJsonWriter(
         scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
         scratchBuf[5] = hexChars[code and HEX_MASK]
 
-        buffer.write(scratchBuf, 0, 6)
+        buffer.write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)
     }
 }

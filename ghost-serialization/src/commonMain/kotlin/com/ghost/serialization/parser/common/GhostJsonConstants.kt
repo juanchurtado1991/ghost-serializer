@@ -158,6 +158,14 @@ object GhostJsonConstants {
     const val BOOL_STR_LEN_4 = 4   // "true"
     const val BOOL_STR_LEN_5 = 5   // "false"
 
+    // Tail lengths after the first character of JSON literals has been consumed.
+    const val TRUE_TAIL_LEN = "true".length - 1
+    const val FALSE_TAIL_LEN = "false".length - 1
+    const val NULL_TAIL_LEN = "null".length - 1
+
+    /** Length of a `\uXXXX` escape sequence written into the scratch buffer. */
+    const val UNICODE_ESCAPE_LENGTH = 6
+
     // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
     @PublishedApi
     internal val TRUE_BS = "true".encodeUtf8()
