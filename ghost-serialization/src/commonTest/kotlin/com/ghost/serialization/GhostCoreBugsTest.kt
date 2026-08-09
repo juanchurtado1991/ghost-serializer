@@ -59,19 +59,12 @@ class GhostCoreBugsTest {
 
         // Ensure that double formatting above 1e9 falls back safely to JVM/Platform standard formatter
         // which guarantees shortest representation instead of printing trailing scale artifacts.
-        val length = GhostDoubleFormatter.writeDoubleDirect(
-            value,
-            scratch,
-            0,
-            fallback = { v ->
-                val str = v.toString()
-                val b = str.encodeToByteArray()
-                b.copyInto(scratch, 0)
-                b.size
-            }
-        )
-
-        val formattedStr = scratch.decodeToString(0, length)
+        val length = GhostDoubleFormatter.writeDoubleDirect(value, scratch, 0)
+        val formattedStr = if (length == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+            value.toString()
+        } else {
+            scratch.decodeToString(0, length)
+        }
         assertTrue(formattedStr.contains("123456789012345.67") || formattedStr.contains("1.2345678901234567E14"))
     }
 

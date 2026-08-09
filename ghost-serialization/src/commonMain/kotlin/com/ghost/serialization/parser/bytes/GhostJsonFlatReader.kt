@@ -14,6 +14,7 @@ import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
+import com.ghost.serialization.parser.common.skipValueCore
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.captureRawJson
@@ -877,49 +878,20 @@ open class GhostJsonFlatReader(
      * Skips the next complete value token (object, array, string, number, boolean, null) from the stream.
      */
     fun skipValue() {
-        val token = peekNextToken()
-        when (token) {
-            C.OPEN_OBJ_INT -> {
-                beginObject()
-                while (hasNext()) {
-                    if (peekNextToken() != C.QUOTE_INT) {
-                        throwError(C.ERR_EXPECTED_KEY)
-                    }
-                    skipQuotedString()
-                    consumeKeySeparator()
-                    skipValue()
-                }
-                endObject()
-            }
-
-            C.OPEN_ARR_INT -> {
-                beginArray()
-                while (hasNext()) {
-                    skipValue()
-                }
-                endArray()
-            }
-
-            C.QUOTE_INT -> {
-                skipQuotedString()
-            }
-
-            C.TRUE_CHAR_INT -> {
-                skipAndValidateLiteral(C.TRUE_BS)
-            }
-
-            C.FALSE_CHAR_INT -> {
-                skipAndValidateLiteral(C.FALSE_BS)
-            }
-
-            C.NULL_CHAR_INT -> {
-                skipAndValidateLiteral(C.NULL_BS)
-            }
-
-            else -> {
-                skipNumber()
-            }
-        }
+        skipValueCore(
+            peekNextToken = { peekNextToken() },
+            beginObject = { beginObject() },
+            endObject = { endObject() },
+            beginArray = { beginArray() },
+            endArray = { endArray() },
+            hasNext = { hasNext() },
+            skipQuotedString = { skipQuotedString() },
+            consumeKeySeparator = { consumeKeySeparator() },
+            skipValue = { skipValue() },
+            skipAndValidateLiteral = { skipAndValidateLiteral(it) },
+            skipNumber = { skipNumber() },
+            throwError = { throwError(it) },
+        )
     }
 
     /**

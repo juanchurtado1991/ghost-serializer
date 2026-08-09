@@ -16,7 +16,8 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * - **Magnitude Limits:** Works with values in `[1e-9, 1e9]`
  *   ([MICROSCOPIC_DOUBLE_THRESHOLD] / [MASSIVE_DOUBLE_THRESHOLD]).
  * - **Fallback Mechanism:** Values outside this range, non-finite values (NaN, Infinity), or microscopic
- *   numbers are delegated to the provided [fallback] lambda (which usually wraps native platform formatters).
+ *   numbers return [FALLBACK_REQUIRED] so the caller can use a platform `toString()` without
+ *   allocating a lambda on the hot fractional path.
  *
  * ### Algorithm Overview
  * 1. **Sign Handling:** Negative values write `-` to the buffer, and the absolute value is processed.
@@ -62,21 +63,25 @@ internal object GhostDoubleFormatter {
     private const val DIGIT_PAIR_WIDTH = 2
 
     /**
+     * Returned when the fast-path cannot format the value; the caller must use a platform formatter.
+     * Negative so call sites can keep `bytesWritten > 0` as the success check.
+     */
+    const val FALLBACK_REQUIRED = -1
+
+    /**
      * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
      *
      * @param value The double value to write.
      * @param scratch The destination byte array.
      * @param offset The starting position in the destination buffer.
-     * @param fallback The fallback formatter used if the value cannot be processed by the fast-path.
-     * @return The number of bytes written to the buffer.
+     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
      */
     fun writeDoubleDirect(
         value: Double,
         scratch: ByteArray,
         offset: Int,
-        fallback: (Double) -> Int
     ): Int {
-        if (!value.isFinite()) return fallback(value)
+        if (!value.isFinite()) return FALLBACK_REQUIRED
 
         var pos = offset
         var localValue = value
@@ -106,7 +111,7 @@ internal object GhostDoubleFormatter {
             localValue > MASSIVE_DOUBLE_THRESHOLD ||
             (localValue > 0.0 && localValue < MICROSCOPIC_DOUBLE_THRESHOLD)
         ) {
-            return fallback(value)
+            return FALLBACK_REQUIRED
         }
 
         val intPart = localValue.toLong()
@@ -173,14 +178,15 @@ internal object GhostDoubleFormatter {
     /**
      * Formats and writes the given [Float] value directly into the [scratch] buffer starting at [offset].
      * Uses 7 decimal places of precision suitable for the single-precision Float type to avoid representation noise.
+     *
+     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
      */
     fun writeFloatDirect(
         value: Float,
         scratch: ByteArray,
         offset: Int,
-        fallback: (Float) -> Int
     ): Int {
-        if (!value.isFinite()) return fallback(value)
+        if (!value.isFinite()) return FALLBACK_REQUIRED
 
         var pos = offset
         var localValue = value
@@ -210,7 +216,7 @@ internal object GhostDoubleFormatter {
             doubleVal > MASSIVE_DOUBLE_THRESHOLD ||
             (localValue > 0.0f && doubleVal < MICROSCOPIC_DOUBLE_THRESHOLD)
         ) {
-            return fallback(value)
+            return FALLBACK_REQUIRED
         }
 
         val intPart = doubleVal.toLong()
