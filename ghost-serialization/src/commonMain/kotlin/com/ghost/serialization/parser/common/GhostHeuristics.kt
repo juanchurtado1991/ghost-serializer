@@ -9,6 +9,11 @@ import com.ghost.serialization.parser.common.GhostHeuristics.maxWarmWriteBufferC
 /**
  * Platform-specific heuristics to balance performance and memory usage.
  * Using 'expect' allows us to tune Ghost for different environments (JVM vs Mobile).
+ *
+ * Debt: [maxCollectionSize] and related caps differ by actual (Android tighter than JVM/Native/Wasm);
+ * not a single cross-platform constant. Registry discovery is separate
+ * ([com.ghost.serialization.discoverRegistries]) — iOS/Wasm discovery is empty and requires
+ * manual [com.ghost.serialization.Ghost.addRegistry].
  */
 @InternalGhostApi
 expect object GhostHeuristics {
@@ -27,6 +32,8 @@ expect object GhostHeuristics {
     /**
      * The maximum number of items allowed in a collection (List/Map) during deserialization.
      * Security limit to prevent DoS via memory exhaustion.
+     *
+     * Platform defaults differ (e.g. Android 50k, Native/Wasm 500k, JVM 1M); not unified.
      */
     val maxCollectionSize: Int
 
