@@ -56,13 +56,13 @@ private fun GhostJsonReader.captureReaderValueBytes() {
         }
 
         C.QUOTE_INT -> captureReaderSkipStringBytes(localLimit)
-        C.TRUE_CHAR_INT -> position += 3
-        C.FALSE_CHAR_INT -> position += 4
-        C.NULL_CHAR_INT -> position += 3
+        C.TRUE_CHAR_INT -> position += C.TRUE_TAIL_LEN
+        C.FALSE_CHAR_INT -> position += C.FALSE_TAIL_LEN
+        C.NULL_CHAR_INT -> position += C.NULL_TAIL_LEN
         else -> {
             while (position < localLimit) {
-                val b = getByte(position)
-                if (b == C.COMMA_INT || b == C.CLOSE_OBJ_INT || b == C.CLOSE_ARR_INT || b <= C.SPACE_INT) break
+                val tokenByte = getByte(position)
+                if (tokenByte == C.COMMA_INT || tokenByte == C.CLOSE_OBJ_INT || tokenByte == C.CLOSE_ARR_INT || tokenByte <= C.SPACE_INT) break
                 position++
             }
         }

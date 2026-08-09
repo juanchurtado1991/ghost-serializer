@@ -100,8 +100,8 @@ class GhostJsonStringReader(
         )
     }
 
-    fun internalSkip(n: Int) {
-        position += n
+    fun internalSkip(charCount: Int) {
+        position += charCount
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 

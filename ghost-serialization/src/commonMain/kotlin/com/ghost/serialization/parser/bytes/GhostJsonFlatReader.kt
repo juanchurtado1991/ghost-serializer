@@ -64,16 +64,16 @@ open class GhostJsonFlatReader(
     fun _getPosition(): Int = position
 
     @InternalGhostApi
-    fun _setPosition(p: Int) {
-        position = p
+    fun _setPosition(position: Int) {
+        this.position = position
     }
 
     @InternalGhostApi
     fun _getRawData(): ByteArray = rawData
 
     @InternalGhostApi
-    fun _setNextTokenByte(t: Int) {
-        nextTokenByte = t
+    fun _setNextTokenByte(tokenByte: Int) {
+        nextTokenByte = tokenByte
     }
 
     internal val stringPool = arrayOfNulls<String>(C.STR_POOL_SIZE)
@@ -138,10 +138,10 @@ open class GhostJsonFlatReader(
     }
 
     /**
-     * Skips forward in the byte array by [n] bytes and resets [nextTokenByte].
+     * Skips forward in the byte array by [byteCount] bytes and resets [nextTokenByte].
      */
-    fun internalSkip(n: Int) {
-        position += n
+    fun internalSkip(byteCount: Int) {
+        position += byteCount
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
@@ -151,32 +151,32 @@ open class GhostJsonFlatReader(
     fun skipWhitespace() {
         val data = rawData
         val lim = limit
-        var p = position
+        var cursor = position
         while (true) {
             // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
             // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
             // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
-            while (p + C.LONG_BYTES <= lim && ghostReadLong8(data, p) == C.SPACE_RUN_LONG) {
-                p += C.LONG_BYTES
+            while (cursor + C.LONG_BYTES <= lim && ghostReadLong8(data, cursor) == C.SPACE_RUN_LONG) {
+                cursor += C.LONG_BYTES
             }
-            if (p >= lim) {
+            if (cursor >= lim) {
                 position = lim
                 nextTokenByte = C.MATCH_END
                 return
             }
-            val b = data[p].toInt() and C.BYTE_MASK
-            if (b > C.SPACE_INT) {
-                position = p
-                nextTokenByte = b
+            val tokenByte = data[cursor].toInt() and C.BYTE_MASK
+            if (tokenByte > C.SPACE_INT) {
+                position = cursor
+                nextTokenByte = tokenByte
                 return
             }
             // Non-space whitespace (tab / LF / CR) or a control byte; mirror WHITESPACE_MASK.
-            if (b != C.SPACE_INT && b != C.LF_INT && b != C.CR_INT && b != C.TAB_INT) {
-                position = p
-                nextTokenByte = b
+            if (tokenByte != C.SPACE_INT && tokenByte != C.LF_INT && tokenByte != C.CR_INT && tokenByte != C.TAB_INT) {
+                position = cursor
+                nextTokenByte = tokenByte
                 return
             }
-            p++
+            cursor++
         }
     }
 
@@ -564,17 +564,17 @@ open class GhostJsonFlatReader(
      * `ull` bytes inline — avoids `okio.ByteString.rangeEquals` on the hot nullable path.
      */
     fun consumeNull() {
-        val p = position
+        val cursor = position
         val data = rawData
-        if (p + 4 > limit ||
-            (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
-            (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
-            (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
-            (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
+        if (cursor + 4 > limit ||
+            (data[cursor].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
+            (data[cursor + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
+            (data[cursor + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
+            (data[cursor + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
         ) {
             throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
         }
-        position = p + 4
+        position = cursor + 4
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 

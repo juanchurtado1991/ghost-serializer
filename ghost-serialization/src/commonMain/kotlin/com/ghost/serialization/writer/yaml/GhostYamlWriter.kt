@@ -374,22 +374,22 @@ class GhostYamlWriter(
             buffer.writeByte(C.ZERO_INT)
             return
         }
-        var temp = value
-        val isNegative = temp < 0
+        var remaining = value
+        val isNegative = remaining < 0
         if (isNegative) {
             buffer.writeByte(C.DASH_INT)
-            if (temp == Long.MIN_VALUE) {
+            if (remaining == Long.MIN_VALUE) {
                 buffer.writeUtf8(C.STR_MIN_LONG_ABS)
                 return
             }
-            temp = -temp
+            remaining = -remaining
         }
         val scratchBuf = scratch ?: acquireScratch()
         var pos = scratchBuf.size
-        while (temp > 0L) {
-            val digit = (temp % C.TEN_LONG).toInt()
+        while (remaining > 0L) {
+            val digit = (remaining % C.TEN_LONG).toInt()
             scratchBuf[--pos] = (C.ZERO_INT + digit).toByte()
-            temp /= C.TEN_LONG
+            remaining /= C.TEN_LONG
         }
         buffer.write(scratchBuf, pos, scratchBuf.size - pos)
     }

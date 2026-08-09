@@ -427,6 +427,10 @@ internal object GhostYamlConstants {
     const val ERR_SERIALIZER_NOT_FOUND_PREFIX = "Serializer not found for "
     const val ERR_NOT_YAML_SERIALIZER_PREFIX = "Serializer for "
     const val ERR_NOT_YAML_SERIALIZER_SUFFIX = " does not implement GhostYamlSerializer"
+    const val ERR_YAML_LIST_NEEDS_YAML_ITEM_PREFIX =
+        "GhostYamlListSerializer requires a GhostYamlSerializer item serializer, got "
+    const val ERR_YAML_MAP_NEEDS_YAML_VALUE_PREFIX =
+        "GhostYamlMapSerializer requires a GhostYamlSerializer value serializer, got "
     const val STR_UNKNOWN_TYPE = "unknown"
 }
 

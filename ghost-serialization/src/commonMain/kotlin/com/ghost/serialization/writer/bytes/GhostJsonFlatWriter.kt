@@ -43,6 +43,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
+import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_ESCAPE_LENGTH
 import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
@@ -108,14 +109,14 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
      * Automatically handles comma insertion and depth tracking.
      */
     fun beginObject(): GhostJsonFlatWriter {
-        val d = depth
-        if (d >= MAX_DEPTH) {
+        val currentDepth = depth
+        if (currentDepth >= MAX_DEPTH) {
             throwDepthError()
         }
         appendSeparator()
         buffer.writeByte(OPEN_OBJ_INT)
         needsComma = false
-        depth = d + 1
+        depth = currentDepth + 1
         return this
     }
 
@@ -132,14 +133,14 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
      * Automatically handles comma insertion and depth tracking.
      */
     fun beginArray(): GhostJsonFlatWriter {
-        val d = depth
-        if (d >= MAX_DEPTH) {
+        val currentDepth = depth
+        if (currentDepth >= MAX_DEPTH) {
             throwDepthError()
         }
         appendSeparator()
         buffer.writeByte(OPEN_ARR_INT)
         needsComma = false
-        depth = d + 1
+        depth = currentDepth + 1
         return this
     }
 
@@ -819,6 +820,6 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
         scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
         scratchBuf[5] = hexChars[code and HEX_MASK]
 
-        buffer.write(scratchBuf, 0, 6)
+        buffer.write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)
     }
 }

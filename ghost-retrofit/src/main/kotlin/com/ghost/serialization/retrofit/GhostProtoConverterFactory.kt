@@ -142,8 +142,7 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
     }
 
     companion object {
-        private const val STR_MEDIA_TYPE = "application/json; charset=UTF-8"
-        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
+        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()
         private const val BUFFER_SIZE = 524288
 
         fun create(): GhostProtoConverterFactory = GhostProtoConverterFactory()

@@ -393,17 +393,17 @@ fun GhostJsonReader.consumeNull() {
         skipAndValidateLiteral(C.NULL_BS)
         return
     }
-    val p = position
+    val cursor = position
     val data = rawData
-    if (p + 4 > limit ||
-        (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
-        (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
-        (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
-        (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
+    if (cursor + 4 > limit ||
+        (data[cursor].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
+        (data[cursor + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
+        (data[cursor + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
+        (data[cursor + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
     ) {
         throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
     }
-    position = p + 4
+    position = cursor + 4
     nextTokenByte = C.RESET_TOKEN_BYTE
 }
 

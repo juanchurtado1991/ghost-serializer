@@ -5,6 +5,7 @@ import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 /**
@@ -18,7 +19,7 @@ class GhostYamlListSerializer<T>(
     @Suppress("UNCHECKED_CAST")
     private val yamlItem: GhostYamlSerializer<T> = run {
         require(itemSerializer is GhostYamlSerializer<*>) {
-            "GhostYamlListSerializer requires a GhostYamlSerializer item serializer, got ${itemSerializer.typeName}"
+            C.ERR_YAML_LIST_NEEDS_YAML_ITEM_PREFIX + itemSerializer.typeName
         }
         itemSerializer as GhostYamlSerializer<T>
     }
