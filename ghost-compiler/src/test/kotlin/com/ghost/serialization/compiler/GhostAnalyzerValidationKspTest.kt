@@ -13,7 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * KSP regression tests for [com.ghost.serialization.compiler.analysis.GhostAnalyzer] validation
+ * KSP regression tests for `GhostAnalyzer` validation
  * errors not covered by [GhostSerializationKspTest]: private properties, duplicate JSON names,
  * and non-String map keys.
  */

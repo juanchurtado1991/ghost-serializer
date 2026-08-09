@@ -16,14 +16,14 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * Verifies that [GhostHttpMessageConverter] routes
- * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization] types
- * through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] (via the generated
+ * `@GhostProtoSerialization` types
+ * through `GhostProtoJsonFlatReader` (via the generated
  * serializer's `isProto` flag), using the KSP-generated serializer for
- * [com.ghost.serialization.spring.fixture.ProtoEventMessage]. The converter is registered
+ * `ProtoEventMessage`. The converter is registered
  * globally (Spring's [org.springframework.http.converter.HttpMessageConverter] list is not
  * per-endpoint), so this also confirms that
- * [@GhostSerialization][com.ghost.serialization.annotations.GhostSerialization] and
- * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]
+ * `@GhostSerialization` and
+ * `@GhostProtoSerialization`
  * types coexist on the same converter instance.
  */
 @SpringBootTest(classes = [GhostSpringTestApplication::class])

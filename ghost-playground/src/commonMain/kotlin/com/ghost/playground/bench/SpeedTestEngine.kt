@@ -1,6 +1,5 @@
 package com.ghost.playground.bench
 
-import com.ghost.playground.bench.SpeedTestEngine.runPhase
 import com.ghost.playground.bench.model.TwitterResponse
 import com.ghost.serialization.Ghost
 import com.ghostserializer.ghost_playground.generated.resources.Res
@@ -12,39 +11,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 
-enum class SpeedTestPhase {
-    Idle,
-    Loading,
-    Warmup,
-    RunningKser,
-    RunningMoshi,
-    RunningGhost,
-    Done,
-}
-
-data class SpeedSample(
-    val phase: SpeedTestPhase,
-    val elapsed: Duration,
-    val totalDuration: Duration,
-    val kserOps: Long,
-    val moshiOps: Long,
-    val ghostOps: Long,
-    val kserOpsPerSec: Double,
-    val moshiOpsPerSec: Double,
-    val ghostOpsPerSec: Double,
-    val kserBytesPerSec: Double,
-    val moshiBytesPerSec: Double,
-    val ghostBytesPerSec: Double,
-    val memBytes: Long?,
-)
-
-/**
- * Speed-test-style benchmark: a short shared warmup, then measured phases in order
- * **KSER → Moshi (codegen) → Ghost**. Ghost runs last so its result appears after the others.
- *
- * Kotlin/Wasm executes on the browser's single thread; see [runPhase] for batching and
- * [delay] between batches.
- */
 object SpeedTestEngine {
     val WARMUP_DURATION: Duration = 3.seconds
     val PHASE_DURATION: Duration = 15.seconds

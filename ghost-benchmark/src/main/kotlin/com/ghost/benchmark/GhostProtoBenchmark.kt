@@ -11,9 +11,9 @@ import java.lang.management.ManagementFactory
 /**
  * Ghost-only proto3 JSON round-trip benchmark (no KSER/Moshi equivalent).
  *
- * Exercises KSP-generated serializers with [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader]
- * via [com.ghost.serialization.proto.GhostProto] on the integration fixture
- * [com.ghost.serialization.integration.model.ProtoBenchUser] (quoted int64 strings, default-value
+ * Exercises KSP-generated serializers with `GhostProtoJsonFlatReader`
+ * via `GhostProto` on the integration fixture
+ * `ProtoBenchUser` (quoted int64 strings, default-value
  * omission on encode).
  */
 object GhostProtoBenchmark {

@@ -265,7 +265,7 @@ object RegressionCalculator {
     /** Baseline group label for the Twitter macro dataset ([BenchmarkThroughput.TWITTER_PAYLOAD_BYTES]). */
     const val TWITTER = "TWITTER MACRO"
 
-    /** Baseline group label for LIST_MEDIUM deserialization (200-item [com.ghost.serialization.integration.model.ComplexResponse] list). */
+    /** Baseline group label for LIST_MEDIUM deserialization (200-item `ComplexResponse` list). */
     const val LIST_MEDIUM = "LIST_MEDIUM (200)"
 
     /** Baseline group label for SYNC_FULL_LARGE deserialization (2 000 items). */

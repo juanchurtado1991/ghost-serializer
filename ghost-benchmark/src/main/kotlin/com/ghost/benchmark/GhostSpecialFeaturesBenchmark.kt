@@ -25,7 +25,7 @@ import java.lang.management.ManagementFactory
 /**
  * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
  *
- * Covers polymorphism, structural flattening, resilience, custom decoders, opaque [com.ghost.serialization.types.RawJson]
+ * Covers polymorphism, structural flattening, resilience, custom decoders, opaque `RawJson`
  * envelopes, and protobuf well-known types. These workloads are measured independently because
  * Moshi, KotlinX Serialization, and Jackson do not expose comparable capabilities.
  *

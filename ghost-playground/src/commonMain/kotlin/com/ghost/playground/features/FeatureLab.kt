@@ -3,12 +3,6 @@ package com.ghost.playground.features
 import com.ghost.playground.i18n.Strings
 import com.ghost.playground.ui.icons.PlaygroundIconKind
 
-enum class LabWireFormat {
-    JSON,
-    PROTO_JSON,
-    YAML,
-}
-
 /** Studio preset for a KSP-compiled DTO demonstrated against one or more [LabVariant] payloads. */
 data class FeatureLab(
     val id: String,

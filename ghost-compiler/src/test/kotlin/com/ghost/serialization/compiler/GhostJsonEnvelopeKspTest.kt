@@ -14,7 +14,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 
-/** KSP regression tests for [@GhostJsonEnvelope][com.ghost.serialization.annotations.GhostJsonEnvelope]. */
+/** KSP regression tests for `@GhostJsonEnvelope`. */
 class GhostJsonEnvelopeKspTest {
 
     @Test
