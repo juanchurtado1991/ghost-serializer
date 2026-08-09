@@ -17,6 +17,19 @@
 - **YAML: leading blank lines and "blank-looking" over-indented lines inside a block scalar (`|`/`>`) were silently dropped.** Two compounding bugs: blank lines before the first real content line were discarded outright instead of contributing their newlines to the value, and a line with *more* spaces than the scalar's indentation was misclassified as fully blank instead of preserving the leftover spaces as content. Fixing both surfaced a third: a block scalar consisting *only* of blank lines needs its indentation guess to stay at least as wide as any blank line already seen, or the second fix would wrongly invent leftover content that was never really there.
 - YAML compliance moved **90.32% → 96.06%** across this round of fixes (starting point: the first fully-measured baseline from the new conformance harness above).
 
+### Known limitations
+- **YAML reader: 24 remaining yaml-test-suite gaps, all tracked by case ID and reason in [`YamlTestSuiteDeviations.kt`](ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlTestSuiteDeviations.kt)** rather than hidden — none of the 279 spec-compliance denominator cases are affected beyond what's already reflected in the 96.06% number. By category:
+  - **Tabs in non-indentation positions** (9 cases, e.g. `Y79Y_000`/`UV7Q`) — tab handling inside quoted-scalar folding, plain-scalar continuation, and a couple of "is this tab actually legal here" edge cases.
+  - **Block/flow mapping-sequence indentation** (9 cases, e.g. `M6YH`/`A2M4`/`ZVH3`) — a sibling landing at some indentation between the outer and nested levels, or a nested dash-sequence combined with tab-separated dashes. Two attempted fixes here this round each broke 12–26 previously-passing cases and were reverted — this area needs deeper, more careful work than a quick pass allows.
+  - **Composite/advanced spec examples not yet individually triaged** (5 cases: `5U3A`, `62EZ`, `JY7Z`, `P2EQ`, `ZL4Z`) — combine several of the other categories in one fixture.
+  - **Block scalar (`|`/`>`) edge cases beyond this round's fixes** (4 cases, e.g. `6VJK`'s "more indented lines" folding, `M5C3`'s tag+indicator interaction).
+  - **Anchors/aliases in specific positions** (3 cases: `CXX2` — anchor on the same line as a document-start `---`; `X38W` — aliases inside flow collections; `4JVG` — a scalar with two anchors).
+  - **Flow-collection edge cases** (3 cases, e.g. `9C9N`'s indentation inside a multi-line flow sequence, `Q9WF` — `readKey` has no bracket-depth tracking, so a flow mapping used as an implicit key breaks at its own first inner `:`).
+  - **Comment placement** (2 cases combining trailing comments with several other constructs in one fixture).
+  - **Tag resolution for root-level documents, one explicit-key compact-notation boundary case (`V9D5`), and one empty/missing-value edge case** (1 each).
+- **YAML writer: 12 kaml-oracle-only gaps, tracked in [`YamlWriterDeviations.kt`](ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlWriterDeviations.kt)** — confirmed to be a limitation of kaml (the oracle), not a Ghost bug: kaml's kotlinx.serialization-property-name-oriented design rejects any mapping key that isn't a simple scalar (a flow-collection-shaped key, or a bare/empty implicit key), even for keys Ghost's own reader and writer round-trip correctly.
+- No known industry-standard YAML library (PyYAML, SnakeYAML, `snakeyaml-engine`, js-yaml) claims 100% against this test suite either — the remaining gaps are overwhelmingly spec edge cases (unusual tab placement, ambiguous indentation, multi-anchor combinations) essentially absent from real-world hand-written or machine-generated YAML (Kubernetes manifests, CI configs, docker-compose, simple config/data files).
+
 ## [1.3.0] - 2026-07-27
 
 ### Added
