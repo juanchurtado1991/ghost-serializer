@@ -13,6 +13,7 @@ import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import com.ghost.serialization.compiler.GhostEmitterTestConstants as T
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
@@ -67,7 +68,7 @@ class GhostGeneratedCodeHygieneTest {
         val generated = readSerializer(compilation.first, "MinimalUser")
         assertTrue("GhostJsonStringReader" !in generated, generated)
         assertTrue(
-            C.STR_OVERRIDE_DESERIALIZE_STRING_READER !in generated,
+            T.STR_OVERRIDE_DESERIALIZE_STRING_READER !in generated,
             generated,
         )
         assertTrue(

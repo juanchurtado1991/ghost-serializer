@@ -87,12 +87,10 @@ class GhostSerializationProcessor(
 
         // Append _Test if we are in a test source set to avoid collisions
         if (moduleName == C.STR_DEFAULT_NAME) {
-            val isTest = originatingFiles.any {
-                val path = it.filePath
-                path.contains(C.STR_SRC_TEST) ||
-                        path.contains(C.STR_SRC_ANDROID_TEST) ||
-                        path.contains(C.STR_SRC_TEST_KSP)
-            }
+            val isTest = TestSourceSetDetection.isTestCompilation(
+                options = options,
+                filePaths = originatingFiles.map { it.filePath },
+            )
             if (isTest) {
                 moduleName += C.STR_TEST_SUFFIX
             }

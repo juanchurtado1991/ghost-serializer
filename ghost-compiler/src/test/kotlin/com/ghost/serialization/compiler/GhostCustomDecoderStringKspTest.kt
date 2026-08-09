@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import com.ghost.serialization.compiler.GhostEmitterTestConstants as T
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
@@ -53,8 +54,8 @@ class GhostCustomDecoderStringKspTest {
     }
 
     private fun extractStringDeserializeBlock(generated: String): String {
-        return generated.substringAfter(C.STR_OVERRIDE_DESERIALIZE_STRING_READER)
-            .substringBefore(C.STR_OVERRIDE_SERIALIZE_FN)
+        return generated.substringAfter(T.STR_OVERRIDE_DESERIALIZE_STRING_READER)
+            .substringBefore(T.STR_OVERRIDE_SERIALIZE_FN)
     }
 
     private fun compileCustomDecoderModel(
@@ -63,9 +64,9 @@ class GhostCustomDecoderStringKspTest {
     ): String {
         val compilation = KotlinCompilation().apply {
             sources = listOf(
-                SourceFile.kotlin("${C.STR_TEST_DECODER_UTILS}.kt", decoderSource),
+                SourceFile.kotlin("${T.STR_TEST_DECODER_UTILS}.kt", decoderSource),
                 SourceFile.kotlin(
-                    "${C.STR_TEST_CUSTOM_FIELD_MODEL}.kt",
+                    "${T.STR_TEST_CUSTOM_FIELD_MODEL}.kt",
                     customFieldModelSource(),
                 ),
             )
@@ -86,7 +87,7 @@ class GhostCustomDecoderStringKspTest {
         val result = compilation.compile()
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val serializerFileName =
-            "${C.STR_TEST_CUSTOM_FIELD_MODEL}${C.STR_KT_SERIALIZER_FILE_SUFFIX}"
+            "${T.STR_TEST_CUSTOM_FIELD_MODEL}${T.STR_KT_SERIALIZER_FILE_SUFFIX}"
         return compilation.kspSourcesDir.walk()
             .filter { it.name == serializerFileName }
             .map { it.readText() }
@@ -100,9 +101,9 @@ class GhostCustomDecoderStringKspTest {
         import com.ghost.serialization.annotations.GhostSerialization
 
         @GhostSerialization
-        data class ${C.STR_TEST_CUSTOM_FIELD_MODEL}(
+        data class ${T.STR_TEST_CUSTOM_FIELD_MODEL}(
             val id: String,
-            @GhostDecoder(${C.STR_TEST_DECODER_UTILS}::class, ${C.STR_TEST_CUSTOM_DECODER_FN.quote()})
+            @GhostDecoder(${T.STR_TEST_DECODER_UTILS}::class, ${T.STR_TEST_CUSTOM_DECODER_FN.quote()})
             val secret: String,
         )
     """.trimIndent()
@@ -113,9 +114,9 @@ class GhostCustomDecoderStringKspTest {
         import ${C.STR_GHOST_JSON_READER_QUALIFIED}
         import ${C.STR_GHOST_JSON_STRING_READER_QUALIFIED}
 
-        object ${C.STR_TEST_DECODER_UTILS} {
-            fun ${C.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_READER}): String = ${C.STR_TEST_BYTES_RESULT.quote()}
-            fun ${C.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_STRING_READER}): String = ${C.STR_TEST_NATIVE_RESULT.quote()}
+        object ${T.STR_TEST_DECODER_UTILS} {
+            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_READER}): String = ${T.STR_TEST_BYTES_RESULT.quote()}
+            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_STRING_READER}): String = ${T.STR_TEST_NATIVE_RESULT.quote()}
         }
     """.trimIndent()
 
@@ -124,8 +125,8 @@ class GhostCustomDecoderStringKspTest {
 
         import ${C.STR_GHOST_JSON_READER_QUALIFIED}
 
-        object ${C.STR_TEST_DECODER_UTILS} {
-            fun ${C.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_READER}): String = ${C.STR_TEST_BYTES_RESULT.quote()}
+        object ${T.STR_TEST_DECODER_UTILS} {
+            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_READER}): String = ${T.STR_TEST_BYTES_RESULT.quote()}
         }
     """.trimIndent()
 
@@ -133,6 +134,6 @@ class GhostCustomDecoderStringKspTest {
 
     private companion object {
         const val DIRECT_DECODER_CALL =
-            "${C.STR_TEST_DECODER_UTILS}.${C.STR_TEST_CUSTOM_DECODER_FN}(reader)"
+            "${T.STR_TEST_DECODER_UTILS}.${T.STR_TEST_CUSTOM_DECODER_FN}(reader)"
     }
 }
