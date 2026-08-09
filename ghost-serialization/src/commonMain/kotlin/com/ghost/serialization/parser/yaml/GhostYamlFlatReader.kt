@@ -189,8 +189,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             C.LEFT_BRACE_BYTE -> readFlowCollectionOrMappingKey(indent, inFlow) { readFlowMapping() }
             C.LEFT_BRACKET_BYTE -> readFlowCollectionOrMappingKey(indent, inFlow) { readFlowSequence() }
             C.EXCLAMATION_BYTE -> readTaggedValue(indent, inFlow)      // tagged value
-            C.AMPERSAND_BYTE -> readAnchoredValue(indent, inFlow, strictDedent)    // anchor definition
-            C.ASTERISK_BYTE -> readAlias()                  // alias reference
+            C.AMPERSAND_BYTE -> readAnchoredValueOrMappingKey(indent, inFlow, strictDedent)    // anchor definition
+            C.ASTERISK_BYTE -> readAliasOrMappingKey(indent, inFlow)                  // alias reference
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }
             C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect)
