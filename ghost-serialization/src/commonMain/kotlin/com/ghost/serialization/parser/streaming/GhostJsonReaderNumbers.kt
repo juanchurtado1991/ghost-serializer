@@ -225,9 +225,10 @@ private fun GhostJsonReader.parseIntDigits(
     return parseIntDigitsCore(
         isNegative = isNegative,
         resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
-        forEachNumericUnit = { onDigitByte, onNonDigit ->
-            readNumericLoop(onDigitByte, onNonDigit)
-        },
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        getByte = { getByte(it) },
         onNumericSeparator = {
             position = startOfNumber
             nextDouble().toInt()
@@ -246,9 +247,10 @@ private fun GhostJsonReader.parseLongDigits(
     return parseLongDigitsCore(
         isNegative = isNegative,
         resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
-        forEachNumericUnit = { onDigitByte, onNonDigit ->
-            readNumericLoop(onDigitByte, onNonDigit)
-        },
+        getPosition = { position },
+        setPosition = { position = it },
+        limit = limit,
+        getByte = { getByte(it) },
         onNumericSeparator = {
             position = startOfNumber
             nextDouble().toLong()
