@@ -7,6 +7,7 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
+import com.ghost.serialization.parser.common.growBuffer
 import com.ghost.serialization.parser.common.rollingHashImpl
 import com.ghost.serialization.parser.common.scanStringSwarNoHash
 import com.ghost.serialization.releaseScratchBuffer
@@ -306,14 +307,4 @@ private fun GhostJsonFlatReader.parseUnicodeHex(currentPosition: Int): Int {
             (digitValue1 shl C.SHIFT_8) or
             (digitValue2 shl C.SHIFT_4) or
             digitValue3
-}
-
-/**
- * Utility helper to grow a temporary byte array buffer.
- */
-private fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
-    val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-    outBuffer.copyInto(newBuffer, 0, 0, outPos)
-    releaseScratchBuffer(outBuffer)
-    return newBuffer
 }

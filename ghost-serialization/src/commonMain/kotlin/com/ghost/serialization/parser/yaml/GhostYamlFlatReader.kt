@@ -578,25 +578,16 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
         while (true) {
             val beforeNewline = position
-            if (position < localLimit && localRawData[position] == C.CR_BYTE) position++
-            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-
             // Blank-ness is judged after skipping *all* leading whitespace (spaces and tabs) — a
             // line that's purely whitespace is blank even if that whitespace includes a tab.
-            var blankScanPos = position
-            while (blankScanPos < localLimit &&
-                (localRawData[blankScanPos] == C.SPACE_BYTE || localRawData[blankScanPos] == C.TAB_BYTE)
-            ) {
-                blankScanPos++
-            }
-            val atBlank = blankScanPos >= localLimit ||
-                localRawData[blankScanPos] == C.NEWLINE_BYTE || localRawData[blankScanPos] == C.CR_BYTE
-            if (atBlank) {
+            val blankScan = scanFoldBlankLine(localRawData, position, localLimit)
+            if (blankScan.isBlank) {
                 blankLines++
-                position = blankScanPos
+                position = blankScan.contentStart
                 if (position >= localLimit) break
                 continue
             }
+            position = blankScan.afterNewline
 
             // Not blank — how "indented" this line is (for the continuation-vs-dedent decision)
             // is judged by real spaces only, the same as everywhere else a tab can't be part of
@@ -662,8 +653,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             val lineText = localRawData.decodeToString(lineStart, lineEnd)
 
             if (folded == null) folded = StringBuilder(firstLine)
-            if (blankLines > 0) repeat(blankLines) { folded.append('\n') } else folded.append(' ')
-            folded.append(lineText)
+            appendFoldedLine(folded, blankLines, lineText)
             blankLines = 0
 
             // Leave position sitting right at the '#' either way — consistent with how the
@@ -694,27 +684,17 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
         while (true) {
             val beforeNewline = position
-            if (position < localLimit && localRawData[position] == C.CR_BYTE) position++
-            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-
-            var blankScanPos = position
-            while (blankScanPos < localLimit &&
-                (localRawData[blankScanPos] == C.SPACE_BYTE || localRawData[blankScanPos] == C.TAB_BYTE)
-            ) {
-                blankScanPos++
-            }
-            val atBlank = blankScanPos >= localLimit ||
-                localRawData[blankScanPos] == C.NEWLINE_BYTE || localRawData[blankScanPos] == C.CR_BYTE
-            if (atBlank) {
+            val blankScan = scanFoldBlankLine(localRawData, position, localLimit)
+            if (blankScan.isBlank) {
                 blankLines++
-                position = blankScanPos
+                position = blankScan.contentStart
                 if (position >= localLimit) break
                 continue
             }
 
             // No indentation threshold to check here (see the KDoc above) — just skip this
             // line's leading whitespace and look at what actually comes next.
-            position = blankScanPos
+            position = blankScan.contentStart
             val lineStart = position
             val leadByte = localRawData[position]
             val leadIsColonSeparator = leadByte == C.COLON_BYTE && run {
@@ -771,8 +751,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             val lineText = localRawData.decodeToString(lineStart, lineEnd)
 
             if (folded == null) folded = StringBuilder(firstLine)
-            if (blankLines > 0) repeat(blankLines) { folded.append('\n') } else folded.append(' ')
-            folded.append(lineText)
+            appendFoldedLine(folded, blankLines, lineText)
             blankLines = 0
 
             position = scanPos
