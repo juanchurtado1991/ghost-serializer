@@ -14,8 +14,17 @@ import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.beginObject
+import com.ghost.serialization.parser.strings.captureRawJsonBytes
+import com.ghost.serialization.parser.strings.consumeArraySeparator
+import com.ghost.serialization.parser.strings.consumeKeySeparator
+import com.ghost.serialization.parser.strings.endObject
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -36,6 +45,16 @@ object ProtoAnySerializer : GhostSerializer<ProtoAny> {
     }
 
     override fun serialize(writer: GhostJsonFlatWriter, value: ProtoAny) {
+        writer.beginObject()
+        writer.name(C.PROTO_TYPE_URL_KEY).value(value.typeUrl)
+        if (value.value.isNotEmpty()) {
+            writer.name(C.PROTO_VALUE_KEY)
+            writer.rawValue(value.value)
+        }
+        writer.endObject()
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: ProtoAny) {
         writer.beginObject()
         writer.name(C.PROTO_TYPE_URL_KEY).value(value.typeUrl)
         if (value.value.isNotEmpty()) {
@@ -66,6 +85,26 @@ object ProtoAnySerializer : GhostSerializer<ProtoAny> {
     }
 
     override fun deserialize(reader: GhostJsonFlatReader): ProtoAny {
+        reader.beginObject()
+        var typeUrl = ""
+        var payload = ByteArray(0)
+        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+            val key = reader.nextString()
+            reader.consumeKeySeparator()
+            when (key) {
+                C.PROTO_TYPE_URL_KEY -> typeUrl = reader.nextString()
+                C.PROTO_VALUE_KEY -> payload = reader.captureRawJsonBytes()
+                else -> reader.skipValue()
+            }
+            if (reader.peekNextToken() == C.COMMA_INT) {
+                reader.consumeArraySeparator()
+            }
+        }
+        reader.endObject()
+        return ProtoAny(typeUrl, payload)
+    }
+
+    override fun deserialize(reader: GhostJsonStringReader): ProtoAny {
         reader.beginObject()
         var typeUrl = ""
         var payload = ByteArray(0)
