@@ -32,8 +32,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.reflect.KClass
 
 /** Minimal proto-flavored model for entry-point and leniency tests. */
-data class ProtoEntryPointDevice(val deviceId: Long, val label: String)
-
 object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> {
     override val typeName: String = "ProtoEntryPointDevice"
 

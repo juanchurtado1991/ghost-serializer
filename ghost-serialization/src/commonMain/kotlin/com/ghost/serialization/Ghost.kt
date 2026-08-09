@@ -483,7 +483,7 @@ object Ghost {
     /**
      * Serializes [value] to an in-memory JSON string.
      *
-     * Writes through the pooled [com.ghost.serialization.writer.strings.GhostJsonStringWriter]
+     * Writes through the pooled `GhostJsonStringWriter`
      * (contiguous [CharArray]), avoiding Okio segments and an intermediate UTF-8 byte buffer.
      *
      * @param value The value to serialize.

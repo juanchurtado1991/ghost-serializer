@@ -13,13 +13,13 @@ import okio.ByteString
 
 
 /**
- * Implementation of [GhostSource] for streaming data from an [okio.BufferedSource].
+ * Implementation of [GhostSource] for streaming data from an `okio.BufferedSource`.
  * Automatically requests data from the source as needed.
  *
  * ## Sliding consume
  *
  * Absolute indices stay stable for the parser, but bytes already behind the reader's
- * logical position are [okio.BufferedSource.skip]ped so Okio's buffer does not retain the
+ * logical position are skipped via `okio.BufferedSource.skip` so Okio's buffer does not retain the
  * entire document. [releaseBefore] is driven by [GhostJsonReader] (not by [get] alone):
  * discriminator peek reads ahead without advancing the reader, and must not discard the
  * prefix the reader still needs.

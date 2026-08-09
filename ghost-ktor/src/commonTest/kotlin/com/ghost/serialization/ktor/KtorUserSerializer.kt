@@ -1,9 +1,8 @@
 @file:OptIn(InternalGhostApi::class)
 
-package com.ghost.serialization.retrofit
+package com.ghost.serialization.ktor
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
@@ -16,14 +15,12 @@ import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
-import kotlin.reflect.KClass
 
+// --- Mock Models ---
+object KtorUserSerializer : GhostSerializer<KtorUser> {
+    override val typeName: String = "com.ghost.serialization.ktor.KtorUser"
 
-@InternalGhostApi
-object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
-    override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
-
-    override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
+    override fun serialize(writer: GhostJsonWriter, value: KtorUser) {
         writer.beginObject()
         writer.name("id")
         writer.value(value.id.toLong())
@@ -34,7 +31,7 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
         writer.endObject()
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: RetrofitUser) {
+    override fun serialize(writer: GhostJsonFlatWriter, value: KtorUser) {
         writer.beginObject()
         writer.name("id")
         writer.value(value.id.toLong())
@@ -45,7 +42,7 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
         writer.endObject()
     }
 
-    override fun deserialize(reader: GhostJsonReader): RetrofitUser {
+    override fun deserialize(reader: GhostJsonReader): KtorUser {
         var id = 0
         var name = ""
         var isActive = false
@@ -61,19 +58,6 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
             }
         }
         reader.endObject()
-        return RetrofitUser(id, name, isActive)
+        return KtorUser(id, name, isActive)
     }
 }
-
-@InternalGhostApi
-object RetrofitTestRegistry : GhostRegistry {
-    override fun prewarm() {}
-    override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
-        mapOf(RetrofitUser::class to RetrofitUserSerializer)
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
-        if (clazz == RetrofitUser::class) RetrofitUserSerializer as GhostSerializer<T> else null
-}
-
-data class RetrofitUser(val id: Int, val name: String, val isActive: Boolean)

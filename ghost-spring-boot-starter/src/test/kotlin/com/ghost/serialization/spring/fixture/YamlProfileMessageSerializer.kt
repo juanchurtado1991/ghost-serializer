@@ -2,9 +2,7 @@
 
 package com.ghost.serialization.spring.fixture
 
-import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
@@ -13,11 +11,6 @@ import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
-import jakarta.annotation.PostConstruct
-import org.springframework.context.annotation.Configuration
-import kotlin.reflect.KClass
-
-data class YamlProfileMessage(val id: Int, val name: String)
 
 object YamlProfileMessageSerializer :
     GhostSerializer<YamlProfileMessage>,
@@ -60,23 +53,5 @@ object YamlProfileMessageSerializer :
         }
         reader.endObject()
         return YamlProfileMessage(id, name)
-    }
-}
-
-object YamlSpringTestRegistry : GhostRegistry {
-    override fun prewarm() {}
-    override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
-        mapOf(YamlProfileMessage::class to YamlProfileMessageSerializer)
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
-        if (clazz == YamlProfileMessage::class) YamlProfileMessageSerializer as GhostSerializer<T> else null
-}
-
-@Configuration(proxyBeanMethods = false)
-open class YamlSpringTestRegistryConfig {
-    @PostConstruct
-    fun registerYamlSerializers() {
-        Ghost.addRegistry(YamlSpringTestRegistry)
     }
 }

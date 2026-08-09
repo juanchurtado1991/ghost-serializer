@@ -35,7 +35,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * compiler can fully inline — no v-table lookup, no segment management, just
  * direct array stores.
  *
- * Compared to the streaming path that writes through [okio.Buffer]/segments,
+ * Compared to the streaming path that writes through `okio.Buffer` segments,
  * this class trades the ability to incrementally drain bytes for ~2-3x
  * faster small-encode throughput. The full encoded payload is exposed at
  * the end of the encode via [toByteArray] / [toStringUtf8] (or accessed

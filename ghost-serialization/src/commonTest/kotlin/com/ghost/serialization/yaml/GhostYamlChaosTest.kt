@@ -13,7 +13,6 @@ import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 /**
  * Chaos and stress scenarios for YAML parser/writer.

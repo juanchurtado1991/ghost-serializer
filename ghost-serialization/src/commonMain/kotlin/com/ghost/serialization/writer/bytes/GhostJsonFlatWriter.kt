@@ -53,7 +53,7 @@ import okio.ByteString
 
 /**
  * In-memory specialization of [GhostJsonWriter] backed by a contiguous
- * [FlatByteArrayWriter] instead of the segmented [okio.Buffer] used by the
+ * [FlatByteArrayWriter] instead of the segmented `okio.Buffer` used by the
  * streaming path.
  */
 class GhostJsonFlatWriter @InternalGhostApi constructor(
@@ -367,7 +367,7 @@ class GhostJsonFlatWriter @InternalGhostApi constructor(
     /**
      * Writes raw JSON bytes directly into the stream without quoting or escaping.
      * Use this to emit a pre-serialized JSON fragment (object, array, or primitive)
-     * captured via [com.ghost.serialization.parser.bytes.captureRawJsonBytes].
+     * captured via `captureRawJsonBytes`.
      */
     fun rawValue(bytes: ByteArray): GhostJsonFlatWriter {
         appendSeparator()

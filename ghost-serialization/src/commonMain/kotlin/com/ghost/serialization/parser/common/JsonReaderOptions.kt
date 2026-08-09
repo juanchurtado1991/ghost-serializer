@@ -30,11 +30,11 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * @property rawStrings Array of field names as original strings.
  */
 class JsonReaderOptions(
-    public val rawBytes: Array<ByteArray>,
+    val rawBytes: Array<ByteArray>,
     @PublishedApi internal val shift: Int,
     @PublishedApi internal val multiplier: Int,
     @PublishedApi internal val tableSize: Int,
-    public val rawStrings: Array<String>,
+    val rawStrings: Array<String>,
     @PublishedApi internal val enableStringDispatch: Boolean = false,
     @PublishedApi internal val extendedKeyHash: Boolean? = null
 ) {

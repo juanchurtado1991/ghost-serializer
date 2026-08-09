@@ -3,7 +3,6 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
@@ -16,8 +15,6 @@ import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
-import kotlin.reflect.KClass
-
 
 /**
  * Hand-written stand-in for what
@@ -93,16 +90,3 @@ object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
         return ProtoDeviceEvent(deviceId, label)
     }
 }
-
-@InternalGhostApi
-object ProtoRetrofitTestRegistry : GhostRegistry {
-    override fun prewarm() {}
-    override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
-        mapOf(ProtoDeviceEvent::class to ProtoDeviceEventSerializer)
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
-        if (clazz == ProtoDeviceEvent::class) ProtoDeviceEventSerializer as GhostSerializer<T> else null
-}
-
-data class ProtoDeviceEvent(val deviceId: Long, val label: String)

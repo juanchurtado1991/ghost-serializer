@@ -30,10 +30,10 @@ fun GhostJsonFlatReader.captureRawJson(): RawJson {
  * brackets or quotes.
  *
  * Designed for deferred parsing: capture bytes here, then pass them later to
- * [com.ghost.serialization.Ghost.deserialize] which will create a new flat reader
+ * `Ghost.deserialize` which will create a new flat reader
  * over the captured slice — no intermediate String allocation, no UTF-8→UTF-16 round-trip.
  *
- * Contrast with [com.ghost.serialization.parser.bytes.GhostJsonFlatReader.skipValue], which
+ * Contrast with `GhostJsonFlatReader.skipValue`, which
  * uses the stateful depth/comma machine. This function is a pure byte-level scan that
  * does not touch depth, needsCommaMask, or commaConsumedMask.
  */

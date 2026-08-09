@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
  *
  * Registration is independent of [Ghost]'s own serializer registry — the type still needs a
  * `GhostSerializer` registered there too (e.g. via `@GhostProtoSerialization` + KSP, or a manual
- * [com.ghost.serialization.contract.GhostRegistry]). This registry only remembers which
+ * `GhostRegistry`). This registry only remembers which
  * `typeUrl` string corresponds to which [KClass].
  *
  * ```kotlin

@@ -541,7 +541,7 @@ class GhostJsonStringReader(
      *
      * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
      * cached array (used by custom-decoder bridges). Otherwise encodes only the range —
-     * avoids a full document UTF-8 pass for [com.ghost.serialization.parser.strings.captureRawJsonBytes] on large envelopes.
+     * avoids a full document UTF-8 pass for `captureRawJsonBytes` on large envelopes.
      */
     @InternalGhostApi
     fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {

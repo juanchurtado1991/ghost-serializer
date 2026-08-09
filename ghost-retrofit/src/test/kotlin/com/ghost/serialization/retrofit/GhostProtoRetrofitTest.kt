@@ -11,21 +11,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import retrofit2.Retrofit
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
 import kotlin.test.assertEquals
-
-interface MockProtoApiService {
-    @GET("/event")
-    suspend fun getEvent(): ProtoDeviceEvent
-
-    @GET("/events")
-    suspend fun getEvents(): List<ProtoDeviceEvent>
-
-    @POST("/event")
-    suspend fun createEvent(@Body event: ProtoDeviceEvent): ProtoDeviceEvent
-}
 
 /**
  * Verifies [GhostProtoConverterFactory] end-to-end over real HTTP (MockWebServer), proving the

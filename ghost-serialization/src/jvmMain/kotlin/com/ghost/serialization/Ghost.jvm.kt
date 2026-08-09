@@ -32,7 +32,7 @@ actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
 /**
  * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
  * and returns it. The pair survives across calls so the underlying
- * [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] grows once and stays warm.
+ * `FlatByteArrayWriter` grows once and stays warm.
  */
 @PublishedApi
 internal fun acquireFlatWriterPair(): WriterSinkPair {
