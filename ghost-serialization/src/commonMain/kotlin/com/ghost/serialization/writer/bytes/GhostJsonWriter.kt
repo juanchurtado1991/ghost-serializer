@@ -19,7 +19,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.EMPTY_STRING_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
-import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_REPLACEMENTS
 import com.ghost.serialization.parser.common.GhostJsonConstants.FALSE_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
@@ -626,110 +625,14 @@ class GhostJsonWriter(
      * Helper to write escaped character bytes into the destination sink buffer.
      */
     private fun writeEscaped(text: String, start: Int = 0) {
-        val scratchBuf = acquireScratch()
-        val length = text.length
-        val remaining = length - start
-        if (remaining <= 0) {
-            return
-        }
-
-        val replacements = ESCAPE_REPLACEMENTS
-        val escapeMasks = ESCAPE_MASKS
-        val scratchSize = scratchBuf.size
-
-        if (remaining <= scratchSize) {
-            var scratchPos = 0
-            var index = start
-            while (index < length) {
-                val charCode = text[index].code
-
-                // Unrolled fast path for plain ASCII
-                if (charCode < ASCII_LIMIT) {
-                    val maskIdx = charCode shr BITMASK_SHIFT
-                    val bitIdx = charCode and BITMASK_INDEX_MASK
-                    if ((escapeMasks[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
-                        scratchBuf[scratchPos++] = charCode.toByte()
-                        index++
-                        continue
-                    }
-                }
-
-                if (scratchPos > 0) {
-                    buffer.write(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-
-                if (charCode < ASCII_LIMIT) {
-                    val replacement = replacements[charCode]
-                    if (replacement != null) {
-                        buffer.write(replacement)
-                    } else {
-                        writeUnicodeEscape(charCode, scratchBuf)
-                    }
-                } else {
-                    val c = text[index]
-                    if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                        buffer.writeUtf8(text, index, index + 2)
-                        index++
-                    } else {
-                        buffer.writeUtf8(text, index, index + 1)
-                    }
-                }
-                index++
-            }
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-            }
-            return
-        }
-
-        var scratchPos = 0
-        var index = start
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (
-                charCode < ASCII_LIMIT &&
-                (escapeMasks[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                if (scratchPos == scratchSize) {
-                    buffer.write(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-                index++
-                continue
-            }
-
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            if (charCode < ASCII_LIMIT) {
-                val replacement = replacements[charCode]
-                if (replacement != null) {
-                    buffer.write(replacement)
-                } else {
-                    writeUnicodeEscape(charCode, scratchBuf)
-                }
-            } else {
-                val char = text[index]
-                if (char.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    buffer.writeUtf8(text, index, index + 2)
-                    index++
-                } else {
-                    buffer.writeUtf8(text, index, index + 1)
-                }
-            }
-            index++
-        }
-
-        if (scratchPos > 0) {
-            buffer.write(scratchBuf, 0, scratchPos)
-        }
+        GhostJsonEscapeHelpers.writeEscapedBytes(
+            text = text,
+            start = start,
+            scratchBuf = acquireScratch(),
+            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
+            writeReplacement = { replacement -> buffer.write(replacement) },
+            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+        )
     }
 
     /**
@@ -756,14 +659,5 @@ class GhostJsonWriter(
             0,
             0
         )
-    }
-
-    /**
-     * Formats unicode characters to standard JSON unicode escape string values.
-     */
-    private fun writeUnicodeEscape(code: Int, scratchBuf: ByteArray) {
-        GhostJsonEscapeHelpers.writeUnicodeEscapeBytes(code, scratchBuf) { buf, offset, len ->
-            buffer.write(buf, offset, len)
-        }
     }
 }

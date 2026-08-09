@@ -1,12 +1,9 @@
 package com.ghost.serialization.writer.yaml
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import okio.BufferedSink
 import okio.ByteString
-import com.ghost.serialization.writer.common.GhostWriterLongDigits
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
@@ -27,20 +24,17 @@ class GhostYamlWriter(
     private var justWroteDash = false
 
     internal fun acquireScratch(): ByteArray {
-        val currentScratch = scratch
-        if (currentScratch != null) return currentScratch
-        val newScratch = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
+        val current = scratch
+        if (current != null) return current
+        val newScratch = GhostYamlWriterHelpers.newScratch()
         scratch = newScratch
         return newScratch
     }
 
     @InternalGhostApi
     fun release() {
-        val currentScratch = scratch
-        if (currentScratch != null) {
-            releaseScratchBuffer(currentScratch)
-            scratch = null
-        }
+        GhostYamlWriterHelpers.releaseScratch(scratch)
+        scratch = null
         depth = 0
         pendingSpace = false
         justWroteDash = false
@@ -301,93 +295,22 @@ class GhostYamlWriter(
     }
 
     private fun writeEscaped(text: String) {
-        val length = text.length
-        var index = 0
-
-        while (index < length) {
-            val charCode = text[index].code
-            if (charCode == C.DOUBLE_QUOTE_INT) {
-                buffer.writeByte(C.BACKSLASH_INT)
-                buffer.writeByte(C.DOUBLE_QUOTE_INT)
-            } else if (charCode == C.BACKSLASH_INT) {
-                buffer.writeByte(C.BACKSLASH_INT)
-                buffer.writeByte(C.BACKSLASH_INT)
-            } else {
-                when (charCode) {
-                    C.CHAR_LF_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_N_INT)
-                    }
-
-                    C.CHAR_CR_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_R_INT)
-                    }
-
-                    C.CHAR_TAB_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_T_INT)
-                    }
-
-                    C.CHAR_BS_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_B_INT)
-                    }
-
-                    C.CHAR_FF_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_F_INT)
-                    }
-
-                    else -> {
-                        if (charCode < C.CHAR_SPACE_INT) {
-                            buffer.writeByte(C.BACKSLASH_INT)
-                            buffer.writeByte(C.CHAR_U_INT)
-                            writeUnicodeHex(charCode)
-                        } else if (charCode < C.ASCII_LIMIT) {
-                            buffer.writeByte(charCode)
-                        } else {
-                            val charVal = text[index]
-                            if (charVal.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                                buffer.writeUtf8(text, index, index + 2)
-                                index++
-                            } else {
-                                buffer.writeUtf8(text, index, index + 1)
-                            }
-                        }
-                    }
-                }
-            }
-            index++
-        }
-    }
-
-    private fun writeUnicodeHex(code: Int) {
-        val hexChars = C.HEX_CHARS_ARR
-        buffer.writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())
-        buffer.writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())
-        buffer.writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())
-        buffer.writeByte(hexChars[code and C.HEX_MASK].toInt())
+        GhostYamlWriterHelpers.writeEscaped(
+            text = text,
+            writeByte = { buffer.writeByte(it) },
+            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+        )
     }
 
     private fun writeLong(value: Long) {
-        if (value == 0L) {
-            buffer.writeByte(C.ZERO_INT)
-            return
-        }
-        var remaining = value
-        val isNegative = remaining < 0
-        if (isNegative) {
-            buffer.writeByte(C.DASH_INT)
-            if (remaining == Long.MIN_VALUE) {
-                buffer.writeUtf8(C.STR_MIN_LONG_ABS)
-                return
-            }
-            remaining = -remaining
-        }
-        val scratchBuf = scratch ?: acquireScratch()
-        val pos = GhostWriterLongDigits.writePositiveDigitsBytes(remaining, scratchBuf)
-        buffer.write(scratchBuf, pos, scratchBuf.size - pos)
+        GhostYamlWriterHelpers.writeLong(
+            value = value,
+            scratch = scratch,
+            acquireScratch = { acquireScratch() },
+            writeByte = { buffer.writeByte(it) },
+            writeUtf8 = { buffer.writeUtf8(it) },
+            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
+        )
     }
 
     private fun extractKey(header: ByteString): String {

@@ -33,7 +33,7 @@ internal object GhostJsonEscapeHelpers {
     inline fun writeUnicodeEscapeBytes(
         code: Int,
         scratchBuf: ByteArray,
-        write: (buf: ByteArray, offset: Int, length: Int) -> Unit,
+        write: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
     ) {
         val hexChars = HEX_CHARS
         scratchBuf[0] = BACKSLASH
@@ -51,7 +51,7 @@ internal object GhostJsonEscapeHelpers {
     inline fun writeUnicodeEscapeChars(
         code: Int,
         scratchBuf: CharArray,
-        write: (buf: CharArray, offset: Int, length: Int) -> Unit,
+        write: (scratch: CharArray, offset: Int, length: Int) -> Unit,
     ) {
         val hexChars = HEX_CHARS_CHARS
         scratchBuf[0] = CHAR_BACKSLASH
@@ -64,6 +64,123 @@ internal object GhostJsonEscapeHelpers {
     }
 
     /**
+     * Escapes [text] from [start] into [scratchBuf], flushing through sink lambdas.
+     * Used by both byte JSON writers when the string does not fit the quoted-scratch path.
+     */
+    inline fun writeEscapedBytes(
+        text: String,
+        start: Int,
+        scratchBuf: ByteArray,
+        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
+        writeReplacement: (replacement: ByteArray) -> Unit,
+        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
+    ) {
+        val length = text.length
+        val remaining = length - start
+        if (remaining <= 0) {
+            return
+        }
+
+        val replacements = ESCAPE_REPLACEMENTS
+        val escapeMasks = ESCAPE_MASKS
+        val scratchSize = scratchBuf.size
+
+        if (remaining <= scratchSize) {
+            var scratchPos = 0
+            var index = start
+            while (index < length) {
+                val charCode = text[index].code
+
+                // Unrolled fast path for plain ASCII
+                if (charCode < ASCII_LIMIT) {
+                    val maskIdx = charCode shr BITMASK_SHIFT
+                    val bitIdx = charCode and BITMASK_INDEX_MASK
+                    if ((escapeMasks[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
+                        scratchBuf[scratchPos++] = charCode.toByte()
+                        index++
+                        continue
+                    }
+                }
+
+                if (scratchPos > 0) {
+                    writeBytes(scratchBuf, 0, scratchPos)
+                    scratchPos = 0
+                }
+
+                if (charCode < ASCII_LIMIT) {
+                    val replacement = replacements[charCode]
+                    if (replacement != null) {
+                        writeReplacement(replacement)
+                    } else {
+                        writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)
+                    }
+                } else {
+                    val c = text[index]
+                    if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
+                        writeUtf8Range(text, index, index + 2)
+                        index++
+                    } else {
+                        writeUtf8Range(text, index, index + 1)
+                    }
+                }
+                index++
+            }
+            if (scratchPos > 0) {
+                writeBytes(scratchBuf, 0, scratchPos)
+            }
+            return
+        }
+
+        var scratchPos = 0
+        var index = start
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (
+                charCode < ASCII_LIMIT &&
+                (escapeMasks[charCode shr BITMASK_SHIFT] shr
+                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+            ) {
+                scratchBuf[scratchPos++] = charCode.toByte()
+                if (scratchPos == scratchSize) {
+                    writeBytes(scratchBuf, 0, scratchPos)
+                    scratchPos = 0
+                }
+                index++
+                continue
+            }
+
+            if (scratchPos > 0) {
+                writeBytes(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            if (charCode < ASCII_LIMIT) {
+                val replacement = replacements[charCode]
+                if (replacement != null) {
+                    writeReplacement(replacement)
+                } else {
+                    writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)
+                }
+            } else {
+                val char = text[index]
+                if (char.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
+                    writeUtf8Range(text, index, index + 2)
+                    index++
+                } else {
+                    writeUtf8Range(text, index, index + 1)
+                }
+            }
+            index++
+        }
+
+        if (scratchPos > 0) {
+            writeBytes(scratchBuf, 0, scratchPos)
+        }
+    }
+
+    /**
      * Escapes [text] into [scratchBuf] (opening quote already at index 0) and flushes
      * through the provided sink lambdas. Used by both byte JSON writers.
      */
@@ -71,7 +188,7 @@ internal object GhostJsonEscapeHelpers {
         text: String,
         length: Int,
         scratchBuf: ByteArray,
-        writeBytes: (buf: ByteArray, offset: Int, length: Int) -> Unit,
+        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
         writeReplacement: (replacement: ByteArray) -> Unit,
         writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
         writeQuoteByte: () -> Unit,
