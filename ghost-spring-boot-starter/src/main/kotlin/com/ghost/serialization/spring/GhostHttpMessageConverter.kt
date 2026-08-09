@@ -12,21 +12,20 @@ import kotlin.reflect.KClass
 
 
 /**
- * Spring [org.springframework.http.converter.HttpMessageConverter]
- * implementation that uses Ghost Serialization.
+ * Spring `HttpMessageConverter` implementation that uses Ghost Serialization.
  *
  * **Read path:** Extracts the request body as a [ByteArray] and feeds it
- * directly to the pooled [com.ghost.serialization.parser.streaming.GhostJsonReader],
+ * directly to the pooled `GhostJsonReader`,
  * avoiding intermediate Okio wrappers.
  *
  * **Write path:** Serializes through the pooled monomorphic
- * [com.ghost.serialization.writer.bytes.GhostJsonFlatWriter] and writes the
+ * `GhostJsonFlatWriter` and writes the
  * resulting [ByteArray] in a single bulk call to the output stream,
  * bypassing Okio sink wrapping entirely.
  */
 class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
     MediaType.APPLICATION_JSON,
-    MediaType("application", "*+json")
+    GhostSpringMediaTypes.APPLICATION_JSON_SUFFIX
 ) {
     private val supportsCache = ConcurrentHashMap<Class<*>, Boolean>()
     private val serializerCache = ConcurrentHashMap<Class<*>, GhostSerializer<Any>>()
@@ -46,7 +45,7 @@ class GhostHttpMessageConverter : AbstractHttpMessageConverter<Any>(
 
     /**
      * Excludes primitive and `java.lang` wrapper types so Spring falls back to its default
-     * converters (for example [org.springframework.http.converter.StringHttpMessageConverter])
+     * converters (for example `StringHttpMessageConverter`)
      * for text/plain, raw bytes, and scalar responses.
      */
     private fun isExcludedType(clazz: Class<*>): Boolean {

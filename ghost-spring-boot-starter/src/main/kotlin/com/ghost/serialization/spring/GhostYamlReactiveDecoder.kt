@@ -15,9 +15,9 @@ import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
 
 class GhostYamlReactiveDecoder : AbstractDecoder<Any>(
-    MimeType("application", "yaml"),
-    MimeType("application", "x-yaml"),
-    MimeType("text", "yaml"),
+    GhostSpringMediaTypes.MIME_APPLICATION_YAML,
+    GhostSpringMediaTypes.MIME_APPLICATION_X_YAML,
+    GhostSpringMediaTypes.MIME_TEXT_YAML,
 ) {
     override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()

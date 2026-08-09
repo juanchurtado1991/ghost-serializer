@@ -36,16 +36,16 @@ expect object GhostHeuristics {
     val maxDiscriminatorPeekDistance: Int
 
     /**
-     * Max retained capacity for [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] after [com.ghost.serialization.writer.bytes.FlatByteArrayWriter.reset].
+     * Max retained capacity for `FlatByteArrayWriter` after `FlatByteArrayWriter.reset`.
      * Larger encoded payloads can reuse the grown buffer on the same thread; capacity above this is released.
      */
     val maxWarmWriteBufferCapacity: Int
 
     /**
-     * Max retained capacity for [com.ghost.serialization.writer.strings.FlatCharArrayWriter] after
-     * [com.ghost.serialization.writer.strings.FlatCharArrayWriter.reset].
+     * Max retained capacity for `FlatCharArrayWriter` after
+     * `FlatCharArrayWriter.reset`.
      * Deliberately smaller than [maxWarmWriteBufferCapacity] because the char writer only
-     * serves [ghostInternalEncodeToString] — producing text output — and very large String
+     * serves `ghostInternalEncodeToString` — producing text output — and very large String
      * payloads are rare compared to binary encoding workloads.
      */
     val maxWarmCharWriteBufferCapacity: Int

@@ -6,7 +6,6 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-
 /**
  * Captures the next complete JSON value (object, array, string, number, boolean, null)
  * as a [RawJson] view into this reader's buffer without copying UTF-8 bytes.

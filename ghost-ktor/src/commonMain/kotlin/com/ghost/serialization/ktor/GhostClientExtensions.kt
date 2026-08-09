@@ -26,7 +26,7 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
 
 /**
  * Proto3-JSON variant of [bodyGhost] for `@GhostProtoSerialization` types — parses through
- * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] (quoted-or-bare int64, lenient
+ * `GhostProtoJsonFlatReader` (quoted-or-bare int64, lenient
  * int32, quoted `NaN`/`Infinity`) instead of the plain flat reader.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
@@ -36,7 +36,7 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
 
 /**
  * YAML variant of [bodyGhost] for types whose serializer implements
- * [com.ghost.serialization.yaml.contract.GhostYamlSerializer].
+ * `GhostYamlSerializer`.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostYaml(): T {
     val bytes = this.body<ByteArray>()

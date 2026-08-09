@@ -17,12 +17,12 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 /**
  * Reactive Encoder for Ghost Serialization.
  *
- * Serializes through the pooled [com.ghost.serialization.writer.bytes.GhostJsonFlatWriter]
+ * Serializes through the pooled `GhostJsonFlatWriter`
  * to a [ByteArray], then wraps the bytes in a [DataBuffer] via [DataBufferFactory].
  */
 class GhostReactiveEncoder : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
-    MimeType("application", "x-ndjson")
+    GhostSpringMediaTypes.MIME_APPLICATION_X_NDJSON
 ) {
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()
@@ -68,6 +68,6 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
     }
 
     private fun isNdJson(mimeType: MimeType?): Boolean {
-        return mimeType?.subtype?.contains("ndjson") == true
+        return mimeType?.subtype?.contains(GhostSpringMediaTypes.SUBTYPE_NDJSON_TOKEN) == true
     }
 }

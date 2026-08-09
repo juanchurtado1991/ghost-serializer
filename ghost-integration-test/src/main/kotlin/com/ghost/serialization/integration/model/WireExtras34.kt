@@ -1,0 +1,11 @@
+package com.ghost.serialization.integration.model
+
+import com.ghost.serialization.annotations.GhostName
+import com.ghost.serialization.annotations.GhostSerialization
+import com.ghost.serialization.annotations.GhostWrappedKeys
+
+@GhostSerialization
+data class WireExtras34(
+    @GhostName("extra3") val extra3: String,
+    @GhostName("extra4") val extra4: String,
+)

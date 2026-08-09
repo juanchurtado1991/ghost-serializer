@@ -13,9 +13,9 @@ import reactor.core.publisher.Flux
 import kotlin.reflect.KClass
 
 class GhostYamlReactiveEncoder : AbstractEncoder<Any>(
-    MimeType("application", "yaml"),
-    MimeType("application", "x-yaml"),
-    MimeType("text", "yaml"),
+    GhostSpringMediaTypes.MIME_APPLICATION_YAML,
+    GhostSpringMediaTypes.MIME_APPLICATION_X_YAML,
+    GhostSpringMediaTypes.MIME_TEXT_YAML,
 ) {
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()

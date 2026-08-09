@@ -10,6 +10,3 @@ sealed class ApiEventDefault {
     @GhostSerialization
     data class Logout(val sessionId: String) : ApiEventDefault()
 }
-
-@GhostSerialization
-data class CustomAction(val actionName: String) : ApiEventDefault()

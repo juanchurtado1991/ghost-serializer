@@ -7,12 +7,6 @@ import com.ghost.serialization.annotations.GhostName
 import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.types.RawJson
 
-@GhostSerialization
-data class DeviceEventPayload(val deviceId: String)
-
-@GhostSerialization
-data class ModeEventPayload(val mode: String)
-
 @GhostJsonEnvelope(discriminator = "eventType", timeField = "eventTime")
 @GhostSerialization
 data class SseEventEnvelope(
@@ -24,15 +18,4 @@ data class SseEventEnvelope(
     @GhostName("modeEvent") val modeEvent: RawJson? = null,
     @GhostEnvelopeFallback
     val unknownEvent: RawJson? = null,
-)
-
-@GhostSerialization
-data class InvoicePaidPayload(val amount: Long)
-
-@GhostJsonEnvelope(discriminator = "type", dataField = "data")
-@GhostSerialization
-data class WebhookEnvelope(
-    val type: String = "",
-    @GhostEnvelopePayload("invoice.paid", target = InvoicePaidPayload::class)
-    val data: RawJson? = null,
 )

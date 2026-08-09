@@ -62,14 +62,14 @@ interface GhostSerializer<T> {
     }
 
     /**
-     * Serializes [value] using the streaming [writer] (segmented [okio.Buffer]
+     * Serializes [value] using the streaming [writer] (segmented `okio.Buffer`
      * under the hood). Used by `Ghost.serialize(sink, value)`.
      */
     fun serialize(writer: GhostJsonWriter, value: T)
 
     /**
      * Serializes [value] using the in-memory [writer] (contiguous
-     * [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] under the hood).
+     * `FlatByteArrayWriter` under the hood).
      * Used by `Ghost.encodeToBytes` (and sink drain / discard) to bypass Okio
      * segment overhead on the synchronous in-memory byte encode path.
      */
@@ -77,7 +77,7 @@ interface GhostSerializer<T> {
 
     /**
      * Serializes [value] using the in-memory text [writer] (contiguous
-     * [com.ghost.serialization.writer.strings.FlatCharArrayWriter] under the hood).
+     * `FlatCharArrayWriter` under the hood).
      * Used by `Ghost.encodeToString` to write characters directly.
      */
     fun serialize(writer: GhostJsonStringWriter, value: T) {

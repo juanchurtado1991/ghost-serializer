@@ -23,10 +23,9 @@ import kotlin.reflect.KClass
 
 /**
  * Retrofit [Converter.Factory] for Ghost JSON serialization
- * ([@GhostSerialization][com.ghost.serialization.annotations.GhostSerialization]).
+ * (`@GhostSerialization`).
  *
- * Honors [@GhostStrict][com.ghost.serialization.annotations.GhostStrict] and
- * [@GhostCoerce][com.ghost.serialization.annotations.GhostCoerce] on endpoint methods.
+ * Honors `@GhostStrict` and `@GhostCoerce` on endpoint methods.
  * Unwraps `List<T>` / `Map<String, V>` when element serializers are registered.
  *
  * ```kotlin

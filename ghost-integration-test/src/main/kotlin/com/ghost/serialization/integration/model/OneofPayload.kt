@@ -1,8 +1,6 @@
 package com.ghost.serialization.integration.model
 
-import com.ghost.serialization.annotations.GhostProtoSerialization
 import com.ghost.serialization.annotations.GhostSerialization
-import com.ghost.serialization.annotations.GhostWrappedKeys
 
 /**
  * Proto3 `oneof` JSON mapping — the payload variant's field name appears as a *sibling* of the
@@ -23,10 +21,3 @@ sealed class OneofPayload {
     @GhostSerialization
     data class Code(val code: Int) : OneofPayload()
 }
-
-@GhostProtoSerialization
-data class ProtoOneofEvent(
-    val id: String,
-    @GhostWrappedKeys(keys = ["text", "code"])
-    val payload: OneofPayload,
-)

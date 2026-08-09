@@ -24,7 +24,7 @@ import kotlin.reflect.KClass
 
 /**
  * Retrofit `Converter.Factory` for YAML-backed types
- * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
+ * (`GhostYamlSerializer`).
  *
  * ```kotlin
  * Retrofit.Builder()

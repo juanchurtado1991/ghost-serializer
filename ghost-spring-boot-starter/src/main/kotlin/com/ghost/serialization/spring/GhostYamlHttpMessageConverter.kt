@@ -13,13 +13,12 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
- * [org.springframework.http.converter.HttpMessageConverter] for YAML-backed Ghost types
- * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
+ * `HttpMessageConverter` for YAML-backed Ghost types (`GhostYamlSerializer`).
  */
 class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
-    MediaType("application", "yaml"),
-    MediaType("application", "x-yaml"),
-    MediaType("text", "yaml"),
+    GhostSpringMediaTypes.APPLICATION_YAML,
+    GhostSpringMediaTypes.APPLICATION_X_YAML,
+    GhostSpringMediaTypes.TEXT_YAML,
 ) {
     private val supportsCache = ConcurrentHashMap<Class<*>, Boolean>()
     private val serializerCache = ConcurrentHashMap<Class<*>, GhostSerializer<Any>>()
