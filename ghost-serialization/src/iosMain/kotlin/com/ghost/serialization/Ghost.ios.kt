@@ -10,6 +10,7 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.WriterSinkPair
+import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import okio.BufferedSource
 import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit

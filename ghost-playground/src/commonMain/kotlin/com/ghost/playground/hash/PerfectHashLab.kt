@@ -1,22 +1,5 @@
 package com.ghost.playground.hash
 
-/**
- * Perfect-hash search aligned with `PerfectHashFinder` in ghost-compiler.
- * Duplicated here so Wasm can build dispatch tables without the JVM KSP module.
- */
-data class PerfectHashConfig(
-    val shift: Int,
-    val multiplier: Int,
-    val tableSize: Int,
-    val extendedKeyHash: Boolean,
-)
-
-data class DispatchSlot(
-    val index: Int,
-    val fieldName: String?,
-    val occupied: Boolean,
-)
-
 object PerfectHashLab {
     private const val HASH_MULTIPLIER_START = 31
     private const val HASH_MULTIPLIER_LIMIT = 15_000

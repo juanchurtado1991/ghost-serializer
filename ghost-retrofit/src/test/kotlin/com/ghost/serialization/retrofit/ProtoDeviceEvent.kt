@@ -7,11 +7,11 @@ import com.ghost.serialization.parser.streaming.nextLong
 
 /**
  * Hand-written stand-in for what
- * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization] + KSP
+ * `@GhostProtoSerialization` + KSP
  * would generate for `data class ProtoDeviceEvent(val deviceId: Long, val label: String)` —
  * `deviceId` is written as a quoted decimal string (proto3 int64 mapping) and must be readable
  * back as a bare-or-quoted number, exercising exactly what [GhostProtoConverterFactory] depends
- * on ([com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader.nextLong] polymorphism via
+ * on (`GhostProtoJsonFlatReader.nextLong` polymorphism via
  * `reader.nextLong()`).
  */
 data class ProtoDeviceEvent(val deviceId: Long, val label: String)

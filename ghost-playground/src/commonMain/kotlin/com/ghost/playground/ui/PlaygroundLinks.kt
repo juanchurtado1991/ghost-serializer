@@ -1,12 +1,5 @@
 package com.ghost.playground.ui
 
-enum class PlaygroundDest {
-    SpeedTest,
-    Studio,
-    UnderHood,
-    LearnMore,
-}
-
 /** Absolute GitHub URLs for documentation opened from the playground on Wasm and JVM targets. */
 object PlaygroundLinks {
     private const val REPO = "https://github.com/juanchurtado1991/ghost-serializer"

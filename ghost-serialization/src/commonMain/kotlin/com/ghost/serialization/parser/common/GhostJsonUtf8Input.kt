@@ -279,7 +279,7 @@ private fun utf8MaxSizeFromUtf16(utf16ByteLength: Int): Int {
     return (utf16ByteLength / UTF16_UNIT_SIZE) * C.UTF8_3BYTE_SIZE
 }
 
-/** Sentinel for a byte position that is past [length] during BOM probing. */
+/** Sentinel for a byte position that is past `length` during BOM probing. */
 private const val ABSENT_BYTE = -1
 
 /** Numeric value of the NUL byte (0x00). */

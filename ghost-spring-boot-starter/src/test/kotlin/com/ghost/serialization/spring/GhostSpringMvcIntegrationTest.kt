@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * Verifies [GhostAutoConfiguration] on Spring Boot 3.4 with a real MVC controller and the
- * KSP-generated [com.ghost.serialization.spring.fixture.HelloMessage] serializer.
+ * KSP-generated `HelloMessage` serializer.
  */
 @SpringBootTest(classes = [GhostSpringTestApplication::class])
 @AutoConfigureMockMvc

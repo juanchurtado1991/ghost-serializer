@@ -15,8 +15,8 @@ import java.lang.management.ManagementFactory
 /**
  * Ghost-only YAML round-trip benchmark, plus a Ghost-vs-kaml decode/encode comparison.
  *
- * Exercises KSP-generated [com.ghost.serialization.yaml.contract.GhostYamlSerializer] paths on the
- * integration fixture [com.ghost.serialization.integration.model.YamlBenchUser].
+ * Exercises KSP-generated `GhostYamlSerializer` paths on the
+ * integration fixture `YamlBenchUser`.
  *
  * The kaml comparison below is fixture-only (this file's `YAML_USER` sample) — it is NOT a run
  * against the official yaml-test-suite / matrix.yaml.info spec-compliance matrix. Tracked

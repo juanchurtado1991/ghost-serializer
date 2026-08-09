@@ -18,7 +18,7 @@ import kotlin.test.assertNull
 /**
  * Direct unit tests for [GhostProtoContentConverter] — proto3 JSON read path, null-return
  * contract, scratch-buffer growth, and list deserialization via
- * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader].
+ * `GhostProtoJsonFlatReader`.
  */
 class GhostProtoContentConverterDirectTest {
 
