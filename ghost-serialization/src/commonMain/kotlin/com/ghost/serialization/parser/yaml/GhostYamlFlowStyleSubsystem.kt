@@ -9,7 +9,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
 /** Parses flow-style mappings (`{key: value}`). */
 internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     position++ // consume '{'
-    val result = LinkedHashMap<String, Any?>(8)
+    val result = LinkedHashMap<String, Any?>(C.DEFAULT_MAP_CAPACITY)
     skipWhitespaceAndComments()
 
     val localRawData = rawData
@@ -23,7 +23,7 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     // Flow collections nest via ordinary recursive readValue calls the same way block ones do
     // (a value can itself be another "{"/"["), so they need the same depth guard — without it,
     // deeply nested flow input has no bound on Kotlin call-stack recursion at all.
-    if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
+    if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
     depth++
     try {
         while (position < localLimit) {
@@ -34,7 +34,7 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
                 break
             }
             if (localRawData[position] == C.COMMA_BYTE) {
-                yamlError("Unexpected ',' in flow mapping — empty entries are not allowed")
+                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_MAPPING)
             }
 
             // Read key. A nested flow collection used as a key (e.g. "[d, e]: f") has to go
@@ -57,7 +57,7 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
             } else if (position < localLimit && (localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACE_BYTE)) {
                 null
             } else {
-                yamlError("Expected ':' after flow mapping key '$key'")
+                yamlError("${C.ERR_EXPECTED_COLON_AFTER_FLOW_KEY_PREFIX}$key'")
             }
             if (key == C.STR_MERGE_KEY) {
                 mergeInto(result, value)
@@ -72,7 +72,7 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
                 position++ // consume '}'
                 break
             } else {
-                yamlError("Expected ',' or '}' in flow mapping")
+                yamlError(C.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_MAP)
             }
         }
     } finally {
@@ -97,7 +97,7 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
 
     // See the matching guard in readFlowMapping — flow collections recurse into readValue the
     // same way block ones do and need the same bound on nesting depth.
-    if (depth >= C.MAX_DEPTH) yamlError("Maximum nesting depth (${C.MAX_DEPTH}) exceeded")
+    if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
     depth++
     try {
         while (position < localLimit) {
@@ -108,7 +108,7 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
                 break
             }
             if (localRawData[position] == C.COMMA_BYTE) {
-                yamlError("Unexpected ',' in flow sequence — empty entries are not allowed")
+                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_SEQUENCE)
             }
 
             val item = readFlowSequenceEntry()
@@ -121,7 +121,7 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
                 position++ // consume ']'
                 break
             } else {
-                yamlError("Expected ',' or ']' in flow sequence")
+                yamlError(C.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_SEQ)
             }
         }
     } finally {

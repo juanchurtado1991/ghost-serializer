@@ -2,6 +2,7 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.yaml.GhostYamlConstants as C
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
@@ -11,9 +12,9 @@ import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
  */
 inline fun <reified T : Any> Ghost.decodeFromYaml(yaml: String): T {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
@@ -28,9 +29,9 @@ inline fun <reified T : Any> Ghost.decodeFromYaml(yaml: String): T {
  */
 inline fun <reified T : Any> Ghost.decodeFromYaml(bytes: ByteArray): T {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
@@ -44,9 +45,9 @@ inline fun <reified T : Any> Ghost.decodeFromYaml(bytes: ByteArray): T {
  */
 inline fun <reified T : Any> Ghost.decodeAllFromYaml(yaml: String): List<T> {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
@@ -60,9 +61,9 @@ inline fun <reified T : Any> Ghost.decodeAllFromYaml(yaml: String): List<T> {
  */
 inline fun <reified T : Any> Ghost.decodeAllFromYaml(bytes: ByteArray): List<T> {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
@@ -76,9 +77,9 @@ inline fun <reified T : Any> Ghost.decodeAllFromYaml(bytes: ByteArray): List<T> 
  */
 inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
@@ -93,9 +94,9 @@ inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
  */
 inline fun <reified T : Any> Ghost.encodeToYamlBytes(value: T): ByteArray {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
@@ -111,9 +112,9 @@ inline fun <reified T : Any> Ghost.encodeToYamlBytes(value: T): ByteArray {
 inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
     if (values.isEmpty()) return ""
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("Serializer not found for ${T::class.simpleName ?: "unknown"}")
+        ?: throw IllegalArgumentException("${C.ERR_SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}")
     if (serializer !is GhostYamlSerializer<*>) {
-        throw IllegalArgumentException("Serializer for ${T::class.simpleName ?: "unknown"} does not implement GhostYamlSerializer")
+        throw IllegalArgumentException("${C.ERR_NOT_YAML_SERIALIZER_PREFIX}${T::class.simpleName ?: C.STR_UNKNOWN_TYPE}${C.ERR_NOT_YAML_SERIALIZER_SUFFIX}")
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>

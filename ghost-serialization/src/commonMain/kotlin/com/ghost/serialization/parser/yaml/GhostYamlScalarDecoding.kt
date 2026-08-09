@@ -102,7 +102,7 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
         return localRawData.decodeToString(startPosition, scanPos)
     }
 
-    var outBuffer = acquireScratchBuffer(256)
+    var outBuffer = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
     var outPos = 0
     // Trailing whitespace before a fold is normally trimmed (see below), but a *escaped*
     // space/tab ("\ "/"\t"/"\<literal tab>") is real content the author deliberately protected
@@ -231,7 +231,7 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
     } finally {
         releaseScratchBuffer(outBuffer)
     }
-    yamlError("Unterminated double-quoted string")
+    yamlError(C.ERR_UNTERMINATED_DOUBLE_QUOTED)
 }
 
 internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
@@ -266,7 +266,7 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
         return localRawData.decodeToString(startPosition, scanPos)
     }
 
-    var outBuffer = acquireScratchBuffer(256)
+    var outBuffer = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
     var outPos = 0
     try {
         while (position < localLimit) {
@@ -334,7 +334,7 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
     } finally {
         releaseScratchBuffer(outBuffer)
     }
-    yamlError("Unterminated single-quoted string")
+    yamlError(C.ERR_UNTERMINATED_SINGLE_QUOTED)
 }
 
 /**
@@ -369,7 +369,7 @@ private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
     // that looks like a document marker is forbidden content inside it regardless (spec's
     // c-forbidden production), not literal text to fold in.
     if (position < localLimit && (isDocumentMarker() || isDocumentEndMarker())) {
-        yamlError("Document marker '${if (localRawData[position] == C.DASH_BYTE) "---" else "..."}' not allowed inside a quoted scalar")
+        yamlError("${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX}${if (localRawData[position] == C.DASH_BYTE) C.STR_DOC_START else C.STR_DOC_END}${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX}")
     }
     return breakCount
 }
@@ -390,23 +390,23 @@ private fun GhostYamlFlatReader.processEscapeSequence(): Int {
         C.LOWERCASE_R_BYTE -> C.CODE_CR
         C.LOWERCASE_T_BYTE -> C.CODE_TAB
         C.LOWERCASE_X_BYTE -> {        // \xXX
-            if (position + 2 > localLimit) yamlError("Incomplete \\x escape")
-            val hexVal = parseHex(rawData, position, 2)
-            position += 2
+            if (position + C.HEX_ESCAPE_X_LEN > localLimit) yamlError(C.ERR_INCOMPLETE_X_ESCAPE)
+            val hexVal = parseHex(rawData, position, C.HEX_ESCAPE_X_LEN)
+            position += C.HEX_ESCAPE_X_LEN
             hexVal
         }
 
         C.LOWERCASE_U_BYTE -> {        // \uXXXX
-            if (position + 4 > localLimit) yamlError("Incomplete \\u escape")
-            val hexVal = parseHex(rawData, position, 4)
-            position += 4
+            if (position + C.HEX_ESCAPE_U_LEN > localLimit) yamlError(C.ERR_INCOMPLETE_U_ESCAPE)
+            val hexVal = parseHex(rawData, position, C.HEX_ESCAPE_U_LEN)
+            position += C.HEX_ESCAPE_U_LEN
             hexVal
         }
 
         C.UPPERCASE_U_BYTE -> {        // \UXXXXXXXX
-            if (position + 8 > localLimit) yamlError("Incomplete \\U escape")
-            val hexVal = parseHex(rawData, position, 8)
-            position += 8
+            if (position + C.HEX_ESCAPE_U32_LEN > localLimit) yamlError(C.ERR_INCOMPLETE_U32_ESCAPE)
+            val hexVal = parseHex(rawData, position, C.HEX_ESCAPE_U32_LEN)
+            position += C.HEX_ESCAPE_U32_LEN
             hexVal
         }
 
@@ -418,7 +418,7 @@ private fun GhostYamlFlatReader.processEscapeSequence(): Int {
         C.UNDERSCORE_BYTE -> C.CODE_NBSP
         C.UPPERCASE_L_BYTE -> C.CODE_LINE_SEP
         C.UPPERCASE_P_BYTE -> C.CODE_PARA_SEP
-        else -> yamlError("Unknown escape: \\${currentByteInt.toChar()}")
+        else -> yamlError("${C.ERR_UNKNOWN_ESCAPE_PREFIX}${currentByteInt.toChar()}")
     }
 }
 
@@ -431,7 +431,7 @@ private fun GhostYamlFlatReader.parseHex(data: ByteArray, start: Int, length: In
             byteVal in C.ZERO_BYTE..C.NINE_BYTE -> byteVal - C.ZERO_BYTE
             byteVal in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> byteVal - C.LOWERCASE_A_BYTE + C.HEX_RADIX_10
             byteVal in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> byteVal - C.UPPERCASE_A_BYTE + C.HEX_RADIX_10
-            else -> yamlError("Invalid hex char in escape sequence")
+            else -> yamlError(C.ERR_INVALID_HEX_IN_ESCAPE)
         }
         value = (value shl C.HEX_SHIFT_4) or digit
         index++

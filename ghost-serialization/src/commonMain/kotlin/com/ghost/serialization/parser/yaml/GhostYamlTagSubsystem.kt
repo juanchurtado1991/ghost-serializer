@@ -17,7 +17,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
     position++ // consume '!'
     val localRawData = rawData
     val localLimit = limit
-    if (position >= localLimit) yamlError("Unexpected end of input after tag indicator")
+    if (position >= localLimit) yamlError(C.ERR_EOF_AFTER_TAG)
 
     var isDoubleExcl = false
     if (localRawData[position] == C.EXCLAMATION_BYTE) {
@@ -74,7 +74,7 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
                     val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)
                     val suffix = rawTagName.substring(exclamationIdx + 1)
                     val prefix = tagDirectives[handle]
-                        ?: yamlError("Tag handle '$handle' is not defined by a %TAG directive in this document")
+                        ?: yamlError("${C.ERR_TAG_HANDLE_UNDEFINED_PREFIX}$handle${C.ERR_TAG_HANDLE_UNDEFINED_SUFFIX}")
                     resolvedTag = prefix + suffix
                 } else {
                     resolvedTag = rawTagName
@@ -155,7 +155,7 @@ private fun GhostYamlFlatReader.requireValidTagTerminator(inFlow: Boolean) {
     val isFlowIndicator = currByte == C.COMMA_BYTE || currByte == C.LEFT_BRACE_BYTE ||
         currByte == C.RIGHT_BRACE_BYTE || currByte == C.LEFT_BRACKET_BYTE || currByte == C.RIGHT_BRACKET_BYTE
     if (inFlow && isFlowIndicator) return
-    yamlError("Invalid character immediately after tag")
+    yamlError(C.ERR_INVALID_CHAR_AFTER_TAG)
 }
 
 private fun GhostYamlFlatReader.matchDoubleExclamationTag(

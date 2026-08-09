@@ -162,16 +162,16 @@ internal fun KSType.isEnum(): Boolean {
 /**
  * Checks whether this type is [kotlin.ByteArray].
  * Fields of this type capture raw JSON bytes via the reader's
- * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
+ * `captureRawJsonBytes` extension.
  */
 internal fun KSType.isByteArray(): Boolean {
     return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY
 }
 
 /**
- * Checks whether this type is [com.ghost.serialization.types.RawJson].
+ * Checks whether this type is `RawJson`.
  * Fields of this type capture raw JSON bytes via the reader's
- * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
+ * `captureRawJsonBytes` extension.
  */
 internal fun KSType.isRawJson(): Boolean {
     return declaration.qualifiedName?.asString() == C.K_RAW_JSON
