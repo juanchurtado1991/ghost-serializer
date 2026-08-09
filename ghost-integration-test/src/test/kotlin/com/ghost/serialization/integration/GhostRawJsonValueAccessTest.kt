@@ -15,7 +15,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** Scalar access and typed re-parse for [com.ghost.serialization.types.RawJson]. */
+/** Scalar access and typed re-parse for `RawJson`. */
 class GhostRawJsonValueAccessTest {
 
     @Test

@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 
 /**
  * Direct unit tests for [GhostYamlFlatWriter], covering the same scenarios as
- * [com.ghost.serialization.writer.bytes.GhostFlatWriterEdgeCaseTest].
+ * `GhostFlatWriterEdgeCaseTest`.
  */
 class GhostYamlFlatWriterEdgeCaseTest {
 

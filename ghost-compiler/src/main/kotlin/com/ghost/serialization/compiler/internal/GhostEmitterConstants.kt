@@ -532,9 +532,23 @@ internal object GhostEmitterConstants {
 
     /** Table size used when the field-name set is empty (no dispatch needed). */
     const val PERFECT_HASH_EMPTY_TABLE_SIZE = 128
+    const val PERFECT_HASH_TABLE_SIZE_256 = 256
+    const val PERFECT_HASH_TABLE_SIZE_512 = 512
+    const val PERFECT_HASH_TABLE_SIZE_1024 = 1024
+    const val PERFECT_HASH_TABLE_SIZE_2048 = 2048
+    const val PERFECT_HASH_TABLE_SIZE_4096 = 4096
+    const val PERFECT_HASH_TABLE_SIZE_8192 = 8192
 
     /** Candidate dispatch table sizes tried by `PerfectHashFinder`, ascending. */
-    val PERFECT_HASH_TABLE_SIZES = intArrayOf(128, 256, 512, 1024, 2048, 4096, 8192)
+    val PERFECT_HASH_TABLE_SIZES = intArrayOf(
+        PERFECT_HASH_EMPTY_TABLE_SIZE,
+        PERFECT_HASH_TABLE_SIZE_256,
+        PERFECT_HASH_TABLE_SIZE_512,
+        PERFECT_HASH_TABLE_SIZE_1024,
+        PERFECT_HASH_TABLE_SIZE_2048,
+        PERFECT_HASH_TABLE_SIZE_4096,
+        PERFECT_HASH_TABLE_SIZE_8192,
+    )
     const val BYTE_MASK = 0xFF
     const val BIT_SHIFT_8 = 8
     const val BIT_SHIFT_16 = 16

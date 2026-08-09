@@ -16,8 +16,8 @@ import kotlin.test.assertFailsWith
 
 /**
  * Chaos and stress scenarios for YAML parser/writer.
- * Covers the same failure modes as [com.ghost.serialization.GhostChaosTest] and
- * [com.ghost.serialization.GhostStressAuditTest].
+ * Covers the same failure modes as `GhostChaosTest` and
+ * `GhostStressAuditTest`.
  */
 class GhostYamlChaosTest {
 

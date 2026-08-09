@@ -14,8 +14,8 @@ import kotlin.test.assertTrue
 
 /**
  * Malformed YAML, depth limits, duplicate keys, and strict traversal edge cases.
- * YAML counterpart to [com.ghost.serialization.GhostCrashProofTest] and
- * [com.ghost.serialization.GhostFlatReaderEdgeCaseTest].
+ * YAML counterpart to `GhostCrashProofTest` and
+ * `GhostFlatReaderEdgeCaseTest`.
  */
 class GhostYamlFlatReaderEdgeCaseTest {
 

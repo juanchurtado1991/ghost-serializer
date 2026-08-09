@@ -37,9 +37,9 @@ internal fun writerRoundTripMatches(case: YamlTestSuiteCase): Boolean {
 
 /**
  * Symmetric deep-equality between two Ghost-native decoded values (both sides from
- * [com.ghost.serialization.parser.yaml.GhostYamlFlatReader], not a JSON fixture) — deliberately
+ * `GhostYamlFlatReader`, not a JSON fixture) — deliberately
  * separate from [deepEquals] in `YamlTestSuiteJsonComparison.kt`, which asymmetrically excludes
- * [com.ghost.serialization.yaml.GhostYamlConstants.STR_TAG_KEY] from only the Ghost-decoded side
+ * `STR_TAG_KEY` from only the Ghost-decoded side
  * because a JSON fixture never has that synthetic key at all. Reusing that function here (both
  * sides Ghost-native) would wrongly treat a `_tag` entry that round-tripped correctly as a
  * mismatch, since it'd be filtered from [original] but not [reDecoded].

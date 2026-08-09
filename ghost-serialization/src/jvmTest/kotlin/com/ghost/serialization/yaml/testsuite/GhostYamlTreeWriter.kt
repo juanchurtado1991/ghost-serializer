@@ -6,7 +6,7 @@ import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 
 /**
  * Test-only bridge: encodes an `Any?` tree (`Map<String, Any?>`/`List<Any?>`/`String`/`Long`/
- * `Double`/`Boolean`/`null` — exactly what [com.ghost.serialization.parser.yaml.GhostYamlFlatReader]'s
+ * `Double`/`Boolean`/`null` — exactly what `GhostYamlFlatReader`'s
  * `readDocument()`/`readAllDocuments()` decode into) by driving [GhostYamlFlatWriter]'s low-level
  * `beginObject`/`name`/`value`/`endObject` API directly, bypassing the KSP-generated
  * per-class `GhostYamlSerializer<T>` path entirely. Lets the writer conformance harness reuse the

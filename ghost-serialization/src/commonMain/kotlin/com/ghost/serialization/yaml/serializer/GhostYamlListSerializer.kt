@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.ghost.serialization.yaml.serializer
 
 import com.ghost.serialization.contract.GhostSerializer
