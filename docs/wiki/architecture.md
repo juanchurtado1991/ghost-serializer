@@ -145,7 +145,7 @@ Short notes for maintainers; details live in KDoc on the linked APIs.
 - **`GhostHeuristics` / discovery** — `maxCollectionSize` (and related caps) differ by platform actual; iOS/Wasm `discoverRegistries()` is empty (manual `Ghost.addRegistry`).
 - **Triple JSON stacks** — structure/comma/number/escape/skip kernels are shared; `internalSelect` / `verifyKeyMatch` / quote scanners stay ByteArray- vs CharArray-specific (flat `internalSelect` still in-class).
 - **Hot-path HOF rule** — never pass nested `(onX: (T) -> Unit) -> Unit` into non-inline (or poorly inlined) helpers; walk with `getByte`/`position` or return sentinels (`GhostDoubleFormatter.FALLBACK_REQUIRED`).
-- **API footguns** — `deserialize(bytes)` is flat; `deserialize(bytes) { options }` is streaming; `ProtoStruct` is a `Map` typealias (no `getWktSerializer` entry).
+- **API notes** — `deserialize(bytes)` and `deserialize(bytes) { options }` both use the flat reader; streaming is explicit via source/`deserializeStreaming`. `ProtoStruct` remains a `Map` typealias (no `getWktSerializer` entry).
 - **Twitter fixtures** — JVM SSOT in `ghost-integration-test` (also used by `ghost-benchmark`); playground keeps `bench/model` (KMP Ghost+kotlinx) and `bench/moshi` (JVM Moshi) on purpose — do not pull Moshi into commonMain.
 - **`publish-version` SSOT** — `libs.versions.toml` feeds generated `GhostVersions` / `GhostPlaygroundVersions` and the PDF script; bump only the catalog.
 
