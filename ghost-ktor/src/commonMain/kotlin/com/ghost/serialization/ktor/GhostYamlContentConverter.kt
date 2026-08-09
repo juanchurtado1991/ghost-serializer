@@ -2,9 +2,7 @@ package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
@@ -15,7 +13,6 @@ import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
-import io.ktor.utils.io.readAvailable
 import kotlin.reflect.KClass
 
 /**
@@ -70,35 +67,12 @@ class GhostYamlContentConverter(
         }
 
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
-        var scratch = acquireScratchBuffer(BUFFER_SIZE)
-
-        try {
-            var offset = 0
-            while (true) {
-                if (offset == scratch.size) {
-                    val grown = acquireScratchBuffer(scratch.size * 2)
-                    scratch.copyInto(grown, 0, 0, offset)
-                    releaseScratchBuffer(scratch)
-                    scratch = grown
-                }
-
-                val read = content.readAvailable(scratch, offset, scratch.size - offset)
-                if (read == -1) break
-                offset += read
-            }
-
+        return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
             val bytesToParse = if (offset == scratch.size) scratch else scratch.copyOf(offset)
-
-            return ghostYamlInternalUseFlatReader(bytesToParse) { reader ->
+            ghostYamlInternalUseFlatReader(bytesToParse) { reader ->
                 configurer?.invoke(reader)
                 yamlSerializer.deserialize(reader)
             }
-        } finally {
-            releaseScratchBuffer(scratch)
         }
-    }
-
-    companion object {
-        private const val BUFFER_SIZE = 524288
     }
 }

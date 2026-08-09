@@ -1,7 +1,6 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.annotations.GhostSerialization
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.AbstractEncoder
@@ -19,6 +18,8 @@ private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
  *
  * Serializes through the pooled `GhostJsonFlatWriter`
  * to a [ByteArray], then wraps the bytes in a [DataBuffer] via [DataBufferFactory].
+ *
+ * [canEncode] accepts types that have a serializer registered with [Ghost].
  */
 class GhostReactiveEncoder : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
@@ -27,8 +28,7 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         val clazz = elementType.toClass()
         return super.canEncode(elementType, mimeType) &&
-                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||
-                        Ghost.getSerializer(clazz.kotlin) != null)
+                Ghost.getSerializer(clazz.kotlin) != null
     }
 
     override fun encode(
