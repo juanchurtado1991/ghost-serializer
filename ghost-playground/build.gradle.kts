@@ -9,6 +9,30 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val publishVersion = libs.versions.publish.version.get()
+val manualPdfFilename = "Ghost-Serialization-Manual-$publishVersion.pdf"
+
+val generatePlaygroundVersions by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/ghost/commonMain/kotlin")
+    inputs.property("publishVersion", publishVersion)
+    outputs.dir(outputDir)
+    doLast {
+        val dir = outputDir.get().asFile
+        dir.mkdirs()
+        dir.resolve("GhostPlaygroundVersions.kt").writeText(
+            """
+            |package com.ghost.playground
+            |
+            |internal object GhostPlaygroundVersions {
+            |    const val PUBLISH_VERSION = "$publishVersion"
+            |    const val MANUAL_PDF_FILENAME = "$manualPdfFilename"
+            |}
+            |
+            """.trimMargin()
+        )
+    }
+}
+
 kotlin {
     jvm {
         compilerOptions {
@@ -28,6 +52,7 @@ kotlin {
 
     sourceSets {
         commonMain {
+            kotlin.srcDir(generatePlaygroundVersions)
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
                 implementation(compose.runtime)
@@ -102,8 +127,8 @@ tasks.register("publishToDocs") {
             "wiki",
             "coverage",
             "GHOST_MANUAL_EN.md",
-            // Filename version must match libs.versions.publish-version (do not rename the PDF here).
-            "Ghost-Serialization-Manual-1.3.0.pdf",
+            // Filename version from libs.versions.publish-version (do not rename the PDF here).
+            manualPdfFilename,
             ".nojekyll",
         )
 

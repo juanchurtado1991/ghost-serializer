@@ -1,5 +1,7 @@
 package com.ghost.playground.ui
 
+import com.ghost.playground.GhostPlaygroundVersions
+
 /** Absolute GitHub URLs for documentation opened from the playground on Wasm and JVM targets. */
 object PlaygroundLinks {
     private const val REPO = "https://github.com/juanchurtado1991/ghost-serializer"
@@ -14,5 +16,5 @@ object PlaygroundLinks {
     const val WIKI_USAGE_PROTOBUF =
         "$DOCS_BLOB/wiki/usage-protobuf.md#2-supported-annotations-on-proto3-json-paths"
     const val MANUAL_MD = "$DOCS_BLOB/GHOST_MANUAL_EN.md"
-    const val MANUAL_PDF = "$DOCS_BLOB/Ghost-Serialization-Manual-1.3.0.pdf"
+    const val MANUAL_PDF = "$DOCS_BLOB/${GhostPlaygroundVersions.MANUAL_PDF_FILENAME}"
 }
