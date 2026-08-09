@@ -84,6 +84,9 @@ expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
 /**
  * Service loader or reflection based module discovery mechanism.
+ *
+ * Debt: iOS/Wasm actuals return empty — register modules manually via [Ghost.addRegistry].
+ * JVM/Android use ServiceLoader/reflection; not unified across targets yet.
  */
 expect fun discoverRegistries(): Iterable<GhostRegistry>
 
@@ -754,6 +757,9 @@ object Ghost {
     /**
      * Deserializes the JSON [bytes] array into an instance of type [T].
      *
+     * Uses the flat reader ([GhostJsonFlatReader]). The options overload
+     * `deserialize(bytes) { … }` uses the streaming reader instead — not unified.
+     *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException
@@ -814,6 +820,9 @@ object Ghost {
 
     /**
      * Advanced: Deserializes the JSON [bytes] array using custom parser settings.
+     *
+     * Debt: uses the streaming [GhostJsonReader] path; plain [deserialize] `(bytes)`
+     * uses the flat reader. Prefer the no-options overload for the hot path.
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @param options A configuration lambda to set reader properties.

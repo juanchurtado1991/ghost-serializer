@@ -137,4 +137,14 @@ Absolute “N× faster / leaner” numbers depend on the fixture. On the Twitter
 
 ---
 
+## 7. Known debts (not unified yet)
+
+Short notes for maintainers; details live in KDoc on the linked APIs.
+
+- **`Ghost.deserialize(bytes)` vs options overload** — plain bytes uses the flat reader; `deserialize(bytes) { options }` uses the streaming reader.
+- **`GhostHeuristics` / discovery** — `maxCollectionSize` (and related caps) differ by platform actual; iOS/Wasm `discoverRegistries()` is empty (manual `Ghost.addRegistry`).
+- **Gradle plugin `DEFAULT_VERSION`** — must stay in sync with `libs.versions.toml` `publish-version`.
+
+---
+
 ← [Back to README](../../README.md) · [Quick Start](quick-start.md) · [Advanced Features](advanced-features.md) · [Benchmarks](benchmarks.md)

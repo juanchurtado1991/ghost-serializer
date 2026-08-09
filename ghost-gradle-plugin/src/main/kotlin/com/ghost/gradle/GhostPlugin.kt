@@ -150,6 +150,7 @@ class GhostPlugin : Plugin<Project> {
 
     companion object {
         private const val EXTENSION_NAME = "ghost"
+        // Must match gradle/libs.versions.toml `publish-version` (and playground PDF pin).
         private const val DEFAULT_VERSION = "1.3.0"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
