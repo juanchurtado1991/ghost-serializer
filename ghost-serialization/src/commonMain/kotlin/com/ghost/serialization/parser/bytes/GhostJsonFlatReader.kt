@@ -151,7 +151,7 @@ open class GhostJsonFlatReader(
      */
     fun skipWhitespace() {
         val data = rawData
-        val lim = limit
+        val byteLimit = limit
         var cursor = position
         while (true) {
             // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
@@ -159,14 +159,14 @@ open class GhostJsonFlatReader(
             // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
             // Gated by ghostUseSwarScans (off on Wasm / Safari — see issue #16).
             if (ghostUseSwarScans) {
-                while (cursor + C.LONG_BYTES <= lim &&
+                while (cursor + C.LONG_BYTES <= byteLimit &&
                     ghostReadLong8(data, cursor) == C.SPACE_RUN_LONG
                 ) {
                     cursor += C.LONG_BYTES
                 }
             }
-            if (cursor >= lim) {
-                position = lim
+            if (cursor >= byteLimit) {
+                position = byteLimit
                 nextTokenByte = C.MATCH_END
                 return
             }
@@ -626,9 +626,9 @@ open class GhostJsonFlatReader(
      */
     private fun matchCoerceBooleanBytes(): Boolean {
         val localData = rawData
-        val lim = limit
+        val byteLimit = limit
         val contentStart = position + 1 // skip opening
-        val end = findClosingQuoteImpl(contentStart, lim) {
+        val end = findClosingQuoteImpl(contentStart, byteLimit) {
             localData[it].toInt() and C.BYTE_MASK
         }
         if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)

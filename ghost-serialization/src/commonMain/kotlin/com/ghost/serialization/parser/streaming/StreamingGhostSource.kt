@@ -105,10 +105,10 @@ class StreamingGhostSource(
         if (absoluteIndex <= discarded || absoluteIndex == Int.MAX_VALUE) return
 
         var retainFrom = (absoluteIndex - GhostJsonConstants.STREAMING_BUFFER_SIZE).coerceAtLeast(0)
-        var i = 0
-        while (i < pinCount) {
-            retainFrom = minOf(retainFrom, pinStack[i])
-            i++
+        var pinIndex = 0
+        while (pinIndex < pinCount) {
+            retainFrom = minOf(retainFrom, pinStack[pinIndex])
+            pinIndex++
         }
         val aligned = (retainFrom / GhostJsonConstants.STREAMING_BUFFER_SIZE) *
                 GhostJsonConstants.STREAMING_BUFFER_SIZE
@@ -380,14 +380,15 @@ class StreamingGhostSource(
                 // Off on Wasm (ghostUseSwarScans) — see issue #16.
                 if (ghostUseSwarScans) {
                     while (localPosition + longBytes <= segmentLimit) {
-                        val w = ghostReadLong8(bufferBytes, localPosition - base)
-                        val hasQuote = swarHasZeroByte(w xor swarQuotes)
-                        val hasBackslash = swarHasZeroByte(w xor swarBackslashes)
-                        val hasControl = (w - spaceRun) and w.inv() and swarHighs
+                        val packedWindow = ghostReadLong8(bufferBytes, localPosition - base)
+                        val hasQuote = swarHasZeroByte(packedWindow xor swarQuotes)
+                        val hasBackslash = swarHasZeroByte(packedWindow xor swarBackslashes)
+                        val hasControl =
+                            (packedWindow - spaceRun) and packedWindow.inv() and swarHighs
                         if ((hasQuote or hasBackslash or hasControl) != localResultNone) {
                             break
                         }
-                        if ((w and swarHighs) != localResultNone) {
+                        if ((packedWindow and swarHighs) != localResultNone) {
                             isPureAscii = false
                         }
                         localPosition += longBytes
@@ -437,10 +438,11 @@ class StreamingGhostSource(
         }
         var accumulatedHash = GhostJsonConstants.SCAN_HASH_NONE
         val hashShift = GhostJsonConstants.HASH_SHIFT
-        var i = 0
-        while (i < length) {
-            accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + get(start + i)
-            i++
+        var byteOffset = 0
+        while (byteOffset < length) {
+            accumulatedHash =
+                (accumulatedHash shl hashShift) - accumulatedHash + get(start + byteOffset)
+            byteOffset++
         }
         return accumulatedHash
     }

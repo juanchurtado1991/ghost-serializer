@@ -57,13 +57,12 @@ class WasmPlatformActualsTest {
         // Issue #16: Long/SWAR wide scans lose on JavaScriptCore; Wasm uses byte loops.
         assertFalse(ghostUseSwarScans)
 
-        val payload = """hello world""".encodeToByteArray()
-        // Closing quote at end — scan from 0 should find length of content before '"'.
-        val withQuotes = ("\"" + "hello world" + "\"").encodeToByteArray()
-        val result = scanStringSwarNoHash(withQuotes, 1, withQuotes.size)
-        assertTrue(result != GhostJsonConstants.MATCH_END.toLong())
-        val length = ((result and GhostJsonConstants.SCAN_LENGTH_MASK) ushr
+        val stringContent = "hello world".encodeToByteArray()
+        val quotedJsonString = ("\"" + "hello world" + "\"").encodeToByteArray()
+        val scanResult = scanStringSwarNoHash(quotedJsonString, 1, quotedJsonString.size)
+        assertTrue(scanResult != GhostJsonConstants.MATCH_END.toLong())
+        val scannedLength = ((scanResult and GhostJsonConstants.SCAN_LENGTH_MASK) ushr
             GhostJsonConstants.SCAN_LENGTH_SHIFT).toInt()
-        assertEquals(payload.size, length)
+        assertEquals(stringContent.size, scannedLength)
     }
 }
