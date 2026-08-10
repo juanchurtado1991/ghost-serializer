@@ -94,6 +94,7 @@ Need non-String map keys?
 
 Need `Set<T>`?
   → Supported (`Set` wire format is a JSON array). Prefer `Set` over `MutableSet` as the declared field type.
+    Top-level `Set<T>` HTTP bodies unwrap in Retrofit, Spring, and Ktor when the element serializer is registered.
 
 Migrating from Gson JsonElement?
   → RawJson — see §7 in advanced-features.md

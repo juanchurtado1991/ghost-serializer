@@ -156,9 +156,9 @@ Proto3-JSON-flavored counterparts to the plain Ghost adapters, for APIs backed b
 
 | Framework | Type | Notes |
 |:---|:---|:---|
-| Retrofit | `GhostProtoConverterFactory` | `Retrofit.Builder().addConverterFactory(GhostProtoConverterFactory.create())`. Unwraps direct types and `List<T>`/`Map<String, V>` bodies when element/value serializers are registered. |
-| Ktor | `Configuration.ghostProto()`, `bodyGhostProto<T>()`, `respondGhostProto<T>()` | `install(ContentNegotiation) { ghostProto() }`, or bypass content negotiation with the `bodyGhostProto`/`respondGhostProto` extensions. Resolves `List<T>`/`Map<String, V>` via `Ghost.getSerializer(KType)` when `TypeInfo.kotlinType` is available. |
-| Spring Boot | *(none needed)* | `GhostHttpMessageConverter` auto-detects `@GhostProtoSerialization` per-request via the resolved serializer's `isProto` flag — plain and proto3 DTOs coexist on the same globally-registered converter with no extra configuration. |
+| Retrofit | `GhostProtoConverterFactory` | `Retrofit.Builder().addConverterFactory(GhostProtoConverterFactory.create())`. Unwraps direct types and `List<T>`/`Set<T>`/`Map<String, V>` bodies when element/value serializers are registered. |
+| Ktor | `Configuration.ghostProto()`, `bodyGhostProto<T>()`, `respondGhostProto<T>()` | `install(ContentNegotiation) { ghostProto() }`, or bypass content negotiation with the `bodyGhostProto`/`respondGhostProto` extensions. Resolves `List`/`Set`/`Map` via `Ghost.getSerializer(KType)` when `TypeInfo.kotlinType` is available. |
+| Spring Boot | *(none needed)* | `GhostHttpMessageConverter` auto-detects `@GhostProtoSerialization` per-request via the resolved serializer's `isProto` flag — plain and proto3 DTOs coexist on the same globally-registered converter. Top-level `List`/`Set`/`Map` bodies unwrap like Retrofit. |
 
 All three read through `GhostProtoJsonFlatReader` (quoted-or-bare int64/uint64, lenient int32, quoted `NaN`/`Infinity`) instead of the plain flat reader. Encoding is unchanged in every case — proto3 wire correctness on write is generated into the `@GhostProtoSerialization` serializer's own `serialize()` method, not a separate writer, so there's nothing framework-specific needed there.
 

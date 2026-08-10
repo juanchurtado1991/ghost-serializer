@@ -116,7 +116,7 @@ call.respondGhost(user)
 ---
 
 ### `ghost-retrofit` — Retrofit Converter
-Incremental `Converter.Factory` for Retrofit 2.11+. Place it before Gson, Moshi, or KotlinX so registered Ghost models use the generated reader and every other type reaches the existing converter. Supports `GhostConverterFactory` (JSON), `GhostYamlConverterFactory` (YAML), and `GhostProtoConverterFactory` (proto3 JSON).
+Incremental `Converter.Factory` for Retrofit 2.11+. Place it before Gson, Moshi, or KotlinX so registered Ghost models use the generated reader and every other type reaches the existing converter. Supports `GhostConverterFactory` (JSON), `GhostYamlConverterFactory` (YAML), and `GhostProtoConverterFactory` (proto3 JSON). Unwraps top-level `List<T>` / `Set<T>` / `Map<String, V>` when element serializers are registered.
 
 **Targets:** JVM / Android
 
@@ -137,7 +137,7 @@ val retrofit = Retrofit.Builder()
 ---
 
 ### `ghost-spring-boot-starter` — Spring Boot Auto-Configuration
-Adds Ghost ahead of the standard Spring Boot 3.4+ MVC and WebFlux codecs. JSON, YAML (`application/yaml`), and Proto3 JSON converters are registered automatically. DTOs backed by `@GhostSerialization` or `@GhostProtoSerialization` use Ghost; all other controller types continue through Jackson — no extra configuration needed.
+Adds Ghost ahead of the standard Spring Boot 3.4+ MVC and WebFlux codecs. JSON, YAML (`application/yaml`), and Proto3 JSON converters are registered automatically. DTOs backed by `@GhostSerialization` or `@GhostProtoSerialization` use Ghost; all other controller types continue through Jackson — no extra configuration needed. Top-level `List` / `Set` / `Map` bodies unwrap when the element/value serializer is registered (parity with Retrofit/Ktor).
 
 **Targets:** JVM
 
