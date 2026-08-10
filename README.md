@@ -88,7 +88,7 @@ Step-by-step → **[Quick Start](docs/wiki/quick-start.md)**
 
 Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), YAML (`application/yaml`), Proto3 JSON mapping.
 
-> **Wasm / Safari:** `ghostUseSwarScans` defaults **on** on all targets (including `wasmJs`). Safari Speed Test rankings need a Mac/WebKit re-measure — see [docs/SAFARI_WASM_MAC_HANDOFF.md](docs/SAFARI_WASM_MAC_HANDOFF.md) and [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16).
+> **Wasm / Safari:** SWAR wide scans are always on (all targets including `wasmJs`). Safari Speed Test on the **byte** channel is competitive (~2× kotlinx.serialization on macOS/Safari 26); the old Safari last-place ranking was a string-channel mis-measure ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)).
 
 Details → **[Modules](docs/wiki/modules.md)**
 

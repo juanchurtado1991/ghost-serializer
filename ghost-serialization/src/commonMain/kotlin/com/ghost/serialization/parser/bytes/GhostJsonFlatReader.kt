@@ -157,13 +157,10 @@ open class GhostJsonFlatReader(
             // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
             // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
             // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
-            // Gated by ghostUseSwarScans (off on Wasm / Safari — see issue #16).
-            if (ghostUseSwarScans) {
-                while (cursor + C.LONG_BYTES <= byteLimit &&
-                    ghostReadLong8(data, cursor) == C.SPACE_RUN_LONG
-                ) {
-                    cursor += C.LONG_BYTES
-                }
+            while (cursor + C.LONG_BYTES <= byteLimit &&
+                ghostReadLong8(data, cursor) == C.SPACE_RUN_LONG
+            ) {
+                cursor += C.LONG_BYTES
             }
             if (cursor >= byteLimit) {
                 position = byteLimit

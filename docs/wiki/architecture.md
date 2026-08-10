@@ -67,7 +67,7 @@ Generated JSON almost always lists object fields in declaration order. Each read
 2. On a hit, skip closing-quote scan + hash + verify entirely.
 3. On a miss, fall through to the perfect-hash dispatch (correctness unchanged).
 
-Wide compares use `ghostReadLong8` (8 bytes at a time) on byte/streaming paths when `ghostUseSwarScans` is true (default on **all** targets including Wasm). The string channel compares `CharArray` candidates without a portable wide-load API and does not use this flag. Safari/JavaScriptCore ranking for the Wasm byte path is tracked in [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16) — Mac re-measure instructions in [SAFARI_WASM_MAC_HANDOFF.md](../SAFARI_WASM_MAC_HANDOFF.md).
+Wide compares use `ghostReadLong8` (8 bytes at a time) on byte/streaming paths. The string channel compares `CharArray` candidates without a portable wide-load API. Safari/JavaScriptCore on the Wasm **byte** path is competitive with SWAR ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)).
 
 > [!TIP]
 > **Pro tip:** align DTO property order with the JSON key order from your producer so prediction hits on every field. Correctness does not depend on order; throughput does. See [Advanced Features § Align DTO property order](advanced-features.md#align-dto-property-order-with-json-pro-tip).

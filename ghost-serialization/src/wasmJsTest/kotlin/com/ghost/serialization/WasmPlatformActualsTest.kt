@@ -3,7 +3,6 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.createByteArraySource
@@ -12,6 +11,7 @@ import com.ghost.serialization.util.isJvm
 import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -52,10 +52,7 @@ class WasmPlatformActualsTest {
     }
 
     @Test
-    fun wasmEnablesSwarScansByDefault() {
-        // SWAR on by default everywhere; Safari must be re-measured on Mac (#16).
-        assertTrue(ghostUseSwarScans)
-
+    fun wasmSwarStringScanWorks() {
         val stringContent = "hello world".encodeToByteArray()
         val quotedJsonString = ("\"" + "hello world" + "\"").encodeToByteArray()
         val scanResult = scanStringSwarNoHash(quotedJsonString, 1, quotedJsonString.size)

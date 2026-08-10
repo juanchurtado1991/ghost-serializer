@@ -17,8 +17,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_56
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 
 
-internal actual val ghostUseSwarScans: Boolean = true
-
 // Scalar assembly for Kotlin/Native (iOS). Byte order is irrelevant for the symmetric
 // comparisons this feeds.
 internal actual fun ghostReadLong8(data: ByteArray, index: Int): Long =

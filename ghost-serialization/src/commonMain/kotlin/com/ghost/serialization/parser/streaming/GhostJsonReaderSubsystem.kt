@@ -6,7 +6,6 @@ package com.ghost.serialization.parser.streaming
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.common.GhostJsonConstants
@@ -452,13 +451,11 @@ private fun GhostJsonReader.internalSelect(
                     false
                 } else {
                     var matchedOffset = 0
-                    if (ghostUseSwarScans) {
-                        while (matchedOffset + C.LONG_BYTES <= candidateLength &&
-                            ghostReadLong8(localData, start + matchedOffset) ==
-                            ghostReadLong8(candidate, matchedOffset)
-                        ) {
-                            matchedOffset += C.LONG_BYTES
-                        }
+                    while (matchedOffset + C.LONG_BYTES <= candidateLength &&
+                        ghostReadLong8(localData, start + matchedOffset) ==
+                        ghostReadLong8(candidate, matchedOffset)
+                    ) {
+                        matchedOffset += C.LONG_BYTES
                     }
                     while (matchedOffset < candidateLength &&
                         localData[start + matchedOffset] == candidate[matchedOffset]
