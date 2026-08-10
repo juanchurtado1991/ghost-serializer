@@ -38,7 +38,7 @@ internal fun GhostJsonFlatReader.internalSelect(
     }
     val start = position + 1
     val localData = rawData
-    val lim = limit
+    val byteLimit = limit
 
     // Optimistic in-order field match: most objects list fields in declaration order,
     // so compare the key directly against the predicted candidate in a single pass. On a
@@ -47,32 +47,37 @@ internal fun GhostJsonFlatReader.internalSelect(
     val rawBytes = options.rawBytes
     if (predicted < rawBytes.size) {
         val candidate = rawBytes[predicted]
-        val candLen = candidate.size
-        val keyEnd = start + candLen
-        if (candLen > 0 && keyEnd < lim &&
+        val candidateLength = candidate.size
+        val keyEnd = start + candidateLength
+        if (candidateLength > 0 && keyEnd < byteLimit &&
             (localData[keyEnd].toInt() and C.BYTE_MASK) == C.QUOTE_INT
         ) {
-            var i = 0
+            var matchedOffset = 0
             // Compare LONG_BYTES at a time for longer field names when SWAR is enabled.
             // Comparing two ghostReadLong8 results is byte-order independent (equality is
             // symmetric). Wasm skips the wide compare (ghostUseSwarScans=false).
             if (ghostUseSwarScans) {
-                while (i + C.LONG_BYTES <= candLen &&
-                    ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
+                while (matchedOffset + C.LONG_BYTES <= candidateLength &&
+                    ghostReadLong8(localData, start + matchedOffset) ==
+                    ghostReadLong8(candidate, matchedOffset)
                 ) {
-                    i += C.LONG_BYTES
+                    matchedOffset += C.LONG_BYTES
                 }
             }
-            while (i < candLen && localData[start + i] == candidate[i]) {
-                i++
+            while (matchedOffset < candidateLength &&
+                localData[start + matchedOffset] == candidate[matchedOffset]
+            ) {
+                matchedOffset++
             }
-            if (i == candLen) {
+            if (matchedOffset == candidateLength) {
                 predictedFieldIndex = predicted + 1
                 val newPos = keyEnd + 1
                 position = newPos
                 nextTokenByte = C.RESET_TOKEN_BYTE
                 if (consumeSeparator) {
-                    if (newPos < lim && (localData[newPos].toInt() and C.BYTE_MASK) == C.COLON_INT) {
+                    if (newPos < byteLimit &&
+                        (localData[newPos].toInt() and C.BYTE_MASK) == C.COLON_INT
+                    ) {
                         position = newPos + 1
                     } else {
                         consumeKeySeparator()
@@ -83,7 +88,7 @@ internal fun GhostJsonFlatReader.internalSelect(
         }
     }
 
-    val end = findClosingQuoteImpl(start, lim) {
+    val end = findClosingQuoteImpl(start, byteLimit) {
         localData[it].toInt() and C.BYTE_MASK
     }
 
@@ -168,18 +173,18 @@ private inline fun GhostJsonFlatReader.verifyKeyMatch(
     // Length is already guaranteed equal by the dispatch table (same hash slot).
     if (expected.size == length) {
         val localData = rawData
-        var i = 0
+        var matchedOffset = 0
         // Unrolled x4 for typical ASCII field name lengths (4–20 chars).
-        while (i + 3 < length) {
-            if (localData[start + i] != expected[i]) return false
-            if (localData[start + i + 1] != expected[i + 1]) return false
-            if (localData[start + i + 2] != expected[i + 2]) return false
-            if (localData[start + i + 3] != expected[i + 3]) return false
-            i += 4
+        while (matchedOffset + 3 < length) {
+            if (localData[start + matchedOffset] != expected[matchedOffset]) return false
+            if (localData[start + matchedOffset + 1] != expected[matchedOffset + 1]) return false
+            if (localData[start + matchedOffset + 2] != expected[matchedOffset + 2]) return false
+            if (localData[start + matchedOffset + 3] != expected[matchedOffset + 3]) return false
+            matchedOffset += 4
         }
-        while (i < length) {
-            if (localData[start + i] != expected[i]) return false
-            i++
+        while (matchedOffset < length) {
+            if (localData[start + matchedOffset] != expected[matchedOffset]) return false
+            matchedOffset++
         }
         val endPos = start + length
         val newPos = endPos + 1

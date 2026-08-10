@@ -270,15 +270,16 @@ internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long
     // Skipped on Wasm (ghostUseSwarScans=false) — i64 pack+SWAR loses on JavaScriptCore (#16).
     if (ghostUseSwarScans) {
         while (cursor + LONG_BYTES <= limit) {
-            val w = ghostReadLong8(data, cursor)
-            val hasQuote = swarHasZeroByte(w xor SWAR_QUOTES)
-            val hasBackslash = swarHasZeroByte(w xor SWAR_BACKSLASHES)
+            val packedWindow = ghostReadLong8(data, cursor)
+            val hasQuote = swarHasZeroByte(packedWindow xor SWAR_QUOTES)
+            val hasBackslash = swarHasZeroByte(packedWindow xor SWAR_BACKSLASHES)
             // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
-            val hasControl = (w - SPACE_RUN_LONG) and w.inv() and SWAR_HIGHS
+            val hasControl =
+                (packedWindow - SPACE_RUN_LONG) and packedWindow.inv() and SWAR_HIGHS
             if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {
                 break
             }
-            if ((w and SWAR_HIGHS) != RESULT_NONE) {
+            if ((packedWindow and SWAR_HIGHS) != RESULT_NONE) {
                 isPureAscii = false
             }
             cursor += LONG_BYTES
@@ -311,11 +312,12 @@ internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long
  */
 internal fun rollingHashImpl(data: ByteArray, start: Int, length: Int): Int {
     var accumulatedHash = SCAN_HASH_NONE
-    var i = 0
-    while (i < length) {
+    var byteOffset = 0
+    while (byteOffset < length) {
         accumulatedHash =
-            (accumulatedHash shl HASH_SHIFT) - accumulatedHash + (data[start + i].toInt() and BYTE_MASK)
-        i++
+            (accumulatedHash shl HASH_SHIFT) - accumulatedHash +
+                (data[start + byteOffset].toInt() and BYTE_MASK)
+        byteOffset++
     }
     return accumulatedHash
 }

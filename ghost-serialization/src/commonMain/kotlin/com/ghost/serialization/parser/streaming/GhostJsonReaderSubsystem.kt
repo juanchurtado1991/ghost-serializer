@@ -363,12 +363,12 @@ fun GhostJsonReader.nextBooleanOrNull(): Boolean? =
  * comparison to [matchCoerceBooleanBytes] in GhostParserUtils — single source of truth.
  */
 private fun GhostJsonReader.matchCoerceBooleanBytes(): Boolean {
-    val lim = limit
+    val byteLimit = limit
     val contentStart = position + 1 // skip opening '"'
     val end = if (isStreaming) {
-        source.findClosingQuote(contentStart, lim)
+        source.findClosingQuote(contentStart, byteLimit)
     } else {
-        findClosingQuoteImpl(contentStart, lim) { getByte(it) }
+        findClosingQuoteImpl(contentStart, byteLimit) { getByte(it) }
     }
     if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)
     val length = end - contentStart
@@ -435,7 +435,7 @@ private fun GhostJsonReader.internalSelect(
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
-    val lim = limit
+    val byteLimit = limit
 
     // Optimistic in-order field match: most objects list fields in declaration order,
     // so compare the key directly against the predicted candidate in a single pass.
@@ -443,26 +443,29 @@ private fun GhostJsonReader.internalSelect(
     val rawBytes = options.rawBytes
     if (predicted < rawBytes.size) {
         val candidate = rawBytes[predicted]
-        val candLen = candidate.size
-        val keyEnd = start + candLen
-        if (candLen > 0 && keyEnd < lim) {
+        val candidateLength = candidate.size
+        val keyEnd = start + candidateLength
+        if (candidateLength > 0 && keyEnd < byteLimit) {
             val matched = if (!isStreaming) {
                 val localData = rawData
                 if ((localData[keyEnd].toInt() and C.BYTE_MASK) != C.QUOTE_INT) {
                     false
                 } else {
-                    var i = 0
+                    var matchedOffset = 0
                     if (ghostUseSwarScans) {
-                        while (i + C.LONG_BYTES <= candLen &&
-                            ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
+                        while (matchedOffset + C.LONG_BYTES <= candidateLength &&
+                            ghostReadLong8(localData, start + matchedOffset) ==
+                            ghostReadLong8(candidate, matchedOffset)
                         ) {
-                            i += C.LONG_BYTES
+                            matchedOffset += C.LONG_BYTES
                         }
                     }
-                    while (i < candLen && localData[start + i] == candidate[i]) {
-                        i++
+                    while (matchedOffset < candidateLength &&
+                        localData[start + matchedOffset] == candidate[matchedOffset]
+                    ) {
+                        matchedOffset++
                     }
-                    i == candLen
+                    matchedOffset == candidateLength
                 }
             } else {
                 // The stream's limit is unknown (Int.MAX_VALUE), so the bounds check above
@@ -470,11 +473,14 @@ private fun GhostJsonReader.internalSelect(
                 if (source.byteOrEof(keyEnd) != C.QUOTE_INT) {
                     false
                 } else {
-                    var i = 0
-                    while (i < candLen && getByte(start + i) == (candidate[i].toInt() and C.BYTE_MASK)) {
-                        i++
+                    var matchedOffset = 0
+                    while (matchedOffset < candidateLength &&
+                        getByte(start + matchedOffset) ==
+                        (candidate[matchedOffset].toInt() and C.BYTE_MASK)
+                    ) {
+                        matchedOffset++
                     }
-                    i == candLen
+                    matchedOffset == candidateLength
                 }
             }
             if (matched) {
@@ -484,7 +490,7 @@ private fun GhostJsonReader.internalSelect(
                 nextTokenByte = C.RESET_TOKEN_BYTE
                 if (consumeSeparator) {
                     val separator = when {
-                        newPos >= lim -> C.MATCH_END
+                        newPos >= byteLimit -> C.MATCH_END
                         isStreaming -> source.byteOrEof(newPos)
                         else -> getByte(newPos)
                     }
@@ -500,10 +506,10 @@ private fun GhostJsonReader.internalSelect(
     }
 
     val end = if (isStreaming) {
-        source.findClosingQuote(start, lim)
+        source.findClosingQuote(start, byteLimit)
     } else {
         val localData = rawData
-        findClosingQuoteImpl(start, lim) {
+        findClosingQuoteImpl(start, byteLimit) {
             localData[it].toInt() and C.BYTE_MASK
         }
     }
@@ -594,32 +600,32 @@ private fun GhostJsonReader.verifyKeyMatch(
     consumeSeparator: Boolean
 ): Boolean {
     if (expected.size == length) {
-        var i = 0
+        var matchedOffset = 0
         if (!isStreaming) {
             val localData = rawData
-            while (i + 3 < length) {
-                if (localData[start + i] != expected[i]) return false
-                if (localData[start + i + 1] != expected[i + 1]) return false
-                if (localData[start + i + 2] != expected[i + 2]) return false
-                if (localData[start + i + 3] != expected[i + 3]) return false
-                i += 4
+            while (matchedOffset + 3 < length) {
+                if (localData[start + matchedOffset] != expected[matchedOffset]) return false
+                if (localData[start + matchedOffset + 1] != expected[matchedOffset + 1]) return false
+                if (localData[start + matchedOffset + 2] != expected[matchedOffset + 2]) return false
+                if (localData[start + matchedOffset + 3] != expected[matchedOffset + 3]) return false
+                matchedOffset += 4
             }
-            while (i < length) {
-                if (localData[start + i] != expected[i]) return false
-                i++
+            while (matchedOffset < length) {
+                if (localData[start + matchedOffset] != expected[matchedOffset]) return false
+                matchedOffset++
             }
         } else {
             val localSource = source
-            while (i + 3 < length) {
-                if (localSource[start + i].toByte() != expected[i]) return false
-                if (localSource[start + i + 1].toByte() != expected[i + 1]) return false
-                if (localSource[start + i + 2].toByte() != expected[i + 2]) return false
-                if (localSource[start + i + 3].toByte() != expected[i + 3]) return false
-                i += 4
+            while (matchedOffset + 3 < length) {
+                if (localSource[start + matchedOffset].toByte() != expected[matchedOffset]) return false
+                if (localSource[start + matchedOffset + 1].toByte() != expected[matchedOffset + 1]) return false
+                if (localSource[start + matchedOffset + 2].toByte() != expected[matchedOffset + 2]) return false
+                if (localSource[start + matchedOffset + 3].toByte() != expected[matchedOffset + 3]) return false
+                matchedOffset += 4
             }
-            while (i < length) {
-                if (localSource[start + i].toByte() != expected[i]) return false
-                i++
+            while (matchedOffset < length) {
+                if (localSource[start + matchedOffset].toByte() != expected[matchedOffset]) return false
+                matchedOffset++
             }
         }
         val endPos = start + length
@@ -627,8 +633,8 @@ private fun GhostJsonReader.verifyKeyMatch(
         position = newPos
         nextTokenByte = C.RESET_TOKEN_BYTE
         if (consumeSeparator) {
-            val lim = limit
-            if (newPos < lim) {
+            val byteLimit = limit
+            if (newPos < byteLimit) {
                 val colonToken = getByte(newPos)
                 if (colonToken == C.COLON_INT) {
                     position = newPos + 1

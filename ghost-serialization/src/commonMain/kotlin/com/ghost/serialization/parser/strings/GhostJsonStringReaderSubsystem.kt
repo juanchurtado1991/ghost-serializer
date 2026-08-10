@@ -294,9 +294,9 @@ internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, limit: In
 
 private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
     val chars = rawChars
-    val lim = limit
+    val charLimit = limit
     val contentStart = position + 1
-    val end = findClosingQuote(contentStart, lim)
+    val end = findClosingQuote(contentStart, charLimit)
     if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)
     val length = end - contentStart
     position = end + 1
@@ -330,7 +330,7 @@ private fun GhostJsonStringReader.internalSelect(
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
-    val lim = limit
+    val charLimit = limit
     val chars = rawChars
 
     // Optimistic in-order field match: compare the key against the predicted candidate in one
@@ -339,28 +339,30 @@ private fun GhostJsonStringReader.internalSelect(
     val candidates = options.rawChars
     if (predicted < candidates.size) {
         val candidate = candidates[predicted]
-        val candLen = candidate.size
-        val keyEnd = start + candLen
-        if (candLen > 0 && keyEnd < lim && chars[keyEnd].code == C.QUOTE_INT) {
-            var i = 0
-            while (i + 3 < candLen &&
-                chars[start + i] == candidate[i] &&
-                chars[start + i + 1] == candidate[i + 1] &&
-                chars[start + i + 2] == candidate[i + 2] &&
-                chars[start + i + 3] == candidate[i + 3]
+        val candidateLength = candidate.size
+        val keyEnd = start + candidateLength
+        if (candidateLength > 0 && keyEnd < charLimit && chars[keyEnd].code == C.QUOTE_INT) {
+            var matchedOffset = 0
+            while (matchedOffset + 3 < candidateLength &&
+                chars[start + matchedOffset] == candidate[matchedOffset] &&
+                chars[start + matchedOffset + 1] == candidate[matchedOffset + 1] &&
+                chars[start + matchedOffset + 2] == candidate[matchedOffset + 2] &&
+                chars[start + matchedOffset + 3] == candidate[matchedOffset + 3]
             ) {
-                i += 4
+                matchedOffset += 4
             }
-            while (i < candLen && chars[start + i] == candidate[i]) {
-                i++
+            while (matchedOffset < candidateLength &&
+                chars[start + matchedOffset] == candidate[matchedOffset]
+            ) {
+                matchedOffset++
             }
-            if (i == candLen) {
+            if (matchedOffset == candidateLength) {
                 predictedFieldIndex = predicted + 1
                 val newPos = keyEnd + 1
                 position = newPos
                 nextTokenByte = C.RESET_TOKEN_BYTE
                 if (consumeSeparator) {
-                    if (newPos < lim && chars[newPos].code == C.COLON_INT) {
+                    if (newPos < charLimit && chars[newPos].code == C.COLON_INT) {
                         position = newPos + 1
                     } else {
                         consumeKeySeparator()
@@ -371,7 +373,7 @@ private fun GhostJsonStringReader.internalSelect(
         }
     }
 
-    val end = findClosingQuote(start, lim)
+    val end = findClosingQuote(start, charLimit)
 
     if (end == -1) {
         throwUnterminatedStringError()
