@@ -88,7 +88,7 @@ Step-by-step → **[Quick Start](docs/wiki/quick-start.md)**
 
 Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), YAML (`application/yaml`), Proto3 JSON mapping.
 
-> **Wasm Speed Test caveat:** playground decode numbers match Chrome (V8). In **Safari (WebKit)** on Apple Silicon, Ghost currently trails kotlinx.serialization / Moshi on the same fixture — tracked in [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16). JVM / Android / iOS benchmarks are unaffected.
+> **Wasm / Safari:** Wasm builds disable Long/SWAR wide scans (`ghostUseSwarScans=false`) and use scalar byte loops — the previous Safari (WebKit) decode lag vs Chrome is addressed in [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16). JVM / Android / iOS keep SWAR.
 
 Details → **[Modules](docs/wiki/modules.md)**
 

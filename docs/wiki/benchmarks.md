@@ -6,7 +6,7 @@
 >
 > **`ghost.textChannel`**: default **true** per model. String benchmarks use the generated `GhostJsonStringReader` / string writer; byte and streaming benchmarks use their dedicated readers. Byte-only applications can opt out with `@GhostSerialization(textChannel = false)` or the module flag `ghost.textChannel=false` to reduce generated code size. See [Native String Reader](advanced-features.md#5-native-string-reader-textchannel).
 >
-> **Wasm / playground:** published Speed Test rankings reflect **Chrome (V8)**. Safari (WebKit) on Apple Silicon currently ranks Ghost behind kotlinx.serialization / Moshi on the same Twitter fixture — see [issue #16](https://github.com/juanchurtado1991/ghost-serializer/issues/16). The JVM regression gates below are the production performance source of truth.
+> **Wasm / playground:** Wasm uses scalar (non-SWAR) string/whitespace scans so Safari/WebKit stays competitive with Chrome ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). JVM regression gates below remain the production performance source of truth.
 
 ## Running the Benchmark Yourself
 

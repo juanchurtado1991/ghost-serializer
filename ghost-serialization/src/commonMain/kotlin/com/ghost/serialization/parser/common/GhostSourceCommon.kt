@@ -1,6 +1,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
@@ -266,22 +267,25 @@ internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long
     val matchEndLong = MATCH_END.toLong()
 
     // SWAR fast path: consume LONG_BYTES windows with no quote, backslash, or control byte.
-    while (cursor + LONG_BYTES <= limit) {
-        val w = ghostReadLong8(data, cursor)
-        val hasQuote = swarHasZeroByte(w xor SWAR_QUOTES)
-        val hasBackslash = swarHasZeroByte(w xor SWAR_BACKSLASHES)
-        // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
-        val hasControl = (w - SPACE_RUN_LONG) and w.inv() and SWAR_HIGHS
-        if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {
-            break
+    // Skipped on Wasm (ghostUseSwarScans=false) — i64 pack+SWAR loses on JavaScriptCore (#16).
+    if (ghostUseSwarScans) {
+        while (cursor + LONG_BYTES <= limit) {
+            val w = ghostReadLong8(data, cursor)
+            val hasQuote = swarHasZeroByte(w xor SWAR_QUOTES)
+            val hasBackslash = swarHasZeroByte(w xor SWAR_BACKSLASHES)
+            // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
+            val hasControl = (w - SPACE_RUN_LONG) and w.inv() and SWAR_HIGHS
+            if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {
+                break
+            }
+            if ((w and SWAR_HIGHS) != RESULT_NONE) {
+                isPureAscii = false
+            }
+            cursor += LONG_BYTES
         }
-        if ((w and SWAR_HIGHS) != RESULT_NONE) {
-            isPureAscii = false
-        }
-        cursor += LONG_BYTES
     }
 
-    // Byte tail: the window holding a boundary byte, plus the final < LONG_BYTES bytes.
+    // Byte tail (or full scan when SWAR is disabled): boundary window + remainder.
     val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
     val asciiLimit = ASCII_LIMIT
     while (cursor < limit) {

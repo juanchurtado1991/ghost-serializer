@@ -2,6 +2,7 @@ package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.GhostSource
@@ -219,10 +220,12 @@ class StreamingGhostSource(
                 val base = segmentStart
 
                 // SWAR: swallow 8-byte runs of ASCII space within the current window.
-                while (localPosition + longBytes <= segmentLimit &&
-                    ghostReadLong8(bufferBytes, localPosition - base) == spaceRun
-                ) {
-                    localPosition += longBytes
+                if (ghostUseSwarScans) {
+                    while (localPosition + longBytes <= segmentLimit &&
+                        ghostReadLong8(bufferBytes, localPosition - base) == spaceRun
+                    ) {
+                        localPosition += longBytes
+                    }
                 }
 
                 while (localPosition + 3 < segmentLimit) {
@@ -374,18 +377,21 @@ class StreamingGhostSource(
 
                 // SWAR: skip clean LONG_BYTES windows (no quote / backslash / control).
                 // Hash is deferred until the closing quote — long values are never pooled.
-                while (localPosition + longBytes <= segmentLimit) {
-                    val w = ghostReadLong8(bufferBytes, localPosition - base)
-                    val hasQuote = swarHasZeroByte(w xor swarQuotes)
-                    val hasBackslash = swarHasZeroByte(w xor swarBackslashes)
-                    val hasControl = (w - spaceRun) and w.inv() and swarHighs
-                    if ((hasQuote or hasBackslash or hasControl) != localResultNone) {
-                        break
+                // Off on Wasm (ghostUseSwarScans) — see issue #16.
+                if (ghostUseSwarScans) {
+                    while (localPosition + longBytes <= segmentLimit) {
+                        val w = ghostReadLong8(bufferBytes, localPosition - base)
+                        val hasQuote = swarHasZeroByte(w xor swarQuotes)
+                        val hasBackslash = swarHasZeroByte(w xor swarBackslashes)
+                        val hasControl = (w - spaceRun) and w.inv() and swarHighs
+                        if ((hasQuote or hasBackslash or hasControl) != localResultNone) {
+                            break
+                        }
+                        if ((w and swarHighs) != localResultNone) {
+                            isPureAscii = false
+                        }
+                        localPosition += longBytes
                     }
-                    if ((w and swarHighs) != localResultNone) {
-                        isPureAscii = false
-                    }
-                    localPosition += longBytes
                 }
 
                 while (localPosition < segmentLimit) {
