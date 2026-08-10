@@ -133,12 +133,10 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
             }
 
             if (Map::class.java.isAssignableFrom(rawType)) {
-                val arg = type.actualTypeArguments.getOrNull(1)
-                    ?: return null
-
-                val valueSerializer = getSerializerWithCache(arg)
-                    ?: return null
-
+                val keyArg = type.actualTypeArguments.getOrNull(0) ?: return null
+                if (!isStringMapKeyType(keyArg)) return null
+                val valueArg = type.actualTypeArguments.getOrNull(1) ?: return null
+                val valueSerializer = getSerializerWithCache(valueArg) ?: return null
                 return MapSerializer(valueSerializer) as GhostSerializer<Any>
             }
 

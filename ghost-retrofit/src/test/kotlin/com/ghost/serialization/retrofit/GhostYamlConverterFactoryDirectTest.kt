@@ -15,7 +15,9 @@ class GhostYamlConverterFactoryDirectTest {
 
     private interface ParameterizedYamlHolder {
         fun list(): List<YamlDeviceProfile>
+        fun set(): Set<YamlDeviceProfile>
         fun map(): Map<String, YamlDeviceProfile>
+        fun intKeyMap(): Map<Int, YamlDeviceProfile>
     }
 
     private interface JsonOnlyListHolder {
@@ -96,5 +98,30 @@ class GhostYamlConverterFactoryDirectTest {
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(yaml.toResponseBody()) as Map<String, YamlDeviceProfile>
         assertEquals(YamlDeviceProfile(7, "east-pod"), result["east"])
+    }
+
+    @Test
+    fun responseBodyConverter_parsesYamlSetBody() {
+        val factory = GhostYamlConverterFactory.create()
+        val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
+        val genericType = ParameterizedYamlHolder::class.java.getMethod("set").genericReturnType
+        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+
+        val yaml = """
+            - deviceId: 1
+              label: one
+        """.trimIndent()
+
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.convert(yaml.toResponseBody()) as Set<YamlDeviceProfile>
+        assertEquals(setOf(YamlDeviceProfile(1, "one")), result)
+    }
+
+    @Test
+    fun responseBodyConverter_returnsNullForNonStringKeyMap() {
+        val factory = GhostYamlConverterFactory.create()
+        val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
+        val genericType = ParameterizedYamlHolder::class.java.getMethod("intKeyMap").genericReturnType
+        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
     }
 }

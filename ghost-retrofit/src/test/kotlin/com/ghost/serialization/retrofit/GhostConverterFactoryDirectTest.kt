@@ -29,6 +29,11 @@ class GhostConverterFactoryDirectTest {
         fun set(): Set<RetrofitUser>
     }
 
+    private interface MapGenericHolder {
+        fun stringKey(): Map<String, RetrofitUser>
+        fun intKey(): Map<Int, RetrofitUser>
+    }
+
     private class UnsupportedHolder<T>
 
     private interface UnsupportedGenericHolder {
@@ -73,6 +78,25 @@ class GhostConverterFactoryDirectTest {
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(body) as Set<RetrofitUser>
         assertEquals(setOf(RetrofitUser(1, "a", true)), result)
+    }
+
+    @Test
+    fun responseBodyConverter_resolvesStringKeyMapGenericType() {
+        val genericType = MapGenericHolder::class.java.getMethod("stringKey").genericReturnType
+        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+            ?: error("Expected a converter for Map<String, RetrofitUser>")
+
+        val body = """{"a":{"id":1,"name":"a","isActive":true}}"""
+            .toResponseBody("application/json; charset=UTF-8".toMediaType())
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.convert(body) as Map<String, RetrofitUser>
+        assertEquals(RetrofitUser(1, "a", true), result["a"])
+    }
+
+    @Test
+    fun responseBodyConverter_returnsNullForNonStringKeyMap() {
+        val genericType = MapGenericHolder::class.java.getMethod("intKey").genericReturnType
+        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
     }
 
     @Test
