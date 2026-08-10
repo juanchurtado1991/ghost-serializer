@@ -29,9 +29,6 @@
 - **YAML: leading blank lines and "blank-looking" over-indented lines inside a block scalar (`|`/`>`) were silently dropped.** Two compounding bugs: blank lines before the first real content line were discarded outright instead of contributing their newlines to the value, and a line with *more* spaces than the scalar's indentation was misclassified as fully blank instead of preserving the leftover spaces as content. Fixing both surfaced a third: a block scalar consisting *only* of blank lines needs its indentation guess to stay at least as wide as any blank line already seen, or the second fix would wrongly invent leftover content that was never really there.
 - YAML compliance moved **90.32% → 96.06%** across this round of fixes (starting point: the first fully-measured baseline from the new conformance harness above).
 
-### Fixed
-- **Wasm / Safari decode lag ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16))**: introduce `ghostUseSwarScans` (`false` on `wasmJs`, `true` elsewhere). When disabled, string scan, space-run skip, and predicted-key wide compare use scalar byte loops instead of packing eight bytes into an `i64` and running SWAR — the pattern that lost to kotlinx.serialization / Moshi on JavaScriptCore while remaining fine on V8/JVM. JVM/Android/iOS SWAR paths unchanged.
-
 ### Known limitations
 - **YAML reader: 24 remaining yaml-test-suite gaps, all tracked by case ID and reason in [`YamlTestSuiteDeviations.kt`](ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlTestSuiteDeviations.kt)** rather than hidden — none of the 279 spec-compliance denominator cases are affected beyond what's already reflected in the 96.06% number. By category:
   - **Tabs in non-indentation positions** (9 cases, e.g. `Y79Y_000`/`UV7Q`) — tab handling inside quoted-scalar folding, plain-scalar continuation, and a couple of "is this tab actually legal here" edge cases.
