@@ -10,7 +10,19 @@ from fpdf import FPDF
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "GHOST_MANUAL_EN.md"
-OUTPUT = ROOT / "docs" / "Ghost-Serialization-Manual-1.3.0.pdf"
+
+
+def _publish_version() -> str:
+    """Read publish-version from gradle/libs.versions.toml (single source of truth)."""
+    toml = (ROOT / "gradle" / "libs.versions.toml").read_text(encoding="utf-8")
+    match = re.search(r'^publish-version\s*=\s*"([^"]+)"', toml, re.M)
+    if not match:
+        raise SystemExit("publish-version not found in gradle/libs.versions.toml")
+    return match.group(1)
+
+
+PUBLISH_VERSION = _publish_version()
+OUTPUT = ROOT / "docs" / f"Ghost-Serialization-Manual-{PUBLISH_VERSION}.pdf"
 
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -67,7 +79,7 @@ class ManualPDF(FPDF):
         self.set_font("body", "", 6)
         self.set_text_color(130, 130, 130)
         self.set_y(6)
-        self.cell(0, 4, "Ghost Serialization  1.3.0  —  API Manual", align="C")
+        self.cell(0, 4, f"Ghost Serialization  {PUBLISH_VERSION}  —  API Manual", align="C")
         self.set_text_color(0, 0, 0)
         self.set_y(MARGIN_T)
 

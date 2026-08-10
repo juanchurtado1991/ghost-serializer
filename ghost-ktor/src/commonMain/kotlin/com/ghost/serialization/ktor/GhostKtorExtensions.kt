@@ -28,7 +28,10 @@ fun Configuration.ghostProto(
     register(contentType, GhostProtoContentConverter(configurer))
 }
 
+@PublishedApi
 internal const val CONTENT_TYPE_APPLICATION = "application"
+
+@PublishedApi
 internal const val CONTENT_TYPE_YAML = "yaml"
 
 /**

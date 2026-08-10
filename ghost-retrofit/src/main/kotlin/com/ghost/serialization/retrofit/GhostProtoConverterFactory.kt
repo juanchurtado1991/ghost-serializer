@@ -4,12 +4,11 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.SetSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -23,21 +22,21 @@ import kotlin.reflect.KClass
 
 /**
  * Retrofit `Converter.Factory` for proto3 JSON mapping
- * ([@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]).
+ * (`@GhostProtoSerialization`).
  *
  * Differs from [GhostConverterFactory] only on the read path: response bodies are parsed
- * through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader], which additionally
+ * through `GhostProtoJsonFlatReader`, which additionally
  * accepts quoted-or-bare int64/uint64, lenient int32 (rejects fractional values), and quoted
  * `"NaN"`/`"Infinity"` literals per proto3 JSON rules — required for round-tripping payloads
  * produced by real protobuf/JSON libraries. Encoding (`requestBodyConverter`) reuses
- * [com.ghost.serialization.Ghost.encodeToBytes] since proto3 wire correctness (int64 quoting,
+ * `Ghost.encodeToBytes` since proto3 wire correctness (int64 quoting,
  * Base64 `bytes`, default-value omission) is generated directly into the
- * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]
+ * `@GhostProtoSerialization`
  * serializer's own `serialize()` method.
  *
- * Also unwraps `List<T>`/`Map<String, V>` request/response bodies when the element/value
- * serializer is registered — same pattern as [GhostConverterFactory], still using
- * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] on the read path.
+ * Also unwraps `List<T>`/`Set<T>`/`Map<String, V>` request/response bodies when the
+ * element/value serializer is registered — same pattern as [GhostConverterFactory], still
+ * using `GhostProtoJsonFlatReader` on the read path.
  *
  * ```kotlin
  * Retrofit.Builder()
@@ -61,23 +60,7 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
 
         return Converter { body ->
             body.use {
-                val stream = it.byteStream()
-                var scratch = acquireScratchBuffer(BUFFER_SIZE)
-                try {
-                    var offset = 0
-                    while (true) {
-                        if (offset == scratch.size) {
-                            val grown = acquireScratchBuffer(scratch.size * 2)
-                            scratch.copyInto(grown, 0, 0, offset)
-                            releaseScratchBuffer(scratch)
-                            scratch = grown
-                        }
-
-                        val read = stream.read(scratch, offset, scratch.size - offset)
-                        if (read == -1) break
-                        offset += read
-                    }
-
+                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset ->
                     ghostProtoInternalUseFlatReader(scratch, length = offset) { reader ->
                         if (reader.isNextNullValue()) {
                             reader.consumeNull()
@@ -86,8 +69,6 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
                             serializer.deserialize(reader)
                         }
                     }
-                } finally {
-                    releaseScratchBuffer(scratch)
                 }
             }
         }
@@ -132,9 +113,17 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
                 return ListSerializer(itemSerializer) as GhostSerializer<Any>
             }
 
+            if (Set::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull() ?: return null
+                val itemSerializer = getSerializerWithCache(arg) ?: return null
+                return SetSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
             if (Map::class.java.isAssignableFrom(rawType)) {
-                val arg = type.actualTypeArguments.getOrNull(1) ?: return null
-                val valueSerializer = getSerializerWithCache(arg) ?: return null
+                val keyArg = type.actualTypeArguments.getOrNull(0) ?: return null
+                if (!isStringMapKeyType(keyArg)) return null
+                val valueArg = type.actualTypeArguments.getOrNull(1) ?: return null
+                val valueSerializer = getSerializerWithCache(valueArg) ?: return null
                 return MapSerializer(valueSerializer) as GhostSerializer<Any>
             }
         }
@@ -142,9 +131,7 @@ class GhostProtoConverterFactory private constructor() : Converter.Factory() {
     }
 
     companion object {
-        private const val STR_MEDIA_TYPE = "application/json; charset=UTF-8"
-        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
-        private const val BUFFER_SIZE = 524288
+        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()
 
         fun create(): GhostProtoConverterFactory = GhostProtoConverterFactory()
     }

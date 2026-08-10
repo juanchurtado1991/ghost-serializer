@@ -34,9 +34,8 @@ object RawJsonDecode {
 
     fun <T : Any> decode(raw: RawJson, clazz: KClass<T>): T {
         val serializer = Ghost.getSerializer(clazz)
-            ?: error("No GhostSerializer registered for ${clazz.simpleName}")
-        @Suppress("UNCHECKED_CAST")
-        return decode(raw, serializer as GhostSerializer<T>)
+            ?: error("${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}")
+        return decode(raw, serializer)
     }
 }
 

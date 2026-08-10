@@ -49,8 +49,8 @@ open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {
         return scanStringImpl(start, limit) { localData[it].toInt() and BYTE_MASK }
     }
 
-    override fun contentEqualsString(start: Int, length: Int, str: String): Boolean {
+    override fun contentEqualsString(start: Int, length: Int, expected: String): Boolean {
         val localData = data
-        return contentEqualsStringImpl(start, length, str) { localData[it].toInt() and BYTE_MASK }
+        return contentEqualsStringImpl(start, length, expected) { localData[it].toInt() and BYTE_MASK }
     }
 }

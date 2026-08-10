@@ -14,8 +14,13 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
- * High-performance JSON parser operating directly on Kotlin Strings.
- * Bypasses encodeToByteArray UTF-8 conversion overhead.
+ * Flat JSON parser for in-memory [String] payloads (the default `textChannel` path).
+ *
+ * Indexes a reused [CharArray] of UTF-16 code units — hot structure/select/number work never
+ * UTF-8-encodes the document. Bridge helpers ([ensureUtf8Bytes], [sliceUtf8Bytes],
+ * [captureRawJsonBytes]) encode lazily once per [reset] when a byte-oriented API is needed.
+ *
+ * Sibling of the byte flat reader (`GhostJsonFlatReader`) and the streaming `GhostJsonReader`.
  */
 class GhostJsonStringReader(
     var rawData: String,
@@ -35,8 +40,8 @@ class GhostJsonStringReader(
 
     /**
      * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
-     * fields in declaration order. Reset to 0 on [beginObject]; mispredictions fall back to
-     * hashed dispatch, so this never affects correctness.
+     * fields in declaration order. Reset to `FIELD_PREDICTION_START` on [beginObject];
+     * mispredictions fall back to hashed dispatch, so this never affects correctness.
      */
     internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 
@@ -49,7 +54,7 @@ class GhostJsonStringReader(
     /** Char-index → UTF-8 byte offset, built once per [reset] cycle. */
     private var charToByteOffsets: IntArray? = null
 
-    /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
+    /** Cross-call string intern pool — same design as the byte flat reader's `stringPool`. */
     val stringPool: Array<String?> = arrayOfNulls(C.STR_POOL_SIZE)
     val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
 
@@ -80,7 +85,7 @@ class GhostJsonStringReader(
         val errorEnd = if (errorPosition > limit) limit else errorPosition
 
         throw GhostJsonException(
-            baseMessage = "$message at position $errorPosition",
+            baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
             computeLineCol = {
                 var columnNumber = 0
                 var lineNumber = 0
@@ -100,8 +105,8 @@ class GhostJsonStringReader(
         )
     }
 
-    fun internalSkip(n: Int) {
-        position += n
+    fun internalSkip(charCount: Int) {
+        position += charCount
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
@@ -168,21 +173,21 @@ class GhostJsonStringReader(
 
     @Suppress("StringReferentialEquality")
     fun reset(newData: String, newLimit: Int = newData.length) {
-        val oldData = this.rawData
-        this.rawData = newData
-        this.position = 0
-        this.limit = newLimit
-        this.nextTokenByte = C.RESET_TOKEN_BYTE
-        this.depth = 0
-        this.needsCommaMask = 0L
-        this.commaConsumedMask = 0L
-        this.strictMode = false
-        this.coerceStringsToNumbers = false
-        this.coerceBooleans = false
-        this.maxDepth = C.MAX_DEPTH
-        this.maxCollectionSize = GhostHeuristics.maxCollectionSize
-        this.lastScanContentWas7BitOnly = false
-        this.predictedFieldIndex = C.FIELD_PREDICTION_START
+        val oldData = rawData
+        rawData = newData
+        position = 0
+        limit = newLimit
+        nextTokenByte = C.RESET_TOKEN_BYTE
+        depth = 0
+        needsCommaMask = 0L
+        commaConsumedMask = 0L
+        strictMode = false
+        coerceStringsToNumbers = false
+        coerceBooleans = false
+        maxDepth = C.MAX_DEPTH
+        maxCollectionSize = GhostHeuristics.maxCollectionSize
+        lastScanContentWas7BitOnly = false
+        predictedFieldIndex = C.FIELD_PREDICTION_START
         invalidateUtf8Cache()
 
         if (newData !== oldData) {
@@ -470,7 +475,7 @@ class GhostJsonStringReader(
 
     /**
      * Computes a cheap hash from the first four char code-points of the string content.
-     * Uses the same algorithm as [GhostJsonFlatReader] for byte sources.
+     * Uses the same algorithm as the byte flat reader for byte sources.
      */
     private fun computeStringPoolHash(start: Int, length: Int): Int {
         val chars = rawChars
@@ -541,7 +546,7 @@ class GhostJsonStringReader(
      *
      * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
      * cached array (used by custom-decoder bridges). Otherwise encodes only the range —
-     * avoids a full document UTF-8 pass for [com.ghost.serialization.parser.strings.captureRawJsonBytes] on large envelopes.
+     * avoids a full document UTF-8 pass for `captureRawJsonBytes` on large envelopes.
      */
     @InternalGhostApi
     fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {

@@ -60,12 +60,38 @@ kotlin {
             implementation(libs.kotlin.test.junit5)
             implementation(libs.jazzer.junit)
             runtimeOnly(libs.junit.engine)
+            // Reference JSON tree used only to parse yaml-test-suite's in.json fixtures for the
+            // value-conformance check (GhostYamlTestSuiteConformanceTest) — JVM-only, test-only,
+            // not a Ghost runtime dependency.
+            implementation(libs.kotlinx.serialization.json)
+            // DynamicTest/TestFactory for the data-driven yaml-test-suite harness — JVM-only.
+            implementation(libs.junit.jupiter.api)
+            // Independent second YAML parser used as a validation oracle for
+            // GhostYamlFlatWriter's output (GhostYamlWriterConformanceTest) — JVM-only,
+            // test-only, not a Ghost runtime dependency.
+            implementation(libs.kaml)
         }
     }
 }
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("yamlComplianceMatrix") {
+    group = "verification"
+    description = "Prints Ghost's YAML spec-compliance report against the vendored yaml-test-suite snapshot"
+    dependsOn("jvmTestClasses")
+    classpath = tasks.named<Test>("jvmTest").get().classpath
+    mainClass.set("com.ghost.serialization.yaml.testsuite.YamlComplianceReportKt")
+}
+
+tasks.register<JavaExec>("yamlWriterComplianceMatrix") {
+    group = "verification"
+    description = "Prints Ghost's YAML writer conformance report (round-trip + kaml oracle) against the vendored yaml-test-suite snapshot"
+    dependsOn("jvmTestClasses")
+    classpath = tasks.named<Test>("jvmTest").get().classpath
+    mainClass.set("com.ghost.serialization.yaml.testsuite.YamlWriterComplianceReportKt")
 }
 
 ksp { arg("ghost.moduleName", "ghost_serialization") }

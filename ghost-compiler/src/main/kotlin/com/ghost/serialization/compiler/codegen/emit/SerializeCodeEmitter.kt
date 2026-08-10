@@ -27,7 +27,7 @@ internal class SerializeCodeEmitter(
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
     private val discriminator: String? = null,
-    private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY
+    private val sealedDiscriminatorKey: String = C.STR_DEFAULT_DISCRIMINATOR
 ) {
     // Sorts properties to group flattened paths together, avoiding duplicate bracket opens/closes.
     private val sortedProperties = run {
@@ -70,7 +70,7 @@ internal class SerializeCodeEmitter(
     private var activeEmitter: BaseSerializeEmitter? = null
 
     /**
-     * Builds the [com.squareup.kotlinpoet.FunSpec] of the serialize function.
+     * Builds the `FunSpec` of the serialize function.
      *
      * @param writerClass The JSON writer class being targeted.
      * @param typeSpecBuilder Companion object builder where nested options or shards can be registered.
@@ -88,7 +88,7 @@ internal class SerializeCodeEmitter(
             }
 
             isValue -> {
-                emitValueUnboxing(code)
+                emitValueUnboxing(code, writerClass)
             }
 
             isEnum -> {
@@ -181,19 +181,19 @@ internal class SerializeCodeEmitter(
     /**
      * Emits value class unboxing statement.
      */
-    private fun emitValueUnboxing(code: CodeBlock.Builder) {
+    private fun emitValueUnboxing(code: CodeBlock.Builder, writerClass: ClassName) {
         val prop = properties.firstOrNull() ?: return
         val accessor = CodeBlock.of(
             C.TEMPLATE_ACCESSOR,
             C.STR_PARAM_VALUE,
             prop.kotlinName
         )
-        // Instantiates a standard emitter to resolve value writing of the unboxed value.
         val valueEmitter = StandardSerializeEmitter(
             properties,
             originalClassName,
-            ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER)
+            writerClass
         )
+        activeEmitter = valueEmitter
         valueEmitter.emitValue(code, prop, accessor)
     }
 }

@@ -1,7 +1,6 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import org.reactivestreams.Publisher
@@ -13,27 +12,22 @@ import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import kotlin.reflect.KClass
-
 
 private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 
 /**
  * Reactive Decoder for Ghost Serialization.
  *
- * Extracts the raw [ByteArray] from each [DataBuffer] and feeds it directly
- * to the pooled [com.ghost.serialization.parser.streaming.GhostJsonReader], avoiding
- * intermediate Okio/InputStream wrappers entirely.
+ * Resolves serializers from the full [ResolvableType] so `List` / `Set` / `Map`
+ * element types are unwrapped (parity with MVC / Retrofit / Ktor).
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
-    MimeType("application", "x-ndjson")
+    GhostSpringMediaTypes.MIME_APPLICATION_X_NDJSON
 ) {
     override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-        val clazz = elementType.toClass()
         return super.canDecode(elementType, mimeType) &&
-                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||
-                        Ghost.getSerializer(clazz.kotlin) != null)
+            GhostSpringTypeSerializers.getJsonSerializer(elementType) != null
     }
 
     override fun decode(
@@ -42,13 +36,11 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Flux<Any> {
-        val clazz = elementType.toClass()
         val isNdJson = isNdJson(mimeType)
-
         return if (isNdJson) {
-            decodeStreaming(inputStream, clazz)
+            decodeStreaming(inputStream, elementType)
         } else {
-            decodeJoined(inputStream, clazz)
+            decodeJoined(inputStream, elementType)
         }
     }
 
@@ -58,8 +50,7 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
-        val clazz = elementType.toClass()
-        return decodeJoined(inputStream, clazz).next()
+        return decodeJoined(inputStream, elementType).next()
     }
 
     /**
@@ -71,7 +62,7 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
      */
     private fun decodeStreaming(
         inputStream: Publisher<DataBuffer>,
-        clazz: Class<*>
+        elementType: ResolvableType
     ): Flux<Any> = Flux.defer {
         var carry = ByteArray(0)
 
@@ -98,38 +89,31 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
                 Flux.fromIterable(lines)
             }
             .concatWith(Flux.defer { if (carry.isEmpty()) Flux.empty() else Flux.just(carry) })
-            .map { line -> deserializeBytes(line, clazz) }
+            .map { line -> deserializeBytes(line, elementType) }
     }
 
     private fun decodeJoined(
         inputStream: Publisher<DataBuffer>,
-        clazz: Class<*>
+        elementType: ResolvableType
     ): Flux<Any> = DataBufferUtils
         .join(inputStream).flatMapMany { buffer ->
             try {
-                Flux.just(deserializeBuffer(buffer, clazz))
+                val bytes = ByteArray(buffer.readableByteCount())
+                buffer.read(bytes)
+                Flux.just(deserializeBytes(bytes, elementType))
             } finally {
                 DataBufferUtils.release(buffer)
             }
         }
 
-    private fun deserializeBuffer(
-        buffer: DataBuffer,
-        clazz: Class<*>
-    ): Any {
-        val bytes = ByteArray(buffer.readableByteCount())
-        buffer.read(bytes)
-        return deserializeBytes(bytes, clazz)
-    }
-
     private fun deserializeBytes(
         bytes: ByteArray,
-        clazz: Class<*>
+        elementType: ResolvableType
     ): Any {
         return try {
-            val serializer = Ghost.getSerializer(clazz.kotlin as KClass<Any>)
+            val serializer = GhostSpringTypeSerializers.getJsonSerializer(elementType)
                 ?: throw IllegalArgumentException(
-                    "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
+                    "${Ghost.NOT_FOUND} $elementType. ${Ghost.MISSING_ANN}"
                 )
             if (serializer.isProto) {
                 return ghostProtoInternalUseFlatReader(bytes) { reader ->
@@ -139,13 +123,13 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
             Ghost.deserialize(serializer, bytes)
         } catch (e: Exception) {
             throw GhostJsonException(
-                "$DECODE_ERROR ${clazz.simpleName}: ${e.message}"
+                "$DECODE_ERROR $elementType: ${e.message}"
             )
         }
     }
 
     private fun isNdJson(mimeType: MimeType?): Boolean {
-        return mimeType?.subtype?.contains("ndjson") == true
+        return mimeType?.subtype?.contains(GhostSpringMediaTypes.SUBTYPE_NDJSON_TOKEN) == true
     }
 
     companion object {

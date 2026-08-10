@@ -26,7 +26,9 @@ class GhostProtoConverterFactoryDirectTest {
 
     private interface ParameterizedHolder {
         fun list(): List<ProtoDeviceEvent>
+        fun set(): Set<ProtoDeviceEvent>
         fun map(): Map<String, ProtoDeviceEvent>
+        fun intKeyMap(): Map<Int, ProtoDeviceEvent>
     }
 
     private data class Unregistered(val x: Int)
@@ -84,6 +86,25 @@ class GhostProtoConverterFactoryDirectTest {
 
         assertEquals(ProtoDeviceEvent(10L, "A"), result["alpha"])
         assertEquals(ProtoDeviceEvent(20L, "B"), result["beta"])
+    }
+
+    @Test
+    fun responseBodyConverter_resolvesParameterizedSetType() {
+        val genericType = ParameterizedHolder::class.java.getMethod("set").genericReturnType
+        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+            ?: error("Expected Set<ProtoDeviceEvent> converter")
+
+        val json = """[{"deviceId":"1","label":"a"}]"""
+        val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+        @Suppress("UNCHECKED_CAST")
+        val result = converter.convert(body) as Set<ProtoDeviceEvent>
+        assertEquals(setOf(ProtoDeviceEvent(1L, "a")), result)
+    }
+
+    @Test
+    fun responseBodyConverter_returnsNullForNonStringKeyMap() {
+        val genericType = ParameterizedHolder::class.java.getMethod("intKeyMap").genericReturnType
+        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
     }
 
     @Test

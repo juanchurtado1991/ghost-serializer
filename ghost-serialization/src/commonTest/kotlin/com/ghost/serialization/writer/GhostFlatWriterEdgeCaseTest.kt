@@ -13,7 +13,7 @@ import kotlin.test.assertFailsWith
 /**
  * Direct unit tests for [GhostJsonFlatWriter] — the in-memory / [FlatByteArrayWriter]-backed
  * writer used by every KSP-generated serializer's flat encode path. Exercises the same scenarios
- * as [com.ghost.serialization.GhostWriterEdgeCaseTest] (which covers the sibling Okio-streaming
+ * as `GhostWriterEdgeCaseTest` (which covers the sibling Okio-streaming
  * [GhostJsonWriter]) so both writers receive equivalent coverage, plus the flat writer's
  * fused/raw APIs that [GhostJsonWriter] does not expose.
  */

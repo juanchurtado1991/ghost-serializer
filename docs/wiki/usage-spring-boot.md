@@ -79,6 +79,21 @@ class UserController(private val userService: UserService) {
 
 Ghost handles serialization and deserialization transparently. Spring's content negotiation, validation, and error handling work unchanged.
 
+### Collection request/response bodies
+
+Top-level `List<T>`, `Set<T>`, and `Map<String, V>` are unwrapped when the element/value type has a Ghost serializer (JSON and YAML converters, MVC and WebFlux). Built-in element types such as `String` / `Int` work for JSON (`List<String>`, `Map<String, String>`, …). Top-level bare `String` / `byte[]` / primitives stay on Spring's default converters. Map key types other than `String` are declined so Ghost does not claim `Map<Int, V>`. Element DTOs must be registered the same way as a direct body type:
+
+```kotlin
+@GetMapping("/users")
+fun listUsers(): List<UserResponse> = userService.findAll()
+
+@PostMapping("/users/batch")
+fun createBatch(@RequestBody users: List<CreateUserRequest>): List<UserResponse> =
+    users.map { userService.create(it) }
+```
+
+Without a registered element serializer, Spring falls through to Jackson for that type (same as a bare unregistered DTO).
+
 ---
 
 ## 4. Declarative Controller Customization

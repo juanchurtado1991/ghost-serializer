@@ -4,6 +4,7 @@ import com.ghost.serialization.Ghost
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.converter.HttpMessageConverter
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
@@ -19,7 +20,7 @@ open class GhostWebMvcAutoConfiguration : WebMvcConfigurer {
         converters.add(0, GhostHttpMessageConverter())
     }
 
-    @org.springframework.context.annotation.Bean
+    @Bean
     open fun ghostRequestBodyAdvice(): GhostRequestBodyAdvice {
         return GhostRequestBodyAdvice()
     }

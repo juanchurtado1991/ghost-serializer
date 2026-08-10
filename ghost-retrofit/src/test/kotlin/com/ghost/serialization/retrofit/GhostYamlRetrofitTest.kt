@@ -11,19 +11,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import retrofit2.Retrofit
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-
-interface MockYamlApiService {
-    @GET("/profile")
-    suspend fun getProfile(): YamlDeviceProfile
-
-    @POST("/profile")
-    suspend fun createProfile(@Body profile: YamlDeviceProfile): YamlDeviceProfile
-}
 
 class GhostYamlRetrofitTest {
 

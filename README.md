@@ -33,7 +33,7 @@ You already have a JSON stack. Ghost is the **optimization layer** for the endpo
 - **Low allocation** — pooled readers/writers and precomputed field dispatch
 - **Incremental adoption** — Ghost and your current serializer coexist in the same app
 - **Kotlin Multiplatform** — Android, iOS, JVM, plus Wasm in this repo
-- **Ready adapters** — Ktor, Retrofit, Spring MVC / WebFlux
+- **Ready adapters** — Ktor, Retrofit, Spring MVC / WebFlux (including top-level `List` / `Set` / `Map` bodies)
 
 ```kotlin
 @GhostSerialization
@@ -87,6 +87,8 @@ Step-by-step → **[Quick Start](docs/wiki/quick-start.md)**
 | **Toolchain** | Kotlin **2.4.0** · KSP **2.3.10** · Ktor **3.5.x** |
 
 Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), YAML (`application/yaml`), Proto3 JSON mapping.
+
+> **Wasm / Safari:** Wasm builds disable Long/SWAR wide scans (`ghostUseSwarScans=false`) and use scalar byte loops — the previous Safari (WebKit) decode lag vs Chrome is addressed in [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16). JVM / Android / iOS keep SWAR.
 
 Details → **[Modules](docs/wiki/modules.md)**
 

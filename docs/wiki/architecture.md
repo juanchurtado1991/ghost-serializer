@@ -67,7 +67,7 @@ Generated JSON almost always lists object fields in declaration order. Each read
 2. On a hit, skip closing-quote scan + hash + verify entirely.
 3. On a miss, fall through to the perfect-hash dispatch (correctness unchanged).
 
-Wide compares use `ghostReadLong8` (8 bytes at a time) on byte/streaming paths. The string channel compares `CharArray` candidates the same way, without a portable wide-load API.
+Wide compares use `ghostReadLong8` (8 bytes at a time) on byte/streaming paths when `ghostUseSwarScans` is true (JVM/Android/Native). Wasm sets that flag to `false` and stays on scalar byte loops — packing `i64` + SWAR was a net loss on Safari/JavaScriptCore ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). The string channel compares `CharArray` candidates without a portable wide-load API.
 
 > [!TIP]
 > **Pro tip:** align DTO property order with the JSON key order from your producer so prediction hits on every field. Correctness does not depend on order; throughput does. See [Advanced Features § Align DTO property order](advanced-features.md#align-dto-property-order-with-json-pro-tip).
@@ -134,6 +134,19 @@ Ghost does not market itself as “no reflection” (kotlinx.serialization alrea
 - **Pooled readers/writers** — steady-state encode/decode reuses buffers across calls.
 
 Absolute “N× faster / leaner” numbers depend on the fixture. On the Twitter macro and synthetic suites used in this repo, Ghost often shows large memory advantages versus Jackson and multi-GB/s decode throughput versus KotlinX on the same machine — always re-measure with [your own harness](benchmarks.md).
+
+---
+
+## 7. Known debts (not unified yet)
+
+Short notes for maintainers; details live in KDoc on the linked APIs.
+
+- **`GhostHeuristics` / discovery** — `maxCollectionSize` (and related caps) differ by platform actual; iOS/Wasm `discoverRegistries()` is empty (manual `Ghost.addRegistry`).
+- **Triple JSON stacks** — structure/comma/number/escape/skip kernels are shared; `internalSelect` / `verifyKeyMatch` / quote scanners stay ByteArray- vs CharArray-specific.
+- **Hot-path HOF rule** — never pass nested `(onX: (T) -> Unit) -> Unit` into non-inline (or poorly inlined) helpers; walk with `getByte`/`position` or return sentinels (`GhostDoubleFormatter.FALLBACK_REQUIRED`).
+- **API notes** — `deserialize(bytes)` and `deserialize(bytes) { options }` both use the flat reader; streaming is explicit via source/`deserializeStreaming`. `ProtoStruct` remains a `Map` typealias (no `getWktSerializer` entry). Default `GhostSerializer.deserialize(Flat|String)` bridges are compatibility-only — override on hot paths.
+- **Twitter fixtures** — JVM SSOT in `ghost-integration-test` (also used by `ghost-benchmark`); playground keeps `bench/model` (KMP Ghost+kotlinx) and `bench/moshi` (JVM Moshi) on purpose — do not pull Moshi into commonMain.
+- **`publish-version` SSOT** — `libs.versions.toml` feeds generated `GhostVersions` / `GhostPlaygroundVersions` and the PDF script; bump only the catalog.
 
 ---
 

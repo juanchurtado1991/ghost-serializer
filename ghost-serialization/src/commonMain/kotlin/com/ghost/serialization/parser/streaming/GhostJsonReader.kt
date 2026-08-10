@@ -5,7 +5,6 @@ package com.ghost.serialization.parser.streaming
 
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
@@ -16,9 +15,10 @@ import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.common.createSourceBridge
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
+import com.ghost.serialization.parser.common.growBuffer
+import com.ghost.serialization.parser.common.readQuotedStringSlowCore
 import com.ghost.serialization.parser.common.scanStringImpl
 import com.ghost.serialization.parser.strings.beginObject
-import com.ghost.serialization.releaseScratchBuffer
 import okio.BufferedSource
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
@@ -66,16 +66,16 @@ class GhostJsonReader(
     fun _getPosition(): Int = position
 
     @InternalGhostApi
-    fun _setPosition(p: Int) {
-        position = p
+    fun _setPosition(position: Int) {
+        this.position = position
     }
 
     @InternalGhostApi
     fun _getRawData(): ByteArray = rawData
 
     @InternalGhostApi
-    fun _setNextTokenByte(t: Int) {
-        nextTokenByte = t
+    fun _setNextTokenByte(tokenByte: Int) {
+        nextTokenByte = tokenByte
     }
 
     internal val stringPool = arrayOfNulls<String>(C.STR_POOL_SIZE)
@@ -166,7 +166,7 @@ class GhostJsonReader(
         }
 
         throw GhostJsonException(
-            baseMessage = "$message at position $errorPosition",
+            baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
             computeLineCol = {
                 var columnNumber = 0
                 var lineNumber = 0
@@ -192,7 +192,7 @@ class GhostJsonReader(
     fun expectByte(expected: Int) {
         if (peekNextToken() != expected) {
             throwError(
-                "Expected '${Char(expected)}' but found '${Char(nextTokenByte)}'"
+                "${C.ERR_EXPECTED_CHAR_PREFIX}${Char(expected)}${C.ERR_EXPECTED_CHAR_MID}${Char(nextTokenByte)}${C.ERR_EXPECTED_CHAR_SUFFIX}"
             )
         }
         if (expected == C.COMMA_INT) {
@@ -206,11 +206,11 @@ class GhostJsonReader(
     }
 
     /**
-     * Skips [n] bytes and resets the cached [nextTokenByte].
+     * Skips [byteCount] bytes and resets the cached [nextTokenByte].
      */
-    fun internalSkip(n: Int) {
-        position += n
-        nextTokenByte = -1
+    fun internalSkip(byteCount: Int) {
+        position += byteCount
+        nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
     /**
@@ -318,7 +318,7 @@ class GhostJsonReader(
         }
 
         position += size
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
     /**
@@ -350,21 +350,21 @@ class GhostJsonReader(
             val end = start + length
             if (length <= 0) {
                 position = end + 1
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 return ""
             }
             if (length > GhostHeuristics.maxStringPoolLength) {
                 val result = source.decodeJsonStringRange(start, end, only7Bit)
                 position = end + 1
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 return result
             }
 
             val poolBucketIndex = rollingHash and (C.STR_POOL_SIZE - 1)
             val cachedString = stringPool[poolBucketIndex]
 
-            val isMatch = if (only7Bit && cachedString != null) {
-                if (isStreaming) {
+            if (only7Bit && cachedString != null) {
+                val isMatch = if (isStreaming) {
                     source.contentEqualsString(start, length, cachedString)
                 } else {
                     val localData = rawData
@@ -374,14 +374,11 @@ class GhostJsonReader(
                         cachedString
                     ) { localData[it].toInt() and C.BYTE_MASK }
                 }
-            } else {
-                false
-            }
-
-            if (isMatch) {
-                position = end + 1
-                nextTokenByte = -1
-                return cachedString!!
+                if (isMatch) {
+                    position = end + 1
+                    nextTokenByte = C.RESET_TOKEN_BYTE
+                    return cachedString
+                }
             }
 
             val decodedString = source.decodeJsonStringRange(start, end, only7Bit)
@@ -389,163 +386,24 @@ class GhostJsonReader(
                 stringPool[poolBucketIndex] = decodedString
             }
             position = end + 1
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             return decodedString
         }
 
         return readQuotedStringSlow(start)
     }
 
-    private fun GhostJsonReader.readQuotedStringSlow(start: Int): String {
-        // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
-        var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)
-        var outPos = 0
-
-        try {
-            var pos = start
-            while (pos < limit) {
-                val byteValue = getByte(pos++)
-                if (byteValue == C.QUOTE_INT) {
-                    position = pos
-                    nextTokenByte = -1
-                    return outBuffer.decodeToString(0, outPos)
-                }
-
-                if (byteValue == C.BACKSLASH_INT) {
-                    if (pos >= limit) {
-                        position = pos
-                        throwError(C.UNTERMINATED_ESCAPE_ERROR)
-                    }
-                    when (val escaped = getByte(pos++)) {
-                        C.UNICODE_PREFIX_U_INT -> {
-                            if (pos + C.UNICODE_HEX_LENGTH > limit) {
-                                position = pos
-                                throwError(C.UNTERMINATED_UNICODE_ERROR)
-                            }
-
-                            var code = parseUnicodeHex(pos)
-                            pos += C.UNICODE_HEX_LENGTH
-
-                            if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
-                                if (pos + C.SURROGATE_OFFSET <= limit &&
-                                    getByte(pos) == C.BACKSLASH_INT &&
-                                    getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT
-                                ) {
-                                    // Valid surrogate pair check
-                                    pos += C.UNICODE_ESCAPE_PREFIX_SIZE
-                                    val lowCode = parseUnicodeHex(pos)
-                                    if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
-                                        pos += C.UNICODE_HEX_LENGTH
-                                        code = C.UNICODE_BASE +
-                                                ((code - C.HIGH_SURROGATE_START) shl C.SHIFT_10) +
-                                                (lowCode - C.LOW_SURROGATE_START)
-                                    } else {
-                                        position = pos
-                                        throwError(C.ERR_HIGH_SURROGATE)
-                                    }
-                                } else {
-                                    position = pos
-                                    throwError(C.ERR_HIGH_SURROGATE)
-                                }
-                            }
-
-                            // Encode code point to UTF-8 bytes in outBuffer
-                            if (code <= C.UTF8_1BYTE_MAX) {
-                                if (outPos + 1 > outBuffer.size) {
-                                    outBuffer = growBuffer(outBuffer, outPos)
-                                }
-                                outBuffer[outPos++] = code.toByte()
-                            } else if (code <= C.UTF8_2BYTE_MAX) {
-                                if (outPos + 2 > outBuffer.size) {
-                                    outBuffer = growBuffer(outBuffer, outPos)
-                                }
-                                outBuffer[outPos++] =
-                                    (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
-                                outBuffer[outPos++] =
-                                    (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                            } else if (code <= C.BMP_LIMIT) {
-                                if (outPos + 3 > outBuffer.size) {
-                                    outBuffer = growBuffer(outBuffer, outPos)
-                                }
-                                outBuffer[outPos++] =
-                                    (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
-                                outBuffer[outPos++] =
-                                    (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] =
-                                    (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                            } else {
-                                if (outPos + 4 > outBuffer.size) {
-                                    outBuffer = growBuffer(outBuffer, outPos)
-                                }
-                                outBuffer[outPos++] =
-                                    (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
-                                outBuffer[outPos++] =
-                                    (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] =
-                                    (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                                outBuffer[outPos++] =
-                                    (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                            }
-                        }
-
-                        C.N_BYTE_INT -> {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = C.LF_INT.toByte()
-                        }
-
-                        C.R_BYTE_INT -> {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = C.CR_INT.toByte()
-                        }
-
-                        C.T_BYTE_INT -> {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = C.TAB_INT.toByte()
-                        }
-
-                        C.B_BYTE_INT -> {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = C.BS_INT.toByte()
-                        }
-
-                        C.F_BYTE_INT -> {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = C.FF_INT.toByte()
-                        }
-
-                        else -> {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = escaped.toByte()
-                        }
-                    }
-                } else if (byteValue < C.SPACE_INT) {
-                    position = pos
-                    throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
-                } else {
-                    if (outPos + 1 > outBuffer.size) {
-                        outBuffer = growBuffer(outBuffer, outPos)
-                    }
-                    outBuffer[outPos++] = byteValue.toByte()
-                }
-            }
-            position = pos
-        } finally {
-            releaseScratchBuffer(outBuffer)
-        }
-        throwError(C.UNTERMINATED_STRING_ERROR)
-    }
+    private fun GhostJsonReader.readQuotedStringSlow(start: Int): String =
+        readQuotedStringSlowCore(
+            start = start,
+            limit = limit,
+            getByte = { getByte(it) },
+            setPosition = { position = it },
+            setNextTokenByte = { nextTokenByte = it },
+            parseUnicodeHex = { parseUnicodeHex(it) },
+            grow = { buf, outPos -> growBuffer(buf, outPos) },
+            throwError = { throwError(it) },
+        )
 
     /**
      * Skips a double-quoted JSON string in the raw source without decoding its content.
@@ -572,7 +430,7 @@ class GhostJsonReader(
             val byteValue = getByte(pos++)
             if (byteValue == C.QUOTE_INT) {
                 position = pos
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 return
             }
 
@@ -626,16 +484,6 @@ class GhostJsonReader(
     }
 
     /**
-     * Utility helper to grow a temporary byte array buffer.
-     */
-    private fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
-        val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-        outBuffer.copyInto(newBuffer, 0, 0, outPos)
-        releaseScratchBuffer(outBuffer)
-        return newBuffer
-    }
-
-    /**
      * Resets the reader's state to process a new flat byte array payload.
      */
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
@@ -664,7 +512,7 @@ class GhostJsonReader(
         this.rawData = newSource.rawSourceData
         this.position = 0
         this.limit = newLimit
-        this.nextTokenByte = -1
+        this.nextTokenByte = C.RESET_TOKEN_BYTE
         this.depth = 0
         this.needsCommaMask = 0L
         this.commaConsumedMask = 0L

@@ -114,10 +114,6 @@ class GhostPlugin : Plugin<Project> {
         project.dependencies.add(CONFIG_IMPL, apiDep)
     }
 
-    private fun isMultiplatform(project: Project): Boolean {
-        return project.pluginManager.hasPlugin(PLUGIN_KMP)
-    }
-
     private fun hasKtorDependency(project: Project): Boolean {
         return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
             val config = project.configurations.findByName(name)
@@ -154,7 +150,6 @@ class GhostPlugin : Plugin<Project> {
 
     companion object {
         private const val EXTENSION_NAME = "ghost"
-        private const val DEFAULT_VERSION = "1.3.0"
 
         private const val PLUGIN_KSP = "com.google.devtools.ksp"
         private const val PLUGIN_KMP = "org.jetbrains.kotlin.multiplatform"

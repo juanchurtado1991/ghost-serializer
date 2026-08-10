@@ -1,11 +1,5 @@
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.packScanResult
-import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.pow
 
@@ -37,6 +31,22 @@ object GhostJsonConstants {
     const val ERR_EXPECTED_COMMA_OR_CLOSE_ARR = "Expected ',' or ']'"
     const val ERR_EXPECTED_COMMA_OR_CLOSE_OBJ = "Expected ',' or '}'"
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
+    const val ERR_EXPECTED_CHAR_PREFIX = "Expected '"
+    const val ERR_EXPECTED_CHAR_MID = "' but found '"
+    const val ERR_EXPECTED_CHAR_SUFFIX = "'"
+    const val ERR_INVALID_JSON_ENCODING =
+        "Invalid JSON text encoding (RFC 8259 requires UTF-8, UTF-16, or UTF-32)"
+    const val ERR_INDEX_BELOW_DISCARDED_PREFIX = "Index "
+    const val ERR_INDEX_BELOW_DISCARDED_MID = " is below discarded prefix ("
+    const val ERR_INDEX_BELOW_DISCARDED_SUFFIX = ")"
+    const val ERR_INDEX_OOB_PREFIX = "Index "
+    const val ERR_INDEX_OOB_MID = " is out of bounds (available absolute end: "
+    const val ERR_INDEX_OOB_SUFFIX = ")"
+    const val ERR_INDEX_OOB = " is out of bounds"
+    const val ERR_DECODE_START_BELOW_DISCARDED_PREFIX = "decodeToString start "
+    const val ERR_DECODE_START_BELOW_DISCARDED_MID = " is below discarded prefix ("
+    const val WARM_RAW_JSON_PAYLOAD = """{"warm":true}"""
+    const val TYPE_NAME_RAW_JSON = "RawJson"
     const val ERR_EXPECTED_QUOTE = "Expected '\"'"
     const val ERR_EXPECTED_SINGLE_CHAR_STRING = "Expected single-character JSON string"
     const val ERR_SINGLE_CHAR_STRING_WRONG_LENGTH =
@@ -58,10 +68,10 @@ object GhostJsonConstants {
     const val EXPONENT_CLAMP_THRESHOLD = 1000
     const val ERR_EXPECTED_LITERAL = "Expected literal "
     const val LITERAL_NULL = "null"
-    const val LITERAL_TRUE = "true"
-    const val LITERAL_FALSE = "false"
     const val ERR_INVALID_UNICODE_AT = "Invalid unicode escape at "
     const val ERR_CAPACITY_OVERFLOW_PREFIX = "FlatByteArrayWriter capacity overflow: "
+    /** Suffix glued onto parser error messages: `"$message$ERR_AT_POSITION_PREFIX$position"`. */
+    const val ERR_AT_POSITION_PREFIX = " at position "
 
     // --- Digit & Limit Constants ---
     const val MIN_SINGLE_DIGIT = 0
@@ -149,6 +159,14 @@ object GhostJsonConstants {
     const val BOOL_STR_LEN_3 = 3   // "yes", "off"
     const val BOOL_STR_LEN_4 = 4   // "true"
     const val BOOL_STR_LEN_5 = 5   // "false"
+
+    // Tail lengths after the first character of JSON literals has been consumed.
+    const val TRUE_TAIL_LEN = "true".length - 1
+    const val FALSE_TAIL_LEN = "false".length - 1
+    const val NULL_TAIL_LEN = "null".length - 1
+
+    /** Length of a `\uXXXX` escape sequence written into the scratch buffer. */
+    const val UNICODE_ESCAPE_LENGTH = 6
 
     // --- Pre-encoded ByteStrings (Fast-Path Writing) ---
     @PublishedApi
@@ -296,7 +314,7 @@ object GhostJsonConstants {
     const val WRITER_SCRATCH_SIZE = 512
 
     /**
-     * Initial capacity of [com.ghost.serialization.parser.strings.GhostJsonStringReader.slowPathChars]
+     * Initial capacity of `GhostJsonStringReader.slowPathChars`
      * for decoding escaped JSON strings. Grows on demand; kept as a constant (not a heuristic)
      * because escape decode is rare and the size only amortizes the first few escapes.
      */
@@ -306,8 +324,8 @@ object GhostJsonConstants {
 
     /**
      * Streaming window size (bytes) copied out of the Okio buffer per
-     * [StreamingGhostSource] slow-path refill, and the sliding-consume retain margin
-     * (see [StreamingGhostSource.releaseBefore]).
+     * [com.ghost.serialization.parser.streaming.StreamingGhostSource] slow-path refill, and the sliding-consume retain margin
+     * (see [com.ghost.serialization.parser.streaming.StreamingGhostSource.releaseBefore]).
      * Kept at one Okio segment (8 KB): larger windows did not improve Decode(Streaming)
      * throughput and raised both allocated KB/op and peak retained Okio prefix
      * (retain = 1× window behind the reader).
@@ -425,7 +443,7 @@ object GhostJsonConstants {
     const val BMP_LIMIT = 0xFFFF
 
     // --- Scanning & Escape Identifiers ---
-    /** Number of bytes packed into a Long by [ghostReadLong8] for SWAR scanning. */
+    /** Number of bytes packed into a Long by [com.ghost.serialization.parser.bytes.ghostReadLong8] for SWAR scanning. */
     const val LONG_BYTES = 8
 
     /** A Long whose 8 bytes are all ASCII space (0x20); byte-order-independent (symmetric). */
@@ -449,7 +467,7 @@ object GhostJsonConstants {
     /** SWAR broadcast of [BACKSLASH_INT] (`'\\' * SWAR_ONES`); XOR then zero-byte detect finds escapes. */
     const val SWAR_BACKSLASHES = 0x5C5C5C5C5C5C5C5CL
 
-    /** Byte offsets within an 8-byte [ghostReadLong8] window (scalar platform assembly). */
+    /** Byte offsets within an 8-byte [com.ghost.serialization.parser.bytes.ghostReadLong8] window (scalar platform assembly). */
     const val LONG_BYTE_OFFSET_1 = 1
     const val LONG_BYTE_OFFSET_2 = 2
     const val LONG_BYTE_OFFSET_3 = 3
@@ -460,7 +478,7 @@ object GhostJsonConstants {
 
     /**
      * Initial / reset value for optimistic in-order field prediction
-     * ([GhostJsonFlatReader] `predictedFieldIndex`).
+     * ([com.ghost.serialization.parser.bytes.GhostJsonFlatReader] `predictedFieldIndex`).
      */
     const val FIELD_PREDICTION_START = 0
 
@@ -521,17 +539,39 @@ object GhostJsonConstants {
     const val HINNANT_DAYS_CYCLE_4 = 1460
     const val HINNANT_DAYS_CYCLE_100 = 36524
     const val HINNANT_DAYS_CYCLE_ERA = 146096
+    /** Coefficient in Howard Hinnant's civil-from-days / days-from-civil month arithmetic. */
+    const val HINNANT_MONTH_COEFF = 153
+    const val DAYS_PER_YEAR = 365
     const val SECONDS_PER_DAY = 86400L
     const val SECONDS_PER_HOUR = 3600L
     const val SECONDS_PER_MINUTE = 60L
+
+    const val TYPE_NAME_STRING = "String"
+    const val TYPE_NAME_INT = "Int"
+    const val TYPE_NAME_LONG = "Long"
+    const val TYPE_NAME_FLOAT = "Float"
+    const val TYPE_NAME_DOUBLE = "Double"
+    const val TYPE_NAME_BOOLEAN = "Boolean"
+    const val TYPE_NAME_BYTE = "Byte"
+    const val TYPE_NAME_SHORT = "Short"
+    const val TYPE_NAME_CHAR = "Char"
+    const val TYPE_NAME_INT_ARRAY = "IntArray"
+    const val TYPE_NAME_LONG_ARRAY = "LongArray"
+    const val TYPE_NAME_FLOAT_ARRAY = "FloatArray"
+    const val TYPE_NAME_DOUBLE_ARRAY = "DoubleArray"
+    const val TYPE_NAME_BOOLEAN_ARRAY = "BooleanArray"
+    const val TYPE_NAME_LIST_PREFIX = "List<"
+    const val TYPE_NAME_SET_PREFIX = "Set<"
+    const val TYPE_NAME_MAP_STRING_PREFIX = "Map<String, "
+    const val TYPE_NAME_GENERIC_SUFFIX = ">"
 
     const val WKT_ANY_TYPE = "google.protobuf.Any"
     const val WKT_STRUCT_TYPE = "google.protobuf.Struct"
     const val WKT_VALUE_TYPE = "google.protobuf.Value"
     const val WKT_EMPTY_TYPE = "google.protobuf.Empty"
-    const val WKT_FIELDMASK_TYPE = "google.protobuf.FieldMask"
     const val WKT_TIMESTAMP_TYPE = "google.protobuf.Timestamp"
     const val WKT_DURATION_TYPE = "google.protobuf.Duration"
+    const val WKT_FIELDMASK_TYPE = "google.protobuf.FieldMask"
     const val WKT_BOOL_VALUE_TYPE = "google.protobuf.BoolValue"
     const val WKT_STRING_VALUE_TYPE = "google.protobuf.StringValue"
     const val WKT_BYTES_VALUE_TYPE = "google.protobuf.BytesValue"
@@ -678,9 +718,6 @@ object GhostJsonConstants {
     /** Low 10 bits of a supplementary-plane offset when forming a UTF-16 surrogate pair. */
     const val SURROGATE_PAIR_MASK = 0x3FF
 
-    /** Unicode replacement character `U+FFFD`. */
-    const val UNICODE_REPLACEMENT = 0xFFFD
-
     /** Worst-case number of UTF-8 bytes for any BMP code point (3 + 1 trailing surrogate). */
     const val UTF8_MAX_BMP_BYTES = 4
 
@@ -706,18 +743,6 @@ object GhostJsonConstants {
         0xBD.toByte()
     )
 
-    internal object FormatUtils {
-        val DIGIT_TENS = ByteArray(100)
-        val DIGIT_ONES = ByteArray(100)
-
-        init {
-            for (i in 0 until 100) {
-                DIGIT_TENS[i] = ((i / BASE_TEN) + ASCII_OFFSET).toByte()
-                DIGIT_ONES[i] = ((i % BASE_TEN) + ASCII_OFFSET).toByte()
-            }
-        }
-    }
-
     // --- Scan results packing (Long) ---
     /** Mask to extract the 32-bit hash from the scan result Long. */
     const val SCAN_HASH_MASK = 0xFFFFFFFFL
@@ -733,8 +758,8 @@ object GhostJsonConstants {
 
     @PublishedApi
     internal fun packScanResult(length: Int, hash: Int, is7Bit: Boolean): Long {
-        var res = (length.toLong() shl SCAN_LENGTH_SHIFT) or (hash.toLong() and SCAN_HASH_MASK)
-        if (is7Bit) res = res or SCAN_7BIT_BIT
-        return res
+        var result = (length.toLong() shl SCAN_LENGTH_SHIFT) or (hash.toLong() and SCAN_HASH_MASK)
+        if (is7Bit) result = result or SCAN_7BIT_BIT
+        return result
     }
 }

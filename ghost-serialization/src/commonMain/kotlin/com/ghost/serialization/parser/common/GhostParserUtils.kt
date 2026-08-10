@@ -1,7 +1,8 @@
-@file:Suppress("NOTHING_TO_INLINE", "UNNECESSARY_NOT_NULL_ASSERTION")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package com.ghost.serialization.parser.common
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import kotlin.math.pow
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -26,6 +27,48 @@ internal inline fun isExponentMarker(markerByte: Int): Boolean {
  */
 internal inline fun isDigit(byteCode: Int): Boolean {
     return (byteCode xor C.ZERO_INT) < C.BASE_TEN
+}
+
+/**
+ * Accumulates one decimal digit into an Int, throwing via [onOverflow] past JVM Int bounds.
+ */
+internal inline fun accumulateIntWithOverflowCheck(
+    current: Int,
+    digitValue: Int,
+    isNegative: Boolean,
+    onOverflow: () -> Nothing,
+): Int {
+    if (current > C.INT_OVERFLOW_LIMIT ||
+        (current == C.INT_OVERFLOW_LIMIT &&
+                digitValue > (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))
+    ) {
+        onOverflow()
+    }
+    return current * C.BASE_TEN + digitValue
+}
+
+/**
+ * Accumulates one decimal digit into a Long, throwing via [onOverflow] past JVM Long bounds.
+ * Preserves the Long.MIN_VALUE edge case for negative overflow-limit + last digit.
+ */
+internal inline fun accumulateLongWithOverflowCheck(
+    current: Long,
+    digitValue: Int,
+    isNegative: Boolean,
+    onOverflow: () -> Nothing,
+): Long {
+    if (current == Long.MIN_VALUE ||
+        current > C.LONG_OVERFLOW_LIMIT ||
+        (current == C.LONG_OVERFLOW_LIMIT && digitValue > C.LONG_MAX_LAST_DIGIT)
+    ) {
+        if (isNegative && current == C.LONG_OVERFLOW_LIMIT &&
+            digitValue == C.LONG_MIN_LAST_DIGIT
+        ) {
+            return Long.MIN_VALUE
+        }
+        onOverflow()
+    }
+    return current * C.BASE_TEN + digitValue
 }
 
 /**
@@ -185,7 +228,7 @@ internal inline fun matchCoerceBooleanBytes(
  * @param charPos The char-indexed position to convert (0 = start of string).
  * @return The UTF-8 byte offset corresponding to [charPos].
  */
-@com.ghost.serialization.InternalGhostApi
+@InternalGhostApi
 fun charToBytePosition(s: String, charPos: Int): Int {
     var bytePos = 0
     var i = 0
@@ -228,7 +271,7 @@ fun charToBytePosition(s: String, charPos: Int): Int {
  * @param targetBytePos The UTF-8 byte offset to convert.
  * @return The char-indexed position in [s] corresponding to [targetBytePos].
  */
-@com.ghost.serialization.InternalGhostApi
+@InternalGhostApi
 fun byteToCharPosition(s: String, targetBytePos: Int): Int {
     var bytePos = 0
     var i = 0

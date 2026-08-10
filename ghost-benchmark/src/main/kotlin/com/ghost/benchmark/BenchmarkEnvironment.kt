@@ -43,7 +43,7 @@ import kotlin.reflect.KClass
  * One-time Ghost registry wiring and JVM prewarm shared by every benchmark process.
  *
  * Registers manual serializers for integration-test types (external coders, protobuf WKTs),
- * calls [com.ghost.serialization.Ghost.prewarm], and enables thread allocation tracking.
+ * calls [Ghost.prewarm], and enables thread allocation tracking.
  */
 internal object BenchmarkEnvironment {
 

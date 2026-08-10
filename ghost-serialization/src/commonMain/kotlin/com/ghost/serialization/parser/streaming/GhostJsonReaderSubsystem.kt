@@ -6,12 +6,29 @@ package com.ghost.serialization.parser.streaming
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.beginArrayCore
+import com.ghost.serialization.parser.common.beginObjectCore
+import com.ghost.serialization.parser.common.computeKeyHashCore
+import com.ghost.serialization.parser.common.consumeArraySeparatorCore
+import com.ghost.serialization.parser.common.consumeKeySeparatorCore
+import com.ghost.serialization.parser.common.endArrayCore
+import com.ghost.serialization.parser.common.endObjectCore
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
+import com.ghost.serialization.parser.common.handleSelectNoMatchCore
+import com.ghost.serialization.parser.common.hasNextCore
+import com.ghost.serialization.parser.common.nextBooleanCore
+import com.ghost.serialization.parser.common.nextKeyCommaPreambleCore
+import com.ghost.serialization.parser.common.nextOrNullCore
+import com.ghost.serialization.parser.common.readListCore
+import com.ghost.serialization.parser.common.readSetCore
 import com.ghost.serialization.parser.common.scanStringImpl
+import com.ghost.serialization.parser.common.selectValidateCommasCore
+import com.ghost.serialization.parser.common.skipValueCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -26,19 +43,18 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * @throws GhostJsonException if the token is invalid or [GhostJsonReader.maxDepth] is exceeded.
  */
 fun GhostJsonReader.beginObject() {
-    if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
-        throwError(C.ERR_EXPECTED_BEGIN_OBJ)
-    }
-    predictedFieldIndex = C.FIELD_PREDICTION_START
-    depth++
-    if (depth > maxDepth) {
-        throwError(C.ERR_DEPTH_EXCEEDED)
-    }
-    if (depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        needsCommaMask = needsCommaMask and bit.inv()
-        commaConsumedMask = commaConsumedMask and bit.inv()
-    }
+    beginObjectCore(
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        maxDepth = maxDepth,
+        getNeedsCommaMask = { needsCommaMask },
+        setNeedsCommaMask = { needsCommaMask = it },
+        getCommaConsumedMask = { commaConsumedMask },
+        setCommaConsumedMask = { commaConsumedMask = it },
+        setPredictedFieldIndex = { predictedFieldIndex = it },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -51,12 +67,12 @@ fun GhostJsonReader.beginObject() {
  * @throws GhostJsonException if the token is not `}`.
  */
 fun GhostJsonReader.endObject() {
-    if (nextNonWhitespace() != C.CLOSE_OBJ_INT) {
-        throwError(C.ERR_EXPECTED_END_OBJ)
-    }
-    if (depth > 0) {
-        depth--
-    }
+    endObjectCore(
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -70,18 +86,17 @@ fun GhostJsonReader.endObject() {
  * @throws GhostJsonException if the token is invalid or [GhostJsonReader.maxDepth] is exceeded.
  */
 fun GhostJsonReader.beginArray() {
-    if (nextNonWhitespace() != C.OPEN_ARR_INT) {
-        throwError(C.ERR_EXPECTED_BEGIN_ARR)
-    }
-    depth++
-    if (depth > maxDepth) {
-        throwError(C.ERR_DEPTH_EXCEEDED)
-    }
-    if (depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        needsCommaMask = needsCommaMask and bit.inv()
-        commaConsumedMask = commaConsumedMask and bit.inv()
-    }
+    beginArrayCore(
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        maxDepth = maxDepth,
+        getNeedsCommaMask = { needsCommaMask },
+        setNeedsCommaMask = { needsCommaMask = it },
+        getCommaConsumedMask = { commaConsumedMask },
+        setCommaConsumedMask = { commaConsumedMask = it },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -94,12 +109,12 @@ fun GhostJsonReader.beginArray() {
  * @throws GhostJsonException if the token is not `]`.
  */
 fun GhostJsonReader.endArray() {
-    if (nextNonWhitespace() != C.CLOSE_ARR_INT) {
-        throwError(C.ERR_EXPECTED_END_ARR)
-    }
-    if (depth > 0) {
-        depth--
-    }
+    endArrayCore(
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -114,55 +129,18 @@ fun GhostJsonReader.endArray() {
  * @return `true` if there are more elements/properties, `false` otherwise.
  * @throws GhostJsonException if a trailing comma is detected or input is invalid.
  */
-fun GhostJsonReader.hasNext(): Boolean {
-    val token = peekNextToken()
-    if (
-        token == C.CLOSE_ARR_INT ||
-        token == C.CLOSE_OBJ_INT ||
-        token == C.MATCH_END
-    ) {
-        return false
-    }
-    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            if (token == C.COMMA_INT) {
-                commaConsumedMask = commaConsumedMask and bit.inv()
-                needsCommaMask = needsCommaMask or bit
-            }
-        }
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            commaConsumedMask = commaConsumedMask and bit.inv()
-            needsCommaMask = needsCommaMask or bit
-        } else {
-            val required = (needsCommaMask and bit) != C.RESULT_NONE
-            if (token == C.COMMA_INT) {
-                if (!required) {
-                    throwError(C.ERR_UNEXPECTED_COMMA)
-                }
-                internalSkip(1)
-                val next = peekNextToken()
-                if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-                commaConsumedMask = commaConsumedMask or bit
-                needsCommaMask = needsCommaMask and bit.inv()
-            } else {
-                if (required) throwError(C.ERR_EXPECTED_COMMA)
-                needsCommaMask = needsCommaMask or bit
-            }
-        }
-    } else {
-        if (token == C.COMMA_INT) {
-            internalSkip(1)
-            val next = peekNextToken()
-            if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-        }
-    }
-    return true
-}
+fun GhostJsonReader.hasNext(): Boolean =
+    hasNextCore(
+        peekNextToken = { peekNextToken() },
+        strictMode = strictMode,
+        depth = depth,
+        getNeedsCommaMask = { needsCommaMask },
+        setNeedsCommaMask = { needsCommaMask = it },
+        getCommaConsumedMask = { commaConsumedMask },
+        setCommaConsumedMask = { commaConsumedMask = it },
+        internalSkip = { internalSkip(it) },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Consumes the optional separator comma and decodes the next JSON key name.
@@ -176,41 +154,19 @@ fun GhostJsonReader.hasNext(): Boolean {
  * @throws GhostJsonException if a trailing comma is detected or the key string is malformed.
  */
 fun GhostJsonReader.nextKey(): String? {
-    val token = peekNextToken()
-    if (token == C.CLOSE_OBJ_INT) {
+    if (!nextKeyCommaPreambleCore(
+            peekNextToken = { peekNextToken() },
+            strictMode = strictMode,
+            depth = depth,
+            getNeedsCommaMask = { needsCommaMask },
+            setNeedsCommaMask = { needsCommaMask = it },
+            getCommaConsumedMask = { commaConsumedMask },
+            setCommaConsumedMask = { commaConsumedMask = it },
+            internalSkip = { internalSkip(it) },
+            throwError = { throwError(it) },
+        )
+    ) {
         return null
-    }
-    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        // If comma was already consumed by consumeArraySeparator(), skip re-requiring it.
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            commaConsumedMask = commaConsumedMask and bit.inv()
-            needsCommaMask = needsCommaMask or bit
-        } else {
-            val required = (needsCommaMask and bit) != C.RESULT_NONE
-            if (token == C.COMMA_INT) {
-                if (!required) {
-                    throwError(C.ERR_UNEXPECTED_COMMA)
-                }
-                internalSkip(1)
-                if (peekNextToken() == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-                needsCommaMask = needsCommaMask or bit
-            } else {
-                if (required) {
-                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
-                }
-                needsCommaMask = needsCommaMask or bit
-            }
-        }
-    } else {
-        if (token == C.COMMA_INT) {
-            internalSkip(1)
-            if (peekNextToken() == C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-        }
     }
     return readQuotedString()
 }
@@ -223,9 +179,10 @@ fun GhostJsonReader.nextKey(): String? {
  * @throws GhostJsonException if the next non-whitespace character is not a colon `:`.
  */
 fun GhostJsonReader.consumeKeySeparator() {
-    if (nextNonWhitespace() != C.COLON_INT) {
-        throwError(C.ERR_EXPECTED_COLON)
-    }
+    consumeKeySeparatorCore(
+        nextNonWhitespace = { nextNonWhitespace() },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -234,46 +191,17 @@ fun GhostJsonReader.consumeKeySeparator() {
  * Advances the cursor by 1 byte if the comma is matched.
  */
 fun GhostJsonReader.consumeArraySeparator() {
-    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        // If hasNext() already consumed the comma, honor that.
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            commaConsumedMask = commaConsumedMask and bit.inv()
-            needsCommaMask = needsCommaMask or bit
-            return
-        }
-        val token = peekNextToken()
-        val required = (needsCommaMask and bit) != C.RESULT_NONE
-        if (token == C.COMMA_INT) {
-            // Consume the comma and signal to the next nextKey()/selectNameAndConsume() that
-            // it was already consumed, so they don't re-require one.
-            internalSkip(1)
-            val next = peekNextToken()
-            if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-            commaConsumedMask = commaConsumedMask or bit
-        } else if (required) {
-            if (token != C.CLOSE_ARR_INT && token != C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)
-            }
-        } else {
-            // First call at this depth: no prior comma needed, but if a non-separator token
-            // follows (neither comma nor closing bracket), the JSON is malformed.
-            if (token != C.CLOSE_ARR_INT && token != C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)
-            }
-        }
-        needsCommaMask = needsCommaMask or bit
-    } else {
-        val token = peekNextToken()
-        if (token == C.COMMA_INT) {
-            internalSkip(1)
-            if (peekNextToken() == C.CLOSE_ARR_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-        }
-    }
+    consumeArraySeparatorCore(
+        strictMode = strictMode,
+        depth = depth,
+        getNeedsCommaMask = { needsCommaMask },
+        setNeedsCommaMask = { needsCommaMask = it },
+        getCommaConsumedMask = { commaConsumedMask },
+        setCommaConsumedMask = { commaConsumedMask = it },
+        peekNextToken = { peekNextToken() },
+        internalSkip = { internalSkip(it) },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -287,32 +215,15 @@ fun GhostJsonReader.consumeArraySeparator() {
  * @return The parsed or coerced boolean value.
  * @throws GhostJsonException if the token is not a boolean or fails to be coerced.
  */
-fun GhostJsonReader.nextBoolean(): Boolean {
-    val token = peekNextToken()
-    if (token == C.TRUE_CHAR_INT) {
-        skipAndValidateLiteral(C.TRUE_BS)
-        return true
-    }
-    if (token == C.FALSE_CHAR_INT) {
-        skipAndValidateLiteral(C.FALSE_BS)
-        return false
-    }
-    if (coerceBooleans) {
-        if (token == C.ONE_INT) {
-            internalSkip(1)
-            return true
-        }
-        if (token == C.ZERO_INT) {
-            internalSkip(1)
-            return false
-        }
-        if (token == C.QUOTE_INT) {
-            // Zero-copy: scan the quoted string bytes directly. No String allocation.
-            return matchCoerceBooleanBytes()
-        }
-    }
-    throwError(C.ERR_EXPECTED_BOOLEAN)
-}
+fun GhostJsonReader.nextBoolean(): Boolean =
+    nextBooleanCore(
+        peekNextToken = { peekNextToken() },
+        skipAndValidateLiteral = { skipAndValidateLiteral(it) },
+        coerceBooleans = coerceBooleans,
+        internalSkip = { internalSkip(it) },
+        matchCoerceBooleanBytes = { matchCoerceBooleanBytes() },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Decodes and returns the next JSON string value.
@@ -353,12 +264,12 @@ fun GhostJsonReader.nextChar(): Char {
         val end = start + length
         if (length == C.SINGLE_CHAR_JSON_LENGTH && only7Bit) {
             position = end + 1
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             return getByte(start).toChar()
         }
         if (length == 0) {
             position = end + 1
-            nextTokenByte = -1
+            nextTokenByte = C.RESET_TOKEN_BYTE
             throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)
         }
     }
@@ -393,76 +304,71 @@ fun GhostJsonReader.consumeNull() {
         skipAndValidateLiteral(C.NULL_BS)
         return
     }
-    val p = position
+    val cursor = position
     val data = rawData
-    if (p + 4 > limit ||
-        (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
-        (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
-        (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
-        (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
+    if (cursor + 4 > limit ||
+        (data[cursor].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
+        (data[cursor + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
+        (data[cursor + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
+        (data[cursor + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
     ) {
         throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
     }
-    position = p + 4
-    nextTokenByte = -1
+    position = cursor + 4
+    nextTokenByte = C.RESET_TOKEN_BYTE
 }
 
 /** Reads a JSON string, or `null` when the next token is the `null` literal. */
-fun GhostJsonReader.nextStringOrNull(): String? {
-    if (peekNextToken() == C.NULL_CHAR_INT) {
-        consumeNull()
-        return null
-    }
-    return nextString()
-}
+fun GhostJsonReader.nextStringOrNull(): String? =
+    nextOrNullCore(
+        peekNextToken = { peekNextToken() },
+        consumeNull = { consumeNull() },
+        readValue = { nextString() },
+    )
 
 /** Reads a JSON int, or `null` when the next token is the `null` literal. */
-fun GhostJsonReader.nextIntOrNull(): Int? {
-    if (peekNextToken() == C.NULL_CHAR_INT) {
-        consumeNull()
-        return null
-    }
-    return nextInt()
-}
+fun GhostJsonReader.nextIntOrNull(): Int? =
+    nextOrNullCore(
+        peekNextToken = { peekNextToken() },
+        consumeNull = { consumeNull() },
+        readValue = { nextInt() },
+    )
 
 /** Reads a JSON long, or `null` when the next token is the `null` literal. */
-fun GhostJsonReader.nextLongOrNull(): Long? {
-    if (peekNextToken() == C.NULL_CHAR_INT) {
-        consumeNull()
-        return null
-    }
-    return nextLong()
-}
+fun GhostJsonReader.nextLongOrNull(): Long? =
+    nextOrNullCore(
+        peekNextToken = { peekNextToken() },
+        consumeNull = { consumeNull() },
+        readValue = { nextLong() },
+    )
 
 /** Reads a JSON unsigned long, or `null` when the next token is the `null` literal. */
-fun GhostJsonReader.nextULongOrNull(): ULong? {
-    if (peekNextToken() == C.NULL_CHAR_INT) {
-        consumeNull()
-        return null
-    }
-    return nextULong()
-}
+fun GhostJsonReader.nextULongOrNull(): ULong? =
+    nextOrNullCore(
+        peekNextToken = { peekNextToken() },
+        consumeNull = { consumeNull() },
+        readValue = { nextULong() },
+    )
 
 /** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
-fun GhostJsonReader.nextBooleanOrNull(): Boolean? {
-    if (peekNextToken() == C.NULL_CHAR_INT) {
-        consumeNull()
-        return null
-    }
-    return nextBoolean()
-}
+fun GhostJsonReader.nextBooleanOrNull(): Boolean? =
+    nextOrNullCore(
+        peekNextToken = { peekNextToken() },
+        consumeNull = { consumeNull() },
+        readValue = { nextBoolean() },
+    )
 
 /**
  * Zero-copy boolean coercion matcher for [GhostJsonReader]. Delegates byte
  * comparison to [matchCoerceBooleanBytes] in GhostParserUtils — single source of truth.
  */
 private fun GhostJsonReader.matchCoerceBooleanBytes(): Boolean {
-    val lim = limit
+    val byteLimit = limit
     val contentStart = position + 1 // skip opening '"'
     val end = if (isStreaming) {
-        source.findClosingQuote(contentStart, lim)
+        source.findClosingQuote(contentStart, byteLimit)
     } else {
-        findClosingQuoteImpl(contentStart, lim) { getByte(it) }
+        findClosingQuoteImpl(contentStart, byteLimit) { getByte(it) }
     }
     if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)
     val length = end - contentStart
@@ -529,7 +435,7 @@ private fun GhostJsonReader.internalSelect(
         throwExpectedKeyOrStringError(consumeSeparator)
     }
     val start = position + 1
-    val lim = limit
+    val byteLimit = limit
 
     // Optimistic in-order field match: most objects list fields in declaration order,
     // so compare the key directly against the predicted candidate in a single pass.
@@ -537,24 +443,29 @@ private fun GhostJsonReader.internalSelect(
     val rawBytes = options.rawBytes
     if (predicted < rawBytes.size) {
         val candidate = rawBytes[predicted]
-        val candLen = candidate.size
-        val keyEnd = start + candLen
-        if (candLen > 0 && keyEnd < lim) {
+        val candidateLength = candidate.size
+        val keyEnd = start + candidateLength
+        if (candidateLength > 0 && keyEnd < byteLimit) {
             val matched = if (!isStreaming) {
                 val localData = rawData
                 if ((localData[keyEnd].toInt() and C.BYTE_MASK) != C.QUOTE_INT) {
                     false
                 } else {
-                    var i = 0
-                    while (i + C.LONG_BYTES <= candLen &&
-                        ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
+                    var matchedOffset = 0
+                    if (ghostUseSwarScans) {
+                        while (matchedOffset + C.LONG_BYTES <= candidateLength &&
+                            ghostReadLong8(localData, start + matchedOffset) ==
+                            ghostReadLong8(candidate, matchedOffset)
+                        ) {
+                            matchedOffset += C.LONG_BYTES
+                        }
+                    }
+                    while (matchedOffset < candidateLength &&
+                        localData[start + matchedOffset] == candidate[matchedOffset]
                     ) {
-                        i += C.LONG_BYTES
+                        matchedOffset++
                     }
-                    while (i < candLen && localData[start + i] == candidate[i]) {
-                        i++
-                    }
-                    i == candLen
+                    matchedOffset == candidateLength
                 }
             } else {
                 // The stream's limit is unknown (Int.MAX_VALUE), so the bounds check above
@@ -562,21 +473,24 @@ private fun GhostJsonReader.internalSelect(
                 if (source.byteOrEof(keyEnd) != C.QUOTE_INT) {
                     false
                 } else {
-                    var i = 0
-                    while (i < candLen && getByte(start + i) == (candidate[i].toInt() and C.BYTE_MASK)) {
-                        i++
+                    var matchedOffset = 0
+                    while (matchedOffset < candidateLength &&
+                        getByte(start + matchedOffset) ==
+                        (candidate[matchedOffset].toInt() and C.BYTE_MASK)
+                    ) {
+                        matchedOffset++
                     }
-                    i == candLen
+                    matchedOffset == candidateLength
                 }
             }
             if (matched) {
                 predictedFieldIndex = predicted + 1
                 val newPos = keyEnd + 1
                 position = newPos
-                nextTokenByte = -1
+                nextTokenByte = C.RESET_TOKEN_BYTE
                 if (consumeSeparator) {
                     val separator = when {
-                        newPos >= lim -> C.MATCH_END
+                        newPos >= byteLimit -> C.MATCH_END
                         isStreaming -> source.byteOrEof(newPos)
                         else -> getByte(newPos)
                     }
@@ -592,10 +506,10 @@ private fun GhostJsonReader.internalSelect(
     }
 
     val end = if (isStreaming) {
-        source.findClosingQuote(start, lim)
+        source.findClosingQuote(start, byteLimit)
     } else {
         val localData = rawData
-        findClosingQuoteImpl(start, lim) {
+        findClosingQuoteImpl(start, byteLimit) {
             localData[it].toInt() and C.BYTE_MASK
         }
     }
@@ -617,69 +531,42 @@ private fun GhostJsonReader.internalSelect(
         }
     }
 
-    return handleSelectNoMatch(start, end, length, consumeSeparator)
+    return handleSelectNoMatch(start, end, consumeSeparator)
 }
 
-private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int {
-    var currentToken = token
-    if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-        val bit = C.BITMASK_UNIT shl depth
-        if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-            commaConsumedMask = commaConsumedMask and bit.inv()
-            needsCommaMask = needsCommaMask or bit
-        } else {
-            val required = (needsCommaMask and bit) != C.RESULT_NONE
-            if (currentToken == C.COMMA_INT) {
-                if (!required) {
-                    throwError(C.ERR_UNEXPECTED_COMMA)
-                }
-                internalSkip(1)
-                currentToken = peekNextToken()
-                if (currentToken == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-                commaConsumedMask = commaConsumedMask and bit.inv()
-                needsCommaMask = needsCommaMask or bit
-            } else {
-                if (required && consumeSeparator) {
-                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
-                }
-                needsCommaMask = needsCommaMask or bit
-            }
-        }
-    } else {
-        if (currentToken == C.COMMA_INT) {
-            internalSkip(1)
-            currentToken = peekNextToken()
-            if (currentToken == C.CLOSE_OBJ_INT) {
-                throwError(C.ERR_TRAILING_COMMA)
-            }
-        }
-    }
-    return currentToken
-}
+private fun GhostJsonReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int =
+    selectValidateCommasCore(
+        token = token,
+        consumeSeparator = consumeSeparator,
+        strictMode = strictMode,
+        depth = depth,
+        getNeedsCommaMask = { needsCommaMask },
+        setNeedsCommaMask = { needsCommaMask = it },
+        getCommaConsumedMask = { commaConsumedMask },
+        setCommaConsumedMask = { commaConsumedMask = it },
+        peekNextToken = { peekNextToken() },
+        internalSkip = { internalSkip(it) },
+        throwError = { throwError(it) },
+    )
 
 private fun GhostJsonReader.handleSelectNoMatch(
     start: Int,
     end: Int,
-    length: Int,
-    consumeSeparator: Boolean
-): Int {
-    val newPos = end + 1
-    position = newPos
-    nextTokenByte = C.MATCH_END
-    if (consumeSeparator) {
-        if (newPos < limit && getByte(newPos) == C.COLON_INT) {
-            position = newPos + 1
-        } else {
-            consumeKeySeparator()
-        }
-    } else if (strictMode) {
-        val unknownKey = source.decodeToString(start, end)
-        throwError("${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey")
-    }
-    return C.MATCH_NONE
-}
+    consumeSeparator: Boolean,
+): Int =
+    handleSelectNoMatchCore(
+        start = start,
+        end = end,
+        consumeSeparator = consumeSeparator,
+        strictMode = strictMode,
+        limit = limit,
+        getByte = { getByte(it) },
+        setPosition = { position = it },
+        setNextTokenByte = { nextTokenByte = it },
+        consumeKeySeparator = { consumeKeySeparator() },
+        decodeUnknownKey = { s, e -> source.decodeToString(s, e) },
+        throwError = { throwError(it) },
+    )
 
 private fun GhostJsonReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
     throwError(if (consumeSeparator) C.ERR_EXPECTED_KEY else C.ERR_EXPECTED_STRING)
@@ -689,41 +576,8 @@ private fun GhostJsonReader.throwUnterminatedStringError() {
     throwError(C.UNTERMINATED_STRING_ERROR)
 }
 
-/**
- * Computes a fast, collision-reducing 32-bit hash value from a raw slice of the JSON buffer.
- *
- * Optimization:
- * - Packs the first 4 bytes directly into a single Int value using bitwise shifts and OR operations.
- * - This avoids allocating any temporary byte arrays or strings, allowing hardware-level key hashing.
- *
- * @param start The absolute 0-based byte position in the buffer.
- * @param length The length of the key.
- * @return The packed 32-bit hash key.
- */
-private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
-    var key = 0
-    if (length >= 4) {
-        val byte0 = getByte(start)
-        val byte1 = getByte(start + 1)
-        val byte2 = getByte(start + 2)
-        val byte3 = getByte(start + 3)
-        key = byte0 or
-                (byte1 shl C.SHIFT_8) or
-                (byte2 shl C.SHIFT_16) or
-                (byte3 shl C.SHIFT_24)
-        if (hasCollisions) {
-            var ci = C.UNICODE_HEX_LENGTH
-            while (ci < length) {
-                key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++
-            }
-        }
-    } else {
-        if (length >= 1) key = key or getByte(start)
-        if (length >= 2) key = key or (getByte(start + 1) shl C.SHIFT_8)
-        if (length >= 3) key = key or (getByte(start + 2) shl C.SHIFT_16)
-    }
-    return key
-}
+private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int =
+    computeKeyHashCore(start, length, hasCollisions) { getByte(it) }
 
 /**
  * Verifies that the candidate key matched in the dispatch table corresponds exactly to the expected key bytes.
@@ -746,41 +600,41 @@ private fun GhostJsonReader.verifyKeyMatch(
     consumeSeparator: Boolean
 ): Boolean {
     if (expected.size == length) {
-        var i = 0
+        var matchedOffset = 0
         if (!isStreaming) {
             val localData = rawData
-            while (i + 3 < length) {
-                if (localData[start + i] != expected[i]) return false
-                if (localData[start + i + 1] != expected[i + 1]) return false
-                if (localData[start + i + 2] != expected[i + 2]) return false
-                if (localData[start + i + 3] != expected[i + 3]) return false
-                i += 4
+            while (matchedOffset + 3 < length) {
+                if (localData[start + matchedOffset] != expected[matchedOffset]) return false
+                if (localData[start + matchedOffset + 1] != expected[matchedOffset + 1]) return false
+                if (localData[start + matchedOffset + 2] != expected[matchedOffset + 2]) return false
+                if (localData[start + matchedOffset + 3] != expected[matchedOffset + 3]) return false
+                matchedOffset += 4
             }
-            while (i < length) {
-                if (localData[start + i] != expected[i]) return false
-                i++
+            while (matchedOffset < length) {
+                if (localData[start + matchedOffset] != expected[matchedOffset]) return false
+                matchedOffset++
             }
         } else {
             val localSource = source
-            while (i + 3 < length) {
-                if (localSource[start + i].toByte() != expected[i]) return false
-                if (localSource[start + i + 1].toByte() != expected[i + 1]) return false
-                if (localSource[start + i + 2].toByte() != expected[i + 2]) return false
-                if (localSource[start + i + 3].toByte() != expected[i + 3]) return false
-                i += 4
+            while (matchedOffset + 3 < length) {
+                if (localSource[start + matchedOffset].toByte() != expected[matchedOffset]) return false
+                if (localSource[start + matchedOffset + 1].toByte() != expected[matchedOffset + 1]) return false
+                if (localSource[start + matchedOffset + 2].toByte() != expected[matchedOffset + 2]) return false
+                if (localSource[start + matchedOffset + 3].toByte() != expected[matchedOffset + 3]) return false
+                matchedOffset += 4
             }
-            while (i < length) {
-                if (localSource[start + i].toByte() != expected[i]) return false
-                i++
+            while (matchedOffset < length) {
+                if (localSource[start + matchedOffset].toByte() != expected[matchedOffset]) return false
+                matchedOffset++
             }
         }
         val endPos = start + length
         val newPos = endPos + 1
         position = newPos
-        nextTokenByte = -1
+        nextTokenByte = C.RESET_TOKEN_BYTE
         if (consumeSeparator) {
-            val lim = limit
-            if (newPos < lim) {
+            val byteLimit = limit
+            if (newPos < byteLimit) {
                 val colonToken = getByte(newPos)
                 if (colonToken == C.COLON_INT) {
                     position = newPos + 1
@@ -816,49 +670,20 @@ fun GhostJsonReader.peekStringField(name: String): String? {
  * This is used to bypass unknown properties, maintaining reader alignment.
  */
 fun GhostJsonReader.skipValue() {
-    val token = peekNextToken()
-    when (token) {
-        C.OPEN_OBJ_INT -> {
-            beginObject()
-            while (hasNext()) {
-                if (peekNextToken() != C.QUOTE_INT) {
-                    throwError(C.ERR_EXPECTED_KEY)
-                }
-                skipQuotedString()
-                consumeKeySeparator()
-                skipValue()
-            }
-            endObject()
-        }
-
-        C.OPEN_ARR_INT -> {
-            beginArray()
-            while (hasNext()) {
-                skipValue()
-            }
-            endArray()
-        }
-
-        C.QUOTE_INT -> {
-            skipQuotedString()
-        }
-
-        C.TRUE_CHAR_INT -> {
-            skipAndValidateLiteral(C.TRUE_BS)
-        }
-
-        C.FALSE_CHAR_INT -> {
-            skipAndValidateLiteral(C.FALSE_BS)
-        }
-
-        C.NULL_CHAR_INT -> {
-            skipAndValidateLiteral(C.NULL_BS)
-        }
-
-        else -> {
-            skipNumber()
-        }
-    }
+    skipValueCore(
+        peekNextToken = { peekNextToken() },
+        beginObject = { beginObject() },
+        endObject = { endObject() },
+        beginArray = { beginArray() },
+        endArray = { endArray() },
+        hasNext = { hasNext() },
+        skipQuotedString = { skipQuotedString() },
+        consumeKeySeparator = { consumeKeySeparator() },
+        skipValue = { skipValue() },
+        skipAndValidateLiteral = { skipAndValidateLiteral(it) },
+        skipNumber = { skipNumber() },
+        throwError = { throwError(it) },
+    )
 }
 
 /**
@@ -873,60 +698,36 @@ fun GhostJsonReader.skipValue() {
  * @param itemParser The parsing lambda to invoke for each array element.
  * @return A [List] containing the parsed items.
  */
-inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T> {
-    beginArray()
-    if (peekNextToken() == C.CLOSE_ARR_INT) {
-        endArray()
-        return emptyList()
-    }
-    val list = ArrayList<T>(initialCollectionCapacity)
-    val maxSize = maxCollectionSize
-
-    while (true) {
-        list.add(itemParser())
-        val next = nextNonWhitespace()
-        if (next == C.CLOSE_ARR_INT) {
-            depth--
-            break
-        }
-        if (next != C.COMMA_INT) {
-            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
-        }
-        if (list.size > maxSize) {
-            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-        }
-    }
-    return list
-}
+inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T> =
+    readListCore(
+        beginArray = { beginArray() },
+        endArray = { endArray() },
+        peekNextToken = { peekNextToken() },
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        initialCapacity = initialCollectionCapacity,
+        maxSize = maxCollectionSize,
+        itemParser = { itemParser() },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Reads a JSON array into a [Set] without an intermediate [List] allocation.
  */
-inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> {
-    beginArray()
-    if (peekNextToken() == C.CLOSE_ARR_INT) {
-        endArray()
-        return emptySet()
-    }
-    val set = HashSet<T>(initialCollectionCapacity)
-    val maxSize = maxCollectionSize
-
-    while (true) {
-        set.add(itemParser())
-        val next = nextNonWhitespace()
-        if (next == C.CLOSE_ARR_INT) {
-            depth--
-            break
-        }
-        if (next != C.COMMA_INT) {
-            throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
-        }
-        if (set.size > maxSize) {
-            throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-        }
-    }
-    return set
-}
+inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> =
+    readSetCore(
+        beginArray = { beginArray() },
+        endArray = { endArray() },
+        peekNextToken = { peekNextToken() },
+        nextNonWhitespace = { nextNonWhitespace() },
+        getDepth = { depth },
+        setDepth = { depth = it },
+        initialCapacity = initialCollectionCapacity,
+        maxSize = maxCollectionSize,
+        itemParser = { itemParser() },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Decodes a JSON object into a [Map] of key-value pairs, using the provided [keyParser] and [valueParser] lambdas.

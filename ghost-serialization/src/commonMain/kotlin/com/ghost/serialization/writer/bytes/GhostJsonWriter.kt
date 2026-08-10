@@ -5,8 +5,8 @@ package com.ghost.serialization.writer.bytes
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
@@ -15,20 +15,14 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_QUOTE_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.COMMA_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.DOT_ZERO
-import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT
 import com.ghost.serialization.parser.common.GhostJsonConstants.EMPTY_STRING_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
-import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_REPLACEMENTS
 import com.ghost.serialization.parser.common.GhostJsonConstants.FALSE_BS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.HUNDRED_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
 import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
-import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS
 import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_LONG_BS
@@ -39,22 +33,18 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
-import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
-import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.common.GhostDoubleFormatter
+import com.ghost.serialization.writer.common.GhostJsonEscapeHelpers
+import com.ghost.serialization.writer.common.GhostWriterLongDigits
 import okio.BufferedSink
 import okio.ByteString
-
 
 /**
  * A highly optimized, low-allocation JSON writer for Kotlin Multiplatform.
@@ -386,7 +376,7 @@ class GhostJsonWriter(
     /**
      * Writes raw JSON bytes directly into the stream without quoting or escaping.
      * Use this to emit a pre-serialized JSON fragment captured via
-     * [com.ghost.serialization.parser.bytes.captureRawJsonBytes].
+     * `captureRawJsonBytes`.
      */
     fun rawValue(bytes: ByteArray): GhostJsonWriter {
         appendSeparator()
@@ -406,7 +396,7 @@ class GhostJsonWriter(
     }
 
     /** Writes [raw] without copying slice data when possible. */
-    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonWriter =
+    fun rawValue(raw: RawJson): GhostJsonWriter =
         rawValue(raw.storage, raw.storageOffset, raw.storageLength)
 
     /**
@@ -485,8 +475,6 @@ class GhostJsonWriter(
      */
     private fun writeLongValueRawInternal(value: Long) {
         val scratchBuf = scratch ?: acquireScratch()
-        val scratchEnd = LONG_SCRATCH_SIZE
-        var pos = scratchEnd
         var localValue = value
         val isNegative = localValue < 0
         if (isNegative) {
@@ -497,25 +485,13 @@ class GhostJsonWriter(
             localValue = -localValue
         }
 
-        while (localValue >= HUNDRED_LONG) {
-            val rem = (localValue % HUNDRED_LONG).toInt() * 2
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem + 1] // ones
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem]     // tens
-            localValue /= HUNDRED_LONG
-        }
-
-        if (localValue < TEN_LONG) {
-            scratchBuf[--pos] = (ZERO_INT + localValue.toInt()).toByte()
-        } else {
-            val rem = localValue.toInt() * 2
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem + 1] // ones
-            scratchBuf[--pos] = DOUBLE_DIGIT_LUT[rem]     // tens
-        }
-
-        if (isNegative) {
-            scratchBuf[--pos] = MINUS
-        }
-
+        val scratchEnd = LONG_SCRATCH_SIZE
+        val pos = GhostWriterLongDigits.writeDigitsBytes(
+            absoluteValue = localValue,
+            negative = isNegative,
+            scratch = scratchBuf,
+            scratchEnd = scratchEnd,
+        )
         buffer.write(scratchBuf, pos, scratchEnd - pos)
     }
 
@@ -538,16 +514,13 @@ class GhostJsonWriter(
             value = number,
             scratch = scratchBuf,
             offset = 0,
-            fallback = { fallbackNum ->
-                if (!fallbackNum.isFinite()) {
-                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                }
-                buffer.writeUtf8(fallbackNum.toString())
-                -1
-            }
         )
-
-        if (bytesWrittenLength > 0) {
+        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+            if (!number.isFinite()) {
+                throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+            }
+            buffer.writeUtf8(number.toString())
+        } else if (bytesWrittenLength > 0) {
             buffer.write(scratchBuf, 0, bytesWrittenLength)
         }
     }
@@ -569,16 +542,13 @@ class GhostJsonWriter(
             value = number,
             scratch = scratchBuf,
             offset = 0,
-            fallback = { fallbackNum ->
-                if (!fallbackNum.isFinite()) {
-                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                }
-                buffer.writeUtf8(fallbackNum.toString())
-                -1
-            }
         )
-
-        if (bytesWrittenLength > 0) {
+        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+            if (!number.isFinite()) {
+                throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+            }
+            buffer.writeUtf8(number.toString())
+        } else if (bytesWrittenLength > 0) {
             buffer.write(scratchBuf, 0, bytesWrittenLength)
         }
     }
@@ -649,170 +619,29 @@ class GhostJsonWriter(
      * Helper to write escaped character bytes into the destination sink buffer.
      */
     private fun writeEscaped(text: String, start: Int = 0) {
-        val scratchBuf = acquireScratch()
-        val length = text.length
-        val remaining = length - start
-        if (remaining <= 0) {
-            return
-        }
-
-        val replacements = ESCAPE_REPLACEMENTS
-        val escapeMasks = ESCAPE_MASKS
-        val scratchSize = scratchBuf.size
-
-        if (remaining <= scratchSize) {
-            var scratchPos = 0
-            var index = start
-            while (index < length) {
-                val charCode = text[index].code
-
-                // Unrolled fast path for plain ASCII
-                if (charCode < ASCII_LIMIT) {
-                    val maskIdx = charCode shr BITMASK_SHIFT
-                    val bitIdx = charCode and BITMASK_INDEX_MASK
-                    if ((escapeMasks[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
-                        scratchBuf[scratchPos++] = charCode.toByte()
-                        index++
-                        continue
-                    }
-                }
-
-                if (scratchPos > 0) {
-                    buffer.write(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-
-                if (charCode < ASCII_LIMIT) {
-                    val replacement = replacements[charCode]
-                    if (replacement != null) {
-                        buffer.write(replacement)
-                    } else {
-                        writeUnicodeEscape(charCode, scratchBuf)
-                    }
-                } else {
-                    val c = text[index]
-                    if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                        buffer.writeUtf8(text, index, index + 2)
-                        index++
-                    } else {
-                        buffer.writeUtf8(text, index, index + 1)
-                    }
-                }
-                index++
-            }
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-            }
-            return
-        }
-
-        var scratchPos = 0
-        var index = start
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (
-                charCode < ASCII_LIMIT &&
-                (escapeMasks[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                if (scratchPos == scratchSize) {
-                    buffer.write(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-                index++
-                continue
-            }
-
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            if (charCode < ASCII_LIMIT) {
-                val replacement = replacements[charCode]
-                if (replacement != null) {
-                    buffer.write(replacement)
-                } else {
-                    writeUnicodeEscape(charCode, scratchBuf)
-                }
-            } else {
-                val char = text[index]
-                if (char.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    buffer.writeUtf8(text, index, index + 2)
-                    index++
-                } else {
-                    buffer.writeUtf8(text, index, index + 1)
-                }
-            }
-            index++
-        }
-
-        if (scratchPos > 0) {
-            buffer.write(scratchBuf, 0, scratchPos)
-        }
+        GhostJsonEscapeHelpers.writeEscapedBytes(
+            text = text,
+            start = start,
+            scratchBuf = acquireScratch(),
+            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
+            writeReplacement = { replacement -> buffer.write(replacement) },
+            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+        )
     }
 
     /**
      * Helper to write escaped character bytes directly into the scratch buffer.
      */
     private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: ByteArray) {
-        val escapeMasks = ESCAPE_MASKS
-        val escapeReplacements = ESCAPE_REPLACEMENTS
-        var scratchPos = 1 // Start after the opening quote already written at index 0.
-        var index = 0
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (
-                charCode < ASCII_LIMIT &&
-                (escapeMasks[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                index++
-                continue
-            }
-
-            // Flush what we have so far
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            // Handle the escape
-            if (charCode < ASCII_LIMIT) {
-                val replacement = escapeReplacements[charCode]
-                if (replacement != null) {
-                    buffer.write(replacement)
-                } else {
-                    writeUnicodeEscape(charCode, scratchBuf)
-                }
-            } else {
-                val c = text[index]
-                if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    buffer.writeUtf8(text, index, index + 2)
-                    index++
-                } else {
-                    buffer.writeUtf8(text, index, index + 1)
-                }
-            }
-            index++
-        }
-
-        // Add the closing quote and final flush
-        if (scratchPos + 1 > scratchBuf.size) {
-            if (scratchPos > 0) {
-                buffer.write(scratchBuf, 0, scratchPos)
-            }
-            buffer.writeByte(QUOTE_INT)
-        } else {
-            scratchBuf[scratchPos++] = QUOTE_BYTE
-            buffer.write(scratchBuf, 0, scratchPos)
-        }
+        GhostJsonEscapeHelpers.writeEscapedIntoByteScratch(
+            text = text,
+            length = length,
+            scratchBuf = scratchBuf,
+            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
+            writeReplacement = { replacement -> buffer.write(replacement) },
+            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+            writeQuoteByte = { buffer.writeByte(QUOTE_INT) },
+        )
     }
 
     /**
@@ -824,21 +653,5 @@ class GhostJsonWriter(
             0,
             0
         )
-    }
-
-    /**
-     * Formats unicode characters to standard JSON unicode escape string values.
-     */
-    private fun writeUnicodeEscape(code: Int, scratchBuf: ByteArray) {
-        val hexChars = HEX_CHARS
-
-        scratchBuf[0] = BACKSLASH
-        scratchBuf[1] = UNICODE_PREFIX_U
-        scratchBuf[2] = hexChars[(code shr SHIFT_12) and HEX_MASK]
-        scratchBuf[3] = hexChars[(code shr SHIFT_8) and HEX_MASK]
-        scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
-        scratchBuf[5] = hexChars[code and HEX_MASK]
-
-        buffer.write(scratchBuf, 0, 6)
     }
 }

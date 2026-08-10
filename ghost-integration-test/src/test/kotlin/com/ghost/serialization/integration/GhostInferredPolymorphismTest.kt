@@ -1,57 +1,10 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.annotations.GhostSerialization
-import com.ghost.serialization.annotations.GhostSignature
 import com.ghost.serialization.exception.GhostJsonException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-
-@GhostSerialization(inferred = true)
-sealed class SmartEvent {
-    @GhostSerialization
-    data class TempEvent(
-        val temperature: Double,
-        val unit: String
-    ) : SmartEvent()
-
-    @GhostSerialization
-    data class HumidityEvent(
-        val humidity: Double
-    ) : SmartEvent()
-
-    @GhostSerialization
-    data class MixedEvent(
-        val temperature: Double,
-        val humidity: Double
-    ) : SmartEvent()
-
-    @GhostSerialization
-    data class MotionEvent(
-        @GhostSignature
-        val motion: Boolean
-    ) : SmartEvent()
-}
-
-@GhostSerialization(inferred = true)
-sealed class DeviceCommand {
-    @GhostSerialization
-    data class Reboot(val force: Boolean = false) : DeviceCommand()
-
-    @GhostSerialization
-    data class SetBrightness(val level: Int) : DeviceCommand()
-
-    @GhostSerialization
-    data class UpdateFirmware(val url: String, val version: String) : DeviceCommand()
-}
-
-@GhostSerialization
-data class InferredNestedContainer(
-    val id: String,
-    val event: SmartEvent,
-    val commands: List<DeviceCommand>
-)
 
 class GhostInferredPolymorphismTest {
 

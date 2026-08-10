@@ -1,5 +1,3 @@
-@file:Suppress("ReplaceSizeCheckWithIsNotEmpty")
-
 package com.ghost.serialization.compiler.codegen
 
 import com.ghost.serialization.compiler.codegen.emit.DeserializeCodeEmitter
@@ -32,18 +30,18 @@ internal class GhostCodeGenerator(
     envelopeModel: GhostEnvelopeModel? = null,
     hasYaml: Boolean = false,
 ) {
-    private val ctx = GhostSerializerContext.from(
+    private val context = GhostSerializerContext.from(
         properties = properties,
         classDeclaration = classDeclaration,
         textChannel = textChannel,
         envelopeModel = envelopeModel,
         hasYaml = hasYaml,
     )
-    private val importResolver = SerializerImportResolver(ctx)
-    private val setupEmitter = SerializerSetupEmitter(ctx)
+    private val importResolver = SerializerImportResolver(context)
+    private val setupEmitter = SerializerSetupEmitter(context)
 
     fun createSpec(): FileSpec {
-        val fileBuilder = FileSpec.builder(ctx.packageName, ctx.serializerName)
+        val fileBuilder = FileSpec.builder(context.packageName, context.serializerName)
             .addAnnotation(
                 AnnotationSpec.builder(ClassName(C.PKG_KOTLIN, C.STR_OPT_IN))
                     .addMember(
@@ -57,7 +55,7 @@ internal class GhostCodeGenerator(
 
         return fileBuilder
             .apply {
-                if (ctx.envelopeModel?.payloadMappings?.any { it.targetType != null } == true) {
+                if (context.envelopeModel?.payloadMappings?.any { it.targetType != null } == true) {
                     addImport(C.PKG_TYPES, C.STR_RAW_JSON_DECODE)
                     addImport(C.PKG_GHOST, C.STR_GHOST)
                     addImport(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
@@ -69,73 +67,73 @@ internal class GhostCodeGenerator(
 
     private fun buildSerializerObject(): TypeSpec {
         val serializeEmitter = SerializeCodeEmitter(
-            ctx.properties,
-            ctx.originalClassName,
-            ctx.isSealed,
-            ctx.isValue,
-            ctx.isEnum,
-            ctx.sealedSubclasses,
-            ctx.discriminator,
-            ctx.sealedDiscriminatorKey
+            context.properties,
+            context.originalClassName,
+            context.isSealed,
+            context.isValue,
+            context.isEnum,
+            context.sealedSubclasses,
+            context.discriminator,
+            context.sealedDiscriminatorKey
         )
 
         val deserializeEmitterStreaming = DeserializeCodeEmitter(
-            ctx.properties,
-            ctx.originalClassName,
-            ctx.streamingReaderClass,
-            ctx.isSealed,
-            ctx.isValue,
-            ctx.isEnum,
-            ctx.sealedSubclasses,
-            ctx.sealedDiscriminatorKey,
-            ctx.isResilient,
-            ctx.isInferred,
-            ctx.isObject,
-            hasFallback = ctx.hasFallbackEnum
+            context.properties,
+            context.originalClassName,
+            context.streamingReaderClass,
+            context.isSealed,
+            context.isValue,
+            context.isEnum,
+            context.sealedSubclasses,
+            context.sealedDiscriminatorKey,
+            context.isResilient,
+            context.isInferred,
+            context.isObject,
+            hasFallback = context.hasFallbackEnum
         )
 
         val deserializeEmitterFlat = DeserializeCodeEmitter(
-            ctx.properties,
-            ctx.originalClassName,
-            ctx.flatReaderClass,
-            ctx.isSealed,
-            ctx.isValue,
-            ctx.isEnum,
-            ctx.sealedSubclasses,
-            ctx.sealedDiscriminatorKey,
-            ctx.isResilient,
-            ctx.isInferred,
-            ctx.isObject,
-            hasFallback = ctx.hasFallbackEnum
+            context.properties,
+            context.originalClassName,
+            context.flatReaderClass,
+            context.isSealed,
+            context.isValue,
+            context.isEnum,
+            context.sealedSubclasses,
+            context.sealedDiscriminatorKey,
+            context.isResilient,
+            context.isInferred,
+            context.isObject,
+            hasFallback = context.hasFallbackEnum
         )
 
-        val deserializeEmitterString = if (ctx.textChannel) {
+        val deserializeEmitterString = if (context.textChannel) {
             DeserializeCodeEmitter(
-                ctx.properties,
-                ctx.originalClassName,
-                ctx.stringReaderClass,
-                ctx.isSealed,
-                ctx.isValue,
-                ctx.isEnum,
-                ctx.sealedSubclasses,
-                ctx.sealedDiscriminatorKey,
-                ctx.isResilient,
-                ctx.isInferred,
-                ctx.isObject,
-                hasFallback = ctx.hasFallbackEnum
+                context.properties,
+                context.originalClassName,
+                context.stringReaderClass,
+                context.isSealed,
+                context.isValue,
+                context.isEnum,
+                context.sealedSubclasses,
+                context.sealedDiscriminatorKey,
+                context.isResilient,
+                context.isInferred,
+                context.isObject,
+                hasFallback = context.hasFallbackEnum
             )
         } else {
             null
         }
 
-        val typeSpecBuilder = TypeSpec.objectBuilder(ctx.serializerName)
-            .addKdoc(C.STR_KDOC_HIGH_PERF, ctx.originalClassName)
+        val typeSpecBuilder = TypeSpec.objectBuilder(context.serializerName)
+            .addKdoc(C.STR_KDOC_HIGH_PERF, context.originalClassName)
             .addKdoc(C.STR_KDOC_GENERATED)
-            .addSuperinterface(ctx.serializerInterface.parameterizedBy(ctx.originalClassName))
+            .addSuperinterface(context.serializerInterface.parameterizedBy(context.originalClassName))
 
-        if (ctx.hasYaml) {
+        if (context.hasYaml) {
             typeSpecBuilder.addSuperinterface(
-                ctx.yamlSerializerInterface.parameterizedBy(ctx.originalClassName)
+                context.yamlSerializerInterface.parameterizedBy(context.originalClassName)
             )
         }
 
@@ -143,11 +141,11 @@ internal class GhostCodeGenerator(
             .addProperty(
                 PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer(C.MARKER, ctx.finalTypeName)
+                    .initializer(C.STR_FORMAT_S, context.finalTypeName)
                     .build()
             )
 
-        if (ctx.isProto) {
+        if (context.isProto) {
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(C.STR_IS_PROTO, com.squareup.kotlinpoet.BOOLEAN)
                     .addModifiers(KModifier.OVERRIDE)
@@ -156,44 +154,43 @@ internal class GhostCodeGenerator(
             )
         }
 
-        if (ctx.needsObjectParsingImports()) {
+        if (context.needsObjectParsingImports()) {
             setupEmitter.addPerfectHashOptions(typeSpecBuilder)
         }
-        if (ctx.needsCachedByteStringHeaders()) {
+        if (context.needsCachedByteStringHeaders()) {
             setupEmitter.addCachedHeaderProperties(typeSpecBuilder)
         }
-        if (ctx.isEnum && ctx.enumValues != null) {
+        if (context.isEnum && context.enumValues != null) {
             setupEmitter.addEnumOptions(typeSpecBuilder)
         }
 
         FlattenOptionsGenerator.generateNestedOptions(
             typeSpecBuilder,
-            ctx.properties,
-            ctx.fullPaths,
-            ctx.readerClass,
-            ctx.textChannel
+            context.properties,
+            context.fullPaths,
+            context.textChannel
         )
 
         deserializeEmitterStreaming.build(typeSpecBuilder, isFlatPath = false)
         deserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
-        if (ctx.textChannel) {
+        if (context.textChannel) {
             deserializeEmitterString?.build(typeSpecBuilder, isFlatPath = true)
         }
 
-        if (ctx.hasYaml) {
+        if (context.hasYaml) {
             val yamlDeserializeEmitterFlat = DeserializeCodeEmitter(
-                ctx.properties,
-                ctx.originalClassName,
-                ctx.yamlFlatReaderClass,
-                ctx.isSealed,
-                ctx.isValue,
-                ctx.isEnum,
-                ctx.sealedSubclasses,
-                ctx.sealedDiscriminatorKey,
+                context.properties,
+                context.originalClassName,
+                context.yamlFlatReaderClass,
+                context.isSealed,
+                context.isValue,
+                context.isEnum,
+                context.sealedSubclasses,
+                context.sealedDiscriminatorKey,
                 isResilientClass = false,
-                ctx.isInferred,
-                ctx.isObject,
-                hasFallback = ctx.hasFallbackEnum,
+                context.isInferred,
+                context.isObject,
+                hasFallback = context.hasFallbackEnum,
                 supportsResilience = false,
             )
             yamlDeserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
@@ -201,24 +198,29 @@ internal class GhostCodeGenerator(
 
         serializeEmitter.injectContextualSerializers(typeSpecBuilder)
 
-        ctx.envelopeModel?.let { envelope ->
+        context.envelopeModel?.let { envelope ->
             EnvelopeRouterEmitter(
                 envelope = envelope,
-                originalClassName = ctx.originalClassName,
-                flatReaderClass = ctx.flatReaderClass
+                originalClassName = context.originalClassName,
+                flatReaderClass = context.flatReaderClass
             ).emit(typeSpecBuilder)
         }
 
         return typeSpecBuilder
-            .addFunction(serializeEmitter.build(ctx.streamingWriterClass, typeSpecBuilder))
-            .addFunction(serializeEmitter.build(ctx.flatWriterClass, typeSpecBuilder))
+            .addFunction(serializeEmitter.build(context.streamingWriterClass, typeSpecBuilder))
+            .addFunction(serializeEmitter.build(context.flatWriterClass, typeSpecBuilder))
             .apply {
-                if (ctx.textChannel) {
-                    addFunction(serializeEmitter.build(ctx.stringWriterClass, typeSpecBuilder))
+                if (context.textChannel) {
+                    addFunction(serializeEmitter.build(context.stringWriterClass, typeSpecBuilder))
                 }
-                if (ctx.hasYaml) {
-                    addFunction(serializeEmitter.build(ctx.yamlWriterClass, typeSpecBuilder))
-                    addFunction(serializeEmitter.build(ctx.yamlFlatWriterClass, typeSpecBuilder))
+                if (context.hasYaml) {
+                    addFunction(serializeEmitter.build(context.yamlWriterClass, typeSpecBuilder))
+                    addFunction(
+                        serializeEmitter.build(
+                            context.yamlFlatWriterClass,
+                            typeSpecBuilder
+                        )
+                    )
                 }
             }
             .addFunction(setupEmitter.buildWarmUpMethod())

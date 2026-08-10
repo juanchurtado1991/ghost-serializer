@@ -1,7 +1,6 @@
 package com.ghost.serialization.compiler.codegen.emit
 
 import com.ghost.serialization.compiler.analysis.serializerClassName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.InferredSubclassModel
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -17,26 +16,23 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main coordinator (Orchestrator) for the deserialization code generation process.
+ * Main coordinator for deserialization code generation.
  *
- * This class implements the Strategy Pattern to select the most efficient deserialization
- * logic for a given DTO. It acts as the central hub that inspects the DTO's metadata
- * (sealed hierarchy, enum, size, or structural complexity) and delegates the generation
- * task to specialized emitters.
+ * Selects a strategy from DTO metadata (sealed hierarchy, enum, size, structural complexity)
+ * and delegates to specialized emitters.
  *
  * ### Orchestration Strategy:
- * - **Polymorphic Types:** Direct delegation for sealed or [kotlin.Enum] types.
- * - **Large DTOs (> [com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE]):**
- *   Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
+ * - **Polymorphic Types:** Direct delegation for sealed or `Enum` types.
+ * - **Large DTOs (> `PROPERTY_MAX_SIZE`):** Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
  * - **Standard DTOs:** Delegates to [StandardEmitter] for highly-optimized, inlinable code.
  *
- * @property properties The list of property metadata to be deserialized.
- * @property originalClassName The canonical name of the class being generated.
- * @property readerClass The specific reader implementation (e.g., GhostJsonFlatReader).
- * @property isSealed Identifies if the class is part of a sealed hierarchy.
- * @property isValue Identifies if the class is a Kotlin Value Class (inline class).
- * @property isEnum Identifies if the class is an Enum.
- * @property isInferred Handles polymorphic types where the discriminator is absent,
+ * @param properties The list of property metadata to be deserialized.
+ * @param originalClassName The canonical name of the class being generated.
+ * @param readerClass The specific reader implementation (e.g., `GhostJsonFlatReader`).
+ * @param isSealed Identifies if the class is part of a sealed hierarchy.
+ * @param isValue Identifies if the class is a Kotlin value class (inline class).
+ * @param isEnum Identifies if the class is an enum.
+ * @param isInferred Handles polymorphic types where the discriminator is absent,
  * relying on property presence to identify the subclass.
  */
 internal class DeserializeCodeEmitter(
@@ -47,7 +43,7 @@ internal class DeserializeCodeEmitter(
     private val isValue: Boolean,
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
-    private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY,
+    private val sealedDiscriminatorKey: String = C.STR_DEFAULT_DISCRIMINATOR,
     private val isResilientClass: Boolean = false,
     private val isInferred: Boolean = false,
     private val isObject: Boolean = false,
@@ -92,7 +88,7 @@ internal class DeserializeCodeEmitter(
                 emitEnum(body)
             }
 
-            properties.size > PROPERTY_MAX_SIZE -> {
+            properties.size > C.PROPERTY_MAX_SIZE -> {
                 emitFragmented(body, typeSpecBuilder, isFlatPath)
             }
 
@@ -170,7 +166,7 @@ internal class DeserializeCodeEmitter(
     private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
         val customName = subclass.annotations
             .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
-            ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String
+            ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String
         return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()
     }
 
@@ -542,7 +538,7 @@ internal class DeserializeCodeEmitter(
                     )
                 }
                 body.addStatement(
-                    C.TEMPLATE_VARIABLE,
+                    C.TEMPLATE_L,
                     C.STR_INSTANCE_VAR
                 )
             }

@@ -9,6 +9,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.decodeAllFromYaml
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeAllToYaml
+import com.ghost.serialization.encodeAllToYamlBytes
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.encodeToYamlBytes
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
@@ -24,8 +25,8 @@ import kotlin.test.assertTrue
 
 /**
  * Entry-point and tri-channel parity tests for YAML serializers.
- * Aligns with [com.ghost.serialization.FeatureTriChannelSerializerTest] and
- * [com.ghost.serialization.proto.GhostProtoEntryPointsTest].
+ * Aligns with `FeatureTriChannelSerializerTest` and
+ * `GhostProtoEntryPointsTest`.
  */
 class GhostYamlEntryPointTest {
 
@@ -154,6 +155,34 @@ class GhostYamlEntryPointTest {
     @Test
     fun encodeAllToYamlEmptyListReturnsEmptyString() {
         assertEquals("", Ghost.encodeAllToYaml<YamlScalarBox>(emptyList()))
+    }
+
+    @Test
+    fun encodeAllToYamlBytesMatchesStringEncoding() {
+        val values = listOf(
+            YamlScalarBox("one", 1),
+            YamlScalarBox("two", 2),
+        )
+        val asString = Ghost.encodeAllToYaml(values)
+        val asBytes = Ghost.encodeAllToYamlBytes(values)
+        assertContentEquals(asString.encodeToByteArray(), asBytes)
+        assertEquals(2, Ghost.decodeAllFromYaml<YamlScalarBox>(asBytes).size)
+    }
+
+    @Test
+    fun encodeDecodeIntArrayViaYamlEntryPoints() {
+        val original = intArrayOf(1, 2, 3, -4)
+        val yaml = Ghost.encodeToYaml(original)
+        val restored = Ghost.decodeFromYaml<IntArray>(yaml)
+        assertContentEquals(original, restored)
+        assertContentEquals(original, Ghost.decodeFromYaml(Ghost.encodeToYamlBytes(original)))
+    }
+
+    @Test
+    fun encodeDecodeBooleanArrayViaYamlEntryPoints() {
+        val original = booleanArrayOf(true, false, true)
+        val yaml = Ghost.encodeToYaml(original)
+        assertContentEquals(original, Ghost.decodeFromYaml<BooleanArray>(yaml))
     }
 
     @Test

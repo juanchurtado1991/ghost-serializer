@@ -8,42 +8,33 @@ import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import org.springframework.http.HttpInputMessage
 import org.springframework.http.HttpOutputMessage
 import org.springframework.http.MediaType
-import org.springframework.http.converter.AbstractHttpMessageConverter
-import java.util.concurrent.ConcurrentHashMap
+import org.springframework.http.converter.AbstractGenericHttpMessageConverter
+import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.http.converter.HttpMessageNotWritableException
+import java.lang.reflect.Type
 import kotlin.reflect.KClass
 
 /**
- * [org.springframework.http.converter.HttpMessageConverter] for YAML-backed Ghost types
- * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
+ * `HttpMessageConverter` for YAML-backed Ghost types (`GhostYamlSerializer`).
+ *
+ * Resolves top-level `List` / `Set` / `Map` when element/value serializers implement
+ * [GhostYamlSerializer].
  */
-class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
-    MediaType("application", "yaml"),
-    MediaType("application", "x-yaml"),
-    MediaType("text", "yaml"),
+class GhostYamlHttpMessageConverter : AbstractGenericHttpMessageConverter<Any>(
+    GhostSpringMediaTypes.APPLICATION_YAML,
+    GhostSpringMediaTypes.APPLICATION_X_YAML,
+    GhostSpringMediaTypes.TEXT_YAML,
 ) {
-    private val supportsCache = ConcurrentHashMap<Class<*>, Boolean>()
-    private val serializerCache = ConcurrentHashMap<Class<*>, GhostSerializer<Any>>()
 
-    override fun supports(clazz: Class<*>): Boolean {
-        val cached = supportsCache[clazz]
-        if (cached != null) return cached
+    override fun supports(clazz: Class<*>): Boolean =
+        GhostSpringTypeSerializers.getYamlSerializer(clazz) != null
 
-        val result = if (isExcludedType(clazz)) {
-            false
-        } else {
-            val serializer = Ghost.getSerializer(clazz.kotlin)
-            serializer is GhostYamlSerializer<*>
-        }
-        supportsCache[clazz] = result
-        return result
-    }
+    override fun canRead(type: Type, contextClass: Class<*>?, mediaType: MediaType?): Boolean =
+        canRead(mediaType) && GhostSpringTypeSerializers.getYamlSerializer(type) != null
 
-    private fun isExcludedType(clazz: Class<*>): Boolean {
-        return clazz == String::class.java ||
-                clazz == ByteArray::class.java ||
-                clazz.isPrimitive ||
-                clazz.name.startsWith("java.lang.")
-    }
+    override fun canWrite(type: Type?, clazz: Class<*>, mediaType: MediaType?): Boolean =
+        canWrite(mediaType) &&
+            GhostSpringTypeSerializers.getYamlSerializer(type ?: clazz) != null
 
     override fun canWrite(mediaType: MediaType?): Boolean {
         if (mediaType == null || mediaType.isWildcardType || mediaType.isWildcardSubtype) {
@@ -59,51 +50,30 @@ class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         return super.canRead(mediaType)
     }
 
-    override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
-        val bytes = inputMessage.body.readBytes()
-        val isStrict = GhostSpringConfig.strict.get()
-        val isCoerce = GhostSpringConfig.coerce.get()
-
-        @Suppress("UNCHECKED_CAST")
-        val targetClass = clazz as Class<Any>
-        val serializer = serializerCache.getOrPut(targetClass) {
-            val resolved = Ghost.getSerializer(targetClass.kotlin)
-                ?: Ghost.throwError("${Ghost.NOT_FOUND} ${targetClass.simpleName}")
-            if (resolved !is GhostYamlSerializer<*>) {
-                Ghost.throwError("Serializer for ${targetClass.simpleName} does not implement GhostYamlSerializer")
-            }
-            resolved
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        val yamlSerializer = serializer as GhostYamlSerializer<Any>
-
-        return ghostYamlInternalUseFlatReader(bytes) { reader ->
-            reader.strictMode = isStrict
-            if (isCoerce) {
-                reader.coerceStringsToNumbers = true
-                reader.coerceBooleans = true
-            }
-            yamlSerializer.deserialize(reader)
-        }
+    override fun read(
+        type: Type,
+        contextClass: Class<*>?,
+        inputMessage: HttpInputMessage
+    ): Any {
+        val serializer = GhostSpringTypeSerializers.getYamlSerializer(type)
+            ?: throw HttpMessageNotReadableException(
+                "${Ghost.NOT_FOUND} $type",
+                inputMessage
+            )
+        return deserializeYaml(serializer, inputMessage.body.readBytes())
     }
 
-    override fun writeInternal(t: Any, outputMessage: HttpOutputMessage) {
-        val clazz = t.javaClass
-        val serializer = serializerCache.getOrPut(clazz) {
-            @Suppress("UNCHECKED_CAST")
-            val resolved = Ghost.getSerializer(clazz.kotlin as KClass<Any>) as GhostSerializer<Any>?
-                ?: throw IllegalArgumentException(
-                    "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}"
-                )
-            if (resolved !is GhostYamlSerializer<*>) {
-                throw IllegalArgumentException(
-                    "Serializer for ${clazz.simpleName} does not implement GhostYamlSerializer"
-                )
-            }
-            resolved
-        }
+    override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
+        val serializer = GhostSpringTypeSerializers.getYamlSerializer(clazz)
+            ?: throw HttpMessageNotReadableException(
+                "${Ghost.NOT_FOUND} ${clazz.simpleName}",
+                inputMessage
+            )
+        return deserializeYaml(serializer, inputMessage.body.readBytes())
+    }
 
+    override fun writeInternal(t: Any, type: Type?, outputMessage: HttpOutputMessage) {
+        val serializer = resolveWriteSerializer(t, type)
         @Suppress("UNCHECKED_CAST")
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
         val bytes = ghostYamlInternalUseFlatWriter { writer ->
@@ -112,5 +82,40 @@ class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter<Any>(
         }
         outputMessage.body.write(bytes)
         outputMessage.body.flush()
+    }
+
+    private fun resolveWriteSerializer(t: Any, type: Type?): GhostSerializer<Any> {
+        type?.let { declared ->
+            GhostSpringTypeSerializers.getYamlSerializer(declared)?.let { return it }
+        }
+        @Suppress("UNCHECKED_CAST")
+        return GhostSpringTypeSerializers.getYamlSerializer(t.javaClass)
+            ?: run {
+                val resolved = Ghost.getSerializer(t::class as KClass<Any>)
+                if (resolved is GhostYamlSerializer<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    resolved as GhostSerializer<Any>
+                } else {
+                    null
+                }
+            }
+            ?: throw HttpMessageNotWritableException(
+                "${Ghost.NOT_FOUND} ${t.javaClass.simpleName}. ${Ghost.MISSING_ANN}"
+            )
+    }
+
+    private fun deserializeYaml(serializer: GhostSerializer<Any>, bytes: ByteArray): Any {
+        val isStrict = GhostSpringConfig.strict.get()
+        val isCoerce = GhostSpringConfig.coerce.get()
+        @Suppress("UNCHECKED_CAST")
+        val yamlSerializer = serializer as GhostYamlSerializer<Any>
+        return ghostYamlInternalUseFlatReader(bytes) { reader ->
+            reader.strictMode = isStrict
+            if (isCoerce) {
+                reader.coerceStringsToNumbers = true
+                reader.coerceBooleans = true
+            }
+            yamlSerializer.deserialize(reader)
+        }
     }
 }

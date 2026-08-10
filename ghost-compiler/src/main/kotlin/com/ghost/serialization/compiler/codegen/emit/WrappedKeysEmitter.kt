@@ -15,7 +15,7 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Code generation helpers for [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys].
+ * Code generation helpers for `@GhostWrappedKeys`.
  */
 internal object WrappedKeysEmitter {
 

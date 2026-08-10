@@ -1,8 +1,6 @@
 package com.ghost.serialization.writer.yaml
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import okio.ByteString
@@ -25,20 +23,17 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     private var justWroteDash = false
 
     internal fun acquireScratch(): ByteArray {
-        val currentScratch = scratch
-        if (currentScratch != null) return currentScratch
-        val newScratch = acquireScratchBuffer(256)
+        val current = scratch
+        if (current != null) return current
+        val newScratch = GhostYamlWriterHelpers.newScratch()
         scratch = newScratch
         return newScratch
     }
 
     @InternalGhostApi
     fun release() {
-        val currentScratch = scratch
-        if (currentScratch != null) {
-            releaseScratchBuffer(currentScratch)
-            scratch = null
-        }
+        GhostYamlWriterHelpers.releaseScratch(scratch)
+        scratch = null
         depth = 0
         pendingSpace = false
         justWroteDash = false
@@ -52,45 +47,27 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         buffer.reset()
     }
 
-    private fun writeIndentation(level: Int) {
-        val spacesCount = level * C.SPACES_PER_LEVEL
-        var count = 0
-        while (count < spacesCount) {
-            buffer.writeByte(C.SPACE_INT)
-            count++
-        }
-    }
-
     private fun prepareValue(isStructural: Boolean) {
         val currentDepth = depth
-        if (currentDepth > 0 && contexts[currentDepth] == C.TYPE_ARRAY) {
-            if (justWroteDash) {
-                buffer.writeByte(C.DASH_INT)
-                buffer.writeByte(C.SPACE_INT)
-            } else {
-                buffer.writeByte(C.NEWLINE_INT)
-                writeIndentation(currentDepth - 1)
-                buffer.writeByte(C.DASH_INT)
-                buffer.writeByte(C.SPACE_INT)
-            }
+        val flags = GhostYamlWriterHelpers.prepareValue(
+            isStructural = isStructural,
+            depth = currentDepth,
+            contextAtDepth = contexts[currentDepth],
+            justWroteDash = justWroteDash,
+            pendingSpace = pendingSpace,
+            writeByte = { buffer.writeByte(it) },
+        )
+        justWroteDash = (flags and GhostYamlWriterHelpers.PREPARE_JUST_WROTE_DASH) != 0
+        pendingSpace = (flags and GhostYamlWriterHelpers.PREPARE_PENDING_SPACE) != 0
+        if ((flags and GhostYamlWriterHelpers.PREPARE_INCREMENT_ITEM) != 0) {
             itemCounts[currentDepth]++
-            justWroteDash = isStructural
-        } else {
-            if (isStructural) {
-                pendingSpace = false
-            } else {
-                if (pendingSpace) {
-                    buffer.writeByte(C.SPACE_INT)
-                    pendingSpace = false
-                }
-            }
         }
     }
 
     fun beginObject(): GhostYamlFlatWriter {
         val currentDepth = depth
         if (currentDepth >= C.MAX_DEPTH) {
-            throw GhostYamlException("Max depth exceeded")
+            throw GhostYamlException(C.ERR_MAX_DEPTH_EXCEEDED)
         }
         prepareValue(isStructural = true)
         val nextDepth = currentDepth + 1
@@ -110,7 +87,7 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     fun beginArray(): GhostYamlFlatWriter {
         val currentDepth = depth
         if (currentDepth >= C.MAX_DEPTH) {
-            throw GhostYamlException("Max depth exceeded")
+            throw GhostYamlException(C.ERR_MAX_DEPTH_EXCEEDED)
         }
         prepareValue(isStructural = true)
         val nextDepth = currentDepth + 1
@@ -136,32 +113,31 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
      */
     private fun writeEmptyPlaceholderIfNeeded(openInt: Int, closeInt: Int) {
         val closingDepth = depth
-        if (itemCounts[closingDepth] != 0) return
         val parentDepth = closingDepth - 1
-        if (parentDepth > 0 && contexts[parentDepth] == C.TYPE_OBJECT) {
-            buffer.writeByte(C.SPACE_INT)
-        }
-        buffer.write2Bytes(openInt, closeInt)
+        GhostYamlWriterHelpers.writeEmptyPlaceholderIfNeeded(
+            depth = closingDepth,
+            itemCountAtDepth = itemCounts[closingDepth],
+            parentContext = if (parentDepth > 0) contexts[parentDepth] else 0,
+            openInt = openInt,
+            closeInt = closeInt,
+            writeByte = { buffer.writeByte(it) },
+            writeOpenClose = { open, close -> buffer.write2Bytes(open, close) },
+        )
     }
 
     fun name(key: String): GhostYamlFlatWriter {
-        val currentDepth = depth
-        if (currentDepth <= 0) {
-            throw GhostYamlException("Cannot write name outside of object scope")
-        }
-        if (justWroteDash) {
-            justWroteDash = false
+        val currentDepth = GhostYamlWriterHelpers.prepareNameLayout(
+            depth = depth,
+            itemCountAtDepth = itemCounts[depth],
+            justWroteDash = justWroteDash,
+            writeByte = { buffer.writeByte(it) },
+        )
+        justWroteDash = false
+        if (keyNeedsQuoting(key)) {
+            writeStringValueRaw(key)
         } else {
-            val count = itemCounts[currentDepth]
-            if (count > 0) {
-                buffer.writeByte(C.NEWLINE_INT)
-                writeIndentation(currentDepth - 1)
-            } else if (currentDepth > 1) {
-                buffer.writeByte(C.NEWLINE_INT)
-                writeIndentation(currentDepth - 1)
-            }
+            buffer.writeUtf8(key)
         }
-        buffer.writeUtf8(key)
         buffer.writeByte(C.COLON_INT)
         itemCounts[currentDepth]++
         pendingSpace = true
@@ -169,22 +145,13 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     }
 
     fun name(key: ByteString): GhostYamlFlatWriter {
-        val currentDepth = depth
-        if (currentDepth <= 0) {
-            throw GhostYamlException("Cannot write name outside of object scope")
-        }
-        if (justWroteDash) {
-            justWroteDash = false
-        } else {
-            val count = itemCounts[currentDepth]
-            if (count > 0) {
-                buffer.writeByte(C.NEWLINE_INT)
-                writeIndentation(currentDepth - 1)
-            } else if (currentDepth > 1) {
-                buffer.writeByte(C.NEWLINE_INT)
-                writeIndentation(currentDepth - 1)
-            }
-        }
+        val currentDepth = GhostYamlWriterHelpers.prepareNameLayout(
+            depth = depth,
+            itemCountAtDepth = itemCounts[depth],
+            justWroteDash = justWroteDash,
+            writeByte = { buffer.writeByte(it) },
+        )
+        justWroteDash = false
         buffer.write(key)
         itemCounts[currentDepth]++
         pendingSpace = false
@@ -257,6 +224,52 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         return this
     }
 
+    /**
+     * True if [key] can't safely be written as bare plain-scalar text: it would either redirect
+     * into a nested mapping when re-read (an embedded ": " indistinguishable from the key/value
+     * separator), get silently truncated (an embedded newline — a bare implicit key's own scan
+     * stops at the first one), or be misread as something else entirely by the reader's own
+     * prefix dispatch. A leading '&'/'!'/'*' looks like an anchor/tag/alias to `readKey`, a
+     * leading '"'/'\'' looks like the start of a quoted key, and a bare '?' — or '?' followed by
+     * whitespace — looks like an explicit-key indicator. A leading '['/'{' is a different hazard:
+     * a *stringified complex key* (Ghost collapses a non-scalar key to its `toString()`, e.g.
+     * `"[a, b]"` or `"{k=v}"`) starting with one of these can end up read back through
+     * `readValue`'s full structural flow-collection dispatch instead of `readKey`'s plain-text
+     * scan — e.g. as a redirected implicit key or a block-sequence item's value — misparsing the
+     * stringified text as a real (and likely invalid, since it uses `=` not `:`) flow collection
+     * instead of treating it as opaque text. An empty key is fine bare: a lone ':' with nothing
+     * before it already round-trips to the empty string correctly.
+     */
+    private fun keyNeedsQuoting(key: String): Boolean {
+        val length = key.length
+        if (length == 0) return false
+        val first = key[0].code
+        if (first == C.AMPERSAND_BYTE.toInt() || first == C.ASTERISK_BYTE.toInt() ||
+            first == C.EXCLAMATION_BYTE.toInt() || first == C.DOUBLE_QUOTE_INT ||
+            first == C.SINGLE_QUOTE_BYTE.toInt() || first == C.LEFT_BRACKET_BYTE.toInt() ||
+            first == C.LEFT_BRACE_BYTE.toInt()
+        ) {
+            return true
+        }
+        if (first == C.QUESTION_BYTE.toInt() &&
+            (length == 1 || key[1].code == C.SPACE_INT || key[1].code == C.CHAR_TAB_INT)
+        ) {
+            return true
+        }
+        var index = 0
+        while (index < length) {
+            val code = key[index].code
+            if (code == C.CHAR_LF_INT || code == C.CHAR_CR_INT) return true
+            if (code == C.COLON_INT &&
+                (index + 1 == length || key[index + 1].code == C.SPACE_INT || key[index + 1].code == C.CHAR_TAB_INT)
+            ) {
+                return true
+            }
+            index++
+        }
+        return false
+    }
+
     @InternalGhostApi
     fun writeStringValueRaw(value: String) {
         val length = value.length
@@ -293,163 +306,74 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
     }
 
     private fun writeEscaped(text: String) {
-        val length = text.length
-        var index = 0
-
-        while (index < length) {
-            val charCode = text[index].code
-            if (charCode == C.DOUBLE_QUOTE_INT) {
-                buffer.writeByte(C.BACKSLASH_INT)
-                buffer.writeByte(C.DOUBLE_QUOTE_INT)
-            } else if (charCode == C.BACKSLASH_INT) {
-                buffer.writeByte(C.BACKSLASH_INT)
-                buffer.writeByte(C.BACKSLASH_INT)
-            } else {
-                when (charCode) {
-                    C.CHAR_LF_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_N_INT)
-                    }
-
-                    C.CHAR_CR_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_R_INT)
-                    }
-
-                    C.CHAR_TAB_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_T_INT)
-                    }
-
-                    C.CHAR_BS_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_B_INT)
-                    }
-
-                    C.CHAR_FF_INT -> {
-                        buffer.writeByte(C.BACKSLASH_INT)
-                        buffer.writeByte(C.CHAR_F_INT)
-                    }
-
-                    else -> {
-                        if (charCode < C.CHAR_SPACE_INT) {
-                            buffer.writeByte(C.BACKSLASH_INT)
-                            buffer.writeByte(C.CHAR_U_INT)
-                            writeUnicodeHex(charCode)
-                        } else if (charCode < C.ASCII_LIMIT) {
-                            buffer.writeByte(charCode)
-                        } else {
-                            val charVal = text[index]
-                            if (charVal.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                                buffer.writeUtf8(text, index, index + 2)
-                                index++
-                            } else {
-                                buffer.writeUtf8(text, index, index + 1)
-                            }
-                        }
-                    }
-                }
-            }
-            index++
-        }
-    }
-
-    private fun writeUnicodeHex(code: Int) {
-        val hexChars = C.HEX_CHARS_ARR
-        buffer.writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())
-        buffer.writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())
-        buffer.writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())
-        buffer.writeByte(hexChars[code and C.HEX_MASK].toInt())
+        GhostYamlWriterHelpers.writeEscaped(
+            text = text,
+            writeByte = { buffer.writeByte(it) },
+            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+        )
     }
 
     private fun writeLong(value: Long) {
-        if (value == 0L) {
-            buffer.writeByte(C.ZERO_INT)
-            return
-        }
-        var temp = value
-        val isNegative = temp < 0
-        if (isNegative) {
-            buffer.writeByte(C.DASH_INT)
-            if (temp == Long.MIN_VALUE) {
-                buffer.writeUtf8(C.STR_MIN_LONG_ABS)
-                return
-            }
-            temp = -temp
-        }
-        val scratchBuf = scratch ?: acquireScratch()
-        var pos = scratchBuf.size
-        while (temp > 0L) {
-            val digit = (temp % C.TEN_LONG).toInt()
-            scratchBuf[--pos] = (C.ZERO_INT + digit).toByte()
-            temp /= C.TEN_LONG
-        }
-        buffer.write(scratchBuf, pos, scratchBuf.size - pos)
-    }
-
-    private fun extractKey(header: ByteString): String {
-        val size = header.size
-        if (size >= C.HEADER_MIN_SIZE &&
-            header[C.HEADER_QUOTE_START_OFFSET] == C.DOUBLE_QUOTE_BYTE &&
-            header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &&
-            header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE
-        ) {
-            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB)
-                .utf8()
-        }
-        return header.utf8()
+        GhostYamlWriterHelpers.writeLong(
+            value = value,
+            scratch = scratch,
+            acquireScratch = { acquireScratch() },
+            writeByte = { buffer.writeByte(it) },
+            writeUtf8 = { buffer.writeUtf8(it) },
+            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
+        )
     }
 
     fun writeNameRaw(header: ByteString): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         return this
     }
 
     fun writeField(header: ByteString, value: String): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this
     }
 
     fun writeField(header: ByteString, value: Int): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this
     }
 
     fun writeField(header: ByteString, value: Long): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this
     }
 
     fun writeField(header: ByteString, value: ULong): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this
     }
 
     fun writeField(header: ByteString, value: Double): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this
     }
 
     fun writeField(header: ByteString, value: Float): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this
     }
 
     fun writeField(header: ByteString, value: Boolean): GhostYamlFlatWriter {
-        val key = extractKey(header)
+        val key = GhostYamlWriterHelpers.extractKey(header)
         name(key)
         value(value)
         return this

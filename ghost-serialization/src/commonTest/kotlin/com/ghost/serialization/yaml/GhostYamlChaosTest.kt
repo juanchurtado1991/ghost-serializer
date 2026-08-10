@@ -13,12 +13,11 @@ import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 /**
  * Chaos and stress scenarios for YAML parser/writer.
- * Covers the same failure modes as [com.ghost.serialization.GhostChaosTest] and
- * [com.ghost.serialization.GhostStressAuditTest].
+ * Covers the same failure modes as `GhostChaosTest` and
+ * `GhostStressAuditTest`.
  */
 class GhostYamlChaosTest {
 
@@ -103,11 +102,13 @@ class GhostYamlChaosTest {
     }
 
     @Test
-    fun flowMappingWithDuplicateCommaParsesLeniently() {
-        val map =
-            GhostYamlFlatReader("{a: 1,, b: 2}".encodeToByteArray()).readDocument() as Map<*, *>
-        assertEquals(1L, map["a"])
-        assertTrue(map.isNotEmpty())
+    fun flowMappingWithDuplicateCommaIsRejected() {
+        // A double comma is an empty entry, which YAML's flow mapping grammar disallows — see
+        // yaml-test-suite case CTN5 (the flow-sequence equivalent). Ghost used to silently skip
+        // the empty entry; it now rejects it like any other malformed flow-collection input.
+        assertFailsWith<GhostYamlException> {
+            GhostYamlFlatReader("{a: 1,, b: 2}".encodeToByteArray()).readDocument()
+        }
     }
 
     @Test

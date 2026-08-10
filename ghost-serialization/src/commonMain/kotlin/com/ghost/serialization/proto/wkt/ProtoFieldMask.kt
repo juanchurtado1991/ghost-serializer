@@ -3,14 +3,7 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
-
 
 /**
  * `FieldMask` represents a set of symbolic field paths, for example:
@@ -18,14 +11,14 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  */
 data class ProtoFieldMask(val paths: List<String>)
 
-internal fun parseFieldMask(str: String): ProtoFieldMask {
-    if (str.isEmpty()) return ProtoFieldMask(emptyList())
+internal fun parseFieldMask(pathsText: String): ProtoFieldMask {
+    if (pathsText.isEmpty()) return ProtoFieldMask(emptyList())
     val paths = mutableListOf<String>()
     val stringBuilder = StringBuilder()
     var charIndex = 0
-    val stringLength = str.length
+    val stringLength = pathsText.length
     while (charIndex < stringLength) {
-        val character = str[charIndex]
+        val character = pathsText[charIndex]
         if (character == C.CHAR_COMMA) {
             paths.add(stringBuilder.toString())
             stringBuilder.clear()
@@ -73,27 +66,4 @@ internal fun formatFieldMask(mask: ProtoFieldMask): String {
         pathIndex++
     }
     return stringBuilder.toString()
-}
-
-/**
- * Serializer for [ProtoFieldMask].
- */
-object ProtoFieldMaskSerializer : GhostSerializer<ProtoFieldMask> {
-    override val typeName: String get() = C.WKT_FIELDMASK_TYPE
-
-    override fun serialize(writer: GhostJsonWriter, value: ProtoFieldMask) {
-        writer.value(formatFieldMask(value))
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFieldMask) {
-        writer.value(formatFieldMask(value))
-    }
-
-    override fun deserialize(reader: GhostJsonReader): ProtoFieldMask {
-        return parseFieldMask(reader.nextString())
-    }
-
-    override fun deserialize(reader: GhostJsonFlatReader): ProtoFieldMask {
-        return parseFieldMask(reader.nextString())
-    }
 }

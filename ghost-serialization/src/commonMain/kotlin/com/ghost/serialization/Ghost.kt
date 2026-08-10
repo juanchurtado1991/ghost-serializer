@@ -2,24 +2,53 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.Ghost.deserialize
-import com.ghost.serialization.Ghost.deserializeStreaming
-import com.ghost.serialization.Ghost.encodeToSink
-import com.ghost.serialization.Ghost.encodeToString
-import com.ghost.serialization.Ghost.serialize
-import com.ghost.serialization.Ghost.serializerCache
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.proto.wkt.ProtoAny
+import com.ghost.serialization.proto.wkt.ProtoAnySerializer
+import com.ghost.serialization.proto.wkt.ProtoBoolValue
+import com.ghost.serialization.proto.wkt.ProtoBoolValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoBytesValue
+import com.ghost.serialization.proto.wkt.ProtoBytesValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDoubleValue
+import com.ghost.serialization.proto.wkt.ProtoDoubleValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoDuration
+import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
+import com.ghost.serialization.proto.wkt.ProtoEmpty
+import com.ghost.serialization.proto.wkt.ProtoEmptySerializer
+import com.ghost.serialization.proto.wkt.ProtoFieldMask
+import com.ghost.serialization.proto.wkt.ProtoFieldMaskSerializer
+import com.ghost.serialization.proto.wkt.ProtoFloatValue
+import com.ghost.serialization.proto.wkt.ProtoFloatValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoInt32Value
+import com.ghost.serialization.proto.wkt.ProtoInt32ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoInt64Value
+import com.ghost.serialization.proto.wkt.ProtoInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoStringValue
+import com.ghost.serialization.proto.wkt.ProtoStringValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoTimestamp
+import com.ghost.serialization.proto.wkt.ProtoTimestampSerializer
+import com.ghost.serialization.proto.wkt.ProtoUInt32Value
+import com.ghost.serialization.proto.wkt.ProtoUInt32ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoUInt64Value
+import com.ghost.serialization.proto.wkt.ProtoUInt64ValueSerializer
+import com.ghost.serialization.proto.wkt.ProtoValue
+import com.ghost.serialization.proto.wkt.ProtoValueSerializer
+import com.ghost.serialization.serializers.BooleanArraySerializer
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.ByteSerializer
 import com.ghost.serialization.serializers.CharSerializer
+import com.ghost.serialization.serializers.DoubleArraySerializer
 import com.ghost.serialization.serializers.DoubleSerializer
+import com.ghost.serialization.serializers.FloatArraySerializer
 import com.ghost.serialization.serializers.FloatSerializer
+import com.ghost.serialization.serializers.IntArraySerializer
 import com.ghost.serialization.serializers.IntSerializer
 import com.ghost.serialization.serializers.ListSerializer
+import com.ghost.serialization.serializers.LongArraySerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.SetSerializer
@@ -29,6 +58,13 @@ import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import com.ghost.serialization.yaml.contract.GhostYamlSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlDoubleArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlFloatArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlIntArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlLongArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
 import okio.BufferedSink
 import okio.BufferedSource
 import kotlin.reflect.KClass
@@ -48,25 +84,25 @@ expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
 /**
  * Service loader or reflection based module discovery mechanism.
+ *
+ * Debt: iOS/Wasm actuals return empty — register modules manually via [Ghost.addRegistry].
+ * JVM/Android use ServiceLoader/reflection; not unified across targets yet.
  */
 expect fun discoverRegistries(): Iterable<GhostRegistry>
 
 /**
  * Runs a block of operations using a pooled [GhostJsonReader] instance.
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
 
 /**
  * Runs a block of operations using a pooled [GhostJsonStringReader] instance.
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseStringReader(json: String, block: (GhostJsonStringReader) -> T): T
 
 /**
  * Runs a block of operations using a pooled [GhostJsonFlatReader] instance.
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
     limit: Int = bytes.size,
@@ -76,7 +112,6 @@ expect fun <T> ghostInternalUseFlatReader(
 /**
  * Runs a block of operations using a pooled [GhostJsonReader] reading from an Okio [BufferedSource].
  */
-@OptIn(InternalGhostApi::class)
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 /**
@@ -180,10 +215,8 @@ object Ghost {
         }
 
         // 2. Check discovered registries
-        if (_discoveredRegistries == null) {
-            _discoveredRegistries = discoverRegistries()
-        }
-        val disc = _discoveredRegistries!!
+        val disc = _discoveredRegistries
+            ?: discoverRegistries().also { _discoveredRegistries = it }
 
         for (registry in disc) {
             registry.getSerializer(clazz)?.let { return it }
@@ -248,9 +281,11 @@ object Ghost {
      * @param clazz The [KClass] of the type to resolve the serializer for.
      * @return The matching [GhostSerializer], or `null` if no serializer is found.
      */
-    public fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
+    fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
         // Fast path for primitives
         getPrimitiveSerializer(clazz)?.let { return it }
+        // Built-in protobuf well-known types (idempotent with manual addRegistry)
+        getWktSerializer(clazz)?.let { return it }
 
         // Atomic lookup (Lock-free on JVM/Android)
         val cached = serializerCache[clazz] as? GhostSerializer<T>
@@ -315,6 +350,26 @@ object Ghost {
                 CharSerializer as GhostSerializer<T>
             }
 
+            IntArray::class -> {
+                IntArraySerializer as GhostSerializer<T>
+            }
+
+            LongArray::class -> {
+                LongArraySerializer as GhostSerializer<T>
+            }
+
+            FloatArray::class -> {
+                FloatArraySerializer as GhostSerializer<T>
+            }
+
+            DoubleArray::class -> {
+                DoubleArraySerializer as GhostSerializer<T>
+            }
+
+            BooleanArray::class -> {
+                BooleanArraySerializer as GhostSerializer<T>
+            }
+
             RawJson::class -> {
                 RawJsonSerializer as GhostSerializer<T>
             }
@@ -322,6 +377,51 @@ object Ghost {
             else -> {
                 null
             }
+        }
+    }
+
+    /**
+     * YAML entry-point lookup for primitive arrays. Kept separate from [getPrimitiveSerializer]
+     * so JSON resolution continues to return the JSON `*ArraySerializer` instances.
+     */
+    @PublishedApi
+    internal fun <T : Any> getYamlPrimitiveSerializer(
+        clazz: KClass<T>
+    ): GhostYamlSerializer<T>? {
+        return when (clazz) {
+            IntArray::class -> GhostYamlIntArraySerializer as GhostYamlSerializer<T>
+            LongArray::class -> GhostYamlLongArraySerializer as GhostYamlSerializer<T>
+            FloatArray::class -> GhostYamlFloatArraySerializer as GhostYamlSerializer<T>
+            DoubleArray::class -> GhostYamlDoubleArraySerializer as GhostYamlSerializer<T>
+            BooleanArray::class -> GhostYamlBooleanArraySerializer as GhostYamlSerializer<T>
+            else -> null
+        }
+    }
+
+    /**
+     * Built-in serializers for protobuf well-known types.
+     */
+    private fun <T : Any> getWktSerializer(
+        clazz: KClass<T>
+    ): GhostSerializer<T>? {
+        return when (clazz) {
+            ProtoTimestamp::class -> ProtoTimestampSerializer as GhostSerializer<T>
+            ProtoDuration::class -> ProtoDurationSerializer as GhostSerializer<T>
+            ProtoEmpty::class -> ProtoEmptySerializer as GhostSerializer<T>
+            ProtoFieldMask::class -> ProtoFieldMaskSerializer as GhostSerializer<T>
+            ProtoAny::class -> ProtoAnySerializer as GhostSerializer<T>
+            // ProtoStruct is a typealias for Map<String, ProtoValue> — KClass erases to Map.
+            ProtoValue::class -> ProtoValueSerializer as GhostSerializer<T>
+            ProtoBoolValue::class -> ProtoBoolValueSerializer as GhostSerializer<T>
+            ProtoStringValue::class -> ProtoStringValueSerializer as GhostSerializer<T>
+            ProtoBytesValue::class -> ProtoBytesValueSerializer as GhostSerializer<T>
+            ProtoDoubleValue::class -> ProtoDoubleValueSerializer as GhostSerializer<T>
+            ProtoFloatValue::class -> ProtoFloatValueSerializer as GhostSerializer<T>
+            ProtoInt32Value::class -> ProtoInt32ValueSerializer as GhostSerializer<T>
+            ProtoInt64Value::class -> ProtoInt64ValueSerializer as GhostSerializer<T>
+            ProtoUInt32Value::class -> ProtoUInt32ValueSerializer as GhostSerializer<T>
+            ProtoUInt64Value::class -> ProtoUInt64ValueSerializer as GhostSerializer<T>
+            else -> null
         }
     }
 
@@ -372,7 +472,11 @@ object Ghost {
                         val itemSerializer = getSerializer(itemType)
                             ?: return@runSynchronized null
 
-                        SetSerializer(itemSerializer)
+                        if (itemSerializer is GhostYamlSerializer<*>) {
+                            GhostYamlSetSerializer(itemSerializer)
+                        } else {
+                            SetSerializer(itemSerializer)
+                        }
                     }
 
                     Map::class -> {
@@ -434,7 +538,7 @@ object Ghost {
     /**
      * Resolves the serializer for the reified type parameter [T].
      */
-    public inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
+    inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
         val cached = serializerCache[T::class]
         if (cached != null) {
             return cached as GhostSerializer<T>
@@ -483,7 +587,7 @@ object Ghost {
     /**
      * Serializes [value] to an in-memory JSON string.
      *
-     * Writes through the pooled [com.ghost.serialization.writer.strings.GhostJsonStringWriter]
+     * Writes through the pooled `GhostJsonStringWriter`
      * (contiguous [CharArray]), avoiding Okio segments and an intermediate UTF-8 byte buffer.
      *
      * @param value The value to serialize.
@@ -537,6 +641,8 @@ object Ghost {
     /**
      * Serializes [value] through the pooled [GhostJsonFlatWriter] and discards
      * the output. No [BufferedSink] allocation, no Okio wrapper objects.
+     *
+     * Public API for frameworks / JIT warm-up; may not be referenced from this module.
      *
      * @param value The value to serialize.
      */
@@ -596,7 +702,6 @@ object Ghost {
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or the structure is invalid.
      * @see deserializeStreaming for O(1)-memory streaming of large files.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
         source.request(Long.MAX_VALUE)
         val limit = source.buffer.size.toInt()
@@ -632,7 +737,6 @@ object Ghost {
      * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserializeStreaming(source: BufferedSource): T {
         return ghostInternalUseSource(source) { reader ->
             deserialize(reader)
@@ -653,12 +757,13 @@ object Ghost {
     /**
      * Deserializes the JSON [bytes] array into an instance of type [T].
      *
+     * Uses the flat reader ([GhostJsonFlatReader]), same engine as the options overload.
+     *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException
      * if the JSON payload is malformed or structure is invalid.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(bytes: ByteArray): T {
         return ghostInternalUseFlatReader(bytes) { reader ->
             deserialize(reader)
@@ -685,7 +790,6 @@ object Ghost {
      * @param options A configuration lambda to set reader properties.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         json: String,
         crossinline options: (GhostJsonStringReader) -> Unit
@@ -703,7 +807,6 @@ object Ghost {
      * @param options A configuration lambda to set reader properties.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         source: BufferedSource,
         crossinline options: (GhostJsonReader) -> Unit
@@ -717,16 +820,19 @@ object Ghost {
     /**
      * Advanced: Deserializes the JSON [bytes] array using custom parser settings.
      *
+     * Uses the same flat reader as [deserialize] `(bytes)` so `strictMode` /
+     * `coerceStringsToNumbers` apply on the hot path. For true streaming from a
+     * [BufferedSource], use [deserializeStreaming] or the source+options overload.
+     *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
-     * @param options A configuration lambda to set reader properties.
+     * @param options A configuration lambda to set [GhostJsonFlatReader] properties.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(
         bytes: ByteArray,
-        crossinline options: (GhostJsonReader) -> Unit
+        crossinline options: (GhostJsonFlatReader) -> Unit
     ): T {
-        return ghostInternalUseReader(bytes) { reader ->
+        return ghostInternalUseFlatReader(bytes) { reader ->
             options(reader)
             deserialize(reader)
         }
@@ -734,7 +840,7 @@ object Ghost {
 
     /**
      * Non-inline variant of [deserialize] that decodes a [ByteArray] into the specified [clazz].
-     * Useful in reflection or framework integration contexts where reified types are unavailable.
+     * Public API for frameworks (Spring, Retrofit) where reified types are unavailable.
      *
      * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
      * @param clazz The KClass of the target type to deserialize.
@@ -742,7 +848,6 @@ object Ghost {
      * @return A reconstructed instance of type [T].
      */
     @Suppress("unused")
-    @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>, limit: Int = bytes.size): T {
         return ghostInternalUseFlatReader(bytes, limit) { reader ->
             val serializer = getSerializer(clazz)
@@ -760,7 +865,6 @@ object Ghost {
      * @param clazz The KClass of the target type to deserialize.
      * @return A reconstructed instance of type [T].
      */
-    @OptIn(InternalGhostApi::class)
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
         source.request(Long.MAX_VALUE)
         val limit = source.buffer.size.toInt()
@@ -797,13 +901,13 @@ object Ghost {
 
     /**
      * Non-inline variant of [encodeToSink] for contexts where the type is known
-     * only as a [KClass] at runtime (e.g. Spring HttpMessageConverter, Retrofit adapters).
+     * only as a [KClass] at runtime.
+     * Public API for frameworks (Spring HttpMessageConverter, Retrofit adapters).
      *
      * @param sink The Okio sink to write the JSON payload to.
      * @param value The value to serialize.
      * @param clazz The KClass of the target type to serialize.
      */
-    @OptIn(InternalGhostApi::class)
     @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
         val serializer = getSerializer(clazz)
@@ -816,7 +920,6 @@ object Ghost {
     /**
      * Helper deserialize routine for KSP generated serializers.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(reader: GhostJsonReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
@@ -825,7 +928,6 @@ object Ghost {
     /**
      * Helper deserialize routine for KSP generated serializers.
      */
-    @OptIn(InternalGhostApi::class)
     inline fun <reified T : Any> deserialize(reader: GhostJsonFlatReader): T {
         val serializer = resolveSerializer<T>()
         return serializer.deserialize(reader)
@@ -905,7 +1007,8 @@ object Ghost {
     const val NOT_FOUND = "No Ghost serializer found for"
 
     /**
-     * Test-only utility to clear global state and prevent test pollution.
+     * Test hook: clears registries and serializer caches to prevent cross-test pollution.
+     * Not for production use.
      */
     @InternalGhostApi
     fun resetForTest() {

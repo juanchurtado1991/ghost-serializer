@@ -72,8 +72,8 @@ Proto3 mapping rules (quoted int64, Base64 `bytes`, omit defaults) apply inside 
 |:---|:---|:---|
 | Ktor client | `Configuration.ghostYaml()`, `bodyGhostYaml<T>()` | `application/yaml` |
 | Ktor server (JVM) | `respondGhostYaml(value)` | `application/yaml` |
-| Retrofit | `GhostYamlConverterFactory.create()` | `application/yaml` — unwraps `List<T>`/`Map<String, V>` when value serializers implement `GhostYamlSerializer` |
-| Spring MVC / WebFlux | auto-registered YAML converters | `application/yaml` |
+| Retrofit | `GhostYamlConverterFactory.create()` | `application/yaml` — unwraps `List<T>`/`Set<T>`/`Map<String, V>` when value serializers implement `GhostYamlSerializer` |
+| Spring MVC / WebFlux | auto-registered YAML converters | `application/yaml` — same collection unwrap as JSON (`List`/`Set`/`Map`) |
 
 See framework guides for setup; converters only bind types whose serializer implements `GhostYamlSerializer`.
 
@@ -114,7 +114,6 @@ data class ConfigDto(val id: Long, val name: String)
 
 Deferred items are tracked on the **[public roadmap](roadmap.md#3-format--adapter-gaps)**:
 
-- `Set<T>` top-level HTTP request/response bodies in Retrofit, Ktor, and Spring Boot (MVC + WebFlux) YAML converters (parity with [Proto §8](usage-protobuf.md#8-known-gaps-not-yet-implemented))
 - Binary protobuf wire format (varint encoding) — YAML/JSON paths are for config/API documents, not gRPC binary
 
 Structural JSON-only features (`@GhostResilient`, `@GhostFlatten`, sealed polymorphism, etc.) remain blocked at compile time with `@GhostYamlSerialization` — see [§2](#2-supported-annotations-on-yaml-paths).

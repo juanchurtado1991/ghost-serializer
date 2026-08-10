@@ -3,9 +3,11 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.createByteArraySource
+import com.ghost.serialization.parser.common.scanStringSwarNoHash
 import com.ghost.serialization.util.isJvm
 import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import kotlin.test.Test
@@ -48,5 +50,19 @@ class WasmPlatformActualsTest {
             endIndex = 4
         )
         assertEquals("hos", destination.concatToString())
+    }
+
+    @Test
+    fun wasmDisablesSwarScansForSafariFriendlyScalarPath() {
+        // Issue #16: Long/SWAR wide scans lose on JavaScriptCore; Wasm uses byte loops.
+        assertFalse(ghostUseSwarScans)
+
+        val stringContent = "hello world".encodeToByteArray()
+        val quotedJsonString = ("\"" + "hello world" + "\"").encodeToByteArray()
+        val scanResult = scanStringSwarNoHash(quotedJsonString, 1, quotedJsonString.size)
+        assertTrue(scanResult != GhostJsonConstants.MATCH_END.toLong())
+        val scannedLength = ((scanResult and GhostJsonConstants.SCAN_LENGTH_MASK) ushr
+            GhostJsonConstants.SCAN_LENGTH_SHIFT).toInt()
+        assertEquals(stringContent.size, scannedLength)
     }
 }

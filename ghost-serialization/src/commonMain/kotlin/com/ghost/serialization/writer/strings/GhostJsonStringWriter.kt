@@ -5,21 +5,19 @@ package com.ghost.serialization.writer.strings
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BS_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
 import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.COMMA_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.CR_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT_CHARS
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
@@ -29,9 +27,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_N_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_R_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.ESC_T_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.FF_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS_CHARS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.HUNDRED_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.LF_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
@@ -52,17 +47,15 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.RESULT_NONE
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
 import com.ghost.serialization.parser.common.GhostJsonConstants.TAB_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
 import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
 import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
 import com.ghost.serialization.writer.common.GhostDoubleFormatter
+import com.ghost.serialization.writer.common.GhostJsonEscapeHelpers
+import com.ghost.serialization.writer.common.GhostWriterLongDigits
 import okio.ByteString
 
 
@@ -388,7 +381,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     }
 
     /** Writes [raw] using its storage slice. */
-    fun rawValue(raw: com.ghost.serialization.types.RawJson): GhostJsonStringWriter =
+    fun rawValue(raw: RawJson): GhostJsonStringWriter =
         rawValue(raw.storage, raw.storageOffset, raw.storageLength)
 
     @InternalGhostApi
@@ -451,8 +444,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
 
     private fun writeLongValueRawInternal(value: Long) {
         val scratchBuf = scratch ?: acquireScratch()
-        val scratchEnd = LONG_SCRATCH_SIZE
-        var scratchIndex = scratchEnd
         var localValue = value
         val isNegative = localValue < 0
         if (isNegative) {
@@ -463,25 +454,13 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
             localValue = -localValue
         }
 
-        while (localValue >= HUNDRED_LONG) {
-            val lutIndex = (localValue % HUNDRED_LONG).toInt() * 2
-            scratchBuf[--scratchIndex] = DOUBLE_DIGIT_LUT_CHARS[lutIndex + 1]
-            scratchBuf[--scratchIndex] = DOUBLE_DIGIT_LUT_CHARS[lutIndex]
-            localValue /= HUNDRED_LONG
-        }
-
-        if (localValue < TEN_LONG) {
-            scratchBuf[--scratchIndex] = (ZERO_INT + localValue.toInt()).toChar()
-        } else {
-            val lutIndex = localValue.toInt() * 2
-            scratchBuf[--scratchIndex] = DOUBLE_DIGIT_LUT_CHARS[lutIndex + 1]
-            scratchBuf[--scratchIndex] = DOUBLE_DIGIT_LUT_CHARS[lutIndex]
-        }
-
-        if (isNegative) {
-            scratchBuf[--scratchIndex] = MINUS_INT.toChar()
-        }
-
+        val scratchEnd = LONG_SCRATCH_SIZE
+        val scratchIndex = GhostWriterLongDigits.writeDigitsChars(
+            absoluteValue = localValue,
+            negative = isNegative,
+            scratch = scratchBuf,
+            scratchEnd = scratchEnd,
+        )
         buffer.write(scratchBuf, scratchIndex, scratchEnd - scratchIndex)
     }
 
@@ -504,16 +483,13 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 value = number,
                 scratch = byteScratch,
                 offset = 0,
-                fallback = { fallbackNum ->
-                    if (!fallbackNum.isFinite()) {
-                        throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                    }
-                    buffer.writeString(fallbackNum.toString())
-                    -1
-                }
             )
-
-            if (bytesWrittenLength > 0) {
+            if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+                if (!number.isFinite()) {
+                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+                }
+                buffer.writeString(number.toString())
+            } else if (bytesWrittenLength > 0) {
                 // Write formatted bytes as chars
                 for (i in 0 until bytesWrittenLength) {
                     scratchBuf[i] = byteScratch[i].toInt().toChar()
@@ -543,16 +519,13 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 value = number,
                 scratch = byteScratch,
                 offset = 0,
-                fallback = { fallbackNum ->
-                    if (!fallbackNum.isFinite()) {
-                        throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-                    }
-                    buffer.writeString(fallbackNum.toString())
-                    -1
-                }
             )
-
-            if (bytesWrittenLength > 0) {
+            if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
+                if (!number.isFinite()) {
+                    throw GhostJsonException(ERR_NON_FINITE, 0, 0)
+                }
+                buffer.writeString(number.toString())
+            } else if (bytesWrittenLength > 0) {
                 for (i in 0 until bytesWrittenLength) {
                     scratchBuf[i] = byteScratch[i].toInt().toChar()
                 }
@@ -797,16 +770,9 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
     }
 
     private fun writeUnicodeEscape(code: Int, scratchBuf: CharArray) {
-        val hexChars = HEX_CHARS_CHARS
-
-        scratchBuf[0] = CHAR_BACKSLASH
-        scratchBuf[1] = CHAR_U
-        scratchBuf[2] = hexChars[(code shr SHIFT_12) and HEX_MASK]
-        scratchBuf[3] = hexChars[(code shr SHIFT_8) and HEX_MASK]
-        scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
-        scratchBuf[5] = hexChars[code and HEX_MASK]
-
-        buffer.write(scratchBuf, 0, 6)
+        GhostJsonEscapeHelpers.writeUnicodeEscapeChars(code, scratchBuf) { buf, offset, len ->
+            buffer.write(buf, offset, len)
+        }
     }
 
     /**

@@ -2,48 +2,7 @@ package com.ghost.serialization.compiler.model
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
-
-/**
- * Reader parameter type resolved from a custom coder function signature.
- */
-internal enum class CustomCoderReaderKind {
-    /** `fun(GhostJsonReader): T` — bytes / streaming channel. */
-    BYTES,
-
-    /** `fun(GhostJsonFlatReader): T` — flat byte buffer channel. */
-    FLAT,
-
-    /** `fun(GhostJsonStringReader): T` — native string channel (textChannel). */
-    STRING,
-}
-
-/**
- * Metadata configuration for custom encoding/decoding providers.
- *
- * @property provider The KotlinPoet [TypeName] of the object/class containing the custom coder function.
- * @property functionName The name of the custom encoding/decoding function to delegate to.
- * @property readerKinds Reader parameter types available across function overloads.
- */
-internal data class CustomCoderModel(
-    val provider: TypeName,
-    val functionName: String,
-    val readerKinds: Set<CustomCoderReaderKind> = setOf(CustomCoderReaderKind.BYTES),
-) {
-    fun supports(kind: CustomCoderReaderKind): Boolean = kind in readerKinds
-}
-
-/**
- * Metadata representation of a subclass target during inferred sealed class deserialization.
- *
- * @property declaration The KSP class declaration of the sealed subclass.
- * @property properties The list of analyzed property models belonging to this subclass.
- */
-internal data class InferredSubclassModel(
-    val declaration: KSClassDeclaration,
-    val properties: List<GhostPropertyModel>
-)
 
 /**
  * Main metadata model representing a serializable property.
@@ -59,7 +18,7 @@ internal data class InferredSubclassModel(
  * @property isGhost True if the property's type is itself annotated with @GhostSerialization.
  * @property isList True if the property type is a [List].
  * @property isSet True if the property type is a [Set].
- * @property isEnum True if the property type is a [kotlin.Enum].
+ * @property isEnum True if the property type is an enum.
  * @property listInnerType The resolved [KSType] of the generic element inside the list, if applicable.
  * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
  * @property listInnerIsEnum True if the list inner type is an enum.
@@ -131,27 +90,4 @@ internal data class GhostPropertyModel(
     val isInferredSignature: Boolean = false,
     val inferredSubclasses: List<InferredSubclassModel> = emptyList(),
     val isProto: Boolean = false
-)
-
-/**
- * One wire field emitted when unwrapping a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
- * property during serialization.
- *
- * @property jsonName JSON key written at the parent object level.
- * @property kotlinPath Property accessor segments from the wrapper value (e.g. `["extras", "extra1"]`).
- * @property isNullable Whether the leaf property accepts JSON null / omission.
- * @property typeName Kotlin type of the leaf property for serialization dispatch.
- * @property sealedSubclassName Non-null when this field was resolved from a sealed subclass of
- *   the wrapped type rather than the wrapped type's own properties (proto3 `oneof` mapping: each
- *   wire key corresponds to one subclass' field, e.g. `Text.text`/`Code.code` on a
- *   `sealed class Payload`). Emission must `is`-check/smart-cast to this subclass before
- *   accessing [kotlinPath] on it.
- */
-internal data class WrappedUnwrapFieldModel(
-    val jsonName: String,
-    val kotlinPath: List<String>,
-    val isNullable: Boolean,
-    val typeName: com.squareup.kotlinpoet.TypeName,
-    val type: KSType,
-    val sealedSubclassName: ClassName? = null,
 )

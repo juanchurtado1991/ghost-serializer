@@ -16,6 +16,10 @@ internal const val ERROR_PREFIX = "Ghost serializer not found for class "
 @PublishedApi
 internal const val ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
 
+@PublishedApi
+internal const val YAML_ERROR_SUFFIX =
+    ". Make sure a GhostYamlSerializer is registered for it."
+
 /**
  * Serializes [value] directly with Ghost and responds, bypassing Ktor Server's
  * ContentNegotiation pipeline.
@@ -47,13 +51,14 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostProto(
 /**
  * YAML variant of [respondGhost] — serializes through [GhostYamlSerializer] and responds with
  * `application/yaml`.
+ * Public API for frameworks — bypasses Ktor ContentNegotiation.
  */
 suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
     value: T,
     status: HttpStatusCode = HttpStatusCode.OK
 ) {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("$ERROR_PREFIX${T::class.simpleName}$ERROR_SUFFIX")
+        ?: throw IllegalArgumentException("$ERROR_PREFIX${T::class.simpleName}$YAML_ERROR_SUFFIX")
     if (serializer !is GhostYamlSerializer<*>) {
         throw IllegalArgumentException(
             "Serializer for ${T::class.simpleName} does not implement GhostYamlSerializer"
@@ -65,5 +70,5 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
         yamlSerializer.serialize(writer, value)
         writer.buffer.toByteArray()
     }
-    respond(ByteArrayContent(bytes, ContentType("application", "yaml"), status))
+    respond(ByteArrayContent(bytes, ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML), status))
 }

@@ -25,17 +25,17 @@ internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
         scanPos++
     }
     while (scanPos < limit) {
-        val b = getByte(scanPos)
-        if (b == C.DOT_INT) {
+        val tokenByte = getByte(scanPos)
+        if (tokenByte == C.DOT_INT) {
             hasDot = true
             break
         }
         if (
-            b == C.QUOTE_INT ||
-            b == C.COMMA_INT ||
-            b == C.CLOSE_OBJ_INT ||
-            b == C.CLOSE_ARR_INT ||
-            b <= C.SPACE_INT
+            tokenByte == C.QUOTE_INT ||
+            tokenByte == C.COMMA_INT ||
+            tokenByte == C.CLOSE_OBJ_INT ||
+            tokenByte == C.CLOSE_ARR_INT ||
+            tokenByte <= C.SPACE_INT
         ) {
             break
         }
@@ -48,14 +48,14 @@ internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
     }
     try {
         if (hasDot) {
-            val d = this.nextDoubleExtension()
-            val i = d.toInt()
-            if (d != i.toDouble()) {
+            val doubleValue = nextDoubleExtension()
+            val intValue = doubleValue.toInt()
+            if (doubleValue != intValue.toDouble()) {
                 throwError(C.ERR_PROTO_FRACTIONAL_INT)
             }
-            return i
+            return intValue
         }
-        return this.nextIntExtension()
+        return nextIntExtension()
     } finally {
         coerceStringsToNumbers = prev
     }

@@ -4,12 +4,13 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
+import com.ghost.serialization.annotations.GhostCoerce
+import com.ghost.serialization.annotations.GhostStrict
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalUseFlatReader
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.SetSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -23,11 +24,10 @@ import kotlin.reflect.KClass
 
 /**
  * Retrofit [Converter.Factory] for Ghost JSON serialization
- * ([@GhostSerialization][com.ghost.serialization.annotations.GhostSerialization]).
+ * (`@GhostSerialization`).
  *
- * Honors [@GhostStrict][com.ghost.serialization.annotations.GhostStrict] and
- * [@GhostCoerce][com.ghost.serialization.annotations.GhostCoerce] on endpoint methods.
- * Unwraps `List<T>` / `Map<String, V>` when element serializers are registered.
+ * Honors `@GhostStrict` and `@GhostCoerce` on endpoint methods.
+ * Unwraps `List<T>` / `Set<T>` / `Map<String, V>` when element serializers are registered.
  *
  * ```kotlin
  * Retrofit.Builder()
@@ -50,42 +50,12 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
         val serializer = getSerializerWithCache(type)
             ?: return null
 
-        val isStrict = annotations.any { it is com.ghost.serialization.annotations.GhostStrict }
-        val isCoerce = annotations.any { it is com.ghost.serialization.annotations.GhostCoerce }
+        val isStrict = annotations.any { it is GhostStrict }
+        val isCoerce = annotations.any { it is GhostCoerce }
 
         return Converter { body ->
             body.use {
-                val stream = it.byteStream()
-                var scratch = acquireScratchBuffer(BUFFER_SIZE)
-                try {
-
-                    var offset = 0
-                    while (true) {
-                        if (offset == scratch.size) {
-                            val grown =
-                                acquireScratchBuffer(scratch.size * 2)
-
-                            scratch.copyInto(
-                                grown,
-                                0,
-                                0,
-                                offset
-                            )
-
-                            releaseScratchBuffer(scratch)
-                            scratch = grown
-                        }
-
-                        val read = stream.read(
-                            scratch,
-                            offset,
-                            scratch.size - offset
-                        )
-
-                        if (read == -1) break
-                        offset += read
-                    }
-
+                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset ->
                     ghostInternalUseFlatReader(
                         scratch, offset
                     ) { reader ->
@@ -101,8 +71,6 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                             serializer.deserialize(reader)
                         }
                     }
-                } finally {
-                    releaseScratchBuffer(scratch)
                 }
             }
         }
@@ -154,13 +122,21 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
                 return ListSerializer(itemSerializer) as GhostSerializer<Any>
             }
 
+            if (Set::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull()
+                    ?: return null
+
+                val itemSerializer = getSerializerWithCache(arg)
+                    ?: return null
+
+                return SetSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
             if (Map::class.java.isAssignableFrom(rawType)) {
-                val arg = type.actualTypeArguments.getOrNull(1)
-                    ?: return null
-
-                val valueSerializer = getSerializerWithCache(arg)
-                    ?: return null
-
+                val keyArg = type.actualTypeArguments.getOrNull(0) ?: return null
+                if (!isStringMapKeyType(keyArg)) return null
+                val valueArg = type.actualTypeArguments.getOrNull(1) ?: return null
+                val valueSerializer = getSerializerWithCache(valueArg) ?: return null
                 return MapSerializer(valueSerializer) as GhostSerializer<Any>
             }
 
@@ -169,9 +145,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
     }
 
     companion object {
-        private const val STR_MEDIA_TYPE = "application/json; charset=UTF-8"
-        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
-        private const val BUFFER_SIZE = 524288
+        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()
 
         fun create(): GhostConverterFactory = GhostConverterFactory()
     }

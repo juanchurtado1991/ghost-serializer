@@ -21,7 +21,7 @@ package com.ghost.serialization.annotations
  * ```
  *
  * During **deserialization**, each listed [keys] entry is captured from the parent object
- * (zero-copy [com.ghost.serialization.types.RawJson] slices) and assembled into a synthetic
+ * (zero-copy `RawJson` slices) and assembled into a synthetic
  * wrapper object `{ "type": "...", "dth": { ... } }` before the property type is parsed.
  *
  * During **serialization**, the wrapper property is **unwrapped**: inner fields are written as

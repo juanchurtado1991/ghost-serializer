@@ -74,7 +74,7 @@ Example targets (to add at the top of `README.md` once wired):
 | Area | Work | Status |
 |:---|:---|:---:|
 | **Adapter gaps** | Retrofit/Ktor proto/YAML converters: `List<T>` / `Map` body unwrapping | Shipped in 1.3.0 |
-| **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)) | Planned |
+| **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)). Safari SWAR lag mitigated via `ghostUseSwarScans=false` on Wasm ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)) | Shipped / ongoing |
 | **Regression visibility** | Optional CI artifact or docs page for benchmark regression JSON (Twitter + synthetic gates) | Planned |
 | **Fuzz / malformed JSON** | Extend stress-suite coverage beyond deep nesting and single malformed payloads | Planned |
 | **Playground** | Keep Speed Test + Studio presets aligned with real generated serializers on JVM | Ongoing |
@@ -93,7 +93,7 @@ Items intentionally deferred (parity across YAML and Proto3 JSON adapters):
 
 | Gap | Notes | Status |
 |:---|:---|:---:|
-| **`Set<T>` HTTP bodies** | Top-level `Set<T>` request/response unwrapping in **Retrofit, Ktor, and Spring Boot** (MVC + WebFlux) for proto **and** YAML codecs — same gap as JSON adapters that only unwrap `List`/`Map` generics. `List<T>` and `Map<String, V>` are supported when element/value serializers are registered. | Planned |
+| **`List` / `Set` / `Map` HTTP bodies** | Top-level collection unwrap in Retrofit, Spring (MVC + WebFlux), and Ktor for JSON / YAML / Proto adapters. | Shipped (1.3.1) |
 | **Binary protobuf wire** | Varint-encoded gRPC/protobuf binary — Ghost implements proto3 **JSON** mapping only (plus YAML documents for config/API). | Planned |
 | **JSON-only structural features on YAML** | `@GhostResilient`, `@GhostFlatten`, sealed/`@GhostFallback`, `@GhostDecoder`/`@GhostEncoder` — compile-time blocked on `@GhostYamlSerialization`; no runtime fallback. | By design |
 

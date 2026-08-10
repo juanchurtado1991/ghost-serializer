@@ -7,7 +7,7 @@ import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
 import com.ghost.serialization.compiler.analysis.isByteArray
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.codegen.GhostCodeGenerator
-import com.ghost.serialization.compiler.codegen.writeTrimmedTo
+import com.ghost.serialization.compiler.codegen.GeneratedSourceTrimmer
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -44,8 +44,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
  * specialized serializers, and builds a global registry mapping classes to serializers
  * to avoid reflection at runtime.
  *
- * @property codeGenerator The KSP [com.google.devtools.ksp.processing.CodeGenerator] used to create new serializer and registry files.
- * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors, warnings, and messages.
+ * @property codeGenerator KSP `CodeGenerator` used to create serializer and registry files.
+ * @property logger KSP `KSPLogger` used to report compilation errors, warnings, and messages.
  * @property options Map of key-value pairs representing processor options passed from build scripts.
  */
 class GhostSerializationProcessor(
@@ -87,12 +87,10 @@ class GhostSerializationProcessor(
 
         // Append _Test if we are in a test source set to avoid collisions
         if (moduleName == C.STR_DEFAULT_NAME) {
-            val isTest = originatingFiles.any {
-                val path = it.filePath
-                path.contains(C.STR_SRC_TEST) ||
-                        path.contains(C.STR_SRC_ANDROID_TEST) ||
-                        path.contains(C.STR_SRC_TEST_KSP)
-            }
+            val isTest = TestSourceSetDetection.isTestCompilation(
+                options = options,
+                filePaths = originatingFiles.map { it.filePath },
+            )
             if (isTest) {
                 moduleName += C.STR_TEST_SUFFIX
             }
@@ -235,7 +233,8 @@ class GhostSerializationProcessor(
         }
         processedFiles.add(fullFileName)
 
-        fileSpec.writeTrimmedTo(
+        GeneratedSourceTrimmer.write(
+            fileSpec = fileSpec,
             codeGenerator = codeGenerator,
             dependencies = Dependencies(
                 aggregating = false,
@@ -413,7 +412,7 @@ class GhostSerializationProcessor(
      * Splitting the structure into chunks if there are many models to avoid JVM method limits.
      */
     private fun generateModuleRegistry() {
-        val serializerType = ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)
+        val serializerType = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
         val kClassType = ClassName(C.STR_REFLECT_PKG, C.STR_KCLASS)
         val type = TypeVariableName(C.STR_TYPE_T, Any::class)
         val mapType = ClassName(C.STR_COLLECTIONS_PKG, C.STR_MAP)
@@ -425,7 +424,7 @@ class GhostSerializationProcessor(
         val entries = classToSerializer.entries.toList().sortedBy { it.key.canonicalName }
         val registrySpec = TypeSpec.classBuilder(registryClassName)
             .addKdoc(C.STR_KDOC_REGISTRY)
-            .addSuperinterface(ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_REGISTRY))
+            .addSuperinterface(ClassName(C.PKG_CONTRACT, C.STR_GHOST_REGISTRY))
 
         val chunks = entries.chunked(C.REGISTRY_CHUNK_SIZE)
 
@@ -510,7 +509,7 @@ class GhostSerializationProcessor(
             .addModifiers(KModifier.OVERRIDE)
             .addAnnotation(
                 AnnotationSpec.builder(Suppress::class)
-                    .addMember(C.MARKER, C.STR_UNCHECKED_CAST)
+                    .addMember(C.STR_FORMAT_S, C.STR_UNCHECKED_CAST)
                     .build()
             )
 
@@ -627,13 +626,13 @@ class GhostSerializationProcessor(
      * @param registrySpec The built registry type specification.
      */
     private fun writeRegistryFile(registrySpec: TypeSpec) {
-        FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
-            .addType(registrySpec)
-            .build()
-            .writeTrimmedTo(
-                codeGenerator,
-                Dependencies(aggregating = true, *originatingFiles.toTypedArray())
-            )
+        GeneratedSourceTrimmer.write(
+            fileSpec = FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
+                .addType(registrySpec)
+                .build(),
+            codeGenerator = codeGenerator,
+            dependencies = Dependencies(aggregating = true, *originatingFiles.toTypedArray()),
+        )
     }
 
     /**

@@ -14,8 +14,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
- * Verifies [GhostAutoConfiguration] on Spring Boot 3.4 with a real MVC controller and the
- * KSP-generated [com.ghost.serialization.spring.fixture.HelloMessage] serializer.
+ * Verifies [GhostWebMvcAutoConfiguration] on Spring Boot 3.4 with a real MVC controller and the
+ * KSP-generated `HelloMessage` serializer.
  */
 @SpringBootTest(classes = [GhostSpringTestApplication::class])
 @AutoConfigureMockMvc
@@ -86,5 +86,47 @@ class GhostSpringMvcIntegrationTest {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(42))
+    }
+
+    @Test
+    fun ghostConverterSerializesListResponseBody() {
+        mockMvc.perform(get("/api/hello-list"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].id").value(1))
+            .andExpect(jsonPath("$[0].name").value("ghost"))
+    }
+
+    @Test
+    fun ghostConverterDeserializesListRequestBody() {
+        mockMvc.perform(
+            post("/api/hello-list")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""[{"id":42,"name":"boot"}]"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].id").value(42))
+            .andExpect(jsonPath("$[0].name").value("BOOT"))
+    }
+
+    @Test
+    fun ghostConverterRoundTripsSetBody() {
+        mockMvc.perform(
+            post("/api/hello-set")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""[{"id":7,"name":"set"}]"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].name").value("SET"))
+    }
+
+    @Test
+    fun ghostConverterRoundTripsMapBody() {
+        mockMvc.perform(
+            post("/api/hello-map")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"a":{"id":3,"name":"map"}}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.a.name").value("MAP"))
     }
 }

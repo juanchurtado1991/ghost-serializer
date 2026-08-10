@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
 
 /**
  * JVM pool reuse and allocation guards for YAML flat reader/writer.
- * Follows the same pooling assertions as [com.ghost.serialization.proto.GhostProtoReaderPoolTest].
+ * Follows the same pooling assertions as `GhostProtoReaderPoolTest`.
  */
 class GhostYamlReaderPoolTest {
 

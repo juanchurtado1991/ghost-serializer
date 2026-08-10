@@ -67,4 +67,13 @@ class ProtoAnyRegistryTest {
     fun packFailsWithoutRegisteredTypeUrl() {
         assertFails { ProtoAnyRegistry.pack(ProtoDuration(1L, 0)) }
     }
+
+    @Test
+    fun unpackFailsOnTypeUrlMismatch() {
+        ProtoAnyRegistry.register<ProtoDuration>("type.googleapis.com/google.protobuf.Duration")
+        ProtoAnyRegistry.register<ProtoEmpty>("type.googleapis.com/google.protobuf.Empty")
+
+        val any = ProtoAnyRegistry.pack(ProtoDuration(1L, 0))
+        assertFails { ProtoAnyRegistry.unpack<ProtoEmpty>(any) }
+    }
 }

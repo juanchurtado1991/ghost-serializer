@@ -6,10 +6,13 @@ import com.ghost.serialization.compiler.analysis.isMap
 import com.ghost.serialization.compiler.analysis.isPrimitiveBoolean
 import com.ghost.serialization.compiler.analysis.isPrimitiveByte
 import com.ghost.serialization.compiler.analysis.isPrimitiveChar
+import com.ghost.serialization.compiler.analysis.isPrimitiveDouble
+import com.ghost.serialization.compiler.analysis.isPrimitiveFloat
 import com.ghost.serialization.compiler.analysis.isPrimitiveInt
 import com.ghost.serialization.compiler.analysis.isPrimitiveLong
 import com.ghost.serialization.compiler.analysis.isPrimitiveShort
 import com.ghost.serialization.compiler.analysis.isPrimitiveULong
+import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isString
 import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -46,12 +49,12 @@ internal class SerializerImportResolver(
     }
 
     @Suppress("AssignedValueIsNeverRead")
-    private fun resolveAllTypes(): Pair<List<String>, Boolean> {
+    private fun resolveAllTypes(): Pair<List<KSType>, Boolean> {
         var hasNullable = ctx.properties.any { it.isNullable }
         val allTypes = ctx.properties.flatMap { prop ->
-            val types = mutableListOf<String>()
+            val types = mutableListOf<KSType>()
             fun collectTypes(type: KSType) {
-                types.add(type.toString())
+                types.add(type)
                 if (type.isMarkedNullable) {
                     hasNullable = true
                 }
@@ -86,16 +89,16 @@ internal class SerializerImportResolver(
 
     private fun addParserImports(
         fileBuilder: FileSpec.Builder,
-        allTypes: List<String>,
+        allTypes: List<KSType>,
         hasNullable: Boolean,
     ) {
         val byteArrayClassifications = classifyAllByteArrayUsages()
         val hasList = ctx.properties.any { it.isList } ||
-                allTypes.any { it.contains(C.STR_LIST) }
+                allTypes.any { it.isList() }
         val hasSet = ctx.properties.any { it.isSet } ||
-                allTypes.any { it.contains(C.STR_SET) }
+                allTypes.any { it.isSet() }
         val hasMap = ctx.properties.any { it.isMap } ||
-                allTypes.any { it.contains(C.STR_MAP) }
+                allTypes.any { it.isMap() }
 
         if (hasList || hasSet) {
             fileBuilder.addImport(
@@ -201,7 +204,12 @@ internal class SerializerImportResolver(
             )
         }
 
-        val allTypeStrings = allTypes.joinToString()
+        val hasDouble = allTypes.any { it.isPrimitiveDouble() }
+        val hasFloat = allTypes.any { it.isPrimitiveFloat() }
+        val hasChar = allTypes.any { it.isPrimitiveChar() } ||
+                ctx.properties.any { it.type.isPrimitiveChar() }
+        val hasByteArray = allTypes.any { it.isByteArray() }
+        val hasRawJson = allTypes.any { it.isRawJson() }
         val needsNextString = needsNextStringImport() ||
                 byteArrayClassifications.contains(ByteArrayCoverage.COVERED)
         // Streaming reader extensions (GhostJsonReader.deserialize).
@@ -220,15 +228,13 @@ internal class SerializerImportResolver(
         if (needsNextString) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_STRING_NAME)
         }
-        if (allTypeStrings.contains(C.STR_DOUBLE)) {
+        if (hasDouble) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_DOUBLE_NAME)
         }
-        if (allTypeStrings.contains(C.STR_FLOAT)) {
+        if (hasFloat) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_FLOAT_NAME)
         }
-        if (allTypeStrings.contains(C.K_CHAR) ||
-            ctx.properties.any { it.type.isPrimitiveChar() }
-        ) {
+        if (hasChar) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_CHAR_NAME)
             fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_NEXT_CHAR_NAME)
         }
@@ -248,15 +254,13 @@ internal class SerializerImportResolver(
             if (needsNextString) {
                 fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_STRING_NAME)
             }
-            if (allTypeStrings.contains(C.STR_DOUBLE)) {
+            if (hasDouble) {
                 fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_DOUBLE_NAME)
             }
-            if (allTypeStrings.contains(C.STR_FLOAT)) {
+            if (hasFloat) {
                 fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_FLOAT_NAME)
             }
-            if (allTypeStrings.contains(C.K_CHAR) ||
-                ctx.properties.any { it.type.isPrimitiveChar() }
-            ) {
+            if (hasChar) {
                 fileBuilder.addImport(C.PKG_PARSER_STRINGS, C.STR_NEXT_CHAR_NAME)
             }
             if (needsNextBooleanImport()) {
@@ -281,23 +285,17 @@ internal class SerializerImportResolver(
             )
         }
 
-        val needsCaptureRawJsonBytes = allTypeStrings.contains(C.STR_BYTE_ARRAY_TYPE) &&
+        val needsCaptureRawJsonBytes = hasByteArray &&
                 byteArrayClassifications.contains(ByteArrayCoverage.UNCOVERED)
-        val needsCaptureRawJson = allTypeStrings.contains(C.K_RAW_JSON) ||
-                allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
         if (needsCaptureRawJsonBytes) {
             fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
             mirrorStringChannelImports(fileBuilder, C.STR_CAPTURE_RAW_JSON_BYTES_NAME)
         }
-        if (needsCaptureRawJson) {
+        if (hasRawJson) {
             fileBuilder.addImport(C.PKG_PARSER_BYTES, C.STR_CAPTURE_RAW_JSON_NAME)
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_CAPTURE_RAW_JSON_NAME)
             mirrorStringChannelImports(fileBuilder, C.STR_CAPTURE_RAW_JSON_NAME)
-        }
-        if (allTypeStrings.contains(C.K_RAW_JSON) ||
-            allTypeStrings.contains(C.STR_RAW_JSON_TYPE)
-        ) {
             fileBuilder.addImport(C.PKG_TYPES, C.STR_RAW_JSON_TYPE)
         }
         if (ctx.isEnum) {

@@ -11,11 +11,6 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
-
-private val nullableAnyType = ClassName(C.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)
-private val rawJsonType = ClassName(C.PKG_TYPES, C.STR_RAW_JSON_TYPE).copy(nullable = true)
-private val ghostSerializerType = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
-
 /**
  * Emits zero-copy envelope routing helpers on generated serializer companions.
  */
@@ -26,6 +21,12 @@ internal class EnvelopeRouterEmitter(
 ) {
 
     private val typedMappings = envelope.payloadMappings.filter { it.targetType != null }
+
+    private companion object {
+        val nullableAnyType = ClassName(C.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)
+        val rawJsonType = ClassName(C.PKG_TYPES, C.STR_RAW_JSON_TYPE).copy(nullable = true)
+        val ghostSerializerType = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
+    }
 
     fun emit(typeSpecBuilder: TypeSpec.Builder) {
         emitCachedTargetSerializers(typeSpecBuilder)
@@ -127,7 +128,7 @@ internal class EnvelopeRouterEmitter(
                     payloadExpression(mapping, dataField, typed)
                 )
             }
-            builder.add(C.STR_ENVELOPE_ELSE_GENERIC, dataField)
+            builder.add(C.STR_ENVELOPE_ELSE_FALLBACK, dataField)
         } else {
             envelope.payloadMappings.forEach { mapping ->
                 builder.add(

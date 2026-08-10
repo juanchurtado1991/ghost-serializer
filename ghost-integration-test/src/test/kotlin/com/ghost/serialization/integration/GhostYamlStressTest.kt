@@ -6,8 +6,10 @@ import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeAllToYaml
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.integration.model.YamlBenchUser
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Larger and messier YAML payloads for integration hardening beyond known-gap fixtures. */
@@ -74,6 +76,8 @@ class GhostYamlStressTest {
 
     @Test
     fun multiDocumentWithLeadingAndTrailingSeparators() {
+        // No trailing `---` here — see multiDocumentTrailingDashesIsAnExplicitEmptyDocument for
+        // why a dangling `---` is not harmless stream padding.
         val yaml = """
             ---
             id: 1
@@ -85,11 +89,27 @@ class GhostYamlStressTest {
             name: second
             email: 2@test
             score: 2.0
-            ---
         """.trimIndent()
         val parsed = Ghost.decodeAllFromYaml<YamlBenchUser>(yaml)
         assertEquals(2, parsed.size)
         assertEquals("first", parsed[0].name)
         assertEquals("second", parsed[1].name)
+    }
+
+    @Test
+    fun multiDocumentTrailingDashesIsAnExplicitEmptyDocument() {
+        // Per the YAML 1.2 grammar (confirmed against yaml-test-suite case 6XDY: `---\n---\n`
+        // decodes as two null documents), a `---` with nothing after it is a real, explicit
+        // document whose content is the empty/null node — not just a stream terminator.
+        val yaml = """
+            id: 1
+            name: first
+            email: 1@test
+            score: 1.0
+            ---
+        """.trimIndent()
+        val documents = GhostYamlFlatReader(yaml.encodeToByteArray()).readAllDocuments()
+        assertEquals(2, documents.size)
+        assertNull(documents[1])
     }
 }

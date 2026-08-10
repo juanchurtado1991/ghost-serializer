@@ -1,6 +1,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
@@ -261,42 +262,46 @@ internal inline fun swarHasZeroByte(v: Long): Long =
  * of the byte volume (long, never-pooled values) is never hashed.
  */
 internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long {
-    var p = start
+    var cursor = start
     var isPureAscii = true
     val matchEndLong = MATCH_END.toLong()
 
     // SWAR fast path: consume LONG_BYTES windows with no quote, backslash, or control byte.
-    while (p + LONG_BYTES <= limit) {
-        val w = ghostReadLong8(data, p)
-        val hasQuote = swarHasZeroByte(w xor SWAR_QUOTES)
-        val hasBackslash = swarHasZeroByte(w xor SWAR_BACKSLASHES)
-        // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
-        val hasControl = (w - SPACE_RUN_LONG) and w.inv() and SWAR_HIGHS
-        if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {
-            break
+    // Skipped on Wasm (ghostUseSwarScans=false) — i64 pack+SWAR loses on JavaScriptCore (#16).
+    if (ghostUseSwarScans) {
+        while (cursor + LONG_BYTES <= limit) {
+            val packedWindow = ghostReadLong8(data, cursor)
+            val hasQuote = swarHasZeroByte(packedWindow xor SWAR_QUOTES)
+            val hasBackslash = swarHasZeroByte(packedWindow xor SWAR_BACKSLASHES)
+            // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
+            val hasControl =
+                (packedWindow - SPACE_RUN_LONG) and packedWindow.inv() and SWAR_HIGHS
+            if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {
+                break
+            }
+            if ((packedWindow and SWAR_HIGHS) != RESULT_NONE) {
+                isPureAscii = false
+            }
+            cursor += LONG_BYTES
         }
-        if ((w and SWAR_HIGHS) != RESULT_NONE) {
-            isPureAscii = false
-        }
-        p += LONG_BYTES
     }
 
-    // Byte tail: the window holding a boundary byte, plus the final < LONG_BYTES bytes.
+    // Byte tail (or full scan when SWAR is disabled): boundary window + remainder.
     val escapeMasks = GhostJsonConstants.ESCAPE_MASKS
     val asciiLimit = ASCII_LIMIT
-    while (p < limit) {
-        val b = data[p].toInt() and BYTE_MASK
-        if (b < asciiLimit &&
-            ((escapeMasks[b shr BITMASK_SHIFT] shr (b and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
+    while (cursor < limit) {
+        val tokenByte = data[cursor].toInt() and BYTE_MASK
+        if (tokenByte < asciiLimit &&
+            ((escapeMasks[tokenByte shr BITMASK_SHIFT] shr (tokenByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)
         ) {
-            if (b == QUOTE_INT) {
-                return packScanResult(p - start, SCAN_HASH_NONE, isPureAscii)
+            if (tokenByte == QUOTE_INT) {
+                return packScanResult(cursor - start, SCAN_HASH_NONE, isPureAscii)
             }
             return matchEndLong
-        } else if (b >= asciiLimit) {
+        } else if (tokenByte >= asciiLimit) {
             isPureAscii = false
         }
-        p++
+        cursor++
     }
     return matchEndLong
 }
@@ -307,11 +312,12 @@ internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long
  */
 internal fun rollingHashImpl(data: ByteArray, start: Int, length: Int): Int {
     var accumulatedHash = SCAN_HASH_NONE
-    var i = 0
-    while (i < length) {
+    var byteOffset = 0
+    while (byteOffset < length) {
         accumulatedHash =
-            (accumulatedHash shl HASH_SHIFT) - accumulatedHash + (data[start + i].toInt() and BYTE_MASK)
-        i++
+            (accumulatedHash shl HASH_SHIFT) - accumulatedHash +
+                (data[start + byteOffset].toInt() and BYTE_MASK)
+        byteOffset++
     }
     return accumulatedHash
 }

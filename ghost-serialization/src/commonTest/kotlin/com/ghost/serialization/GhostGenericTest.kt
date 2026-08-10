@@ -1,15 +1,11 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.annotations.GhostSerialization
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-
-@GhostSerialization
-data class TestUser(val id: Int, val name: String)
 
 class GhostGenericTest {
 

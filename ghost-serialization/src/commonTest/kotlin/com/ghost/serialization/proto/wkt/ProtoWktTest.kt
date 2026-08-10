@@ -1,11 +1,47 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.proto.wkt
 
+import com.ghost.serialization.Ghost
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 
 
 class ProtoWktTest {
+
+    @Test
+    fun getSerializerResolvesBuiltInWktTypes() {
+        assertSame(ProtoTimestampSerializer, Ghost.getSerializer(ProtoTimestamp::class))
+        assertSame(ProtoDurationSerializer, Ghost.getSerializer(ProtoDuration::class))
+        assertSame(ProtoFieldMaskSerializer, Ghost.getSerializer(ProtoFieldMask::class))
+        assertNotNull(Ghost.getSerializer(ProtoEmpty::class))
+        assertNotNull(Ghost.getSerializer(ProtoAny::class))
+        assertNotNull(Ghost.getSerializer(ProtoValue::class))
+    }
+
+    @Test
+    fun fieldMaskSerializerRoundTrips() {
+        val original = ProtoFieldMask(listOf("user.display_name", "photo"))
+        val buffer = FlatByteArrayWriter()
+        val writer = GhostJsonFlatWriter(buffer)
+        ProtoFieldMaskSerializer.serialize(writer, original)
+        val json = buffer.toByteArray().decodeToString()
+        assertEquals("\"user.displayName,photo\"", json)
+        val restored =
+            ProtoFieldMaskSerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        assertEquals(original, restored)
+        assertEquals(
+            original,
+            Ghost.deserialize(ProtoFieldMaskSerializer, json.encodeToByteArray()),
+        )
+    }
 
     @Test
     fun testTimestampParse() {

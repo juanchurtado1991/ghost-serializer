@@ -25,7 +25,6 @@ import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.json.okio.encodeToBufferedSink
 import okio.Buffer
 import okio.ByteString
-import java.io.ByteArrayInputStream
 import java.lang.management.ManagementFactory
 import kotlin.math.sqrt
 
@@ -41,7 +40,7 @@ import kotlin.math.sqrt
 // ============================================================================
 
 /** Runs and prints the one-shot cold-start parse table before global JIT warmup. */
-internal fun runAndPrintColdStart(smallBytes: ByteString, engines: BenchmarkEngines) {
+internal fun runAndPrintColdStart(smallBytes: ByteString) {
     val coldMetrics = runColdStart(smallBytes)
     printColdStartTable("COLD START (first parse, before JUnit suite)", coldMetrics)
 }
@@ -549,16 +548,6 @@ private fun printRankedSubTable(label: String, metrics: BenchmarkMetrics, payloa
     printRankedTableBody(metrics, payloadBytes)
 }
 
-private fun printRankedTable(title: String, metrics: BenchmarkMetrics, payloadBytes: Long) {
-    println("\n========================================================")
-    println("BENCHMARK: $title")
-    println("========================================================")
-    println(
-        "  Payload: %d bytes → µs/op and decimal GB/s (payload / seconds / 10⁹)".format(payloadBytes)
-    )
-    printRankedTableBody(metrics, payloadBytes)
-}
-
 /**
  * Cold start measures one-time initialization latency, not sustained throughput.
  *
@@ -732,13 +721,6 @@ private fun median(values: List<Double>): Double {
     }
 }
 
-private data class EngineRank(
-    val name: String,
-    val nanos: Long,
-    val mem: Long,
-    val stDevNanos: Long
-)
-
 private fun engineRankings(metrics: BenchmarkMetrics): List<EngineRank> {
     return listOf(
         EngineRank(
@@ -839,48 +821,60 @@ internal fun initializePlatformDiagnostics(): ThreadMXBean? {
     return threadBean
 }
 
-/** Builds a synthetic [com.ghost.serialization.integration.model.ComplexResponse] with [count] users and fixed metadata. */
+private const val METADATA_HISTORY_SIZE = 1_000
+private const val FAILURE_MEASURE_SAMPLES = 100
+private const val TREE_LEAF_NAME = "L"
+private const val TREE_NODE_NAME = "N"
+private const val RESPONSE_STATUS_SUCCESS = "success"
+private const val RESPONSE_CODE = "42"
+private const val SAMPLE_USER_EMAIL = "u@e.com"
+private const val SAMPLE_USER_NAME_PREFIX = "User "
+private const val SAMPLE_META_TAG = "beta"
+private const val SAMPLE_META_SCORE = 1.2e-4
+private const val SAMPLE_USER_SCORE = 1.0
+
+/** Builds a synthetic ComplexResponse with [count] users and fixed metadata. */
 internal fun generateComplexData(count: Int): ComplexResponse {
-    val history = IntArray(1000) { it }
+    val history = IntArray(METADATA_HISTORY_SIZE) { it }
     val meta = ExtremeMetadata(
         System.currentTimeMillis(),
         UserRole.EDITOR,
-        listOf("beta"),
-        1.2e-4,
+        listOf(SAMPLE_META_TAG),
+        SAMPLE_META_SCORE,
         history
     )
     val users = List(count) { i ->
         BenchUser(
             i,
-            "User $i",
-            "u@e.com",
-            1.0,
+            "$SAMPLE_USER_NAME_PREFIX$i",
+            SAMPLE_USER_EMAIL,
+            SAMPLE_USER_SCORE,
             true,
             UserRole.VIEWER,
             null
         )
     }
     return ComplexResponse(
-        "success",
+        RESPONSE_STATUS_SUCCESS,
         users,
         meta,
-        "42"
+        RESPONSE_CODE
     )
 }
 
 private inline fun measureAvgFailSpeed(block: () -> Unit): Long {
     val startTime = System.nanoTime()
-    repeat(100) { block() }
-    return (System.nanoTime() - startTime) / 100
+    repeat(FAILURE_MEASURE_SAMPLES) { block() }
+    return (System.nanoTime() - startTime) / FAILURE_MEASURE_SAMPLES
 }
 
-/** Builds a [com.ghost.serialization.integration.model.Category] tree [depth] levels deep for nesting stress tests. */
-internal fun createTree(d: Int): Category = if (d <= 0) {
-    Category(name = "L")
+/** Builds a Category tree [depth] levels deep for nesting stress tests. */
+internal fun createTree(depth: Int): Category = if (depth <= 0) {
+    Category(name = TREE_LEAF_NAME)
 } else {
     Category(
-        name = "N",
-        subCategories = listOf(createTree(d - 1))
+        name = TREE_NODE_NAME,
+        subCategories = listOf(createTree(depth - 1))
     )
 }
 
@@ -917,26 +911,4 @@ private inline fun <T> measurePerfBatched(
     val allocatedBytes = (endAllocatedBytes - startAllocatedBytes) / samples
     @Suppress("UNCHECKED_CAST")
     return Triple(lastResult as T, durationNanos, allocatedBytes)
-}
-
-/** Reusable Okio / byte streams for streaming decode (payload fixed per suite). */
-private class StreamingDecodeSinks(private val rawBytes: ByteArray) {
-
-    private val okioBuffer = Buffer()
-
-    fun freshByteStream(): ByteArrayInputStream = ByteArrayInputStream(rawBytes)
-
-    fun freshOkioSource(): Buffer {
-        okioBuffer.clear()
-        okioBuffer.write(rawBytes)
-        return okioBuffer
-    }
-}
-
-/** Thread-local encode sinks so streaming serialization reuses buffers across batched samples. */
-private object StreamingEncodeSinks {
-
-    private val okioBuffer = ThreadLocal.withInitial { Buffer() }
-
-    fun okioBuffer(): Buffer = okioBuffer.get().also { it.clear() }
 }

@@ -8,8 +8,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
- * Immutable metadata for generating a single
- * [com.ghost.serialization.contract.GhostSerializer] companion object.
+ * Immutable metadata for generating a single `GhostSerializer` companion object.
  */
 internal class GhostSerializerContext private constructor(
     val properties: List<GhostPropertyModel>,
@@ -46,8 +45,6 @@ internal class GhostSerializerContext private constructor(
     val yamlFlatWriterClass: ClassName,
     val yamlFlatReaderClass: ClassName,
 ) {
-    val readerClass: ClassName = streamingReaderClass
-
     val serializerName: String = baseClassName + C.STR_SERIALIZER_SUFFIX
 
     fun needsObjectParsingImports(): Boolean {
@@ -127,7 +124,7 @@ internal class GhostSerializerContext private constructor(
             val discriminator = if (parentSealedClass != null) {
                 val customName = classDeclaration.annotations
                     .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
-                    ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String
+                    ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String
                 if (!customName.isNullOrEmpty()) customName else classDeclaration.simpleName.asString()
             } else {
                 null
@@ -146,7 +143,7 @@ internal class GhostSerializerContext private constructor(
             val customTypeName = classDeclaration.annotations
                 .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
                 ?.arguments
-                ?.find { it.name?.asString() == C.ARG_NAME }
+                ?.find { it.name?.asString() == C.NAME }
                 ?.value as? String ?: C.STR_EMPTY
 
             val isInferred = (if (discriminator != null) {

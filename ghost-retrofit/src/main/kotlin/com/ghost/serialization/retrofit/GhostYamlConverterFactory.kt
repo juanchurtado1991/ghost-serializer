@@ -4,14 +4,13 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.contract.GhostSerializer
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
 import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
 import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -24,7 +23,7 @@ import kotlin.reflect.KClass
 
 /**
  * Retrofit `Converter.Factory` for YAML-backed types
- * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
+ * (`GhostYamlSerializer`).
  *
  * ```kotlin
  * Retrofit.Builder()
@@ -50,30 +49,12 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
 
         return Converter { body ->
             body.use {
-                val stream = it.byteStream()
-                var scratch = acquireScratchBuffer(BUFFER_SIZE)
-                try {
-                    var offset = 0
-                    while (true) {
-                        if (offset == scratch.size) {
-                            val grown = acquireScratchBuffer(scratch.size * 2)
-                            scratch.copyInto(grown, 0, 0, offset)
-                            releaseScratchBuffer(scratch)
-                            scratch = grown
-                        }
-
-                        val read = stream.read(scratch, offset, scratch.size - offset)
-                        if (read == -1) break
-                        offset += read
-                    }
-
+                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset ->
                     val bytesToParse =
                         if (offset == scratch.size) scratch else scratch.copyOf(offset)
                     ghostYamlInternalUseFlatReader(bytesToParse) { reader ->
                         yamlSerializer.deserialize(reader)
                     }
-                } finally {
-                    releaseScratchBuffer(scratch)
                 }
             }
         }
@@ -122,9 +103,18 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
                 return GhostYamlListSerializer(itemSerializer) as GhostSerializer<Any>
             }
 
+            if (Set::class.java.isAssignableFrom(rawType)) {
+                val arg = type.actualTypeArguments.firstOrNull() ?: return null
+                val itemSerializer = getSerializerWithCache(arg) ?: return null
+                if (itemSerializer !is GhostYamlSerializer<*>) return null
+                return GhostYamlSetSerializer(itemSerializer) as GhostSerializer<Any>
+            }
+
             if (Map::class.java.isAssignableFrom(rawType)) {
-                val arg = type.actualTypeArguments.getOrNull(1) ?: return null
-                val valueSerializer = getSerializerWithCache(arg) ?: return null
+                val keyArg = type.actualTypeArguments.getOrNull(0) ?: return null
+                if (!isStringMapKeyType(keyArg)) return null
+                val valueArg = type.actualTypeArguments.getOrNull(1) ?: return null
+                val valueSerializer = getSerializerWithCache(valueArg) ?: return null
                 if (valueSerializer !is GhostYamlSerializer<*>) return null
                 return GhostYamlMapSerializer(valueSerializer) as GhostSerializer<Any>
             }
@@ -133,9 +123,7 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
     }
 
     companion object {
-        private const val STR_MEDIA_TYPE = "application/yaml; charset=UTF-8"
-        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()
-        private const val BUFFER_SIZE = 524288
+        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_YAML_UTF8.toMediaType()
 
         fun create(): GhostYamlConverterFactory = GhostYamlConverterFactory()
     }

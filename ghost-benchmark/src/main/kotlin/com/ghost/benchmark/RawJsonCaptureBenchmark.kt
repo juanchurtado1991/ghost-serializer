@@ -12,7 +12,7 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Benchmarks opaque JSON capture: [com.ghost.serialization.types.RawJson] slice path vs [ByteArray]
+ * Benchmarks opaque JSON capture: `RawJson` slice path vs [ByteArray]
  * copy path across bytes and string channels.
  *
  * Scalar access, `RawJson.decodeAs`, and JsonEnvelope routing are measured

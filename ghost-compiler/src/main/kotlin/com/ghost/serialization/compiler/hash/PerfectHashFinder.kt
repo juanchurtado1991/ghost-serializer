@@ -4,13 +4,6 @@ package com.ghost.serialization.compiler.hash
 
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
-internal data class PerfectHashConfig(
-    val shift: Int,
-    val multiplier: Int,
-    val tableSize: Int,
-    val extendedKeyHash: Boolean
-)
-
 internal object PerfectHashFinder {
 
     /**

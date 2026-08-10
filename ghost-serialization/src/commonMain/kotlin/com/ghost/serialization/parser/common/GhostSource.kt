@@ -10,7 +10,7 @@ import okio.ByteString
 /**
  * Core data source abstraction for the Ghost JSON parser.
  *
- * This interface allows the parser to operate on both [ByteArray] and streaming [okio.BufferedSource]
+ * This interface allows the parser to operate on both [ByteArray] and streaming `okio.BufferedSource`
  * with a unified, high-performance API.
  *
  * **Key Constraints:**
@@ -80,7 +80,7 @@ interface GhostSource {
      * It allows checking if a pool-cached string matches the source bytes WITHOUT
      * allocating a new [String] for the comparison.
      */
-    fun contentEqualsString(start: Int, length: Int, str: String): Boolean
+    fun contentEqualsString(start: Int, length: Int, expected: String): Boolean
 }
 
 @InternalGhostApi

@@ -20,7 +20,9 @@ plugins {
     id("com.ghostserializer.ghost") version "1.3.0"
 }
 
-// Optional for byte-only apps: omit native String reader/writer generation.
+// Recommended for Retrofit/OkHttp/Ktor byte-first modules: omit native String
+// reader/writer generation (~4 KB smaller per DTO). Keep default true if models
+// also parse large in-memory Strings. See Advanced Features §5.
 ksp {
     arg("ghost.textChannel", "false")
 }
@@ -143,11 +145,13 @@ interface UserApi {
 
 ---
 
-## 6. Lists and Nullable Fields
+## 6. Lists, Sets, and Nullable Fields
 
 ```kotlin
-// Lists are handled automatically
+// Collections are handled automatically (wire format for Set is a JSON array)
 val users: List<User> = Ghost.deserialize(jsonArrayString)
+val unique: Set<User> = Ghost.deserialize(jsonArrayString)
+// Retrofit response types List<User> / Set<User> / Map<String, User> unwrap when User is registered
 
 // Nullable fields work as expected
 @GhostSerialization

@@ -1,5 +1,3 @@
-@file:Suppress("unused", "SameParameterValue")
-
 package com.ghost.serialization.compiler.codegen.emit
 
 import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
@@ -23,14 +21,13 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 /**
  * Emitter for fragmented deserialization logic.
  *
- * This emitter is designed for large classes (typically > 40 properties) to bypass JVM
- * method size limits (64KB bytecode limit). It fragments the decoding process by creating
- * a helper context class (`DecodingContext`) to store deserialized properties and bitmasks,
- * and splitting the field assignment logic into multiple chunk methods (e.g. `decodeChunk0`, `decodeChunk1`).
+ * This emitter is designed for large classes (typically > `PROPERTY_MAX_SIZE` properties) to
+ * bypass JVM method size limits (64KB bytecode). It fragments decoding via a `DecodingContext`
+ * helper and chunk methods (e.g. `decodeChunk0`, `decodeChunk1`).
  *
- * @property properties The list of property models.
- * @property originalClassName The target class to deserialize.
- * @property readerClass The reader implementation class used.
+ * @param properties The list of property models.
+ * @param originalClassName The target class to deserialize.
+ * @param readerClass The reader implementation class used.
  */
 internal class FragmentedEmitter(
     properties: List<GhostPropertyModel>,
@@ -70,7 +67,6 @@ internal class FragmentedEmitter(
                 chunkIdx,
                 chunkProps,
                 chunkSize,
-                readerClass,
                 contextClassName,
                 typeSpecBuilder
             )
@@ -180,7 +176,6 @@ internal class FragmentedEmitter(
      * @param chunkIdx The chunk index.
      * @param chunkProps The list of DTO properties assigned to this chunk.
      * @param chunkSize Size of a chunk.
-     * @param readerClass The reader class used.
      * @param contextClassName Class name of the context object holding property variables.
      * @param typeSpecBuilder Serializer class builder.
      */
@@ -188,7 +183,6 @@ internal class FragmentedEmitter(
         chunkIdx: Int,
         chunkProps: List<GhostPropertyModel>,
         chunkSize: Int,
-        readerClass: ClassName,
         contextClassName: ClassName,
         typeSpecBuilder: TypeSpec.Builder
     ) {
@@ -198,7 +192,7 @@ internal class FragmentedEmitter(
                     .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
             )
             .addModifiers(KModifier.PRIVATE)
-            .addParameter(C.STR_READER_VAR, readerClass)
+            .addParameter(C.STR_READER, readerClass)
             .addParameter(C.STR_CTX_VAR, contextClassName)
             .addParameter(C.STR_INDEX_VAR, INT)
 
@@ -242,7 +236,7 @@ internal class FragmentedEmitter(
                 C.TEMPLATE_CALL_VALIDATION,
                 C.STR_FUN_VALIDATE_FIELDS,
                 C.STR_CTX_VAR,
-                C.STR_READER_VAR
+                C.STR_READER
             )
         }
     }
@@ -266,7 +260,7 @@ internal class FragmentedEmitter(
         val funBuilder = FunSpec.builder(C.STR_FUN_VALIDATE_FIELDS)
             .addModifiers(KModifier.PRIVATE)
             .addParameter(C.STR_CTX_VAR, contextClassName)
-            .addParameter(C.STR_READER_VAR, readerClass)
+            .addParameter(C.STR_READER, readerClass)
 
         val funBody = CodeBlock.builder()
         for (maskIdx in C.VAL_ZERO until maskCount) {
@@ -359,7 +353,7 @@ internal class FragmentedEmitter(
                 )
             }
             body.addStatement(C.STR_PAREN)
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
             return
         }
 
@@ -398,10 +392,10 @@ internal class FragmentedEmitter(
             }
             body.addStatement(C.STR_PAREN)
             body.nextControlFlow(C.STR_ELSE)
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
             body.endControlFlow()
         } else {
-            body.addStatement(C.STR_RETURN_RESULT_FINAL)
+            body.addStatement(C.STR_RETURN_RESULT)
         }
     }
 }

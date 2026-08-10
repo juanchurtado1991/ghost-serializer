@@ -2,6 +2,7 @@ package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostUseSwarScans
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.GhostSource
@@ -13,13 +14,13 @@ import okio.ByteString
 
 
 /**
- * Implementation of [GhostSource] for streaming data from an [okio.BufferedSource].
+ * Implementation of [GhostSource] for streaming data from an `okio.BufferedSource`.
  * Automatically requests data from the source as needed.
  *
  * ## Sliding consume
  *
  * Absolute indices stay stable for the parser, but bytes already behind the reader's
- * logical position are [okio.BufferedSource.skip]ped so Okio's buffer does not retain the
+ * logical position are skipped via `okio.BufferedSource.skip` so Okio's buffer does not retain the
  * entire document. [releaseBefore] is driven by [GhostJsonReader] (not by [get] alone):
  * discriminator peek reads ahead without advancing the reader, and must not discard the
  * prefix the reader still needs.
@@ -104,10 +105,10 @@ class StreamingGhostSource(
         if (absoluteIndex <= discarded || absoluteIndex == Int.MAX_VALUE) return
 
         var retainFrom = (absoluteIndex - GhostJsonConstants.STREAMING_BUFFER_SIZE).coerceAtLeast(0)
-        var i = 0
-        while (i < pinCount) {
-            retainFrom = minOf(retainFrom, pinStack[i])
-            i++
+        var pinIndex = 0
+        while (pinIndex < pinCount) {
+            retainFrom = minOf(retainFrom, pinStack[pinIndex])
+            pinIndex++
         }
         val aligned = (retainFrom / GhostJsonConstants.STREAMING_BUFFER_SIZE) *
                 GhostJsonConstants.STREAMING_BUFFER_SIZE
@@ -126,7 +127,7 @@ class StreamingGhostSource(
     private fun getSlow(index: Int): Int {
         if (index < discarded) {
             throw IndexOutOfBoundsException(
-                "Index $index is below discarded prefix ($discarded)"
+                "${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_PREFIX}$index${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_MID}$discarded${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_SUFFIX}"
             )
         }
         val relativeIndex = (index - discarded).toLong()
@@ -134,7 +135,7 @@ class StreamingGhostSource(
         val available = buffer.size
         if (relativeIndex >= available) {
             throw IndexOutOfBoundsException(
-                "Index $index is out of bounds (available absolute end: ${discarded + available})"
+                "${GhostJsonConstants.ERR_INDEX_OOB_PREFIX}$index${GhostJsonConstants.ERR_INDEX_OOB_MID}${discarded + available}${GhostJsonConstants.ERR_INDEX_OOB_SUFFIX}"
             )
         }
 
@@ -148,7 +149,7 @@ class StreamingGhostSource(
         val toCopy = (windowEnd - windowStart).toLong()
 
         if (toCopy <= 0L) {
-            throw IndexOutOfBoundsException("Index $index is out of bounds")
+            throw IndexOutOfBoundsException("${GhostJsonConstants.ERR_INDEX_OOB_PREFIX}$index${GhostJsonConstants.ERR_INDEX_OOB}")
         }
 
         buffer.copyTo(tempBuffer, windowStartRel, toCopy)
@@ -183,7 +184,7 @@ class StreamingGhostSource(
         }
         if (start < discarded) {
             throw IndexOutOfBoundsException(
-                "decodeToString start $start is below discarded prefix ($discarded)"
+                "${GhostJsonConstants.ERR_DECODE_START_BELOW_DISCARDED_PREFIX}$start${GhostJsonConstants.ERR_DECODE_START_BELOW_DISCARDED_MID}$discarded${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_SUFFIX}"
             )
         }
         val relativeEnd = (end - discarded).toLong()
@@ -219,10 +220,12 @@ class StreamingGhostSource(
                 val base = segmentStart
 
                 // SWAR: swallow 8-byte runs of ASCII space within the current window.
-                while (localPosition + longBytes <= segmentLimit &&
-                    ghostReadLong8(bufferBytes, localPosition - base) == spaceRun
-                ) {
-                    localPosition += longBytes
+                if (ghostUseSwarScans) {
+                    while (localPosition + longBytes <= segmentLimit &&
+                        ghostReadLong8(bufferBytes, localPosition - base) == spaceRun
+                    ) {
+                        localPosition += longBytes
+                    }
                 }
 
                 while (localPosition + 3 < segmentLimit) {
@@ -374,18 +377,22 @@ class StreamingGhostSource(
 
                 // SWAR: skip clean LONG_BYTES windows (no quote / backslash / control).
                 // Hash is deferred until the closing quote — long values are never pooled.
-                while (localPosition + longBytes <= segmentLimit) {
-                    val w = ghostReadLong8(bufferBytes, localPosition - base)
-                    val hasQuote = swarHasZeroByte(w xor swarQuotes)
-                    val hasBackslash = swarHasZeroByte(w xor swarBackslashes)
-                    val hasControl = (w - spaceRun) and w.inv() and swarHighs
-                    if ((hasQuote or hasBackslash or hasControl) != localResultNone) {
-                        break
+                // Off on Wasm (ghostUseSwarScans) — see issue #16.
+                if (ghostUseSwarScans) {
+                    while (localPosition + longBytes <= segmentLimit) {
+                        val packedWindow = ghostReadLong8(bufferBytes, localPosition - base)
+                        val hasQuote = swarHasZeroByte(packedWindow xor swarQuotes)
+                        val hasBackslash = swarHasZeroByte(packedWindow xor swarBackslashes)
+                        val hasControl =
+                            (packedWindow - spaceRun) and packedWindow.inv() and swarHighs
+                        if ((hasQuote or hasBackslash or hasControl) != localResultNone) {
+                            break
+                        }
+                        if ((packedWindow and swarHighs) != localResultNone) {
+                            isPureAscii = false
+                        }
+                        localPosition += longBytes
                     }
-                    if ((w and swarHighs) != localResultNone) {
-                        isPureAscii = false
-                    }
-                    localPosition += longBytes
                 }
 
                 while (localPosition < segmentLimit) {
@@ -431,10 +438,11 @@ class StreamingGhostSource(
         }
         var accumulatedHash = GhostJsonConstants.SCAN_HASH_NONE
         val hashShift = GhostJsonConstants.HASH_SHIFT
-        var i = 0
-        while (i < length) {
-            accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + get(start + i)
-            i++
+        var byteOffset = 0
+        while (byteOffset < length) {
+            accumulatedHash =
+                (accumulatedHash shl hashShift) - accumulatedHash + get(start + byteOffset)
+            byteOffset++
         }
         return accumulatedHash
     }
@@ -442,10 +450,10 @@ class StreamingGhostSource(
     override fun contentEqualsString(
         start: Int,
         length: Int,
-        str: String
+        expected: String
     ): Boolean {
         var currentPosition = start
-        if (str.length != length) return false
+        if (expected.length != length) return false
 
         while (true) {
             val segmentStart = bufferStart
@@ -457,7 +465,7 @@ class StreamingGhostSource(
                 while (localPosition < segmentLimit) {
                     val byteValue =
                         bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK
-                    if (byteValue != str[localPosition - start].code) return false
+                    if (byteValue != expected[localPosition - start].code) return false
                     localPosition++
                 }
 

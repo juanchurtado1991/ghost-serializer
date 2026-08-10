@@ -5,6 +5,8 @@
 > **Methodology**: Independent Gradle JVM tasks (`benchmarkTwitter`, `benchmarkSynthetic`, …). Engines: **Ghost, KSER, Moshi (codegen adapters)**. **10 000-iteration warmup**, **500 sessions × 50 batched samples** on LIST / SYNC / WRITING. Per session: **Ghost+KSER measured first** (back-to-back), then Moshi. Throughput tables report **decimal GB/s** (`payload_bytes / seconds / 10⁹`, equivalent to `ops/s × payload / 10⁹`). Stress tests report **latency only** (single-shot or 100-iteration avg). Regression uses **median** of per-session Ghost÷KSER ratios. LIST / SYNC / WRITING suites isolated with phase GC only.
 >
 > **`ghost.textChannel`**: default **true** per model. String benchmarks use the generated `GhostJsonStringReader` / string writer; byte and streaming benchmarks use their dedicated readers. Byte-only applications can opt out with `@GhostSerialization(textChannel = false)` or the module flag `ghost.textChannel=false` to reduce generated code size. See [Native String Reader](advanced-features.md#5-native-string-reader-textchannel).
+>
+> **Wasm / playground:** Wasm uses scalar (non-SWAR) string/whitespace scans so Safari/WebKit stays competitive with Chrome ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). JVM regression gates below remain the production performance source of truth.
 
 ## Running the Benchmark Yourself
 
@@ -43,6 +45,10 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 ./gradlew :ghost-benchmark:benchmarkYamlFast -PskipTests
 ./gradlew :ghost-benchmark:benchmarkProto -PskipTests      # Proto3 JSON via GhostProto (full profile)
 ./gradlew :ghost-benchmark:benchmarkProtoFast -PskipTests
+
+# YAML spec-compliance reports (not perf benchmarks — see below), fully offline
+./gradlew :ghost-serialization:yamlComplianceMatrix
+./gradlew :ghost-serialization:yamlWriterComplianceMatrix
 
 # Full README suite (cold start + all tables)
 ./gradlew :ghost-benchmark:run -PskipTests
@@ -198,6 +204,109 @@ Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-gener
 | Round-trip (minimal fixture, 49 B) | 1.78 | 1.852 | 0.027 |
 
 Prefer **`ByteArray`** inputs when your client already exposes bytes — avoids an intermediate `String` and matches the flat reader hot path.
+
+---
+
+## 👻 YAML Spec Compliance (Ghost-only)
+
+Not a performance benchmark — a **spec-conformance report** against the vendored
+[yaml-test-suite](https://github.com/yaml/yaml-test-suite) snapshot (`ghost-serialization/src/jvmTest/resources/yaml-test-suite`,
+pinned to commit `6ad3d2c6`, same tree as the official `data-2022-01-17` tag — see that directory's `README.md`). Runs entirely
+offline; every case is a local resource, so the report is fully reproducible by anyone who clones the repo.
+
+The **compliance %** is `value-pass / 279` — 279 is the count of valid (non-error) cases that ship an `in.json` fixture, the
+same denominator [matrix.yaml.info](https://matrix.yaml.info)'s own "json" column uses, so this number is directly comparable
+to that table.
+
+| Task | What it does |
+|:---|:---|
+| `yamlComplianceMatrix` | Prints the report below; exits non-zero if any case falls outside the tracked deviations |
+
+```bash
+./gradlew :ghost-serialization:yamlComplianceMatrix
+```
+
+```
+==============================================================================
+Ghost YAML Spec Compliance — vendored yaml-test-suite snapshot
+==============================================================================
+Cases loaded: 402  (279 valid, with in.json — the matrix.yaml.info-comparable denominator)
+
+Outcome (parses/rejects as the spec expects):
+  371 pass, 31 known gap(s), 0 UNEXPECTED
+Value (decoded tree matches in.json, of 275 checked):
+  268 pass, 7 known gap(s), 0 UNEXPECTED
+
+Compliance = value-pass / 279 valid cases:
+  268 / 279 = 96.06%
+
+Known gaps by category:
+  TAB                      9 case(s)
+  INDENTATION              9 case(s)
+  MISC                     5 case(s)
+  BLOCK_SCALAR             4 case(s)
+  ANCHOR_ALIAS             3 case(s)
+  FLOW_COLLECTION          3 case(s)
+  COMMENT                  2 case(s)
+  TAG                      1 case(s)
+  EXPLICIT_KEY             1 case(s)
+  EMPTY_MISSING            1 case(s)
+==============================================================================
+No unexpected deviations — every known gap is tracked in YamlTestSuiteDeviations.kt
+```
+
+Every known gap is tracked by case ID with a category and reason in
+[`YamlTestSuiteDeviations.kt`](../../ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlTestSuiteDeviations.kt) —
+nothing here is silently skipped. `GhostYamlTestSuiteConformanceTest` (the JUnit source of truth this report reads) fails the
+build if a tracked case ever regresses or a stale entry survives a snapshot refresh, so the two can't quietly drift apart.
+
+---
+
+## 👻 YAML Writer Conformance (Ghost-only)
+
+The reader-side report above says nothing about the **writer** (`GhostYamlFlatWriter`). This report runs every
+vendored yaml-test-suite case the reader can decode through `decode -> encode -> decode` and checks two things:
+does it reproduce the original tree (**round-trip**), and does a second, independent parser
+([kaml](https://github.com/charleskorn/kaml)) accept Ghost's own re-encoded output (**kaml oracle**)? Same offline,
+reproducible-by-anyone-who-clones-the-repo shape as the reader report.
+
+| Task | What it does |
+|:---|:---|
+| `yamlWriterComplianceMatrix` | Prints the report below; exits non-zero if any case falls outside the tracked deviations |
+
+```bash
+./gradlew :ghost-serialization:yamlWriterComplianceMatrix
+```
+
+```
+==============================================================================
+Ghost YAML Writer Conformance — vendored yaml-test-suite snapshot
+==============================================================================
+Cases loaded: 321 reader-decodable (out of 402 total)
+
+Round-trip (decode -> encode -> decode reproduces the original tree):
+  321 pass, 0 known gap(s), 0 UNEXPECTED
+  321 / 321 = 100.00%
+
+kaml oracle (an independent second parser accepts Ghost's re-encoded output):
+  309 pass, 12 known gap(s), 0 UNEXPECTED
+  309 / 321 = 96.26%
+
+Known gaps by category:
+  KAML_COMPLEX_KEY_LIMITATION   12 case(s)
+==============================================================================
+No unexpected deviations — every known gap is tracked in YamlWriterDeviations.kt
+```
+
+`name(key: String)` used to write mapping keys as bare, unquoted plain-scalar text (unlike `value()`, which always
+double-quotes) — a key containing structurally-significant bytes (`": "`, an embedded newline/tab, a leading
+anchor/tag/alias/quote sigil, or a leading `[`/`{` from a stringified complex key) could round-trip to a different
+structure, or fail to re-parse at all. Fixed via a fast, single-pass `keyNeedsQuoting` check that quotes only when
+actually necessary (an ordinary key like `userId` stays bare) — round-trip is now 100%. `KAML_COMPLEX_KEY_LIMITATION`
+is **not** a Ghost bug — kaml's own parser rejects any mapping key that isn't a simple scalar (flow-collection-shaped
+or bare/empty implicit keys), a kotlinx.serialization-property-name design choice on kaml's side, not a YAML spec
+violation; every one of those cases round-trips correctly through Ghost's own reader. Full detail, case-by-case, in
+[`YamlWriterDeviations.kt`](../../ghost-serialization/src/jvmTest/kotlin/com/ghost/serialization/yaml/testsuite/YamlWriterDeviations.kt).
 
 ---
 

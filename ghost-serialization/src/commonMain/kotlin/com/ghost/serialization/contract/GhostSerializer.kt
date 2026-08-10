@@ -4,6 +4,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 import com.ghost.serialization.ghostInternalEncodeWithWriter
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.parser.common.withPreparedUtf8Json
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -62,14 +63,14 @@ interface GhostSerializer<T> {
     }
 
     /**
-     * Serializes [value] using the streaming [writer] (segmented [okio.Buffer]
+     * Serializes [value] using the streaming [writer] (segmented `okio.Buffer`
      * under the hood). Used by `Ghost.serialize(sink, value)`.
      */
     fun serialize(writer: GhostJsonWriter, value: T)
 
     /**
      * Serializes [value] using the in-memory [writer] (contiguous
-     * [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] under the hood).
+     * `FlatByteArrayWriter` under the hood).
      * Used by `Ghost.encodeToBytes` (and sink drain / discard) to bypass Okio
      * segment overhead on the synchronous in-memory byte encode path.
      */
@@ -77,7 +78,7 @@ interface GhostSerializer<T> {
 
     /**
      * Serializes [value] using the in-memory text [writer] (contiguous
-     * [com.ghost.serialization.writer.strings.FlatCharArrayWriter] under the hood).
+     * `FlatCharArrayWriter` under the hood).
      * Used by `Ghost.encodeToString` to write characters directly.
      */
     fun serialize(writer: GhostJsonStringWriter, value: T) {
@@ -100,7 +101,13 @@ interface GhostSerializer<T> {
     /** Deserializes a new instance of [T] using a specialized streaming [reader]. */
     fun deserialize(reader: GhostJsonReader): T
 
-    /** Deserializes a new instance of [T] using a specialized flat in-memory [reader]. */
+    /**
+     * Deserializes a new instance of [T] using a specialized flat in-memory [reader].
+     *
+     * **Compatibility bridge:** the default wraps [reader] in a streaming [GhostJsonReader]
+     * (allocates, loses flat monomorphy). KSP-generated serializers always override this.
+     * Hand-written serializers on the hot path must override it too.
+     */
     fun deserialize(reader: GhostJsonFlatReader): T {
         val delegatedReader = GhostJsonReader(reader.rawData).also {
             it.position = reader.position
@@ -113,11 +120,17 @@ interface GhostSerializer<T> {
         }
         val result = deserialize(delegatedReader)
         reader.position = delegatedReader.position
-        reader.nextTokenByte = -1
+        reader.nextTokenByte = C.RESET_TOKEN_BYTE
         return result
     }
 
-    /** Deserializes a new instance of [T] using a specialized string [reader]. */
+    /**
+     * Deserializes a new instance of [T] using a specialized string [reader].
+     *
+     * **Compatibility bridge:** the default UTF-8-encodes via [GhostJsonStringReader.ensureUtf8Bytes]
+     * and re-enters [deserialize] on a [GhostJsonFlatReader]. Override for `textChannel` hot paths
+     * (WKT wrappers and generated string dispatch already do).
+     */
     fun deserialize(reader: GhostJsonStringReader): T {
         val bytes = reader.ensureUtf8Bytes()
         val flatReader = GhostJsonFlatReader(bytes).also {
@@ -132,7 +145,7 @@ interface GhostSerializer<T> {
         }
         val result = deserialize(flatReader)
         reader.position = reader.bytePositionToCharPosition(flatReader.position)
-        reader.nextTokenByte = -1
+        reader.nextTokenByte = C.RESET_TOKEN_BYTE
         return result
     }
 

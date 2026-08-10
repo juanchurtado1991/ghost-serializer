@@ -9,6 +9,11 @@ import com.ghost.serialization.parser.common.GhostHeuristics.maxWarmWriteBufferC
 /**
  * Platform-specific heuristics to balance performance and memory usage.
  * Using 'expect' allows us to tune Ghost for different environments (JVM vs Mobile).
+ *
+ * Debt: [maxCollectionSize] and related caps differ by actual (Android tighter than JVM/Native/Wasm);
+ * not a single cross-platform constant. Registry discovery is separate
+ * ([com.ghost.serialization.discoverRegistries]) — iOS/Wasm discovery is empty and requires
+ * manual [com.ghost.serialization.Ghost.addRegistry].
  */
 @InternalGhostApi
 expect object GhostHeuristics {
@@ -27,6 +32,8 @@ expect object GhostHeuristics {
     /**
      * The maximum number of items allowed in a collection (List/Map) during deserialization.
      * Security limit to prevent DoS via memory exhaustion.
+     *
+     * Platform defaults differ (e.g. Android 50k, Native/Wasm 500k, JVM 1M); not unified.
      */
     val maxCollectionSize: Int
 
@@ -36,16 +43,16 @@ expect object GhostHeuristics {
     val maxDiscriminatorPeekDistance: Int
 
     /**
-     * Max retained capacity for [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] after [com.ghost.serialization.writer.bytes.FlatByteArrayWriter.reset].
+     * Max retained capacity for `FlatByteArrayWriter` after `FlatByteArrayWriter.reset`.
      * Larger encoded payloads can reuse the grown buffer on the same thread; capacity above this is released.
      */
     val maxWarmWriteBufferCapacity: Int
 
     /**
-     * Max retained capacity for [com.ghost.serialization.writer.strings.FlatCharArrayWriter] after
-     * [com.ghost.serialization.writer.strings.FlatCharArrayWriter.reset].
+     * Max retained capacity for `FlatCharArrayWriter` after
+     * `FlatCharArrayWriter.reset`.
      * Deliberately smaller than [maxWarmWriteBufferCapacity] because the char writer only
-     * serves [ghostInternalEncodeToString] — producing text output — and very large String
+     * serves `ghostInternalEncodeToString` — producing text output — and very large String
      * payloads are rare compared to binary encoding workloads.
      */
     val maxWarmCharWriteBufferCapacity: Int

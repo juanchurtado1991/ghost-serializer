@@ -12,7 +12,7 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Resolves [@GhostJsonEnvelope][com.ghost.serialization.annotations.GhostJsonEnvelope] metadata
+ * Resolves `@GhostJsonEnvelope` metadata
  * and validates payload field conventions.
  */
 internal class EnvelopeAnalyzer(private val logger: KSPLogger) {

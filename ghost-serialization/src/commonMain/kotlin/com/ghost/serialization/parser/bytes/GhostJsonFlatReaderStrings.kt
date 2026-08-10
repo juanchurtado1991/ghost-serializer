@@ -3,13 +3,13 @@
 package com.ghost.serialization.parser.bytes
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
+import com.ghost.serialization.parser.common.growBuffer
+import com.ghost.serialization.parser.common.readQuotedStringSlowCore
 import com.ghost.serialization.parser.common.rollingHashImpl
 import com.ghost.serialization.parser.common.scanStringSwarNoHash
-import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -80,156 +80,17 @@ fun GhostJsonFlatReader.readQuotedString(): String {
     return readQuotedStringSlow(start)
 }
 
-private fun GhostJsonFlatReader.readQuotedStringSlow(start: Int): String {
-    // Slow path: manual string building for escapes (Bitwise & Zero-Allocation approach)
-    var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)
-    var outPos = 0
-
-    try {
-        var pos = start
-        while (pos < limit) {
-            val byteValue = getByte(pos++)
-            if (byteValue == C.QUOTE_INT) {
-                position = pos
-                nextTokenByte = C.RESET_TOKEN_BYTE
-                return outBuffer.decodeToString(0, outPos)
-            }
-
-            if (byteValue == C.BACKSLASH_INT) {
-                if (pos >= limit) {
-                    position = pos
-                    throwError(C.UNTERMINATED_ESCAPE_ERROR)
-                }
-                when (val escaped = getByte(pos++)) {
-                    C.UNICODE_PREFIX_U_INT -> {
-                        if (pos + C.UNICODE_HEX_LENGTH > limit) {
-                            position = pos
-                            throwError(C.UNTERMINATED_UNICODE_ERROR)
-                        }
-
-                        var code = parseUnicodeHex(pos)
-                        pos += C.UNICODE_HEX_LENGTH
-
-                        if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {
-                            if (pos + C.SURROGATE_OFFSET <= limit &&
-                                getByte(pos) == C.BACKSLASH_INT &&
-                                getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT
-                            ) {
-                                // Valid surrogate pair check
-                                pos += C.UNICODE_ESCAPE_PREFIX_SIZE
-                                val lowCode = parseUnicodeHex(pos)
-                                if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {
-                                    pos += C.UNICODE_HEX_LENGTH
-                                    code = C.UNICODE_BASE +
-                                            ((code - C.HIGH_SURROGATE_START) shl C.SHIFT_10) +
-                                            (lowCode - C.LOW_SURROGATE_START)
-                                } else {
-                                    position = pos
-                                    throwError(C.ERR_HIGH_SURROGATE)
-                                }
-                            } else {
-                                position = pos
-                                throwError(C.ERR_HIGH_SURROGATE)
-                            }
-                        }
-
-                        // Encode code point to UTF-8 bytes in outBuffer
-                        if (code <= C.UTF8_1BYTE_MAX) {
-                            if (outPos + 1 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] = code.toByte()
-                        } else if (code <= C.UTF8_2BYTE_MAX) {
-                            if (outPos + 2 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] =
-                                (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                        } else if (code <= C.BMP_LIMIT) {
-                            if (outPos + 3 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] =
-                                (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                        } else {
-                            if (outPos + 4 > outBuffer.size) {
-                                outBuffer = growBuffer(outBuffer, outPos)
-                            }
-                            outBuffer[outPos++] =
-                                (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()
-                            outBuffer[outPos++] =
-                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()
-                        }
-                    }
-
-                    C.N_BYTE_INT -> {
-                        if (outPos + 1 > outBuffer.size) {
-                            outBuffer = growBuffer(outBuffer, outPos)
-                        }
-                        outBuffer[outPos++] = C.LF_INT.toByte()
-                    }
-
-                    C.R_BYTE_INT -> {
-                        if (outPos + 1 > outBuffer.size) {
-                            outBuffer = growBuffer(outBuffer, outPos)
-                        }
-                        outBuffer[outPos++] = C.CR_INT.toByte()
-                    }
-
-                    C.T_BYTE_INT -> {
-                        if (outPos + 1 > outBuffer.size) {
-                            outBuffer = growBuffer(outBuffer, outPos)
-                        }
-                        outBuffer[outPos++] = C.TAB_INT.toByte()
-                    }
-
-                    C.B_BYTE_INT -> {
-                        if (outPos + 1 > outBuffer.size) {
-                            outBuffer = growBuffer(outBuffer, outPos)
-                        }
-                        outBuffer[outPos++] = C.BS_INT.toByte()
-                    }
-
-                    C.F_BYTE_INT -> {
-                        if (outPos + 1 > outBuffer.size) {
-                            outBuffer = growBuffer(outBuffer, outPos)
-                        }
-                        outBuffer[outPos++] = C.FF_INT.toByte()
-                    }
-
-                    else -> {
-                        if (outPos + 1 > outBuffer.size) {
-                            outBuffer = growBuffer(outBuffer, outPos)
-                        }
-                        outBuffer[outPos++] = escaped.toByte()
-                    }
-                }
-            } else if (byteValue < C.SPACE_INT) {
-                position = pos
-                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)
-            } else {
-                if (outPos + 1 > outBuffer.size) {
-                    outBuffer = growBuffer(outBuffer, outPos)
-                }
-                outBuffer[outPos++] = byteValue.toByte()
-            }
-        }
-        position = pos
-    } finally {
-        releaseScratchBuffer(outBuffer)
-    }
-    throwError(C.UNTERMINATED_STRING_ERROR)
-}
+private fun GhostJsonFlatReader.readQuotedStringSlow(start: Int): String =
+    readQuotedStringSlowCore(
+        start = start,
+        limit = limit,
+        getByte = { getByte(it) },
+        setPosition = { position = it },
+        setNextTokenByte = { nextTokenByte = it },
+        parseUnicodeHex = { parseUnicodeHex(it) },
+        grow = { buf, outPos -> growBuffer(buf, outPos) },
+        throwError = { throwError(it) },
+    )
 
 /**
  * Skips a double-quoted JSON string in the raw byte array without decoding its content.
@@ -306,14 +167,4 @@ private fun GhostJsonFlatReader.parseUnicodeHex(currentPosition: Int): Int {
             (digitValue1 shl C.SHIFT_8) or
             (digitValue2 shl C.SHIFT_4) or
             digitValue3
-}
-
-/**
- * Utility helper to grow a temporary byte array buffer.
- */
-private fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
-    val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-    outBuffer.copyInto(newBuffer, 0, 0, outPos)
-    releaseScratchBuffer(outBuffer)
-    return newBuffer
 }

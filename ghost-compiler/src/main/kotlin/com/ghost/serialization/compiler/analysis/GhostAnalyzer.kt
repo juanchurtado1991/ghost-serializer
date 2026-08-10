@@ -1,4 +1,4 @@
-@file:OptIn(com.google.devtools.ksp.KspExperimental::class)
+@file:OptIn(KspExperimental::class)
 
 package com.ghost.serialization.compiler.analysis
 
@@ -8,6 +8,7 @@ import com.ghost.serialization.compiler.model.CustomCoderReaderKind
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.InferredSubclassModel
 import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
@@ -407,7 +408,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val len = str.length
         while (i < len) {
             val c = str[i]
-            if (c == '_') {
+            if (c == C.CHAR_UNDERSCORE) {
                 uppercaseNext = true
             } else {
                 if (uppercaseNext) {
@@ -852,13 +853,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     /**
      * Resolves the serialized name for an annotated element, checking GhostName or kotlinx SerialName.
      */
-    internal fun getSerialName(declaration: KSAnnotated): String {
+    private fun getSerialName(declaration: KSAnnotated): String {
         val annotations = declaration.annotations.toList()
 
         // 1. GhostName (Primary)
         val ghostName = annotations.find { it.shortName.asString() == C.GHOST_NAME }
         if (ghostName != null) {
-            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME_ARG }
+            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME }
                 ?: ghostName.arguments.firstOrNull()
             return arg?.value?.toString() ?: C.STR_EMPTY
         }
@@ -895,7 +896,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     private fun isGhostType(type: KSType): Boolean =
         type.declaration.annotations.any {
             val name = it.shortName.asString()
-            name == C.GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
+            name == C.ANNOTATION_GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
         }
 
     companion object {
