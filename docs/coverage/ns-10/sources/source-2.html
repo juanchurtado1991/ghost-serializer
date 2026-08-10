@@ -25,9 +25,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <h1>Coverage Summary for Class: GhostJsonFlatReader (com.ghost.serialization.parser.bytes)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,50 +52,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">GhostJsonFlatReader</td>
 <td class="coverageStat">
   <span class="percent">
-    98.4%
-  </span>
-  <span class="absValue">
-    (60/61)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    74.3%
-  </span>
-  <span class="absValue">
-    (225/303)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    89%
-  </span>
-  <span class="absValue">
-    (446/501)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    85.9%
-  </span>
-  <span class="absValue">
-    (2102/2448)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">GhostJsonFlatReader$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
     100%
   </span>
   <span class="absValue">
@@ -101,48 +60,38 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    98.3%
   </span>
   <span class="absValue">
-    (2/2)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    98.4%
-  </span>
-  <span class="absValue">
-    (61/62)
+    (58/59)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74.3%
+    74.1%
   </span>
   <span class="absValue">
-    (225/303)
+    (143/193)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89%
+    90.3%
   </span>
   <span class="absValue">
-    (447/502)
+    (335/371)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.9%
+    86.9%
   </span>
   <span class="absValue">
-    (2104/2450)
+    (1546/1780)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -166,6 +115,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.common.createByteArraySource
 &nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
+&nbsp;import com.ghost.serialization.parser.common.skipValueCore
 &nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.captureRawJson
@@ -178,7 +128,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
 &nbsp; */
 &nbsp;open class GhostJsonFlatReader(
-<b class="fc">&nbsp;    public var rawData: ByteArray,</b>
+<b class="fc">&nbsp;    var rawData: ByteArray,</b>
 <b class="fc">&nbsp;    var maxDepth: Int = C.MAX_DEPTH,</b>
 &nbsp;    /**
 &nbsp;     * When true, enables strict JSON validation: rejects unknown/unmapped fields
@@ -206,26 +156,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    internal val source: ByteArrayGhostSource =</b>
 <b class="fc">&nbsp;        createByteArraySource(rawData) as ByteArrayGhostSource</b>
 &nbsp;
-<b class="fc">&nbsp;    public var limit: Int = rawData.size</b>
+<b class="fc">&nbsp;    var limit: Int = rawData.size</b>
 &nbsp;
-<b class="fc">&nbsp;    public var position: Int = 0</b>
+<b class="fc">&nbsp;    var position: Int = 0</b>
 &nbsp;
-<b class="fc">&nbsp;    public var nextTokenByte: Int = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;    var nextTokenByte: Int = C.RESET_TOKEN_BYTE</b>
 &nbsp;
 &nbsp;    @InternalGhostApi
 <b class="fc">&nbsp;    fun _getPosition(): Int = position</b>
 &nbsp;
 &nbsp;    @InternalGhostApi
-&nbsp;    fun _setPosition(p: Int) {
-<b class="fc">&nbsp;        position = p</b>
+&nbsp;    fun _setPosition(position: Int) {
+<b class="fc">&nbsp;        this.position = position</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
 <b class="fc">&nbsp;    fun _getRawData(): ByteArray = rawData</b>
 &nbsp;
 &nbsp;    @InternalGhostApi
-&nbsp;    fun _setNextTokenByte(t: Int) {
-<b class="fc">&nbsp;        nextTokenByte = t</b>
+&nbsp;    fun _setNextTokenByte(tokenByte: Int) {
+<b class="fc">&nbsp;        nextTokenByte = tokenByte</b>
 &nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    internal val stringPool = arrayOfNulls&lt;String&gt;(C.STR_POOL_SIZE)</b>
@@ -242,7 +192,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * hint never affects correctness — only speed. Reset to
 &nbsp;     * [GhostJsonConstants.FIELD_PREDICTION_START] on [beginObject].
 &nbsp;     */
-&nbsp;    private var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
+<b class="fc">&nbsp;    internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START</b>
 &nbsp;
 <b class="fc">&nbsp;    var depth: Int = 0</b>
 &nbsp;    @PublishedApi
@@ -254,7 +204,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Gets the byte at the specified index, masking it to a positive integer.
 &nbsp;     */
 &nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
-&nbsp;    public inline fun getByte(index: Int): Int {
+&nbsp;    inline fun getByte(index: Int): Int {
 <b class="fc">&nbsp;        return rawData[index].toInt() and C.BYTE_MASK</b>
 &nbsp;    }
 &nbsp;
@@ -270,7 +220,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        throw GhostJsonException(</b>
-<b class="fc">&nbsp;            baseMessage = &quot;$message at position $errorPosition&quot;,</b>
+<b class="fc">&nbsp;            baseMessage = &quot;$message${C.ERR_AT_POSITION_PREFIX}$errorPosition&quot;,</b>
 <b class="fc">&nbsp;            computeLineCol = {</b>
 <b class="fc">&nbsp;                var columnNumber = 0</b>
 <b class="fc">&nbsp;                var lineNumber = 0</b>
@@ -290,10 +240,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Skips forward in the byte array by [n] bytes and resets [nextTokenByte].
+&nbsp;     * Skips forward in the byte array by [byteCount] bytes and resets [nextTokenByte].
 &nbsp;     */
-&nbsp;    fun internalSkip(n: Int) {
-<b class="fc">&nbsp;        position += n</b>
+&nbsp;    fun internalSkip(byteCount: Int) {
+<b class="fc">&nbsp;        position += byteCount</b>
 <b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;    }
 &nbsp;
@@ -302,33 +252,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun skipWhitespace() {
 <b class="fc">&nbsp;        val data = rawData</b>
-<b class="fc">&nbsp;        val lim = limit</b>
-<b class="fc">&nbsp;        var p = position</b>
+<b class="fc">&nbsp;        val byteLimit = limit</b>
+<b class="fc">&nbsp;        var cursor = position</b>
 <b class="fc">&nbsp;        while (true) {</b>
 &nbsp;            // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
 &nbsp;            // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
 &nbsp;            // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
-<b class="fc">&nbsp;            while (p + C.LONG_BYTES &lt;= lim &amp;&amp; ghostReadLong8(data, p) == C.SPACE_RUN_LONG) {</b>
-<b class="fc">&nbsp;                p += C.LONG_BYTES</b>
+<b class="fc">&nbsp;            while (cursor + C.LONG_BYTES &lt;= byteLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                ghostReadLong8(data, cursor) == C.SPACE_RUN_LONG</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                cursor += C.LONG_BYTES</b>
 &nbsp;            }
-<b class="fc">&nbsp;            if (p &gt;= lim) {</b>
-<b class="fc">&nbsp;                position = lim</b>
+<b class="fc">&nbsp;            if (cursor &gt;= byteLimit) {</b>
+<b class="fc">&nbsp;                position = byteLimit</b>
 <b class="fc">&nbsp;                nextTokenByte = C.MATCH_END</b>
 &nbsp;                return
 &nbsp;            }
-<b class="fc">&nbsp;            val b = data[p].toInt() and C.BYTE_MASK</b>
-<b class="fc">&nbsp;            if (b &gt; C.SPACE_INT) {</b>
-<b class="fc">&nbsp;                position = p</b>
-<b class="fc">&nbsp;                nextTokenByte = b</b>
+<b class="fc">&nbsp;            val tokenByte = data[cursor].toInt() and C.BYTE_MASK</b>
+<b class="fc">&nbsp;            if (tokenByte &gt; C.SPACE_INT) {</b>
+<b class="fc">&nbsp;                position = cursor</b>
+<b class="fc">&nbsp;                nextTokenByte = tokenByte</b>
 &nbsp;                return
 &nbsp;            }
 &nbsp;            // Non-space whitespace (tab / LF / CR) or a control byte; mirror WHITESPACE_MASK.
-<b class="fc">&nbsp;            if (b != C.SPACE_INT &amp;&amp; b != C.LF_INT &amp;&amp; b != C.CR_INT &amp;&amp; b != C.TAB_INT) {</b>
-<b class="fc">&nbsp;                position = p</b>
-<b class="fc">&nbsp;                nextTokenByte = b</b>
+<b class="fc">&nbsp;            if (tokenByte != C.SPACE_INT &amp;&amp; tokenByte != C.LF_INT &amp;&amp; tokenByte != C.CR_INT &amp;&amp; tokenByte != C.TAB_INT) {</b>
+<b class="fc">&nbsp;                position = cursor</b>
+<b class="fc">&nbsp;                nextTokenByte = tokenByte</b>
 &nbsp;                return
 &nbsp;            }
-<b class="fc">&nbsp;            p++</b>
+<b class="fc">&nbsp;            cursor++</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
@@ -402,7 +354,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * proto3 `uint64` scalar — quoted decimal string on the wire; bare JSON numbers accepted
-&nbsp;     * on read when they fit in [Long]. Subclasses (e.g. [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader])
+&nbsp;     * on read when they fit in [Long]. Subclasses (e.g. `GhostProtoJsonFlatReader`)
 &nbsp;     * override for full [ULong] range.
 &nbsp;     */
 &nbsp;    open fun nextProtoUInt64(): ULong {
@@ -441,20 +393,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Resets the reader to parse a sub-range of [buffer] without copying (zero-copy slice decode).
 &nbsp;     */
 &nbsp;    fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
-<b class="fc">&nbsp;        this.rawData = buffer</b>
+<b class="fc">&nbsp;        rawData = buffer</b>
 <b class="fc">&nbsp;        source.data = buffer</b>
-<b class="fc">&nbsp;        this.position = offset</b>
-<b class="fc">&nbsp;        this.limit = offset + length</b>
-<b class="fc">&nbsp;        this.nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;        this.depth = 0</b>
-<b class="fc">&nbsp;        this.needsCommaMask = 0L</b>
-<b class="fc">&nbsp;        this.commaConsumedMask = 0L</b>
-<b class="fc">&nbsp;        this.strictMode = false</b>
-<b class="fc">&nbsp;        this.coerceStringsToNumbers = false</b>
-<b class="fc">&nbsp;        this.coerceBooleans = false</b>
-<b class="fc">&nbsp;        this.maxDepth = C.MAX_DEPTH</b>
-<b class="fc">&nbsp;        this.maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
-<b class="fc">&nbsp;        this.lastScanContentWas7BitOnly = false</b>
+<b class="fc">&nbsp;        position = offset</b>
+<b class="fc">&nbsp;        limit = offset + length</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        depth = 0</b>
+<b class="fc">&nbsp;        needsCommaMask = 0L</b>
+<b class="fc">&nbsp;        commaConsumedMask = 0L</b>
+<b class="fc">&nbsp;        strictMode = false</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        coerceBooleans = false</b>
+<b class="fc">&nbsp;        maxDepth = C.MAX_DEPTH</b>
+<b class="fc">&nbsp;        maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;        lastScanContentWas7BitOnly = false</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -555,7 +507,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    commaConsumedMask = commaConsumedMask or bit</b>
 <b class="fc">&nbsp;                    needsCommaMask = needsCommaMask and bit.inv()</b>
 &nbsp;                } else {
-<b class="pc">&nbsp;                    if (required) throwError(C.ERR_EXPECTED_COMMA)</b>
+<b class="fc">&nbsp;                    if (required) throwError(C.ERR_EXPECTED_COMMA)</b>
 <b class="fc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
 &nbsp;                }
 &nbsp;            }
@@ -713,20 +665,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Consumes the null value literal from the stream.
 &nbsp;     *
 &nbsp;     * After [peekNextToken] has already positioned on `&#39;n&#39;`, validates the remaining
-&nbsp;     * `ull` bytes inline — avoids [okio.ByteString.rangeEquals] on the hot nullable path.
+&nbsp;     * `ull` bytes inline — avoids `okio.ByteString.rangeEquals` on the hot nullable path.
 &nbsp;     */
 &nbsp;    fun consumeNull() {
-<b class="fc">&nbsp;        val p = position</b>
+<b class="fc">&nbsp;        val cursor = position</b>
 <b class="fc">&nbsp;        val data = rawData</b>
-<b class="pc">&nbsp;        if (p + 4 &gt; limit ||</b>
-<b class="pc">&nbsp;            (data[p].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||</b>
-<b class="pc">&nbsp;            (data[p + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||</b>
-<b class="fc">&nbsp;            (data[p + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||</b>
-<b class="pc">&nbsp;            (data[p + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT</b>
+<b class="pc">&nbsp;        if (cursor + 4 &gt; limit ||</b>
+<b class="pc">&nbsp;            (data[cursor].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||</b>
+<b class="pc">&nbsp;            (data[cursor + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||</b>
+<b class="fc">&nbsp;            (data[cursor + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||</b>
+<b class="pc">&nbsp;            (data[cursor + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT</b>
 &nbsp;        ) {
 <b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)</b>
 &nbsp;        }
-<b class="fc">&nbsp;        position = p + 4</b>
+<b class="fc">&nbsp;        position = cursor + 4</b>
 <b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;    }
 &nbsp;
@@ -772,9 +724,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    private fun matchCoerceBooleanBytes(): Boolean {
 <b class="fc">&nbsp;        val localData = rawData</b>
-<b class="fc">&nbsp;        val lim = limit</b>
+<b class="fc">&nbsp;        val byteLimit = limit</b>
 <b class="fc">&nbsp;        val contentStart = position + 1 // skip opening</b>
-<b class="fc">&nbsp;        val end = findClosingQuoteImpl(contentStart, lim) {</b>
+<b class="fc">&nbsp;        val end = findClosingQuoteImpl(contentStart, byteLimit) {</b>
 <b class="fc">&nbsp;            localData[it].toInt() and C.BYTE_MASK</b>
 &nbsp;        }
 <b class="pc">&nbsp;        if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)</b>
@@ -802,223 +754,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        internalSelect(options, consumeSeparator = false)</b>
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Low-level helper to search and return matched index in options lookup table.
-&nbsp;     */
-&nbsp;    private fun internalSelect(options: JsonReaderOptions, consumeSeparator: Boolean): Int {
-<b class="fc">&nbsp;        var token = peekNextToken()</b>
-<b class="fc">&nbsp;        if (token == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;            return -1</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (strictMode &amp;&amp; depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;            val bit = C.BITMASK_UNIT shl depth</b>
-<b class="pc">&nbsp;            if ((commaConsumedMask and bit) != C.RESULT_NONE) {</b>
-<b class="nc">&nbsp;                commaConsumedMask = commaConsumedMask and bit.inv()</b>
-<b class="nc">&nbsp;                needsCommaMask = needsCommaMask or bit</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                val required = (needsCommaMask and bit) != C.RESULT_NONE</b>
-<b class="pc">&nbsp;                if (token == C.COMMA_INT) {</b>
-<b class="nc">&nbsp;                    if (!required) {</b>
-<b class="nc">&nbsp;                        throwError(C.ERR_UNEXPECTED_COMMA)</b>
-&nbsp;                    }
-<b class="nc">&nbsp;                    internalSkip(1)</b>
-<b class="nc">&nbsp;                    token = peekNextToken()</b>
-<b class="nc">&nbsp;                    if (token == C.CLOSE_OBJ_INT) {</b>
-<b class="nc">&nbsp;                        throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;                    }
-<b class="nc">&nbsp;                    commaConsumedMask = commaConsumedMask and bit.inv()</b>
-<b class="nc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
-&nbsp;                } else {
-<b class="pc">&nbsp;                    if (required &amp;&amp; consumeSeparator) {</b>
-<b class="fc">&nbsp;                        throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)</b>
-&nbsp;                    }
-<b class="fc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        } else {
-<b class="fc">&nbsp;            if (token == C.COMMA_INT) {</b>
-<b class="fc">&nbsp;                internalSkip(1)</b>
-<b class="fc">&nbsp;                token = peekNextToken()</b>
-<b class="fc">&nbsp;                if (token == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        if (token != C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;            throwError(</b>
-<b class="fc">&nbsp;                if (consumeSeparator) {</b>
-<b class="fc">&nbsp;                    C.ERR_EXPECTED_KEY</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    C.ERR_EXPECTED_STRING</b>
-&nbsp;                }
-&nbsp;            )
-&nbsp;        }
-<b class="fc">&nbsp;        val start = position + 1</b>
-<b class="fc">&nbsp;        val localData = rawData</b>
-<b class="fc">&nbsp;        val lim = limit</b>
-&nbsp;
-&nbsp;        // Optimistic in-order field match: most objects list fields in declaration order,
-&nbsp;        // so compare the key directly against the predicted candidate in a single pass. On a
-&nbsp;        // hit this avoids the separate closing-quote scan, hash, and verify passes entirely.
-<b class="fc">&nbsp;        val predicted = predictedFieldIndex</b>
-<b class="fc">&nbsp;        val rawBytes = options.rawBytes</b>
-<b class="fc">&nbsp;        if (predicted &lt; rawBytes.size) {</b>
-<b class="fc">&nbsp;            val candidate = rawBytes[predicted]</b>
-<b class="fc">&nbsp;            val candLen = candidate.size</b>
-<b class="fc">&nbsp;            val keyEnd = start + candLen</b>
-<b class="pc">&nbsp;            if (candLen &gt; 0 &amp;&amp; keyEnd &lt; lim &amp;&amp;</b>
-<b class="fc">&nbsp;                (localData[keyEnd].toInt() and C.BYTE_MASK) == C.QUOTE_INT</b>
-&nbsp;            ) {
-<b class="fc">&nbsp;                var i = 0</b>
-&nbsp;                // Compare LONG_BYTES at a time for longer field names. Comparing two
-&nbsp;                // ghostReadLong8 results is byte-order independent (equality is symmetric),
-&nbsp;                // so no masking is needed; a trailing byte loop covers the remainder.
-<b class="fc">&nbsp;                while (i + C.LONG_BYTES &lt;= candLen &amp;&amp;</b>
-<b class="fc">&nbsp;                    ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)</b>
-&nbsp;                ) {
-<b class="fc">&nbsp;                    i += C.LONG_BYTES</b>
-&nbsp;                }
-<b class="fc">&nbsp;                while (i &lt; candLen &amp;&amp; localData[start + i] == candidate[i]) {</b>
-<b class="fc">&nbsp;                    i++</b>
-&nbsp;                }
-<b class="fc">&nbsp;                if (i == candLen) {</b>
-<b class="fc">&nbsp;                    predictedFieldIndex = predicted + 1</b>
-<b class="fc">&nbsp;                    val newPos = keyEnd + 1</b>
-<b class="fc">&nbsp;                    position = newPos</b>
-<b class="fc">&nbsp;                    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;                    if (consumeSeparator) {</b>
-<b class="pc">&nbsp;                        if (newPos &lt; lim &amp;&amp; (localData[newPos].toInt() and C.BYTE_MASK) == C.COLON_INT) {</b>
-<b class="fc">&nbsp;                            position = newPos + 1</b>
-&nbsp;                        } else {
-<b class="fc">&nbsp;                            consumeKeySeparator()</b>
-&nbsp;                        }
-&nbsp;                    }
-<b class="fc">&nbsp;                    return predicted</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val end = findClosingQuoteImpl(start, lim) {</b>
-<b class="fc">&nbsp;            localData[it].toInt() and C.BYTE_MASK</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (end == -1) {</b>
-<b class="nc">&nbsp;            throwError(C.UNTERMINATED_STRING_ERROR)</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val length = end - start</b>
-<b class="fc">&nbsp;        val key = computeKeyHash(start, length, options.hasCollisions)</b>
-&nbsp;
-<b class="fc">&nbsp;        val hasIndex =</b>
-<b class="fc">&nbsp;            ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)</b>
-<b class="fc">&nbsp;        val index = options.dispatch[hasIndex]</b>
-&nbsp;
-<b class="fc">&nbsp;        if (index != C.MATCH_END) {</b>
-<b class="pc">&nbsp;            if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {</b>
-<b class="fc">&nbsp;                predictedFieldIndex = index + 1</b>
-<b class="fc">&nbsp;                return index</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        // No match found
-<b class="fc">&nbsp;        val newPos = end + 1</b>
-<b class="fc">&nbsp;        position = newPos</b>
-<b class="fc">&nbsp;        nextTokenByte = C.MATCH_END</b>
-<b class="fc">&nbsp;        if (consumeSeparator) {</b>
-<b class="pc">&nbsp;            if (newPos &lt; limit &amp;&amp; getByte(newPos) == C.COLON_INT) {</b>
-<b class="fc">&nbsp;                position = newPos + 1</b>
-&nbsp;            } else {
-<b class="nc">&nbsp;                consumeKeySeparator()</b>
-&nbsp;            }
-<b class="pc">&nbsp;        } else if (strictMode) {</b>
-<b class="nc">&nbsp;            val unknownKey = source.decodeToString(start, end)</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey&quot;)</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return C.MATCH_NONE</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Computes the 32-bit hash value of the string range.
-&nbsp;     */
-&nbsp;    private fun computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int {
-<b class="fc">&nbsp;        var key = 0</b>
-<b class="fc">&nbsp;        if (length &gt;= 4) {</b>
-<b class="fc">&nbsp;            val b0 = rawData[start].toInt() and C.BYTE_MASK</b>
-<b class="fc">&nbsp;            val b1 = rawData[start + 1].toInt() and C.BYTE_MASK</b>
-<b class="fc">&nbsp;            val b2 = rawData[start + 2].toInt() and C.BYTE_MASK</b>
-<b class="fc">&nbsp;            val b3 = rawData[start + 3].toInt() and C.BYTE_MASK</b>
-<b class="fc">&nbsp;            key = b0 or (b1 shl C.SHIFT_8) or (b2 shl C.SHIFT_16) or (b3 shl C.SHIFT_24)</b>
-<b class="fc">&nbsp;            if (hasCollisions) {</b>
-<b class="fc">&nbsp;                var ci = C.UNICODE_HEX_LENGTH</b>
-<b class="fc">&nbsp;                while (ci &lt; length) {</b>
-<b class="fc">&nbsp;                    key =</b>
-<b class="fc">&nbsp;                        key * C.COLLISION_HASH_MULTIPLIER + (rawData[start + ci].toInt() and C.BYTE_MASK); ci++</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        } else {
-<b class="pc">&nbsp;            if (length &gt;= 1) {</b>
-<b class="fc">&nbsp;                key = key or (rawData[start].toInt() and C.BYTE_MASK)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            if (length &gt;= 2) {</b>
-<b class="fc">&nbsp;                key = key or ((rawData[start + 1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            if (length &gt;= 3) {</b>
-<b class="fc">&nbsp;                key = key or ((rawData[start + 2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)</b>
-&nbsp;            }
-&nbsp;        }
-<b class="fc">&nbsp;        return key</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Performs a fast comparison of the parsed string against expected bytes to verify matches.
-&nbsp;     */
-&nbsp;    private fun verifyKeyMatch(
-&nbsp;        start: Int,
-&nbsp;        length: Int,
-&nbsp;        expected: ByteArray,
-&nbsp;        consumeSeparator: Boolean
-&nbsp;    ): Boolean {
-&nbsp;        // Length is already guaranteed equal by the dispatch table (same hash slot).
-<b class="pc">&nbsp;        if (expected.size == length) {</b>
-<b class="fc">&nbsp;            val localData = rawData</b>
-<b class="fc">&nbsp;            var i = 0</b>
-&nbsp;            // Unrolled x4 for typical ASCII field name lengths (4–20 chars).
-<b class="fc">&nbsp;            while (i + 3 &lt; length) {</b>
-<b class="pc">&nbsp;                if (localData[start + i] != expected[i]) return false</b>
-<b class="pc">&nbsp;                if (localData[start + i + 1] != expected[i + 1]) return false</b>
-<b class="pc">&nbsp;                if (localData[start + i + 2] != expected[i + 2]) return false</b>
-<b class="pc">&nbsp;                if (localData[start + i + 3] != expected[i + 3]) return false</b>
-<b class="fc">&nbsp;                i += 4</b>
-&nbsp;            }
-<b class="fc">&nbsp;            while (i &lt; length) {</b>
-<b class="pc">&nbsp;                if (localData[start + i] != expected[i]) return false</b>
-<b class="fc">&nbsp;                i++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            val endPos = start + length</b>
-<b class="fc">&nbsp;            val newPos = endPos + 1</b>
-<b class="fc">&nbsp;            position = newPos</b>
-<b class="fc">&nbsp;            nextTokenByte = -1</b>
-<b class="fc">&nbsp;            if (consumeSeparator) {</b>
-<b class="pc">&nbsp;                if (newPos &lt; limit) {</b>
-<b class="fc">&nbsp;                    val colonToken = getByte(newPos)</b>
-<b class="pc">&nbsp;                    if (colonToken == C.COLON_INT) {</b>
-<b class="fc">&nbsp;                        position = newPos + 1</b>
-&nbsp;                    } else {
-<b class="nc">&nbsp;                        consumeKeySeparator()</b>
-&nbsp;                    }
-&nbsp;                } else {
-<b class="nc">&nbsp;                    consumeKeySeparator()</b>
-&nbsp;                }
-&nbsp;            }
-<b class="fc">&nbsp;            return true</b>
-&nbsp;        }
-<b class="nc">&nbsp;        return false</b>
-&nbsp;    }
-&nbsp;
-&nbsp;
-&nbsp;    /**
 &nbsp;     * Peeks at a key name and returns it if it is a string match.
 &nbsp;     */
 &nbsp;    fun peekStringField(name: String): String? {
@@ -1029,49 +764,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * Skips the next complete value token (object, array, string, number, boolean, null) from the stream.
 &nbsp;     */
 &nbsp;    fun skipValue() {
-<b class="fc">&nbsp;        val token = peekNextToken()</b>
-<b class="pc">&nbsp;        when (token) {</b>
-&nbsp;            C.OPEN_OBJ_INT -&gt; {
-<b class="fc">&nbsp;                beginObject()</b>
-<b class="fc">&nbsp;                while (hasNext()) {</b>
-<b class="pc">&nbsp;                    if (peekNextToken() != C.QUOTE_INT) {</b>
-<b class="nc">&nbsp;                        throwError(C.ERR_EXPECTED_KEY)</b>
-&nbsp;                    }
-<b class="fc">&nbsp;                    skipQuotedString()</b>
-<b class="fc">&nbsp;                    consumeKeySeparator()</b>
-<b class="fc">&nbsp;                    skipValue()</b>
-&nbsp;                }
-<b class="fc">&nbsp;                endObject()</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            C.OPEN_ARR_INT -&gt; {
-<b class="fc">&nbsp;                beginArray()</b>
-<b class="fc">&nbsp;                while (hasNext()) {</b>
-<b class="fc">&nbsp;                    skipValue()</b>
-&nbsp;                }
-<b class="fc">&nbsp;                endArray()</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            C.QUOTE_INT -&gt; {
-<b class="fc">&nbsp;                skipQuotedString()</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            C.TRUE_CHAR_INT -&gt; {
-<b class="nc">&nbsp;                skipAndValidateLiteral(C.TRUE_BS)</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            C.FALSE_CHAR_INT -&gt; {
-<b class="fc">&nbsp;                skipAndValidateLiteral(C.FALSE_BS)</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            C.NULL_CHAR_INT -&gt; {
-<b class="nc">&nbsp;                skipAndValidateLiteral(C.NULL_BS)</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            else -&gt; {
-<b class="fc">&nbsp;                skipNumber()</b>
-&nbsp;            }
-&nbsp;        }
+<b class="fc">&nbsp;        skipValueCore(</b>
+<b class="fc">&nbsp;            peekNextToken = { peekNextToken() },</b>
+<b class="fc">&nbsp;            beginObject = { beginObject() },</b>
+<b class="fc">&nbsp;            endObject = { endObject() },</b>
+<b class="fc">&nbsp;            beginArray = { beginArray() },</b>
+<b class="fc">&nbsp;            endArray = { endArray() },</b>
+<b class="fc">&nbsp;            hasNext = { hasNext() },</b>
+<b class="fc">&nbsp;            skipQuotedString = { skipQuotedString() },</b>
+<b class="fc">&nbsp;            consumeKeySeparator = { consumeKeySeparator() },</b>
+<b class="fc">&nbsp;            skipValue = { skipValue() },</b>
+<b class="fc">&nbsp;            skipAndValidateLiteral = { skipAndValidateLiteral(it) },</b>
+<b class="fc">&nbsp;            skipNumber = { skipNumber() },</b>
+<b class="nc">&nbsp;            throwError = { throwError(it) },</b>
+&nbsp;        )
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -1205,10 +911,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    companion object {</b>
-&nbsp;        @InternalGhostApi
-&nbsp;        const val RESET_TOKEN_BYTE: Int = -1
-&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -1233,7 +935,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

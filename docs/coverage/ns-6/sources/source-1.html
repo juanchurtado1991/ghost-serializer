@@ -687,8 +687,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
 <b class="fc">&nbsp;        val ghostClass = ClassName(</b>
-<b class="fc">&nbsp;            C.STR_GHOST_PKG,</b>
-<b class="fc">&nbsp;            C.STR_GHOST_OBJ</b>
+<b class="fc">&nbsp;            C.PKG_GHOST,</b>
+<b class="fc">&nbsp;            C.STR_GHOST</b>
 &nbsp;        )
 &nbsp;
 <b class="fc">&nbsp;        contextualSerializers.forEach { (type, name) -&gt;</b>
@@ -697,7 +697,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                PropertySpec.builder(</b>
 <b class="nc">&nbsp;                    name,</b>
 <b class="nc">&nbsp;                    ClassName(</b>
-<b class="nc">&nbsp;                        C.STR_CONTRACT_PKG,</b>
+<b class="nc">&nbsp;                        C.PKG_CONTRACT,</b>
 <b class="nc">&nbsp;                        C.STR_GHOST_SERIALIZER</b>
 &nbsp;                    )
 <b class="nc">&nbsp;                        .parameterizedBy(nonNullableType.toTypeName()),</b>
@@ -760,7 +760,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

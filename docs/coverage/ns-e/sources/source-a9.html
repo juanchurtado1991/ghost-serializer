@@ -104,30 +104,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val id: String,</b>
 <b class="fc">&nbsp;    @GhostName(&quot;metadata&quot;) val metadata: RawJson</b>
 &nbsp;)
-&nbsp;
-&nbsp;/** ByteArray control model for capture benchmarks. */
-&nbsp;@GhostSerialization
-&nbsp;data class OpaqueMetadataByteEnvelope(
-&nbsp;    val id: String,
-&nbsp;    @GhostName(&quot;metadata&quot;) val metadata: ByteArray,
-&nbsp;) {
-&nbsp;    override fun equals(other: Any?): Boolean {
-&nbsp;        if (this === other) {
-&nbsp;            return true
-&nbsp;        }
-&nbsp;        if (other == null || this::class != other::class) {
-&nbsp;            return false
-&nbsp;        }
-&nbsp;        other as OpaqueMetadataByteEnvelope
-&nbsp;        return id == other.id &amp;&amp; metadata.contentEquals(other.metadata)
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun hashCode(): Int {
-&nbsp;        var result = id.hashCode()
-&nbsp;        result = 31 * result + metadata.contentHashCode()
-&nbsp;        return result
-&nbsp;    }
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -151,7 +127,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

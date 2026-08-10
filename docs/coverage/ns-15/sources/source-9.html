@@ -1,0 +1,174 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlFoldHelpersKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlFoldHelpersKt (com.ghost.serialization.parser.yaml)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlFoldHelpersKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.2%
+  </span>
+  <span class="absValue">
+    (19/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.8%
+  </span>
+  <span class="absValue">
+    (82/83)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Result of consuming a newline and scanning whether the following line is blank
+&nbsp; * (whitespace-only until newline/EOF).
+&nbsp; *
+&nbsp; * @property afterNewline Position of the first byte of the line (after CR/LF).
+&nbsp; * @property contentStart First non-space/tab byte on the line, or past whitespace if blank.
+&nbsp; * @property isBlank True when the line is empty or whitespace-only through newline/EOF.
+&nbsp; */
+&nbsp;internal class FoldBlankLineScan(
+&nbsp;    val afterNewline: Int,
+&nbsp;    val contentStart: Int,
+&nbsp;    val isBlank: Boolean,
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Advances past a CR/LF at [position], then scans leading spaces/tabs to decide blank-ness.
+&nbsp; * Does not mutate caller state — wrappers assign [position] from the result.
+&nbsp; */
+&nbsp;internal fun scanFoldBlankLine(rawData: ByteArray, position: Int, limit: Int): FoldBlankLineScan {
+<b class="fc">&nbsp;    var afterNewline = position</b>
+<b class="pc">&nbsp;    if (afterNewline &lt; limit &amp;&amp; rawData[afterNewline] == C.CR_BYTE) afterNewline++</b>
+<b class="pc">&nbsp;    if (afterNewline &lt; limit &amp;&amp; rawData[afterNewline] == C.NEWLINE_BYTE) afterNewline++</b>
+&nbsp;
+<b class="fc">&nbsp;    var contentStart = afterNewline</b>
+<b class="fc">&nbsp;    while (contentStart &lt; limit &amp;&amp;</b>
+<b class="fc">&nbsp;        (rawData[contentStart] == C.SPACE_BYTE || rawData[contentStart] == C.TAB_BYTE)</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        contentStart++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val isBlank = contentStart &gt;= limit ||</b>
+<b class="pc">&nbsp;        rawData[contentStart] == C.NEWLINE_BYTE || rawData[contentStart] == C.CR_BYTE</b>
+<b class="fc">&nbsp;    return FoldBlankLineScan(afterNewline, contentStart, isBlank)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Appends one folded continuation line using YAML plain-scalar folding rules:
+&nbsp; * blank lines become `\n` separators; otherwise a single space joins lines.
+&nbsp; */
+&nbsp;internal fun appendFoldedLine(builder: StringBuilder, blankLines: Int, lineText: String) {
+<b class="fc">&nbsp;    if (blankLines &gt; 0) repeat(blankLines) { builder.append(&#39;\n&#39;) } else builder.append(&#39; &#39;)</b>
+<b class="fc">&nbsp;    builder.append(lineText)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
+</div>
+</body>
+</html>

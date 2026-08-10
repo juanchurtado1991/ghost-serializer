@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    98.6%
+    97.9%
   </span>
   <span class="absValue">
-    (137/139)
+    (139/142)
   </span>
 </td>
 </tr>
@@ -102,7 +102,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
 &nbsp;
 &nbsp;import com.ghost.serialization.Ghost
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import org.reactivestreams.Publisher
 &nbsp;import org.springframework.core.ResolvableType
 &nbsp;import org.springframework.core.codec.AbstractEncoder
@@ -118,18 +118,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Reactive Encoder for Ghost Serialization.
 &nbsp; *
-&nbsp; * Serializes through the pooled [com.ghost.serialization.writer.bytes.GhostJsonFlatWriter]
-&nbsp; * to a [ByteArray], then wraps the bytes in a [DataBuffer] via [DataBufferFactory].
+&nbsp; * [canEncode] / encode resolve serializers from the full [ResolvableType] so
+&nbsp; * collection bodies use the declared generic serializer, not `value::class`.
 &nbsp; */
 <b class="fc">&nbsp;class GhostReactiveEncoder : AbstractEncoder&lt;Any&gt;(</b>
 <b class="fc">&nbsp;    MimeTypeUtils.APPLICATION_JSON,</b>
-<b class="fc">&nbsp;    MimeType(&quot;application&quot;, &quot;x-ndjson&quot;)</b>
+<b class="fc">&nbsp;    GhostSpringMediaTypes.MIME_APPLICATION_X_NDJSON</b>
 &nbsp;) {
 &nbsp;    override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-<b class="fc">&nbsp;        val clazz = elementType.toClass()</b>
 <b class="fc">&nbsp;        return super.canEncode(elementType, mimeType) &amp;&amp;</b>
-<b class="pc">&nbsp;                (clazz.isAnnotationPresent(GhostSerialization::class.java) ||</b>
-<b class="fc">&nbsp;                        Ghost.getSerializer(clazz.kotlin) != null)</b>
+<b class="fc">&nbsp;            GhostSpringTypeSerializers.getJsonSerializer(elementType) != null</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun encode(
@@ -140,22 +138,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        hints: MutableMap&lt;String, Any&gt;?
 &nbsp;    ): Flux&lt;DataBuffer&gt; {
 <b class="fc">&nbsp;        val isNdJson = isNdJson(mimeType)</b>
+<b class="fc">&nbsp;        val declaredSerializer = GhostSpringTypeSerializers.getJsonSerializer(elementType)</b>
 &nbsp;
 <b class="fc">&nbsp;        return Flux.from(inputStream).map { value -&gt;</b>
-<b class="fc">&nbsp;            encodeValue(value, bufferFactory, isNdJson)</b>
+<b class="fc">&nbsp;            encodeValue(value, bufferFactory, isNdJson, declaredSerializer)</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun encodeValue(
 &nbsp;        value: Any,
 &nbsp;        bufferFactory: DataBufferFactory,
-&nbsp;        isNdJson: Boolean
+&nbsp;        isNdJson: Boolean,
+&nbsp;        declaredSerializer: GhostSerializer&lt;Any&gt;?
 &nbsp;    ): DataBuffer {
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        val kClass = value::class as KClass&lt;Any&gt;</b>
-<b class="fc">&nbsp;        val serializer = Ghost.getSerializer(kClass)</b>
+<b class="pc">&nbsp;        val serializer = declaredSerializer</b>
+<b class="fc">&nbsp;            ?: run {</b>
+&nbsp;                @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;                Ghost.getSerializer(value::class as KClass&lt;Any&gt;)</b>
+&nbsp;            }
 <b class="fc">&nbsp;            ?: throw IllegalArgumentException(</b>
-<b class="fc">&nbsp;                &quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;</b>
+<b class="fc">&nbsp;                &quot;${Ghost.NOT_FOUND} ${value::class.simpleName}. ${Ghost.MISSING_ANN}&quot;</b>
 &nbsp;            )
 &nbsp;
 <b class="fc">&nbsp;        val encoded = Ghost.encodeToBytes(serializer, value)</b>
@@ -169,7 +171,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun isNdJson(mimeType: MimeType?): Boolean {
-<b class="pc">&nbsp;        return mimeType?.subtype?.contains(&quot;ndjson&quot;) == true</b>
+<b class="pc">&nbsp;        return mimeType?.subtype?.contains(GhostSpringMediaTypes.SUBTYPE_NDJSON_TOKEN) == true</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -195,7 +197,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

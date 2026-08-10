@@ -154,7 +154,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(com.google.devtools.ksp.KspExperimental::class)
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(KspExperimental::class)
 &nbsp;
 &nbsp;package com.ghost.serialization.compiler.analysis
 &nbsp;
@@ -164,6 +164,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.ghost.serialization.compiler.model.InferredSubclassModel
 &nbsp;import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
+&nbsp;import com.google.devtools.ksp.KspExperimental
 &nbsp;import com.google.devtools.ksp.getAnnotationsByType
 &nbsp;import com.google.devtools.ksp.processing.KSPLogger
 &nbsp;import com.google.devtools.ksp.symbol.ClassKind
@@ -563,7 +564,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val len = str.length</b>
 <b class="fc">&nbsp;        while (i &lt; len) {</b>
 <b class="fc">&nbsp;            val c = str[i]</b>
-<b class="fc">&nbsp;            if (c == &#39;_&#39;) {</b>
+<b class="fc">&nbsp;            if (c == C.CHAR_UNDERSCORE) {</b>
 <b class="fc">&nbsp;                uppercaseNext = true</b>
 &nbsp;            } else {
 <b class="fc">&nbsp;                if (uppercaseNext) {</b>
@@ -1008,13 +1009,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Resolves the serialized name for an annotated element, checking GhostName or kotlinx SerialName.
 &nbsp;     */
-&nbsp;    internal fun getSerialName(declaration: KSAnnotated): String {
+&nbsp;    private fun getSerialName(declaration: KSAnnotated): String {
 <b class="fc">&nbsp;        val annotations = declaration.annotations.toList()</b>
 &nbsp;
 &nbsp;        // 1. GhostName (Primary)
 <b class="fc">&nbsp;        val ghostName = annotations.find { it.shortName.asString() == C.GHOST_NAME }</b>
 <b class="fc">&nbsp;        if (ghostName != null) {</b>
-<b class="pc">&nbsp;            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME_ARG }</b>
+<b class="pc">&nbsp;            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME }</b>
 <b class="nc">&nbsp;                ?: ghostName.arguments.firstOrNull()</b>
 <b class="pc">&nbsp;            return arg?.value?.toString() ?: C.STR_EMPTY</b>
 &nbsp;        }
@@ -1051,7 +1052,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun isGhostType(type: KSType): Boolean =
 <b class="fc">&nbsp;        type.declaration.annotations.any {</b>
 <b class="fc">&nbsp;            val name = it.shortName.asString()</b>
-<b class="fc">&nbsp;            name == C.GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
+<b class="fc">&nbsp;            name == C.ANNOTATION_GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
 &nbsp;        }
 &nbsp;
 &nbsp;    companion object {
@@ -1090,7 +1091,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

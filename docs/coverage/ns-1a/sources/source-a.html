@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlHttpMessageConverter</title>
+  <title>GhostSerialization Coverage Report > GhostWebFluxAutoConfiguration</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.spring</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlHttpMessageConverter (com.ghost.serialization.spring)</h1>
+<h1>Coverage Summary for Class: GhostWebFluxAutoConfiguration (com.ghost.serialization.spring)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlHttpMessageConverter</td>
+  <td class="name">GhostWebFluxAutoConfiguration</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (9/9)
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    53.6%
+    100%
   </span>
   <span class="absValue">
-    (15/28)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    76.8%
-  </span>
-  <span class="absValue">
-    (43/56)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    78.9%
-  </span>
-  <span class="absValue">
-    (217/275)
+    (29/29)
   </span>
 </td>
 </tr>
@@ -102,117 +95,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
 &nbsp;
 &nbsp;import com.ghost.serialization.Ghost
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
-&nbsp;import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
-&nbsp;import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
-&nbsp;import org.springframework.http.HttpInputMessage
-&nbsp;import org.springframework.http.HttpOutputMessage
-&nbsp;import org.springframework.http.MediaType
-&nbsp;import org.springframework.http.converter.AbstractHttpMessageConverter
-&nbsp;import java.util.concurrent.ConcurrentHashMap
-&nbsp;import kotlin.reflect.KClass
+&nbsp;import org.springframework.boot.autoconfigure.AutoConfiguration
+&nbsp;import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
+&nbsp;import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
+&nbsp;import org.springframework.context.annotation.Configuration
+&nbsp;import org.springframework.http.codec.ServerCodecConfigurer
+&nbsp;import org.springframework.web.reactive.config.WebFluxConfigurer
 &nbsp;
-&nbsp;/**
-&nbsp; * [org.springframework.http.converter.HttpMessageConverter] for YAML-backed Ghost types
-&nbsp; * ([com.ghost.serialization.yaml.contract.GhostYamlSerializer]).
-&nbsp; */
-<b class="fc">&nbsp;class GhostYamlHttpMessageConverter : AbstractHttpMessageConverter&lt;Any&gt;(</b>
-<b class="fc">&nbsp;    MediaType(&quot;application&quot;, &quot;yaml&quot;),</b>
-<b class="fc">&nbsp;    MediaType(&quot;application&quot;, &quot;x-yaml&quot;),</b>
-<b class="fc">&nbsp;    MediaType(&quot;text&quot;, &quot;yaml&quot;),</b>
-&nbsp;) {
-<b class="fc">&nbsp;    private val supportsCache = ConcurrentHashMap&lt;Class&lt;*&gt;, Boolean&gt;()</b>
-<b class="fc">&nbsp;    private val serializerCache = ConcurrentHashMap&lt;Class&lt;*&gt;, GhostSerializer&lt;Any&gt;&gt;()</b>
-&nbsp;
-&nbsp;    override fun supports(clazz: Class&lt;*&gt;): Boolean {
-<b class="fc">&nbsp;        val cached = supportsCache[clazz]</b>
-<b class="fc">&nbsp;        if (cached != null) return cached</b>
-&nbsp;
-<b class="fc">&nbsp;        val result = if (isExcludedType(clazz)) {</b>
-<b class="fc">&nbsp;            false</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            val serializer = Ghost.getSerializer(clazz.kotlin)</b>
-<b class="fc">&nbsp;            serializer is GhostYamlSerializer&lt;*&gt;</b>
-&nbsp;        }
-<b class="fc">&nbsp;        supportsCache[clazz] = result</b>
-<b class="fc">&nbsp;        return result</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun isExcludedType(clazz: Class&lt;*&gt;): Boolean {
-<b class="fc">&nbsp;        return clazz == String::class.java ||</b>
-<b class="pc">&nbsp;                clazz == ByteArray::class.java ||</b>
-<b class="pc">&nbsp;                clazz.isPrimitive ||</b>
-<b class="fc">&nbsp;                clazz.name.startsWith(&quot;java.lang.&quot;)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun canWrite(mediaType: MediaType?): Boolean {
-<b class="pc">&nbsp;        if (mediaType == null || mediaType.isWildcardType || mediaType.isWildcardSubtype) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        return super.canWrite(mediaType)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun canRead(mediaType: MediaType?): Boolean {
-<b class="pc">&nbsp;        if (mediaType == null) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        return super.canRead(mediaType)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun readInternal(clazz: Class&lt;out Any&gt;, inputMessage: HttpInputMessage): Any {
-<b class="fc">&nbsp;        val bytes = inputMessage.body.readBytes()</b>
-<b class="fc">&nbsp;        val isStrict = GhostSpringConfig.strict.get()</b>
-<b class="fc">&nbsp;        val isCoerce = GhostSpringConfig.coerce.get()</b>
-&nbsp;
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        val targetClass = clazz as Class&lt;Any&gt;</b>
-<b class="fc">&nbsp;        val serializer = serializerCache.getOrPut(targetClass) {</b>
-<b class="pc">&nbsp;            val resolved = Ghost.getSerializer(targetClass.kotlin)</b>
-<b class="nc">&nbsp;                ?: Ghost.throwError(&quot;${Ghost.NOT_FOUND} ${targetClass.simpleName}&quot;)</b>
-<b class="pc">&nbsp;            if (resolved !is GhostYamlSerializer&lt;*&gt;) {</b>
-<b class="nc">&nbsp;                Ghost.throwError(&quot;Serializer for ${targetClass.simpleName} does not implement GhostYamlSerializer&quot;)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            resolved</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        val yamlSerializer = serializer as GhostYamlSerializer&lt;Any&gt;</b>
-&nbsp;
-<b class="fc">&nbsp;        return ghostYamlInternalUseFlatReader(bytes) { reader -&gt;</b>
-<b class="fc">&nbsp;            reader.strictMode = isStrict</b>
-<b class="pc">&nbsp;            if (isCoerce) {</b>
-<b class="nc">&nbsp;                reader.coerceStringsToNumbers = true</b>
-<b class="nc">&nbsp;                reader.coerceBooleans = true</b>
-&nbsp;            }
-<b class="fc">&nbsp;            yamlSerializer.deserialize(reader)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun writeInternal(t: Any, outputMessage: HttpOutputMessage) {
-<b class="fc">&nbsp;        val clazz = t.javaClass</b>
-<b class="fc">&nbsp;        val serializer = serializerCache.getOrPut(clazz) {</b>
-&nbsp;            @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="nc">&nbsp;            val resolved = Ghost.getSerializer(clazz.kotlin as KClass&lt;Any&gt;) as GhostSerializer&lt;Any&gt;?</b>
-<b class="nc">&nbsp;                ?: throw IllegalArgumentException(</b>
-<b class="nc">&nbsp;                    &quot;${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}&quot;</b>
-&nbsp;                )
-<b class="nc">&nbsp;            if (resolved !is GhostYamlSerializer&lt;*&gt;) {</b>
-<b class="nc">&nbsp;                throw IllegalArgumentException(</b>
-<b class="nc">&nbsp;                    &quot;Serializer for ${clazz.simpleName} does not implement GhostYamlSerializer&quot;</b>
-&nbsp;                )
-&nbsp;            }
-<b class="nc">&nbsp;            resolved</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        val yamlSerializer = serializer as GhostYamlSerializer&lt;Any&gt;</b>
-<b class="fc">&nbsp;        val bytes = ghostYamlInternalUseFlatWriter { writer -&gt;</b>
-<b class="fc">&nbsp;            yamlSerializer.serialize(writer, t)</b>
-<b class="fc">&nbsp;            writer.buffer.toByteArray()</b>
-&nbsp;        }
-<b class="fc">&nbsp;        outputMessage.body.write(bytes)</b>
-<b class="fc">&nbsp;        outputMessage.body.flush()</b>
+<b class="fc">&nbsp;@AutoConfiguration</b>
+&nbsp;@ConditionalOnClass(Ghost::class, WebFluxConfigurer::class)
+&nbsp;@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+&nbsp;@Configuration(proxyBeanMethods = false)
+&nbsp;open class GhostWebFluxAutoConfiguration : WebFluxConfigurer {
+&nbsp;    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
+<b class="fc">&nbsp;        with(configurer.customCodecs()) {</b>
+<b class="fc">&nbsp;            register(GhostReactiveDecoder())</b>
+<b class="fc">&nbsp;            register(GhostReactiveEncoder())</b>
+<b class="fc">&nbsp;            register(GhostYamlReactiveDecoder())</b>
+<b class="fc">&nbsp;            register(GhostYamlReactiveEncoder())</b>
+<b class="fc">&nbsp;        }</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -238,7 +139,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

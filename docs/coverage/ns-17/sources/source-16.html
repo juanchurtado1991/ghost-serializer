@@ -97,16 +97,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextLong
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Wrapper message for `int64`.
@@ -115,63 +106,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;@JvmInline
 <b class="fc">&nbsp;value class ProtoInt64Value(val value: Long)</b>
-&nbsp;
-&nbsp;// Helper to format a Long to String zero-allocation.
-&nbsp;// Operates in negative space throughout (never negates the full magnitude) so that
-&nbsp;// Long.MIN_VALUE round-trips correctly: -Long.MIN_VALUE overflows back to Long.MIN_VALUE
-&nbsp;// in two&#39;s complement, which previously corrupted the output to &quot;-0&quot; for that boundary value.
-&nbsp;internal fun formatLong(value: Long): String {
-&nbsp;    val outputBuffer = ByteArray(C.LONG_BUFFER_SIZE)
-&nbsp;    var bufferPosition = 0
-&nbsp;    val isNegative = value &lt; 0
-&nbsp;    if (isNegative) {
-&nbsp;        outputBuffer[bufferPosition++] = C.CHAR_HYPHEN.code.toByte()
-&nbsp;    }
-&nbsp;    var absoluteValue = if (isNegative) value else -value
-&nbsp;    var digitCount = 1
-&nbsp;    while (absoluteValue &lt;= -C.BASE_TEN) {
-&nbsp;        digitCount++
-&nbsp;        absoluteValue /= C.BASE_TEN
-&nbsp;    }
-&nbsp;    var divisor = 1L
-&nbsp;    var digitIndex = digitCount - 1
-&nbsp;    while (digitIndex &gt; 0) {
-&nbsp;        divisor *= C.BASE_TEN
-&nbsp;        digitIndex--
-&nbsp;    }
-&nbsp;    absoluteValue = if (isNegative) value else -value
-&nbsp;    while (divisor &gt; 0) {
-&nbsp;        val digit = (-(absoluteValue / divisor)).toInt()
-&nbsp;        outputBuffer[bufferPosition++] = (digit + C.ZERO_INT).toByte()
-&nbsp;        absoluteValue %= divisor
-&nbsp;        divisor /= C.BASE_TEN
-&nbsp;    }
-&nbsp;    return outputBuffer.decodeToString(0, bufferPosition)
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Serializer for [ProtoInt64Value].
-&nbsp; */
-&nbsp;object ProtoInt64ValueSerializer : GhostSerializer&lt;ProtoInt64Value&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_INT64_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value =
-&nbsp;        ProtoInt64Value(reader.nextLong())
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value =
-&nbsp;        ProtoInt64Value(reader.nextLong())
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -195,7 +129,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

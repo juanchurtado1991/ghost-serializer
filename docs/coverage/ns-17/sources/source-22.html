@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    57.1%
   </span>
   <span class="absValue">
-    (4/6)
+    (4/7)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    57.1%
   </span>
   <span class="absValue">
-    (4/6)
+    (4/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.5%
+    53.6%
   </span>
   <span class="absValue">
-    (15/24)
+    (15/28)
   </span>
 </td>
 </tr>
@@ -101,10 +101,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-&nbsp;import kotlin.jvm.JvmInline
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
@@ -116,9 +117,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `UInt64Value` is JSON string.
 &nbsp; */
-&nbsp;@JvmInline
-&nbsp;value class ProtoUInt64Value(val value: ULong)
-&nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoUInt64Value].
 &nbsp; */
@@ -145,6 +143,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoUInt64Value =
 <b class="fc">&nbsp;        ProtoUInt64Value(reader.nextString().toULong())</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoUInt64Value =
+<b class="nc">&nbsp;        ProtoUInt64Value(reader.nextString().toULong())</b>
 &nbsp;}
 </code>
 </pre>
@@ -169,7 +170,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

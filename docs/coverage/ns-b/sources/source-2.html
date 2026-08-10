@@ -142,6 +142,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.ghostInternalEncodeAndDrainTo
 &nbsp;import com.ghost.serialization.ghostInternalEncodeWithWriter
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.parser.common.withPreparedUtf8Json
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -200,14 +201,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Serializes [value] using the streaming [writer] (segmented [okio.Buffer]
+&nbsp;     * Serializes [value] using the streaming [writer] (segmented `okio.Buffer`
 &nbsp;     * under the hood). Used by `Ghost.serialize(sink, value)`.
 &nbsp;     */
 &nbsp;    fun serialize(writer: GhostJsonWriter, value: T)
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Serializes [value] using the in-memory [writer] (contiguous
-&nbsp;     * [com.ghost.serialization.writer.bytes.FlatByteArrayWriter] under the hood).
+&nbsp;     * `FlatByteArrayWriter` under the hood).
 &nbsp;     * Used by `Ghost.encodeToBytes` (and sink drain / discard) to bypass Okio
 &nbsp;     * segment overhead on the synchronous in-memory byte encode path.
 &nbsp;     */
@@ -215,7 +216,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Serializes [value] using the in-memory text [writer] (contiguous
-&nbsp;     * [com.ghost.serialization.writer.strings.FlatCharArrayWriter] under the hood).
+&nbsp;     * `FlatCharArrayWriter` under the hood).
 &nbsp;     * Used by `Ghost.encodeToString` to write characters directly.
 &nbsp;     */
 <b class="nc">&nbsp;    fun serialize(writer: GhostJsonStringWriter, value: T) {</b>
@@ -238,7 +239,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /** Deserializes a new instance of [T] using a specialized streaming [reader]. */
 &nbsp;    fun deserialize(reader: GhostJsonReader): T
 &nbsp;
-&nbsp;    /** Deserializes a new instance of [T] using a specialized flat in-memory [reader]. */
+&nbsp;    /**
+&nbsp;     * Deserializes a new instance of [T] using a specialized flat in-memory [reader].
+&nbsp;     *
+&nbsp;     * **Compatibility bridge:** the default wraps [reader] in a streaming [GhostJsonReader]
+&nbsp;     * (allocates, loses flat monomorphy). KSP-generated serializers always override this.
+&nbsp;     * Hand-written serializers on the hot path must override it too.
+&nbsp;     */
 <b class="nc">&nbsp;    fun deserialize(reader: GhostJsonFlatReader): T {</b>
 <b class="fc">&nbsp;        val delegatedReader = GhostJsonReader(reader.rawData).also {</b>
 <b class="fc">&nbsp;            it.position = reader.position</b>
@@ -251,11 +258,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        }</b>
 <b class="fc">&nbsp;        val result = deserialize(delegatedReader)</b>
 <b class="fc">&nbsp;        reader.position = delegatedReader.position</b>
-<b class="fc">&nbsp;        reader.nextTokenByte = -1</b>
+<b class="fc">&nbsp;        reader.nextTokenByte = C.RESET_TOKEN_BYTE</b>
 <b class="fc">&nbsp;        return result</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /** Deserializes a new instance of [T] using a specialized string [reader]. */
+&nbsp;    /**
+&nbsp;     * Deserializes a new instance of [T] using a specialized string [reader].
+&nbsp;     *
+&nbsp;     * **Compatibility bridge:** the default UTF-8-encodes via [GhostJsonStringReader.ensureUtf8Bytes]
+&nbsp;     * and re-enters [deserialize] on a [GhostJsonFlatReader]. Override for `textChannel` hot paths
+&nbsp;     * (WKT wrappers and generated string dispatch already do).
+&nbsp;     */
 <b class="nc">&nbsp;    fun deserialize(reader: GhostJsonStringReader): T {</b>
 <b class="fc">&nbsp;        val bytes = reader.ensureUtf8Bytes()</b>
 <b class="fc">&nbsp;        val flatReader = GhostJsonFlatReader(bytes).also {</b>
@@ -270,7 +283,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        }</b>
 <b class="fc">&nbsp;        val result = deserialize(flatReader)</b>
 <b class="fc">&nbsp;        reader.position = reader.bytePositionToCharPosition(flatReader.position)</b>
-<b class="fc">&nbsp;        reader.nextTokenByte = -1</b>
+<b class="fc">&nbsp;        reader.nextTokenByte = C.RESET_TOKEN_BYTE</b>
 <b class="fc">&nbsp;        return result</b>
 &nbsp;    }
 &nbsp;
@@ -304,7 +317,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

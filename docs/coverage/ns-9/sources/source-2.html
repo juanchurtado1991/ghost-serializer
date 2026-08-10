@@ -1,0 +1,179 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > TestSourceSetDetection</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.ksp</a>
+</div>
+
+<h1>Coverage Summary for Class: TestSourceSetDetection (com.ghost.serialization.compiler.ksp)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TestSourceSetDetection</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (53/53)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.ksp
+&nbsp;
+&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Heuristics / options for deciding whether annotated sources belong to a test compilation
+&nbsp; * so the default module registry can take a `_Test` suffix.
+&nbsp; *
+&nbsp; * **Why this exists:** KSP does not expose a stable `isTest` / source-set API on
+&nbsp; * [com.google.devtools.ksp.symbol.KSFile]. Main and test compilations are separate processor
+&nbsp; * runs, but when `@GhostSerialization` models live under test roots and
+&nbsp; * [C.OPTION_MODULE_NAME] is unset (Default), production and test would both emit
+&nbsp; * `GhostModuleRegistry_Default` without a distinguishing suffix.
+&nbsp; *
+&nbsp; * **Preference order:**
+&nbsp; * 1. Explicit [C.OPTION_IS_TEST] (`&quot;true&quot;` / `&quot;false&quot;`) when present.
+&nbsp; * 2. Path sniffing for common Gradle layouts (`src/test`, `src/androidTest`, `src/testKsp`).
+&nbsp; *
+&nbsp; * Path sniffing is intentionally narrow: custom source-set directory names will not match;
+&nbsp; * pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) in those layouts.
+&nbsp; */
+&nbsp;internal object TestSourceSetDetection {
+&nbsp;
+<b class="fc">&nbsp;    private val testPathMarkers = listOf(</b>
+<b class="fc">&nbsp;        C.STR_SRC_TEST,</b>
+<b class="fc">&nbsp;        C.STR_SRC_ANDROID_TEST,</b>
+<b class="fc">&nbsp;        C.STR_SRC_TEST_KSP,</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @param options KSP processor options (may include [C.OPTION_IS_TEST]).
+&nbsp;     * @param filePaths Absolute or project-relative paths of originating [com.google.devtools.ksp.symbol.KSFile]s.
+&nbsp;     */
+&nbsp;    fun isTestCompilation(
+&nbsp;        options: Map&lt;String, String&gt;,
+&nbsp;        filePaths: Iterable&lt;String&gt;,
+&nbsp;    ): Boolean {
+<b class="fc">&nbsp;        options[C.OPTION_IS_TEST]?.let { raw -&gt;</b>
+<b class="fc">&nbsp;            return raw.equals(C.STR_TRUE, ignoreCase = true)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return filePaths.any { pathLooksLikeTestSource(it) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns true when [filePath] matches a known test source-set directory segment.
+&nbsp;     * Not a substitute for a real source-set API — see class KDoc.
+&nbsp;     */
+&nbsp;    fun pathLooksLikeTestSource(filePath: String): Boolean {
+<b class="fc">&nbsp;        return testPathMarkers.any { marker -&gt; filePath.contains(marker) }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
+</div>
+</body>
+</html>

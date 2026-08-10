@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlTagSubsystemKt</title>
+  <title>GhostSerialization Coverage Report > GhostYamlCursorTraversalKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlTagSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: GhostYamlCursorTraversalKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlTagSubsystemKt</td>
+  <td class="name">GhostYamlCursorTraversalKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    72.7%
   </span>
   <span class="absValue">
-    (2/2)
+    (24/33)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63.9%
+    41.3%
   </span>
   <span class="absValue">
-    (76/119)
+    (43/104)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.9%
+    67.6%
   </span>
   <span class="absValue">
-    (77/82)
+    (140/207)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.3%
+    63.4%
   </span>
   <span class="absValue">
-    (515/535)
+    (498/785)
   </span>
 </td>
 </tr>
@@ -101,166 +101,389 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
+&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
+&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
-&nbsp;internal object GhostYamlTags {
-&nbsp;    const val TAG_NONE = 0
-&nbsp;    const val TAG_STR = 1
-&nbsp;    const val TAG_INT = 2
-&nbsp;    const val TAG_FLOAT = 3
-&nbsp;    const val TAG_BOOL = 4
-&nbsp;    const val TAG_NULL = 5
-&nbsp;    const val TAG_SEQ = 6
-&nbsp;    const val TAG_MAP = 7
+&nbsp;/**
+&nbsp; * Implementation behind [GhostYamlFlatReader]&#39;s `JsonReader`-compatible cursor traversal API
+&nbsp; * (`beginObject`/`endObject`/`nextString`/`nextInt`/etc.) — a second-phase facade that walks the
+&nbsp; * already-fully-parsed in-memory `Map`/`List` AST built by [GhostYamlFlatReader.readDocument] via
+&nbsp; * plain iterators. Zero byte-level scanning happens here, and nothing here calls back into the
+&nbsp; * byte-level parser (`readValue`, `readBlockMapping`, ...).
+&nbsp; *
+&nbsp; * Every method in [GhostYamlFlatReader] itself stays a thin one-line delegate to the identically-
+&nbsp; * named `xxxImpl` function here — deliberately, not following the plain extension-function pattern
+&nbsp; * the other subsystems use: `beginObject`/`nextString`/etc. are public members called by
+&nbsp; * KSP-generated `deserialize()` bodies that may live in a *different Gradle module&#39;s package*
+&nbsp; * (see `ghost-compiler`&#39;s `GhostEmitterConstants`), and Kotlin resolves true class members via the
+&nbsp; * receiver type with zero imports — converting them to extension functions directly would require
+&nbsp; * every downstream consumer&#39;s generated code to gain a new import the compiler doesn&#39;t emit today.
+&nbsp; * The state fields these functions manipulate (`traversalStack`, `currentMap`, `nextValue`, etc.)
+&nbsp; * necessarily stay declared on `GhostYamlFlatReader` itself — Kotlin classes can&#39;t span files, and
+&nbsp; * `readList`/`readSet`/`readMap` are `public inline fun` whose `@PublishedApi internal` field
+&nbsp; * access has to resolve against wherever the class body lives.
+&nbsp; */
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.ensureRootParsed() {
+<b class="fc">&nbsp;    if (!rootParsed) {</b>
+<b class="fc">&nbsp;        rootObject = readDocument()</b>
+<b class="fc">&nbsp;        nextValue = rootObject</b>
+<b class="fc">&nbsp;        rootParsed = true</b>
+&nbsp;    }
 &nbsp;}
 &nbsp;
-&nbsp;internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
-<b class="fc">&nbsp;    position++ // consume &#39;!&#39;</b>
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
-<b class="pc">&nbsp;    if (position &gt;= localLimit) yamlError(&quot;Unexpected end of input after tag indicator&quot;)</b>
+&nbsp;/** Called once per document by [GhostYamlFlatReader.readAllDocuments] (typed overload). */
+&nbsp;internal fun GhostYamlFlatReader.prepareRootForCurrentDocument() {
+<b class="fc">&nbsp;    traversalStack.clear()</b>
+<b class="fc">&nbsp;    currentMap = null</b>
+<b class="fc">&nbsp;    mapIterator = null</b>
+<b class="fc">&nbsp;    currentEntry = null</b>
+<b class="fc">&nbsp;    currentList = null</b>
+<b class="fc">&nbsp;    listIterator = null</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    rootObject = readValue(indent = C.INDENT_UNSET, inFlow = false)</b>
+<b class="fc">&nbsp;    nextValue = rootObject</b>
+<b class="fc">&nbsp;    rootParsed = true</b>
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;    var isDoubleExcl = false</b>
-<b class="fc">&nbsp;    if (localRawData[position] == C.EXCLAMATION_BYTE) {</b>
-<b class="fc">&nbsp;        isDoubleExcl = true</b>
-<b class="fc">&nbsp;        position++</b>
-&nbsp;    }
+&nbsp;/** Called once per document by [GhostYamlFlatReader.readAllDocuments] (typed overload). */
+&nbsp;internal fun GhostYamlFlatReader.clearAfterDocument() {
+<b class="fc">&nbsp;    traversalStack.clear()</b>
+<b class="fc">&nbsp;    currentMap = null</b>
+<b class="fc">&nbsp;    mapIterator = null</b>
+<b class="fc">&nbsp;    currentEntry = null</b>
+<b class="fc">&nbsp;    currentList = null</b>
+<b class="fc">&nbsp;    listIterator = null</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    rootParsed = false</b>
+<b class="fc">&nbsp;    rootObject = null</b>
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;    var resolvedTag: String? = null</b>
-<b class="fc">&nbsp;    var tagType = GhostYamlTags.TAG_NONE</b>
+&nbsp;internal fun GhostYamlFlatReader.beginObjectImpl() {
+<b class="fc">&nbsp;    ensureRootParsed()</b>
+<b class="fc">&nbsp;    val map =</b>
+<b class="fc">&nbsp;        nextValue as? Map&lt;*, *&gt; ?: throw GhostYamlException(&quot;${C.ERR_EXPECTED_MAP_PREFIX}$nextValue&quot;)</b>
 &nbsp;
-<b class="fc">&nbsp;    if (isDoubleExcl) {</b>
-<b class="fc">&nbsp;        val tagStart = position</b>
-<b class="pc">&nbsp;        while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;            val currByte = localRawData[position]</b>
-<b class="pc">&nbsp;            if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val tagLen = position - tagStart</b>
-<b class="pc">&nbsp;        if (tagLen &gt; 0) {</b>
-<b class="fc">&nbsp;            tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)</b>
-&nbsp;        }
+<b class="fc">&nbsp;    traversalStack.add(</b>
+<b class="fc">&nbsp;        GhostYamlFlatReader.StateFrame(</b>
+<b class="fc">&nbsp;            currentMap,</b>
+<b class="fc">&nbsp;            mapIterator,</b>
+<b class="fc">&nbsp;            currentEntry,</b>
+<b class="fc">&nbsp;            currentList,</b>
+<b class="fc">&nbsp;            listIterator</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;    val typedMap = map as Map&lt;String, Any?&gt;</b>
+<b class="fc">&nbsp;    currentMap = typedMap</b>
+<b class="fc">&nbsp;    mapIterator = typedMap.entries.iterator()</b>
+<b class="fc">&nbsp;    currentEntry = null</b>
+<b class="fc">&nbsp;    currentList = null</b>
+<b class="fc">&nbsp;    listIterator = null</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.endObjectImpl() {
+<b class="pc">&nbsp;    if (traversalStack.isNotEmpty()) {</b>
+<b class="fc">&nbsp;        val frame = traversalStack.removeAt(traversalStack.size - 1)</b>
+<b class="fc">&nbsp;        currentMap = frame.map</b>
+<b class="fc">&nbsp;        mapIterator = frame.mapIterator</b>
+<b class="fc">&nbsp;        currentEntry = frame.entry</b>
+<b class="fc">&nbsp;        currentList = frame.list</b>
+<b class="fc">&nbsp;        listIterator = frame.listIterator</b>
 &nbsp;    } else {
-&nbsp;        // Custom tag
-<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LT_BYTE) {</b>
-&nbsp;            // Verbose tag like !&lt;Circle&gt;
-<b class="fc">&nbsp;            position++ // consume &#39;&lt;&#39;</b>
-<b class="fc">&nbsp;            val tagStart = position</b>
-<b class="pc">&nbsp;            while (position &lt; localLimit &amp;&amp; localRawData[position] != C.GT_BYTE) {</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            val tagLen = position - tagStart</b>
-<b class="fc">&nbsp;            resolvedTag = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
-<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.GT_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;&gt;&#39;</b>
-&nbsp;            }
-&nbsp;        } else {
-&nbsp;            // Short tag like !Circle or !m!Circle
-<b class="fc">&nbsp;            val tagStart = position</b>
-<b class="pc">&nbsp;            while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;                val currByte = localRawData[position]</b>
-<b class="pc">&nbsp;                if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            val tagLen = position - tagStart</b>
-<b class="pc">&nbsp;            if (tagLen &gt; 0) {</b>
-<b class="fc">&nbsp;                val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
-&nbsp;                // Check for namespace prefix mapping (%TAG directive)
-<b class="fc">&nbsp;                val exclamationIdx = rawTagName.indexOf(&#39;!&#39;)</b>
-<b class="pc">&nbsp;                if (exclamationIdx != -1) {</b>
-<b class="fc">&nbsp;                    val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)</b>
-<b class="fc">&nbsp;                    val suffix = rawTagName.substring(exclamationIdx + 1)</b>
-<b class="fc">&nbsp;                    val prefix = tagDirectives[handle]</b>
-<b class="pc">&nbsp;                    resolvedTag = if (prefix != null) {</b>
-<b class="fc">&nbsp;                        prefix + suffix</b>
-&nbsp;                    } else {
-<b class="nc">&nbsp;                        rawTagName</b>
-&nbsp;                    }
-&nbsp;                } else {
-<b class="nc">&nbsp;                    resolvedTag = rawTagName</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
+<b class="nc">&nbsp;        currentMap = null</b>
+<b class="nc">&nbsp;        mapIterator = null</b>
+<b class="nc">&nbsp;        currentEntry = null</b>
+<b class="nc">&nbsp;        currentList = null</b>
+<b class="nc">&nbsp;        listIterator = null</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    // Skip inline space after tag
-<b class="fc">&nbsp;    skipInlineWhitespace()</b>
-&nbsp;
-&nbsp;    // If value is on next line, advance and use next line&#39;s indentation
-<b class="fc">&nbsp;    val valueIndent =</b>
-<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {</b>
-<b class="fc">&nbsp;            advanceLine()</b>
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;            currentIndent</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            indent</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;    val value = when (tagType) {</b>
-&nbsp;        GhostYamlTags.TAG_SEQ -&gt; {
-<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACKET_BYTE) {</b>
-<b class="nc">&nbsp;                readFlowSequence()</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;                readBlockSequence(currentIndent)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        GhostYamlTags.TAG_MAP -&gt; {
-<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACE_BYTE) {</b>
-<b class="nc">&nbsp;                readFlowMapping()</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;                readBlockMapping(currentIndent)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        else -&gt; {
-<b class="fc">&nbsp;            readValue(valueIndent, inFlow = false, expectedTag = tagType)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    // Inject tag into the Map if it&#39;s a custom tag and value is a Map
-<b class="pc">&nbsp;    if (resolvedTag != null &amp;&amp; value is MutableMap&lt;*, *&gt;) {</b>
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        val map = value as MutableMap&lt;String, Any?&gt;</b>
-<b class="fc">&nbsp;        map[C.STR_TAG_KEY] = resolvedTag</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return value</b>
+<b class="fc">&nbsp;    nextValue = null</b>
 &nbsp;}
 &nbsp;
-&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(
-&nbsp;    localRawData: ByteArray,
-&nbsp;    start: Int,
-&nbsp;    len: Int
-&nbsp;): Int {
-<b class="pc">&nbsp;    if (len == 3) {</b>
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_T_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_R_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_STR</b>
+&nbsp;internal fun GhostYamlFlatReader.selectNameAndConsumeImpl(options: JsonReaderOptions): Int {
+<b class="pc">&nbsp;    val iterator = mapIterator ?: return tokenEndObject</b>
+<b class="fc">&nbsp;    if (!iterator.hasNext()) {</b>
+<b class="fc">&nbsp;        return tokenEndObject</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val entry = iterator.next()</b>
+<b class="fc">&nbsp;    currentEntry = entry</b>
+<b class="fc">&nbsp;    nextValue = entry.value</b>
+&nbsp;
+<b class="fc">&nbsp;    val index = options.findOptionIndex(entry.key)</b>
+<b class="pc">&nbsp;    if (index &gt;= 0) {</b>
+<b class="fc">&nbsp;        return index</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return tokenUnknownName</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.selectStringImpl(options: JsonReaderOptions): Int {
+<b class="nc">&nbsp;    val strValue = nextString()</b>
+<b class="nc">&nbsp;    val index = options.findOptionIndex(strValue)</b>
+<b class="nc">&nbsp;    if (index &gt;= 0) {</b>
+<b class="nc">&nbsp;        return index</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return tokenEndObject</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.skipValueImpl() {
+<b class="nc">&nbsp;    nextValue = null</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.isNextNullValueImpl(): Boolean {
+<b class="fc">&nbsp;    ensureRootParsed()</b>
+<b class="fc">&nbsp;    return nextValue == null</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.consumeNullImpl() {
+<b class="fc">&nbsp;    nextValue = null</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a YAML string, or `null` when the next value is YAML null. */
+&nbsp;internal fun GhostYamlFlatReader.nextStringOrNullImpl(): String? {
+<b class="pc">&nbsp;    if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;        consumeNull()</b>
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return nextString()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a YAML int, or `null` when the next value is YAML null. */
+&nbsp;internal fun GhostYamlFlatReader.nextIntOrNullImpl(): Int? {
+<b class="nc">&nbsp;    if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;        consumeNull()</b>
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return nextInt()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a YAML long, or `null` when the next value is YAML null. */
+&nbsp;internal fun GhostYamlFlatReader.nextLongOrNullImpl(): Long? {
+<b class="nc">&nbsp;    if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;        consumeNull()</b>
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return nextLong()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a YAML boolean, or `null` when the next value is YAML null. */
+&nbsp;internal fun GhostYamlFlatReader.nextBooleanOrNullImpl(): Boolean? {
+<b class="nc">&nbsp;    if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;        consumeNull()</b>
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return nextBoolean()</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextIntImpl(): Int {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        return value.toInt()</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (value is String) {</b>
+<b class="pc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            return value.toIntOrNull() ?: 0</b>
 &nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_I_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_T_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_INT</b>
+<b class="fc">&nbsp;        return value.toInt()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_INT_PREFIX}$value&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextLongImpl(): Long {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="pc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        return value.toLong()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value is String) {</b>
+<b class="nc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            return value.toLongOrNull() ?: 0L</b>
 &nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_E_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_Q_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_SEQ</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_M_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_P_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_MAP</b>
-&nbsp;        }
-&nbsp;    } else if (len == 4) {
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_B_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_BOOL</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_U_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_NULL</b>
-&nbsp;        }
-&nbsp;    } else if (len == 5) {
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_F_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 4] == C.CHAR_T_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_FLOAT</b>
+<b class="nc">&nbsp;        return value.toLong()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_LONG_PREFIX}$value&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
+<b class="nc">&nbsp;    val previous = coerceStringsToNumbers</b>
+<b class="nc">&nbsp;    coerceStringsToNumbers = true</b>
+&nbsp;    return try {
+<b class="nc">&nbsp;        nextString().toULong()</b>
+&nbsp;    } finally {
+<b class="nc">&nbsp;        coerceStringsToNumbers = previous</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Plain YAML scalar `ULong` — accepts numeric or string scalars (full range via decimal string). */
+&nbsp;internal fun GhostYamlFlatReader.nextULongImpl(): ULong {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    when (value) {</b>
+<b class="fc">&nbsp;        is Number -&gt; return value.toLong().toULong()</b>
+<b class="pc">&nbsp;        is String -&gt; {</b>
+<b class="pc">&nbsp;            if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                return value.toULongOrNull() ?: 0uL</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return value.toULong()</b>
 &nbsp;        }
 &nbsp;    }
-<b class="nc">&nbsp;    return GhostYamlTags.TAG_NONE</b>
+<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_ULONG_PREFIX}$value&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? {
+<b class="pc">&nbsp;    if (isNextNullValue()) {</b>
+<b class="fc">&nbsp;        consumeNull()</b>
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return nextULong()</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextDoubleImpl(): Double {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="pc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        return value.toDouble()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value is String) {</b>
+<b class="nc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            return value.toDoubleOrNull() ?: 0.0</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return value.toDouble()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_DOUBLE_PREFIX}$value&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="pc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        return value.toFloat()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value is String) {</b>
+<b class="nc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            return value.toFloatOrNull() ?: 0.0f</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return value.toFloat()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_FLOAT_PREFIX}$value&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextBooleanImpl(): Boolean {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    if (value is Boolean) {</b>
+<b class="fc">&nbsp;        return value</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (value is String) {</b>
+<b class="pc">&nbsp;        if (coerceBooleans) {</b>
+<b class="nc">&nbsp;            return value.lowercase() == C.STR_TRUE</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return value.toBoolean()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_BOOLEAN_PREFIX}$value&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
+&nbsp;internal fun GhostYamlFlatReader.nextCharImpl(): Char {
+<b class="nc">&nbsp;    val text = nextString()</b>
+<b class="nc">&nbsp;    if (text.length != 1) {</b>
+<b class="nc">&nbsp;        throw GhostYamlException(&quot;${C.ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX}${text.length}&quot;)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return text[0]</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextStringImpl(): String {
+<b class="fc">&nbsp;    val value = nextValue</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+<b class="pc">&nbsp;    if (value == null) return &quot;&quot;</b>
+<b class="fc">&nbsp;    return value.toString()</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.beginArrayImpl() {
+<b class="fc">&nbsp;    ensureRootParsed()</b>
+<b class="pc">&nbsp;    val list = nextValue as? List&lt;*&gt;</b>
+<b class="nc">&nbsp;        ?: throw GhostYamlException(&quot;${C.ERR_EXPECTED_LIST_PREFIX}$nextValue&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;    traversalStack.add(</b>
+<b class="fc">&nbsp;        GhostYamlFlatReader.StateFrame(</b>
+<b class="fc">&nbsp;            currentMap,</b>
+<b class="fc">&nbsp;            mapIterator,</b>
+<b class="fc">&nbsp;            currentEntry,</b>
+<b class="fc">&nbsp;            currentList,</b>
+<b class="fc">&nbsp;            listIterator</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    currentList = list</b>
+<b class="fc">&nbsp;    listIterator = list.iterator()</b>
+<b class="fc">&nbsp;    currentMap = null</b>
+<b class="fc">&nbsp;    mapIterator = null</b>
+<b class="fc">&nbsp;    currentEntry = null</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.endArrayImpl() {
+<b class="pc">&nbsp;    if (traversalStack.isNotEmpty()) {</b>
+<b class="fc">&nbsp;        val frame = traversalStack.removeAt(traversalStack.size - 1)</b>
+<b class="fc">&nbsp;        currentMap = frame.map</b>
+<b class="fc">&nbsp;        mapIterator = frame.mapIterator</b>
+<b class="fc">&nbsp;        currentEntry = frame.entry</b>
+<b class="fc">&nbsp;        currentList = frame.list</b>
+<b class="fc">&nbsp;        listIterator = frame.listIterator</b>
+&nbsp;    } else {
+<b class="nc">&nbsp;        currentMap = null</b>
+<b class="nc">&nbsp;        mapIterator = null</b>
+<b class="nc">&nbsp;        currentEntry = null</b>
+<b class="nc">&nbsp;        currentList = null</b>
+<b class="nc">&nbsp;        listIterator = null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    nextValue = null</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.hasNextImpl(): Boolean {
+<b class="pc">&nbsp;    return mapIterator?.hasNext() == true</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.hasNextArrayElementImpl(): Boolean {
+<b class="pc">&nbsp;    val iterator = listIterator ?: return false</b>
+<b class="fc">&nbsp;    if (iterator.hasNext()) {</b>
+<b class="fc">&nbsp;        nextValue = iterator.next()</b>
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return false</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.isNextCloseArrayImpl(): Boolean {
+<b class="fc">&nbsp;    val iterator = listIterator</b>
+<b class="pc">&nbsp;    return iterator == null || !iterator.hasNext()</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.nextKeyImpl(): String? {
+<b class="pc">&nbsp;    val iterator = mapIterator ?: return null</b>
+<b class="pc">&nbsp;    if (iterator.hasNext()) {</b>
+<b class="fc">&nbsp;        val entry = iterator.next()</b>
+<b class="fc">&nbsp;        currentEntry = entry</b>
+<b class="fc">&nbsp;        nextValue = entry.value</b>
+<b class="fc">&nbsp;        return entry.key</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return null</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.consumeKeySeparatorImpl() {
+&nbsp;    // No-op for AST traversal
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.throwErrorImpl(message: String): Nothing {
+<b class="nc">&nbsp;    throw GhostYamlException(message)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.peekStringFieldImpl(name: String): String? {
+<b class="nc">&nbsp;    ensureRootParsed()</b>
+<b class="nc">&nbsp;    val currentObj = nextValue as? Map&lt;*, *&gt; ?: return null</b>
+<b class="nc">&nbsp;    return currentObj[name]?.toString()</b>
 &nbsp;}
 </code>
 </pre>
@@ -285,7 +508,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

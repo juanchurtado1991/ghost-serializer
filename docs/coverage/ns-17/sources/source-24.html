@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    71.4%
   </span>
   <span class="absValue">
-    (5/5)
+    (5/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.2%
+    52.4%
   </span>
   <span class="absValue">
-    (32/42)
+    (33/63)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    79.7%
+    53.4%
   </span>
   <span class="absValue">
-    (47/59)
+    (47/88)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.2%
+    52.2%
   </span>
   <span class="absValue">
-    (259/331)
+    (257/492)
   </span>
 </td>
 </tr>
@@ -114,19 +114,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
 &nbsp;import com.ghost.serialization.parser.streaming.readList
 &nbsp;import com.ghost.serialization.parser.streaming.readMap
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.consumeNull
+&nbsp;import com.ghost.serialization.parser.strings.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.strings.nextBoolean
+&nbsp;import com.ghost.serialization.parser.strings.nextDouble
+&nbsp;import com.ghost.serialization.parser.strings.nextString
+&nbsp;import com.ghost.serialization.parser.strings.readList
+&nbsp;import com.ghost.serialization.parser.strings.readMap
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
-&nbsp;
-&nbsp;sealed class ProtoValue {
-&nbsp;    object Null : ProtoValue()
-&nbsp;    data class Number(val value: Double) : ProtoValue()
-&nbsp;    data class Str(val value: String) : ProtoValue()
-&nbsp;    data class Bool(val value: Boolean) : ProtoValue()
-&nbsp;    data class Struct(val value: Map&lt;String, ProtoValue&gt;) : ProtoValue()
-&nbsp;    data class List(val value: kotlin.collections.List&lt;ProtoValue&gt;) : ProtoValue()
-&nbsp;}
 &nbsp;
 &nbsp;object ProtoValueSerializer : GhostSerializer&lt;ProtoValue&gt; {
 <b class="fc">&nbsp;    override val typeName: String get() = C.WKT_VALUE_TYPE</b>
@@ -181,6 +181,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoValue) {
+<b class="nc">&nbsp;        when (value) {</b>
+<b class="nc">&nbsp;            is ProtoValue.Null -&gt; writer.nullValue()</b>
+<b class="nc">&nbsp;            is ProtoValue.Number -&gt; writer.value(value.value)</b>
+<b class="nc">&nbsp;            is ProtoValue.Str -&gt; writer.value(value.value)</b>
+<b class="nc">&nbsp;            is ProtoValue.Bool -&gt; writer.value(value.value)</b>
+<b class="nc">&nbsp;            is ProtoValue.Struct -&gt; {</b>
+<b class="nc">&nbsp;                writer.beginObject()</b>
+<b class="nc">&nbsp;                for ((mapKey, mapValue) in value.value) {</b>
+<b class="nc">&nbsp;                    writer.name(mapKey)</b>
+<b class="nc">&nbsp;                    serialize(writer, mapValue)</b>
+&nbsp;                }
+<b class="nc">&nbsp;                writer.endObject()</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            is ProtoValue.List -&gt; {</b>
+<b class="nc">&nbsp;                writer.beginArray()</b>
+<b class="nc">&nbsp;                for (listItem in value.value) {</b>
+<b class="nc">&nbsp;                    serialize(writer, listItem)</b>
+&nbsp;                }
+<b class="nc">&nbsp;                writer.endArray()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoValue {
 <b class="pc">&nbsp;        if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;            reader.consumeNull()</b>
@@ -220,6 +245,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            else -&gt; ProtoValue.Number(reader.nextDouble())</b>
 &nbsp;        }
 &nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoValue {
+<b class="nc">&nbsp;        if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;            reader.consumeNull()</b>
+<b class="nc">&nbsp;            return ProtoValue.Null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        val token = reader.peekNextToken()</b>
+<b class="nc">&nbsp;        return when (token) {</b>
+<b class="nc">&nbsp;            C.QUOTE_INT -&gt; ProtoValue.Str(reader.nextString())</b>
+<b class="nc">&nbsp;            C.TRUE_CHAR_INT, C.FALSE_CHAR_INT -&gt; ProtoValue.Bool(reader.nextBoolean())</b>
+<b class="nc">&nbsp;            C.OPEN_ARR_INT -&gt; ProtoValue.List(reader.readList { deserialize(reader) })</b>
+<b class="nc">&nbsp;            C.OPEN_OBJ_INT -&gt; ProtoValue.Struct(</b>
+<b class="nc">&nbsp;                reader.readMap(</b>
+<b class="nc">&nbsp;                    { reader.nextString() },</b>
+<b class="nc">&nbsp;                    { deserialize(reader) })</b>
+&nbsp;            )
+&nbsp;
+<b class="nc">&nbsp;            else -&gt; ProtoValue.Number(reader.nextDouble())</b>
+&nbsp;        }
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -244,7 +289,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80%
+    57.1%
   </span>
   <span class="absValue">
-    (4/5)
+    (4/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    66.7%
   </span>
   <span class="absValue">
-    (12/12)
+    (12/18)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97%
+    65.3%
   </span>
   <span class="absValue">
-    (32/33)
+    (32/49)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    99.3%
+    66.3%
   </span>
   <span class="absValue">
-    (138/139)
+    (138/208)
   </span>
 </td>
 </tr>
@@ -112,18 +112,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.consumeKeySeparator
 &nbsp;import com.ghost.serialization.parser.streaming.endObject
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.beginObject
+&nbsp;import com.ghost.serialization.parser.strings.consumeArraySeparator
+&nbsp;import com.ghost.serialization.parser.strings.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.strings.endObject
+&nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
-&nbsp;
-&nbsp;/**
-&nbsp; * Type alias for `Struct` message.
-&nbsp; *
-&nbsp; * `Struct` represents a structured data value, consisting of fields
-&nbsp; * which map to dynamically typed values.
-&nbsp; */
-&nbsp;typealias ProtoStruct = Map&lt;String, ProtoValue&gt;
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoStruct].
@@ -147,6 +146,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            ProtoValueSerializer.serialize(writer, mapValue)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoStruct) {
+<b class="nc">&nbsp;        writer.beginObject()</b>
+<b class="nc">&nbsp;        for ((mapKey, mapValue) in value) {</b>
+<b class="nc">&nbsp;            writer.name(mapKey)</b>
+<b class="nc">&nbsp;            ProtoValueSerializer.serialize(writer, mapValue)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        writer.endObject()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoStruct {
@@ -180,6 +188,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        reader.endObject()</b>
 <b class="fc">&nbsp;        return map</b>
 &nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoStruct {
+<b class="nc">&nbsp;        val map = mutableMapOf&lt;String, ProtoValue&gt;()</b>
+<b class="nc">&nbsp;        reader.beginObject()</b>
+<b class="nc">&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {</b>
+<b class="nc">&nbsp;            val key = reader.nextString()</b>
+<b class="nc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="nc">&nbsp;            val value = ProtoValueSerializer.deserialize(reader)</b>
+<b class="nc">&nbsp;            map[key] = value</b>
+<b class="nc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
+<b class="nc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        reader.endObject()</b>
+<b class="nc">&nbsp;        return map</b>
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -204,7 +228,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

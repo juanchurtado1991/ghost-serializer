@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.1%
+    89.6%
   </span>
   <span class="absValue">
-    (472/530)
+    (457/510)
   </span>
 </td>
 </tr>
@@ -101,8 +101,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.common
 &nbsp;
-&nbsp;import com.ghost.serialization.writer.common.GhostDoubleFormatter.MAX_DECIMALS
-&nbsp;import com.ghost.serialization.writer.common.GhostDoubleFormatter.writeLongDirect
+&nbsp;import com.ghost.serialization.parser.common.GhostFormatUtils
 &nbsp;import kotlin.math.roundToInt
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
@@ -115,9 +114,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * ### Thresholds and Precision Limits
 &nbsp; * - **Fast-Path Precision:** Supports up to [MAX_DECIMALS] (9) decimal places of precision.
-&nbsp; * - **Magnitude Limits:** Works with values within the range `[1e-9, 1e15]`.
+&nbsp; * - **Magnitude Limits:** Works with values in `[1e-9, 1e9]`
+&nbsp; *   ([MICROSCOPIC_DOUBLE_THRESHOLD] / [MASSIVE_DOUBLE_THRESHOLD]).
 &nbsp; * - **Fallback Mechanism:** Values outside this range, non-finite values (NaN, Infinity), or microscopic
-&nbsp; *   numbers are delegated to the provided [fallback] lambda (which usually wraps native platform formatters).
+&nbsp; *   numbers return [FALLBACK_REQUIRED] so the caller can use a platform `toString()` without
+&nbsp; *   allocating a lambda on the hot fractional path.
 &nbsp; *
 &nbsp; * ### Algorithm Overview
 &nbsp; * 1. **Sign Handling:** Negative values write `-` to the buffer, and the absolute value is processed.
@@ -163,21 +164,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private const val DIGIT_PAIR_WIDTH = 2
 &nbsp;
 &nbsp;    /**
+&nbsp;     * Returned when the fast-path cannot format the value; the caller must use a platform formatter.
+&nbsp;     * Negative so call sites can keep `bytesWritten &gt; 0` as the success check.
+&nbsp;     */
+&nbsp;    const val FALLBACK_REQUIRED = -1
+&nbsp;
+&nbsp;    /**
 &nbsp;     * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
 &nbsp;     *
 &nbsp;     * @param value The double value to write.
 &nbsp;     * @param scratch The destination byte array.
 &nbsp;     * @param offset The starting position in the destination buffer.
-&nbsp;     * @param fallback The fallback formatter used if the value cannot be processed by the fast-path.
-&nbsp;     * @return The number of bytes written to the buffer.
+&nbsp;     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
 &nbsp;     */
 &nbsp;    fun writeDoubleDirect(
 &nbsp;        value: Double,
 &nbsp;        scratch: ByteArray,
 &nbsp;        offset: Int,
-&nbsp;        fallback: (Double) -&gt; Int
 &nbsp;    ): Int {
-<b class="fc">&nbsp;        if (!value.isFinite()) return fallback(value)</b>
+<b class="fc">&nbsp;        if (!value.isFinite()) return FALLBACK_REQUIRED</b>
 &nbsp;
 <b class="fc">&nbsp;        var pos = offset</b>
 <b class="fc">&nbsp;        var localValue = value</b>
@@ -207,7 +212,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            localValue &gt; MASSIVE_DOUBLE_THRESHOLD ||</b>
 <b class="pc">&nbsp;            (localValue &gt; 0.0 &amp;&amp; localValue &lt; MICROSCOPIC_DOUBLE_THRESHOLD)</b>
 &nbsp;        ) {
-<b class="fc">&nbsp;            return fallback(value)</b>
+<b class="fc">&nbsp;            return FALLBACK_REQUIRED</b>
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        val intPart = localValue.toLong()</b>
@@ -274,14 +279,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Formats and writes the given [Float] value directly into the [scratch] buffer starting at [offset].
 &nbsp;     * Uses 7 decimal places of precision suitable for the single-precision Float type to avoid representation noise.
+&nbsp;     *
+&nbsp;     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
 &nbsp;     */
 &nbsp;    fun writeFloatDirect(
 &nbsp;        value: Float,
 &nbsp;        scratch: ByteArray,
 &nbsp;        offset: Int,
-&nbsp;        fallback: (Float) -&gt; Int
 &nbsp;    ): Int {
-<b class="fc">&nbsp;        if (!value.isFinite()) return fallback(value)</b>
+<b class="fc">&nbsp;        if (!value.isFinite()) return FALLBACK_REQUIRED</b>
 &nbsp;
 <b class="fc">&nbsp;        var pos = offset</b>
 <b class="fc">&nbsp;        var localValue = value</b>
@@ -311,7 +317,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;            doubleVal &gt; MASSIVE_DOUBLE_THRESHOLD ||</b>
 <b class="pc">&nbsp;            (localValue &gt; 0.0f &amp;&amp; doubleVal &lt; MICROSCOPIC_DOUBLE_THRESHOLD)</b>
 &nbsp;        ) {
-<b class="nc">&nbsp;            return fallback(value)</b>
+<b class="nc">&nbsp;            return FALLBACK_REQUIRED</b>
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        val intPart = doubleVal.toLong()</b>
@@ -415,13 +421,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val quotient = localValue / C.BASE_HUNDRED</b>
 <b class="fc">&nbsp;            val remainder = (localValue - (quotient * C.BASE_HUNDRED)).toInt()</b>
 <b class="fc">&nbsp;            localValue = quotient</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_ONES[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_TENS[remainder]</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (localValue &gt;= C.BASE_TEN) {</b>
 <b class="fc">&nbsp;            val remainder = localValue.toInt()</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_ONES[remainder]</b>
-<b class="fc">&nbsp;            scratch[--end] = C.FormatUtils.DIGIT_TENS[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_ONES[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_TENS[remainder]</b>
 &nbsp;        } else {
 <b class="fc">&nbsp;            scratch[--end] = (localValue.toInt() + C.ASCII_OFFSET).toByte()</b>
 &nbsp;        }
@@ -467,7 +473,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

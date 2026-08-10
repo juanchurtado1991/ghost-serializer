@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlAnchorSubsystemKt</title>
+  <title>GhostSerialization Coverage Report > FoldBlankLineScan</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlAnchorSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: FoldBlankLineScan (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlAnchorSubsystemKt</td>
+  <td class="name">FoldBlankLineScan</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,15 +63,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (3/3)
+    (1/1)
   </span>
 </td>
+    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    70.4%
+    100%
   </span>
   <span class="absValue">
-    (38/54)
+    (4/4)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,15 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (44/44)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    94.9%
-  </span>
-  <span class="absValue">
-    (244/257)
+    (17/17)
   </span>
 </td>
 </tr>
@@ -104,80 +97,46 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Subsystem for parsing and managing YAML Anchors (&amp;anchor), Aliases (*alias), and Merge Keys (&lt;&lt;).
+&nbsp; * Result of consuming a newline and scanning whether the following line is blank
+&nbsp; * (whitespace-only until newline/EOF).
+&nbsp; *
+&nbsp; * @property afterNewline Position of the first byte of the line (after CR/LF).
+&nbsp; * @property contentStart First non-space/tab byte on the line, or past whitespace if blank.
+&nbsp; * @property isBlank True when the line is empty or whitespace-only through newline/EOF.
 &nbsp; */
+<b class="fc">&nbsp;internal class FoldBlankLineScan(</b>
+<b class="fc">&nbsp;    val afterNewline: Int,</b>
+<b class="fc">&nbsp;    val contentStart: Int,</b>
+<b class="fc">&nbsp;    val isBlank: Boolean,</b>
+&nbsp;)
 &nbsp;
-&nbsp;internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean): Any? {
-<b class="fc">&nbsp;    position++ // consume &#39;&amp;&#39;</b>
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;/**
+&nbsp; * Advances past a CR/LF at [position], then scans leading spaces/tabs to decide blank-ness.
+&nbsp; * Does not mutate caller state — wrappers assign [position] from the result.
+&nbsp; */
+&nbsp;internal fun scanFoldBlankLine(rawData: ByteArray, position: Int, limit: Int): FoldBlankLineScan {
+&nbsp;    var afterNewline = position
+&nbsp;    if (afterNewline &lt; limit &amp;&amp; rawData[afterNewline] == C.CR_BYTE) afterNewline++
+&nbsp;    if (afterNewline &lt; limit &amp;&amp; rawData[afterNewline] == C.NEWLINE_BYTE) afterNewline++
 &nbsp;
-<b class="fc">&nbsp;    val start = position</b>
-<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;        val currByte = localRawData[position]</b>
-<b class="pc">&nbsp;        if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||</b>
-<b class="pc">&nbsp;            currByte == C.COMMA_BYTE || currByte == C.RIGHT_BRACE_BYTE || currByte == C.RIGHT_BRACKET_BYTE</b>
-&nbsp;        ) break
-<b class="fc">&nbsp;        position++</b>
+&nbsp;    var contentStart = afterNewline
+&nbsp;    while (contentStart &lt; limit &amp;&amp;
+&nbsp;        (rawData[contentStart] == C.SPACE_BYTE || rawData[contentStart] == C.TAB_BYTE)
+&nbsp;    ) {
+&nbsp;        contentStart++
 &nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    val anchorName = localRawData.decodeToString(start, position)</b>
-&nbsp;
-&nbsp;    // Skip whitespace after anchor name
-<b class="fc">&nbsp;    skipInlineWhitespace()</b>
-<b class="fc">&nbsp;    val valueIndent =</b>
-<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {</b>
-<b class="fc">&nbsp;            advanceLine()</b>
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;            currentIndent</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            indent</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;    val value = readValue(valueIndent, inFlow)</b>
-<b class="fc">&nbsp;    anchorTable[anchorName] = value</b>
-<b class="fc">&nbsp;    return value</b>
+&nbsp;    val isBlank = contentStart &gt;= limit ||
+&nbsp;        rawData[contentStart] == C.NEWLINE_BYTE || rawData[contentStart] == C.CR_BYTE
+&nbsp;    return FoldBlankLineScan(afterNewline, contentStart, isBlank)
 &nbsp;}
 &nbsp;
-&nbsp;internal fun GhostYamlFlatReader.readAlias(): Any? {
-<b class="fc">&nbsp;    position++ // consume &#39;*&#39;</b>
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
-&nbsp;
-<b class="fc">&nbsp;    val start = position</b>
-<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;        val currByte = localRawData[position]</b>
-<b class="pc">&nbsp;        if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||</b>
-<b class="pc">&nbsp;            currByte == C.COMMA_BYTE || currByte == C.RIGHT_BRACE_BYTE || currByte == C.RIGHT_BRACKET_BYTE</b>
-&nbsp;        ) break
-<b class="fc">&nbsp;        position++</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    val aliasName = localRawData.decodeToString(start, position)</b>
-<b class="pc">&nbsp;    val value = anchorTable[aliasName] ?: yamlError(&quot;Anchor &#39;$aliasName&#39; not found&quot;)</b>
-<b class="fc">&nbsp;    return value</b>
-&nbsp;}
-&nbsp;
-&nbsp;internal fun GhostYamlFlatReader.mergeInto(target: MutableMap&lt;String, Any?&gt;, value: Any?) {
-<b class="fc">&nbsp;    when (value) {</b>
-<b class="fc">&nbsp;        is Map&lt;*, *&gt; -&gt; {</b>
-<b class="fc">&nbsp;            for ((k, v) in value) {</b>
-<b class="pc">&nbsp;                val keyStr = k as? String ?: continue</b>
-<b class="fc">&nbsp;                if (!target.containsKey(keyStr)) {</b>
-<b class="fc">&nbsp;                    target[keyStr] = v</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        is List&lt;*&gt; -&gt; {</b>
-<b class="fc">&nbsp;            var idx = 0</b>
-<b class="fc">&nbsp;            val size = value.size</b>
-<b class="fc">&nbsp;            while (idx &lt; size) {</b>
-<b class="fc">&nbsp;                mergeInto(target, value[idx])</b>
-<b class="fc">&nbsp;                idx++</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
+&nbsp;/**
+&nbsp; * Appends one folded continuation line using YAML plain-scalar folding rules:
+&nbsp; * blank lines become `\n` separators; otherwise a single space joins lines.
+&nbsp; */
+&nbsp;internal fun appendFoldedLine(builder: StringBuilder, blankLines: Int, lineText: String) {
+&nbsp;    if (blankLines &gt; 0) repeat(blankLines) { builder.append(&#39;\n&#39;) } else builder.append(&#39; &#39;)
+&nbsp;    builder.append(lineText)
 &nbsp;}
 </code>
 </pre>
@@ -202,7 +161,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

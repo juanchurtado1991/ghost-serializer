@@ -49,18 +49,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.beginObject
-&nbsp;import com.ghost.serialization.parser.streaming.consumeArraySeparator
-&nbsp;import com.ghost.serialization.parser.streaming.consumeKeySeparator
-&nbsp;import com.ghost.serialization.parser.streaming.endObject
-&nbsp;import com.ghost.serialization.parser.streaming.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Type alias for `Struct` message.
@@ -69,63 +57,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * which map to dynamically typed values.
 &nbsp; */
 &nbsp;typealias ProtoStruct = Map&lt;String, ProtoValue&gt;
-&nbsp;
-&nbsp;/**
-&nbsp; * Serializer for [ProtoStruct].
-&nbsp; */
-&nbsp;object ProtoStructSerializer : GhostSerializer&lt;ProtoStruct&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_STRUCT_TYPE
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoStruct) {
-&nbsp;        writer.beginObject()
-&nbsp;        for ((mapKey, mapValue) in value) {
-&nbsp;            writer.name(mapKey)
-&nbsp;            ProtoValueSerializer.serialize(writer, mapValue)
-&nbsp;        }
-&nbsp;        writer.endObject()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoStruct) {
-&nbsp;        writer.beginObject()
-&nbsp;        for ((mapKey, mapValue) in value) {
-&nbsp;            writer.name(mapKey)
-&nbsp;            ProtoValueSerializer.serialize(writer, mapValue)
-&nbsp;        }
-&nbsp;        writer.endObject()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoStruct {
-&nbsp;        val map = mutableMapOf&lt;String, ProtoValue&gt;()
-&nbsp;        reader.beginObject()
-&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
-&nbsp;            val key = reader.nextString()
-&nbsp;            reader.consumeKeySeparator()
-&nbsp;            val value = ProtoValueSerializer.deserialize(reader)
-&nbsp;            map[key] = value
-&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {
-&nbsp;                reader.consumeArraySeparator()
-&nbsp;            }
-&nbsp;        }
-&nbsp;        reader.endObject()
-&nbsp;        return map
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoStruct {
-&nbsp;        val map = mutableMapOf&lt;String, ProtoValue&gt;()
-&nbsp;        reader.beginObject()
-&nbsp;        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
-&nbsp;            val key = reader.nextString()
-&nbsp;            reader.consumeKeySeparator()
-&nbsp;            val value = ProtoValueSerializer.deserialize(reader)
-&nbsp;            map[key] = value
-&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {
-&nbsp;                reader.consumeArraySeparator()
-&nbsp;            }
-&nbsp;        }
-&nbsp;        reader.endObject()
-&nbsp;        return map
-&nbsp;    }
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -149,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

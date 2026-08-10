@@ -96,19 +96,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-&nbsp;/**
-&nbsp; * Minimal sealed hierarchy for SmartThings ViperPage wire shape:
-&nbsp; * nested `devices` array before custom `pageType` discriminator.
-&nbsp; */
-&nbsp;@GhostSerialization(discriminator = &quot;pageType&quot;)
-&nbsp;sealed class PageWithNestedDevices {
-&nbsp;    @GhostSerialization
-&nbsp;    data class LoggedIn(
-&nbsp;        val devices: List&lt;NestedDeviceStub&gt; = emptyList(),
-&nbsp;        val name: String = &quot;&quot;,
-&nbsp;    ) : PageWithNestedDevices()
-&nbsp;}
-&nbsp;
 <b class="fc">&nbsp;@GhostSerialization</b>
 &nbsp;data class NestedDeviceStub(
 <b class="fc">&nbsp;    val id: String,</b>
@@ -136,7 +123,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

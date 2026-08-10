@@ -57,26 +57,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    72.2%
+    69%
   </span>
   <span class="absValue">
-    (26/36)
+    (29/42)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.9%
+    93.2%
   </span>
   <span class="absValue">
-    (46/49)
+    (41/44)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.1%
+    91.9%
   </span>
   <span class="absValue">
-    (254/270)
+    (250/272)
   </span>
 </td>
 </tr>
@@ -120,26 +120,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    72.2%
+    69%
   </span>
   <span class="absValue">
-    (26/36)
+    (29/42)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94%
+    93.3%
   </span>
   <span class="absValue">
-    (47/50)
+    (42/45)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.2%
+    92%
   </span>
   <span class="absValue">
-    (258/274)
+    (254/276)
   </span>
 </td>
 </tr>
@@ -156,12 +156,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
-&nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import com.ghost.serialization.serializers.ListSerializer
 &nbsp;import com.ghost.serialization.serializers.MapSerializer
+&nbsp;import com.ghost.serialization.serializers.SetSerializer
 &nbsp;import okhttp3.MediaType.Companion.toMediaType
 &nbsp;import okhttp3.RequestBody
 &nbsp;import okhttp3.RequestBody.Companion.toRequestBody
@@ -175,21 +174,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Retrofit `Converter.Factory` for proto3 JSON mapping
-&nbsp; * ([@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]).
+&nbsp; * (`@GhostProtoSerialization`).
 &nbsp; *
 &nbsp; * Differs from [GhostConverterFactory] only on the read path: response bodies are parsed
-&nbsp; * through [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader], which additionally
+&nbsp; * through `GhostProtoJsonFlatReader`, which additionally
 &nbsp; * accepts quoted-or-bare int64/uint64, lenient int32 (rejects fractional values), and quoted
 &nbsp; * `&quot;NaN&quot;`/`&quot;Infinity&quot;` literals per proto3 JSON rules — required for round-tripping payloads
 &nbsp; * produced by real protobuf/JSON libraries. Encoding (`requestBodyConverter`) reuses
-&nbsp; * [com.ghost.serialization.Ghost.encodeToBytes] since proto3 wire correctness (int64 quoting,
+&nbsp; * `Ghost.encodeToBytes` since proto3 wire correctness (int64 quoting,
 &nbsp; * Base64 `bytes`, default-value omission) is generated directly into the
-&nbsp; * [@GhostProtoSerialization][com.ghost.serialization.annotations.GhostProtoSerialization]
+&nbsp; * `@GhostProtoSerialization`
 &nbsp; * serializer&#39;s own `serialize()` method.
 &nbsp; *
-&nbsp; * Also unwraps `List&lt;T&gt;`/`Map&lt;String, V&gt;` request/response bodies when the element/value
-&nbsp; * serializer is registered — same pattern as [GhostConverterFactory], still using
-&nbsp; * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] on the read path.
+&nbsp; * Also unwraps `List&lt;T&gt;`/`Set&lt;T&gt;`/`Map&lt;String, V&gt;` request/response bodies when the
+&nbsp; * element/value serializer is registered — same pattern as [GhostConverterFactory], still
+&nbsp; * using `GhostProtoJsonFlatReader` on the read path.
 &nbsp; *
 &nbsp; * ```kotlin
 &nbsp; * Retrofit.Builder()
@@ -213,23 +212,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;        return Converter { body -&gt;</b>
 <b class="fc">&nbsp;            body.use {</b>
-<b class="fc">&nbsp;                val stream = it.byteStream()</b>
-<b class="fc">&nbsp;                var scratch = acquireScratchBuffer(BUFFER_SIZE)</b>
-&nbsp;                try {
-<b class="fc">&nbsp;                    var offset = 0</b>
-<b class="fc">&nbsp;                    while (true) {</b>
-<b class="fc">&nbsp;                        if (offset == scratch.size) {</b>
-<b class="fc">&nbsp;                            val grown = acquireScratchBuffer(scratch.size * 2)</b>
-<b class="fc">&nbsp;                            scratch.copyInto(grown, 0, 0, offset)</b>
-<b class="fc">&nbsp;                            releaseScratchBuffer(scratch)</b>
-<b class="fc">&nbsp;                            scratch = grown</b>
-&nbsp;                        }
-&nbsp;
-<b class="fc">&nbsp;                        val read = stream.read(scratch, offset, scratch.size - offset)</b>
-<b class="fc">&nbsp;                        if (read == -1) break</b>
-<b class="fc">&nbsp;                        offset += read</b>
-&nbsp;                    }
-&nbsp;
+<b class="fc">&nbsp;                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset -&gt;</b>
 <b class="fc">&nbsp;                    ghostProtoInternalUseFlatReader(scratch, length = offset) { reader -&gt;</b>
 <b class="pc">&nbsp;                        if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;                            reader.consumeNull()</b>
@@ -237,9 +220,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                        } else {
 <b class="fc">&nbsp;                            serializer.deserialize(reader)</b>
 &nbsp;                        }
-&nbsp;                    }
-&nbsp;                } finally {
-<b class="fc">&nbsp;                    releaseScratchBuffer(scratch)</b>
+<b class="fc">&nbsp;                    }</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
@@ -284,9 +265,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                return ListSerializer(itemSerializer) as GhostSerializer&lt;Any&gt;</b>
 &nbsp;            }
 &nbsp;
+<b class="fc">&nbsp;            if (Set::class.java.isAssignableFrom(rawType)) {</b>
+<b class="pc">&nbsp;                val arg = type.actualTypeArguments.firstOrNull() ?: return null</b>
+<b class="pc">&nbsp;                val itemSerializer = getSerializerWithCache(arg) ?: return null</b>
+<b class="fc">&nbsp;                return SetSerializer(itemSerializer) as GhostSerializer&lt;Any&gt;</b>
+&nbsp;            }
+&nbsp;
 <b class="pc">&nbsp;            if (Map::class.java.isAssignableFrom(rawType)) {</b>
-<b class="pc">&nbsp;                val arg = type.actualTypeArguments.getOrNull(1) ?: return null</b>
-<b class="pc">&nbsp;                val valueSerializer = getSerializerWithCache(arg) ?: return null</b>
+<b class="pc">&nbsp;                val keyArg = type.actualTypeArguments.getOrNull(0) ?: return null</b>
+<b class="fc">&nbsp;                if (!isStringMapKeyType(keyArg)) return null</b>
+<b class="pc">&nbsp;                val valueArg = type.actualTypeArguments.getOrNull(1) ?: return null</b>
+<b class="pc">&nbsp;                val valueSerializer = getSerializerWithCache(valueArg) ?: return null</b>
 <b class="fc">&nbsp;                return MapSerializer(valueSerializer) as GhostSerializer&lt;Any&gt;</b>
 &nbsp;            }
 &nbsp;        }
@@ -294,9 +283,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    companion object {
-&nbsp;        private const val STR_MEDIA_TYPE = &quot;application/json; charset=UTF-8&quot;
-<b class="fc">&nbsp;        private val MEDIA_TYPE = STR_MEDIA_TYPE.toMediaType()</b>
-&nbsp;        private const val BUFFER_SIZE = 524288
+<b class="fc">&nbsp;        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()</b>
 &nbsp;
 <b class="fc">&nbsp;        fun create(): GhostProtoConverterFactory = GhostProtoConverterFactory()</b>
 &nbsp;    }
@@ -324,7 +311,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

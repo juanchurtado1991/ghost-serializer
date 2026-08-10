@@ -68,7 +68,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     96.3%
   </span>
   <span class="absValue">
-    (257/267)
+    (259/269)
   </span>
 </td>
 <td class="coverageStat">
@@ -107,7 +107,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     96.3%
   </span>
   <span class="absValue">
-    (257/267)
+    (259/269)
   </span>
 </td>
 <td class="coverageStat">
@@ -141,13 +141,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Implementation of [GhostSource] for streaming data from an [okio.BufferedSource].
+&nbsp; * Implementation of [GhostSource] for streaming data from an `okio.BufferedSource`.
 &nbsp; * Automatically requests data from the source as needed.
 &nbsp; *
 &nbsp; * ## Sliding consume
 &nbsp; *
 &nbsp; * Absolute indices stay stable for the parser, but bytes already behind the reader&#39;s
-&nbsp; * logical position are [okio.BufferedSource.skip]ped so Okio&#39;s buffer does not retain the
+&nbsp; * logical position are skipped via `okio.BufferedSource.skip` so Okio&#39;s buffer does not retain the
 &nbsp; * entire document. [releaseBefore] is driven by [GhostJsonReader] (not by [get] alone):
 &nbsp; * discriminator peek reads ahead without advancing the reader, and must not discard the
 &nbsp; * prefix the reader still needs.
@@ -232,10 +232,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        if (absoluteIndex &lt;= discarded || absoluteIndex == Int.MAX_VALUE) return</b>
 &nbsp;
 <b class="fc">&nbsp;        var retainFrom = (absoluteIndex - GhostJsonConstants.STREAMING_BUFFER_SIZE).coerceAtLeast(0)</b>
-<b class="fc">&nbsp;        var i = 0</b>
-<b class="fc">&nbsp;        while (i &lt; pinCount) {</b>
-<b class="fc">&nbsp;            retainFrom = minOf(retainFrom, pinStack[i])</b>
-<b class="fc">&nbsp;            i++</b>
+<b class="fc">&nbsp;        var pinIndex = 0</b>
+<b class="fc">&nbsp;        while (pinIndex &lt; pinCount) {</b>
+<b class="fc">&nbsp;            retainFrom = minOf(retainFrom, pinStack[pinIndex])</b>
+<b class="fc">&nbsp;            pinIndex++</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val aligned = (retainFrom / GhostJsonConstants.STREAMING_BUFFER_SIZE) *</b>
 <b class="fc">&nbsp;                GhostJsonConstants.STREAMING_BUFFER_SIZE</b>
@@ -254,7 +254,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun getSlow(index: Int): Int {
 <b class="fc">&nbsp;        if (index &lt; discarded) {</b>
 <b class="fc">&nbsp;            throw IndexOutOfBoundsException(</b>
-<b class="fc">&nbsp;                &quot;Index $index is below discarded prefix ($discarded)&quot;</b>
+<b class="fc">&nbsp;                &quot;${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_PREFIX}$index${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_MID}$discarded${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_SUFFIX}&quot;</b>
 &nbsp;            )
 &nbsp;        }
 <b class="fc">&nbsp;        val relativeIndex = (index - discarded).toLong()</b>
@@ -262,7 +262,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val available = buffer.size</b>
 <b class="fc">&nbsp;        if (relativeIndex &gt;= available) {</b>
 <b class="fc">&nbsp;            throw IndexOutOfBoundsException(</b>
-<b class="fc">&nbsp;                &quot;Index $index is out of bounds (available absolute end: ${discarded + available})&quot;</b>
+<b class="fc">&nbsp;                &quot;${GhostJsonConstants.ERR_INDEX_OOB_PREFIX}$index${GhostJsonConstants.ERR_INDEX_OOB_MID}${discarded + available}${GhostJsonConstants.ERR_INDEX_OOB_SUFFIX}&quot;</b>
 &nbsp;            )
 &nbsp;        }
 &nbsp;
@@ -276,7 +276,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val toCopy = (windowEnd - windowStart).toLong()</b>
 &nbsp;
 <b class="pc">&nbsp;        if (toCopy &lt;= 0L) {</b>
-<b class="nc">&nbsp;            throw IndexOutOfBoundsException(&quot;Index $index is out of bounds&quot;)</b>
+<b class="nc">&nbsp;            throw IndexOutOfBoundsException(&quot;${GhostJsonConstants.ERR_INDEX_OOB_PREFIX}$index${GhostJsonConstants.ERR_INDEX_OOB}&quot;)</b>
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        buffer.copyTo(tempBuffer, windowStartRel, toCopy)</b>
@@ -311,7 +311,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="pc">&nbsp;        if (start &lt; discarded) {</b>
 <b class="nc">&nbsp;            throw IndexOutOfBoundsException(</b>
-<b class="nc">&nbsp;                &quot;decodeToString start $start is below discarded prefix ($discarded)&quot;</b>
+<b class="nc">&nbsp;                &quot;${GhostJsonConstants.ERR_DECODE_START_BELOW_DISCARDED_PREFIX}$start${GhostJsonConstants.ERR_DECODE_START_BELOW_DISCARDED_MID}$discarded${GhostJsonConstants.ERR_INDEX_BELOW_DISCARDED_SUFFIX}&quot;</b>
 &nbsp;            )
 &nbsp;        }
 <b class="fc">&nbsp;        val relativeEnd = (end - discarded).toLong()</b>
@@ -503,14 +503,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                // SWAR: skip clean LONG_BYTES windows (no quote / backslash / control).
 &nbsp;                // Hash is deferred until the closing quote — long values are never pooled.
 <b class="fc">&nbsp;                while (localPosition + longBytes &lt;= segmentLimit) {</b>
-<b class="fc">&nbsp;                    val w = ghostReadLong8(bufferBytes, localPosition - base)</b>
-<b class="fc">&nbsp;                    val hasQuote = swarHasZeroByte(w xor swarQuotes)</b>
-<b class="fc">&nbsp;                    val hasBackslash = swarHasZeroByte(w xor swarBackslashes)</b>
-<b class="fc">&nbsp;                    val hasControl = (w - spaceRun) and w.inv() and swarHighs</b>
+<b class="fc">&nbsp;                    val packedWindow = ghostReadLong8(bufferBytes, localPosition - base)</b>
+<b class="fc">&nbsp;                    val hasQuote = swarHasZeroByte(packedWindow xor swarQuotes)</b>
+<b class="fc">&nbsp;                    val hasBackslash = swarHasZeroByte(packedWindow xor swarBackslashes)</b>
+<b class="fc">&nbsp;                    val hasControl =</b>
+<b class="fc">&nbsp;                        (packedWindow - spaceRun) and packedWindow.inv() and swarHighs</b>
 <b class="fc">&nbsp;                    if ((hasQuote or hasBackslash or hasControl) != localResultNone) {</b>
 &nbsp;                        break
 &nbsp;                    }
-<b class="fc">&nbsp;                    if ((w and swarHighs) != localResultNone) {</b>
+<b class="fc">&nbsp;                    if ((packedWindow and swarHighs) != localResultNone) {</b>
 <b class="fc">&nbsp;                        isPureAscii = false</b>
 &nbsp;                    }
 <b class="fc">&nbsp;                    localPosition += longBytes</b>
@@ -559,10 +560,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="fc">&nbsp;        var accumulatedHash = GhostJsonConstants.SCAN_HASH_NONE</b>
 <b class="fc">&nbsp;        val hashShift = GhostJsonConstants.HASH_SHIFT</b>
-<b class="fc">&nbsp;        var i = 0</b>
-<b class="fc">&nbsp;        while (i &lt; length) {</b>
-<b class="fc">&nbsp;            accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + get(start + i)</b>
-<b class="fc">&nbsp;            i++</b>
+<b class="fc">&nbsp;        var byteOffset = 0</b>
+<b class="fc">&nbsp;        while (byteOffset &lt; length) {</b>
+<b class="fc">&nbsp;            accumulatedHash =</b>
+<b class="fc">&nbsp;                (accumulatedHash shl hashShift) - accumulatedHash + get(start + byteOffset)</b>
+<b class="fc">&nbsp;            byteOffset++</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return accumulatedHash</b>
 &nbsp;    }
@@ -570,10 +572,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    override fun contentEqualsString(
 &nbsp;        start: Int,
 &nbsp;        length: Int,
-&nbsp;        str: String
+&nbsp;        expected: String
 &nbsp;    ): Boolean {
 <b class="fc">&nbsp;        var currentPosition = start</b>
-<b class="fc">&nbsp;        if (str.length != length) return false</b>
+<b class="fc">&nbsp;        if (expected.length != length) return false</b>
 &nbsp;
 <b class="fc">&nbsp;        while (true) {</b>
 <b class="fc">&nbsp;            val segmentStart = bufferStart</b>
@@ -585,7 +587,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                while (localPosition &lt; segmentLimit) {</b>
 <b class="fc">&nbsp;                    val byteValue =</b>
 <b class="fc">&nbsp;                        bufferBytes[localPosition - segmentStart].toInt() and GhostJsonConstants.BYTE_MASK</b>
-<b class="fc">&nbsp;                    if (byteValue != str[localPosition - start].code) return false</b>
+<b class="fc">&nbsp;                    if (byteValue != expected[localPosition - start].code) return false</b>
 <b class="fc">&nbsp;                    localPosition++</b>
 &nbsp;                }
 &nbsp;
@@ -625,7 +627,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

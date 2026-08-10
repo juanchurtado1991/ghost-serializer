@@ -60,10 +60,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    27.3%
   </span>
   <span class="absValue">
-    (4/12)
+    (3/11)
   </span>
 </td>
 <td class="coverageStat">
@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    54.2%
+    52.2%
   </span>
   <span class="absValue">
-    (13/24)
+    (12/23)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    56.7%
+    59.7%
   </span>
   <span class="absValue">
-    (68/120)
+    (77/129)
   </span>
 </td>
 </tr>
@@ -104,180 +104,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 &nbsp;import com.ghost.serialization.serializers.ListSerializer
-&nbsp;import com.ghost.serialization.serializers.MapSerializer
 &nbsp;import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 &nbsp;import com.ghost.serialization.writer.yaml.GhostYamlWriter
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
-&nbsp;
-&nbsp;object GhostYamlIntArraySerializer : GhostYamlSerializer&lt;IntArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: IntArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: IntArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): IntArray {
-&nbsp;        reader.beginArray()
-&nbsp;        val list = ArrayList&lt;Int&gt;()
-&nbsp;        while (reader.hasNextArrayElement()) {
-&nbsp;            list.add(reader.nextInt())
-&nbsp;        }
-&nbsp;        reader.endArray()
-&nbsp;        return list.toIntArray()
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;object GhostYamlLongArraySerializer : GhostYamlSerializer&lt;LongArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: LongArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: LongArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): LongArray {
-&nbsp;        reader.beginArray()
-&nbsp;        val list = ArrayList&lt;Long&gt;()
-&nbsp;        while (reader.hasNextArrayElement()) {
-&nbsp;            list.add(reader.nextLong())
-&nbsp;        }
-&nbsp;        reader.endArray()
-&nbsp;        return list.toLongArray()
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;object GhostYamlFloatArraySerializer : GhostYamlSerializer&lt;FloatArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: FloatArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: FloatArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): FloatArray {
-&nbsp;        reader.beginArray()
-&nbsp;        val list = ArrayList&lt;Float&gt;()
-&nbsp;        while (reader.hasNextArrayElement()) {
-&nbsp;            list.add(reader.nextFloat())
-&nbsp;        }
-&nbsp;        reader.endArray()
-&nbsp;        return list.toFloatArray()
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;object GhostYamlDoubleArraySerializer : GhostYamlSerializer&lt;DoubleArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: DoubleArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: DoubleArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): DoubleArray {
-&nbsp;        reader.beginArray()
-&nbsp;        val list = ArrayList&lt;Double&gt;()
-&nbsp;        while (reader.hasNextArrayElement()) {
-&nbsp;            list.add(reader.nextDouble())
-&nbsp;        }
-&nbsp;        reader.endArray()
-&nbsp;        return list.toDoubleArray()
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;object GhostYamlBooleanArraySerializer : GhostYamlSerializer&lt;BooleanArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: BooleanArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: BooleanArray) {
-&nbsp;        writer.beginArray()
-&nbsp;        val size = value.size
-&nbsp;        var idx = 0
-&nbsp;        while (idx &lt; size) {
-&nbsp;            writer.value(value[idx])
-&nbsp;            idx++
-&nbsp;        }
-&nbsp;        writer.endArray()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): BooleanArray {
-&nbsp;        reader.beginArray()
-&nbsp;        val list = ArrayList&lt;Boolean&gt;()
-&nbsp;        while (reader.hasNextArrayElement()) {
-&nbsp;            list.add(reader.nextBoolean())
-&nbsp;        }
-&nbsp;        reader.endArray()
-&nbsp;        return list.toBooleanArray()
-&nbsp;    }
-&nbsp;}
 &nbsp;
 &nbsp;/**
 &nbsp; * YAML list body serializer — used by Retrofit/Ktor YAML adapters for `List&lt;T&gt;` endpoints when
@@ -287,14 +117,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    private val itemSerializer: GhostSerializer&lt;T&gt;,</b>
 &nbsp;) : GhostSerializer&lt;List&lt;T&gt;&gt;, GhostYamlSerializer&lt;List&lt;T&gt;&gt; {
 &nbsp;
-<b class="fc">&nbsp;    init {</b>
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;    private val yamlItem: GhostYamlSerializer&lt;T&gt; = run {</b>
 <b class="fc">&nbsp;        require(itemSerializer is GhostYamlSerializer&lt;*&gt;) {</b>
-<b class="fc">&nbsp;            &quot;GhostYamlListSerializer requires a GhostYamlSerializer item serializer, got ${itemSerializer.typeName}&quot;</b>
+<b class="fc">&nbsp;            C.ERR_YAML_LIST_NEEDS_YAML_ITEM_PREFIX + itemSerializer.typeName</b>
 &nbsp;        }
-<b class="fc">&nbsp;    }</b>
-&nbsp;
-&nbsp;    private val yamlItem: GhostYamlSerializer&lt;T&gt;
-<b class="fc">&nbsp;        get() = itemSerializer as GhostYamlSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        itemSerializer as GhostYamlSerializer&lt;T&gt;</b>
+&nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    private val jsonList = ListSerializer(itemSerializer)</b>
 &nbsp;
@@ -347,77 +176,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    override fun deserialize(reader: GhostYamlFlatReader): List&lt;T&gt; =
 <b class="fc">&nbsp;        reader.readList { yamlItem.deserialize(reader) }</b>
 &nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * YAML map body serializer for `Map&lt;String, V&gt;` endpoints when the value serializer implements
-&nbsp; * [GhostYamlSerializer].
-&nbsp; */
-&nbsp;class GhostYamlMapSerializer&lt;V&gt;(
-&nbsp;    private val valueSerializer: GhostSerializer&lt;V&gt;,
-&nbsp;) : GhostSerializer&lt;Map&lt;String, V&gt;&gt;, GhostYamlSerializer&lt;Map&lt;String, V&gt;&gt; {
-&nbsp;
-&nbsp;    init {
-&nbsp;        require(valueSerializer is GhostYamlSerializer&lt;*&gt;) {
-&nbsp;            &quot;GhostYamlMapSerializer requires a GhostYamlSerializer value serializer, got ${valueSerializer.typeName}&quot;
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    private val yamlValue: GhostYamlSerializer&lt;V&gt;
-&nbsp;        get() = valueSerializer as GhostYamlSerializer&lt;V&gt;
-&nbsp;
-&nbsp;    private val jsonMap = MapSerializer(valueSerializer)
-&nbsp;
-&nbsp;    override val typeName: String
-&nbsp;        get() = &quot;Map&lt;String, ${valueSerializer.typeName}&gt;&quot;
-&nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
-&nbsp;        value: Map&lt;String, V&gt;
-&nbsp;    ) =
-&nbsp;        jsonMap.serialize(writer, value)
-&nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
-&nbsp;        value: Map&lt;String, V&gt;
-&nbsp;    ) =
-&nbsp;        jsonMap.serialize(writer, value)
-&nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter,
-&nbsp;        value: Map&lt;String, V&gt;
-&nbsp;    ) =
-&nbsp;        jsonMap.serialize(writer, value)
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: Map&lt;String, V&gt;) {
-&nbsp;        writer.beginObject()
-&nbsp;        for ((key, entryValue) in value) {
-&nbsp;            writer.name(key)
-&nbsp;            yamlValue.serialize(writer, entryValue)
-&nbsp;        }
-&nbsp;        writer.endObject()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: Map&lt;String, V&gt;) {
-&nbsp;        writer.beginObject()
-&nbsp;        for ((key, entryValue) in value) {
-&nbsp;            writer.name(key)
-&nbsp;            yamlValue.serialize(writer, entryValue)
-&nbsp;        }
-&nbsp;        writer.endObject()
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): Map&lt;String, V&gt; =
-&nbsp;        jsonMap.deserialize(reader)
-&nbsp;
-&nbsp;    override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): Map&lt;String, V&gt; =
-&nbsp;        jsonMap.deserialize(reader)
-&nbsp;
-&nbsp;    override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): Map&lt;String, V&gt; =
-&nbsp;        jsonMap.deserialize(reader)
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): Map&lt;String, V&gt; =
-&nbsp;        reader.readMap({ reader.nextKey()!! }) { yamlValue.deserialize(reader) }
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -441,7 +199,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

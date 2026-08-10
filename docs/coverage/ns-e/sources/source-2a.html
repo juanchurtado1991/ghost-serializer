@@ -96,15 +96,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-&nbsp;@GhostSerialization
-&nbsp;sealed class ApiEventDefault {
-&nbsp;    @GhostSerialization
-&nbsp;    data class Login(val userId: String) : ApiEventDefault()
-&nbsp;
-&nbsp;    @GhostSerialization
-&nbsp;    data class Logout(val sessionId: String) : ApiEventDefault()
-&nbsp;}
-&nbsp;
 <b class="fc">&nbsp;@GhostSerialization</b>
 <b class="fc">&nbsp;data class CustomAction(val actionName: String) : ApiEventDefault()</b>
 </code>
@@ -130,7 +121,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

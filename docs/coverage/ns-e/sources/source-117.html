@@ -101,28 +101,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;import com.ghost.serialization.types.RawJson
 &nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class DeviceEventPayload(val deviceId: String)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class ModeEventPayload(val mode: String)
-&nbsp;
-&nbsp;@GhostJsonEnvelope(discriminator = &quot;eventType&quot;, timeField = &quot;eventTime&quot;)
-&nbsp;@GhostSerialization
-&nbsp;data class SseEventEnvelope(
-&nbsp;    @GhostName(&quot;eventType&quot;) val eventType: String = &quot;&quot;,
-&nbsp;    @GhostName(&quot;eventTime&quot;) val timeMillis: Long = 0L,
-&nbsp;    @GhostEnvelopePayload(&quot;DEVICE_EVENT&quot;, target = DeviceEventPayload::class)
-&nbsp;    @GhostName(&quot;deviceEvent&quot;) val deviceEvent: RawJson? = null,
-&nbsp;    @GhostEnvelopePayload(&quot;MODE_EVENT&quot;, target = ModeEventPayload::class)
-&nbsp;    @GhostName(&quot;modeEvent&quot;) val modeEvent: RawJson? = null,
-&nbsp;    @GhostEnvelopeFallback
-&nbsp;    val unknownEvent: RawJson? = null,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class InvoicePaidPayload(val amount: Long)
-&nbsp;
 <b class="fc">&nbsp;@GhostJsonEnvelope(discriminator = &quot;type&quot;, dataField = &quot;data&quot;)</b>
 &nbsp;@GhostSerialization
 &nbsp;data class WebhookEnvelope(
@@ -153,7 +131,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

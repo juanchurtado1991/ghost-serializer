@@ -95,28 +95,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostProtoSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
-&nbsp;
-&nbsp;/**
-&nbsp; * Proto3 `oneof` JSON mapping — the payload variant&#39;s field name appears as a *sibling* of the
-&nbsp; * message&#39;s other fields (no wrapper key, no discriminator value), e.g. `{&quot;id&quot;:&quot;e1&quot;,&quot;text&quot;:&quot;hi&quot;}`
-&nbsp; * or `{&quot;id&quot;:&quot;e1&quot;,&quot;code&quot;:5}`. Achieved by composing two existing features rather than needing
-&nbsp; * dedicated oneof codegen:
-&nbsp; *   - `@GhostSerialization(inferred = true)` on the sealed hierarchy: picks the subclass whose
-&nbsp; *     required property set matches whichever wire keys are present (no discriminator field).
-&nbsp; *   - `@GhostWrappedKeys` on the property: collapses those sibling wire keys into one property,
-&nbsp; *     assembling a synthetic wrapper object only from the keys actually present on the wire —
-&nbsp; *     which is exactly what the `inferred` dispatch above needs to pick the right subclass.
-&nbsp; */
-&nbsp;@GhostSerialization(inferred = true)
-&nbsp;sealed class OneofPayload {
-&nbsp;    @GhostSerialization
-&nbsp;    data class Text(val text: String) : OneofPayload()
-&nbsp;
-&nbsp;    @GhostSerialization
-&nbsp;    data class Code(val code: Int) : OneofPayload()
-&nbsp;}
 &nbsp;
 <b class="fc">&nbsp;@GhostProtoSerialization</b>
 &nbsp;data class ProtoOneofEvent(
@@ -147,7 +126,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

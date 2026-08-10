@@ -104,14 +104,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * `FieldMask` represents a set of symbolic field paths, for example:
@@ -119,14 +112,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;data class ProtoFieldMask(val paths: List&lt;String&gt;)
 &nbsp;
-&nbsp;internal fun parseFieldMask(str: String): ProtoFieldMask {
-<b class="pc">&nbsp;    if (str.isEmpty()) return ProtoFieldMask(emptyList())</b>
+&nbsp;internal fun parseFieldMask(pathsText: String): ProtoFieldMask {
+<b class="pc">&nbsp;    if (pathsText.isEmpty()) return ProtoFieldMask(emptyList())</b>
 <b class="fc">&nbsp;    val paths = mutableListOf&lt;String&gt;()</b>
 <b class="fc">&nbsp;    val stringBuilder = StringBuilder()</b>
 <b class="fc">&nbsp;    var charIndex = 0</b>
-<b class="fc">&nbsp;    val stringLength = str.length</b>
+<b class="fc">&nbsp;    val stringLength = pathsText.length</b>
 <b class="fc">&nbsp;    while (charIndex &lt; stringLength) {</b>
-<b class="fc">&nbsp;        val character = str[charIndex]</b>
+<b class="fc">&nbsp;        val character = pathsText[charIndex]</b>
 <b class="fc">&nbsp;        if (character == C.CHAR_COMMA) {</b>
 <b class="fc">&nbsp;            paths.add(stringBuilder.toString())</b>
 <b class="fc">&nbsp;            stringBuilder.clear()</b>
@@ -175,29 +168,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 <b class="fc">&nbsp;    return stringBuilder.toString()</b>
 &nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Serializer for [ProtoFieldMask].
-&nbsp; */
-&nbsp;object ProtoFieldMaskSerializer : GhostSerializer&lt;ProtoFieldMask&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_FIELDMASK_TYPE
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoFieldMask) {
-&nbsp;        writer.value(formatFieldMask(value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFieldMask) {
-&nbsp;        writer.value(formatFieldMask(value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoFieldMask {
-&nbsp;        return parseFieldMask(reader.nextString())
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoFieldMask {
-&nbsp;        return parseFieldMask(reader.nextString())
-&nbsp;    }
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -221,7 +191,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

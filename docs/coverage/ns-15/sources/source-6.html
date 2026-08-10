@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlTags</title>
+  <title>GhostSerialization Coverage Report > GhostYamlExplicitKeySubsystemKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,19 +22,74 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlTags (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: GhostYamlExplicitKeySubsystemKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
   <th class="name">Class</th>
 <th class="coverageStat 
 ">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
   Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlTags</td>
-    <td class="coverageStat"/>
+  <td class="name">GhostYamlExplicitKeySubsystemKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (48/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.9%
+  </span>
+  <span class="absValue">
+    (46/47)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.5%
+  </span>
+  <span class="absValue">
+    (260/264)
+  </span>
+</td>
 </tr>
 
 </table>
@@ -48,164 +103,115 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
-&nbsp;internal object GhostYamlTags {
-&nbsp;    const val TAG_NONE = 0
-&nbsp;    const val TAG_STR = 1
-&nbsp;    const val TAG_INT = 2
-&nbsp;    const val TAG_FLOAT = 3
-&nbsp;    const val TAG_BOOL = 4
-&nbsp;    const val TAG_NULL = 5
-&nbsp;    const val TAG_SEQ = 6
-&nbsp;    const val TAG_MAP = 7
+&nbsp;/**
+&nbsp; * Subsystem for YAML&#39;s explicit block-mapping keys: &quot;? key&quot; optionally followed by &quot;: value&quot; on
+&nbsp; * its own line, e.g.
+&nbsp; * ```
+&nbsp; * ? explicit key
+&nbsp; * : value
+&nbsp; * ```
+&nbsp; * Unlike an implicit &quot;key: value&quot; pair, the key here may be any node — a multi-line plain
+&nbsp; * scalar, a block scalar, or even a nested sequence/mapping — not just plain key text, and the
+&nbsp; * value is entirely optional (a bare &quot;? key&quot; with nothing else is a key mapped to null).
+&nbsp; */
+&nbsp;
+&nbsp;/** True if position is at a `?` explicit-key indicator (must be followed by whitespace/EOL). */
+&nbsp;internal fun GhostYamlFlatReader.isExplicitKeyIndicator(): Boolean {
+<b class="pc">&nbsp;    if (position &gt;= limit || rawData[position] != C.QUESTION_BYTE) return false</b>
+<b class="fc">&nbsp;    val nextPosition = position + 1</b>
+<b class="pc">&nbsp;    return nextPosition &gt;= limit ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == C.SPACE_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;        rawData[nextPosition] == C.CR_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == C.TAB_BYTE</b>
 &nbsp;}
 &nbsp;
-&nbsp;internal fun GhostYamlFlatReader.readTaggedValue(indent: Int): Any? {
-&nbsp;    position++ // consume &#39;!&#39;
-&nbsp;    val localRawData = rawData
-&nbsp;    val localLimit = limit
-&nbsp;    if (position &gt;= localLimit) yamlError(&quot;Unexpected end of input after tag indicator&quot;)
+&nbsp;/**
+&nbsp; * Reads one &quot;? key&quot; / &quot;: value&quot; entry, with [GhostYamlFlatReader.position] at the &quot;?&quot;. The key
+&nbsp; * may be on the same line as &quot;?&quot; or indented on later lines; if a &quot;:&quot; doesn&#39;t follow at
+&nbsp; * [blockIndent] (on the key&#39;s own line or a later one), the value is null and nothing past the
+&nbsp; * key is consumed — the next loop iteration in [GhostYamlFlatReader.readBlockMapping] sees
+&nbsp; * whatever comes next fresh, the same way a bare &quot;key:&quot; with no value already works.
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair&lt;String, Any?&gt; {
+<b class="fc">&nbsp;    position++ // consume &#39;?&#39;</b>
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
 &nbsp;
-&nbsp;    var isDoubleExcl = false
-&nbsp;    if (localRawData[position] == C.EXCLAMATION_BYTE) {
-&nbsp;        isDoubleExcl = true
-&nbsp;        position++
-&nbsp;    }
-&nbsp;
-&nbsp;    var resolvedTag: String? = null
-&nbsp;    var tagType = GhostYamlTags.TAG_NONE
-&nbsp;
-&nbsp;    if (isDoubleExcl) {
-&nbsp;        val tagStart = position
-&nbsp;        while (position &lt; localLimit) {
-&nbsp;            val currByte = localRawData[position]
-&nbsp;            if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break
-&nbsp;            position++
+<b class="pc">&nbsp;    val keyNode = if (position &gt;= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {</b>
+&nbsp;        // Key is on the next line(s), indented more than blockIndent — mirrors how a value
+&nbsp;        // after &#39;:&#39; on its own line is resolved, including the &quot;a &#39;-&#39; sequence entry may sit
+&nbsp;        // at exactly blockIndent&quot; exception (e.g. &quot;?\n- a\n- b&quot; is a sequence key aligned with
+&nbsp;        // the &quot;?&quot; itself, not a dedent out of the mapping).
+<b class="fc">&nbsp;        advanceLine()</b>
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        val continuesAsSequenceEntry =</b>
+<b class="pc">&nbsp;            position &lt; localLimit &amp;&amp; localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry()</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit || (currentIndent &lt;= blockIndent &amp;&amp; !(currentIndent == blockIndent &amp;&amp; continuesAsSequenceEntry))) {</b>
+<b class="nc">&nbsp;            null</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            readValue(currentIndent, inFlow = false)</b>
 &nbsp;        }
-&nbsp;        val tagLen = position - tagStart
-&nbsp;        if (tagLen &gt; 0) {
-&nbsp;            tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)
-&nbsp;        }
+<b class="fc">&nbsp;    } else if (isExplicitValueIndicator()) {</b>
+&nbsp;        // Nothing between &#39;?&#39; and &#39;:&#39; (e.g. &quot;? : x&quot;) — an empty/null key.
+<b class="fc">&nbsp;        null</b>
 &nbsp;    } else {
-&nbsp;        // Custom tag
-&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LT_BYTE) {
-&nbsp;            // Verbose tag like !&lt;Circle&gt;
-&nbsp;            position++ // consume &#39;&lt;&#39;
-&nbsp;            val tagStart = position
-&nbsp;            while (position &lt; localLimit &amp;&amp; localRawData[position] != C.GT_BYTE) {
-&nbsp;                position++
-&nbsp;            }
-&nbsp;            val tagLen = position - tagStart
-&nbsp;            resolvedTag = localRawData.decodeToString(tagStart, tagStart + tagLen)
-&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.GT_BYTE) {
-&nbsp;                position++ // consume &#39;&gt;&#39;
-&nbsp;            }
-&nbsp;        } else {
-&nbsp;            // Short tag like !Circle or !m!Circle
-&nbsp;            val tagStart = position
-&nbsp;            while (position &lt; localLimit) {
-&nbsp;                val currByte = localRawData[position]
-&nbsp;                if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) break
-&nbsp;                position++
-&nbsp;            }
-&nbsp;            val tagLen = position - tagStart
-&nbsp;            if (tagLen &gt; 0) {
-&nbsp;                val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)
-&nbsp;                // Check for namespace prefix mapping (%TAG directive)
-&nbsp;                val exclamationIdx = rawTagName.indexOf(&#39;!&#39;)
-&nbsp;                if (exclamationIdx != -1) {
-&nbsp;                    val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)
-&nbsp;                    val suffix = rawTagName.substring(exclamationIdx + 1)
-&nbsp;                    val prefix = tagDirectives[handle]
-&nbsp;                    resolvedTag = if (prefix != null) {
-&nbsp;                        prefix + suffix
-&nbsp;                    } else {
-&nbsp;                        rawTagName
-&nbsp;                    }
-&nbsp;                } else {
-&nbsp;                    resolvedTag = rawTagName
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
+&nbsp;        // Unlike an implicit &quot;key: value&quot; pair&#39;s value, explicit-key content (and its &quot;: value&quot;
+&nbsp;        // counterpart below) legitimately supports YAML&#39;s &quot;compact notation&quot; — a nested block
+&nbsp;        // mapping/sequence starting inline right after &quot;?&quot;/&quot;:&quot;, not just on a fresh indented line
+&nbsp;        // (spec example 8.19, &quot;Compact Block Mappings&quot; — see V9D5). allowMappingRedirect stays at
+&nbsp;        // its default (true) here; only an *implicit* pair&#39;s inline value forbids it (see
+&nbsp;        // GhostYamlFlatReader.resolveValueAfterColon).
+<b class="fc">&nbsp;        readValue(blockIndent, inFlow = false, strictDedent = true)</b>
 &nbsp;    }
+<b class="fc">&nbsp;    val key = stringifyExplicitMappingKey(keyNode)</b>
 &nbsp;
-&nbsp;    // Skip inline space after tag
-&nbsp;    skipInlineWhitespace()
-&nbsp;
-&nbsp;    // If value is on next line, advance and use next line&#39;s indentation
-&nbsp;    val valueIndent =
-&nbsp;        if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
-&nbsp;            advanceLine()
-&nbsp;            skipWhitespaceAndComments()
-&nbsp;            currentIndent
-&nbsp;        } else {
-&nbsp;            indent
+&nbsp;    // Look for &#39;:&#39;. On the key&#39;s own line it&#39;s always valid regardless of column (e.g. &quot;? : x&quot;
+&nbsp;    // or &quot;? &amp;a a : b&quot; have no ambiguity to resolve) — the indentation check only matters once
+&nbsp;    // we&#39;ve crossed onto a later line, the same way a value after &#39;:&#39; requires exactly
+&nbsp;    // blockIndent on its own line rather than merely &quot;more indented than before&quot;.
+<b class="fc">&nbsp;    val positionBeforeGap = position</b>
+<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;    var crossedLine = false</b>
+<b class="fc">&nbsp;    var scanPos = positionBeforeGap</b>
+<b class="fc">&nbsp;    while (scanPos &lt; position) {</b>
+<b class="pc">&nbsp;        if (localRawData[scanPos] == C.NEWLINE_BYTE || localRawData[scanPos] == C.CR_BYTE) {</b>
+<b class="fc">&nbsp;            crossedLine = true</b>
+&nbsp;            break
 &nbsp;        }
-&nbsp;
-&nbsp;    val value = when (tagType) {
-&nbsp;        GhostYamlTags.TAG_SEQ -&gt; {
-&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACKET_BYTE) {
-&nbsp;                readFlowSequence()
-&nbsp;            } else {
-&nbsp;                skipWhitespaceAndComments()
-&nbsp;                readBlockSequence(currentIndent)
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        GhostYamlTags.TAG_MAP -&gt; {
-&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACE_BYTE) {
-&nbsp;                readFlowMapping()
-&nbsp;            } else {
-&nbsp;                skipWhitespaceAndComments()
-&nbsp;                readBlockMapping(currentIndent)
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        else -&gt; {
-&nbsp;            readValue(valueIndent, inFlow = false, expectedTag = tagType)
-&nbsp;        }
+<b class="fc">&nbsp;        scanPos++</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    // Inject tag into the Map if it&#39;s a custom tag and value is a Map
-&nbsp;    if (resolvedTag != null &amp;&amp; value is MutableMap&lt;*, *&gt;) {
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-&nbsp;        val map = value as MutableMap&lt;String, Any?&gt;
-&nbsp;        map[C.STR_TAG_KEY] = resolvedTag
+<b class="pc">&nbsp;    val value = if (position &lt; localLimit &amp;&amp; isExplicitValueIndicator() &amp;&amp; (!crossedLine || currentIndent == blockIndent)) {</b>
+<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
+<b class="fc">&nbsp;        resolveValueAfterColon(blockIndent)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        null</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    return value
+<b class="fc">&nbsp;    return key to value</b>
 &nbsp;}
 &nbsp;
-&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(
-&nbsp;    localRawData: ByteArray,
-&nbsp;    start: Int,
-&nbsp;    len: Int
-&nbsp;): Int {
-&nbsp;    if (len == 3) {
-&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_T_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_R_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_STR
-&nbsp;        }
-&nbsp;        if (localRawData[start] == C.CHAR_I_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_T_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_INT
-&nbsp;        }
-&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_E_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_Q_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_SEQ
-&nbsp;        }
-&nbsp;        if (localRawData[start] == C.CHAR_M_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_P_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_MAP
-&nbsp;        }
-&nbsp;    } else if (len == 4) {
-&nbsp;        if (localRawData[start] == C.CHAR_B_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_BOOL
-&nbsp;        }
-&nbsp;        if (localRawData[start] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_U_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_NULL
-&nbsp;        }
-&nbsp;    } else if (len == 5) {
-&nbsp;        if (localRawData[start] == C.CHAR_F_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 4] == C.CHAR_T_BYTE) {
-&nbsp;            return GhostYamlTags.TAG_FLOAT
-&nbsp;        }
-&nbsp;    }
-&nbsp;    return GhostYamlTags.TAG_NONE
+&nbsp;/** True if position is at a `:` explicit-value indicator (must be followed by whitespace/EOL). */
+&nbsp;private fun GhostYamlFlatReader.isExplicitValueIndicator(): Boolean {
+<b class="fc">&nbsp;    if (rawData[position] != C.COLON_BYTE) return false</b>
+<b class="fc">&nbsp;    val nextPosition = position + 1</b>
+<b class="pc">&nbsp;    return nextPosition &gt;= limit ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == C.SPACE_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;        rawData[nextPosition] == C.CR_BYTE ||</b>
+<b class="pc">&nbsp;        rawData[nextPosition] == C.TAB_BYTE</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Converts a node read as an explicit key into the String [GhostYamlFlatReader]&#39;s
+&nbsp; * `Map&lt;String, Any?&gt;` representation needs — same requirement JSON object keys already have.
+&nbsp; * Non-scalar keys (a sequence or mapping used as a key) have no clean string form; the
+&nbsp; * yaml-test-suite cases that use them don&#39;t have a JSON fixture to match against either.
+&nbsp; */
+<b class="fc">&nbsp;internal fun stringifyExplicitMappingKey(keyNode: Any?): String = when (keyNode) {</b>
+<b class="fc">&nbsp;    null -&gt; &quot;&quot;</b>
+<b class="fc">&nbsp;    is String -&gt; keyNode</b>
+<b class="fc">&nbsp;    else -&gt; keyNode.toString()</b>
 &nbsp;}
 </code>
 </pre>
@@ -230,7 +236,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

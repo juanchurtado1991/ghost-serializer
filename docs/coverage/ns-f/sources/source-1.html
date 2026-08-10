@@ -49,10 +49,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">GhostClientExtensionsKt</td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    100%
   </span>
   <span class="absValue">
-    (2/3)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (6/8)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.8%
+    100%
   </span>
   <span class="absValue">
-    (52/66)
+    (66/66)
   </span>
 </td>
 </tr>
@@ -96,10 +96,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    75%
   </span>
   <span class="absValue">
-    (2/4)
+    (3/4)
   </span>
 </td>
 <td class="coverageStat">
@@ -112,18 +112,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (6/8)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.8%
+    100%
   </span>
   <span class="absValue">
-    (52/66)
+    (66/66)
   </span>
 </td>
 </tr>
@@ -154,7 +154,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * ContentNegotiation pipeline.
 &nbsp; */
 &nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhost(): T {
-<b class="fc">&nbsp;    val bytes = this.body&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
 <b class="fc">&nbsp;    val serializer = Ghost.getSerializer(T::class)</b>
 <b class="fc">&nbsp;        ?: throw IllegalArgumentException(&quot;$CLIENT_ERROR_PREFIX${T::class.simpleName}$CLIENT_ERROR_SUFFIX&quot;)</b>
 <b class="fc">&nbsp;    return Ghost.deserialize(serializer, bytes)</b>
@@ -162,21 +162,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Proto3-JSON variant of [bodyGhost] for `@GhostProtoSerialization` types — parses through
-&nbsp; * [com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader] (quoted-or-bare int64, lenient
+&nbsp; * `GhostProtoJsonFlatReader` (quoted-or-bare int64, lenient
 &nbsp; * int32, quoted `NaN`/`Infinity`) instead of the plain flat reader.
 &nbsp; */
 &nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhostProto(): T {
-<b class="fc">&nbsp;    val bytes = this.body&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
 <b class="fc">&nbsp;    return GhostProto.deserialize(bytes, T::class)</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
 &nbsp; * YAML variant of [bodyGhost] for types whose serializer implements
-&nbsp; * [com.ghost.serialization.yaml.contract.GhostYamlSerializer].
+&nbsp; * `GhostYamlSerializer`.
+&nbsp; * Public API for frameworks — bypasses Ktor ContentNegotiation.
 &nbsp; */
 &nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhostYaml(): T {
-<b class="nc">&nbsp;    val bytes = this.body&lt;ByteArray&gt;()</b>
-<b class="nc">&nbsp;    return Ghost.decodeFromYaml(bytes)</b>
+<b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;    return Ghost.decodeFromYaml(bytes)</b>
 &nbsp;}
 </code>
 </pre>
@@ -201,7 +202,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

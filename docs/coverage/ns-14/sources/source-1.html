@@ -115,8 +115,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * High-performance JSON parser operating directly on Kotlin Strings.
-&nbsp; * Bypasses encodeToByteArray UTF-8 conversion overhead.
+&nbsp; * Flat JSON parser for in-memory [String] payloads (the default `textChannel` path).
+&nbsp; *
+&nbsp; * Indexes a reused [CharArray] of UTF-16 code units — hot structure/select/number work never
+&nbsp; * UTF-8-encodes the document. Bridge helpers ([ensureUtf8Bytes], [sliceUtf8Bytes],
+&nbsp; * [captureRawJsonBytes]) encode lazily once per [reset] when a byte-oriented API is needed.
+&nbsp; *
+&nbsp; * Sibling of the byte flat reader (`GhostJsonFlatReader`) and the streaming `GhostJsonReader`.
 &nbsp; */
 &nbsp;class GhostJsonStringReader(
 <b class="fc">&nbsp;    var rawData: String,</b>
@@ -136,8 +141,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
-&nbsp;     * fields in declaration order. Reset to 0 on [beginObject]; mispredictions fall back to
-&nbsp;     * hashed dispatch, so this never affects correctness.
+&nbsp;     * fields in declaration order. Reset to `FIELD_PREDICTION_START` on [beginObject];
+&nbsp;     * mispredictions fall back to hashed dispatch, so this never affects correctness.
 &nbsp;     */
 <b class="fc">&nbsp;    internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START</b>
 &nbsp;
@@ -150,7 +155,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /** Char-index → UTF-8 byte offset, built once per [reset] cycle. */
 &nbsp;    private var charToByteOffsets: IntArray? = null
 &nbsp;
-&nbsp;    /** Cross-call string intern pool — same design as [GhostJsonFlatReader.stringPool]. */
+&nbsp;    /** Cross-call string intern pool — same design as the byte flat reader&#39;s `stringPool`. */
 <b class="fc">&nbsp;    val stringPool: Array&lt;String?&gt; = arrayOfNulls(C.STR_POOL_SIZE)</b>
 <b class="fc">&nbsp;    val stringPoolHashes = IntArray(C.STR_POOL_SIZE)</b>
 &nbsp;
@@ -181,7 +186,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        val errorEnd = if (errorPosition &gt; limit) limit else errorPosition</b>
 &nbsp;
 <b class="fc">&nbsp;        throw GhostJsonException(</b>
-<b class="fc">&nbsp;            baseMessage = &quot;$message at position $errorPosition&quot;,</b>
+<b class="fc">&nbsp;            baseMessage = &quot;$message${C.ERR_AT_POSITION_PREFIX}$errorPosition&quot;,</b>
 <b class="fc">&nbsp;            computeLineCol = {</b>
 <b class="nc">&nbsp;                var columnNumber = 0</b>
 <b class="nc">&nbsp;                var lineNumber = 0</b>
@@ -201,8 +206,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        )
 &nbsp;    }
 &nbsp;
-&nbsp;    fun internalSkip(n: Int) {
-<b class="fc">&nbsp;        position += n</b>
+&nbsp;    fun internalSkip(charCount: Int) {
+<b class="fc">&nbsp;        position += charCount</b>
 <b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;    }
 &nbsp;
@@ -269,21 +274,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    @Suppress(&quot;StringReferentialEquality&quot;)
 <b class="fc">&nbsp;    fun reset(newData: String, newLimit: Int = newData.length) {</b>
-<b class="fc">&nbsp;        val oldData = this.rawData</b>
-<b class="fc">&nbsp;        this.rawData = newData</b>
-<b class="fc">&nbsp;        this.position = 0</b>
-<b class="fc">&nbsp;        this.limit = newLimit</b>
-<b class="fc">&nbsp;        this.nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;        this.depth = 0</b>
-<b class="fc">&nbsp;        this.needsCommaMask = 0L</b>
-<b class="fc">&nbsp;        this.commaConsumedMask = 0L</b>
-<b class="fc">&nbsp;        this.strictMode = false</b>
-<b class="fc">&nbsp;        this.coerceStringsToNumbers = false</b>
-<b class="fc">&nbsp;        this.coerceBooleans = false</b>
-<b class="fc">&nbsp;        this.maxDepth = C.MAX_DEPTH</b>
-<b class="fc">&nbsp;        this.maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
-<b class="fc">&nbsp;        this.lastScanContentWas7BitOnly = false</b>
-<b class="fc">&nbsp;        this.predictedFieldIndex = C.FIELD_PREDICTION_START</b>
+<b class="fc">&nbsp;        val oldData = rawData</b>
+<b class="fc">&nbsp;        rawData = newData</b>
+<b class="fc">&nbsp;        position = 0</b>
+<b class="fc">&nbsp;        limit = newLimit</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        depth = 0</b>
+<b class="fc">&nbsp;        needsCommaMask = 0L</b>
+<b class="fc">&nbsp;        commaConsumedMask = 0L</b>
+<b class="fc">&nbsp;        strictMode = false</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        coerceBooleans = false</b>
+<b class="fc">&nbsp;        maxDepth = C.MAX_DEPTH</b>
+<b class="fc">&nbsp;        maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;        lastScanContentWas7BitOnly = false</b>
+<b class="fc">&nbsp;        predictedFieldIndex = C.FIELD_PREDICTION_START</b>
 <b class="fc">&nbsp;        invalidateUtf8Cache()</b>
 &nbsp;
 <b class="fc">&nbsp;        if (newData !== oldData) {</b>
@@ -571,7 +576,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Computes a cheap hash from the first four char code-points of the string content.
-&nbsp;     * Uses the same algorithm as [GhostJsonFlatReader] for byte sources.
+&nbsp;     * Uses the same algorithm as the byte flat reader for byte sources.
 &nbsp;     */
 &nbsp;    private fun computeStringPoolHash(start: Int, length: Int): Int {
 <b class="fc">&nbsp;        val chars = rawChars</b>
@@ -642,7 +647,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     *
 &nbsp;     * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
 &nbsp;     * cached array (used by custom-decoder bridges). Otherwise encodes only the range —
-&nbsp;     * avoids a full document UTF-8 pass for [com.ghost.serialization.parser.strings.captureRawJsonBytes] on large envelopes.
+&nbsp;     * avoids a full document UTF-8 pass for `captureRawJsonBytes` on large envelopes.
 &nbsp;     */
 &nbsp;    @InternalGhostApi
 &nbsp;    fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {
@@ -723,7 +728,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

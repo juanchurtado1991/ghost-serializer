@@ -281,20 +281,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.consumeNull
-&nbsp;import com.ghost.serialization.parser.streaming.isNextNullValue
-&nbsp;import com.ghost.serialization.parser.streaming.nextBoolean
-&nbsp;import com.ghost.serialization.parser.streaming.nextDouble
-&nbsp;import com.ghost.serialization.parser.streaming.nextString
-&nbsp;import com.ghost.serialization.parser.streaming.readList
-&nbsp;import com.ghost.serialization.parser.streaming.readMap
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 <b class="fc">&nbsp;sealed class ProtoValue {</b>
 <b class="fc">&nbsp;    object Null : ProtoValue()</b>
@@ -303,100 +289,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    data class Bool(val value: Boolean) : ProtoValue()</b>
 <b class="fc">&nbsp;    data class Struct(val value: Map&lt;String, ProtoValue&gt;) : ProtoValue()</b>
 <b class="fc">&nbsp;    data class List(val value: kotlin.collections.List&lt;ProtoValue&gt;) : ProtoValue()</b>
-&nbsp;}
-&nbsp;
-&nbsp;object ProtoValueSerializer : GhostSerializer&lt;ProtoValue&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_VALUE_TYPE
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoValue) {
-&nbsp;        when (value) {
-&nbsp;            is ProtoValue.Null -&gt; writer.nullValue()
-&nbsp;            is ProtoValue.Number -&gt; writer.value(value.value)
-&nbsp;            is ProtoValue.Str -&gt; writer.value(value.value)
-&nbsp;            is ProtoValue.Bool -&gt; writer.value(value.value)
-&nbsp;            is ProtoValue.Struct -&gt; {
-&nbsp;                writer.beginObject()
-&nbsp;                for ((mapKey, mapValue) in value.value) {
-&nbsp;                    writer.name(mapKey)
-&nbsp;                    serialize(writer, mapValue)
-&nbsp;                }
-&nbsp;                writer.endObject()
-&nbsp;            }
-&nbsp;
-&nbsp;            is ProtoValue.List -&gt; {
-&nbsp;                writer.beginArray()
-&nbsp;                for (listItem in value.value) {
-&nbsp;                    serialize(writer, listItem)
-&nbsp;                }
-&nbsp;                writer.endArray()
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoValue) {
-&nbsp;        when (value) {
-&nbsp;            is ProtoValue.Null -&gt; writer.nullValue()
-&nbsp;            is ProtoValue.Number -&gt; writer.value(value.value)
-&nbsp;            is ProtoValue.Str -&gt; writer.value(value.value)
-&nbsp;            is ProtoValue.Bool -&gt; writer.value(value.value)
-&nbsp;            is ProtoValue.Struct -&gt; {
-&nbsp;                writer.beginObject()
-&nbsp;                for ((mapKey, mapValue) in value.value) {
-&nbsp;                    writer.name(mapKey)
-&nbsp;                    serialize(writer, mapValue)
-&nbsp;                }
-&nbsp;                writer.endObject()
-&nbsp;            }
-&nbsp;
-&nbsp;            is ProtoValue.List -&gt; {
-&nbsp;                writer.beginArray()
-&nbsp;                for (listItem in value.value) {
-&nbsp;                    serialize(writer, listItem)
-&nbsp;                }
-&nbsp;                writer.endArray()
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoValue {
-&nbsp;        if (reader.isNextNullValue()) {
-&nbsp;            reader.consumeNull()
-&nbsp;            return ProtoValue.Null
-&nbsp;        }
-&nbsp;        val token = reader.peekNextToken()
-&nbsp;        return when (token) {
-&nbsp;            C.QUOTE_INT -&gt; ProtoValue.Str(reader.nextString())
-&nbsp;            C.TRUE_CHAR_INT, C.FALSE_CHAR_INT -&gt; ProtoValue.Bool(reader.nextBoolean())
-&nbsp;            C.OPEN_ARR_INT -&gt; ProtoValue.List(reader.readList { deserialize(reader) })
-&nbsp;            C.OPEN_OBJ_INT -&gt; ProtoValue.Struct(
-&nbsp;                reader.readMap(
-&nbsp;                    { reader.nextString() },
-&nbsp;                    { deserialize(reader) })
-&nbsp;            )
-&nbsp;
-&nbsp;            else -&gt; ProtoValue.Number(reader.nextDouble())
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoValue {
-&nbsp;        if (reader.isNextNullValue()) {
-&nbsp;            reader.consumeNull()
-&nbsp;            return ProtoValue.Null
-&nbsp;        }
-&nbsp;        val token = reader.peekNextToken()
-&nbsp;        return when (token) {
-&nbsp;            C.QUOTE_INT -&gt; ProtoValue.Str(reader.nextString())
-&nbsp;            C.TRUE_CHAR_INT, C.FALSE_CHAR_INT -&gt; ProtoValue.Bool(reader.nextBoolean())
-&nbsp;            C.OPEN_ARR_INT -&gt; ProtoValue.List(reader.readList { deserialize(reader) })
-&nbsp;            C.OPEN_OBJ_INT -&gt; ProtoValue.Struct(
-&nbsp;                reader.readMap(
-&nbsp;                    { reader.nextString() },
-&nbsp;                    { deserialize(reader) })
-&nbsp;            )
-&nbsp;
-&nbsp;            else -&gt; ProtoValue.Number(reader.nextDouble())
-&nbsp;        }
-&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -421,7 +313,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

@@ -97,16 +97,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextLong
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Wrapper message for `uint32`.
@@ -115,30 +106,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;@JvmInline
 <b class="fc">&nbsp;value class ProtoUInt32Value(val value: Long)</b>
-&nbsp;
-&nbsp;/**
-&nbsp; * Serializer for [ProtoUInt32Value].
-&nbsp; */
-&nbsp;object ProtoUInt32ValueSerializer : GhostSerializer&lt;ProtoUInt32Value&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_UINT32_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoUInt32Value) {
-&nbsp;        writer.value(value.value)
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoUInt32Value) {
-&nbsp;        writer.value(value.value)
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoUInt32Value) {
-&nbsp;        writer.value(value.value)
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoUInt32Value =
-&nbsp;        ProtoUInt32Value(reader.nextLong())
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoUInt32Value =
-&nbsp;        ProtoUInt32Value(reader.nextLong())
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -162,7 +129,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

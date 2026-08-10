@@ -63,7 +63,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (4/4)
   </span>
 </td>
     <td class="coverageStat"/>
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (6/6)
+    (15/15)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (39/39)
+    (87/87)
   </span>
 </td>
 </tr>
@@ -99,7 +99,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.FileSpec
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
-&nbsp;
 &nbsp;/**
 &nbsp; * Post-processes KotlinPoet output to drop redundant noise:
 &nbsp; * - stdlib imports Kotlin resolves implicitly (e.g. `import kotlin.String`)
@@ -113,23 +112,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    fun trim(source: String): String {
 <b class="fc">&nbsp;        return source.lineSequence()</b>
 <b class="fc">&nbsp;            .filterNot { line -&gt; redundantKotlinImport.matches(line.trim()) }</b>
-<b class="fc">&nbsp;            .map { line -&gt; redundantPublic.replace(line, &quot;$1&quot;) }</b>
-<b class="fc">&nbsp;            .joinToString(C.STR_NEWLINE)</b>
+<b class="fc">&nbsp;            .joinToString(C.STR_NEWLINE) { line -&gt;</b>
+<b class="fc">&nbsp;                redundantPublic.replace(line, C.STR_REGEX_GROUP_1)</b>
+&nbsp;            }
 &nbsp;    }
-&nbsp;}
 &nbsp;
-&nbsp;internal fun FileSpec.writeTrimmedTo(
-&nbsp;    codeGenerator: CodeGenerator,
-&nbsp;    dependencies: Dependencies,
-&nbsp;) {
-&nbsp;    val content = GeneratedSourceTrimmer.trim(toString())
-&nbsp;    codeGenerator.createNewFile(
-&nbsp;        dependencies = dependencies,
-&nbsp;        packageName = packageName,
-&nbsp;        fileName = name,
-&nbsp;        extensionName = C.STR_EXT_KT,
-&nbsp;    ).use { stream -&gt;
-&nbsp;        stream.write(content.toByteArray(Charsets.UTF_8))
+&nbsp;    fun write(
+&nbsp;        fileSpec: FileSpec,
+&nbsp;        codeGenerator: CodeGenerator,
+&nbsp;        dependencies: Dependencies,
+&nbsp;    ) {
+<b class="fc">&nbsp;        val content = trim(fileSpec.toString())</b>
+<b class="fc">&nbsp;        codeGenerator.createNewFile(</b>
+<b class="fc">&nbsp;            dependencies = dependencies,</b>
+<b class="fc">&nbsp;            packageName = fileSpec.packageName,</b>
+<b class="fc">&nbsp;            fileName = fileSpec.name,</b>
+<b class="fc">&nbsp;            extensionName = C.STR_EXT_KT,</b>
+<b class="fc">&nbsp;        ).use { stream -&gt;</b>
+<b class="fc">&nbsp;            stream.write(content.toByteArray(Charsets.UTF_8))</b>
+<b class="fc">&nbsp;        }</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -155,7 +156,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

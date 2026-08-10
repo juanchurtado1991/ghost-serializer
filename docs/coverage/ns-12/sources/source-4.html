@@ -148,12 +148,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        val prev = coerceStringsToNumbers</b>
 <b class="nc">&nbsp;        coerceStringsToNumbers = true</b>
 &nbsp;        try {
-<b class="nc">&nbsp;            return this.nextFloatExtension()</b>
+<b class="nc">&nbsp;            return nextFloatExtension()</b>
 &nbsp;        } finally {
 <b class="nc">&nbsp;            coerceStringsToNumbers = prev</b>
 &nbsp;        }
 &nbsp;    }
-<b class="fc">&nbsp;    return this.nextFloatExtension()</b>
+<b class="fc">&nbsp;    return nextFloatExtension()</b>
 &nbsp;}
 &nbsp;
 &nbsp;internal fun GhostProtoJsonFlatReader.nextProtoDouble(): Double {
@@ -192,12 +192,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        val prev = coerceStringsToNumbers</b>
 <b class="nc">&nbsp;        coerceStringsToNumbers = true</b>
 &nbsp;        try {
-<b class="nc">&nbsp;            return this.nextDoubleExtension()</b>
+<b class="nc">&nbsp;            return nextDoubleExtension()</b>
 &nbsp;        } finally {
 <b class="nc">&nbsp;            coerceStringsToNumbers = prev</b>
 &nbsp;        }
 &nbsp;    }
-<b class="fc">&nbsp;    return this.nextDoubleExtension()</b>
+<b class="fc">&nbsp;    return nextDoubleExtension()</b>
 &nbsp;}
 &nbsp;
 &nbsp;private fun GhostProtoJsonFlatReader.matchInfinityBytes(start: Int): Boolean {
@@ -218,12 +218,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val prev = coerceStringsToNumbers</b>
 <b class="fc">&nbsp;        coerceStringsToNumbers = true</b>
 &nbsp;        try {
-<b class="fc">&nbsp;            this.nextLongExtension()</b>
+<b class="fc">&nbsp;            nextLongExtension()</b>
 &nbsp;        } finally {
 <b class="fc">&nbsp;            coerceStringsToNumbers = prev</b>
 &nbsp;        }
 &nbsp;    } else {
-<b class="fc">&nbsp;        this.nextDoubleExtension().toLong()</b>
+<b class="fc">&nbsp;        nextDoubleExtension().toLong()</b>
 &nbsp;    }
 &nbsp;}
 &nbsp;
@@ -285,7 +285,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

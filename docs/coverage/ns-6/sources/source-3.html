@@ -153,7 +153,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.codegen.emit
 &nbsp;
 &nbsp;import com.ghost.serialization.compiler.analysis.serializerClassName
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.ghost.serialization.compiler.model.InferredSubclassModel
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -169,26 +168,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Main coordinator (Orchestrator) for the deserialization code generation process.
+&nbsp; * Main coordinator for deserialization code generation.
 &nbsp; *
-&nbsp; * This class implements the Strategy Pattern to select the most efficient deserialization
-&nbsp; * logic for a given DTO. It acts as the central hub that inspects the DTO&#39;s metadata
-&nbsp; * (sealed hierarchy, enum, size, or structural complexity) and delegates the generation
-&nbsp; * task to specialized emitters.
+&nbsp; * Selects a strategy from DTO metadata (sealed hierarchy, enum, size, structural complexity)
+&nbsp; * and delegates to specialized emitters.
 &nbsp; *
 &nbsp; * ### Orchestration Strategy:
-&nbsp; * - **Polymorphic Types:** Direct delegation for sealed or [kotlin.Enum] types.
-&nbsp; * - **Large DTOs (&gt; [com.ghost.serialization.compiler.internal.GhostEmitterConstants.PROPERTY_MAX_SIZE]):**
-&nbsp; *   Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
+&nbsp; * - **Polymorphic Types:** Direct delegation for sealed or `Enum` types.
+&nbsp; * - **Large DTOs (&gt; `PROPERTY_MAX_SIZE`):** Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
 &nbsp; * - **Standard DTOs:** Delegates to [StandardEmitter] for highly-optimized, inlinable code.
 &nbsp; *
-&nbsp; * @property properties The list of property metadata to be deserialized.
-&nbsp; * @property originalClassName The canonical name of the class being generated.
-&nbsp; * @property readerClass The specific reader implementation (e.g., GhostJsonFlatReader).
-&nbsp; * @property isSealed Identifies if the class is part of a sealed hierarchy.
-&nbsp; * @property isValue Identifies if the class is a Kotlin Value Class (inline class).
-&nbsp; * @property isEnum Identifies if the class is an Enum.
-&nbsp; * @property isInferred Handles polymorphic types where the discriminator is absent,
+&nbsp; * @param properties The list of property metadata to be deserialized.
+&nbsp; * @param originalClassName The canonical name of the class being generated.
+&nbsp; * @param readerClass The specific reader implementation (e.g., `GhostJsonFlatReader`).
+&nbsp; * @param isSealed Identifies if the class is part of a sealed hierarchy.
+&nbsp; * @param isValue Identifies if the class is a Kotlin value class (inline class).
+&nbsp; * @param isEnum Identifies if the class is an enum.
+&nbsp; * @param isInferred Handles polymorphic types where the discriminator is absent,
 &nbsp; * relying on property presence to identify the subclass.
 &nbsp; */
 &nbsp;internal class DeserializeCodeEmitter(
@@ -199,7 +195,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    private val isValue: Boolean,</b>
 <b class="fc">&nbsp;    private val isEnum: Boolean,</b>
 <b class="fc">&nbsp;    private val sealedSubclasses: List&lt;KSClassDeclaration&gt;,</b>
-<b class="fc">&nbsp;    private val sealedDiscriminatorKey: String = C.DEFAULT_DISCRIMINATOR_KEY,</b>
+<b class="fc">&nbsp;    private val sealedDiscriminatorKey: String = C.STR_DEFAULT_DISCRIMINATOR,</b>
 <b class="fc">&nbsp;    private val isResilientClass: Boolean = false,</b>
 <b class="fc">&nbsp;    private val isInferred: Boolean = false,</b>
 <b class="fc">&nbsp;    private val isObject: Boolean = false,</b>
@@ -244,7 +240,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                emitEnum(body)</b>
 &nbsp;            }
 &nbsp;
-<b class="pc">&nbsp;            properties.size &gt; PROPERTY_MAX_SIZE -&gt; {</b>
+<b class="pc">&nbsp;            properties.size &gt; C.PROPERTY_MAX_SIZE -&gt; {</b>
 <b class="nc">&nbsp;                emitFragmented(body, typeSpecBuilder, isFlatPath)</b>
 &nbsp;            }
 &nbsp;
@@ -322,7 +318,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
 <b class="pc">&nbsp;        val customName = subclass.annotations</b>
 <b class="pc">&nbsp;            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }</b>
-<b class="pc">&nbsp;            ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String</b>
+<b class="pc">&nbsp;            ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String</b>
 <b class="pc">&nbsp;        return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()</b>
 &nbsp;    }
 &nbsp;
@@ -694,7 +690,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                    )
 <b class="nc">&nbsp;                }</b>
 <b class="fc">&nbsp;                body.addStatement(</b>
-<b class="nc">&nbsp;                    C.TEMPLATE_VARIABLE,</b>
+<b class="nc">&nbsp;                    C.TEMPLATE_L,</b>
 <b class="nc">&nbsp;                    C.STR_INSTANCE_VAR</b>
 &nbsp;                )
 &nbsp;            }
@@ -775,7 +771,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > JvmByteArraySource</title>
+  <title>GhostSerialization Coverage Report > GhostSource_androidKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: JvmByteArraySource (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostSource_androidKt (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">JvmByteArraySource</td>
+  <td class="name">GhostSource_androidKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,7 +63,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -71,23 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (8/8)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (28/28)
+    (5/5)
   </span>
 </td>
 </tr>
@@ -107,28 +100,29 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * JVM-optimized [GhostSource] that overrides [decodeJsonStringRange]
-&nbsp; * to use [StandardCharsets.US_ASCII] for known 7-bit content,
-&nbsp; * bypassing full UTF-8 validation.
+&nbsp; * Android-optimized [GhostSource] that overrides [decodeJsonStringRange]
+&nbsp; * to use [StandardCharsets.ISO_8859_1] for known 7-bit content.
+&nbsp; * ISO_8859_1 does a direct byte copy without ASCII validation — safe here
+&nbsp; * because isKnown7BitContent already guarantees all bytes are &lt; 128.
 &nbsp; */
-<b class="fc">&nbsp;@InternalGhostApi</b>
-&nbsp;class JvmByteArraySource(
+&nbsp;@InternalGhostApi
+&nbsp;class AndroidByteArraySource(
 &nbsp;    data: ByteArray
-<b class="fc">&nbsp;) : ByteArrayGhostSource(data) {</b>
+&nbsp;) : ByteArrayGhostSource(data) {
 &nbsp;
 &nbsp;    override fun decodeJsonStringRange(
 &nbsp;        start: Int,
 &nbsp;        end: Int,
 &nbsp;        isKnown7BitContent: Boolean
 &nbsp;    ): String {
-<b class="fc">&nbsp;        if (!isKnown7BitContent) {</b>
-<b class="fc">&nbsp;            return decodeToString(start, end)</b>
+&nbsp;        if (!isKnown7BitContent) {
+&nbsp;            return decodeToString(start, end)
 &nbsp;        }
-<b class="fc">&nbsp;        return String(</b>
-<b class="fc">&nbsp;            data,</b>
+&nbsp;        return String(
+&nbsp;            data,
 &nbsp;            start,
-<b class="fc">&nbsp;            end - start,</b>
-<b class="fc">&nbsp;            StandardCharsets.ISO_8859_1</b>
+&nbsp;            end - start,
+&nbsp;            StandardCharsets.ISO_8859_1
 &nbsp;        )
 &nbsp;    }
 &nbsp;}
@@ -136,7 +130,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;@InternalGhostApi
 &nbsp;actual fun createByteArraySource(
 &nbsp;    data: ByteArray
-&nbsp;): GhostSource = JvmByteArraySource(data)
+<b class="fc">&nbsp;): GhostSource = AndroidByteArraySource(data)</b>
 </code>
 </pre>
 </div>
@@ -160,7 +154,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

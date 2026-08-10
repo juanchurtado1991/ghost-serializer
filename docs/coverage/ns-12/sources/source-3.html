@@ -126,17 +126,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        scanPos++</b>
 &nbsp;    }
 <b class="fc">&nbsp;    while (scanPos &lt; limit) {</b>
-<b class="fc">&nbsp;        val b = getByte(scanPos)</b>
-<b class="fc">&nbsp;        if (b == C.DOT_INT) {</b>
+<b class="fc">&nbsp;        val tokenByte = getByte(scanPos)</b>
+<b class="fc">&nbsp;        if (tokenByte == C.DOT_INT) {</b>
 <b class="fc">&nbsp;            hasDot = true</b>
 &nbsp;            break
 &nbsp;        }
 <b class="fc">&nbsp;        if (</b>
-<b class="fc">&nbsp;            b == C.QUOTE_INT ||</b>
-<b class="fc">&nbsp;            b == C.COMMA_INT ||</b>
-<b class="fc">&nbsp;            b == C.CLOSE_OBJ_INT ||</b>
-<b class="pc">&nbsp;            b == C.CLOSE_ARR_INT ||</b>
-<b class="fc">&nbsp;            b &lt;= C.SPACE_INT</b>
+<b class="fc">&nbsp;            tokenByte == C.QUOTE_INT ||</b>
+<b class="fc">&nbsp;            tokenByte == C.COMMA_INT ||</b>
+<b class="fc">&nbsp;            tokenByte == C.CLOSE_OBJ_INT ||</b>
+<b class="pc">&nbsp;            tokenByte == C.CLOSE_ARR_INT ||</b>
+<b class="fc">&nbsp;            tokenByte &lt;= C.SPACE_INT</b>
 &nbsp;        ) {
 &nbsp;            break
 &nbsp;        }
@@ -149,14 +149,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;    try {
 <b class="fc">&nbsp;        if (hasDot) {</b>
-<b class="fc">&nbsp;            val d = this.nextDoubleExtension()</b>
-<b class="fc">&nbsp;            val i = d.toInt()</b>
-<b class="fc">&nbsp;            if (d != i.toDouble()) {</b>
+<b class="fc">&nbsp;            val doubleValue = nextDoubleExtension()</b>
+<b class="fc">&nbsp;            val intValue = doubleValue.toInt()</b>
+<b class="fc">&nbsp;            if (doubleValue != intValue.toDouble()) {</b>
 <b class="fc">&nbsp;                throwError(C.ERR_PROTO_FRACTIONAL_INT)</b>
 &nbsp;            }
-<b class="fc">&nbsp;            return i</b>
+<b class="fc">&nbsp;            return intValue</b>
 &nbsp;        }
-<b class="fc">&nbsp;        return this.nextIntExtension()</b>
+<b class="fc">&nbsp;        return nextIntExtension()</b>
 &nbsp;    } finally {
 <b class="fc">&nbsp;        coerceStringsToNumbers = prev</b>
 &nbsp;    }
@@ -184,7 +184,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

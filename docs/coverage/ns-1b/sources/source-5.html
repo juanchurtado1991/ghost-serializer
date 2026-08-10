@@ -97,6 +97,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.types
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.bytes.captureRawJson
@@ -111,7 +112,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/** Built-in serializer for [RawJson] opaque JSON passthrough. */
 &nbsp;object RawJsonSerializer : GhostSerializer&lt;RawJson&gt; {
-<b class="fc">&nbsp;    override val typeName: String = &quot;RawJson&quot;</b>
+<b class="fc">&nbsp;    override val typeName: String = C.TYPE_NAME_RAW_JSON</b>
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonReader): RawJson =
 <b class="fc">&nbsp;        reader.captureRawJson()</b>
@@ -135,7 +136,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun warmUp() {
-<b class="nc">&nbsp;        val sample = &quot;&quot;&quot;{&quot;warm&quot;:true}&quot;&quot;&quot;.encodeToByteArray()</b>
+<b class="nc">&nbsp;        val sample = C.WARM_RAW_JSON_PAYLOAD.encodeToByteArray()</b>
 &nbsp;        try {
 <b class="nc">&nbsp;            deserialize(GhostJsonReader(sample))</b>
 &nbsp;        } catch (_: Exception) {
@@ -169,7 +170,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

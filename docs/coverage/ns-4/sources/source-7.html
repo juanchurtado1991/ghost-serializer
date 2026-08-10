@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.4%
+    100%
   </span>
   <span class="absValue">
-    (27/28)
+    (27/27)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    49.1%
+    50%
   </span>
   <span class="absValue">
-    (56/114)
+    (56/112)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.3%
+    93.8%
   </span>
   <span class="absValue">
-    (60/65)
+    (60/64)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    81.4%
+    82.5%
   </span>
   <span class="absValue">
-    (454/558)
+    (454/550)
   </span>
 </td>
 </tr>
@@ -249,7 +249,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;internal fun KSType.isGhost(): Boolean {
 <b class="fc">&nbsp;    return declaration.annotations.any {</b>
-<b class="fc">&nbsp;        it.shortName.asString() == C.GHOST_SERIALIZATION</b>
+<b class="fc">&nbsp;        it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION</b>
 &nbsp;    }
 &nbsp;}
 &nbsp;
@@ -263,25 +263,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Checks whether this type is [kotlin.ByteArray].
 &nbsp; * Fields of this type capture raw JSON bytes via the reader&#39;s
-&nbsp; * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
+&nbsp; * `captureRawJsonBytes` extension.
 &nbsp; */
 &nbsp;internal fun KSType.isByteArray(): Boolean {
 <b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Checks whether this type is [com.ghost.serialization.types.RawJson].
+&nbsp; * Checks whether this type is `RawJson`.
 &nbsp; * Fields of this type capture raw JSON bytes via the reader&#39;s
-&nbsp; * [com.ghost.serialization.parser.bytes.captureRawJsonBytes] extension.
+&nbsp; * `captureRawJsonBytes` extension.
 &nbsp; */
 &nbsp;internal fun KSType.isRawJson(): Boolean {
 <b class="pc">&nbsp;    return declaration.qualifiedName?.asString() == C.K_RAW_JSON</b>
 &nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Checks whether this type captures opaque JSON inline (ByteArray or RawJson).
-&nbsp; */
-<b class="nc">&nbsp;internal fun KSType.isOpaqueJson(): Boolean = isByteArray() || isRawJson()</b>
 &nbsp;
 &nbsp;/**
 &nbsp; * True when this type (recursively) uses JSON-only codegen features unsupported on YAML paths.
@@ -362,7 +357,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

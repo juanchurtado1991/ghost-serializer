@@ -49,10 +49,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">GhostPlugin</td>
 <td class="coverageStat">
   <span class="percent">
-    90%
+    100%
   </span>
   <span class="absValue">
-    (9/10)
+    (9/9)
   </span>
 </td>
 <td class="coverageStat">
@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.7%
+    88.1%
   </span>
   <span class="absValue">
-    (52/60)
+    (52/59)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.7%
+    92.7%
   </span>
   <span class="absValue">
-    (343/374)
+    (343/370)
   </span>
 </td>
 </tr>
@@ -389,10 +389,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    95%
+    100%
   </span>
   <span class="absValue">
-    (19/20)
+    (19/19)
   </span>
 </td>
 <td class="coverageStat">
@@ -405,18 +405,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.4%
+    91.5%
   </span>
   <span class="absValue">
-    (75/83)
+    (75/82)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94%
+    94.7%
   </span>
   <span class="absValue">
-    (514/547)
+    (514/543)
   </span>
 </td>
 </tr>
@@ -543,10 +543,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        project.dependencies.add(CONFIG_IMPL, apiDep)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    private fun isMultiplatform(project: Project): Boolean {
-<b class="nc">&nbsp;        return project.pluginManager.hasPlugin(PLUGIN_KMP)</b>
-&nbsp;    }
-&nbsp;
 &nbsp;    private fun hasKtorDependency(project: Project): Boolean {
 <b class="fc">&nbsp;        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name -&gt;</b>
 <b class="fc">&nbsp;            val config = project.configurations.findByName(name)</b>
@@ -583,7 +579,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    companion object {
 &nbsp;        private const val EXTENSION_NAME = &quot;ghost&quot;
-&nbsp;        private const val DEFAULT_VERSION = &quot;1.3.0&quot;
 &nbsp;
 &nbsp;        private const val PLUGIN_KSP = &quot;com.google.devtools.ksp&quot;
 &nbsp;        private const val PLUGIN_KMP = &quot;org.jetbrains.kotlin.multiplatform&quot;
@@ -635,7 +630,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

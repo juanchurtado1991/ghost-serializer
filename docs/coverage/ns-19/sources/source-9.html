@@ -76,10 +76,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.9%
+    91.7%
   </span>
   <span class="absValue">
-    (10/11)
+    (11/12)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     97.3%
   </span>
   <span class="absValue">
-    (72/74)
+    (73/75)
   </span>
 </td>
 </tr>
@@ -116,8 +116,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun add(value: Int) {
 <b class="fc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="fc">&nbsp;            val newCapacity =</b>
-<b class="fc">&nbsp;                if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="fc">&nbsp;            val newCapacity = if (buffer.isEmpty()) {</b>
+<b class="fc">&nbsp;                C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
+&nbsp;            }
 <b class="fc">&nbsp;            buffer = buffer.copyOf(newCapacity)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        buffer[currentSize++] = value</b>
@@ -138,44 +141,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun isEmpty(): Boolean {
 <b class="fc">&nbsp;        return currentSize == 0</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Highly optimized, zero-allocation internal list implementation for [Long] primitives.
-&nbsp; * Avoids boxing overhead and memory allocation pressure.
-&nbsp; */
-&nbsp;internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {
-&nbsp;    private var buffer = LongArray(initialCapacity)
-&nbsp;    private var currentSize = 0
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Adds a long item to the list, expanding the backing buffer if necessary.
-&nbsp;     */
-&nbsp;    fun add(value: Long) {
-&nbsp;        if (currentSize == buffer.size) {
-&nbsp;            val newCapacity =
-&nbsp;                if (buffer.size == 0) C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY else (buffer.size * C.BUFFER_SCALE_FACTOR)
-&nbsp;            buffer = buffer.copyOf(newCapacity)
-&nbsp;        }
-&nbsp;        buffer[currentSize++] = value
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Returns the accumulated list elements as a raw [LongArray].
-&nbsp;     */
-&nbsp;    fun toArray(): LongArray {
-&nbsp;        if (currentSize == buffer.size) {
-&nbsp;            return buffer
-&nbsp;        }
-&nbsp;        return buffer.copyOf(currentSize)
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Returns true if the collection has no elements.
-&nbsp;     */
-&nbsp;    fun isEmpty(): Boolean {
-&nbsp;        return currentSize == 0
 &nbsp;    }
 &nbsp;}
 </code>
@@ -201,7 +166,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

@@ -221,7 +221,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            C.K_FLOAT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, targetAccessor)</b>
 <b class="nc">&nbsp;            C.K_SHORT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, targetAccessor)</b>
 <b class="nc">&nbsp;            C.K_BYTE -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, targetAccessor)</b>
-<b class="fc">&nbsp;            C.K_BOOLEAN -&gt; CodeBlock.of(C.TEMPLATE_ACCESSOR_L, targetAccessor)</b>
+<b class="fc">&nbsp;            C.K_BOOLEAN -&gt; CodeBlock.of(C.TEMPLATE_L, targetAccessor)</b>
 <b class="fc">&nbsp;            C.K_STRING -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
 <b class="fc">&nbsp;            C.K_BYTE_ARRAY -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
 <b class="nc">&nbsp;            else -&gt; null</b>
@@ -274,7 +274,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Unwraps a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
+&nbsp;     * Unwraps a `@GhostWrappedKeys`
 &nbsp;     * property by writing each wire field at the current JSON object level.
 &nbsp;     */
 &nbsp;    private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
@@ -535,7 +535,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val isNullable = type.isMarkedNullable</b>
 <b class="pc">&nbsp;        if (isNullable &amp;&amp; !skipNullCheck) {</b>
 <b class="nc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)</b>
-<b class="nc">&nbsp;            code.addStatement(C.STR_NULL_VAL_CALL)</b>
+<b class="nc">&nbsp;            code.addStatement(C.STR_WRITER_NULL_VAL)</b>
 <b class="nc">&nbsp;            code.nextControlFlow(C.STR_ELSE)</b>
 &nbsp;        }
 &nbsp;
@@ -591,14 +591,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            typeName == C.K_INT -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            typeName == C.K_LONG -&gt; {</b>
 <b class="fc">&nbsp;                if (isProto) {</b>
 <b class="fc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)</b>
 &nbsp;                } else {
-<b class="fc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="fc">&nbsp;                    code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;
@@ -606,36 +606,36 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                if (isProto) {</b>
 <b class="nc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)</b>
 &nbsp;                } else {
-<b class="nc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="nc">&nbsp;                    code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            typeName == C.K_STRING -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            typeName == C.K_BOOLEAN -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            typeName == C.K_DOUBLE -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            typeName == C.K_FLOAT -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_FLOAT, accessor)</b>
+<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            typeName == C.K_BYTE -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(&quot;writer.value(%L.toInt())&quot;, accessor)</b>
+<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_TO_INT, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            typeName == C.K_SHORT -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(&quot;writer.value(%L.toInt())&quot;, accessor)</b>
+<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_TO_INT, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            typeName == C.K_CHAR -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_L, accessor)</b>
+<b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            typeName == C.K_BYTE_ARRAY -&gt; {</b>
@@ -774,14 +774,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
 &nbsp;     */
 &nbsp;    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
-<b class="nc">&nbsp;        val ghostClass = ClassName(C.STR_GHOST_PKG, C.STR_GHOST_OBJ)</b>
+<b class="nc">&nbsp;        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST)</b>
 &nbsp;
 <b class="nc">&nbsp;        contextualSerializers.forEach { (type, name) -&gt;</b>
 <b class="nc">&nbsp;            val nonNullableType = type.makeNotNullable()</b>
 <b class="nc">&nbsp;            typeSpecBuilder.addProperty(</b>
 <b class="nc">&nbsp;                PropertySpec.builder(</b>
 <b class="nc">&nbsp;                    name,</b>
-<b class="nc">&nbsp;                    ClassName(C.STR_CONTRACT_PKG, C.STR_GHOST_SERIALIZER)</b>
+<b class="nc">&nbsp;                    ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)</b>
 <b class="nc">&nbsp;                        .parameterizedBy(nonNullableType.toTypeName()),</b>
 <b class="nc">&nbsp;                    KModifier.PRIVATE</b>
 &nbsp;                )
@@ -833,7 +833,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

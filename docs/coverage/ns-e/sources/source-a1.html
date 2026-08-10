@@ -98,69 +98,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
 &nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class WireExtras(
-&nbsp;    @GhostName(&quot;extra1&quot;) val extra1: String?,
-&nbsp;    @GhostName(&quot;extra2&quot;) val extra2: String?,
-&nbsp;    @GhostName(&quot;extra3&quot;) val extra3: String?,
-&nbsp;    @GhostName(&quot;extra4&quot;) val extra4: String?,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class WrappedKeysFixture(
-&nbsp;    val id: String,
-&nbsp;    @GhostWrappedKeys(keys = [&quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;])
-&nbsp;    @GhostName(&quot;extras&quot;)
-&nbsp;    val extras: WireExtras,
-&nbsp;)
-&nbsp;
 <b class="fc">&nbsp;@GhostSerialization</b>
 &nbsp;data class OmitIfEmptyWrappedKeysFixture(
 <b class="fc">&nbsp;    val id: String,</b>
 <b class="fc">&nbsp;    @GhostWrappedKeys(keys = [&quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;], omitIfEmpty = true)</b>
 &nbsp;    @GhostName(&quot;extras&quot;)
 <b class="fc">&nbsp;    val extras: WireExtras?,</b>
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class OmitIfAbsentWrappedKeysFixture(
-&nbsp;    val id: String,
-&nbsp;    @GhostWrappedKeys(
-&nbsp;        keys = [&quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;],
-&nbsp;        omitIfAbsent = [&quot;extra2&quot;, &quot;extra4&quot;],
-&nbsp;    )
-&nbsp;    @GhostName(&quot;extras&quot;)
-&nbsp;    val extras: WireExtras?,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class HierarchyWrappedKeysFixture(
-&nbsp;    @GhostWrappedKeys(keys = [&quot;id&quot;, &quot;extra1&quot;, &quot;extra2&quot;, &quot;extra3&quot;, &quot;extra4&quot;])
-&nbsp;    @GhostName(&quot;wrappedKeysTestClass&quot;)
-&nbsp;    val wrappedKeysTestClass: WrappedKeysFixture,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class WireExtras12(
-&nbsp;    @GhostName(&quot;extra1&quot;) val extra1: String,
-&nbsp;    @GhostName(&quot;extra2&quot;) val extra2: String,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class WireExtras34(
-&nbsp;    @GhostName(&quot;extra3&quot;) val extra3: String,
-&nbsp;    @GhostName(&quot;extra4&quot;) val extra4: String,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostSerialization
-&nbsp;data class RepeatedWrappedKeysFixture(
-&nbsp;    val id: String,
-&nbsp;    @GhostWrappedKeys(keys = [&quot;extra1&quot;, &quot;extra2&quot;])
-&nbsp;    @GhostName(&quot;extras12&quot;)
-&nbsp;    val extras12: WireExtras12,
-&nbsp;    @GhostWrappedKeys(keys = [&quot;extra3&quot;, &quot;extra4&quot;])
-&nbsp;    @GhostName(&quot;extras34&quot;)
-&nbsp;    val extras34: WireExtras34,
 &nbsp;)
 </code>
 </pre>
@@ -185,7 +128,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

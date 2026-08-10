@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.5%
+    96.4%
   </span>
   <span class="absValue">
-    (55/57)
+    (54/56)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90%
+    89.8%
   </span>
   <span class="absValue">
-    (271/301)
+    (265/295)
   </span>
 </td>
 </tr>
@@ -138,15 +138,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     97.5%
   </span>
   <span class="absValue">
-    (155/159)
+    (154/158)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.5%
+    94.4%
   </span>
   <span class="absValue">
-    (1006/1065)
+    (1000/1059)
   </span>
 </td>
 </tr>
@@ -167,8 +167,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Immutable metadata for generating a single
-&nbsp; * [com.ghost.serialization.contract.GhostSerializer] companion object.
+&nbsp; * Immutable metadata for generating a single `GhostSerializer` companion object.
 &nbsp; */
 <b class="fc">&nbsp;internal class GhostSerializerContext private constructor(</b>
 <b class="fc">&nbsp;    val properties: List&lt;GhostPropertyModel&gt;,</b>
@@ -205,8 +204,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val yamlFlatWriterClass: ClassName,</b>
 <b class="fc">&nbsp;    val yamlFlatReaderClass: ClassName,</b>
 &nbsp;) {
-<b class="fc">&nbsp;    val readerClass: ClassName = streamingReaderClass</b>
-&nbsp;
 <b class="fc">&nbsp;    val serializerName: String = baseClassName + C.STR_SERIALIZER_SUFFIX</b>
 &nbsp;
 &nbsp;    fun needsObjectParsingImports(): Boolean {
@@ -286,7 +283,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val discriminator = if (parentSealedClass != null) {</b>
 <b class="pc">&nbsp;                val customName = classDeclaration.annotations</b>
 <b class="pc">&nbsp;                    .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }</b>
-<b class="pc">&nbsp;                    ?.arguments?.find { it.name?.asString() == C.ARG_NAME }?.value as? String</b>
+<b class="pc">&nbsp;                    ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String</b>
 <b class="pc">&nbsp;                if (!customName.isNullOrEmpty()) customName else classDeclaration.simpleName.asString()</b>
 &nbsp;            } else {
 <b class="fc">&nbsp;                null</b>
@@ -305,7 +302,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val customTypeName = classDeclaration.annotations</b>
 <b class="fc">&nbsp;                .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }</b>
 <b class="fc">&nbsp;                ?.arguments</b>
-<b class="pc">&nbsp;                ?.find { it.name?.asString() == C.ARG_NAME }</b>
+<b class="pc">&nbsp;                ?.find { it.name?.asString() == C.NAME }</b>
 <b class="pc">&nbsp;                ?.value as? String ?: C.STR_EMPTY</b>
 &nbsp;
 <b class="fc">&nbsp;            val isInferred = (if (discriminator != null) {</b>
@@ -411,7 +408,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

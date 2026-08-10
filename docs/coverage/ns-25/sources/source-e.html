@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostStrict</title>
+  <title>GhostSerialization Coverage Report > GhostFallback</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostStrict (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostFallback (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostStrict</td>
+  <td class="name">GhostFallback</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,28 +47,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Enforces strict JSON syntax checking (missing or duplicate commas, trailing commas,
-&nbsp; * and unmapped fields) during deserialization for the annotated endpoint, parameter, or controller.
+&nbsp; * Indicates that this subclass should be used as the fallback when deserializing
+&nbsp; * a sealed class and the discriminator value in the JSON does not match any known subclass.
+&nbsp; *
+&nbsp; * Only one subclass per sealed class hierarchy can be annotated with this annotation.
 &nbsp; */
-&nbsp;@Target(
-&nbsp;    AnnotationTarget.FUNCTION,
-&nbsp;    AnnotationTarget.VALUE_PARAMETER,
-&nbsp;    AnnotationTarget.CLASS
-&nbsp;)
-&nbsp;@Retention(AnnotationRetention.RUNTIME)
-&nbsp;annotation class GhostStrict
-&nbsp;
-&nbsp;/**
-&nbsp; * Enables loose type coercion (automatic conversion of stringified numbers or booleans into
-&nbsp; * their primitive representations) during deserialization for the annotated endpoint, parameter, or controller.
-&nbsp; */
-&nbsp;@Target(
-&nbsp;    AnnotationTarget.FUNCTION,
-&nbsp;    AnnotationTarget.VALUE_PARAMETER,
-&nbsp;    AnnotationTarget.CLASS
-&nbsp;)
-&nbsp;@Retention(AnnotationRetention.RUNTIME)
-&nbsp;annotation class GhostCoerce
+&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostFallback
 </code>
 </pre>
 </div>
@@ -92,7 +78,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

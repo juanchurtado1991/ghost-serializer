@@ -135,9 +135,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    fun &lt;T : Any&gt; decode(raw: RawJson, clazz: KClass&lt;T&gt;): T {
 <b class="pc">&nbsp;        val serializer = Ghost.getSerializer(clazz)</b>
-<b class="nc">&nbsp;            ?: error(&quot;No GhostSerializer registered for ${clazz.simpleName}&quot;)</b>
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        return decode(raw, serializer as GhostSerializer&lt;T&gt;)</b>
+<b class="nc">&nbsp;            ?: error(&quot;${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}&quot;)</b>
+<b class="fc">&nbsp;        return decode(raw, serializer)</b>
 &nbsp;    }
 &nbsp;}
 &nbsp;
@@ -170,7 +169,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

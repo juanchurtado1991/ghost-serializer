@@ -97,16 +97,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.jvm.JvmInline
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * Full `uint64` range (0 to [ULong.MAX_VALUE], `18446744073709551615`) — [Long] cannot represent
@@ -118,34 +109,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;@JvmInline
 <b class="fc">&nbsp;value class ProtoUInt64Value(val value: ULong)</b>
-&nbsp;
-&nbsp;/**
-&nbsp; * Serializer for [ProtoUInt64Value].
-&nbsp; */
-&nbsp;object ProtoUInt64ValueSerializer : GhostSerializer&lt;ProtoUInt64Value&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_UINT64_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoUInt64Value) {
-&nbsp;        writer.value(value.value.toString())
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoUInt64Value) {
-&nbsp;        writer.value(value.value.toString())
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoUInt64Value) {
-&nbsp;        writer.value(value.value.toString())
-&nbsp;    }
-&nbsp;
-&nbsp;    // Reader-agnostic: the canonical proto3 JSON form for uint64 is always a quoted decimal
-&nbsp;    // string (unlike int64, which many producers also emit unquoted within the safe Long
-&nbsp;    // range), so nextString().toULong() is correct on every reader flavor without needing
-&nbsp;    // GhostProtoJsonFlatReader-specific numeric coercion.
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoUInt64Value =
-&nbsp;        ProtoUInt64Value(reader.nextString().toULong())
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoUInt64Value =
-&nbsp;        ProtoUInt64Value(reader.nextString().toULong())
-&nbsp;}
 </code>
 </pre>
 </div>
@@ -169,7 +132,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

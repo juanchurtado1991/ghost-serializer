@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlFlowStyleSubsystemKt</title>
+  <title>GhostSerialization Coverage Report > GhostYamlBlockStyleSubsystemKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlFlowStyleSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: GhostYamlBlockStyleSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlFlowStyleSubsystemKt</td>
+  <td class="name">GhostYamlBlockStyleSubsystemKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    72.7%
+    91.2%
   </span>
   <span class="absValue">
-    (32/44)
+    (73/80)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.2%
+    100%
   </span>
   <span class="absValue">
-    (50/52)
+    (79/79)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.7%
+    94.5%
   </span>
   <span class="absValue">
-    (284/300)
+    (445/471)
   </span>
 </td>
 </tr>
@@ -104,96 +104,185 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Subsystem for parsing YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]).
+&nbsp; * Subsystem for parsing YAML block-style mappings and sequences.
 &nbsp; */
 &nbsp;
-&nbsp;/** Parses flow-style mappings (`{key: value}`). */
-&nbsp;internal fun GhostYamlFlatReader.readFlowMapping(): Map&lt;String, Any?&gt; {
-<b class="fc">&nbsp;    position++ // consume &#39;{&#39;</b>
-<b class="fc">&nbsp;    val result = LinkedHashMap&lt;String, Any?&gt;(8)</b>
-<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
-&nbsp;
-<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;/**
+&nbsp; * Reads a block mapping starting at the current position.
+&nbsp; * Called when we detect &quot;key: value&quot; on a new line.
+&nbsp; *
+&nbsp; * @param blockIndent The indentation of the first key in this mapping.
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map&lt;String, Any?&gt; {
+<b class="pc">&nbsp;    if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}&quot;)</b>
+<b class="fc">&nbsp;    depth++</b>
+<b class="fc">&nbsp;    val result = LinkedHashMap&lt;String, Any?&gt;(C.DEFAULT_MAP_CAPACITY)</b>
 <b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) break</b>
 &nbsp;
-<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;        position++</b>
-<b class="fc">&nbsp;        return result</b>
-&nbsp;    }
+<b class="fc">&nbsp;            val lineIndent = currentIndent</b>
+<b class="fc">&nbsp;            if (result.isNotEmpty() &amp;&amp; lineIndent &lt; blockIndent) break  // dedented — end of this mapping</b>
+<b class="fc">&nbsp;            if (isDocumentMarker() || isDocumentEndMarker()) break</b>
+&nbsp;            // A tab can&#39;t be part of the indentation opening or extending a block mapping —
+&nbsp;            // tabs have no fixed column width, so there&#39;s no way to compare this line&#39;s
+&nbsp;            // indentation against blockIndent/a sibling&#39;s. Harmless once inside an already-
+&nbsp;            // established scalar&#39;s own content (readValue never reaches this loop for that).
+<b class="fc">&nbsp;            if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_MAPPING_INDENT)</b>
 &nbsp;
-<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="pc">&nbsp;        if (position &gt;= localLimit) break</b>
-<b class="pc">&nbsp;        if (localRawData[position] == C.RIGHT_BRACE_BYTE) {</b>
-<b class="nc">&nbsp;            position++</b>
-&nbsp;            break
+<b class="fc">&nbsp;            if (isExplicitKeyIndicator()) {</b>
+<b class="fc">&nbsp;                val (key, value) = readExplicitKeyEntry(blockIndent)</b>
+<b class="fc">&nbsp;                result[key] = value</b>
+&nbsp;                continue
+&nbsp;            }
+&nbsp;
+&nbsp;            // Read key
+<b class="pc">&nbsp;            val key = readKey(inFlow = false) ?: break</b>
+<b class="fc">&nbsp;            skipInlineWhitespace()</b>
+&nbsp;
+&nbsp;            // Expect &#39;:&#39; after the key
+<b class="fc">&nbsp;            if (position &gt;= localLimit || localRawData[position] != C.COLON_BYTE) {</b>
+<b class="fc">&nbsp;                yamlError(&quot;${C.ERR_EXPECTED_COLON_AFTER_KEY_PREFIX}$key${C.ERR_EXPECTED_COLON_AFTER_KEY_MID}$position&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++ // consume &#39;:&#39;</b>
+&nbsp;            // An implicit &quot;key: value&quot; pair&#39;s value can&#39;t redirect into a nested block
+&nbsp;            // mapping while still inline on the same physical line as this &#39;:&#39; (that shape is
+&nbsp;            // only legal via YAML&#39;s &quot;compact notation&quot;, reserved for explicit &quot;?&quot;/&quot;:&quot; entries
+&nbsp;            // — see resolveValueAfterColon&#39;s KDoc). Without this, &quot;a: b: c: d&quot; silently parsed
+&nbsp;            // as {&quot;a&quot;: {&quot;b&quot;: {&quot;c&quot;: &quot;d&quot;}}} instead of being rejected (yaml-test-suite ZCZ6).
+<b class="fc">&nbsp;            val value = resolveValueAfterColon(blockIndent, allowMappingRedirect = false)</b>
+&nbsp;
+<b class="fc">&nbsp;            if (key == C.STR_MERGE_KEY) {</b>
+<b class="fc">&nbsp;                mergeInto(result, value)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                result[key] = value</b>
+&nbsp;            }
 &nbsp;        }
-&nbsp;
-&nbsp;        // Read key
-<b class="pc">&nbsp;        val key = readKey() ?: break</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-&nbsp;
-<b class="pc">&nbsp;        if (position &gt;= localLimit || localRawData[position] != C.COLON_BYTE) {</b>
-<b class="fc">&nbsp;            yamlError(&quot;Expected &#39;:&#39; after flow mapping key &#39;$key&#39;&quot;)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-&nbsp;
-&nbsp;        // Read value
-<b class="fc">&nbsp;        val value = readValue(indent = 0, inFlow = true)</b>
-<b class="pc">&nbsp;        if (key == C.STR_MERGE_KEY) {</b>
-<b class="nc">&nbsp;            mergeInto(result, value)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            result[key] = value</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COMMA_BYTE) {</b>
-<b class="fc">&nbsp;            position++ // consume &#39;,&#39;</b>
-<b class="pc">&nbsp;        } else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;            position++ // consume &#39;}&#39;</b>
-&nbsp;            break
-&nbsp;        } else {
-<b class="fc">&nbsp;            yamlError(&quot;Expected &#39;,&#39; or &#39;}&#39; in flow mapping&quot;)</b>
-&nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        depth--</b>
 &nbsp;    }
 <b class="fc">&nbsp;    return result</b>
 &nbsp;}
 &nbsp;
-&nbsp;/** Parses flow-style sequences (`[a, b, c]`). */
-&nbsp;internal fun GhostYamlFlatReader.readFlowSequence(): List&lt;Any?&gt; {
-<b class="fc">&nbsp;    position++ // consume &#39;[&#39;</b>
-<b class="fc">&nbsp;    val result = mutableListOf&lt;Any?&gt;()</b>
-<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
-&nbsp;
-<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;/**
+&nbsp; * Called right after a mapping &#39;:&#39; has been consumed and inline whitespace skipped, to
+&nbsp; * determine and read the value. Shared by [readBlockMapping]&#39;s implicit (&quot;key: value&quot;)
+&nbsp; * entries and [readExplicitKeyEntry]&#39;s explicit (&quot;? key\n: value&quot;) entries — both need
+&nbsp; * exactly the same &quot;same line, next line indented, or no value at all&quot; resolution, but differ
+&nbsp; * on whether an *inline* value may itself redirect into a nested block mapping: explicit
+&nbsp; * entries get YAML&#39;s &quot;compact notation&quot; allowance (see the comment at
+&nbsp; * [readExplicitKeyEntry]&#39;s call site), implicit ones
+&nbsp; * don&#39;t — [allowMappingRedirect] lets each caller opt in/out.
+&nbsp; */
+<b class="fc">&nbsp;internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowMappingRedirect: Boolean = true): Any? {</b>
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
 <b class="fc">&nbsp;    val localLimit = limit</b>
-&nbsp;
-<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;        position++</b>
-<b class="fc">&nbsp;        return result</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.HASH_BYTE) {</b>
+<b class="fc">&nbsp;        skipToEndOfLine()</b>
 &nbsp;    }
-&nbsp;
-<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="pc">&nbsp;        if (position &gt;= localLimit) break</b>
-<b class="fc">&nbsp;        if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;            break
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        position &gt;= localLimit -&gt; null</b>
+<b class="fc">&nbsp;        localRawData[position] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                localRawData[position] == C.CR_BYTE -&gt; {</b>
+<b class="fc">&nbsp;            advanceLine()</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) null</b>
+&nbsp;            else {
+<b class="fc">&nbsp;                val valueIndent = currentIndent</b>
+<b class="fc">&nbsp;                if (valueIndent &lt; blockIndent) {</b>
+<b class="fc">&nbsp;                    null</b>
+<b class="fc">&nbsp;                } else if (valueIndent == blockIndent &amp;&amp; !(localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry())) {</b>
+<b class="fc">&nbsp;                    null</b>
+&nbsp;                } else {
+&nbsp;                    // foldIndent = blockIndent (not valueIndent): if this value turns out to
+&nbsp;                    // be a plain scalar, later continuation lines only need to be indented
+&nbsp;                    // more than the *enclosing mapping&#39;s* indent to keep folding — matching
+&nbsp;                    // the inline-value case below — not more than this value&#39;s own
+&nbsp;                    // auto-detected column, which is typically the SAME indent every
+&nbsp;                    // continuation line also sits at (see 4CQQ/M5C3/NB6Z/RZT7/UGM3).
+<b class="fc">&nbsp;                    readValue(valueIndent, inFlow = false, foldIndent = blockIndent)</b>
+&nbsp;                }
+&nbsp;            }
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        val item = readValue(indent = 0, inFlow = true)</b>
-<b class="fc">&nbsp;        result.add(item)</b>
+<b class="fc">&nbsp;        else -&gt; readValue(blockIndent, inFlow = false, strictDedent = true, allowMappingRedirect = allowMappingRedirect)</b>
+&nbsp;    }
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COMMA_BYTE) {</b>
-<b class="fc">&nbsp;            position++ // consume &#39;,&#39;</b>
-<b class="pc">&nbsp;        } else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;            position++ // consume &#39;]&#39;</b>
-&nbsp;            break
-&nbsp;        } else {
-<b class="fc">&nbsp;            yamlError(&quot;Expected &#39;,&#39; or &#39;]&#39; in flow sequence&quot;)</b>
+&nbsp;/**
+&nbsp; * Reads a block sequence (list). Each item starts with &#39;- &#39;.
+&nbsp; *
+&nbsp; * @param seqIndent Indentation of the &#39;-&#39; markers.
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.readBlockSequence(seqIndent: Int): List&lt;Any?&gt; {
+<b class="pc">&nbsp;    if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}&quot;)</b>
+<b class="fc">&nbsp;    depth++</b>
+<b class="fc">&nbsp;    val result = mutableListOf&lt;Any?&gt;()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) break</b>
+&nbsp;
+<b class="fc">&nbsp;            val lineIndent = currentIndent</b>
+<b class="fc">&nbsp;            if (result.isNotEmpty() &amp;&amp; lineIndent &lt; seqIndent) break</b>
+<b class="fc">&nbsp;            if (!isBlockSequenceEntry()) break</b>
+<b class="pc">&nbsp;            if (isDocumentMarker()) break</b>
+&nbsp;            // See the equivalent check in readBlockMapping — tabs can&#39;t be part of the
+&nbsp;            // indentation opening or extending a block sequence.
+<b class="pc">&nbsp;            if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_SEQUENCE_INDENT)</b>
+&nbsp;
+&nbsp;            // Consume &#39;-&#39;
+<b class="fc">&nbsp;            position++ // &#39;-&#39;</b>
+&nbsp;
+&nbsp;            // Indentation of the element value is the position of &#39;-&#39; plus 2.
+<b class="fc">&nbsp;            val elementIndent = lineIndent + 2</b>
+&nbsp;
+&nbsp;            // Skip the optional inline space after &#39;-&#39;
+<b class="fc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.SPACE_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // A comment directly after &quot;- &quot; (e.g. &quot;- # Empty&quot;) leaves no inline value, same
+&nbsp;            // as it would after a mapping key&#39;s &#39;:&#39; (see resolveValueAfterColon) — without
+&nbsp;            // this, the comment text would be read as the item&#39;s own plain-scalar content.
+<b class="fc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.HASH_BYTE) {</b>
+<b class="fc">&nbsp;                skipToEndOfLine()</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val item: Any? = when {</b>
+<b class="fc">&nbsp;                position &gt;= localLimit -&gt; null</b>
+<b class="fc">&nbsp;                localRawData[position] == C.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                        localRawData[position] == C.CR_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                    advanceLine()</b>
+<b class="fc">&nbsp;                    skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;                    if (position &gt;= localLimit) null</b>
+&nbsp;                    else {
+<b class="fc">&nbsp;                        val itemIndent = currentIndent</b>
+<b class="fc">&nbsp;                        if (itemIndent &lt; elementIndent) null</b>
+&nbsp;                        // Delegate to readValue&#39;s own dispatch — see the equivalent comment
+&nbsp;                        // in readBlockMapping for why (bare scalar vs. mapping vs. block
+&nbsp;                        // scalar, not just sequence-vs-mapping).
+<b class="fc">&nbsp;                        else readValue(itemIndent, inFlow = false)</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+&nbsp;                else -&gt; {
+&nbsp;                    // Value starts on the same line after &#39;- &#39;
+&nbsp;                    // Try reading plain scalar or mapping or sequence.
+&nbsp;                    // Since we are parsing the list item, we can call readValue with elementIndent.
+<b class="fc">&nbsp;                    readValue(elementIndent, inFlow = false)</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            result.add(item)</b>
 &nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        depth--</b>
 &nbsp;    }
 <b class="fc">&nbsp;    return result</b>
 &nbsp;}
@@ -220,7 +309,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

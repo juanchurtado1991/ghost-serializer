@@ -304,10 +304,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /** Writes a ByteString interpreting its bytes directly as ASCII chars. */
 &nbsp;    fun writeAscii(byteString: ByteString) {
-<b class="nc">&nbsp;        val str = byteString.utf8()</b>
-<b class="nc">&nbsp;        val length = str.length</b>
+<b class="nc">&nbsp;        val text = byteString.utf8()</b>
+<b class="nc">&nbsp;        val length = text.length</b>
 <b class="nc">&nbsp;        ensureCapacity(length)</b>
-<b class="nc">&nbsp;        str.copyRangeToCharArray(array, size, 0, length)</b>
+<b class="nc">&nbsp;        text.copyRangeToCharArray(array, size, 0, length)</b>
 <b class="nc">&nbsp;        size += length</b>
 &nbsp;    }
 &nbsp;
@@ -398,7 +398,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

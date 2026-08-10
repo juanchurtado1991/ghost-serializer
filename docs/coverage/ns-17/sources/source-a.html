@@ -105,17 +105,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextString
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
 &nbsp;
 &nbsp;/**
 &nbsp; * A Duration represents a signed, fixed-length span of time represented
@@ -129,143 +119,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            throw IllegalArgumentException(C.ERR_DURATION_SIGN)</b>
 &nbsp;        }
 <b class="fc">&nbsp;    }</b>
-&nbsp;}
-&nbsp;
-&nbsp;object ProtoDurationSerializer : GhostSerializer&lt;ProtoDuration&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_DURATION_TYPE
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoDuration) {
-&nbsp;        writer.value(formatDuration(value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoDuration) {
-&nbsp;        writer.value(formatDuration(value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoDuration) {
-&nbsp;        writer.value(formatDuration(value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoDuration {
-&nbsp;        return parseDuration(reader.nextString())
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoDuration {
-&nbsp;        return parseDuration(reader.nextString())
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoDuration {
-&nbsp;        return parseDuration(reader.nextString())
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;internal fun parseDuration(durationString: String): ProtoDuration {
-&nbsp;    if (durationString.length &lt; 2 || durationString[durationString.length - 1] != C.CHAR_S) throw IllegalArgumentException(
-&nbsp;        C.ERR_DURATION_SUFFIX
-&nbsp;    )
-&nbsp;    val dotIndex = durationString.indexOf(C.CHAR_DOT)
-&nbsp;    val limitIndex = durationString.length - 1
-&nbsp;    if (dotIndex == -1) {
-&nbsp;        var seconds = 0L
-&nbsp;        var isNegative = false
-&nbsp;        var start = 0
-&nbsp;        if (durationString[0] == C.CHAR_HYPHEN) {
-&nbsp;            isNegative = true
-&nbsp;            start = 1
-&nbsp;        }
-&nbsp;        var index = start
-&nbsp;        while (index &lt; limitIndex) {
-&nbsp;            seconds = seconds * C.BASE_TEN + (durationString[index].code - C.ZERO_INT)
-&nbsp;            index++
-&nbsp;        }
-&nbsp;        return ProtoDuration(if (isNegative) -seconds else seconds, 0)
-&nbsp;    } else {
-&nbsp;        var seconds = 0L
-&nbsp;        var isNegative = false
-&nbsp;        var start = 0
-&nbsp;        if (durationString[0] == C.CHAR_HYPHEN) {
-&nbsp;            isNegative = true
-&nbsp;            start = 1
-&nbsp;        }
-&nbsp;        var index = start
-&nbsp;        while (index &lt; dotIndex) {
-&nbsp;            seconds = seconds * C.BASE_TEN + (durationString[index].code - C.ZERO_INT)
-&nbsp;            index++
-&nbsp;        }
-&nbsp;        val fracDigits = limitIndex - (dotIndex + 1)
-&nbsp;        var fractionValue = 0
-&nbsp;        var fractionIndex = dotIndex + 1
-&nbsp;        while (fractionIndex &lt; limitIndex) {
-&nbsp;            fractionValue =
-&nbsp;                fractionValue * C.BASE_TEN + (durationString[fractionIndex].code - C.ZERO_INT)
-&nbsp;            fractionIndex++
-&nbsp;        }
-&nbsp;        var multiplier = 1
-&nbsp;        var multiplierIndex = 0
-&nbsp;        while (multiplierIndex &lt; C.NANOS_DIGITS - fracDigits) {
-&nbsp;            multiplier *= C.BASE_TEN
-&nbsp;            multiplierIndex++
-&nbsp;        }
-&nbsp;        val nanos = fractionValue * multiplier
-&nbsp;        return ProtoDuration(
-&nbsp;            if (isNegative) -seconds else seconds,
-&nbsp;            if (isNegative) -nanos else nanos
-&nbsp;        )
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;// Operates in negative space throughout (never negates the full magnitude) so that
-&nbsp;// Long.MIN_VALUE round-trips correctly: -Long.MIN_VALUE overflows back to Long.MIN_VALUE
-&nbsp;// in two&#39;s complement, which previously corrupted the output to &quot;-0&quot; for that boundary value.
-&nbsp;private fun writeLongToBytes(buffer: ByteArray, startOffset: Int, value: Long): Int {
-&nbsp;    var position = startOffset
-&nbsp;    val isNegative = value &lt; 0
-&nbsp;    if (isNegative) {
-&nbsp;        buffer[position++] = C.CHAR_HYPHEN.code.toByte()
-&nbsp;    }
-&nbsp;    // Count digits
-&nbsp;    var tempValue = if (isNegative) value else -value
-&nbsp;    var digitCount = 1
-&nbsp;    while (tempValue &lt;= -C.BASE_TEN) {
-&nbsp;        digitCount++
-&nbsp;        tempValue /= C.BASE_TEN
-&nbsp;    }
-&nbsp;    // Write digits in reverse
-&nbsp;    var divisor = 1L
-&nbsp;    var digitIndex = digitCount - 1
-&nbsp;    while (digitIndex &gt; 0) {
-&nbsp;        divisor *= C.BASE_TEN
-&nbsp;        digitIndex--
-&nbsp;    }
-&nbsp;    tempValue = if (isNegative) value else -value
-&nbsp;    while (divisor &gt; 0) {
-&nbsp;        val digit = (-(tempValue / divisor)).toInt()
-&nbsp;        buffer[position++] = (digit + C.ZERO_INT).toByte()
-&nbsp;        tempValue %= divisor
-&nbsp;        divisor /= C.BASE_TEN
-&nbsp;    }
-&nbsp;    return position
-&nbsp;}
-&nbsp;
-&nbsp;internal fun formatDuration(duration: ProtoDuration): String {
-&nbsp;    val seconds = duration.seconds
-&nbsp;    val nanoseconds = kotlin.math.abs(duration.nanos)
-&nbsp;    val bytes = ByteArray(C.DUR_BUFFER_SIZE)
-&nbsp;    var pos = 0
-&nbsp;    // writeLongToBytes(0) has no sign of its own to carry — for a duration under one second
-&nbsp;    // (seconds == 0), the sign lives entirely in nanos and must be written explicitly, or it&#39;s
-&nbsp;    // lost: ProtoDuration(0, -1) would otherwise format as &quot;0.000000001s&quot; instead of
-&nbsp;    // &quot;-0.000000001s&quot;.
-&nbsp;    if (seconds == 0L &amp;&amp; duration.nanos &lt; 0) {
-&nbsp;        bytes[pos++] = C.CHAR_HYPHEN.code.toByte()
-&nbsp;    }
-&nbsp;    pos = writeLongToBytes(bytes, pos, seconds)
-&nbsp;    if (nanoseconds != 0) {
-&nbsp;        bytes[pos++] = C.CHAR_DOT.code.toByte()
-&nbsp;        pos = writeNanosFraction(bytes, pos, nanoseconds)
-&nbsp;    }
-&nbsp;    bytes[pos++] = C.CHAR_S.code.toByte()
-&nbsp;    return bytes.decodeToString(0, pos)
 &nbsp;}
 </code>
 </pre>
@@ -290,7 +143,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

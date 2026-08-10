@@ -52,35 +52,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">ProtoFieldMaskSerializer</td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/1)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    28.6%
   </span>
   <span class="absValue">
-    (0/5)
+    (2/7)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    28.6%
   </span>
   <span class="absValue">
-    (0/5)
+    (2/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    32%
   </span>
   <span class="absValue">
-    (0/17)
+    (8/25)
   </span>
 </td>
 </tr>
@@ -101,73 +101,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
-&nbsp;
-&nbsp;/**
-&nbsp; * `FieldMask` represents a set of symbolic field paths, for example:
-&nbsp; * paths: &quot;f.a,b&quot;
-&nbsp; */
-&nbsp;data class ProtoFieldMask(val paths: List&lt;String&gt;)
-&nbsp;
-&nbsp;internal fun parseFieldMask(str: String): ProtoFieldMask {
-&nbsp;    if (str.isEmpty()) return ProtoFieldMask(emptyList())
-&nbsp;    val paths = mutableListOf&lt;String&gt;()
-&nbsp;    val stringBuilder = StringBuilder()
-&nbsp;    var charIndex = 0
-&nbsp;    val stringLength = str.length
-&nbsp;    while (charIndex &lt; stringLength) {
-&nbsp;        val character = str[charIndex]
-&nbsp;        if (character == C.CHAR_COMMA) {
-&nbsp;            paths.add(stringBuilder.toString())
-&nbsp;            stringBuilder.clear()
-&nbsp;        } else {
-&nbsp;            if (character.isUpperCase()) {
-&nbsp;                stringBuilder.append(C.CHAR_UNDERSCORE)
-&nbsp;                stringBuilder.append(character.lowercaseChar())
-&nbsp;            } else {
-&nbsp;                stringBuilder.append(character)
-&nbsp;            }
-&nbsp;        }
-&nbsp;        charIndex++
-&nbsp;    }
-&nbsp;    if (stringBuilder.isNotEmpty()) {
-&nbsp;        paths.add(stringBuilder.toString())
-&nbsp;    }
-&nbsp;    return ProtoFieldMask(paths)
-&nbsp;}
-&nbsp;
-&nbsp;internal fun formatFieldMask(mask: ProtoFieldMask): String {
-&nbsp;    if (mask.paths.isEmpty()) return &quot;&quot;
-&nbsp;    val stringBuilder = StringBuilder()
-&nbsp;    var pathIndex = 0
-&nbsp;    val pathsSize = mask.paths.size
-&nbsp;    while (pathIndex &lt; pathsSize) {
-&nbsp;        if (pathIndex &gt; 0) stringBuilder.append(C.CHAR_COMMA)
-&nbsp;        val path = mask.paths[pathIndex]
-&nbsp;        var uppercaseNext = false
-&nbsp;        var charIndex = 0
-&nbsp;        val pathLength = path.length
-&nbsp;        while (charIndex &lt; pathLength) {
-&nbsp;            val character = path[charIndex]
-&nbsp;            if (character == C.CHAR_UNDERSCORE) {
-&nbsp;                uppercaseNext = true
-&nbsp;            } else {
-&nbsp;                if (uppercaseNext) {
-&nbsp;                    stringBuilder.append(character.uppercaseChar())
-&nbsp;                    uppercaseNext = false
-&nbsp;                } else {
-&nbsp;                    stringBuilder.append(character)
-&nbsp;                }
-&nbsp;            }
-&nbsp;            charIndex++
-&nbsp;        }
-&nbsp;        pathIndex++
-&nbsp;    }
-&nbsp;    return stringBuilder.toString()
-&nbsp;}
 &nbsp;
 &nbsp;/**
 &nbsp; * Serializer for [ProtoFieldMask].
@@ -180,6 +119,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoFieldMask) {
+<b class="fc">&nbsp;        writer.value(formatFieldMask(value))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoFieldMask) {
 <b class="nc">&nbsp;        writer.value(formatFieldMask(value))</b>
 &nbsp;    }
 &nbsp;
@@ -188,6 +131,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoFieldMask {
+<b class="fc">&nbsp;        return parseFieldMask(reader.nextString())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoFieldMask {
 <b class="nc">&nbsp;        return parseFieldMask(reader.nextString())</b>
 &nbsp;    }
 &nbsp;}
@@ -214,7 +161,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

@@ -244,7 +244,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                  temp._setPosition(reader._getPosition())</b>
 <b class="fc">&nbsp;                  val res = EncoderHexUtils.decodeHex(temp)</b>
 <b class="fc">&nbsp;                  reader._setPosition(temp._getPosition())</b>
-<b class="fc">&nbsp;                  reader._setNextTokenByte(com.ghost.serialization.parser.bytes.GhostJsonFlatReader.RESET_TOKEN_BYTE)</b>
+<b class="fc">&nbsp;                  reader._setNextTokenByte(com.ghost.serialization.parser.common.GhostJsonConstants.RESET_TOKEN_BYTE)</b>
 <b class="fc">&nbsp;                  res</b>
 &nbsp;              }
 <b class="fc">&nbsp;          mask0 = mask0 or MASK_SECRET</b>
@@ -255,7 +255,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                  temp._setPosition(reader._getPosition())</b>
 <b class="nc">&nbsp;                  val res = EncoderHexUtils.decodeNullableInt(temp)</b>
 <b class="nc">&nbsp;                  reader._setPosition(temp._getPosition())</b>
-<b class="nc">&nbsp;                  reader._setNextTokenByte(com.ghost.serialization.parser.bytes.GhostJsonFlatReader.RESET_TOKEN_BYTE)</b>
+<b class="nc">&nbsp;                  reader._setNextTokenByte(com.ghost.serialization.parser.common.GhostJsonConstants.RESET_TOKEN_BYTE)</b>
 <b class="nc">&nbsp;                  res</b>
 &nbsp;              }
 <b class="nc">&nbsp;          mask0 = mask0 or MASK_SCORE</b>
@@ -414,7 +414,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

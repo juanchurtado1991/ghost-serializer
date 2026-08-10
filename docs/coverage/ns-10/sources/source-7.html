@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostSwar_androidKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonFlatReaderSubsystemKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.bytes</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostSwar_androidKt (com.ghost.serialization.parser.bytes)</h1>
+<h1>Coverage Summary for Class: GhostJsonFlatReaderSubsystemKt (com.ghost.serialization.parser.bytes)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostSwar_androidKt</td>
+  <td class="name">GhostJsonFlatReaderSubsystemKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    85.7%
   </span>
   <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (8/8)
+    (6/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    79.3%
   </span>
   <span class="absValue">
-    (83/83)
+    (46/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.2%
+  </span>
+  <span class="absValue">
+    (93/102)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.8%
+  </span>
+  <span class="absValue">
+    (544/586)
   </span>
 </td>
 </tr>
@@ -92,37 +99,212 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.bytes
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_1
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_2
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_3
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_4
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_5
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_6
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_7
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_16
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_24
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_32
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_40
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_48
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_56
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
+&nbsp;package com.ghost.serialization.parser.bytes
 &nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
+&nbsp;import com.ghost.serialization.parser.common.computeKeyHashCore
+&nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
+&nbsp;import com.ghost.serialization.parser.common.handleSelectNoMatchCore
+&nbsp;import com.ghost.serialization.parser.common.selectValidateCommasCore
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
-&nbsp;// Scalar assembly: Android&#39;s minSdk (21) predates VarHandle byte[] views (API 26), so the
-&nbsp;// bytes are combined by hand. Byte order is irrelevant for the symmetric comparisons this
-&nbsp;// feeds; the JIT/AOT compiler folds the shifts efficiently.
-&nbsp;internal actual fun ghostReadLong8(data: ByteArray, index: Int): Long =
-<b class="fc">&nbsp;    (data[index].toLong() and LONG_BYTE_MASK) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_1].toLong() and LONG_BYTE_MASK) shl SHIFT_8) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_2].toLong() and LONG_BYTE_MASK) shl SHIFT_16) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_3].toLong() and LONG_BYTE_MASK) shl SHIFT_24) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_4].toLong() and LONG_BYTE_MASK) shl SHIFT_32) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_5].toLong() and LONG_BYTE_MASK) shl SHIFT_40) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_6].toLong() and LONG_BYTE_MASK) shl SHIFT_48) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_7].toLong() and LONG_BYTE_MASK) shl SHIFT_56)</b>
+&nbsp;/**
+&nbsp; * Low-level select parser helper that hashes and matches against [JsonReaderOptions] fields.
+&nbsp; *
+&nbsp; * Mechanics:
+&nbsp; * 1. Checks for trailing comma conditions and finds the start of the quoted string/key.
+&nbsp; * 2. Optimistic in-order predicted-key compare via [ghostReadLong8] (byte-flat fast path).
+&nbsp; * 3. Falls back to closing-quote scan + perfect-hash dispatch + [verifyKeyMatch].
+&nbsp; * 4. Consumes the trailing colon `:` if [consumeSeparator] is enabled.
+&nbsp; *
+&nbsp; * @return The matched options index, `-1` on object closing, or [C.MATCH_NONE] if not found.
+&nbsp; */
+&nbsp;internal fun GhostJsonFlatReader.internalSelect(
+&nbsp;    options: JsonReaderOptions,
+&nbsp;    consumeSeparator: Boolean,
+&nbsp;): Int {
+<b class="fc">&nbsp;    var token = peekNextToken()</b>
+<b class="fc">&nbsp;    if (token == C.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;        return -1</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    token = selectValidateCommas(token, consumeSeparator)</b>
+&nbsp;
+<b class="fc">&nbsp;    if (token != C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;        throwExpectedKeyOrStringError(consumeSeparator)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val start = position + 1</b>
+<b class="fc">&nbsp;    val localData = rawData</b>
+<b class="fc">&nbsp;    val byteLimit = limit</b>
+&nbsp;
+&nbsp;    // Optimistic in-order field match: most objects list fields in declaration order,
+&nbsp;    // so compare the key directly against the predicted candidate in a single pass. On a
+&nbsp;    // hit this avoids the separate closing-quote scan, hash, and verify passes entirely.
+<b class="fc">&nbsp;    val predicted = predictedFieldIndex</b>
+<b class="fc">&nbsp;    val rawBytes = options.rawBytes</b>
+<b class="fc">&nbsp;    if (predicted &lt; rawBytes.size) {</b>
+<b class="fc">&nbsp;        val candidate = rawBytes[predicted]</b>
+<b class="fc">&nbsp;        val candidateLength = candidate.size</b>
+<b class="fc">&nbsp;        val keyEnd = start + candidateLength</b>
+<b class="pc">&nbsp;        if (candidateLength &gt; 0 &amp;&amp; keyEnd &lt; byteLimit &amp;&amp;</b>
+<b class="fc">&nbsp;            (localData[keyEnd].toInt() and C.BYTE_MASK) == C.QUOTE_INT</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            var matchedOffset = 0</b>
+&nbsp;            // Compare LONG_BYTES at a time for longer field names.
+&nbsp;            // Comparing two ghostReadLong8 results is byte-order independent (equality is
+&nbsp;            // symmetric).
+<b class="fc">&nbsp;            while (matchedOffset + C.LONG_BYTES &lt;= candidateLength &amp;&amp;</b>
+<b class="fc">&nbsp;                ghostReadLong8(localData, start + matchedOffset) ==</b>
+<b class="fc">&nbsp;                ghostReadLong8(candidate, matchedOffset)</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                matchedOffset += C.LONG_BYTES</b>
+&nbsp;            }
+<b class="fc">&nbsp;            while (matchedOffset &lt; candidateLength &amp;&amp;</b>
+<b class="fc">&nbsp;                localData[start + matchedOffset] == candidate[matchedOffset]</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                matchedOffset++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (matchedOffset == candidateLength) {</b>
+<b class="fc">&nbsp;                predictedFieldIndex = predicted + 1</b>
+<b class="fc">&nbsp;                val newPos = keyEnd + 1</b>
+<b class="fc">&nbsp;                position = newPos</b>
+<b class="fc">&nbsp;                nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;                if (consumeSeparator) {</b>
+<b class="pc">&nbsp;                    if (newPos &lt; byteLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                        (localData[newPos].toInt() and C.BYTE_MASK) == C.COLON_INT</b>
+&nbsp;                    ) {
+<b class="fc">&nbsp;                        position = newPos + 1</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        consumeKeySeparator()</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                return predicted</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val end = findClosingQuoteImpl(start, byteLimit) {</b>
+<b class="fc">&nbsp;        localData[it].toInt() and C.BYTE_MASK</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (end == -1) {</b>
+<b class="nc">&nbsp;        throwUnterminatedStringError()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val length = end - start</b>
+<b class="fc">&nbsp;    val key = computeKeyHash(start, length, options.hasCollisions)</b>
+&nbsp;
+<b class="fc">&nbsp;    val hasIndex =</b>
+<b class="fc">&nbsp;        ((key * options.multiplier + length) shr options.shift) and (options.dispatch.size - 1)</b>
+<b class="fc">&nbsp;    val index = options.dispatch[hasIndex]</b>
+&nbsp;
+<b class="fc">&nbsp;    if (index != C.MATCH_END) {</b>
+<b class="pc">&nbsp;        if (verifyKeyMatch(start, length, options.rawBytes[index], consumeSeparator)) {</b>
+<b class="fc">&nbsp;            predictedFieldIndex = index + 1</b>
+<b class="fc">&nbsp;            return index</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return handleSelectNoMatch(start, end, consumeSeparator)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int =
+<b class="fc">&nbsp;    selectValidateCommasCore(</b>
+<b class="fc">&nbsp;        token = token,</b>
+<b class="fc">&nbsp;        consumeSeparator = consumeSeparator,</b>
+<b class="fc">&nbsp;        strictMode = strictMode,</b>
+<b class="fc">&nbsp;        depth = depth,</b>
+<b class="fc">&nbsp;        getNeedsCommaMask = { needsCommaMask },</b>
+<b class="fc">&nbsp;        setNeedsCommaMask = { needsCommaMask = it },</b>
+<b class="fc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
+<b class="nc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
+<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
+<b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    )
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.handleSelectNoMatch(
+&nbsp;    start: Int,
+&nbsp;    end: Int,
+&nbsp;    consumeSeparator: Boolean,
+&nbsp;): Int =
+<b class="fc">&nbsp;    handleSelectNoMatchCore(</b>
+<b class="fc">&nbsp;        start = start,</b>
+<b class="fc">&nbsp;        end = end,</b>
+<b class="fc">&nbsp;        consumeSeparator = consumeSeparator,</b>
+<b class="fc">&nbsp;        strictMode = strictMode,</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="fc">&nbsp;        setNextTokenByte = { nextTokenByte = it },</b>
+<b class="nc">&nbsp;        consumeKeySeparator = { consumeKeySeparator() },</b>
+<b class="nc">&nbsp;        decodeUnknownKey = { s, e -&gt; source.decodeToString(s, e) },</b>
+<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    )
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
+<b class="fc">&nbsp;    throwError(if (consumeSeparator) C.ERR_EXPECTED_KEY else C.ERR_EXPECTED_STRING)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.throwUnterminatedStringError() {
+<b class="nc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostJsonFlatReader.computeKeyHash(start: Int, length: Int, hasCollisions: Boolean): Int =
+<b class="fc">&nbsp;    computeKeyHashCore(start, length, hasCollisions) { getByte(it) }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Performs a fast comparison of the parsed string against expected bytes to verify matches.
+&nbsp; *
+&nbsp; * Byte-flat path: unrolled x4 over [rawData] plus optional colon consume. Kept here (not shared
+&nbsp; * with CharArray string select) so the predicted-key / [ghostReadLong8] sibling stays monomorphic.
+&nbsp; */
+&nbsp;private inline fun GhostJsonFlatReader.verifyKeyMatch(
+&nbsp;    start: Int,
+&nbsp;    length: Int,
+&nbsp;    expected: ByteArray,
+&nbsp;    consumeSeparator: Boolean,
+&nbsp;): Boolean {
+&nbsp;    // Length is already guaranteed equal by the dispatch table (same hash slot).
+<b class="pc">&nbsp;    if (expected.size == length) {</b>
+<b class="fc">&nbsp;        val localData = rawData</b>
+<b class="fc">&nbsp;        var matchedOffset = 0</b>
+&nbsp;        // Unrolled x4 for typical ASCII field name lengths (4–20 chars).
+<b class="fc">&nbsp;        while (matchedOffset + 3 &lt; length) {</b>
+<b class="pc">&nbsp;            if (localData[start + matchedOffset] != expected[matchedOffset]) return false</b>
+<b class="pc">&nbsp;            if (localData[start + matchedOffset + 1] != expected[matchedOffset + 1]) return false</b>
+<b class="pc">&nbsp;            if (localData[start + matchedOffset + 2] != expected[matchedOffset + 2]) return false</b>
+<b class="pc">&nbsp;            if (localData[start + matchedOffset + 3] != expected[matchedOffset + 3]) return false</b>
+<b class="fc">&nbsp;            matchedOffset += 4</b>
+&nbsp;        }
+<b class="fc">&nbsp;        while (matchedOffset &lt; length) {</b>
+<b class="pc">&nbsp;            if (localData[start + matchedOffset] != expected[matchedOffset]) return false</b>
+<b class="fc">&nbsp;            matchedOffset++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val endPos = start + length</b>
+<b class="fc">&nbsp;        val newPos = endPos + 1</b>
+<b class="fc">&nbsp;        position = newPos</b>
+<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        if (consumeSeparator) {</b>
+<b class="pc">&nbsp;            if (newPos &lt; limit) {</b>
+<b class="fc">&nbsp;                val colonToken = getByte(newPos)</b>
+<b class="pc">&nbsp;                if (colonToken == C.COLON_INT) {</b>
+<b class="fc">&nbsp;                    position = newPos + 1</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    consumeKeySeparator()</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="nc">&nbsp;                consumeKeySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return false</b>
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -146,7 +328,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

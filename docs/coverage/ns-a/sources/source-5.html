@@ -96,48 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSType
-&nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;import com.squareup.kotlinpoet.TypeName
-&nbsp;
-&nbsp;/**
-&nbsp; * Reader parameter type resolved from a custom coder function signature.
-&nbsp; */
-&nbsp;internal enum class CustomCoderReaderKind {
-&nbsp;    /** `fun(GhostJsonReader): T` — bytes / streaming channel. */
-&nbsp;    BYTES,
-&nbsp;
-&nbsp;    /** `fun(GhostJsonFlatReader): T` — flat byte buffer channel. */
-&nbsp;    FLAT,
-&nbsp;
-&nbsp;    /** `fun(GhostJsonStringReader): T` — native string channel (textChannel). */
-&nbsp;    STRING,
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Metadata configuration for custom encoding/decoding providers.
-&nbsp; *
-&nbsp; * @property provider The KotlinPoet [TypeName] of the object/class containing the custom coder function.
-&nbsp; * @property functionName The name of the custom encoding/decoding function to delegate to.
-&nbsp; * @property readerKinds Reader parameter types available across function overloads.
-&nbsp; */
-&nbsp;internal data class CustomCoderModel(
-&nbsp;    val provider: TypeName,
-&nbsp;    val functionName: String,
-&nbsp;    val readerKinds: Set&lt;CustomCoderReaderKind&gt; = setOf(CustomCoderReaderKind.BYTES),
-&nbsp;) {
-&nbsp;    fun supports(kind: CustomCoderReaderKind): Boolean = kind in readerKinds
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Metadata representation of a subclass target during inferred sealed class deserialization.
-&nbsp; *
-&nbsp; * @property declaration The KSP class declaration of the sealed subclass.
-&nbsp; * @property properties The list of analyzed property models belonging to this subclass.
-&nbsp; */
-&nbsp;internal data class InferredSubclassModel(
-&nbsp;    val declaration: KSClassDeclaration,
-&nbsp;    val properties: List&lt;GhostPropertyModel&gt;
-&nbsp;)
 &nbsp;
 &nbsp;/**
 &nbsp; * Main metadata model representing a serializable property.
@@ -153,7 +112,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * @property isGhost True if the property&#39;s type is itself annotated with @GhostSerialization.
 &nbsp; * @property isList True if the property type is a [List].
 &nbsp; * @property isSet True if the property type is a [Set].
-&nbsp; * @property isEnum True if the property type is a [kotlin.Enum].
+&nbsp; * @property isEnum True if the property type is an enum.
 &nbsp; * @property listInnerType The resolved [KSType] of the generic element inside the list, if applicable.
 &nbsp; * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
 &nbsp; * @property listInnerIsEnum True if the list inner type is an enum.
@@ -226,29 +185,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val inferredSubclasses: List&lt;InferredSubclassModel&gt; = emptyList(),</b>
 <b class="fc">&nbsp;    val isProto: Boolean = false</b>
 &nbsp;)
-&nbsp;
-&nbsp;/**
-&nbsp; * One wire field emitted when unwrapping a [@GhostWrappedKeys][com.ghost.serialization.annotations.GhostWrappedKeys]
-&nbsp; * property during serialization.
-&nbsp; *
-&nbsp; * @property jsonName JSON key written at the parent object level.
-&nbsp; * @property kotlinPath Property accessor segments from the wrapper value (e.g. `[&quot;extras&quot;, &quot;extra1&quot;]`).
-&nbsp; * @property isNullable Whether the leaf property accepts JSON null / omission.
-&nbsp; * @property typeName Kotlin type of the leaf property for serialization dispatch.
-&nbsp; * @property sealedSubclassName Non-null when this field was resolved from a sealed subclass of
-&nbsp; *   the wrapped type rather than the wrapped type&#39;s own properties (proto3 `oneof` mapping: each
-&nbsp; *   wire key corresponds to one subclass&#39; field, e.g. `Text.text`/`Code.code` on a
-&nbsp; *   `sealed class Payload`). Emission must `is`-check/smart-cast to this subclass before
-&nbsp; *   accessing [kotlinPath] on it.
-&nbsp; */
-&nbsp;internal data class WrappedUnwrapFieldModel(
-&nbsp;    val jsonName: String,
-&nbsp;    val kotlinPath: List&lt;String&gt;,
-&nbsp;    val isNullable: Boolean,
-&nbsp;    val typeName: com.squareup.kotlinpoet.TypeName,
-&nbsp;    val type: KSType,
-&nbsp;    val sealedSubclassName: ClassName? = null,
-&nbsp;)
 </code>
 </pre>
 </div>
@@ -272,7 +208,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

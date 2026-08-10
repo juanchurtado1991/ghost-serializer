@@ -1,0 +1,238 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostWriterLongDigits</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.writer.common</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostWriterLongDigits (com.ghost.serialization.writer.common)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostWriterLongDigits</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.9%
+  </span>
+  <span class="absValue">
+    (37/39)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98%
+  </span>
+  <span class="absValue">
+    (194/198)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.common
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT_CHARS
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HUNDRED_LONG
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
+&nbsp;
+&nbsp;/**
+&nbsp; * Shared decimal digit emission for writer long values.
+&nbsp; *
+&nbsp; * Writes digits backward into a scratch buffer and returns the start index of the
+&nbsp; * written span. Callers handle [Long.MIN_VALUE] and sink-specific flush.
+&nbsp; */
+&nbsp;internal object GhostWriterLongDigits {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits decimal digits of non-negative [absoluteValue] into [scratch] ending at
+&nbsp;     * [scratchEnd]. When [negative] is true, prefixes `&#39;-&#39;`.
+&nbsp;     *
+&nbsp;     * @return start index such that `scratch[start until scratchEnd]` is the decimal text
+&nbsp;     */
+&nbsp;    fun writeDigitsBytes(
+&nbsp;        absoluteValue: Long,
+&nbsp;        negative: Boolean,
+&nbsp;        scratch: ByteArray,
+<b class="nc">&nbsp;        scratchEnd: Int = LONG_SCRATCH_SIZE,</b>
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        var pos = scratchEnd</b>
+<b class="fc">&nbsp;        var localValue = absoluteValue</b>
+&nbsp;
+<b class="fc">&nbsp;        while (localValue &gt;= HUNDRED_LONG) {</b>
+<b class="fc">&nbsp;            val rem = (localValue % HUNDRED_LONG).toInt() * 2</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT[rem + 1] // ones</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT[rem]     // tens</b>
+<b class="fc">&nbsp;            localValue /= HUNDRED_LONG</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (localValue &lt; TEN_LONG) {</b>
+<b class="fc">&nbsp;            scratch[--pos] = (ZERO_INT + localValue.toInt()).toByte()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val rem = localValue.toInt() * 2</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT[rem + 1] // ones</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT[rem]     // tens</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (negative) {</b>
+<b class="fc">&nbsp;            scratch[--pos] = MINUS</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return pos</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Char-array twin of [writeDigitsBytes] for the string JSON writer.
+&nbsp;     */
+&nbsp;    fun writeDigitsChars(
+&nbsp;        absoluteValue: Long,
+&nbsp;        negative: Boolean,
+&nbsp;        scratch: CharArray,
+<b class="nc">&nbsp;        scratchEnd: Int = LONG_SCRATCH_SIZE,</b>
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        var pos = scratchEnd</b>
+<b class="fc">&nbsp;        var localValue = absoluteValue</b>
+&nbsp;
+<b class="fc">&nbsp;        while (localValue &gt;= HUNDRED_LONG) {</b>
+<b class="fc">&nbsp;            val lutIndex = (localValue % HUNDRED_LONG).toInt() * 2</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT_CHARS[lutIndex + 1]</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT_CHARS[lutIndex]</b>
+<b class="fc">&nbsp;            localValue /= HUNDRED_LONG</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (localValue &lt; TEN_LONG) {</b>
+<b class="fc">&nbsp;            scratch[--pos] = (ZERO_INT + localValue.toInt()).toChar()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val lutIndex = localValue.toInt() * 2</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT_CHARS[lutIndex + 1]</b>
+<b class="fc">&nbsp;            scratch[--pos] = DOUBLE_DIGIT_LUT_CHARS[lutIndex]</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (negative) {</b>
+<b class="fc">&nbsp;            scratch[--pos] = MINUS_INT.toChar()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return pos</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Emits digits of a strictly positive [absoluteValue] one digit at a time into
+&nbsp;     * [scratch] ending at [scratch.size]. Used by YAML writers (sign written separately).
+&nbsp;     *
+&nbsp;     * @return start index such that `scratch[start until scratch.size]` is the decimal text
+&nbsp;     */
+&nbsp;    fun writePositiveDigitsBytes(
+&nbsp;        absoluteValue: Long,
+&nbsp;        scratch: ByteArray,
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        var remaining = absoluteValue</b>
+<b class="fc">&nbsp;        var pos = scratch.size</b>
+<b class="fc">&nbsp;        while (remaining &gt; 0L) {</b>
+<b class="fc">&nbsp;            val digit = (remaining % TEN_LONG).toInt()</b>
+<b class="fc">&nbsp;            scratch[--pos] = (ZERO_INT + digit).toByte()</b>
+<b class="fc">&nbsp;            remaining /= TEN_LONG</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return pos</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
+</div>
+</body>
+</html>

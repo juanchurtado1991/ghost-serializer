@@ -1,0 +1,767 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlScalarDecodingKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlScalarDecodingKt (com.ghost.serialization.parser.yaml)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlScalarDecodingKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    74.7%
+  </span>
+  <span class="absValue">
+    (357/478)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (318/403)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78%
+  </span>
+  <span class="absValue">
+    (1876/2406)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser.yaml
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Subsystem for turning raw scalar bytes into Kotlin values: quoted-string unescaping, number
+&nbsp; * parsing, and null/bool/int/float type resolution (YAML 1.2 core schema priority). Pulled out of
+&nbsp; * `GhostYamlFlatReader` itself since this layer is only ever called *from* the core block/flow
+&nbsp; * parser (`readValue`, `readPlainScalarOrMapping`, `readKey`) and never calls back into it.
+&nbsp; */
+&nbsp;
+&nbsp;/**
+&nbsp; * Interprets raw bytes as the appropriate Kotlin type.
+&nbsp; * Never allocates a String until we know it&#39;s needed.
+&nbsp; *
+&nbsp; * Type priority (YAML 1.2 core schema):
+&nbsp; *   null → bool → int → float → string
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
+<b class="fc">&nbsp;    val length = end - start</b>
+&nbsp;    // A tag forcing string type still resolves to &quot;&quot; on empty content (e.g. a flow-mapping
+&nbsp;    // entry whose value is just &quot;!!str,&quot;) — same as it does at EOF in readValue — so this has
+&nbsp;    // to run before the untagged &quot;empty content means null&quot; default just below.
+<b class="fc">&nbsp;    if (expectedTag == GhostYamlTags.TAG_STR) {</b>
+<b class="fc">&nbsp;        return data.decodeToString(start, end)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (length == 0) return null</b>
+&nbsp;
+<b class="fc">&nbsp;    val firstByte = data[start]</b>
+&nbsp;
+<b class="fc">&nbsp;    if (expectedTag == GhostYamlTags.TAG_NULL) {</b>
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (expectedTag == GhostYamlTags.TAG_BOOL) {</b>
+<b class="fc">&nbsp;        if (isTrueLiteral(data, start, length)) return true</b>
+<b class="pc">&nbsp;        if (isFalseLiteral(data, start, length)) return false</b>
+<b class="nc">&nbsp;        return false</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (expectedTag == GhostYamlTags.TAG_INT) {</b>
+<b class="pc">&nbsp;        tryParseNumber(data, start, end)?.let {</b>
+<b class="pc">&nbsp;            if (it is Long) return it</b>
+<b class="nc">&nbsp;            if (it is Double) return it.toLong()</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        return data.decodeToString(start, end).toLongOrNull() ?: 0L</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (expectedTag == GhostYamlTags.TAG_FLOAT) {</b>
+<b class="pc">&nbsp;        tryParseNumber(data, start, end)?.let {</b>
+<b class="pc">&nbsp;            if (it is Double) return it</b>
+<b class="nc">&nbsp;            if (it is Long) return it.toDouble()</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        return data.decodeToString(start, end).toDoubleOrNull() ?: 0.0</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // null: ~, null, Null, NULL
+<b class="pc">&nbsp;    if (firstByte == C.TILDE_BYTE &amp;&amp; length == 1) return null</b>
+<b class="fc">&nbsp;    if (isNullLiteral(data, start, length)) return null</b>
+&nbsp;
+&nbsp;    // bool: true, True, TRUE, false, False, FALSE
+<b class="fc">&nbsp;    if (isTrueLiteral(data, start, length)) return true</b>
+<b class="fc">&nbsp;    if (isFalseLiteral(data, start, length)) return false</b>
+&nbsp;
+&nbsp;    // number: starts with digit, &#39;-&#39;, or &#39;.&#39; (for .inf/.nan)
+<b class="pc">&nbsp;    if (firstByte == C.DASH_BYTE || isDigit(firstByte) || firstByte == C.DOT_BYTE) {</b>
+<b class="fc">&nbsp;        tryParseNumber(data, start, end)?.let { return it }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Fallback: string
+<b class="fc">&nbsp;    return data.decodeToString(start, end)</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ── Quoted strings ─────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
+<b class="fc">&nbsp;    position++ // consume opening &#39;&quot;&#39;</b>
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;
+<b class="fc">&nbsp;    var hasEscape = false</b>
+<b class="fc">&nbsp;    var scanPos = position</b>
+<b class="fc">&nbsp;    while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byteVal = localRawData[scanPos]</b>
+<b class="fc">&nbsp;        if (byteVal == C.DOUBLE_QUOTE_BYTE) {</b>
+&nbsp;            break
+&nbsp;        }
+<b class="pc">&nbsp;        if (byteVal == C.BACKSLASH_BYTE || byteVal == C.NEWLINE_BYTE || byteVal == C.CR_BYTE) {</b>
+&nbsp;            // A line break needs folding, same as an escape sequence needs decoding — both force
+&nbsp;            // the slow path.
+<b class="fc">&nbsp;            hasEscape = true</b>
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        scanPos++</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (!hasEscape &amp;&amp; scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        position = scanPos + 1 // consume string and closing quote</b>
+<b class="fc">&nbsp;        return localRawData.decodeToString(startPosition, scanPos)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var outBuffer = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    var outPos = 0</b>
+&nbsp;    // Trailing whitespace before a fold is normally trimmed (see below), but a *escaped*
+&nbsp;    // space/tab (&quot;\ &quot;/&quot;\t&quot;/&quot;\&lt;literal tab&gt;&quot;) is real content the author deliberately protected
+&nbsp;    // from exactly that trimming — trimFloor marks how far back the trim loop is allowed to go,
+&nbsp;    // advanced to outPos after every escape write so it can never remove one.
+<b class="fc">&nbsp;    var trimFloor = 0</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;            if (currentByte == C.DOUBLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+<b class="fc">&nbsp;                return outBuffer.decodeToString(0, outPos)</b>
+<b class="fc">&nbsp;            } else if (currentByte == C.BACKSLASH_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+<b class="pc">&nbsp;                if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;                val nextByte = localRawData[position]</b>
+<b class="pc">&nbsp;                if (nextByte == C.NEWLINE_BYTE || nextByte == C.CR_BYTE) {</b>
+<b class="pc">&nbsp;                    if (nextByte == C.CR_BYTE &amp;&amp; position + 1 &lt; localLimit &amp;&amp; localRawData[position + 1] == C.NEWLINE_BYTE) {</b>
+<b class="nc">&nbsp;                        position++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    position++</b>
+<b class="pc">&nbsp;                    while (position &lt; localLimit &amp;&amp; (localRawData[position] == C.SPACE_BYTE || localRawData[position] == C.TAB_BYTE)) {</b>
+<b class="fc">&nbsp;                        position++</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    val code = processEscapeSequence()</b>
+<b class="fc">&nbsp;                    if (code &lt;= C.UTF8_1BYTE_MAX) {</b>
+<b class="pc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = code.toByte()</b>
+<b class="pc">&nbsp;                    } else if (code &lt;= C.UTF8_2BYTE_MAX) {</b>
+<b class="nc">&nbsp;                        if (outPos + 2 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (C.UTF8_2BYTE_PREFIX or (code shr C.SHIFT_6_BITS)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="pc">&nbsp;                    } else if (code &lt;= C.UTF8_3BYTE_MAX) {</b>
+<b class="pc">&nbsp;                        if (outPos + 3 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                            (C.UTF8_3BYTE_PREFIX or (code shr C.SHIFT_12)).toByte()</b>
+<b class="fc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                            (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                            (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        if (outPos + 4 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (C.UTF8_4BYTE_PREFIX or (code shr C.SHIFT_18_BITS)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_12) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (C.UTF8_CONT_PREFIX or ((code shr C.SHIFT_6_BITS) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                trimFloor = outPos</b>
+<b class="pc">&nbsp;            } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {</b>
+&nbsp;                // Trailing spaces/tabs are trimmed before the fold, but never past trimFloor —
+&nbsp;                // that would eat an escaped space/tab the author deliberately protected.
+<b class="fc">&nbsp;                while (outPos &gt; trimFloor &amp;&amp; (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {</b>
+<b class="fc">&nbsp;                    outPos--</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val breakCount = skipQuotedLineBreaks()</b>
+<b class="fc">&nbsp;                val toAppend = if (breakCount == 1) 1 else breakCount - 1</b>
+<b class="pc">&nbsp;                if (outPos + toAppend &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + toAppend &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= C.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val fillByte = if (breakCount == 1) C.SPACE_BYTE else C.NEWLINE_BYTE</b>
+<b class="fc">&nbsp;                repeat(toAppend) { outBuffer[outPos++] = fillByte }</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val startPos = position</b>
+<b class="fc">&nbsp;                while (position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != C.DOUBLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != C.BACKSLASH_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != C.NEWLINE_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                    localRawData[position] != C.CR_BYTE</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val rangeLength = position - startPos</b>
+<b class="pc">&nbsp;                if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + rangeLength &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= C.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
+<b class="fc">&nbsp;                outPos += rangeLength</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        releaseScratchBuffer(outBuffer)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    yamlError(C.ERR_UNTERMINATED_DOUBLE_QUOTED)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
+<b class="fc">&nbsp;    position++ // consume opening &#39;\&#39;&#39;</b>
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;
+<b class="fc">&nbsp;    var hasEscape = false</b>
+<b class="fc">&nbsp;    var scanPos = position</b>
+<b class="fc">&nbsp;    while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byteVal = localRawData[scanPos]</b>
+<b class="fc">&nbsp;        if (byteVal == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;            if (scanPos + 1 &lt; localLimit &amp;&amp; localRawData[scanPos + 1] == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                hasEscape = true</b>
+<b class="fc">&nbsp;                scanPos += 2</b>
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            break
+&nbsp;        }
+<b class="pc">&nbsp;        if (byteVal == C.NEWLINE_BYTE || byteVal == C.CR_BYTE) {</b>
+&nbsp;            // A line break needs folding, same as a doubled &#39;&#39; needs unescaping — both force the
+&nbsp;            // slow path.
+<b class="fc">&nbsp;            hasEscape = true</b>
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        scanPos++</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (!hasEscape &amp;&amp; scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        position = scanPos + 1 // consume string and closing quote</b>
+<b class="fc">&nbsp;        return localRawData.decodeToString(startPosition, scanPos)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var outBuffer = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    var outPos = 0</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;            if (currentByte == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+<b class="pc">&nbsp;                if (position &lt; localLimit &amp;&amp; localRawData[position] == C.SINGLE_QUOTE_BYTE) {</b>
+<b class="pc">&nbsp;                    if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                        val newBuffer =</b>
+<b class="nc">&nbsp;                            acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                        outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                        releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                        outBuffer = newBuffer</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    outBuffer[outPos++] = C.SINGLE_QUOTE_BYTE</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    return outBuffer.decodeToString(0, outPos)</b>
+&nbsp;                }
+<b class="pc">&nbsp;            } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {</b>
+&nbsp;                // Single-quoted scalars have no backslash-escape mechanism at all, so — unlike
+&nbsp;                // the double-quoted reader — there&#39;s never a protected trailing space/tab to
+&nbsp;                // preserve here; trailing whitespace before a fold is always trimmed in full.
+<b class="pc">&nbsp;                while (outPos &gt; 0 &amp;&amp; (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {</b>
+<b class="fc">&nbsp;                    outPos--</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val breakCount = skipQuotedLineBreaks()</b>
+<b class="fc">&nbsp;                val toAppend = if (breakCount == 1) 1 else breakCount - 1</b>
+<b class="pc">&nbsp;                if (outPos + toAppend &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + toAppend &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= C.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val fillByte = if (breakCount == 1) C.SPACE_BYTE else C.NEWLINE_BYTE</b>
+<b class="fc">&nbsp;                repeat(toAppend) { outBuffer[outPos++] = fillByte }</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val startPos = position</b>
+<b class="fc">&nbsp;                while (position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != C.SINGLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != C.NEWLINE_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                    localRawData[position] != C.CR_BYTE</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val rangeLength = position - startPos</b>
+<b class="pc">&nbsp;                if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + rangeLength &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= C.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
+<b class="fc">&nbsp;                outPos += rangeLength</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        releaseScratchBuffer(outBuffer)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    yamlError(C.ERR_UNTERMINATED_SINGLE_QUOTED)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Called with [GhostYamlFlatReader.position] at a line-break byte inside a quoted scalar. Folds
+&nbsp; * it the same way plain and block-folded scalars do: a single line break becomes a space, N
+&nbsp; * consecutive breaks (i.e. N-1 blank lines) become N-1 newlines. Each line&#39;s leading whitespace
+&nbsp; * is fully skipped — quoted scalars have no block-style indentation to preserve, unlike literal
+&nbsp; * block scalars. Leaves [GhostYamlFlatReader.position] at the first non-blank content (or the
+&nbsp; * closing quote). Returns the number of line breaks folded.
+&nbsp; */
+&nbsp;private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    var breakCount = 0</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currentByte = localRawData[position]</b>
+<b class="pc">&nbsp;        if (currentByte == C.CR_BYTE) {</b>
+<b class="nc">&nbsp;            position++</b>
+<b class="nc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            position++ // NEWLINE_BYTE</b>
+&nbsp;        }
+<b class="fc">&nbsp;        breakCount++</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit &amp;&amp; (localRawData[position] == C.SPACE_BYTE || localRawData[position] == C.TAB_BYTE)) {</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;        val next = localRawData[position]</b>
+<b class="pc">&nbsp;        if (next != C.NEWLINE_BYTE &amp;&amp; next != C.CR_BYTE) break</b>
+&nbsp;    }
+&nbsp;    // A quoted scalar is still &quot;open&quot; here — the closing quote hasn&#39;t been seen yet — but a line
+&nbsp;    // that looks like a document marker is forbidden content inside it regardless (spec&#39;s
+&nbsp;    // c-forbidden production), not literal text to fold in.
+<b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; (isDocumentMarker() || isDocumentEndMarker())) {</b>
+<b class="fc">&nbsp;        yamlError(&quot;${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX}${if (localRawData[position] == C.DASH_BYTE) C.STR_DOC_START else C.STR_DOC_END}${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX}&quot;)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return breakCount</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.processEscapeSequence(): Int {
+<b class="fc">&nbsp;    val currentByte = rawData[position++]</b>
+<b class="fc">&nbsp;    val currentByteInt = currentByte.toInt()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    return when (currentByte) {</b>
+<b class="fc">&nbsp;        C.DOUBLE_QUOTE_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        C.BACKSLASH_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        C.ESCAPE_SLASH_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        C.SPACE_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        C.TAB_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        C.LOWERCASE_B_BYTE -&gt; C.CODE_BS</b>
+<b class="pc">&nbsp;        C.LOWERCASE_F_BYTE -&gt; C.CODE_FF</b>
+<b class="fc">&nbsp;        C.LOWERCASE_N_BYTE -&gt; C.CHAR_LF_INT</b>
+<b class="fc">&nbsp;        C.LOWERCASE_R_BYTE -&gt; C.CODE_CR</b>
+<b class="fc">&nbsp;        C.LOWERCASE_T_BYTE -&gt; C.CODE_TAB</b>
+<b class="fc">&nbsp;        C.LOWERCASE_X_BYTE -&gt; {        // \xXX</b>
+<b class="pc">&nbsp;            if (position + C.HEX_ESCAPE_X_LEN &gt; localLimit) yamlError(C.ERR_INCOMPLETE_X_ESCAPE)</b>
+<b class="fc">&nbsp;            val hexVal = parseHex(rawData, position, C.HEX_ESCAPE_X_LEN)</b>
+<b class="fc">&nbsp;            position += C.HEX_ESCAPE_X_LEN</b>
+<b class="fc">&nbsp;            hexVal</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        C.LOWERCASE_U_BYTE -&gt; {        // \uXXXX</b>
+<b class="fc">&nbsp;            if (position + C.HEX_ESCAPE_U_LEN &gt; localLimit) yamlError(C.ERR_INCOMPLETE_U_ESCAPE)</b>
+<b class="fc">&nbsp;            val hexVal = parseHex(rawData, position, C.HEX_ESCAPE_U_LEN)</b>
+<b class="fc">&nbsp;            position += C.HEX_ESCAPE_U_LEN</b>
+<b class="fc">&nbsp;            hexVal</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        C.UPPERCASE_U_BYTE -&gt; {        // \UXXXXXXXX</b>
+<b class="nc">&nbsp;            if (position + C.HEX_ESCAPE_U32_LEN &gt; localLimit) yamlError(C.ERR_INCOMPLETE_U32_ESCAPE)</b>
+<b class="nc">&nbsp;            val hexVal = parseHex(rawData, position, C.HEX_ESCAPE_U32_LEN)</b>
+<b class="nc">&nbsp;            position += C.HEX_ESCAPE_U32_LEN</b>
+<b class="nc">&nbsp;            hexVal</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        C.ZERO_BYTE -&gt; C.CODE_ZERO</b>
+<b class="pc">&nbsp;        C.LOWERCASE_A_BYTE -&gt; C.CODE_BEL</b>
+<b class="pc">&nbsp;        C.LOWERCASE_V_BYTE -&gt; C.CODE_VTAB</b>
+<b class="pc">&nbsp;        C.LOWERCASE_E_BYTE -&gt; C.CODE_ESC</b>
+<b class="pc">&nbsp;        C.UPPERCASE_N_BYTE -&gt; C.CODE_NEXT_LINE</b>
+<b class="pc">&nbsp;        C.UNDERSCORE_BYTE -&gt; C.CODE_NBSP</b>
+<b class="pc">&nbsp;        C.UPPERCASE_L_BYTE -&gt; C.CODE_LINE_SEP</b>
+<b class="pc">&nbsp;        C.UPPERCASE_P_BYTE -&gt; C.CODE_PARA_SEP</b>
+<b class="fc">&nbsp;        else -&gt; yamlError(&quot;${C.ERR_UNKNOWN_ESCAPE_PREFIX}${currentByteInt.toChar()}&quot;)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.parseHex(data: ByteArray, start: Int, length: Int): Int {
+<b class="fc">&nbsp;    var value = 0</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="fc">&nbsp;    while (index &lt; length) {</b>
+<b class="fc">&nbsp;        val byteVal = data[start + index]</b>
+<b class="fc">&nbsp;        val digit = when {</b>
+<b class="pc">&nbsp;            byteVal in C.ZERO_BYTE..C.NINE_BYTE -&gt; byteVal - C.ZERO_BYTE</b>
+<b class="fc">&nbsp;            byteVal in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; byteVal - C.LOWERCASE_A_BYTE + C.HEX_RADIX_10</b>
+<b class="pc">&nbsp;            byteVal in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; byteVal - C.UPPERCASE_A_BYTE + C.HEX_RADIX_10</b>
+<b class="fc">&nbsp;            else -&gt; yamlError(C.ERR_INVALID_HEX_IN_ESCAPE)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        value = (value shl C.HEX_SHIFT_4) or digit</b>
+<b class="fc">&nbsp;        index++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ── Number parsing ─────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readNumber(): Any {
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;
+&nbsp;    // Negative hex/octal/binary (&quot;-0x10&quot;, &quot;-0o17&quot;, &quot;-0b101&quot;) aren&#39;t plain decimal digits,
+&nbsp;    // so the digit-only loop below would stop right after the leading &quot;-0&quot;. Scan their
+&nbsp;    // digit classes explicitly and hand the full token to tryParseNumber, which already
+&nbsp;    // knows how to parse (and negate) these bases — see the DASH_BYTE branch below.
+<b class="fc">&nbsp;    var prefixPosition = position</b>
+<b class="pc">&nbsp;    if (prefixPosition &lt; localLimit &amp;&amp; localRawData[prefixPosition] == C.DASH_BYTE) {</b>
+<b class="fc">&nbsp;        prefixPosition++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (prefixPosition + 1 &lt; localLimit &amp;&amp; localRawData[prefixPosition] == C.ZERO_BYTE) {</b>
+<b class="fc">&nbsp;        val baseByte = localRawData[prefixPosition + 1]</b>
+<b class="pc">&nbsp;        val isHex = baseByte == C.LOWERCASE_X_BYTE || baseByte == C.UPPERCASE_X_BYTE</b>
+<b class="pc">&nbsp;        val isOctal = baseByte == C.LOWERCASE_O_BYTE || baseByte == C.UPPERCASE_O_BYTE</b>
+<b class="pc">&nbsp;        val isBinary = baseByte == C.LOWERCASE_B_BYTE || baseByte == C.UPPERCASE_B_BYTE</b>
+<b class="fc">&nbsp;        if (isHex || isOctal || isBinary) {</b>
+<b class="fc">&nbsp;            position = prefixPosition + 2</b>
+<b class="pc">&nbsp;            while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;                val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;                val isBaseDigit = when {</b>
+<b class="fc">&nbsp;                    isHex -&gt; isDigit(currentByte) ||</b>
+<b class="pc">&nbsp;                            currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE ||</b>
+<b class="pc">&nbsp;                            currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE</b>
+&nbsp;
+<b class="pc">&nbsp;                    isOctal -&gt; currentByte in C.ZERO_BYTE..C.SEVEN_BYTE</b>
+<b class="fc">&nbsp;                    else -&gt; currentByte == C.ZERO_BYTE || currentByte == C.ONE_BYTE</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (!isBaseDigit) break</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            }
+<b class="pc">&nbsp;            return tryParseNumber(localRawData, startPosition, position)</b>
+<b class="nc">&nbsp;                ?: localRawData.decodeToString(startPosition, position)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currentByte = localRawData[position]</b>
+<b class="pc">&nbsp;        if (!isDigit(currentByte) &amp;&amp; currentByte != C.DASH_BYTE &amp;&amp; currentByte != C.PLUS_BYTE &amp;&amp; currentByte != C.DOT_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            currentByte != C.LOWERCASE_E_BYTE &amp;&amp; currentByte != C.UPPERCASE_E_BYTE</b>
+&nbsp;        ) break  // e, E for scientific
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+<b class="pc">&nbsp;    return tryParseNumber(localRawData, startPosition, position)</b>
+<b class="nc">&nbsp;        ?: localRawData.decodeToString(startPosition, position)</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ── Bitwise scalar type checks ─────────────────────────────────────────────
+&nbsp;// (isDigit itself stays on GhostYamlFlatReader — it&#39;s already internal and shared with
+&nbsp;// GhostYamlBlockScalarSubsystem.kt, no benefit to relocating a one-line leaf function.)
+&nbsp;
+&nbsp;/** Checks if bytes[start..start+len) match &#39;null&#39;, &#39;Null&#39;, or &#39;NULL&#39;. */
+&nbsp;private fun isNullLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+<b class="fc">&nbsp;    if (length != 4) return false</b>
+<b class="fc">&nbsp;    val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_N_BYTE &amp;&amp; byte1 == C.LOWERCASE_U_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_L_BYTE  // n,u,l,l</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Checks if bytes[start..start+len) match &#39;true&#39;, &#39;True&#39;, or &#39;TRUE&#39;. */
+&nbsp;private fun isTrueLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+<b class="fc">&nbsp;    if (length != 4) return false</b>
+<b class="fc">&nbsp;    val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_T_BYTE &amp;&amp; byte1 == C.LOWERCASE_R_BYTE &amp;&amp; byte2 == C.LOWERCASE_U_BYTE &amp;&amp; byte3 == C.LOWERCASE_E_BYTE  // t,r,u,e</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Checks if bytes[start..start+len) match &#39;false&#39;, &#39;False&#39;, or &#39;FALSE&#39;. */
+&nbsp;private fun isFalseLiteral(data: ByteArray, start: Int, length: Int): Boolean {
+<b class="fc">&nbsp;    if (length != 5) return false</b>
+<b class="fc">&nbsp;    val byte0 = (data[start].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="fc">&nbsp;    val byte4 = (data[start + 4].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
+<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_F_BYTE &amp;&amp; byte1 == C.LOWERCASE_A_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_S_BYTE &amp;&amp; byte4 == C.LOWERCASE_E_BYTE  // f,a,l,s,e</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Attempts to parse [data] between [start] and [end] as a [Long] or [Double].
+&nbsp; *
+&nbsp; * Returns `null` when the slice is not a valid number. Parsing is performed incrementally
+&nbsp; * over bytes; callers must not decode the entire range with [String.toInt] or [String.toDouble].
+&nbsp; */
+&nbsp;private fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end: Int): Any? {
+<b class="fc">&nbsp;    val length = end - start</b>
+<b class="pc">&nbsp;    if (length == 0) return null</b>
+&nbsp;
+<b class="fc">&nbsp;    var currentPosition = start</b>
+<b class="fc">&nbsp;    var isNegative = false</b>
+&nbsp;
+<b class="fc">&nbsp;    if (data[currentPosition] == C.DASH_BYTE) {</b>
+<b class="fc">&nbsp;        isNegative = true; currentPosition++</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (currentPosition &gt;= end) return null</b>
+&nbsp;
+&nbsp;    // Check for hex (0x), octal (0o), binary (0b)
+<b class="fc">&nbsp;    if (end - currentPosition &gt;= 3 &amp;&amp; data[currentPosition] == C.ZERO_BYTE) {</b>
+<b class="fc">&nbsp;        val nextByte = data[currentPosition + 1]</b>
+<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X</b>
+<b class="fc">&nbsp;            var value = 0L</b>
+<b class="fc">&nbsp;            var index = currentPosition + 2</b>
+<b class="fc">&nbsp;            while (index &lt; end) {</b>
+<b class="fc">&nbsp;                val currentByte = data[index]</b>
+<b class="fc">&nbsp;                val digit = when {</b>
+<b class="fc">&nbsp;                    isDigit(currentByte) -&gt; (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="pc">&nbsp;                    currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f</b>
+<b class="pc">&nbsp;                    currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F</b>
+<b class="nc">&nbsp;                    else -&gt; return null</b>
+&nbsp;                }
+<b class="fc">&nbsp;                value = (value shl C.HEX_SHIFT) or digit</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return if (isNegative) -value else value</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O</b>
+<b class="fc">&nbsp;            var value = 0L</b>
+<b class="fc">&nbsp;            var index = currentPosition + 2</b>
+<b class="fc">&nbsp;            while (index &lt; end) {</b>
+<b class="fc">&nbsp;                val currentByte = data[index]</b>
+<b class="pc">&nbsp;                if (currentByte &lt; C.ZERO_BYTE || currentByte &gt; C.SEVEN_BYTE) return null // 0-7</b>
+<b class="fc">&nbsp;                val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="fc">&nbsp;                value = (value shl C.OCTAL_SHIFT) or digit</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return if (isNegative) -value else value</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B</b>
+<b class="fc">&nbsp;            var value = 0L</b>
+<b class="fc">&nbsp;            var index = currentPosition + 2</b>
+<b class="fc">&nbsp;            while (index &lt; end) {</b>
+<b class="fc">&nbsp;                val currentByte = data[index]</b>
+<b class="pc">&nbsp;                if (currentByte != C.ZERO_BYTE &amp;&amp; currentByte != C.ONE_BYTE) return null // 0 or 1</b>
+<b class="fc">&nbsp;                val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
+<b class="fc">&nbsp;                value = (value shl C.BINARY_SHIFT) or digit</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return if (isNegative) -value else value</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Check for .inf / .nan
+<b class="fc">&nbsp;    if (data[currentPosition] == C.DOT_BYTE) {</b>
+<b class="fc">&nbsp;        val stringRepresentation = data.decodeToString(start, end)</b>
+<b class="pc">&nbsp;        return when (stringRepresentation.lowercase()) {</b>
+<b class="fc">&nbsp;            C.STR_DOT_INF, C.STR_PLUS_DOT_INF -&gt; Double.POSITIVE_INFINITY</b>
+<b class="fc">&nbsp;            C.STR_MINUS_DOT_INF -&gt; Double.NEGATIVE_INFINITY</b>
+<b class="fc">&nbsp;            C.STR_DOT_NAN -&gt; Double.NaN</b>
+<b class="nc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Parse integer part byte by byte
+<b class="fc">&nbsp;    var accumulatedLongValue = 0L</b>
+<b class="fc">&nbsp;    var hasDigit = false</b>
+<b class="fc">&nbsp;    var isFloatingPoint = false</b>
+&nbsp;
+<b class="fc">&nbsp;    while (currentPosition &lt; end) {</b>
+<b class="fc">&nbsp;        val currentByte = data[currentPosition]</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            isDigit(currentByte) -&gt; {</b>
+<b class="fc">&nbsp;                hasDigit = true</b>
+<b class="fc">&nbsp;                val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
+&nbsp;                // Overflow check
+<b class="fc">&nbsp;                if (accumulatedLongValue &gt; (Long.MAX_VALUE - digit) / 10) {</b>
+<b class="fc">&nbsp;                    isFloatingPoint = true</b>
+&nbsp;                    break
+&nbsp;                }
+<b class="fc">&nbsp;                accumulatedLongValue = accumulatedLongValue * 10 + digit</b>
+<b class="fc">&nbsp;                currentPosition++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            currentByte == C.DOT_BYTE || currentByte == C.LOWERCASE_E_BYTE || currentByte == C.UPPERCASE_E_BYTE -&gt; {</b>
+<b class="fc">&nbsp;                isFloatingPoint = true</b>
+&nbsp;                break
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; return null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (!hasDigit) return null</b>
+&nbsp;
+<b class="pc">&nbsp;    if (!isFloatingPoint &amp;&amp; currentPosition == end) {</b>
+<b class="fc">&nbsp;        return if (isNegative) -accumulatedLongValue else accumulatedLongValue</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val stringRepresentation = data.decodeToString(start, end)</b>
+<b class="fc">&nbsp;    return stringRepresentation.toDoubleOrNull()</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
+</div>
+</body>
+</html>

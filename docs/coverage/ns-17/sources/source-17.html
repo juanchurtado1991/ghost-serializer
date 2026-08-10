@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ProtoInt64ValueKt</title>
+  <title>GhostSerialization Coverage Report > ProtoInt64ValueSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.proto.wkt</a>
 </div>
 
-<h1>Coverage Summary for Class: ProtoInt64ValueKt (com.ghost.serialization.proto.wkt)</h1>
+<h1>Coverage Summary for Class: ProtoInt64ValueSerializer (com.ghost.serialization.proto.wkt)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ProtoInt64ValueKt</td>
+  <td class="name">ProtoInt64ValueSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    57.1%
   </span>
   <span class="absValue">
-    (1/1)
+    (4/7)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    57.1%
+  </span>
+  <span class="absValue">
+    (4/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    56%
   </span>
   <span class="absValue">
-    (14/14)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (22/22)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (97/97)
+    (14/25)
   </span>
 </td>
 </tr>
@@ -108,10 +101,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.streaming.nextLong
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.nextLong
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-&nbsp;import kotlin.jvm.JvmInline
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
@@ -120,64 +114,64 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * The JSON representation for `Int64Value` is JSON string.
 &nbsp; */
-&nbsp;@JvmInline
-&nbsp;value class ProtoInt64Value(val value: Long)
+&nbsp;/**
+&nbsp; * Serializer for [ProtoInt64Value].
+&nbsp; */
+&nbsp;object ProtoInt64ValueSerializer : GhostSerializer&lt;ProtoInt64Value&gt; {
+<b class="fc">&nbsp;    override val typeName: String get() = C.WKT_INT64_VALUE_TYPE</b>
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
+<b class="nc">&nbsp;        writer.value(formatLong(value.value))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
+<b class="fc">&nbsp;        writer.value(formatLong(value.value))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) {
+<b class="fc">&nbsp;        writer.value(formatLong(value.value))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value =
+<b class="nc">&nbsp;        ProtoInt64Value(reader.nextLong())</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value =
+<b class="fc">&nbsp;        ProtoInt64Value(reader.nextLong())</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoInt64Value =
+<b class="nc">&nbsp;        ProtoInt64Value(reader.nextLong())</b>
+&nbsp;}
 &nbsp;
 &nbsp;// Helper to format a Long to String zero-allocation.
 &nbsp;// Operates in negative space throughout (never negates the full magnitude) so that
 &nbsp;// Long.MIN_VALUE round-trips correctly: -Long.MIN_VALUE overflows back to Long.MIN_VALUE
 &nbsp;// in two&#39;s complement, which previously corrupted the output to &quot;-0&quot; for that boundary value.
 &nbsp;internal fun formatLong(value: Long): String {
-<b class="fc">&nbsp;    val outputBuffer = ByteArray(C.LONG_BUFFER_SIZE)</b>
-<b class="fc">&nbsp;    var bufferPosition = 0</b>
-<b class="fc">&nbsp;    val isNegative = value &lt; 0</b>
-<b class="fc">&nbsp;    if (isNegative) {</b>
-<b class="fc">&nbsp;        outputBuffer[bufferPosition++] = C.CHAR_HYPHEN.code.toByte()</b>
+&nbsp;    val outputBuffer = ByteArray(C.LONG_BUFFER_SIZE)
+&nbsp;    var bufferPosition = 0
+&nbsp;    val isNegative = value &lt; 0
+&nbsp;    if (isNegative) {
+&nbsp;        outputBuffer[bufferPosition++] = C.CHAR_HYPHEN.code.toByte()
 &nbsp;    }
-<b class="fc">&nbsp;    var absoluteValue = if (isNegative) value else -value</b>
-<b class="fc">&nbsp;    var digitCount = 1</b>
-<b class="fc">&nbsp;    while (absoluteValue &lt;= -C.BASE_TEN) {</b>
-<b class="fc">&nbsp;        digitCount++</b>
-<b class="fc">&nbsp;        absoluteValue /= C.BASE_TEN</b>
+&nbsp;    var absoluteValue = if (isNegative) value else -value
+&nbsp;    var digitCount = 1
+&nbsp;    while (absoluteValue &lt;= -C.BASE_TEN) {
+&nbsp;        digitCount++
+&nbsp;        absoluteValue /= C.BASE_TEN
 &nbsp;    }
-<b class="fc">&nbsp;    var divisor = 1L</b>
-<b class="fc">&nbsp;    var digitIndex = digitCount - 1</b>
-<b class="fc">&nbsp;    while (digitIndex &gt; 0) {</b>
-<b class="fc">&nbsp;        divisor *= C.BASE_TEN</b>
-<b class="fc">&nbsp;        digitIndex--</b>
+&nbsp;    var divisor = 1L
+&nbsp;    var digitIndex = digitCount - 1
+&nbsp;    while (digitIndex &gt; 0) {
+&nbsp;        divisor *= C.BASE_TEN
+&nbsp;        digitIndex--
 &nbsp;    }
-<b class="fc">&nbsp;    absoluteValue = if (isNegative) value else -value</b>
-<b class="fc">&nbsp;    while (divisor &gt; 0) {</b>
-<b class="fc">&nbsp;        val digit = (-(absoluteValue / divisor)).toInt()</b>
-<b class="fc">&nbsp;        outputBuffer[bufferPosition++] = (digit + C.ZERO_INT).toByte()</b>
-<b class="fc">&nbsp;        absoluteValue %= divisor</b>
-<b class="fc">&nbsp;        divisor /= C.BASE_TEN</b>
+&nbsp;    absoluteValue = if (isNegative) value else -value
+&nbsp;    while (divisor &gt; 0) {
+&nbsp;        val digit = (-(absoluteValue / divisor)).toInt()
+&nbsp;        outputBuffer[bufferPosition++] = (digit + C.ZERO_INT).toByte()
+&nbsp;        absoluteValue %= divisor
+&nbsp;        divisor /= C.BASE_TEN
 &nbsp;    }
-<b class="fc">&nbsp;    return outputBuffer.decodeToString(0, bufferPosition)</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Serializer for [ProtoInt64Value].
-&nbsp; */
-&nbsp;object ProtoInt64ValueSerializer : GhostSerializer&lt;ProtoInt64Value&gt; {
-&nbsp;    override val typeName: String get() = C.WKT_INT64_VALUE_TYPE
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoInt64Value =
-&nbsp;        ProtoInt64Value(reader.nextLong())
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoInt64Value =
-&nbsp;        ProtoInt64Value(reader.nextLong())
+&nbsp;    return outputBuffer.decodeToString(0, bufferPosition)
 &nbsp;}
 </code>
 </pre>
@@ -202,7 +196,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

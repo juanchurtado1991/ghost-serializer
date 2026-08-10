@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.6%
+    100%
   </span>
   <span class="absValue">
-    (11/13)
+    (13/13)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    64.3%
+    63.6%
   </span>
   <span class="absValue">
-    (9/14)
+    (14/22)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.2%
+    86.5%
   </span>
   <span class="absValue">
-    (23/27)
+    (32/37)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80.9%
+    82.4%
   </span>
   <span class="absValue">
-    (144/178)
+    (187/227)
   </span>
 </td>
 </tr>
@@ -120,7 +120,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * Registration is independent of [Ghost]&#39;s own serializer registry — the type still needs a
 &nbsp; * `GhostSerializer` registered there too (e.g. via `@GhostProtoSerialization` + KSP, or a manual
-&nbsp; * [com.ghost.serialization.contract.GhostRegistry]). This registry only remembers which
+&nbsp; * `GhostRegistry`). This registry only remembers which
 &nbsp; * `typeUrl` string corresponds to which [KClass].
 &nbsp; *
 &nbsp; * ```kotlin
@@ -148,10 +148,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /** The `typeUrl` registered for [kClass], or `null` if none was registered. */
-<b class="nc">&nbsp;    fun typeUrlFor(kClass: KClass&lt;*&gt;): String? = typeUrlByClass[kClass]</b>
+<b class="fc">&nbsp;    fun typeUrlFor(kClass: KClass&lt;*&gt;): String? = typeUrlByClass[kClass]</b>
 &nbsp;
 &nbsp;    /** The [KClass] registered for [typeUrl], or `null` if none was registered. */
-<b class="nc">&nbsp;    fun classFor(typeUrl: String): KClass&lt;*&gt;? = classByTypeUrl[typeUrl]</b>
+<b class="fc">&nbsp;    fun classFor(typeUrl: String): KClass&lt;*&gt;? = classByTypeUrl[typeUrl]</b>
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Serializes [message] and wraps it in a [ProtoAny] using the `typeUrl` registered for
@@ -179,13 +179,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Decodes the payload captured in [any] as [kClass], using the [GhostSerializer] registered
-&nbsp;     * with [Ghost] for that type. Does not check [any]&#39;s `typeUrl` against [kClass] — use
-&nbsp;     * [unpackDynamic] when the target type is only known from the wire.
+&nbsp;     * with [Ghost] for that type.
 &nbsp;     *
-&nbsp;     * @throws IllegalArgumentException if [kClass] has no [GhostSerializer] registered with [Ghost].
+&nbsp;     * When [kClass] or [any]&#39;s `typeUrl` is registered via [register], verifies that the wire
+&nbsp;     * `typeUrl` matches [kClass]; a mismatch throws. Use [unpackDynamic] when the target type is
+&nbsp;     * only known from the wire.
+&nbsp;     *
+&nbsp;     * @throws IllegalArgumentException if [kClass] has no [GhostSerializer] registered with [Ghost],
+&nbsp;     *   or if a registered `typeUrl` does not match [kClass].
 &nbsp;     */
 &nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
 &nbsp;    fun &lt;T : Any&gt; unpack(any: ProtoAny, kClass: KClass&lt;T&gt;): T {
+<b class="fc">&nbsp;        val expectedTypeUrl = typeUrlFor(kClass)</b>
+<b class="pc">&nbsp;        if (expectedTypeUrl != null &amp;&amp; any.typeUrl != expectedTypeUrl) {</b>
+<b class="fc">&nbsp;            Ghost.throwError(</b>
+<b class="fc">&nbsp;                &quot;ProtoAny typeUrl mismatch: expected &#39;$expectedTypeUrl&#39; for ${kClass.simpleName}, &quot; +</b>
+<b class="fc">&nbsp;                        &quot;got &#39;${any.typeUrl}&#39;&quot;</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        val registeredClass = classFor(any.typeUrl)</b>
+<b class="pc">&nbsp;        if (registeredClass != null &amp;&amp; registeredClass != kClass) {</b>
+<b class="nc">&nbsp;            Ghost.throwError(</b>
+<b class="nc">&nbsp;                &quot;ProtoAny typeUrl &#39;${any.typeUrl}&#39; is registered for ${registeredClass.simpleName}, &quot; +</b>
+<b class="nc">&nbsp;                        &quot;not ${kClass.simpleName}&quot;</b>
+&nbsp;            )
+&nbsp;        }
 <b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) as? GhostSerializer&lt;T&gt;</b>
 <b class="nc">&nbsp;            ?: Ghost.throwError(&quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;)</b>
 <b class="fc">&nbsp;        return ghostProtoInternalUseFlatReader(any.value) { reader -&gt;</b>
@@ -210,7 +228,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /** Test-only: clears all registered typeUrl/KClass mappings. */
+&nbsp;    /**
+&nbsp;     * Test hook: clears all registered typeUrl/KClass mappings to prevent cross-test pollution.
+&nbsp;     * Not for production use.
+&nbsp;     */
 &nbsp;    @InternalGhostApi
 &nbsp;    fun resetForTest() {
 <b class="fc">&nbsp;        typeUrlByClass.clear()</b>
@@ -240,7 +261,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>

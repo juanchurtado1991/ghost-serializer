@@ -155,22 +155,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.annotations.GhostProtoSerialization
 &nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-&nbsp;@JvmInline
-&nbsp;@Serializable
-&nbsp;value class ProtoAccountIds(val value: List&lt;Long&gt;)
-&nbsp;
-&nbsp;@GhostProtoSerialization
-&nbsp;@Serializable
-&nbsp;data class ProtoAccountIdsMessage(
-&nbsp;    val account_ids: ProtoAccountIds,
-&nbsp;)
-&nbsp;
-&nbsp;@GhostProtoSerialization
-&nbsp;@Serializable
-&nbsp;data class ProtoUInt64FieldMessage(
-&nbsp;    val shard_id: ULong,
-&nbsp;)
-&nbsp;
 <b class="pc">&nbsp;@GhostProtoSerialization</b>
 &nbsp;@Serializable
 &nbsp;data class ProtoDeviceEventListItem(
@@ -200,7 +184,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-04 18:36</div>
+    <div style="float:right;">generated on 2026-08-10 03:44</div>
 </div>
 </body>
 </html>
