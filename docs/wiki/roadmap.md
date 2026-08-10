@@ -74,7 +74,7 @@ Example targets (to add at the top of `README.md` once wired):
 | Area | Work | Status |
 |:---|:---|:---:|
 | **Adapter gaps** | Retrofit/Ktor proto/YAML converters: `List<T>` / `Map` body unwrapping | Shipped in 1.3.0 |
-| **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)). Safari SWAR lag mitigated via `ghostUseSwarScans=false` on Wasm ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)) | Shipped / ongoing |
+| **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)). Safari SWAR re-measure on Mac with SWAR **on** by default + byte-channel Speed Test ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16), [handoff](../SAFARI_WASM_MAC_HANDOFF.md)) | Ongoing |
 | **Regression visibility** | Optional CI artifact or docs page for benchmark regression JSON (Twitter + synthetic gates) | Planned |
 | **Fuzz / malformed JSON** | Extend stress-suite coverage beyond deep nesting and single malformed payloads | Planned |
 | **Playground** | Keep Speed Test + Studio presets aligned with real generated serializers on JVM | Ongoing |

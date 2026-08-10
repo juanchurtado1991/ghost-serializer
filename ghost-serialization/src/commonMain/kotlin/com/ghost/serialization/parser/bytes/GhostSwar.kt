@@ -6,9 +6,9 @@ import com.ghost.serialization.parser.common.GhostJsonConstants
  * When `true`, hot paths may pack 8 bytes into a [Long] and run SWAR bit tricks
  * (`scanStringSwarNoHash`, space-run skipping, predicted-key wide compare).
  *
- * Wasm sets this to `false`: assembling an `i64` from eight loads and then doing SWAR is a
- * net loss on JavaScriptCore (Safari); scalar byte loops recover the ranking.
- * See https://github.com/juanchurtado1991/ghost-serializer/issues/16
+ * Default `true` on all targets (JVM/Android/Native/Wasm). Safari/JSC performance
+ * is validated on Mac — see docs/SAFARI_WASM_MAC_HANDOFF.md and
+ * https://github.com/juanchurtado1991/ghost-serializer/issues/16
  */
 internal expect val ghostUseSwarScans: Boolean
 

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ghost.playground.bench.SpeedSample
 import com.ghost.playground.bench.SpeedTestEngine
+import com.ghost.playground.bench.SpeedTestPayload
 import com.ghost.playground.bench.SpeedTestPhase
 import com.ghost.playground.bench.formatBytes
 import com.ghost.playground.bench.formatSeconds
@@ -48,7 +49,7 @@ import kotlin.time.DurationUnit
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SpeedTestScreen(strings: Strings) {
-    var payload by remember { mutableStateOf<String?>(null) }
+    var payload by remember { mutableStateOf<SpeedTestPayload?>(null) }
     var payloadBytes by remember { mutableStateOf(0L) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
@@ -62,12 +63,12 @@ fun SpeedTestScreen(strings: Strings) {
         sample = null
         phase = SpeedTestPhase.Loading
         try {
-            val json = payload ?: SpeedTestEngine.loadPayload().also {
+            val loaded = payload ?: SpeedTestEngine.loadPayload().also {
                 payload = it
-                payloadBytes = it.encodeToByteArray().size.toLong()
+                payloadBytes = it.sizeBytes
             }
             gaugeMax = 1.0
-            SpeedTestEngine.run(json) { s ->
+            SpeedTestEngine.run(loaded) { s ->
                 sample = s
                 phase = s.phase
                 val peak = maxOf(s.ghostOpsPerSec, s.kserOpsPerSec, s.moshiOpsPerSec)

@@ -22,19 +22,21 @@ class SpeedTestEngineJvmTest {
     fun bundledTwitterDatasetRoundTripsThroughAllEngines() = runBlocking {
         val payload = SpeedTestEngine.loadPayload()
         assertTrue(
-            payload.length > 5_000,
-            "expected a non-trivial twitter_macro.json payload, got ${payload.length} chars"
+            payload.text.length > 5_000,
+            "expected a non-trivial twitter_macro.json payload, got ${payload.text.length} chars"
         )
+        assertEquals(payload.utf8.size.toLong(), payload.sizeBytes)
+        assertEquals(payload.text, payload.utf8.decodeToString())
 
-        val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload)
+        val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload.utf8)
         assertTrue(ghostDecoded.statuses.isNotEmpty())
-        val ghostEncoded = Ghost.encodeToString(ghostDecoded)
-        assertTrue(ghostEncoded.contains("\"statuses\""))
+        val ghostEncoded = Ghost.encodeToBytes(ghostDecoded)
+        assertTrue(ghostEncoded.decodeToString().contains("\"statuses\""))
         val ghostRoundTripped = Ghost.deserialize<TwitterResponse>(ghostEncoded)
         assertEquals(ghostDecoded.statuses.size, ghostRoundTripped.statuses.size)
 
         val json = Json { ignoreUnknownKeys = true }
-        val kserDecoded = json.decodeFromString<TwitterResponse>(payload)
+        val kserDecoded = json.decodeFromString<TwitterResponse>(payload.text)
         assertEquals(
             ghostDecoded.statuses.size,
             kserDecoded.statuses.size,
@@ -46,7 +48,7 @@ class SpeedTestEngineJvmTest {
             kserDecoded.statuses.first().user.screenName
         )
 
-        MoshiBench.roundTrip(payload)
+        MoshiBench.roundTrip(payload.text)
     }
 
     @Test

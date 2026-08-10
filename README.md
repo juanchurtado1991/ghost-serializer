@@ -88,7 +88,7 @@ Step-by-step → **[Quick Start](docs/wiki/quick-start.md)**
 
 Also: Retrofit 2.11+, Spring Boot 3.4+ (MVC + WebFlux), YAML (`application/yaml`), Proto3 JSON mapping.
 
-> **Wasm / Safari:** Wasm builds disable Long/SWAR wide scans (`ghostUseSwarScans=false`) and use scalar byte loops — the previous Safari (WebKit) decode lag vs Chrome is addressed in [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16). JVM / Android / iOS keep SWAR.
+> **Wasm / Safari:** `ghostUseSwarScans` defaults **on** on all targets (including `wasmJs`). Safari Speed Test rankings need a Mac/WebKit re-measure — see [docs/SAFARI_WASM_MAC_HANDOFF.md](docs/SAFARI_WASM_MAC_HANDOFF.md) and [#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16).
 
 Details → **[Modules](docs/wiki/modules.md)**
 

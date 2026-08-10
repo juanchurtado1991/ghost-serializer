@@ -12,7 +12,6 @@ import com.ghost.serialization.util.isJvm
 import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -53,9 +52,9 @@ class WasmPlatformActualsTest {
     }
 
     @Test
-    fun wasmDisablesSwarScansForSafariFriendlyScalarPath() {
-        // Issue #16: Long/SWAR wide scans lose on JavaScriptCore; Wasm uses byte loops.
-        assertFalse(ghostUseSwarScans)
+    fun wasmEnablesSwarScansByDefault() {
+        // SWAR on by default everywhere; Safari must be re-measured on Mac (#16).
+        assertTrue(ghostUseSwarScans)
 
         val stringContent = "hello world".encodeToByteArray()
         val quotedJsonString = ("\"" + "hello world" + "\"").encodeToByteArray()

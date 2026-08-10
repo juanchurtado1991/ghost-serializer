@@ -17,11 +17,12 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_56
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 
 
-// Disable Long/SWAR wide scans on Wasm — JSC (Safari) loses to scalar byte loops (#16).
-internal actual val ghostUseSwarScans: Boolean = false
+// SWAR/i64 wide scans enabled on Wasm (same as JVM/Native). Safari ranking is
+// re-measured on Mac — see docs/SAFARI_WASM_MAC_HANDOFF.md and issue #16.
+internal actual val ghostUseSwarScans: Boolean = true
 
-// Scalar assembly for Kotlin/Wasm. Production hot paths gate on ghostUseSwarScans
-// (false here); kept for tests and any future opt-in wide compares.
+// Scalar assembly for Kotlin/Wasm (`ghostReadLong8`). Hot paths use this when
+// ghostUseSwarScans is true (default on all targets).
 // Byte order is irrelevant for the symmetric comparisons this feeds.
 internal actual fun ghostReadLong8(data: ByteArray, index: Int): Long =
     (data[index].toLong() and LONG_BYTE_MASK) or
