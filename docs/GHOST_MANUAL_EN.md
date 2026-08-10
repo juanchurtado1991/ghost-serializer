@@ -624,7 +624,7 @@ Ghost.getSerializer(Order::class)
 Ghost.decodeFromBytes(bytes, Order::class)
 ```
 
-For `List<Order>` in Retrofit, the factory resolves `ParameterizedType` and builds `ListSerializer(OrderSerializer)`.
+For `List<Order>` / `Set<Order>` / `Map<String, Order>` in Retrofit (and Spring MVC/WebFlux), factories resolve `ParameterizedType` / `ResolvableType` and build `ListSerializer` / `SetSerializer` / `MapSerializer` around the element serializer. Ktor uses `Ghost.getSerializer(KType)` the same way.
 
 ### Prewarm — why and when
 
@@ -854,9 +854,9 @@ fun reset() {
 
 `serializers/PrimitiveSerializers.kt`, `ListSerializer`, `MapSerializer`, etc.
 
-`Ghost` resolves `Int`, `String`, `List<T>`, `Map<String,V>` with built-in serializers before the registry.
+`Ghost` resolves `Int`, `String`, `List<T>`, `Set<T>`, `Map<String,V>` with built-in serializers before the registry.
 
-For generics: `getSerializer(KType)` builds or caches `ListSerializer(element)`.
+For generics: `getSerializer(KType)` builds or caches `ListSerializer` / `SetSerializer` / `MapSerializer` around the element serializer.
 
 ---
 
@@ -997,10 +997,10 @@ No `ghost.*` in `application.properties`. Everything is automatic if the DTO has
 
 Spring Boot brings Jackson by default. Ghost inserts its converter at **index 0**:
 
-- If `Ghost.getSerializer(Order::class) != null` → Ghost serializes/deserializes.
+- If `Ghost.getSerializer` resolves the declared type (including top-level `List`/`Set`/`Map` of registered DTOs) → Ghost serializes/deserializes.
 - If no Ghost serializer → Jackson continues with the DTO as before.
 
-You can have in the same project: JPA entities with Jackson and API DTOs with Ghost.
+You can have in the same project: JPA entities with Jackson and API DTOs with Ghost. Collection endpoints such as `List<OrderDto>` stay on Ghost when `OrderDto` is registered.
 
 ### Typical controller (no special changes)
 
@@ -1278,8 +1278,10 @@ Highlights since 1.2.7 (see `CHANGELOG.md` for the full list):
 - **Kotlin 2.4.0 / KSP 2.3.10 / Ktor 3.5.1** toolchain.
 - **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-ktor`, and `ghost-playground` (JSON, YAML, and Proto3 JSON share the unified `ghost-serialization` runtime).
 - **Decode hot path**: in-order field prediction, SWAR whitespace/string scanning, deferred pool hash — string/bytes/streaming.
-- **`textChannel = true` by default** (native string reader/writer overloads).
+- **`textChannel = true` by default** (native string reader/writer overloads). Prefer `ghost.textChannel=false` in byte-first HTTP modules (Retrofit/Spring/Ktor).
 - **RFC 8259** UTF-8/UTF-16/UTF-32 input normalization on byte/streaming entrypoints.
+- **HTTP adapters**: top-level `List`/`Set`/`Map` unwrap on Retrofit, Spring MVC/WebFlux, and Ktor (JSON, YAML, Proto).
+- **`Ghost.deserialize(bytes) { options }`** uses the flat reader (same as plain bytes).
 - Twitter macro decode (this machine): String **1.219 GB/s**, Bytes **1.011 GB/s**, Streaming **0.525 GB/s**.
 
 Earlier 1.2.x notes retained below for historical context:

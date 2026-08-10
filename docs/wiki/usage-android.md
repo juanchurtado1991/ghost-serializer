@@ -145,11 +145,13 @@ interface UserApi {
 
 ---
 
-## 6. Lists and Nullable Fields
+## 6. Lists, Sets, and Nullable Fields
 
 ```kotlin
-// Lists are handled automatically
+// Collections are handled automatically (wire format for Set is a JSON array)
 val users: List<User> = Ghost.deserialize(jsonArrayString)
+val unique: Set<User> = Ghost.deserialize(jsonArrayString)
+// Retrofit response types List<User> / Set<User> / Map<String, User> unwrap when User is registered
 
 // Nullable fields work as expected
 @GhostSerialization

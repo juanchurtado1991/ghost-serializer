@@ -33,7 +33,7 @@ You already have a JSON stack. Ghost is the **optimization layer** for the endpo
 - **Low allocation** — pooled readers/writers and precomputed field dispatch
 - **Incremental adoption** — Ghost and your current serializer coexist in the same app
 - **Kotlin Multiplatform** — Android, iOS, JVM, plus Wasm in this repo
-- **Ready adapters** — Ktor, Retrofit, Spring MVC / WebFlux
+- **Ready adapters** — Ktor, Retrofit, Spring MVC / WebFlux (including top-level `List` / `Set` / `Map` bodies)
 
 ```kotlin
 @GhostSerialization
