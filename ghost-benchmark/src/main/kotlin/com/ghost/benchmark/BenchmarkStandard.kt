@@ -6,7 +6,7 @@ package com.ghost.benchmark
  * Values are read once at class initialization from `ghost.benchmark.profile`:
  *
  * - **Full** (`full`, default) — baselines in [RegressionCalculator], ±10% tolerance.
- * - **Fast** (`fast`) — same baselines and tolerance, ~5× less work per suite.
+ * - **Fast** (`fast`) — same baselines, ±20% tolerance, ~5× less work per suite.
  */
 internal object BenchmarkStandard {
 

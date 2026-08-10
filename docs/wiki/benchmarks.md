@@ -33,7 +33,7 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 # CI regression gate — full profile (~9 min bench, +tests unless -PskipTests)
 ./gradlew :ghost-benchmark:benchmarkRegression -PskipTests
 
-# Dev regression gate — fast profile (~1–2 min, ±10% tolerance)
+# Dev regression gate — fast profile (~1–2 min, ±20% tolerance)
 ./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests
 
 # Individual suites (add -PskipTests to skip allTests gate)
@@ -55,7 +55,7 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 ./gradlew :ghost-benchmark:run -Pjit -PskipTests  # JIT log for JITWatch
 ```
 
-Exit code `1` = regression beyond ±10% tolerance vs baseline (twitter / synthetic tasks only).
+Exit code `1` = regression vs README baseline on twitter / synthetic tasks: **±10%** on the full profile, **±20%** on fast (wider bar for sample noise; full remains the release gate).
 
 | Task | Wall-clock | Regression gate |
 |------|------------|-----------------|

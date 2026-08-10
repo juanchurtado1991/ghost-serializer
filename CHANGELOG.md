@@ -13,6 +13,7 @@
 
 ### Changed
 - **Release 1.3.1**: `publish-version` / Gradle plugin `DEFAULT_VERSION` and wiki/README/manual version pins bumped from `1.3.0` → `1.3.1`. Study manual regenerated as `docs/Ghost-Serialization-Manual-1.3.1.pdf` (playground `MANUAL_PDF` link follows `GhostPlaygroundVersions` from the catalog).
+- **Benchmark fast profile**: regression gate tolerance raised to **±20%** on Ghost÷KSER advantage (full profile stays **±10%**). Absorbs ratio noise from ~5× fewer samples without loosening the release bar.
 - **`Ghost.deserialize(bytes) { options }` uses the flat reader** — same engine as plain `deserialize(bytes)`, so `strictMode` / `coerceStringsToNumbers` apply on the hot path. Streaming remains explicit via `BufferedSource` / `deserializeStreaming`.
 - **Parser/writer kernel sharing** across flat / streaming / string channels: structure/comma, `skipValue`, list/set readers, `computeKeyHash` / select-no-match, numeric header/exponent/digits, `skipNumber` / floating body, YAML writer layout helpers, UTF-8 `readQuotedStringSlow`, and flat `internalSelect` extracted to `GhostJsonFlatReaderSubsystem`. YAML block mapping/sequence peeled to `GhostYamlBlockStyleSubsystem`.
 - **HTTP / Android docs**: recommend `ksp { arg("ghost.textChannel", "false") }` for Retrofit/OkHttp/Ktor/Spring byte-first modules (~4 KB less generated code per DTO); keep the default `true` when models also parse large in-memory `String`s.

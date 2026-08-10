@@ -4,7 +4,7 @@ package com.ghost.benchmark
  * Benchmark workload shape selected via JVM property `ghost.benchmark.profile`.
  *
  * - [FULL] (default) — README regression baselines, ±10% tolerance, ~9 min combined gate.
- * - [FAST] — same baselines and tolerance with ~5× fewer iterations (~1–2 min combined gate).
+ * - [FAST] — same baselines, ±20% tolerance (noisier with ~5× fewer iterations), ~1–2 min gate.
  */
 internal enum class BenchmarkProfile(
     val warmupIterations: Int,
@@ -26,7 +26,10 @@ internal enum class BenchmarkProfile(
         regressionTolerance = RegressionCalculator.DEFAULT_TOLERANCE,
     ),
 
-    /** Developer gate profile — same tolerance, fewer warmup and session iterations. */
+    /**
+     * Developer / smoke gate — fewer warmup and session iterations.
+     * Wider speed tolerance absorbs Ghost÷KSER ratio noise; [FULL] remains the release bar.
+     */
     FAST(
         warmupIterations = 2_000,
         localWarmupIterations = 100,
@@ -34,12 +37,15 @@ internal enum class BenchmarkProfile(
         syntheticSamplesPerSession = 50,
         measurementRuns = 1_000,
         progressInterval = 100,
-        regressionTolerance = RegressionCalculator.DEFAULT_TOLERANCE,
+        regressionTolerance = FAST_REGRESSION_TOLERANCE,
     ),
     ;
 
     companion object {
         private const val PROPERTY_KEY = "ghost.benchmark.profile"
+
+        /** Relative Ghost÷KSER advantage degradation tolerated on the fast profile only. */
+        const val FAST_REGRESSION_TOLERANCE: Double = 0.20
 
         /** Returns [FULL] unless `ghost.benchmark.profile=fast`. */
         fun active(): BenchmarkProfile {
