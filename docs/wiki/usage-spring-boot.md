@@ -81,7 +81,7 @@ Ghost handles serialization and deserialization transparently. Spring's content 
 
 ### Collection request/response bodies
 
-Top-level `List<T>`, `Set<T>`, and `Map<String, V>` are unwrapped when the element/value type has a Ghost serializer (JSON and YAML converters, MVC and WebFlux). Element types must be registered the same way as a direct body DTO:
+Top-level `List<T>`, `Set<T>`, and `Map<String, V>` are unwrapped when the element/value type has a Ghost serializer (JSON and YAML converters, MVC and WebFlux). Built-in element types such as `String` / `Int` work for JSON (`List<String>`, `Map<String, String>`, …). Top-level bare `String` / `byte[]` / primitives stay on Spring's default converters. Map key types other than `String` are declined so Ghost does not claim `Map<Int, V>`. Element DTOs must be registered the same way as a direct body type:
 
 ```kotlin
 @GetMapping("/users")
