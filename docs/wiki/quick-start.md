@@ -2,7 +2,7 @@
 
 Add Ghost as a **drop-in optimization** for performance-critical Kotlin JSON models while your current serializer continues handling everything else. You can start with one DTO and one endpoint; no project-wide migration is required.
 
-Ghost Serializer **1.3.0** supports Kotlin Multiplatform, Android, iOS, JVM, and browser WebAssembly (`wasmJs`) on Maven Central, with Kotlin **2.4.0**, KSP **2.3.10**, and Ktor **3.5.x**. The snippets below match that stack.
+Ghost Serializer **1.3.1** supports Kotlin Multiplatform, Android, iOS, JVM, and browser WebAssembly (`wasmJs`) on Maven Central, with Kotlin **2.4.0**, KSP **2.3.10**, and Ktor **3.5.x**. The snippets below match that stack.
 
 ## 1. Apply KSP and the Ghost Gradle plugin
 
@@ -13,7 +13,7 @@ The Ghost plugin adds `ghost-api` and `ghost-serialization`, then wires `ghost-c
 plugins {
     kotlin("jvm") version "2.4.0" // or Android / Kotlin Multiplatform
     id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.3.0"
+    id("com.ghostserializer.ghost") version "1.3.1"
 }
 ```
 
@@ -34,7 +34,7 @@ For a version catalog:
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.3.0"
+ghost = "1.3.1"
 ksp = "2.3.10"
 
 [plugins]
@@ -138,7 +138,7 @@ Add the starter:
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.0")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.1")
 }
 ```
 

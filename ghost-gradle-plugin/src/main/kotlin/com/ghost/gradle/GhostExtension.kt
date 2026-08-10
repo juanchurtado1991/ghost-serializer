@@ -8,7 +8,7 @@ import org.gradle.api.provider.Property
  * Registered under the `ghost` block when [GhostPlugin] is applied:
  * ```
  * ghost {
- *     version.set("1.3.0")
+ *     version.set("1.3.1")
  *     autoInjectKtor.set(true)
  *     autoInjectRetrofit.set(true)
  * }

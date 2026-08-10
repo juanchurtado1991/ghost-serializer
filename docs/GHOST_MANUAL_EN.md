@@ -1,8 +1,8 @@
-# Ghost Serialization 1.3.0 {#titulo}
+# Ghost Serialization 1.3.1 {#titulo}
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
-> Monorepo ghost-serializer · version 1.3.0 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
+> Monorepo ghost-serializer · version 1.3.1 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
 
 ### How to read this manual
 
@@ -367,7 +367,7 @@ KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost reg
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.0"
+    id("com.ghostserializer.ghost") version "1.3.1"
 }
 
 // Optional but recommended with several modules containing models:
@@ -900,13 +900,13 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 ```kotlin
 ghost {
-    version.set("1.3.0")
+    version.set("1.3.1")
     autoInjectKtor.set(true)
     autoInjectRetrofit.set(true)
 }
 ```
 
-Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.0.
+Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.1.
 
 ---
 
@@ -916,7 +916,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.0.
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-retrofit:1.3.0")
+    implementation("com.ghostserializer:ghost-retrofit:1.3.1")
 }
 
 interface ApiService {
@@ -972,10 +972,10 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.0"
+    id("com.ghostserializer.ghost") version "1.3.1"
 }
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.0")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.1")
 }
 ```
 
@@ -1060,7 +1060,7 @@ Publishable (publish.gradle.kts): ghost-* except benchmark, integration-test, pl
 
 Uploads a deployment bundle to Central Portal in `USER_MANAGED` mode (staged, not released). Review and publish it manually at [central.sonatype.com](https://central.sonatype.com/publishing/deployments). To publish and release automatically instead, run `./gradlew publishAndReleaseToMavenCentral`.
 
-Coordinates: `com.ghostserializer:*:1.3.0`
+Coordinates: `com.ghostserializer:*:1.3.1`
 
 From Linux: iOS variants may be missing on Central.
 
@@ -1123,7 +1123,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 | ghost-spring-boot-test-app | Jackson vs Ghost WebFlux, benchmark.py |
 | ghost-ios-test-app | XCFramework + GhostBridge + Codable |
 
-All use **1.3.0 Maven Central** (no mavenLocal in final config).
+All use **1.3.1 Maven Central** (no mavenLocal in final config).
 
 ---
 
@@ -1132,7 +1132,7 @@ All use **1.3.0 Maven Central** (no mavenLocal in final config).
 ### Step by step (from scratch)
 
 1. **settings.gradle.kts** — `pluginManagement { gradlePluginPortal() }`
-2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.0"`
+2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.1"`
 3. Create `data class` with `@GhostSerialization` in the network package
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
@@ -1229,7 +1229,7 @@ List or map in JSON exceeded platform limit (50k on Android). May be legitimate 
 
 ### Plugin com.ghostserializer.ghost not found
 
-Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.0 on Maven Central, and sync again.
+Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.1 on Maven Central, and sync again.
 
 ### iOS: works in debug, fails in release
 
@@ -1271,18 +1271,17 @@ Ghost.getSerializer(MyClass::class)
 
 ---
 
-## 31. Version 1.3.0 — relevant changes {#cap-31--version-1.3.0-cambios-relevantes}
+## 31. Version 1.3.1 — relevant changes {#cap-31--version-1.3.1-cambios-relevantes}
 
-Highlights since 1.2.7 (see `CHANGELOG.md` for the full list):
+Highlights in 1.3.1 (see `CHANGELOG.md` for the full list):
 
-- **Kotlin 2.4.0 / KSP 2.3.10 / Ktor 3.5.1** toolchain.
-- **`wasmJs` targets** on `ghost-api`, `ghost-serialization`, `ghost-ktor`, and `ghost-playground` (JSON, YAML, and Proto3 JSON share the unified `ghost-serialization` runtime).
-- **Decode hot path**: in-order field prediction, SWAR whitespace/string scanning, deferred pool hash — string/bytes/streaming.
-- **`textChannel = true` by default** (native string reader/writer overloads). Prefer `ghost.textChannel=false` in byte-first HTTP modules (Retrofit/Spring/Ktor).
-- **RFC 8259** UTF-8/UTF-16/UTF-32 input normalization on byte/streaming entrypoints.
-- **HTTP adapters**: top-level `List`/`Set`/`Map` unwrap on Retrofit, Spring MVC/WebFlux, and Ktor (JSON, YAML, Proto).
-- **`Ghost.deserialize(bytes) { options }`** uses the flat reader (same as plain bytes).
-- Twitter macro decode (this machine): String **1.219 GB/s**, Bytes **1.011 GB/s**, Streaming **0.525 GB/s**.
+- **YAML**: yaml-test-suite harness + fuzzing; reader compliance **96.06%**; writer round-trip **100%**.
+- **HTTP adapters**: Spring/Retrofit top-level `List`/`Set`/`Map` unwrap (element scalars like `List<String>` included; Map keys must be `String`).
+- **Wasm / Safari**: `ghostUseSwarScans=false` on `wasmJs` — scalar byte loops instead of i64 SWAR (#16).
+- **Hot path**: shared reader/writer kernels; digit-walk / `SetSerializer` / WKT string-channel fixes; `deserialize(bytes){options}` → flat reader.
+- **Toolchain** (unchanged from 1.3.0): Kotlin **2.4.0** / KSP **2.3.10** / Ktor **3.5.x**; `wasmJs` on API/serialization/Ktor/playground.
+
+1.3.0 baseline retained for context: unified JSON+YAML+Proto runtime, `textChannel=true` default, RFC 8259 encoding normalization, in-order prediction + SWAR on JVM/Native.
 
 Earlier 1.2.x notes retained below for historical context:
 
@@ -1643,7 +1642,7 @@ All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
 
 ```kotlin
 ghost {
-    version.set("1.3.0") // or omit if plugin brings DEFAULT_VERSION
+    version.set("1.3.1") // or omit if plugin brings DEFAULT_VERSION
 }
 ```
 
@@ -1688,7 +1687,7 @@ Without this (or with KSP disabled on a module): `NOT_FOUND` in release even if 
 .venv-pdf/bin/python scripts/build_ghost_manual_pdf.py
 ```
 
-PDF output: `docs/Ghost-Serialization-Manual-1.3.0.pdf` (A5 format).
+PDF output: `docs/Ghost-Serialization-Manual-1.3.1.pdf` (A5 format).
 
 ---
 
@@ -2125,7 +2124,7 @@ ls ghost-integration-test/build/generated/ksp/main/kotlin/com/ghost/serializatio
 
 ---
 
-## 51. Maven artifacts table 1.3.0 {#cap-51--tabla-de-artefactos-maven-1-1-17}
+## 51. Maven artifacts table 1.3.1 {#cap-51--tabla-de-artefactos-maven-1-1-17}
 
 ```
 com.ghostserializer:ghost-api
@@ -2141,7 +2140,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.3.0) {#verificacion-factual}
+## Factual verification (aligned with code 1.3.1) {#verificacion-factual}
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2171,7 +2170,7 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 # Appendix: API Reference {#appendix-api}
 
 This section documents the public API of Ghost Serialization, derived from the
-KDoc comments in the source code (version 1.3.0).
+KDoc comments in the source code (version 1.3.1).
 
 ---
 

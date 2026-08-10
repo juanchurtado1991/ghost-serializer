@@ -17,7 +17,7 @@ The Ghost Gradle plugin automatically adds runtime dependencies and wires the KS
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.3.0"
+    id("com.ghostserializer.ghost") version "1.3.1"
 }
 
 // Recommended for Retrofit/OkHttp/Ktor byte-first modules: omit native String

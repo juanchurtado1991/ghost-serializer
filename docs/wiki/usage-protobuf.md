@@ -13,7 +13,7 @@ Proto3 JSON mapping ships inside **`ghost-serialization`** (same artifact as JSO
 ```kotlin
 // build.gradle.kts — core runtime (Gradle plugin wires KSP automatically)
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.0"
+    id("com.ghostserializer.ghost") version "1.3.1"
 }
 ```
 

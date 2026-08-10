@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.3.1] - Unreleased
+## [1.3.1] - 2026-08-09
 
 ### Added
 - **Spring HTTP — top-level `List` / `Set` / `Map` body unwrap** (MVC + WebFlux, JSON + YAML): converters resolve `ParameterizedType` / `ResolvableType` via `GhostSpringTypeSerializers`, matching Retrofit/Ktor. Controllers can return or accept `List<T>`, `Set<T>`, and `Map<String, V>` without falling through to Jackson for the collection wrapper.
@@ -12,6 +12,7 @@
 - **JSON parser fuzzing** (`GhostJsonFuzzTest`): same coverage-guided approach for Ghost's two core JSON parsers — `GhostJsonFlatReader` (in-memory `ByteArray`) and `GhostJsonReader` (streaming/`BufferedSource`, a genuinely separate hot-path implementation) — which previously had only example-based adversarial coverage (`GhostCrashProofTest` and friends), no coverage-guided exploration. `skipValue()` is the fuzz entry point: a self-contained, generic recursive-descent traversal of whatever JSON value comes next, needing no target type (Ghost's typed deserialization always needs a concrete KSP-generated model, which isn't fuzzable generically). 42-file curated seed corpus (structural/adversarial JSON snippets plus two real-world fragments sliced from the existing `twitter_macro.json` benchmark fixture, including emoji/surrogate-pair text). A 100+ second local `JAZZER_FUZZ=1` run across all three methods found no crashes.
 
 ### Changed
+- **Release 1.3.1**: `publish-version` / Gradle plugin `DEFAULT_VERSION` and wiki/README/manual version pins bumped from `1.3.0` → `1.3.1`. Study manual regenerated as `docs/Ghost-Serialization-Manual-1.3.1.pdf` (playground `MANUAL_PDF` link follows `GhostPlaygroundVersions` from the catalog).
 - **`Ghost.deserialize(bytes) { options }` uses the flat reader** — same engine as plain `deserialize(bytes)`, so `strictMode` / `coerceStringsToNumbers` apply on the hot path. Streaming remains explicit via `BufferedSource` / `deserializeStreaming`.
 - **Parser/writer kernel sharing** across flat / streaming / string channels: structure/comma, `skipValue`, list/set readers, `computeKeyHash` / select-no-match, numeric header/exponent/digits, `skipNumber` / floating body, YAML writer layout helpers, UTF-8 `readQuotedStringSlow`, and flat `internalSelect` extracted to `GhostJsonFlatReaderSubsystem`. YAML block mapping/sequence peeled to `GhostYamlBlockStyleSubsystem`.
 - **HTTP / Android docs**: recommend `ksp { arg("ghost.textChannel", "false") }` for Retrofit/OkHttp/Ktor/Spring byte-first modules (~4 KB less generated code per DTO); keep the default `true` when models also parse large in-memory `String`s.
