@@ -5,6 +5,8 @@
 > **Methodology**: Independent Gradle JVM tasks (`benchmarkTwitter`, `benchmarkSynthetic`, …). Engines: **Ghost, KSER, Moshi (codegen adapters)**. **10 000-iteration warmup**, **500 sessions × 50 batched samples** on LIST / SYNC / WRITING. Per session: **Ghost+KSER measured first** (back-to-back), then Moshi. Throughput tables report **decimal GB/s** (`payload_bytes / seconds / 10⁹`, equivalent to `ops/s × payload / 10⁹`). Stress tests report **latency only** (single-shot or 100-iteration avg). Regression uses **median** of per-session Ghost÷KSER ratios. LIST / SYNC / WRITING suites isolated with phase GC only.
 >
 > **`ghost.textChannel`**: default **true** per model. String benchmarks use the generated `GhostJsonStringReader` / string writer; byte and streaming benchmarks use their dedicated readers. Byte-only applications can opt out with `@GhostSerialization(textChannel = false)` or the module flag `ghost.textChannel=false` to reduce generated code size. See [Native String Reader](advanced-features.md#5-native-string-reader-textchannel).
+>
+> **Wasm / playground:** published Speed Test rankings reflect **Chrome (V8)**. Safari (WebKit) on Apple Silicon currently ranks Ghost behind kotlinx.serialization / Moshi on the same Twitter fixture — see [issue #16](https://github.com/juanchurtado1991/ghost-serializer/issues/16). The JVM regression gates below are the production performance source of truth.
 
 ## Running the Benchmark Yourself
 
