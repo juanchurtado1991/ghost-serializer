@@ -61,7 +61,7 @@ Twitter macro fixture (**631 KB**). Three views of the same decode run — throu
 
 Full tables + how to run them → **[Benchmarks](docs/wiki/benchmarks.md)** · also [`ktor-ghost`](https://www.http-arena.com/#sort=rps:-1&q=kotlin) on HTTP Arena (+14% vs plain Ktor).
 
-> **Host:** `./gradlew :ghost-benchmark:benchmarkTwitter -PskipTests` (full profile, 10 000-iteration warmup) on **Ubuntu 24.04 (Linux x86_64)** · **AMD Ryzen 9 7900X** (12 cores / 24 threads, up to ~5.7 GHz boost) · **64 GB RAM** · **Eclipse Temurin JDK 17** (Gradle `jvmToolchain(17)`) · Kotlin **2.4.0**. Absolute GB/s varies by machine; relative Ghost vs KSER/Moshi rankings are what the regression gate tracks.
+> **Host:** `./gradlew :ghost-benchmark:benchmarkTwitter -PskipTests` (**full** profile — regression **source of truth**, ±10%; `*Fast` is smoke at ±20%) on **Ubuntu 24.04 (Linux x86_64)** · **AMD Ryzen 9 7900X** (12 cores / 24 threads, up to ~5.7 GHz boost) · **64 GB RAM** · **Eclipse Temurin JDK 17** (Gradle `jvmToolchain(17)`) · Kotlin **2.4.0**. Absolute GB/s varies by machine; relative Ghost vs KSER/Moshi rankings are what the regression gate tracks.
 
 
 ---

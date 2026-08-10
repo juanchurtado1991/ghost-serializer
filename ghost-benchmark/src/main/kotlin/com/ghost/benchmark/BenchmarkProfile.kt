@@ -3,8 +3,8 @@ package com.ghost.benchmark
 /**
  * Benchmark workload shape selected via JVM property `ghost.benchmark.profile`.
  *
- * - [FULL] (default) — README regression baselines, ±10% tolerance, ~9 min combined gate.
- * - [FAST] — same baselines, ±20% tolerance (noisier with ~5× fewer iterations), ~1–2 min gate.
+ * - [FULL] (default) — **source of truth** for README baselines and release/merge gates (±10%).
+ * - [FAST] — smoke gate only (±20%, ~5× fewer iterations). Prefer [FULL] when results disagree.
  */
 internal enum class BenchmarkProfile(
     val warmupIterations: Int,
@@ -15,7 +15,7 @@ internal enum class BenchmarkProfile(
     val progressInterval: Int,
     val regressionTolerance: Double,
 ) {
-    /** Production regression profile — matches README baseline capture settings. */
+    /** Production regression profile — README baselines; **source of truth** for release gates. */
     FULL(
         warmupIterations = 10_000,
         localWarmupIterations = 500,

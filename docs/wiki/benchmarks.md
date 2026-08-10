@@ -8,6 +8,15 @@
 >
 > **Wasm / playground:** Wasm uses scalar (non-SWAR) string/whitespace scans so Safari/WebKit stays competitive with Chrome ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). JVM regression gates below remain the production performance source of truth.
 
+## Profiles: full is the source of truth
+
+| Profile | Task examples | Tolerance | Role |
+|---------|---------------|-----------|------|
+| **full** | `benchmarkRegression`, `run`, `benchmarkTwitter` / `benchmarkSynthetic` (no `Fast` suffix) | **±10%** | **Canonical.** README baselines were captured here. Use for release / merge decisions. A green full gate beats any fast result. |
+| **fast** | `benchmarkRegressionFast`, `*Fast` tasks | **±20%** | Smoke / local CI (~5× fewer samples). Wider bar absorbs Ghost÷KSER ratio noise. A fast fail with flat memory and Ghost still ranking first is usually noise — re-run or trust **full**. |
+
+Do not loosen full to match fast flakes. Absolute GB/s varies by machine; the gate tracks Ghost’s advantage vs KSER on the same JVM process.
+
 ## Running the Benchmark Yourself
 
 Independent JVM processes — run only what you need.
@@ -55,7 +64,7 @@ Benchmark tasks (`benchmarkRegression`, `benchmarkRegressionFast`, `benchmarkTwi
 ./gradlew :ghost-benchmark:run -Pjit -PskipTests  # JIT log for JITWatch
 ```
 
-Exit code `1` = regression vs README baseline on twitter / synthetic tasks: **±10%** on the full profile, **±20%** on fast (wider bar for sample noise; full remains the release gate).
+Exit code `1` = regression vs README baseline on twitter / synthetic tasks (**±10% full**, **±20% fast**). **Full is authoritative**; fast is advisory smoke only.
 
 | Task | Wall-clock | Regression gate |
 |------|------------|-----------------|
