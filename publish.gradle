@@ -20,8 +20,11 @@ if (isPublishable) {
             project.rootProject.version.toString()
         )
 
-        publishToMavenCentral()
-        
+        // Upload to Central Portal as a deployment only — do NOT auto-publish to production.
+        // Review/release manually at https://central.sonatype.com/publishing/deployments
+        // Use publishAndReleaseToMavenCentral (or automaticRelease=true) only when you want prod.
+        publishToMavenCentral(false)
+
         def hasSigningKey = project.hasProperty("signing.keyId") || 
                            project.hasProperty("signing.signingKey") ||
                            project.hasProperty("signing.secretKeyRingFile")
