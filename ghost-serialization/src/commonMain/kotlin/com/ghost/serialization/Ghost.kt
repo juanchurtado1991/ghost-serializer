@@ -7,6 +7,7 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.proto.wkt.ProtoAny
 import com.ghost.serialization.proto.wkt.ProtoAnySerializer
 import com.ghost.serialization.proto.wkt.ProtoBoolValue
@@ -587,17 +588,17 @@ object Ghost {
     /**
      * Serializes [value] to an in-memory JSON string.
      *
-     * Writes through the pooled `GhostJsonStringWriter`
-     * (contiguous [CharArray]), avoiding Okio segments and an intermediate UTF-8 byte buffer.
+     * On Wasm JavaScriptCore (`GhostHeuristics.encodeToStringViaUtf8Bytes`), uses the UTF-8
+     * flat writer + platform UTF-8→String conversion — JSC’s `CharArray.concatToString` path is
+     * a known encode cliff (#16). Chrome/V8 and JVM/Android/Native keep the pooled
+     * [GhostJsonStringWriter].
      *
      * @param value The value to serialize.
      * @return The serialized JSON string.
      */
     inline fun <reified T : Any> encodeToString(value: T): String {
         val serializer = resolveSerializer<T>()
-        return ghostInternalEncodeToString { writer ->
-            serializer.serialize(writer, value)
-        }
+        return encodeToString(serializer, value)
     }
 
     /**
@@ -606,6 +607,10 @@ object Ghost {
      * Bypasses type lookup and resolution overhead.
      */
     fun <T : Any> encodeToString(serializer: GhostSerializer<T>, value: T): String {
+        if (GhostHeuristics.encodeToStringViaUtf8Bytes) {
+            val bytes = encodeToBytes(serializer, value)
+            return ghostUtf8BytesToString(bytes, 0, bytes.size)
+        }
         return ghostInternalEncodeToString { writer ->
             serializer.serialize(writer, value)
         }

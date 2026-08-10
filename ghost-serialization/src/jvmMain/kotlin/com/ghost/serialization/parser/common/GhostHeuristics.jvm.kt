@@ -23,4 +23,5 @@ actual object GhostHeuristics {
     actual val maxWarmCharWriteBufferCapacity: Int =
         System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull()
             ?: (2 * 1024 * 1024)
+    actual val encodeToStringViaUtf8Bytes: Boolean = false
 }

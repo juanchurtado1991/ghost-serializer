@@ -12,8 +12,8 @@ import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 
 /**
- * Bundled Speed Test fixture: UTF-8 bytes for Ghost's flat reader, and the decoded
- * [String] for kotlinx.serialization / Moshi (string formats).
+ * Bundled Speed Test fixture: shared UTF-8 bytes (size / identity) and the decoded
+ * [String] used by all three engines on the string channel.
  */
 data class SpeedTestPayload(
     val utf8: ByteArray,
@@ -35,8 +35,8 @@ object SpeedTestEngine {
     }
 
     /**
-     * Ghost round-trips on the **byte** channel (flat reader / SWAR-capable path).
-     * KSER and Moshi stay on their string formats over the same UTF-8 content.
+     * All three engines round-trip the same [String] payload (Ghost string channel).
+     * On Wasm/JavaScriptCore, Ghost `encodeToString` uses the UTF-8 path (#16).
      */
     suspend fun run(
         payload: SpeedTestPayload,
@@ -47,9 +47,8 @@ object SpeedTestEngine {
         val payloadBytes = payload.sizeBytes
         val totalDuration = warmupDuration + phaseDuration * 3
         val text = payload.text
-        val utf8 = payload.utf8
 
-        warmup(text, utf8, warmupDuration, payloadBytes, totalDuration, onUpdate)
+        warmup(text, warmupDuration, payloadBytes, totalDuration, onUpdate)
 
         val kser = runPhase(
             duration = phaseDuration,
@@ -88,8 +87,7 @@ object SpeedTestEngine {
         val ghost = runPhase(
             duration = phaseDuration,
             op = {
-                val decoded = Ghost.deserialize<TwitterResponse>(utf8)
-                Ghost.encodeToBytes(decoded)
+                Ghost.encodeToString(Ghost.deserialize<TwitterResponse>(text))
             },
         ) { elapsed, ops, opsPerSec ->
             onUpdate(
@@ -126,7 +124,6 @@ object SpeedTestEngine {
 
     private suspend fun warmup(
         text: String,
-        utf8: ByteArray,
         warmupDuration: Duration,
         payloadBytes: Long,
         totalDuration: Duration,
@@ -138,7 +135,7 @@ object SpeedTestEngine {
             while (batchStart.elapsedNow() < BATCH_BUDGET && warmupStart.elapsedNow() < warmupDuration) {
                 json.encodeToString(json.decodeFromString<TwitterResponse>(text))
                 MoshiBench.roundTrip(text)
-                Ghost.encodeToBytes(Ghost.deserialize<TwitterResponse>(utf8))
+                Ghost.encodeToString(Ghost.deserialize<TwitterResponse>(text))
             }
             onUpdate(
                 sample(
@@ -208,4 +205,5 @@ object SpeedTestEngine {
         val avg = if (elapsed > Duration.ZERO) ops / elapsed.toDouble(DurationUnit.SECONDS) else 0.0
         return PhaseResult(ops, avg)
     }
+
 }

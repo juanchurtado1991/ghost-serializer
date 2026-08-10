@@ -28,10 +28,10 @@ class SpeedTestEngineJvmTest {
         assertEquals(payload.utf8.size.toLong(), payload.sizeBytes)
         assertEquals(payload.text, payload.utf8.decodeToString())
 
-        val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload.utf8)
+        val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload.text)
         assertTrue(ghostDecoded.statuses.isNotEmpty())
-        val ghostEncoded = Ghost.encodeToBytes(ghostDecoded)
-        assertTrue(ghostEncoded.decodeToString().contains("\"statuses\""))
+        val ghostEncoded = Ghost.encodeToString(ghostDecoded)
+        assertTrue(ghostEncoded.contains("\"statuses\""))
         val ghostRoundTripped = Ghost.deserialize<TwitterResponse>(ghostEncoded)
         assertEquals(ghostDecoded.statuses.size, ghostRoundTripped.statuses.size)
 

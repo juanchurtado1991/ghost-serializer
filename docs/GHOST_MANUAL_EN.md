@@ -1277,7 +1277,7 @@ Highlights in 1.3.1 (see `CHANGELOG.md` for the full list):
 
 - **YAML**: yaml-test-suite harness + fuzzing; reader compliance **96.06%**; writer round-trip **100%**.
 - **HTTP adapters**: Spring/Retrofit top-level `List`/`Set`/`Map` unwrap (element scalars like `List<String>` included; Map keys must be `String`).
-- **Wasm / Safari**: SWAR always on (including `wasmJs`). Safari byte-channel Speed Test ~2× kotlinx.serialization (#16).
+- **Wasm / Safari**: `Ghost.encodeToString` on JavaScriptCore uses UTF-8 flat writer + `TextDecoder` (char writer kept on Chrome/V8); playground string Speed Test ~2.7× KSER on Safari ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)).
 - **Hot path**: shared reader/writer kernels; digit-walk / `SetSerializer` / WKT string-channel fixes; `deserialize(bytes){options}` → flat reader.
 - **Toolchain** (unchanged from 1.3.0): Kotlin **2.4.0** / KSP **2.3.10** / Ktor **3.5.x**; `wasmJs` on API/serialization/Ktor/playground.
 

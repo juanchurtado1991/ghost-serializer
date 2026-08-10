@@ -9,4 +9,14 @@ actual object GhostHeuristics {
     actual val maxDiscriminatorPeekDistance: Int = 1024
     actual val maxWarmWriteBufferCapacity: Int = 1024 * 1024
     actual val maxWarmCharWriteBufferCapacity: Int = 512 * 1024
+
+    /**
+     * JSC (Safari / iOS): UTF-8 flat writer + TextDecoder.
+     * V8 and other engines: keep [GhostJsonStringWriter] (faster on Chrome).
+     * Resolved once at first access.
+     */
+    actual val encodeToStringViaUtf8Bytes: Boolean
+        get() = utf8EncodePreference
+
+    private val utf8EncodePreference: Boolean = ghostJsEnginePrefersUtf8EncodeToString()
 }

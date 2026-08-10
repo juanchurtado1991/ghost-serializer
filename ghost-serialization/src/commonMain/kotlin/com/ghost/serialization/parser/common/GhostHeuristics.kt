@@ -56,4 +56,15 @@ expect object GhostHeuristics {
      * payloads are rare compared to binary encoding workloads.
      */
     val maxWarmCharWriteBufferCapacity: Int
+
+    /**
+     * When true, [com.ghost.serialization.Ghost.encodeToString] serializes through the UTF-8
+     * flat writer and converts the bytes to a [String], instead of [GhostJsonStringWriter] +
+     * `CharArray.concatToString`.
+     *
+     * Wasm: resolved at runtime — **true** on JavaScriptCore (Safari / iOS), where the char
+     * writer collapses (~3× behind kotlinx.serialization encode); **false** on V8 (Chrome)
+     * where the char writer stays ahead. JVM/Android/Native always false.
+     */
+    val encodeToStringViaUtf8Bytes: Boolean
 }

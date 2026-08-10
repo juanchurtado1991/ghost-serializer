@@ -6,7 +6,7 @@
 >
 > **`ghost.textChannel`**: default **true** per model. String benchmarks use the generated `GhostJsonStringReader` / string writer; byte and streaming benchmarks use their dedicated readers. Byte-only applications can opt out with `@GhostSerialization(textChannel = false)` or the module flag `ghost.textChannel=false` to reduce generated code size. See [Native String Reader](advanced-features.md#5-native-string-reader-textchannel).
 >
-> **Wasm / playground:** SWAR is always on for Wasm (same as JVM/Native). Safari Speed Test on Ghost’s **byte** channel is ~2× kotlinx.serialization ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). JVM regression gates below remain the production performance source of truth.
+> **Wasm / playground:** Speed Test uses Ghost’s **string** API. On `wasmJs`, `encodeToString` routes through UTF-8 bytes + `TextDecoder` **on JavaScriptCore only** (Safari / iOS); V8 keeps the char writer ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). JVM regression gates below remain the production performance source of truth.
 
 ## Profiles: full is the source of truth
 
