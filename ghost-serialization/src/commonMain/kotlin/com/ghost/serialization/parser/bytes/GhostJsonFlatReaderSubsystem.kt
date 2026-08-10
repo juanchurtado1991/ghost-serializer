@@ -53,13 +53,15 @@ internal fun GhostJsonFlatReader.internalSelect(
             (localData[keyEnd].toInt() and C.BYTE_MASK) == C.QUOTE_INT
         ) {
             var i = 0
-            // Compare LONG_BYTES at a time for longer field names. Comparing two
-            // ghostReadLong8 results is byte-order independent (equality is symmetric),
-            // so no masking is needed; a trailing byte loop covers the remainder.
-            while (i + C.LONG_BYTES <= candLen &&
-                ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
-            ) {
-                i += C.LONG_BYTES
+            // Compare LONG_BYTES at a time for longer field names when SWAR is enabled.
+            // Comparing two ghostReadLong8 results is byte-order independent (equality is
+            // symmetric). Wasm skips the wide compare (ghostUseSwarScans=false).
+            if (ghostUseSwarScans) {
+                while (i + C.LONG_BYTES <= candLen &&
+                    ghostReadLong8(localData, start + i) == ghostReadLong8(candidate, i)
+                ) {
+                    i += C.LONG_BYTES
+                }
             }
             while (i < candLen && localData[start + i] == candidate[i]) {
                 i++

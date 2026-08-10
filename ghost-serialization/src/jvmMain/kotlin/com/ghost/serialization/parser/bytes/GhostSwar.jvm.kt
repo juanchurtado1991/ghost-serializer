@@ -13,5 +13,7 @@ private val LONG_VIEW = MethodHandles.byteArrayViewVarHandle(
     ByteOrder.nativeOrder(),
 )
 
+internal actual val ghostUseSwarScans: Boolean = true
+
 internal actual fun ghostReadLong8(data: ByteArray, index: Int): Long =
     LONG_VIEW.get(data, index) as Long

@@ -17,6 +17,8 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_56
 import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 
 
+internal actual val ghostUseSwarScans: Boolean = true
+
 // Scalar assembly: Android's minSdk (21) predates VarHandle byte[] views (API 26), so the
 // bytes are combined by hand. Byte order is irrelevant for the symmetric comparisons this
 // feeds; the JIT/AOT compiler folds the shifts efficiently.
