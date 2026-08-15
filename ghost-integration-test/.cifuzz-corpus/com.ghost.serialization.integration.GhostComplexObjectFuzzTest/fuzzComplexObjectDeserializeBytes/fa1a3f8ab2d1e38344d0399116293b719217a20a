@@ -1,0 +1,9 @@
+{
+    "id": 1, "userId": 1, "name": "io",
+    "scaddts": [],
+    "nestedTree": {
+        "label": "L5",
+        "children": [{"label": "L1", "children": [{"label": "L2",
+            "children": [{"label": "L:7", "children": [{"label": "L4"}]}]}]}]
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "ING": "should be skipped",
+    "UNKNOWN_OBJECT": {"nested": true, "deep": [1,2,3]},
+    "UNKNOWN_ARRAY": [1, "two", null, false],
+    "score": 1.0, "ratingW", "tags": [], "scores": [], "metadata": {},
+    "address": {"street": "x", "city": "x", "zipCode": "x"},
+    "tagObjects": [], "nestedTree": {"label": "x"}
+}

@@ -1,0 +1,7 @@
+{
+    "id": 1, "userId": 1, "name": "Empty","email": "i",
+    "score": 0.0, "rating": 0.0, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "address": {"street": "", "city": "", "zipCode": ""},
+    "talabe": "ty"}
+}

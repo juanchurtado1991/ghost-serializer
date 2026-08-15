@@ -1,0 +1,8 @@
+{ "UNKNOWN_STRING": "should bipped",
+    "UNKN@WN_OBJECT": {"nested": true, "deep": [1]},
+    "UNKNOWN_ARRAY": [1, "two", null, false],
+    "ore": 1.0, "rating": 1.0, "il": "s@g.io",
+    "UNKNOWN_STRINÿÿG": "ÿÿÿÿÿÿÿÿe skipped",
+    "UNKNT": {"nested": true, "de%p": [1,2,3]},
+    "UNKore": 1.0, "rating": 1.0, "isActive": true, "biography": "ok",
+    "isActive": true, "biography": " "LO,W ""tags"

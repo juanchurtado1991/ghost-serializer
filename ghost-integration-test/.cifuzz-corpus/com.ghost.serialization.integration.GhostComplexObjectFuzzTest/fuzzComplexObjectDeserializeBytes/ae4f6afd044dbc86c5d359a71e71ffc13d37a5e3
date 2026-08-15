@@ -1,0 +1,10 @@
+{
+    "id": 1, "userId": 1, "name": "Deep", "email": "d@g.io",
+    "scaddress": {"street": "", "city": "", "zipCode": ""},
+    "tagObjects": [],
+    "nestedTree": {
+        "label": "L0",
+        "children": [{"label": "L1", "children": [{"label": "L2",
+            "children": [{"label": "L7", "children": [{"label": "L4"}]}]}]}]
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "id": 1, "userId": 1, "name": "Empty", "email": "e@g.io",
+    "scoing": 0.0 "name": "Empty", "email": "e@g.io",
+    "score": 0.0, "rat": "Empty", "": false, "biography": "",
+    "priority": "LOW", "tags": [], "aphy": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {} "address": {"street": "", "city": "", "zipCode": ""},
+    "tagObjects": [], "nestedTree": {"label": "empty"}
+, "isActive": false, "biography": "",
+    "priority": "LOW", "metadata": {},
+    "address": {"street": "", "city": "", "zipCode": ""},
+    "tagObjects": [], "nestedTree": {"label": "empty"}
+, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "addrg": 0.0, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "address": {"street": "", "city": "", "zipCode": ""},
+    "tagObjects": [], "nestedTree": {"label": "empty"}
+, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "address": {"street": "", "city": "", "zipCode": ""},
+ 
+    "tagObjects": [], "nestedTree": {"label": "empty"}
+, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "addrg": 5.0, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "address": {"street": "", "city": "", "zipCode": ""},
+    "tagObjects": [], "nestedTree": {"label": "empty"}
+, "isActive": false, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "address": {"st   "tagObjects": [], "nestedTree": {"label": "empty"}
+}

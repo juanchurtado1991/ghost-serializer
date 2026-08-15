@@ -238,7 +238,10 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
      * scan — e.g. as a redirected implicit key or a block-sequence item's value — misparsing the
      * stringified text as a real (and likely invalid, since it uses `=` not `:`) flow collection
      * instead of treating it as opaque text. An empty key is fine bare: a lone ':' with nothing
-     * before it already round-trips to the empty string correctly.
+     * before it already round-trips to the empty string correctly. A leading or trailing space/tab
+     * is also unsafe bare: a plain scalar's surrounding whitespace is not part of its content, so
+     * the reader silently trims it — found by fuzzing (`GhostYamlWriterFuzzTest`): `" ?xup"` wrote
+     * bare as `" ?xup: 1"` and re-read as key `"?xup"`, silently dropping the leading space.
      */
     private fun keyNeedsQuoting(key: String): Boolean {
         val length = key.length
@@ -247,8 +250,13 @@ class GhostYamlFlatWriter @InternalGhostApi constructor(
         if (first == C.AMPERSAND_BYTE.toInt() || first == C.ASTERISK_BYTE.toInt() ||
             first == C.EXCLAMATION_BYTE.toInt() || first == C.DOUBLE_QUOTE_INT ||
             first == C.SINGLE_QUOTE_BYTE.toInt() || first == C.LEFT_BRACKET_BYTE.toInt() ||
-            first == C.LEFT_BRACE_BYTE.toInt()
+            first == C.LEFT_BRACE_BYTE.toInt() ||
+            first == C.SPACE_INT || first == C.CHAR_TAB_INT
         ) {
+            return true
+        }
+        val last = key[length - 1].code
+        if (last == C.SPACE_INT || last == C.CHAR_TAB_INT) {
             return true
         }
         if (first == C.QUESTION_BYTE.toInt() &&

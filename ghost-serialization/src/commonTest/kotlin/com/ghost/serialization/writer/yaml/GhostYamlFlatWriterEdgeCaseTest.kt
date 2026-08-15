@@ -502,6 +502,29 @@ class GhostYamlFlatWriterEdgeCaseTest {
         assertTrue(readsKeyBackVerbatim("{a=b}"))
     }
 
+    @Test
+    fun keyWithLeadingSpaceRoundTrips() {
+        // Found by GhostYamlWriterFuzzTest: " ?xup" wrote bare as " ?xup: 1" and re-read as "?xup"
+        // — a plain scalar's leading whitespace is not part of its content, so it was silently
+        // dropped.
+        assertTrue(readsKeyBackVerbatim(" ?xup"))
+    }
+
+    @Test
+    fun keyWithTrailingSpaceRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("foo "))
+    }
+
+    @Test
+    fun keyWithLeadingTabRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("\tfoo"))
+    }
+
+    @Test
+    fun keyWithTrailingTabRoundTrips() {
+        assertTrue(readsKeyBackVerbatim("foo\t"))
+    }
+
     // ── E. FUSED writeField(header, value) OVERLOADS ──────────────────
 
     @Test

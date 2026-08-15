@@ -1,0 +1,5 @@
+{
+ ,
+    "nestedTree": {"label": "ro", "children": [{"label": "child1", "children": [{"label": "lea"}]}, {"label": "child2"}]} 
+    "nestedTree": {"label": "root", "children": [{"label": "ld1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}
+}
