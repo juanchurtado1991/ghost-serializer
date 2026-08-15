@@ -1,0 +1,1 @@
+{"id": null, "userId": 1, "name": "x", "email": "x", "score": 1.0, "rating": 1.0, "isActive": true, "biography": "x", "priority": "LOW", "tags": [], "scores": [], "metadata": {}, "address": {"street": "x", "city": "x", "zipCode": "x"}, "tagObjects": [], "nestedTree": {"label": "x"}}

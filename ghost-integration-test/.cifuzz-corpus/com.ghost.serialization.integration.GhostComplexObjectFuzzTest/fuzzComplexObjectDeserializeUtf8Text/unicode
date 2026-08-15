@@ -1,0 +1,9 @@
+{
+    "id": 1, "userId": 1, "name": "漢字テスト🚀", "email": "emoji@test.io",
+    "score": 0.0, "rating": 0.0, "isActive": true,
+    "biography": "Héllo Wörld éèê",
+    "priority": "LOW", "tags": ["日本語", "中文"],
+    "scores": [], "metadata": {"emoji": "🎉"},
+    "address": {"street": "Ñoño St", "city": "São Paulo", "zipCode": "00000"},
+    "tagObjects": [], "nestedTree": {"label": "🌍"}
+}

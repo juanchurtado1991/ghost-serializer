@@ -1,0 +1,12 @@
+{
+    "id": 1, "userId": 1, "name": "Deep", "email": "d@g.io",
+    "score": 0.0, "rating": 0.0, "isActive": true, "biography": "",
+    "priority": "LOW", "tags": [], "scores": [], "metadata": {},
+    "address": {"street": "", "city": "", "zipCode": ""},
+    "tagObjects": [],
+    "nestedTree": {
+        "label": "L0",
+        "children": [{"label": "L1", "children": [{"label": "L2",
+            "children": [{"label": "L3", "children": [{"label": "L4"}]}]}]}]
+    }
+}

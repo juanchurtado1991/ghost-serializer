@@ -76,7 +76,7 @@ Example targets (to add at the top of `README.md` once wired):
 | **Adapter gaps** | Retrofit/Ktor proto/YAML converters: `List<T>` / `Map` body unwrapping | Shipped in 1.3.0 |
 | **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)). Safari string encode cliff: **done** — JSC uses UTF-8 + `TextDecoder` for `encodeToString`; Chrome keeps char writer (~2.7× KSER on Safari Speed Test) ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)) | Ongoing |
 | **Regression visibility** | Optional CI artifact or docs page for benchmark regression JSON (Twitter + synthetic gates) | Planned |
-| **Fuzz / malformed JSON** | Extend stress-suite coverage beyond deep nesting and single malformed payloads | Planned |
+| **Fuzz / malformed JSON** | Extend stress-suite coverage beyond deep nesting and single malformed payloads. Writer round-trip fuzzing (JSON + YAML) and typed-decode fuzzing (`GhostComplexObjectFuzzTest`) added; readers/writers/typed decode now all have Jazzer coverage | Ongoing |
 | **Playground** | Keep Speed Test + Studio presets aligned with real generated serializers on JVM | Ongoing |
 
 ### Success criteria

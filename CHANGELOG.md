@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **Fuzz coverage for the JSON/YAML writers** (`GhostJsonWriterFuzzTest`, `GhostYamlWriterFuzzTest` in `ghost-serialization`): round-trip Jazzer fuzzing of `GhostJsonFlatWriter`/`GhostYamlFlatWriter`'s hand-rolled string escaping and (YAML-only) bare-vs-quoted key heuristic — any string/key the writer accepts must decode back to itself. Neither writer had any fuzz coverage before; only the readers did (`GhostJsonFuzzTest`, `GhostYamlFuzzTest`).
+- **Fuzz coverage for the typed decode path** (`GhostComplexObjectFuzzTest` in `ghost-integration-test`, the one module where KSP runs over test-visible models): fuzzes `ComplexObjectSerializer.deserialize` — a real generated serializer for a 20-field, deeply-nested fixture — closing the gap the existing JSON/YAML fuzz tests explicitly called out (their KDoc: typed deserialization "isn't fuzzable generically", since it was never fuzzed against any *concrete* model either). Required adding `jazzer-junit` + the JUnit5 platform to `ghost-integration-test`, which previously ran its 236 tests on JUnit4.
+
 ## [1.3.1] - 2026-08-09
 
 ### Added
