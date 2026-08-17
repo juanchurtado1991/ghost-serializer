@@ -222,6 +222,19 @@ class GhostStringReaderTest {
     }
 
     @Test
+    fun unicodeEscapeWithNonLatin1DigitThrowsCleanlyInsteadOfCrashing() {
+        // Found by GhostJsonStringChannelFuzzTest: unlike the byte-based readers (a byte is
+        // inherently 0..255), a Char's .code here can be any UTF-16 code unit up to 65535 — a
+        // literal CJK character right after `\u` used to index straight past HEX_LUT's 256
+        // entries and crash with ArrayIndexOutOfBoundsException instead of throwing this.
+        val reader = readerOf("{\"v\":\"\\u00\u6f22G\"}")
+        reader.beginObject()
+        reader.nextKey()
+        reader.consumeKeySeparator()
+        assertFailsWith<GhostJsonException> { reader.nextString() }
+    }
+
+    @Test
     fun orphanedHighSurrogateThrowsException() {
         // \uD83D is a high surrogate with no following low surrogate
         val reader = readerOf("{\"v\":\"abc\\uD83D\"}")

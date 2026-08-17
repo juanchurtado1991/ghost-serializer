@@ -437,11 +437,18 @@ class GhostJsonStringReader(
         val hexByte2 = chars[currentPosition + 2].code
         val hexByte3 = chars[currentPosition + 3].code
 
+        // Unlike the byte-based readers (bytes are inherently 0..255), a Char's .code here can be
+        // any UTF-16 code unit up to 65535 — a non-Latin-1 char right after `\u` (e.g. a literal
+        // CJK character) would index past HEX_LUT's 256 entries. Bounds-check rather than index
+        // directly, same as ProtoJsonFlatReaderBase64's LUT lookups — found by fuzzing
+        // (`GhostJsonStringChannelFuzzTest`): a raw high-code-point char there threw
+        // ArrayIndexOutOfBoundsException instead of the documented parse error.
         val hexLookupTable = C.HEX_LUT
-        val digitValue0 = hexLookupTable[hexByte0]
-        val digitValue1 = hexLookupTable[hexByte1]
-        val digitValue2 = hexLookupTable[hexByte2]
-        val digitValue3 = hexLookupTable[hexByte3]
+        val lutSize = hexLookupTable.size
+        val digitValue0 = if (hexByte0 < lutSize) hexLookupTable[hexByte0] else -1
+        val digitValue1 = if (hexByte1 < lutSize) hexLookupTable[hexByte1] else -1
+        val digitValue2 = if (hexByte2 < lutSize) hexLookupTable[hexByte2] else -1
+        val digitValue3 = if (hexByte3 < lutSize) hexLookupTable[hexByte3] else -1
 
         if ((digitValue0 or digitValue1 or digitValue2 or digitValue3) < 0) {
             throwError(C.ERR_INVALID_UNICODE_AT + currentPosition)

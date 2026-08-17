@@ -76,6 +76,13 @@ kotlin {
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
+    // jazzer-junit's regression mode only replays each @FuzzTest's accumulated
+    // .cifuzz-corpus/<class>/<method>/ seeds when Utils.isGatheringCoverage() is true (a
+    // coverage agent attached, or this var) — see SeedArgumentsProvider#provideArguments in
+    // jazzer-junit's sources. Without it, `./gradlew jvmTest` only ever runs "<empty input>" per
+    // @FuzzTest method and every crash a local `JAZZER_FUZZ=1` run found is silently never
+    // replayed again, despite each fuzz test's own KDoc claiming otherwise.
+    environment("JAZZER_COVERAGE", "true")
 }
 
 tasks.register<JavaExec>("yamlComplianceMatrix") {

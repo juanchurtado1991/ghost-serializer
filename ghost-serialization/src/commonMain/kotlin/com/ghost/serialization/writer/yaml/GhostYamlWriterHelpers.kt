@@ -1,5 +1,6 @@
 package com.ghost.serialization.writer.yaml
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.common.GhostWriterLongDigits
@@ -12,8 +13,12 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * [GhostYamlFlatWriter] (FlatByteArrayWriter).
  *
  * Sink flushes stay at call sites via inlined lambdas so both backends keep
- * monomorphic writes. Flat-only key quoting stays on [GhostYamlFlatWriter].
+ * monomorphic writes. [keyNeedsQuoting] is pure (no I/O), so both backends call it directly
+ * instead of duplicating it — it used to live only on [GhostYamlFlatWriter], which left
+ * [GhostYamlWriter] writing every mapping key bare/unescaped (found by fuzzing:
+ * `GhostYamlWriter.name("a: b")` produced YAML `GhostYamlFlatReader` itself couldn't parse back).
  */
+@OptIn(InternalGhostApi::class)
 internal object GhostYamlWriterHelpers {
 
     /** Packed [prepareValue] result: bit0 justWroteDash, bit1 pendingSpace, bit2 incrementItemCount. */
@@ -159,54 +164,57 @@ internal object GhostYamlWriterHelpers {
         var index = 0
 
         while (index < length) {
-            val charCode = text[index].code
-            if (charCode == C.DOUBLE_QUOTE_INT) {
-                writeByte(C.BACKSLASH_INT)
-                writeByte(C.DOUBLE_QUOTE_INT)
-            } else if (charCode == C.BACKSLASH_INT) {
-                writeByte(C.BACKSLASH_INT)
-                writeByte(C.BACKSLASH_INT)
-            } else {
-                when (charCode) {
-                    C.CHAR_LF_INT -> {
-                        writeByte(C.BACKSLASH_INT)
-                        writeByte(C.CHAR_N_INT)
-                    }
-
-                    C.CHAR_CR_INT -> {
-                        writeByte(C.BACKSLASH_INT)
-                        writeByte(C.CHAR_R_INT)
-                    }
-
-                    C.CHAR_TAB_INT -> {
-                        writeByte(C.BACKSLASH_INT)
-                        writeByte(C.CHAR_T_INT)
-                    }
-
-                    C.CHAR_BS_INT -> {
-                        writeByte(C.BACKSLASH_INT)
-                        writeByte(C.CHAR_B_INT)
-                    }
-
-                    C.CHAR_FF_INT -> {
-                        writeByte(C.BACKSLASH_INT)
-                        writeByte(C.CHAR_F_INT)
-                    }
-
-                    else -> {
-                        if (charCode < C.CHAR_SPACE_INT) {
+            when (val charCode = text[index].code) {
+                C.DOUBLE_QUOTE_INT -> {
+                    writeByte(C.BACKSLASH_INT)
+                    writeByte(C.DOUBLE_QUOTE_INT)
+                }
+                C.BACKSLASH_INT -> {
+                    writeByte(C.BACKSLASH_INT)
+                    writeByte(C.BACKSLASH_INT)
+                }
+                else -> {
+                    when (charCode) {
+                        C.CHAR_LF_INT -> {
                             writeByte(C.BACKSLASH_INT)
-                            writeByte(C.CHAR_U_INT)
-                            writeUnicodeHex(charCode, writeByte)
-                        } else if (charCode < C.ASCII_LIMIT) {
-                            writeByte(charCode)
-                        } else {
-                            val charVal = text[index]
-                            if (charVal.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                                writeUtf8Range(text, index, index + 2)
-                                index++
+                            writeByte(C.CHAR_N_INT)
+                        }
+
+                        C.CHAR_CR_INT -> {
+                            writeByte(C.BACKSLASH_INT)
+                            writeByte(C.CHAR_R_INT)
+                        }
+
+                        C.CHAR_TAB_INT -> {
+                            writeByte(C.BACKSLASH_INT)
+                            writeByte(C.CHAR_T_INT)
+                        }
+
+                        C.CHAR_BS_INT -> {
+                            writeByte(C.BACKSLASH_INT)
+                            writeByte(C.CHAR_B_INT)
+                        }
+
+                        C.CHAR_FF_INT -> {
+                            writeByte(C.BACKSLASH_INT)
+                            writeByte(C.CHAR_F_INT)
+                        }
+
+                        else -> {
+                            if (charCode < C.CHAR_SPACE_INT) {
+                                writeByte(C.BACKSLASH_INT)
+                                writeByte(C.CHAR_U_INT)
+                                writeUnicodeHex(charCode, writeByte)
+                            } else if (charCode < C.ASCII_LIMIT) {
+                                writeByte(charCode)
                             } else {
-                                writeUtf8Range(text, index, index + 1)
+                                val charVal = text[index]
+                                if (charVal.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
+                                    writeUtf8Range(text, index, index + 2)
+                                    index++
+                                } else {
+                                    writeUtf8Range(text, index, index + 1)
+                                }
                             }
                         }
                     }
@@ -241,5 +249,63 @@ internal object GhostYamlWriterHelpers {
         val scratchBuf = scratch ?: acquireScratch()
         val pos = GhostWriterLongDigits.writePositiveDigitsBytes(remaining, scratchBuf)
         writeBytes(scratchBuf, pos, scratchBuf.size - pos)
+    }
+
+    /**
+     * True if [key] can't safely be written as bare plain-scalar text: it would either redirect
+     * into a nested mapping when re-read (an embedded ": " indistinguishable from the key/value
+     * separator), get silently truncated (an embedded newline — a bare implicit key's own scan
+     * stops at the first one), or be misread as something else entirely by the reader's own
+     * prefix dispatch. A leading '&'/'!'/'*' looks like an anchor/tag/alias to `readKey`, a
+     * leading '"'/'\'' looks like the start of a quoted key, and a bare '?' — or '?' followed by
+     * whitespace — looks like an explicit-key indicator. A leading '['/'{' is a different hazard:
+     * a *stringified complex key* (Ghost collapses a non-scalar key to its `toString()`, e.g.
+     * `"[a, b]"` or `"{k=v}"`) starting with one of these can end up read back through
+     * `readValue`'s full structural flow-collection dispatch instead of `readKey`'s plain-text
+     * scan — e.g. as a redirected implicit key or a block-sequence item's value — misparsing the
+     * stringified text as a real (and likely invalid, since it uses `=` not `:`) flow collection
+     * instead of treating it as opaque text. An empty key is fine bare: a lone ':' with nothing
+     * before it already round-trips to the empty string correctly. A leading or trailing space/tab
+     * is also unsafe bare: a plain scalar's surrounding whitespace is not part of its content, so
+     * the reader silently trims it — found by fuzzing (`GhostYamlWriterFuzzTest`): `" ?xup"` wrote
+     * bare as `" ?xup: 1"` and re-read as key `"?xup"`, silently dropping the leading space. A
+     * leading '%' is also unsafe: reserved for `%YAML`/`%TAG` directives, so a key like `"%foo"`
+     * landing as the document's first line is read as an (invalid, unterminated) directive
+     * instead of a mapping key — also found by fuzzing (`GhostYamlStreamingWriterFuzzTest`).
+     */
+    fun keyNeedsQuoting(key: String): Boolean {
+        val length = key.length
+        if (length == 0) return false
+        val first = key[0].code
+        if (first == C.AMPERSAND_BYTE.toInt() || first == C.ASTERISK_BYTE.toInt() ||
+            first == C.EXCLAMATION_BYTE.toInt() || first == C.DOUBLE_QUOTE_INT ||
+            first == C.SINGLE_QUOTE_BYTE.toInt() || first == C.LEFT_BRACKET_BYTE.toInt() ||
+            first == C.LEFT_BRACE_BYTE.toInt() ||
+            first == C.SPACE_INT || first == C.CHAR_TAB_INT ||
+            first == C.PERCENT_BYTE.toInt()
+        ) {
+            return true
+        }
+        val last = key[length - 1].code
+        if (last == C.SPACE_INT || last == C.CHAR_TAB_INT) {
+            return true
+        }
+        if (first == C.QUESTION_BYTE.toInt() &&
+            (length == 1 || key[1].code == C.SPACE_INT || key[1].code == C.CHAR_TAB_INT)
+        ) {
+            return true
+        }
+        var index = 0
+        while (index < length) {
+            val code = key[index].code
+            if (code == C.CHAR_LF_INT || code == C.CHAR_CR_INT) return true
+            if (code == C.COLON_INT &&
+                (index + 1 == length || key[index + 1].code == C.SPACE_INT || key[index + 1].code == C.CHAR_TAB_INT)
+            ) {
+                return true
+            }
+            index++
+        }
+        return false
     }
 }

@@ -39,4 +39,7 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // See the matching comment in ghost-serialization/build.gradle.kts: without this,
+    // GhostComplexObjectFuzzTest's .cifuzz-corpus seeds are never replayed by a normal test run.
+    environment("JAZZER_COVERAGE", "true")
 }

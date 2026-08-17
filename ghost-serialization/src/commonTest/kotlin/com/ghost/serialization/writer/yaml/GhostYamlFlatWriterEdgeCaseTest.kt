@@ -516,6 +516,14 @@ class GhostYamlFlatWriterEdgeCaseTest {
     }
 
     @Test
+    fun keyStartingWithPercentRoundTrips() {
+        // Found by GhostYamlStreamingWriterFuzzTest: "%foo" wrote bare as the document's first
+        // line ("%foo: 1") and was read back as an invalid %YAML/%TAG directive instead of a
+        // mapping key, throwing instead of round-tripping.
+        assertTrue(readsKeyBackVerbatim("%foo"))
+    }
+
+    @Test
     fun keyWithLeadingTabRoundTrips() {
         assertTrue(readsKeyBackVerbatim("\tfoo"))
     }

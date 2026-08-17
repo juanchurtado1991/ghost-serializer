@@ -9,6 +9,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
 /**
  * A highly optimized, low-allocation YAML writer for Kotlin Multiplatform.
  */
+@OptIn(InternalGhostApi::class)
 class GhostYamlWriter(
     internal val sink: BufferedSink
 ) {
@@ -141,7 +142,11 @@ class GhostYamlWriter(
             writeByte = { buffer.writeByte(it) },
         )
         justWroteDash = false
-        buffer.writeUtf8(key)
+        if (GhostYamlWriterHelpers.keyNeedsQuoting(key)) {
+            writeStringValueRaw(key)
+        } else {
+            buffer.writeUtf8(key)
+        }
         buffer.writeByte(C.COLON_INT)
         itemCounts[currentDepth]++
         pendingSpace = true
