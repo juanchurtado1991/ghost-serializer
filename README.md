@@ -1,4 +1,4 @@
-# 👻 Ghost Serializer (JSON, Proto, YAML)
+# 👻 Ghost Serializer (Kotlin Multiplatform · JSON, Proto, YAML)
 
 **Parse and hydrate Kotlin models at up to 1.2 GB/s — drop in beside the serializer you already use.**
 
