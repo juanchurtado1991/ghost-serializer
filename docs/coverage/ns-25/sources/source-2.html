@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostEnvelopePayload</title>
+  <title>GhostSerialization Coverage Report > GhostEncoder</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostEnvelopePayload (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEncoder (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostEnvelopePayload</td>
+  <td class="name">GhostEncoder</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -49,20 +49,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import kotlin.reflect.KClass
 &nbsp;
 &nbsp;/**
-&nbsp; * Maps a wire discriminator value to a nullable payload field on a [GhostJsonEnvelope] class.
+&nbsp; * Delegates serialization of the annotated property to a static function in [provider].
 &nbsp; *
-&nbsp; * The generated router selects this property when the envelope discriminator matches [value].
-&nbsp; * When [target] is set to a [GhostSerialization] model, `routeTyped` / `parseTyped` decode via
-&nbsp; * zero-copy `RawJson` slice parsing.
+&nbsp; * Use this for custom wire formats (dates, legacy booleans, and similar) without writing a
+&nbsp; * full serializer. JSON-only — incompatible with [GhostYamlSerialization].
 &nbsp; *
-&nbsp; * @param value Wire discriminator string (e.g. `&quot;DEVICE_EVENT&quot;`, `&quot;invoice.paid&quot;`).
-&nbsp; * @param target Typed model to decode into; default means return `RawJson` only.
+&nbsp; * @param provider Class or object that declares the encoding function.
+&nbsp; * @param functionName Name of the static encoding function with signature
+&nbsp; *   `fun(writer, value: T)`. The writer parameter must be one of:
+&nbsp; *   - `GhostJsonFlatWriter` (`writer.bytes`) — flat byte output
+&nbsp; *   - `GhostJsonWriter` (`writer.bytes`) — streaming byte output
+&nbsp; *
+&nbsp; * Provide overloads for each byte writer you use so both serialize paths call directly.
+&nbsp; * The string-channel writer bridges through a temporary `GhostJsonFlatWriter`.
 &nbsp; */
 &nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostEnvelopePayload(
-&nbsp;    val value: String,
-&nbsp;    val target: KClass&lt;*&gt; = Unit::class
+&nbsp;annotation class GhostEncoder(
+&nbsp;    val provider: KClass&lt;*&gt;,
+&nbsp;    val functionName: String
 &nbsp;)
 </code>
 </pre>
@@ -87,7 +92,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 17:16</div>
+    <div style="float:right;">generated on 2026-08-19 17:50</div>
 </div>
 </body>
 </html>

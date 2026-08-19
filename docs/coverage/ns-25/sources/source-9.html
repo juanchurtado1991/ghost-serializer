@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostDecoder</title>
+  <title>GhostSerialization Coverage Report > GhostJsonEnvelope</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostDecoder (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostJsonEnvelope (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostDecoder</td>
+  <td class="name">GhostJsonEnvelope</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,30 +46,48 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
-&nbsp;import kotlin.reflect.KClass
-&nbsp;
 &nbsp;/**
-&nbsp; * Delegates deserialization of the annotated property to a static function in [provider].
+&nbsp; * Marks a data class as an external-discriminator JSON envelope (webhook / SSE / EventBridge shape).
 &nbsp; *
-&nbsp; * Use this for custom wire formats (dates, legacy booleans, and similar) without writing a
-&nbsp; * full serializer. JSON-only — incompatible with [GhostYamlSerialization].
+&nbsp; * The KSP plugin generates zero-copy payload routing on the companion serializer:
+&nbsp; * `routePayload(envelope)`, `parsePayload(bytes)`, and optional typed variants when
+&nbsp; * [GhostEnvelopePayload.target] is set.
 &nbsp; *
-&nbsp; * @param provider Class or object that declares the decoding function.
-&nbsp; * @param functionName Name of the static decoding function. The first parameter must be one of:
-&nbsp; *   - `GhostJsonReader` (`parser.streaming`) — streaming byte input
-&nbsp; *   - `GhostJsonFlatReader` (`parser.bytes`) — flat byte buffer input
-&nbsp; *   - `GhostJsonStringReader` (`parser.strings`) — native string input
+&nbsp; * ### Fat envelope (SmartThings SSE)
+&nbsp; * One nullable `RawJson` field per event type, each tagged with
+&nbsp; * [GhostEnvelopePayload]:
+&nbsp; * ```kotlin
+&nbsp; * @GhostJsonEnvelope(discriminator = &quot;eventType&quot;, timeField = &quot;eventTime&quot;)
+&nbsp; * @GhostSerialization
+&nbsp; * data class RawSseEventEnvelope(
+&nbsp; *     @GhostName(&quot;eventType&quot;) val eventType: String = &quot;&quot;,
+&nbsp; *     @GhostName(&quot;eventTime&quot;) val timeMillis: Long = 0L,
+&nbsp; *     @GhostEnvelopePayload(&quot;DEVICE_EVENT&quot;)
+&nbsp; *     @GhostName(&quot;deviceEvent&quot;) val deviceEvent: RawJson? = null,
+&nbsp; * )
+&nbsp; * ```
 &nbsp; *
-&nbsp; * Provide overloads for each channel you use. A matching overload is called directly; otherwise
-&nbsp; * KSP bridges through a temporary reader (string → UTF-8 when only a byte-reader overload exists).
-&nbsp; * Prefer a `GhostJsonStringReader` overload when [GhostSerialization.textChannel] is `true`
-&nbsp; * (the default).
+&nbsp; * ### Generic envelope (Stripe / GitHub / CloudEvents-like)
+&nbsp; * Single payload field shared by all types:
+&nbsp; * ```kotlin
+&nbsp; * @GhostJsonEnvelope(discriminator = &quot;type&quot;, dataField = &quot;data&quot;)
+&nbsp; * @GhostSerialization
+&nbsp; * data class WebhookEnvelope(
+&nbsp; *     val type: String = &quot;&quot;,
+&nbsp; *     val data: RawJson? = null,
+&nbsp; * )
+&nbsp; * ```
+&nbsp; *
+&nbsp; * @param discriminator JSON field holding the wire type name (default `&quot;type&quot;`).
+&nbsp; * @param timeField Optional JSON field copied into routed results metadata (e.g. `&quot;eventTime&quot;`).
+&nbsp; * @param dataField When non-empty, enables generic single-payload mode using this JSON field name.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY)
+&nbsp;@Target(AnnotationTarget.CLASS)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostDecoder(
-&nbsp;    val provider: KClass&lt;*&gt;,
-&nbsp;    val functionName: String
+&nbsp;annotation class GhostJsonEnvelope(
+&nbsp;    val discriminator: String = &quot;type&quot;,
+&nbsp;    val timeField: String = &quot;&quot;,
+&nbsp;    val dataField: String = &quot;&quot;
 &nbsp;)
 </code>
 </pre>
@@ -94,7 +112,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 17:16</div>
+    <div style="float:right;">generated on 2026-08-19 17:50</div>
 </div>
 </body>
 </html>
