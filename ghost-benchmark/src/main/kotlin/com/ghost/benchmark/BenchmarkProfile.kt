@@ -1,5 +1,8 @@
 package com.ghost.benchmark
 
+/** Relative Ghost÷KSER advantage degradation tolerated on the fast profile only. */
+private const val FAST_REGRESSION_TOLERANCE: Double = 0.20
+
 /**
  * Benchmark workload shape selected via JVM property `ghost.benchmark.profile`.
  *
@@ -43,9 +46,6 @@ internal enum class BenchmarkProfile(
 
     companion object {
         private const val PROPERTY_KEY = "ghost.benchmark.profile"
-
-        /** Relative Ghost÷KSER advantage degradation tolerated on the fast profile only. */
-        const val FAST_REGRESSION_TOLERANCE: Double = 0.20
 
         /** Returns [FULL] unless `ghost.benchmark.profile=fast`. */
         fun active(): BenchmarkProfile {

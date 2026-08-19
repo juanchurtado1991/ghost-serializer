@@ -49,6 +49,8 @@ cd ghost-serializer
 
 Kover only measures JVM bytecode — it does not cover Kotlin/Native (`iosSimulatorArm64Test`), Wasm (`wasmJsBrowserTest`), or the `expect`/`actual` bodies that only exist on non-JVM source sets.
 
+Every `RegressionCalculator.report` run (the regression gate inside `benchmarkRegression*`/`run`) also writes a JSON snapshot to `ghost-benchmark/build/reports/regression/regression-report.json` — useful to diff against a previous local run or paste into a PR description. This is local, pre-PR tooling only; regression checks are **not** a CI gate (they take 1–9 minutes per run and would tax every PR for full-machine JIT warmup), so run one of the `benchmarkRegression*` commands above yourself before opening a PR that touches a hot path.
+
 On **Linux/Windows**, `ciTest` skips iOS. On **macOS** with Xcode it also runs `iosSimulatorArm64Test`. Wasm coverage is exercised separately by the CI `test-wasm` job (`wasmJsBrowserTest` on the KMP modules).
 
 ---

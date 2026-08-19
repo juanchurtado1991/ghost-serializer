@@ -57,25 +57,18 @@ These stay **manual** (or opt-in via `x-ghost-*` extensions):
 
 | Badge | Purpose | Status |
 |:---|:---|:---:|
-| **CI** | Link to [GitHub Actions](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml) — green/red signal on every push | Planned |
-| **Coverage** | Link to the [published Kover report](https://juanchurtado1991.github.io/ghost-serializer/coverage/) with line/branch % from the latest `main` build | Planned |
+| **CI** | Link to [GitHub Actions](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml) — green/red signal on every push | Shipped |
+| **Coverage** | Link to the [published Kover report](https://juanchurtado1991.github.io/ghost-serializer/coverage/) with line/branch % from the latest `main` build | Shipped (static "see report" badge) |
 
-Example targets (to add at the top of `README.md` once wired):
-
-```markdown
-[![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-see_report-blue.png?style=flat)](https://juanchurtado1991.github.io/ghost-serializer/coverage/)
-```
-
-*(Coverage % badge may use shields.io dynamic endpoint or a committed `coverage-badge.svg` updated by CI — TBD.)*
+Both now live at the top of `README.md`. The Coverage badge is the static "see report" version — a dynamic %-badge (shields.io endpoint or a committed `coverage-badge.svg` updated by CI) is still a possible follow-up, not started.
 
 ### Test improvements
 
 | Area | Work | Status |
 |:---|:---|:---:|
 | **Adapter gaps** | Retrofit/Ktor proto/YAML converters: `List<T>` / `Map` body unwrapping | Shipped in 1.3.0 |
-| **Wasm / Native** | Expand `wasmJsBrowserTest` and document what Kover cannot measure (see [Contributing — Kover limits](contributing.md#verification-commands)). Safari string encode cliff: **done** — JSC uses UTF-8 + `TextDecoder` for `encodeToString`; Chrome keeps char writer (~2.7× KSER on Safari Speed Test) ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)) | Ongoing |
-| **Regression visibility** | Optional CI artifact or docs page for benchmark regression JSON (Twitter + synthetic gates) | Planned |
+| **Wasm / Native** | Documenting what Kover cannot measure is done (see [Contributing — Kover limits](contributing.md#verification-commands)). Safari string encode cliff: **done** — JSC uses UTF-8 + `TextDecoder` for `encodeToString`; Chrome keeps char writer (~2.7× KSER on Safari Speed Test) ([#16](https://github.com/juanchurtado1991/ghost-serializer/issues/16)). Expanding `wasmJsBrowserTest` still open — only `WasmPlatformActualsTest` exists today; no test exercises a real Ghost JSON/YAML round-trip on the actual Wasm target | Ongoing |
+| **Regression visibility** | `RegressionCalculator.report` writes a JSON snapshot to `ghost-benchmark/build/reports/regression/regression-report.json` on every run (see [Contributing — Kover limits](contributing.md#verification-commands)). Deliberately local/pre-PR tooling only, not a CI artifact — regression checks stay opt-in (not a CI gate) since a full run takes 1–9 minutes | Shipped |
 | **Fuzz / malformed JSON** | Every JSON/YAML reader and writer implementation (flat, Okio-streaming, string channel) plus typed decode (`GhostComplexObjectFuzzTest`) and proto3-JSON-specific decoders now have Jazzer fuzz coverage; found and fixed 3 real bugs (YAML key quoting on both writers, `GhostJsonStringReader` unicode-escape crash) and a gap where `.cifuzz-corpus` seeds were never replayed in CI | Shipped |
 | **Playground** | Keep Speed Test + Studio presets aligned with real generated serializers on JVM | Ongoing |
 

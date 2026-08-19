@@ -4,6 +4,8 @@
 
 Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate only the hot DTOs, leave everything else alone, and migrate when you want.
 
+[![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-see_report-blue.png?style=flat)](https://juanchurtado1991.github.io/ghost-serializer/coverage/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.3.10-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
 [![Version](https://img.shields.io/badge/version-1.3.1-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)

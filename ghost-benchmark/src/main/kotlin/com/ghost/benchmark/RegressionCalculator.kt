@@ -4,6 +4,10 @@ import com.ghost.benchmark.RegressionCalculator.DECODE_STRING
 import com.ghost.benchmark.RegressionCalculator.DEFAULT_TOLERANCE
 import com.ghost.benchmark.RegressionCalculator.LIST_MEDIUM
 import com.ghost.benchmark.RegressionCalculator.TWITTER
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.time.Instant
 
 
 /**
@@ -32,6 +36,38 @@ object RegressionCalculator {
 
     /** Relative degradation of the Ghost/KSER advantage ratio tolerated before flagging regression. */
     const val DEFAULT_TOLERANCE: Double = 0.10
+
+    /**
+     * Where [report] writes its machine-readable JSON snapshot, relative to the JVM's working
+     * directory (`ghost-benchmark/` when launched via a Gradle `JavaExec` task). Not read by CI —
+     * this is local, pre-PR best-practice tooling, not a CI gate (regression checks stay opt-in,
+     * on purpose: they take 1–9 minutes and would make every PR pay for full-machine JIT warmup).
+     */
+    const val REPORT_JSON_PATH = "build/reports/regression/regression-report.json"
+
+    private val REPORT_JSON = Json { prettyPrint = true }
+
+    @Serializable
+    data class ReportCategory(
+        val group: String,
+        val category: String,
+        val baseSpeedAdvantagePct: Double,
+        val currentSpeedAdvantagePct: Double,
+        val speedDeltaPct: Double,
+        val speedRegressed: Boolean,
+        val baseMemAdvantagePct: Double?,
+        val currentMemAdvantagePct: Double?,
+        val memDeltaPct: Double?,
+        val memRegressed: Boolean,
+    )
+
+    @Serializable
+    data class Report(
+        val timestamp: String,
+        val tolerancePct: Double,
+        val passed: Boolean,
+        val categories: List<ReportCategory>,
+    )
 
     /** Raw metric kind for a regression category (controls how advantage is derived). */
     enum class Metric { THROUGHPUT, LATENCY }
@@ -164,7 +200,40 @@ object RegressionCalculator {
             }
         }
         println("════════════════════════════════════════════════════════════════\n")
+
+        writeJsonReport(rows, tolerance, regressions == 0)
         return regressions == 0
+    }
+
+    /**
+     * Durable counterpart to the console table above — a JSON snapshot at [REPORT_JSON_PATH],
+     * so a regression run's result survives past the terminal scrollback (e.g. to paste into a
+     * PR description, or diff against a previous local run).
+     */
+    private fun writeJsonReport(rows: List<Row>, tolerance: Double, passed: Boolean) {
+        val report = Report(
+            timestamp = Instant.now().toString(),
+            tolerancePct = tolerance * 100.0,
+            passed = passed,
+            categories = rows.map { row ->
+                ReportCategory(
+                    group = row.group,
+                    category = row.category,
+                    baseSpeedAdvantagePct = (row.baseSpeedAdv - 1.0) * 100.0,
+                    currentSpeedAdvantagePct = (row.curSpeedAdv - 1.0) * 100.0,
+                    speedDeltaPct = row.speedDeltaRel * 100.0,
+                    speedRegressed = row.speedRegressed,
+                    baseMemAdvantagePct = row.baseMemAdv?.let { (it - 1.0) * 100.0 },
+                    currentMemAdvantagePct = row.curMemAdv?.let { (it - 1.0) * 100.0 },
+                    memDeltaPct = row.memDeltaRel?.let { it * 100.0 },
+                    memRegressed = row.memRegressed,
+                )
+            },
+        )
+        val file = File(REPORT_JSON_PATH)
+        file.parentFile?.mkdirs()
+        file.writeText(REPORT_JSON.encodeToString(report))
+        println("  📄 JSON report written to ${file.path}\n")
     }
 
     private fun buildRow(obs: Observed, tolerance: Double): Row? {
