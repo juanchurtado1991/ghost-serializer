@@ -51,7 +51,12 @@ jobs:
             echo "Coverage report unchanged, nothing to commit."
           else
             git commit -m "chore: update coverage report [skip ci]"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
+            # docs/coverage is fully regenerated, not hand-authored — Kover's HTML isn't
+            # byte-stable across runs, so a plain rebase against a concurrent coverage-report
+            # commit conflicts on nearly every file even when both reflect the same underlying
+            # coverage. Let this run's freshly generated report win outright instead of trying
+            # to line-merge two generated-HTML trees.
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
             git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
 
@@ -175,7 +180,10 @@ jobs:
             echo "Playground site unchanged, nothing to commit."
           else
             git commit -m "chore: update ghost playground [skip ci]"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
+            # Same reasoning as the coverage-report publish step: docs/ here is a fully
+            # regenerated wasm build output, not hand-authored — prefer this run's fresh build
+            # outright on conflict instead of line-merging generated artifacts.
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
             git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
 
