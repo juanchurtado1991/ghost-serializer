@@ -6,23 +6,25 @@ Ghost sits beside `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate onl
 
 [![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-see_report-blue.png?style=flat)](https://juanchurtado1991.github.io/ghost-serializer/coverage/)
+[![Version](https://img.shields.io/badge/version-1.3.1-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![KSP](https://img.shields.io/badge/KSP-2.3.10-black.png?style=flat&logo=google&logoColor=white)](https://github.com/google/ksp)
-[![Version](https://img.shields.io/badge/version-1.3.1-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](docs/wiki/usage-ios.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
 [![Wasm](https://img.shields.io/badge/Wasm-654FF0.png?style=flat&logo=webassembly&logoColor=white)](docs/wiki/modules.md)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
+
 [![Downloads](https://img.shields.io/badge/downloads-70K%2B%2F3mo-blue)](https://central.sonatype.com)
 [![Companies](https://img.shields.io/badge/used%20by-600%2B%20companies-brightgreen)](https://central.sonatype.com)
 
 **[Quick Start](docs/wiki/quick-start.md)** ·
 **[Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer)** ·
-**[Live Ghost Speedtest · Playground](https://juanchurtado1991.github.io/ghost-serializer/)** ·
+**[Live Ghost Speedtest · Playground](https://juanchurtado1991.github.io/ghost-serializer/)**
+
 **[Benchmarks](docs/wiki/benchmarks.md)** ·
-**[Independent Benchmarks](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** .
-**[Coverage](https://juanchurtado1991.github.io/ghost-serializer/coverage/)** ·
+**[Independent Benchmarks](https://www.http-arena.com/#sort=rps:-1&q=kotlin)** ·
 **[Roadmap](docs/wiki/roadmap.md)**
 
 ---
