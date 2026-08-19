@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostName</title>
+  <title>GhostSerialization Coverage Report > GhostStrict</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostName (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostStrict (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostName</td>
+  <td class="name">GhostStrict</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,17 +47,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Customizes the wire key used for the annotated property during serialization and deserialization.
-&nbsp; *
-&nbsp; * By default, the serializer uses the property&#39;s Kotlin name. When this annotation is applied,
-&nbsp; * the serializer uses [name] instead on every generated path where the property is emitted:
-&nbsp; * **JSON**, **proto3 JSON** ([GhostProtoSerialization]), and **YAML** ([GhostYamlSerialization]).
-&nbsp; *
-&nbsp; * @property name The custom key name on the wire (JSON field name, YAML mapping key, proto JSON name).
+&nbsp; * Enforces strict JSON syntax checking (missing or duplicate commas, trailing commas,
+&nbsp; * and unmapped fields) during deserialization for the annotated endpoint, parameter, or controller.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY)
-&nbsp;@Retention(AnnotationRetention.SOURCE)
-&nbsp;annotation class GhostName(val name: String)
+&nbsp;@Target(
+&nbsp;    AnnotationTarget.FUNCTION,
+&nbsp;    AnnotationTarget.VALUE_PARAMETER,
+&nbsp;    AnnotationTarget.CLASS
+&nbsp;)
+&nbsp;@Retention(AnnotationRetention.RUNTIME)
+&nbsp;annotation class GhostStrict
 </code>
 </pre>
 </div>
@@ -81,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

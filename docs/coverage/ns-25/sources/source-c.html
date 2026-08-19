@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostProtoSerialization</title>
+  <title>GhostSerialization Coverage Report > GhostEncoder</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostProtoSerialization (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostEncoder (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostProtoSerialization</td>
+  <td class="name">GhostEncoder</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,34 +46,28 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
 &nbsp;/**
-&nbsp; * Triggers the automatic generation of high-performance serializers for the annotated class,
-&nbsp; * adhering strictly to the proto3 JSON mapping rules.
+&nbsp; * Delegates serialization of the annotated property to a static function in [provider].
 &nbsp; *
-&nbsp; * Differences from standard `@GhostSerialization`:
-&nbsp; * - Fields are serialized using `lowerCamelCase` names.
-&nbsp; * - Fields with default/empty values are omitted by default.
-&nbsp; * - 64-bit integers (`int64`, `uint64`) are serialized as quoted string values.
-&nbsp; * - Enums are serialized as strings by default.
-&nbsp; * - Byte arrays are serialized as Base64 strings.
+&nbsp; * Use this for custom wire formats (dates, legacy booleans, and similar) without writing a
+&nbsp; * full serializer. JSON-only — incompatible with [GhostYamlSerialization].
 &nbsp; *
-&nbsp; * **Cross-format annotations** (also honored when YAML codegen runs on the same class):
-&nbsp; * - [GhostName] — wire key override
-&nbsp; * - [GhostIgnore] — skip property on read/write
-&nbsp; * - [GhostYamlSerialization] — opt-in YAML on the same message
+&nbsp; * @param provider Class or object that declares the encoding function.
+&nbsp; * @param functionName Name of the static encoding function with signature
+&nbsp; *   `fun(writer, value: T)`. The writer parameter must be one of:
+&nbsp; *   - `GhostJsonFlatWriter` (`writer.bytes`) — flat byte output
+&nbsp; *   - `GhostJsonWriter` (`writer.bytes`) — streaming byte output
 &nbsp; *
-&nbsp; * **Proto3 JSON patterns:**
-&nbsp; * - [GhostWrappedKeys] + nested `@GhostSerialization(inferred = true)` types for `oneof`
-&nbsp; *
-&nbsp; * **Not for proto3 JSON** (or KSP error when combined with [GhostYamlSerialization]):
-&nbsp; * [GhostJsonEnvelope], [GhostFlatten], [GhostWrap], sealed/`inferred` on the message itself,
-&nbsp; * [GhostDecoder], [GhostEncoder], `RawJson`, and non-proto opaque
-&nbsp; * `ByteArray`.
+&nbsp; * Provide overloads for each byte writer you use so both serialize paths call directly.
+&nbsp; * The string-channel writer bridges through a temporary `GhostJsonFlatWriter`.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostProtoSerialization(
-&nbsp;    val name: String = &quot;&quot;,
+&nbsp;annotation class GhostEncoder(
+&nbsp;    val provider: KClass&lt;*&gt;,
+&nbsp;    val functionName: String
 &nbsp;)
 </code>
 </pre>
@@ -98,7 +92,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

@@ -57,26 +57,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    22.2%
+    33.3%
   </span>
   <span class="absValue">
-    (6/27)
+    (9/27)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    51.7%
+    62.1%
   </span>
   <span class="absValue">
-    (30/58)
+    (36/58)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50.4%
+    61.7%
   </span>
   <span class="absValue">
-    (133/264)
+    (163/264)
   </span>
 </td>
 </tr>
@@ -96,26 +96,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    22.2%
+    33.3%
   </span>
   <span class="absValue">
-    (6/27)
+    (9/27)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    51.7%
+    62.1%
   </span>
   <span class="absValue">
-    (30/58)
+    (36/58)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50.4%
+    61.7%
   </span>
   <span class="absValue">
-    (133/264)
+    (163/264)
   </span>
 </td>
 </tr>
@@ -172,7 +172,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;      2 -&gt; Priority.HIGH</b>
 <b class="fc">&nbsp;      3 -&gt; Priority.CRITICAL</b>
 <b class="nc">&nbsp;      -1 -&gt; reader.throwError(&quot;Invalid enum value&quot;)</b>
-<b class="nc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
+<b class="fc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -196,13 +196,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonStringReader): Priority {
 <b class="fc">&nbsp;    val index = reader.selectString(ENUM_OPTIONS)</b>
-<b class="nc">&nbsp;    return when (index) {</b>
-<b class="nc">&nbsp;      0 -&gt; Priority.LOW</b>
+<b class="pc">&nbsp;    return when (index) {</b>
+<b class="fc">&nbsp;      0 -&gt; Priority.LOW</b>
 <b class="nc">&nbsp;      1 -&gt; Priority.MEDIUM</b>
-<b class="nc">&nbsp;      2 -&gt; Priority.HIGH</b>
-<b class="nc">&nbsp;      3 -&gt; Priority.CRITICAL</b>
+<b class="fc">&nbsp;      2 -&gt; Priority.HIGH</b>
+<b class="fc">&nbsp;      3 -&gt; Priority.CRITICAL</b>
 <b class="nc">&nbsp;      -1 -&gt; reader.throwError(&quot;Invalid enum value&quot;)</b>
-<b class="nc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
+<b class="fc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -280,7 +280,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69.5%
+    93.9%
   </span>
   <span class="absValue">
-    (57/82)
+    (77/82)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.4%
+    97.4%
   </span>
   <span class="absValue">
-    (138/151)
+    (147/151)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.7%
+    97.4%
   </span>
   <span class="absValue">
-    (712/794)
+    (773/794)
   </span>
 </td>
 </tr>
@@ -153,7 +153,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    var index = start</b>
 <b class="fc">&nbsp;    while (index &lt; end) {</b>
 <b class="fc">&nbsp;        val code = this[index].code</b>
-<b class="pc">&nbsp;        if ((code - C.ZERO_INT) !in 0..9) throw IllegalArgumentException(C.ERR_MALFORMED_DIGIT)</b>
+<b class="fc">&nbsp;        if ((code - C.ZERO_INT) !in 0..9) throw IllegalArgumentException(C.ERR_MALFORMED_DIGIT)</b>
 <b class="fc">&nbsp;        result = result * C.BASE_TEN + (code - C.ZERO_INT)</b>
 <b class="fc">&nbsp;        index++</b>
 &nbsp;    }
@@ -204,9 +204,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    if (nanos % C.NANOS_PER_MILLI == 0) {</b>
 <b class="fc">&nbsp;        width = 3</b>
 <b class="fc">&nbsp;        scale = C.NANOS_PER_MILLI</b>
-<b class="pc">&nbsp;    } else if (nanos % C.NANOS_PER_MICRO == 0) {</b>
-<b class="nc">&nbsp;        width = 6</b>
-<b class="nc">&nbsp;        scale = C.NANOS_PER_MICRO</b>
+<b class="fc">&nbsp;    } else if (nanos % C.NANOS_PER_MICRO == 0) {</b>
+<b class="fc">&nbsp;        width = 6</b>
+<b class="fc">&nbsp;        scale = C.NANOS_PER_MICRO</b>
 &nbsp;    } else {
 <b class="fc">&nbsp;        width = 9</b>
 <b class="fc">&nbsp;        scale = 1</b>
@@ -221,24 +221,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_SHORT)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    val year = timestampString.parseDecimalAt(C.TS_YEAR_START, C.TS_YEAR_END)</b>
-<b class="pc">&nbsp;    if (timestampString[C.TS_YEAR_END] != C.CHAR_HYPHEN) {</b>
-<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)</b>
+<b class="fc">&nbsp;    if (timestampString[C.TS_YEAR_END] != C.CHAR_HYPHEN) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_YEAR_HYPHEN)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    val month = timestampString.parseDecimalAt(C.TS_MONTH_START, C.TS_MONTH_END)</b>
-<b class="pc">&nbsp;    if (timestampString[C.TS_MONTH_END] != C.CHAR_HYPHEN) {</b>
-<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)</b>
+<b class="fc">&nbsp;    if (timestampString[C.TS_MONTH_END] != C.CHAR_HYPHEN) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_MONTH_HYPHEN)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    val day = timestampString.parseDecimalAt(C.TS_DAY_START, C.TS_DAY_END)</b>
-<b class="pc">&nbsp;    if (timestampString[C.TS_DAY_END] != C.CHAR_T_UPPER &amp;&amp; timestampString[C.TS_DAY_END] != C.CHAR_T) {</b>
-<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_T)</b>
+<b class="fc">&nbsp;    if (timestampString[C.TS_DAY_END] != C.CHAR_T_UPPER &amp;&amp; timestampString[C.TS_DAY_END] != C.CHAR_T) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_T)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    val hour = timestampString.parseDecimalAt(C.TS_HOUR_START, C.TS_HOUR_END)</b>
-<b class="pc">&nbsp;    if (timestampString[C.TS_HOUR_END] != C.CHAR_COLON) {</b>
-<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)</b>
+<b class="fc">&nbsp;    if (timestampString[C.TS_HOUR_END] != C.CHAR_COLON) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_HOUR_COLON)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    val minute = timestampString.parseDecimalAt(C.TS_MIN_START, C.TS_MIN_END)</b>
-<b class="pc">&nbsp;    if (timestampString[C.TS_MIN_END] != C.CHAR_COLON) {</b>
-<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)</b>
+<b class="fc">&nbsp;    if (timestampString[C.TS_MIN_END] != C.CHAR_COLON) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_MINUTE_COLON)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    val second = timestampString.parseDecimalAt(C.TS_SEC_START, C.TS_SEC_END)</b>
 &nbsp;
@@ -247,9 +247,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    if (timestampString[C.TS_SEC_END] == C.CHAR_DOT) {</b>
 <b class="fc">&nbsp;        var endIndex = C.TS_SEC_END + 1</b>
 <b class="fc">&nbsp;        val len = timestampString.length</b>
-<b class="pc">&nbsp;        while (endIndex &lt; len) {</b>
+<b class="fc">&nbsp;        while (endIndex &lt; len) {</b>
 <b class="fc">&nbsp;            val code = timestampString[endIndex].code</b>
-<b class="pc">&nbsp;            if ((code - C.ZERO_INT) !in 0..9) {</b>
+<b class="fc">&nbsp;            if ((code - C.ZERO_INT) !in 0..9) {</b>
 &nbsp;                break
 &nbsp;            }
 <b class="fc">&nbsp;            endIndex++</b>
@@ -272,19 +272,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        nextIndex = endIndex</b>
 &nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;    if (nextIndex &gt;= timestampString.length) {</b>
-<b class="nc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)</b>
+<b class="fc">&nbsp;    if (nextIndex &gt;= timestampString.length) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ)</b>
 &nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    var offsetSec = 0</b>
-<b class="pc">&nbsp;    if (timestampString[nextIndex] != C.CHAR_Z_UPPER &amp;&amp; timestampString[nextIndex] != C.CHAR_Z_LOWER) {</b>
+<b class="fc">&nbsp;    if (timestampString[nextIndex] != C.CHAR_Z_UPPER &amp;&amp; timestampString[nextIndex] != C.CHAR_Z_LOWER) {</b>
 <b class="fc">&nbsp;        if (</b>
-<b class="pc">&nbsp;            nextIndex + C.TS_TZ_OFFSET_LEN != timestampString.length ||</b>
-<b class="pc">&nbsp;            (timestampString[nextIndex] != C.CHAR_PLUS &amp;&amp; timestampString[nextIndex] != C.CHAR_HYPHEN)</b>
+<b class="fc">&nbsp;            nextIndex + C.TS_TZ_OFFSET_LEN != timestampString.length ||</b>
+<b class="fc">&nbsp;            (timestampString[nextIndex] != C.CHAR_PLUS &amp;&amp; timestampString[nextIndex] != C.CHAR_HYPHEN)</b>
 &nbsp;        ) {
-<b class="nc">&nbsp;            throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ_SUPPORT)</b>
+<b class="fc">&nbsp;            throw IllegalArgumentException(C.ERR_TIMESTAMP_TZ_SUPPORT)</b>
 &nbsp;        }
-<b class="pc">&nbsp;        val tzSign = if (timestampString[nextIndex] == C.CHAR_HYPHEN) -1 else 1</b>
+<b class="fc">&nbsp;        val tzSign = if (timestampString[nextIndex] == C.CHAR_HYPHEN) -1 else 1</b>
 <b class="fc">&nbsp;        val tzHour = timestampString.parseDecimalAt(nextIndex + 1, nextIndex + 3)</b>
 <b class="fc">&nbsp;        val tzMin = timestampString.parseDecimalAt(nextIndex + 4, nextIndex + 6)</b>
 <b class="fc">&nbsp;        offsetSec = tzSign * (</b>
@@ -387,7 +387,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

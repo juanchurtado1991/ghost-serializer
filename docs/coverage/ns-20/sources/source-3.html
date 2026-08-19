@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80%
+    90.9%
   </span>
   <span class="absValue">
-    (8/10)
+    (10/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    86.1%
   </span>
   <span class="absValue">
-    (60/72)
+    (93/108)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88%
+    96.6%
   </span>
   <span class="absValue">
-    (88/100)
+    (115/119)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.7%
+    97.1%
   </span>
   <span class="absValue">
-    (390/466)
+    (527/543)
   </span>
 </td>
 </tr>
@@ -101,6 +101,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.yaml
 &nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.acquireScratchBuffer
 &nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import com.ghost.serialization.writer.common.GhostWriterLongDigits
@@ -113,8 +114,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * [GhostYamlFlatWriter] (FlatByteArrayWriter).
 &nbsp; *
 &nbsp; * Sink flushes stay at call sites via inlined lambdas so both backends keep
-&nbsp; * monomorphic writes. Flat-only key quoting stays on [GhostYamlFlatWriter].
+&nbsp; * monomorphic writes. [keyNeedsQuoting] is pure (no I/O), so both backends call it directly
+&nbsp; * instead of duplicating it — it used to live only on [GhostYamlFlatWriter], which left
+&nbsp; * [GhostYamlWriter] writing every mapping key bare/unescaped (found by fuzzing:
+&nbsp; * `GhostYamlWriter.name(&quot;a: b&quot;)` produced YAML `GhostYamlFlatReader` itself couldn&#39;t parse back).
 &nbsp; */
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal object GhostYamlWriterHelpers {
 &nbsp;
 &nbsp;    /** Packed [prepareValue] result: bit0 justWroteDash, bit1 pendingSpace, bit2 incrementItemCount. */
@@ -244,11 +249,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        code: Int,
 &nbsp;        writeByte: (Int) -&gt; Unit,
 &nbsp;    ) {
-<b class="nc">&nbsp;        val hexChars = C.HEX_CHARS_ARR</b>
-<b class="nc">&nbsp;        writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())</b>
-<b class="nc">&nbsp;        writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())</b>
-<b class="nc">&nbsp;        writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())</b>
-<b class="nc">&nbsp;        writeByte(hexChars[code and C.HEX_MASK].toInt())</b>
+<b class="fc">&nbsp;        val hexChars = C.HEX_CHARS_ARR</b>
+<b class="fc">&nbsp;        writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())</b>
+<b class="fc">&nbsp;        writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())</b>
+<b class="fc">&nbsp;        writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())</b>
+<b class="fc">&nbsp;        writeByte(hexChars[code and C.HEX_MASK].toInt())</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    inline fun writeEscaped(
@@ -260,54 +265,57 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var index = 0</b>
 &nbsp;
 <b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="fc">&nbsp;            val charCode = text[index].code</b>
-<b class="fc">&nbsp;            if (charCode == C.DOUBLE_QUOTE_INT) {</b>
-<b class="fc">&nbsp;                writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                writeByte(C.DOUBLE_QUOTE_INT)</b>
-&nbsp;            } else if (charCode == C.BACKSLASH_INT) {
-<b class="fc">&nbsp;                writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                writeByte(C.BACKSLASH_INT)</b>
-&nbsp;            } else {
-<b class="pc">&nbsp;                when (charCode) {</b>
-&nbsp;                    C.CHAR_LF_INT -&gt; {
-<b class="fc">&nbsp;                        writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                        writeByte(C.CHAR_N_INT)</b>
-&nbsp;                    }
+<b class="fc">&nbsp;            when (val charCode = text[index].code) {</b>
+&nbsp;                C.DOUBLE_QUOTE_INT -&gt; {
+<b class="fc">&nbsp;                    writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                    writeByte(C.DOUBLE_QUOTE_INT)</b>
+&nbsp;                }
+&nbsp;                C.BACKSLASH_INT -&gt; {
+<b class="fc">&nbsp;                    writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                    writeByte(C.BACKSLASH_INT)</b>
+&nbsp;                }
+&nbsp;                else -&gt; {
+<b class="fc">&nbsp;                    when (charCode) {</b>
+&nbsp;                        C.CHAR_LF_INT -&gt; {
+<b class="fc">&nbsp;                            writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                            writeByte(C.CHAR_N_INT)</b>
+&nbsp;                        }
 &nbsp;
-&nbsp;                    C.CHAR_CR_INT -&gt; {
-<b class="fc">&nbsp;                        writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                        writeByte(C.CHAR_R_INT)</b>
-&nbsp;                    }
+&nbsp;                        C.CHAR_CR_INT -&gt; {
+<b class="fc">&nbsp;                            writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                            writeByte(C.CHAR_R_INT)</b>
+&nbsp;                        }
 &nbsp;
-&nbsp;                    C.CHAR_TAB_INT -&gt; {
-<b class="fc">&nbsp;                        writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                        writeByte(C.CHAR_T_INT)</b>
-&nbsp;                    }
+&nbsp;                        C.CHAR_TAB_INT -&gt; {
+<b class="fc">&nbsp;                            writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                            writeByte(C.CHAR_T_INT)</b>
+&nbsp;                        }
 &nbsp;
-&nbsp;                    C.CHAR_BS_INT -&gt; {
-<b class="fc">&nbsp;                        writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                        writeByte(C.CHAR_B_INT)</b>
-&nbsp;                    }
+&nbsp;                        C.CHAR_BS_INT -&gt; {
+<b class="fc">&nbsp;                            writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                            writeByte(C.CHAR_B_INT)</b>
+&nbsp;                        }
 &nbsp;
-&nbsp;                    C.CHAR_FF_INT -&gt; {
-<b class="fc">&nbsp;                        writeByte(C.BACKSLASH_INT)</b>
-<b class="fc">&nbsp;                        writeByte(C.CHAR_F_INT)</b>
-&nbsp;                    }
+&nbsp;                        C.CHAR_FF_INT -&gt; {
+<b class="fc">&nbsp;                            writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                            writeByte(C.CHAR_F_INT)</b>
+&nbsp;                        }
 &nbsp;
-&nbsp;                    else -&gt; {
-<b class="pc">&nbsp;                        if (charCode &lt; C.CHAR_SPACE_INT) {</b>
-<b class="nc">&nbsp;                            writeByte(C.BACKSLASH_INT)</b>
-<b class="nc">&nbsp;                            writeByte(C.CHAR_U_INT)</b>
-<b class="nc">&nbsp;                            writeUnicodeHex(charCode, writeByte)</b>
-<b class="fc">&nbsp;                        } else if (charCode &lt; C.ASCII_LIMIT) {</b>
-<b class="fc">&nbsp;                            writeByte(charCode)</b>
-&nbsp;                        } else {
-<b class="fc">&nbsp;                            val charVal = text[index]</b>
-<b class="pc">&nbsp;                            if (charVal.isHighSurrogate() &amp;&amp; index + 1 &lt; length &amp;&amp; text[index + 1].isLowSurrogate()) {</b>
-<b class="fc">&nbsp;                                writeUtf8Range(text, index, index + 2)</b>
-<b class="fc">&nbsp;                                index++</b>
+&nbsp;                        else -&gt; {
+<b class="fc">&nbsp;                            if (charCode &lt; C.CHAR_SPACE_INT) {</b>
+<b class="fc">&nbsp;                                writeByte(C.BACKSLASH_INT)</b>
+<b class="fc">&nbsp;                                writeByte(C.CHAR_U_INT)</b>
+<b class="fc">&nbsp;                                writeUnicodeHex(charCode, writeByte)</b>
+<b class="fc">&nbsp;                            } else if (charCode &lt; C.ASCII_LIMIT) {</b>
+<b class="fc">&nbsp;                                writeByte(charCode)</b>
 &nbsp;                            } else {
-<b class="fc">&nbsp;                                writeUtf8Range(text, index, index + 1)</b>
+<b class="fc">&nbsp;                                val charVal = text[index]</b>
+<b class="pc">&nbsp;                                if (charVal.isHighSurrogate() &amp;&amp; index + 1 &lt; length &amp;&amp; text[index + 1].isLowSurrogate()) {</b>
+<b class="fc">&nbsp;                                    writeUtf8Range(text, index, index + 2)</b>
+<b class="fc">&nbsp;                                    index++</b>
+&nbsp;                                } else {
+<b class="fc">&nbsp;                                    writeUtf8Range(text, index, index + 1)</b>
+&nbsp;                                }
 &nbsp;                            }
 &nbsp;                        }
 &nbsp;                    }
@@ -343,6 +351,64 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val pos = GhostWriterLongDigits.writePositiveDigitsBytes(remaining, scratchBuf)</b>
 <b class="fc">&nbsp;        writeBytes(scratchBuf, pos, scratchBuf.size - pos)</b>
 &nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * True if [key] can&#39;t safely be written as bare plain-scalar text: it would either redirect
+&nbsp;     * into a nested mapping when re-read (an embedded &quot;: &quot; indistinguishable from the key/value
+&nbsp;     * separator), get silently truncated (an embedded newline — a bare implicit key&#39;s own scan
+&nbsp;     * stops at the first one), or be misread as something else entirely by the reader&#39;s own
+&nbsp;     * prefix dispatch. A leading &#39;&amp;&#39;/&#39;!&#39;/&#39;*&#39; looks like an anchor/tag/alias to `readKey`, a
+&nbsp;     * leading &#39;&quot;&#39;/&#39;\&#39;&#39; looks like the start of a quoted key, and a bare &#39;?&#39; — or &#39;?&#39; followed by
+&nbsp;     * whitespace — looks like an explicit-key indicator. A leading &#39;[&#39;/&#39;{&#39; is a different hazard:
+&nbsp;     * a *stringified complex key* (Ghost collapses a non-scalar key to its `toString()`, e.g.
+&nbsp;     * `&quot;[a, b]&quot;` or `&quot;{k=v}&quot;`) starting with one of these can end up read back through
+&nbsp;     * `readValue`&#39;s full structural flow-collection dispatch instead of `readKey`&#39;s plain-text
+&nbsp;     * scan — e.g. as a redirected implicit key or a block-sequence item&#39;s value — misparsing the
+&nbsp;     * stringified text as a real (and likely invalid, since it uses `=` not `:`) flow collection
+&nbsp;     * instead of treating it as opaque text. An empty key is fine bare: a lone &#39;:&#39; with nothing
+&nbsp;     * before it already round-trips to the empty string correctly. A leading or trailing space/tab
+&nbsp;     * is also unsafe bare: a plain scalar&#39;s surrounding whitespace is not part of its content, so
+&nbsp;     * the reader silently trims it — found by fuzzing (`GhostYamlWriterFuzzTest`): `&quot; ?xup&quot;` wrote
+&nbsp;     * bare as `&quot; ?xup: 1&quot;` and re-read as key `&quot;?xup&quot;`, silently dropping the leading space. A
+&nbsp;     * leading &#39;%&#39; is also unsafe: reserved for `%YAML`/`%TAG` directives, so a key like `&quot;%foo&quot;`
+&nbsp;     * landing as the document&#39;s first line is read as an (invalid, unterminated) directive
+&nbsp;     * instead of a mapping key — also found by fuzzing (`GhostYamlStreamingWriterFuzzTest`).
+&nbsp;     */
+&nbsp;    fun keyNeedsQuoting(key: String): Boolean {
+<b class="fc">&nbsp;        val length = key.length</b>
+<b class="fc">&nbsp;        if (length == 0) return false</b>
+<b class="fc">&nbsp;        val first = key[0].code</b>
+<b class="fc">&nbsp;        if (first == C.AMPERSAND_BYTE.toInt() || first == C.ASTERISK_BYTE.toInt() ||</b>
+&nbsp;            first == C.EXCLAMATION_BYTE.toInt() || first == C.DOUBLE_QUOTE_INT ||
+&nbsp;            first == C.SINGLE_QUOTE_BYTE.toInt() || first == C.LEFT_BRACKET_BYTE.toInt() ||
+&nbsp;            first == C.LEFT_BRACE_BYTE.toInt() ||
+&nbsp;            first == C.SPACE_INT || first == C.CHAR_TAB_INT ||
+&nbsp;            first == C.PERCENT_BYTE.toInt()
+&nbsp;        ) {
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val last = key[length - 1].code</b>
+<b class="fc">&nbsp;        if (last == C.SPACE_INT || last == C.CHAR_TAB_INT) {</b>
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (first == C.QUESTION_BYTE.toInt() &amp;&amp;</b>
+<b class="pc">&nbsp;            (length == 1 || key[1].code == C.SPACE_INT || key[1].code == C.CHAR_TAB_INT)</b>
+&nbsp;        ) {
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var index = 0</b>
+<b class="fc">&nbsp;        while (index &lt; length) {</b>
+<b class="fc">&nbsp;            val code = key[index].code</b>
+<b class="pc">&nbsp;            if (code == C.CHAR_LF_INT || code == C.CHAR_CR_INT) return true</b>
+<b class="fc">&nbsp;            if (code == C.COLON_INT &amp;&amp;</b>
+<b class="pc">&nbsp;                (index + 1 == length || key[index + 1].code == C.SPACE_INT || key[index + 1].code == C.CHAR_TAB_INT)</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                return true</b>
+&nbsp;            }
+<b class="fc">&nbsp;            index++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -367,7 +433,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

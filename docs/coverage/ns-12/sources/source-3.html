@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.3%
+    100%
   </span>
   <span class="absValue">
-    (25/28)
+    (28/28)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.6%
+    100%
   </span>
   <span class="absValue">
-    (28/29)
+    (29/29)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    99.1%
+    100%
   </span>
   <span class="absValue">
-    (116/117)
+    (117/117)
   </span>
 </td>
 </tr>
@@ -122,8 +122,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    var scanPos = position</b>
 <b class="fc">&nbsp;    if (isQuoted) scanPos++</b>
 &nbsp;    // Skip optional minus
-<b class="pc">&nbsp;    if (scanPos &lt; limit &amp;&amp; getByte(scanPos) == C.MINUS_INT) {</b>
-<b class="nc">&nbsp;        scanPos++</b>
+<b class="fc">&nbsp;    if (scanPos &lt; limit &amp;&amp; getByte(scanPos) == C.MINUS_INT) {</b>
+<b class="fc">&nbsp;        scanPos++</b>
 &nbsp;    }
 <b class="fc">&nbsp;    while (scanPos &lt; limit) {</b>
 <b class="fc">&nbsp;        val tokenByte = getByte(scanPos)</b>
@@ -135,7 +135,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            tokenByte == C.QUOTE_INT ||</b>
 <b class="fc">&nbsp;            tokenByte == C.COMMA_INT ||</b>
 <b class="fc">&nbsp;            tokenByte == C.CLOSE_OBJ_INT ||</b>
-<b class="pc">&nbsp;            tokenByte == C.CLOSE_ARR_INT ||</b>
+<b class="fc">&nbsp;            tokenByte == C.CLOSE_ARR_INT ||</b>
 <b class="fc">&nbsp;            tokenByte &lt;= C.SPACE_INT</b>
 &nbsp;        ) {
 &nbsp;            break
@@ -184,7 +184,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

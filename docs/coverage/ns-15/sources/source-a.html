@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74.7%
+    75.5%
   </span>
   <span class="absValue">
-    (357/478)
+    (361/478)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.9%
+    81.6%
   </span>
   <span class="absValue">
-    (318/403)
+    (329/403)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78%
+    79.8%
   </span>
   <span class="absValue">
-    (1876/2406)
+    (1919/2406)
   </span>
 </td>
 </tr>
@@ -231,12 +231,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                } else {
 <b class="fc">&nbsp;                    val code = processEscapeSequence()</b>
 <b class="fc">&nbsp;                    if (code &lt;= C.UTF8_1BYTE_MAX) {</b>
-<b class="pc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
-<b class="nc">&nbsp;                            val newBuffer =</b>
-<b class="nc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
-<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
-<b class="nc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
-<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            val newBuffer =</b>
+<b class="fc">&nbsp;                                acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)</b>
+<b class="fc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="fc">&nbsp;                            releaseScratchBuffer(outBuffer)</b>
+<b class="fc">&nbsp;                            outBuffer = newBuffer</b>
 &nbsp;                        }
 <b class="fc">&nbsp;                        outBuffer[outPos++] = code.toByte()</b>
 <b class="pc">&nbsp;                    } else if (code &lt;= C.UTF8_2BYTE_MAX) {</b>
@@ -315,15 +315,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    position++</b>
 &nbsp;                }
 <b class="fc">&nbsp;                val rangeLength = position - startPos</b>
-<b class="pc">&nbsp;                if (outPos + rangeLength &gt; outBuffer.size) {</b>
-<b class="nc">&nbsp;                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
-<b class="nc">&nbsp;                    while (outPos + rangeLength &gt; newSize) {</b>
+<b class="fc">&nbsp;                if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                    var newSize = outBuffer.size * C.BUFFER_SCALE_FACTOR</b>
+<b class="pc">&nbsp;                    while (outPos + rangeLength &gt; newSize) {</b>
 <b class="nc">&nbsp;                        newSize *= C.BUFFER_SCALE_FACTOR</b>
 &nbsp;                    }
-<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(newSize)</b>
-<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
-<b class="nc">&nbsp;                    releaseScratchBuffer(outBuffer)</b>
-<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+<b class="fc">&nbsp;                    val newBuffer = acquireScratchBuffer(newSize)</b>
+<b class="fc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="fc">&nbsp;                    releaseScratchBuffer(outBuffer)</b>
+<b class="fc">&nbsp;                    outBuffer = newBuffer</b>
 &nbsp;                }
 <b class="fc">&nbsp;                localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
 <b class="fc">&nbsp;                outPos += rangeLength</b>
@@ -486,7 +486,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        C.SPACE_BYTE -&gt; currentByteInt</b>
 <b class="fc">&nbsp;        C.TAB_BYTE -&gt; currentByteInt</b>
 <b class="fc">&nbsp;        C.LOWERCASE_B_BYTE -&gt; C.CODE_BS</b>
-<b class="pc">&nbsp;        C.LOWERCASE_F_BYTE -&gt; C.CODE_FF</b>
+<b class="fc">&nbsp;        C.LOWERCASE_F_BYTE -&gt; C.CODE_FF</b>
 <b class="fc">&nbsp;        C.LOWERCASE_N_BYTE -&gt; C.CHAR_LF_INT</b>
 <b class="fc">&nbsp;        C.LOWERCASE_R_BYTE -&gt; C.CODE_CR</b>
 <b class="fc">&nbsp;        C.LOWERCASE_T_BYTE -&gt; C.CODE_TAB</b>
@@ -761,7 +761,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

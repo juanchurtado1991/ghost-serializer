@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69.5%
+    77.3%
   </span>
   <span class="absValue">
-    (98/141)
+    (109/141)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.3%
+    93.4%
   </span>
   <span class="absValue">
-    (108/121)
+    (113/121)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86%
+    91.2%
   </span>
   <span class="absValue">
-    (516/600)
+    (547/600)
   </span>
 </td>
 </tr>
@@ -113,7 +113,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Checks if the byte code matches dot, lower &#39;e&#39;, or upper &#39;E&#39;.
 &nbsp; */
 &nbsp;internal inline fun isNumericSeparator(byteCode: Int): Boolean {
-<b class="pc">&nbsp;    return byteCode == C.DOT_INT || byteCode == C.EXP_LOWER_INT || byteCode == C.EXP_UPPER_INT</b>
+<b class="fc">&nbsp;    return byteCode == C.DOT_INT || byteCode == C.EXP_LOWER_INT || byteCode == C.EXP_UPPER_INT</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -127,7 +127,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Helper to verify if the given byte is a valid JSON numeric digit.
 &nbsp; */
 &nbsp;internal inline fun isDigit(byteCode: Int): Boolean {
-<b class="pc">&nbsp;    return (byteCode xor C.ZERO_INT) &lt; C.BASE_TEN</b>
+<b class="fc">&nbsp;    return (byteCode xor C.ZERO_INT) &lt; C.BASE_TEN</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -140,7 +140,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    onOverflow: () -&gt; Nothing,
 &nbsp;): Int {
 <b class="fc">&nbsp;    if (current &gt; C.INT_OVERFLOW_LIMIT ||</b>
-<b class="pc">&nbsp;        (current == C.INT_OVERFLOW_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;        (current == C.INT_OVERFLOW_LIMIT &amp;&amp;</b>
 <b class="pc">&nbsp;                digitValue &gt; (if (isNegative) C.INT_MIN_LAST_DIGIT else C.INT_MAX_LAST_DIGIT))</b>
 &nbsp;    ) {
 <b class="fc">&nbsp;        onOverflow()</b>
@@ -163,7 +163,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        (current == C.LONG_OVERFLOW_LIMIT &amp;&amp; digitValue &gt; C.LONG_MAX_LAST_DIGIT)</b>
 &nbsp;    ) {
 <b class="fc">&nbsp;        if (isNegative &amp;&amp; current == C.LONG_OVERFLOW_LIMIT &amp;&amp;</b>
-<b class="pc">&nbsp;            digitValue == C.LONG_MIN_LAST_DIGIT</b>
+<b class="fc">&nbsp;            digitValue == C.LONG_MIN_LAST_DIGIT</b>
 &nbsp;        ) {
 <b class="fc">&nbsp;            return Long.MIN_VALUE</b>
 &nbsp;        }
@@ -176,18 +176,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Returns 10.0f raised to the power of exponent using a lookup table or pow fallback.
 &nbsp; */
 &nbsp;internal inline fun getFloatPowerOfTen(exponent: Int): Float {
-<b class="pc">&nbsp;    return if (exponent &gt; 0) {</b>
-<b class="nc">&nbsp;        if (exponent &lt; C.POWERS_OF_TEN_FLOAT.size) {</b>
-<b class="nc">&nbsp;            C.POWERS_OF_TEN_FLOAT[exponent]</b>
+<b class="fc">&nbsp;    return if (exponent &gt; 0) {</b>
+<b class="fc">&nbsp;        if (exponent &lt; C.POWERS_OF_TEN_FLOAT.size) {</b>
+<b class="fc">&nbsp;            C.POWERS_OF_TEN_FLOAT[exponent]</b>
 &nbsp;        } else {
-<b class="nc">&nbsp;            10.0f.pow(exponent.toFloat())</b>
+<b class="fc">&nbsp;            10.0f.pow(exponent.toFloat())</b>
 &nbsp;        }
 &nbsp;    } else {
 <b class="fc">&nbsp;        val absExp = -exponent</b>
-<b class="pc">&nbsp;        if (absExp &lt; C.INVERSE_POWERS_OF_TEN_FLOAT.size) {</b>
+<b class="fc">&nbsp;        if (absExp &lt; C.INVERSE_POWERS_OF_TEN_FLOAT.size) {</b>
 <b class="fc">&nbsp;            C.INVERSE_POWERS_OF_TEN_FLOAT[absExp]</b>
 &nbsp;        } else {
-<b class="nc">&nbsp;            10.0f.pow(exponent.toFloat())</b>
+<b class="fc">&nbsp;            10.0f.pow(exponent.toFloat())</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;}
@@ -204,10 +204,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    } else {
 <b class="fc">&nbsp;        val absExp = -exponent</b>
-<b class="pc">&nbsp;        if (absExp &lt; C.INVERSE_POWERS_OF_TEN.size) {</b>
+<b class="fc">&nbsp;        if (absExp &lt; C.INVERSE_POWERS_OF_TEN.size) {</b>
 <b class="fc">&nbsp;            C.INVERSE_POWERS_OF_TEN[absExp]</b>
 &nbsp;        } else {
-<b class="nc">&nbsp;            10.0.pow(exponent.toDouble())</b>
+<b class="fc">&nbsp;            10.0.pow(exponent.toDouble())</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;}
@@ -427,7 +427,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    39.1%
+    97.8%
   </span>
   <span class="absValue">
-    (18/46)
+    (45/46)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73%
+    100%
   </span>
   <span class="absValue">
-    (27/37)
+    (37/37)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.6%
+    99.6%
   </span>
   <span class="absValue">
-    (171/273)
+    (272/273)
   </span>
 </td>
 </tr>
@@ -123,25 +123,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    try {
 <b class="fc">&nbsp;        for (charIndex in 0 until length) {</b>
 <b class="fc">&nbsp;            val byteCode = decodedString[charIndex].code</b>
-<b class="pc">&nbsp;            if (byteCode &lt;= C.SPACE_INT) continue</b>
+<b class="fc">&nbsp;            if (byteCode &lt;= C.SPACE_INT) continue</b>
 <b class="fc">&nbsp;            chunk[chunkIndex++] = byteCode</b>
 <b class="fc">&nbsp;            if (chunkIndex == 4) {</b>
 &nbsp;                // Chars outside the LUT&#39;s range (any non-Latin-1 code unit) are never valid
 &nbsp;                // base64 alphabet members — bounds-check rather than indexing lut[] directly,
 &nbsp;                // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
 &nbsp;                // documented parse error.
-<b class="pc">&nbsp;                val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
-<b class="pc">&nbsp;                val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
-<b class="pc">&nbsp;                val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
-<b class="pc">&nbsp;                val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
+<b class="fc">&nbsp;                val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
+<b class="fc">&nbsp;                val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
+<b class="fc">&nbsp;                val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
+<b class="fc">&nbsp;                val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
 &nbsp;
-<b class="pc">&nbsp;                if (value0 &lt; 0 || value1 &lt; 0 || value2 == -1 || value3 == -1) {</b>
+<b class="fc">&nbsp;                if (value0 &lt; 0 || value1 &lt; 0 || value2 == -1 || value3 == -1) {</b>
 <b class="fc">&nbsp;                    throwError(C.ERR_INVALID_BASE64)</b>
 &nbsp;                }
 <b class="fc">&nbsp;                outputBuffer[outputPosition++] = ((value0 shl 2) or (value1 ushr 4)).toByte()</b>
 <b class="fc">&nbsp;                if (value2 != -2) {</b>
 <b class="fc">&nbsp;                    outputBuffer[outputPosition++] = ((value1 shl 4) or (value2 ushr 2)).toByte()</b>
-<b class="pc">&nbsp;                    if (value3 != -2) {</b>
+<b class="fc">&nbsp;                    if (value3 != -2) {</b>
 <b class="fc">&nbsp;                        outputBuffer[outputPosition++] = ((value2 shl 6) or value3).toByte()</b>
 &nbsp;                    }
 &nbsp;                }
@@ -149,19 +149,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-<b class="pc">&nbsp;        if (chunkIndex &gt; 0) {</b>
-<b class="nc">&nbsp;            while (chunkIndex &lt; 4) {</b>
-<b class="nc">&nbsp;                chunk[chunkIndex++] = C.EQUALS_INT</b>
+<b class="fc">&nbsp;        if (chunkIndex &gt; 0) {</b>
+<b class="fc">&nbsp;            while (chunkIndex &lt; 4) {</b>
+<b class="fc">&nbsp;                chunk[chunkIndex++] = C.EQUALS_INT</b>
 &nbsp;            }
-<b class="nc">&nbsp;            val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
-<b class="nc">&nbsp;            val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
-<b class="nc">&nbsp;            val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
-<b class="nc">&nbsp;            val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
+<b class="fc">&nbsp;            val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
+<b class="fc">&nbsp;            val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
+<b class="fc">&nbsp;            val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
+<b class="pc">&nbsp;            val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
 &nbsp;
-<b class="nc">&nbsp;            if (value0 &gt;= 0 &amp;&amp; value1 &gt;= 0) {</b>
-<b class="nc">&nbsp;                outputBuffer[outputPosition++] = ((value0 shl 2) or (value1 ushr 4)).toByte()</b>
-<b class="nc">&nbsp;                if (value2 != -2 &amp;&amp; value2 &gt;= 0) {</b>
-<b class="nc">&nbsp;                    outputBuffer[outputPosition++] = ((value1 shl 4) or (value2 ushr 2)).toByte()</b>
+<b class="fc">&nbsp;            if (value0 &gt;= 0 &amp;&amp; value1 &gt;= 0) {</b>
+<b class="fc">&nbsp;                outputBuffer[outputPosition++] = ((value0 shl 2) or (value1 ushr 4)).toByte()</b>
+<b class="fc">&nbsp;                if (value2 != -2 &amp;&amp; value2 &gt;= 0) {</b>
+<b class="fc">&nbsp;                    outputBuffer[outputPosition++] = ((value1 shl 4) or (value2 ushr 2)).toByte()</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
@@ -194,7 +194,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

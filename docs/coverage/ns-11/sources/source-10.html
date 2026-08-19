@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86%
+    94.9%
   </span>
   <span class="absValue">
-    (117/136)
+    (129/136)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.7%
+    97.3%
   </span>
   <span class="absValue">
-    (178/188)
+    (183/188)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    98.8%
+    99.4%
   </span>
   <span class="absValue">
-    (806/816)
+    (811/816)
   </span>
 </td>
 </tr>
@@ -144,7 +144,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)</b>
-<b class="pc">&nbsp;        if (byte1 &gt; SPACE_INT || (whitespaceMask shr byte1) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
+<b class="fc">&nbsp;        if (byte1 &gt; SPACE_INT || (whitespaceMask shr byte1) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
 <b class="fc">&nbsp;            return currentPosition + INDEX_OFFSET_1</b>
 &nbsp;        }
 &nbsp;
@@ -162,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 <b class="fc">&nbsp;    while (currentPosition &lt; limit) {</b>
 <b class="fc">&nbsp;        val singleByte = getByte(currentPosition)</b>
-<b class="pc">&nbsp;        if (singleByte &gt; SPACE_INT || (whitespaceMask shr singleByte) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
+<b class="fc">&nbsp;        if (singleByte &gt; SPACE_INT || (whitespaceMask shr singleByte) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
 <b class="fc">&nbsp;            return currentPosition</b>
 &nbsp;        }
 <b class="fc">&nbsp;        currentPosition++</b>
@@ -180,7 +180,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;    while (currentPosition + INDEX_OFFSET_3 &lt; limit) {</b>
 <b class="fc">&nbsp;        val byte0 = getByte(currentPosition)</b>
-<b class="pc">&nbsp;        if (byte0 &lt; ASCII_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;        if (byte0 &lt; ASCII_LIMIT &amp;&amp;</b>
 <b class="fc">&nbsp;            ((escapeMasks[byte0 shr BITMASK_SHIFT] shr</b>
 <b class="fc">&nbsp;                    (byte0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
 &nbsp;        ) {
@@ -190,27 +190,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            return MATCH_END</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)</b>
-<b class="pc">&nbsp;        if (byte1 &lt; ASCII_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;        if (byte1 &lt; ASCII_LIMIT &amp;&amp;</b>
 <b class="fc">&nbsp;            ((escapeMasks[byte1 shr BITMASK_SHIFT] shr</b>
 <b class="fc">&nbsp;                    (byte1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
 &nbsp;        ) {
-<b class="pc">&nbsp;            if (byte1 == QUOTE_INT) {</b>
+<b class="fc">&nbsp;            if (byte1 == QUOTE_INT) {</b>
 <b class="fc">&nbsp;                return currentPosition + INDEX_OFFSET_1</b>
 &nbsp;            }
-<b class="nc">&nbsp;            return MATCH_END</b>
+<b class="fc">&nbsp;            return MATCH_END</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)</b>
-<b class="pc">&nbsp;        if (byte2 &lt; ASCII_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;        if (byte2 &lt; ASCII_LIMIT &amp;&amp;</b>
 <b class="fc">&nbsp;            ((escapeMasks[byte2 shr BITMASK_SHIFT] shr</b>
 <b class="fc">&nbsp;                    (byte2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
 &nbsp;        ) {
-<b class="pc">&nbsp;            if (byte2 == QUOTE_INT) {</b>
+<b class="fc">&nbsp;            if (byte2 == QUOTE_INT) {</b>
 <b class="fc">&nbsp;                return currentPosition + INDEX_OFFSET_2</b>
 &nbsp;            }
-<b class="nc">&nbsp;            return MATCH_END</b>
+<b class="fc">&nbsp;            return MATCH_END</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)</b>
-<b class="pc">&nbsp;        if (byte3 &lt; ASCII_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;        if (byte3 &lt; ASCII_LIMIT &amp;&amp;</b>
 <b class="fc">&nbsp;            ((escapeMasks[byte3 shr BITMASK_SHIFT] shr</b>
 <b class="fc">&nbsp;                    (byte3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
 &nbsp;        ) {
@@ -222,20 +222,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        currentPosition += UNROLL_STEP</b>
 &nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;    while (currentPosition &lt; limit) {</b>
+<b class="fc">&nbsp;    while (currentPosition &lt; limit) {</b>
 <b class="fc">&nbsp;        val singleByte = getByte(currentPosition)</b>
-<b class="pc">&nbsp;        if (singleByte &lt; ASCII_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;        if (singleByte &lt; ASCII_LIMIT &amp;&amp;</b>
 <b class="fc">&nbsp;            ((escapeMasks[singleByte shr BITMASK_SHIFT] shr</b>
 <b class="fc">&nbsp;                    (singleByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
 &nbsp;        ) {
-<b class="pc">&nbsp;            if (singleByte == QUOTE_INT) {</b>
+<b class="fc">&nbsp;            if (singleByte == QUOTE_INT) {</b>
 <b class="fc">&nbsp;                return currentPosition</b>
 &nbsp;            }
-<b class="nc">&nbsp;            return MATCH_END</b>
+<b class="fc">&nbsp;            return MATCH_END</b>
 &nbsp;        }
 <b class="fc">&nbsp;        currentPosition++</b>
 &nbsp;    }
-<b class="nc">&nbsp;    return MATCH_END</b>
+<b class="fc">&nbsp;    return MATCH_END</b>
 &nbsp;}
 &nbsp;
 &nbsp;internal inline fun scanStringImpl(
@@ -332,10 +332,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            ((escapeMasks[singleByte shr BITMASK_SHIFT] shr</b>
 <b class="fc">&nbsp;                    (singleByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
 &nbsp;        ) {
-<b class="pc">&nbsp;            if (singleByte == QUOTE_INT) {</b>
+<b class="fc">&nbsp;            if (singleByte == QUOTE_INT) {</b>
 <b class="fc">&nbsp;                return packScanResult(currentPosition - start, accumulatedHash, isPureAscii)</b>
 &nbsp;            }
-<b class="nc">&nbsp;            return matchEndLong</b>
+<b class="fc">&nbsp;            return matchEndLong</b>
 <b class="fc">&nbsp;        } else if (singleByte &gt;= asciiLimit) {</b>
 <b class="fc">&nbsp;            isPureAscii = false</b>
 &nbsp;        }
@@ -478,7 +478,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

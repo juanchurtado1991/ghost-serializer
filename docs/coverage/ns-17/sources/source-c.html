@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.2%
+    100%
   </span>
   <span class="absValue">
-    (41/44)
+    (44/44)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96%
+    100%
   </span>
   <span class="absValue">
-    (72/75)
+    (75/75)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.2%
+    100%
   </span>
   <span class="absValue">
-    (302/314)
+    (314/314)
   </span>
 </td>
 </tr>
@@ -155,16 +155,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        var seconds = 0L</b>
 <b class="fc">&nbsp;        var isNegative = false</b>
 <b class="fc">&nbsp;        var start = 0</b>
-<b class="pc">&nbsp;        if (durationString[0] == C.CHAR_HYPHEN) {</b>
-<b class="nc">&nbsp;            isNegative = true</b>
-<b class="nc">&nbsp;            start = 1</b>
+<b class="fc">&nbsp;        if (durationString[0] == C.CHAR_HYPHEN) {</b>
+<b class="fc">&nbsp;            isNegative = true</b>
+<b class="fc">&nbsp;            start = 1</b>
 &nbsp;        }
 <b class="fc">&nbsp;        var index = start</b>
 <b class="fc">&nbsp;        while (index &lt; limitIndex) {</b>
 <b class="fc">&nbsp;            seconds = seconds * C.BASE_TEN + (durationString[index].code - C.ZERO_INT)</b>
 <b class="fc">&nbsp;            index++</b>
 &nbsp;        }
-<b class="pc">&nbsp;        return ProtoDuration(if (isNegative) -seconds else seconds, 0)</b>
+<b class="fc">&nbsp;        return ProtoDuration(if (isNegative) -seconds else seconds, 0)</b>
 &nbsp;    } else {
 <b class="fc">&nbsp;        var seconds = 0L</b>
 <b class="fc">&nbsp;        var isNegative = false</b>
@@ -242,8 +242,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    // (seconds == 0), the sign lives entirely in nanos and must be written explicitly, or it&#39;s
 &nbsp;    // lost: ProtoDuration(0, -1) would otherwise format as &quot;0.000000001s&quot; instead of
 &nbsp;    // &quot;-0.000000001s&quot;.
-<b class="pc">&nbsp;    if (seconds == 0L &amp;&amp; duration.nanos &lt; 0) {</b>
-<b class="nc">&nbsp;        bytes[pos++] = C.CHAR_HYPHEN.code.toByte()</b>
+<b class="fc">&nbsp;    if (seconds == 0L &amp;&amp; duration.nanos &lt; 0) {</b>
+<b class="fc">&nbsp;        bytes[pos++] = C.CHAR_HYPHEN.code.toByte()</b>
 &nbsp;    }
 <b class="fc">&nbsp;    pos = writeLongToBytes(bytes, pos, seconds)</b>
 <b class="fc">&nbsp;    if (nanoseconds != 0) {</b>
@@ -276,7 +276,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

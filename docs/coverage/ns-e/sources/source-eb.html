@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    40%
+    73.3%
   </span>
   <span class="absValue">
-    (12/30)
+    (22/30)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.8%
+    86.9%
   </span>
   <span class="absValue">
-    (76/99)
+    (86/99)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67%
+    82.9%
   </span>
   <span class="absValue">
-    (262/391)
+    (324/391)
   </span>
 </td>
 </tr>
@@ -156,11 +156,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private const val MASK_REQUIRED_0: Long = 3L
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
-<b class="nc">&nbsp;      if ((mask0 and MASK_KEY) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;key&#39; missing in JSON&quot;)</b>
-<b class="nc">&nbsp;      } else if ((mask0 and MASK_VALUE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;value&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="fc">&nbsp;      if ((mask0 and MASK_KEY) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;key&#39; missing in JSON&quot;)</b>
+<b class="pc">&nbsp;      } else if ((mask0 and MASK_VALUE) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;value&#39; missing in JSON&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -186,7 +186,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;        -1 -&gt; break
 &nbsp;        -2 -&gt; {
-<b class="nc">&nbsp;          reader.skipValue()</b>
+<b class="fc">&nbsp;          reader.skipValue()</b>
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
@@ -242,11 +242,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
-<b class="nc">&nbsp;      if ((mask0 and MASK_KEY) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;key&#39; missing in JSON&quot;)</b>
-<b class="nc">&nbsp;      } else if ((mask0 and MASK_VALUE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;value&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="fc">&nbsp;      if ((mask0 and MASK_KEY) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;key&#39; missing in JSON&quot;)</b>
+<b class="pc">&nbsp;      } else if ((mask0 and MASK_VALUE) == 0L) {</b>
+<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;value&#39; missing in JSON&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -272,7 +272,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;        -1 -&gt; break
 &nbsp;        -2 -&gt; {
-<b class="nc">&nbsp;          reader.skipValue()</b>
+<b class="fc">&nbsp;          reader.skipValue()</b>
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
@@ -352,7 +352,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>

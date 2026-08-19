@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.1%
+    97.1%
   </span>
   <span class="absValue">
-    (32/34)
+    (33/34)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    82.1%
+    90.3%
   </span>
   <span class="absValue">
-    (110/134)
+    (121/134)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.2%
+    94.4%
   </span>
   <span class="absValue">
-    (323/354)
+    (334/354)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.9%
+    89.5%
   </span>
   <span class="absValue">
-    (1511/1801)
+    (1612/1801)
   </span>
 </td>
 </tr>
@@ -147,7 +147,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
 <b class="fc">&nbsp;        getDepth = { depth },</b>
 <b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
 &nbsp;}
 &nbsp;
@@ -170,7 +170,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
 <b class="fc">&nbsp;        getDepth = { depth },</b>
 <b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
 &nbsp;}
 &nbsp;
@@ -184,7 +184,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
 <b class="nc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
 <b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
 &nbsp;
 &nbsp;fun GhostJsonStringReader.nextKey(): String? {
@@ -272,7 +272,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;fun GhostJsonStringReader.consumeNull() {
 <b class="fc">&nbsp;    val cursor = position</b>
 <b class="fc">&nbsp;    val chars = rawChars</b>
-<b class="pc">&nbsp;    if (cursor + 4 &gt; limit ||</b>
+<b class="fc">&nbsp;    if (cursor + 4 &gt; limit ||</b>
 <b class="pc">&nbsp;        chars[cursor].code != C.NULL_CHAR_INT ||</b>
 <b class="pc">&nbsp;        chars[cursor + 1].code != C.U_BYTE_INT ||</b>
 <b class="pc">&nbsp;        chars[cursor + 2].code != C.L_BYTE_INT ||</b>
@@ -383,10 +383,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            ((escapeMasks[singleByte shr localBitmaskShift] shr</b>
 <b class="fc">&nbsp;                    (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)</b>
 &nbsp;        ) {
-<b class="pc">&nbsp;            if (singleByte == localQuoteInt) {</b>
+<b class="fc">&nbsp;            if (singleByte == localQuoteInt) {</b>
 <b class="fc">&nbsp;                return currentPosition</b>
 &nbsp;            }
-<b class="nc">&nbsp;            return localMatchEnd</b>
+<b class="fc">&nbsp;            return localMatchEnd</b>
 &nbsp;        }
 <b class="fc">&nbsp;        currentPosition++</b>
 &nbsp;    }
@@ -446,9 +446,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            var matchedOffset = 0</b>
 <b class="fc">&nbsp;            while (matchedOffset + 3 &lt; candidateLength &amp;&amp;</b>
 <b class="fc">&nbsp;                chars[start + matchedOffset] == candidate[matchedOffset] &amp;&amp;</b>
-<b class="pc">&nbsp;                chars[start + matchedOffset + 1] == candidate[matchedOffset + 1] &amp;&amp;</b>
+<b class="fc">&nbsp;                chars[start + matchedOffset + 1] == candidate[matchedOffset + 1] &amp;&amp;</b>
 <b class="fc">&nbsp;                chars[start + matchedOffset + 2] == candidate[matchedOffset + 2] &amp;&amp;</b>
-<b class="pc">&nbsp;                chars[start + matchedOffset + 3] == candidate[matchedOffset + 3]</b>
+<b class="fc">&nbsp;                chars[start + matchedOffset + 3] == candidate[matchedOffset + 3]</b>
 &nbsp;            ) {
 <b class="fc">&nbsp;                matchedOffset += 4</b>
 &nbsp;            }
@@ -476,8 +476,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;    val end = findClosingQuote(start, charLimit)</b>
 &nbsp;
-<b class="pc">&nbsp;    if (end == -1) {</b>
-<b class="nc">&nbsp;        throwUnterminatedStringError()</b>
+<b class="fc">&nbsp;    if (end == -1) {</b>
+<b class="fc">&nbsp;        throwUnterminatedStringError()</b>
 &nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    val length = end - start</b>
@@ -527,7 +527,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        getByte = { getByte(it) },</b>
 <b class="fc">&nbsp;        setPosition = { position = it },</b>
 <b class="fc">&nbsp;        setNextTokenByte = { nextTokenByte = it },</b>
-<b class="nc">&nbsp;        consumeKeySeparator = { consumeKeySeparator() },</b>
+<b class="fc">&nbsp;        consumeKeySeparator = { consumeKeySeparator() },</b>
 <b class="fc">&nbsp;        decodeUnknownKey = { s, e -&gt; rawData.substring(s, e) },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
@@ -537,7 +537,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;private fun GhostJsonStringReader.throwUnterminatedStringError() {
-<b class="nc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
+<b class="fc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
 &nbsp;}
 &nbsp;
 &nbsp;private fun GhostJsonStringReader.computeKeyHash(
@@ -557,14 +557,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val chars = rawChars</b>
 <b class="fc">&nbsp;        var index = 0</b>
 <b class="fc">&nbsp;        while (index + 3 &lt; length) {</b>
-<b class="pc">&nbsp;            if (chars[start + index] != expected[index]) return false</b>
+<b class="fc">&nbsp;            if (chars[start + index] != expected[index]) return false</b>
 <b class="fc">&nbsp;            if (chars[start + index + 1] != expected[index + 1]) return false</b>
-<b class="pc">&nbsp;            if (chars[start + index + 2] != expected[index + 2]) return false</b>
-<b class="pc">&nbsp;            if (chars[start + index + 3] != expected[index + 3]) return false</b>
+<b class="fc">&nbsp;            if (chars[start + index + 2] != expected[index + 2]) return false</b>
+<b class="fc">&nbsp;            if (chars[start + index + 3] != expected[index + 3]) return false</b>
 <b class="fc">&nbsp;            index += 4</b>
 &nbsp;        }
 <b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="pc">&nbsp;            if (chars[start + index] != expected[index]) return false</b>
+<b class="fc">&nbsp;            if (chars[start + index] != expected[index]) return false</b>
 <b class="fc">&nbsp;            index++</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val endPos = start + length</b>
@@ -574,10 +574,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        if (consumeSeparator) {</b>
 <b class="pc">&nbsp;            if (newPos &lt; limit) {</b>
 <b class="fc">&nbsp;                val colonToken = chars[newPos].code</b>
-<b class="pc">&nbsp;                if (colonToken == C.COLON_INT) {</b>
+<b class="fc">&nbsp;                if (colonToken == C.COLON_INT) {</b>
 <b class="fc">&nbsp;                    position = newPos + C.SINGLE_CHAR_SIZE</b>
 &nbsp;                } else {
-<b class="nc">&nbsp;                    consumeKeySeparator()</b>
+<b class="fc">&nbsp;                    consumeKeySeparator()</b>
 &nbsp;                }
 &nbsp;            } else {
 <b class="nc">&nbsp;                consumeKeySeparator()</b>
@@ -611,7 +611,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        skipValue = { skipValue() },</b>
 <b class="fc">&nbsp;        skipAndValidateLiteral = { skipAndValidateLiteral(it) },</b>
 <b class="fc">&nbsp;        skipNumber = { skipNumber() },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
 &nbsp;}
 &nbsp;
@@ -626,7 +626,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        initialCapacity = initialCollectionCapacity,</b>
 <b class="fc">&nbsp;        maxSize = maxCollectionSize,</b>
 <b class="fc">&nbsp;        itemParser = { itemParser() },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
 &nbsp;
 &nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readSet(crossinline itemParser: () -&gt; T): Set&lt;T&gt; =
@@ -669,8 +669,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;            break
 &nbsp;        }
-<b class="pc">&nbsp;        if (next != C.COMMA_INT) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ} but found $next&quot;)</b>
+<b class="fc">&nbsp;        if (next != C.COMMA_INT) {</b>
+<b class="fc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ} but found $next&quot;)</b>
 &nbsp;        }
 <b class="pc">&nbsp;        if (depth &lt; C.MAX_BITMASK_DEPTH) {</b>
 <b class="fc">&nbsp;            val bit = C.BITMASK_UNIT shl depth</b>
@@ -706,7 +706,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-10 03:44</div>
+    <div style="float:right;">generated on 2026-08-19 17:16</div>
 </div>
 </body>
 </html>
