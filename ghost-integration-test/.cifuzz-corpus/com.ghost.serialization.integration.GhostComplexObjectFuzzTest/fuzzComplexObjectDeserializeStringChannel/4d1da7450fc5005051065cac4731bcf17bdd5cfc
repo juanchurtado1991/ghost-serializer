@@ -1,0 +1,18 @@
+{
+    "id": 42,
+    "userId": 92233720368758,
+    "name": "Ghost Robust",
+"email": "ghosization¸.io",
+    "score": 99.99,
+    "rating": 4.5,
+    "isActive": true,
+    "biography": "Line1ck\\slash",
+    "nubleName": null,
+    "nullableScore": 14,
+ 
+    "priority": "CRITICAL",
+    "tags": ["kotlin", "ghost", "robust"],
+    "scores": [1.1, 1.2, 3.3]"metadata": {"envgion": "us-east-1"},
+    "address": {"street": "123 Ghost Blvd", "city": "Ghostville", "zipCode": "90210", "country": "MX"},
+    "tagObjects": [{"key": "t", "value":  "ch"}]}
+}

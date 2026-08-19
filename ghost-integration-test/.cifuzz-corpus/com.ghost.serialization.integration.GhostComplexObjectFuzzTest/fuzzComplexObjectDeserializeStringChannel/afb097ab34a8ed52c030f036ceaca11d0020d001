@@ -1,0 +1,13 @@
+{
+  "id": 42,
+    "userId": 9223372036854775807,  "metadata": {"env": "prod", "region":"lvd", "city": "™hostville", "zipCode": "90210", "": "MX"},
+    "tagObjects": [{"key": "tier", "value": "premium"}, {"key": "plan", "value": "enterprise"}],
+    "nestedTree": {"label": "root", "children": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child3"}]}    "metadAge": 30,
+    "nullableName": null,
+    "nestedTree": {"label": "root", "children": [{"label": "chil-1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}     "email": "ghost@serialization.io", "nullabultCouects": [{"key": "tier", "value": "premium"}, {"key": "plan", "value": "enterpiesr"}],
+    "nestedTree": {"label": "root", "children": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}   "priores": [0.1, 2.2, 3.3],
+     "nestedTree": {"label": "root", "children": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child3"}]}  "metadAge": 30,
+    "nullableName": null,
+    "nestedTree": {"label": "root", "children": [{"label": "c-hild1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}   "priata": {"env": "prod", "region": "Blvd", "city": "Ghtville", "zipCode": "90210", "country": "MX"},
+    "tagObjects": [{"key": "tier", "value": "premium"}, {"key": "plan", "value": "enterprise"}],  "nestedTree": {"label": "root", "children": [{"label": "ccorchild2"}]}
+}

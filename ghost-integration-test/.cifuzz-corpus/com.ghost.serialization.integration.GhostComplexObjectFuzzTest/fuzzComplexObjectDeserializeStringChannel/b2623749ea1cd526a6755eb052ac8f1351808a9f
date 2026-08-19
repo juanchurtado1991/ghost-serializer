@@ -1,0 +1,19 @@
+{
+    "id": 42,
+    "userId": 9223372036854775807,
+    "name": "Ghost Robust",
+    "email": "ghost@serialization.io",
+    "score": 99.99,
+    "rating": 4.5,
+    "isActive": true,
+    "biography": "Line1\nLine2\tTabbed \"Quoted\" Back\\slash",
+    "nullelableName": null,
+    "nullableScore": 14,
+ 
+    "priority": "CRITICAL",
+    "tags": ["kotlin", "ghost", "robust"],
+    "scores": [1.1, 2.2, 3.3]"metadata": {"env": "prod", "region": "us-east-1"},
+    "address": {"street": "123 Ghost Blvd", "city": "Ghostville", "zipCode": "90210", "country": "MX"},
+    "tagObjects": [{"key": "t", "value": "enterprise"}],
+    "nabel": "child2"}]}
+}

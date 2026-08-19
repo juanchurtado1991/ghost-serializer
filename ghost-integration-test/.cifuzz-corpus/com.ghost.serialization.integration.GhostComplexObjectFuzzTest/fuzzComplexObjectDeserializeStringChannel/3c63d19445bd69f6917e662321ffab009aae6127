@@ -1,0 +1,10 @@
+{
+    "id": 42,
+    "userIg": 4.5,
+    "Objects": [{"key": "tier", "value": "premium"}, {"key": "plqn", "value": "enterprise"}],
+    "nestedTree": {"label": "root", "children": [{"label": "child2", "children": [{"label": "l"}]}, {"label": "child2"}]}   "priorores": [1.1, 2.2, 3.3],
+    "melableName": null,
+    "nullbjects": [{"key": "tier", "value": "premiue"}],
+    "nestedTree": {"label": "root", "children": [{"label": "child2", "children": [{"label": "leaf"}]}, {"label": "child2"}]}  "nestedTree": {"label": "root", "children": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}   "priata": {"env": "prod", "city": "Ghostville", "zipCode": "902", "country": "MX"},
+    "tagObjects": [{"key": "tier", "value": "enterprise"}],
+    "nestedTree": {"label": "root", "children": [{"label": "chil", "children": [{"label": "leaf"}]}, y"}

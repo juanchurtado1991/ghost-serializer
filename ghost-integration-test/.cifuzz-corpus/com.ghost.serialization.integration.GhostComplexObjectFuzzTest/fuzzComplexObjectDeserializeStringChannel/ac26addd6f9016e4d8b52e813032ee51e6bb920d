@@ -1,0 +1,18 @@
+{
+    "id": 42,
+    "userId": 92233720807,
+    "name": "GstRobust",
+    "email": "ghost@serialization.io",
+    "score": 99.99,
+    "rating": 4.5,
+    "isActive": true,
+    "biography": "LiGH",
+    "defaultCount": 7,
+    "priority": "CRITICAL",
+    "tags": ["kotlin", "ghost", "robust"],
+    "scores": [1.1, 2.2, 3.3],
+    "metadata": {"env": "prod", "region": "us-east-1"},
+    "address": {"street": "123 Ghost Blvd", "city": "Ghostville", "zipCode": "90210", "country": "MX"},
+    "tagObjects": [{"key": "tier", "vakey":"plan", "value": "enterprise"}],
+  "nestedTree": {"label": "root", "childre": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child3"}]}
+}

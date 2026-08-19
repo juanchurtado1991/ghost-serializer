@@ -4,6 +4,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.ComplexObjectSerializer
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 
 /**
@@ -28,6 +29,14 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
  * [GhostJsonException] (e.g. a `null` on a non-nullable field surfaces as the Kotlin constructor's
  * own null-check), so this test allows any [Exception] — anything Jazzer finds beyond that
  * (index-out-of-bounds, arithmetic, stack overflow, hangs) is a real bug.
+ *
+ * `deserialize(GhostJsonStringReader)` is a third, independent generated overload — the
+ * `textChannel = true` default channel (KSP generates it whenever a `@GhostSerialization` model
+ * doesn't opt out, which [ComplexObject] doesn't) — and had no fuzz coverage of its own until
+ * `fuzzComplexObjectDeserializeStringChannel` below: it walks a `CharArray`, not a `ByteArray`,
+ * so its bounds/index bugs are a genuinely different class from the other two overloads' (see
+ * `GhostJsonStringChannelFuzzTest`'s `ArrayIndexOutOfBoundsException` finding in
+ * `ghost-serialization`, which was in this exact channel's generic reader).
  *
  * Runs in regression mode (fixed seed corpus, JUnit-speed) as part of `ciTestJvm`. Run actual
  * fuzzing locally with `JAZZER_FUZZ=1 ./gradlew :ghost-integration-test:test --tests
@@ -55,6 +64,16 @@ class GhostComplexObjectFuzzTest {
         val text = data.consumeRemainingAsString()
         try {
             ComplexObjectSerializer.deserialize(GhostJsonReader(text.encodeToByteArray()))
+        } catch (_: Exception) {
+            // Expected for malformed/adversarial input — see class KDoc.
+        }
+    }
+
+    @FuzzTest
+    fun fuzzComplexObjectDeserializeStringChannel(data: FuzzedDataProvider) {
+        val text = data.consumeRemainingAsString()
+        try {
+            ComplexObjectSerializer.deserialize(GhostJsonStringReader(text))
         } catch (_: Exception) {
             // Expected for malformed/adversarial input — see class KDoc.
         }

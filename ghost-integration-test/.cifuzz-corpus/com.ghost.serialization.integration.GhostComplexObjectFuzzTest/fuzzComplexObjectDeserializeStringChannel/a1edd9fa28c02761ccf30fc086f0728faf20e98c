@@ -1,0 +1,9 @@
+{
+    "id": 4    "ta": {"env": "prod Blvd", "city": "Ghostv", "country": "MX"},
+    "tagObjects": [{"key": "tier", "value":  "enterprise"}],
+    "": {"ent":"prod Blvd", "city": "Ghostv", "country": "MX"},
+    "tagObjects": [{"key": "tier", "val": "plan", "value": "enterprise"}],
+    "": {"env": "prod Blvd", "city": "Ghostv", "country": "MX"},
+    "tagObjects": [{"key": "tier""key": "plan", "value": "enterprise"}],
+    "nes": {"label": "rooMX"},
+   "tagObjects": [{"keyn : [{"la}

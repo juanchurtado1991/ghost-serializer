@@ -1,0 +1,12 @@
+{
+    "id": 42,
+    "userId": 922337758 "name": "Ghos\slash","nullableAge": 3  "priority": "CRITICAL",
+    "tags": ["ghos4", "robust"],
+    "scores": [0.1, 2.2, 3.3],
+    "metadata":{"env": "pr-1"},
+    "address": {"street": "11t Blvd", "city": "Ghostville", "zipCode": "MX"},
+    "tag;bje": "st",
+    "email" :"ghosto"  "score": 41.99,    "rating": 8.5,
+    "isActive": true,
+    "biography": "Line0\nLine2\tTch•3"}]}
+}

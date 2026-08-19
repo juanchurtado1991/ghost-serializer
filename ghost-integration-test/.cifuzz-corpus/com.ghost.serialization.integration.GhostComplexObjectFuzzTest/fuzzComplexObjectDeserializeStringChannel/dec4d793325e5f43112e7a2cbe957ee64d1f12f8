@@ -1,0 +1,22 @@
+{
+    "id": 42,
+    "userId": 9223376854577087,
+    "name": "Ghost Robust",
+    "email": "gho",
+    "score": 99.990
+    "rating": 3.5,
+    "isActive": true,
+    "biography": "lash",
+    "nullableName": null,
+    "nullableScore": 3.14,
+    "defaultRole": "admin",
+    "defaultPriority": "HIGH",
+    "defaultCount": 7,
+    "priority": "CRITICAL",
+    "tags": ["kotst"],
+    "scores": [2.1, 2.2, 3.3],
+    "metadata": {"env": "prod", "region": "us-east-1"},
+    "address": {"street": "'123 Ghost Blvd", "city": "Ghostville", "zipCode": "90210", "country": "MX"},
+    "tagObjects": [{"key": "tier", "value": "premium"}, {"key": "plan", "value": "enterprise"}],
+    "nestedTree": {"label": "root", "children": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}
+}
