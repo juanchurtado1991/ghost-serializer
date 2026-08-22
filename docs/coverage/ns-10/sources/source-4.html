@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.9%
+    76%
   </span>
   <span class="absValue">
-    (17/23)
+    (19/25)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.9%
+    75%
   </span>
   <span class="absValue">
-    (102/138)
+    (108/144)
   </span>
 </td>
 </tr>
@@ -129,6 +129,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        if (length == C.SINGLE_CHAR_JSON_LENGTH &amp;&amp; only7Bit) {</b>
 <b class="fc">&nbsp;            position = end + 1</b>
 <b class="fc">&nbsp;            nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;            return (localData[start].toInt() and C.BYTE_MASK).toChar()</b>
 &nbsp;        }
 <b class="nc">&nbsp;        if (length == 0) {</b>
@@ -142,6 +143,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;    if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {</b>
 <b class="nc">&nbsp;        throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)</b>
 &nbsp;    }
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return decoded[0]</b>
 &nbsp;}
 &nbsp;
@@ -172,7 +174,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.9%
+    71.5%
   </span>
   <span class="absValue">
-    (112/158)
+    (113/158)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96%
+    97%
   </span>
   <span class="absValue">
-    (95/99)
+    (96/99)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.9%
+    95.4%
   </span>
   <span class="absValue">
-    (589/627)
+    (598/627)
   </span>
 </td>
 </tr>
@@ -290,8 +290,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    // anchorTable[aliasName] ?: error(...) would be wrong here: a Map lookup returns null both
 &nbsp;    // when the key is absent *and* when it&#39;s present with a null value (e.g. an anchor on an
 &nbsp;    // empty node, &quot;a: &amp;anchor\nb: *anchor&quot;), so the two cases must be told apart explicitly.
-<b class="pc">&nbsp;    if (!anchorTable.containsKey(aliasName)) {</b>
-<b class="nc">&nbsp;        yamlError(&quot;${C.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${C.ERR_ANCHOR_NOT_FOUND_SUFFIX}&quot;)</b>
+<b class="fc">&nbsp;    if (!anchorTable.containsKey(aliasName)) {</b>
+<b class="fc">&nbsp;        yamlError(&quot;${C.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${C.ERR_ANCHOR_NOT_FOUND_SUFFIX}&quot;)</b>
 &nbsp;    }
 <b class="fc">&nbsp;    return anchorTable[aliasName]</b>
 &nbsp;}
@@ -340,7 +340,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

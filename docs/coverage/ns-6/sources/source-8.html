@@ -76,7 +76,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     97.2%
   </span>
   <span class="absValue">
-    (1909/1963)
+    (1907/1961)
   </span>
 </td>
 </tr>
@@ -123,7 +123,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     97.2%
   </span>
   <span class="absValue">
-    (1909/1963)
+    (1907/1961)
   </span>
 </td>
 </tr>
@@ -203,7 +203,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            propertyIndices,</b>
 <b class="fc">&nbsp;            readerClass,</b>
 &nbsp;        )
+&nbsp;        // Validate before endObject so JSONPath still includes the current object frame
+&nbsp;        // (and throwMissingRequiredField can append the missing key).
 <b class="fc">&nbsp;        emitFieldValidationCall(body)</b>
+<b class="fc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
 <b class="fc">&nbsp;        emitReturnStatement(body, typeSpecBuilder)</b>
 &nbsp;
 <b class="fc">&nbsp;        emitValidationHelper(typeSpecBuilder)</b>
@@ -299,7 +302,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        body.endControlFlow()</b>
 <b class="fc">&nbsp;        body.endControlFlow()</b>
 <b class="fc">&nbsp;        body.endControlFlow()</b>
-<b class="fc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
+&nbsp;        // endObject is emitted after required-field validation (see emit)
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -470,8 +473,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;            funBody.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_STMT, constName)</b>
 <b class="fc">&nbsp;            funBody.addStatement(</b>
-<b class="fc">&nbsp;                C.TEMPLATE_THROW_S,</b>
-<b class="fc">&nbsp;                C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2</b>
+<b class="fc">&nbsp;                C.TEMPLATE_THROW_MISSING_REQUIRED,</b>
+<b class="fc">&nbsp;                prop.jsonName</b>
 &nbsp;            )
 <b class="fc">&nbsp;            funBody.endControlFlow()</b>
 &nbsp;        } else {
@@ -489,8 +492,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    funBody.nextControlFlow(C.TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW, constName)</b>
 &nbsp;                }
 <b class="fc">&nbsp;                funBody.addStatement(</b>
-<b class="fc">&nbsp;                    C.TEMPLATE_THROW_S,</b>
-<b class="fc">&nbsp;                    C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2</b>
+<b class="fc">&nbsp;                    C.TEMPLATE_THROW_MISSING_REQUIRED,</b>
+<b class="fc">&nbsp;                    prop.jsonName</b>
 &nbsp;                )
 <b class="fc">&nbsp;            }</b>
 <b class="fc">&nbsp;            funBody.endControlFlow()</b>
@@ -804,7 +807,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

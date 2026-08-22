@@ -60,10 +60,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    83.8%
   </span>
   <span class="absValue">
-    (30/36)
+    (31/37)
   </span>
 </td>
 <td class="coverageStat">
@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.2%
+    92.4%
   </span>
   <span class="absValue">
-    (225/244)
+    (232/251)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.1%
+    89.4%
   </span>
   <span class="absValue">
-    (1153/1294)
+    (1183/1324)
   </span>
 </td>
 </tr>
@@ -107,9 +107,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.exception.hintForJsonError
 &nbsp;import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
 &nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonPathTracker
 &nbsp;import com.ghost.serialization.parser.common.GhostSource
 &nbsp;import com.ghost.serialization.parser.common.contentEqualsStringImpl
 &nbsp;import com.ghost.serialization.parser.common.createByteArraySource
@@ -203,6 +205,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal var commaConsumedMask: Long = 0L</b>
 &nbsp;
+&nbsp;    /** JSONPath breadcrumbs — formatted only when [throwError] builds an exception. */
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()</b>
+&nbsp;
 &nbsp;    /** Convenience constructor for ByteArray —
 &nbsp;     * used by KSP-generated serializers and tests. */
 &nbsp;    constructor(
@@ -255,7 +261,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
+&nbsp;     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
 &nbsp;     */
 &nbsp;    fun throwError(message: String): Nothing {
 <b class="fc">&nbsp;        val errorPosition = position</b>
@@ -265,6 +271,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        } else {
 <b class="fc">&nbsp;            errorPosition</b>
 &nbsp;        }
+<b class="fc">&nbsp;        val errorPath = pathTracker.formatPath()</b>
 &nbsp;
 <b class="fc">&nbsp;        throw GhostJsonException(</b>
 <b class="fc">&nbsp;            baseMessage = &quot;$message${C.ERR_AT_POSITION_PREFIX}$errorPosition&quot;,</b>
@@ -282,8 +289,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    byteIndex++</b>
 &nbsp;                }
 <b class="fc">&nbsp;                intArrayOf(lineNumber, columnNumber)</b>
-&nbsp;            }
+&nbsp;            },
+<b class="fc">&nbsp;            path = errorPath,</b>
+<b class="fc">&nbsp;            hint = hintForJsonError(message),</b>
 &nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
+&nbsp;     * exception points at `$.….&lt;jsonName&gt;` (validation runs before [endObject]).
+&nbsp;     */
+&nbsp;    fun throwMissingRequiredField(jsonName: String): Nothing {
+<b class="fc">&nbsp;        pathTracker.pushKey(jsonName)</b>
+<b class="fc">&nbsp;        throwError(&quot;${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}&quot;)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -624,6 +642,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        this.maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
 <b class="fc">&nbsp;        this.lastScanContentWas7BitOnly = false</b>
 <b class="fc">&nbsp;        this.predictedFieldIndex = C.FIELD_PREDICTION_START</b>
+<b class="fc">&nbsp;        this.pathTracker.reset()</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -649,7 +668,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

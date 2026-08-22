@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    64.5%
+    64.7%
   </span>
   <span class="absValue">
-    (517/801)
+    (521/805)
   </span>
 </td>
 </tr>
@@ -193,15 +193,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_TAGS) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;tags&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;tags&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_CODE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;code&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;code&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_PORT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;port&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;port&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_LETTER) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;letter&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;letter&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RATIO) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;ratio&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;ratio&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -248,8 +248,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return ExtendedScalarsModel(</b>
 <b class="fc">&nbsp;      tags = tagsValue!!,</b>
 <b class="fc">&nbsp;      code = codeValue,</b>
@@ -262,15 +262,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_TAGS) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;tags&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;tags&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_CODE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;code&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;code&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_PORT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;port&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;port&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_LETTER) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;letter&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;letter&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RATIO) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;ratio&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;ratio&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -317,8 +317,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return ExtendedScalarsModel(</b>
 <b class="fc">&nbsp;      tags = tagsValue!!,</b>
 <b class="fc">&nbsp;      code = codeValue,</b>
@@ -331,15 +331,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_TAGS) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;tags&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;tags&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_CODE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;code&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;code&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_PORT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;port&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;port&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_LETTER) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;letter&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;letter&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RATIO) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;ratio&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;ratio&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -386,8 +386,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return ExtendedScalarsModel(</b>
 <b class="fc">&nbsp;      tags = tagsValue!!,</b>
 <b class="fc">&nbsp;      code = codeValue,</b>
@@ -498,7 +498,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

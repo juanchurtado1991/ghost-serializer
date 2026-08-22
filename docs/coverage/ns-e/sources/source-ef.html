@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > TweetEntities</title>
+  <title>GhostSerialization Coverage Report > SmartDevice</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: TweetEntities (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: SmartDevice (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 
@@ -46,42 +46,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">TweetEntities</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    21.9%
-  </span>
-  <span class="absValue">
-    (7/32)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (7/7)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    60%
-  </span>
-  <span class="absValue">
-    (156/260)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">TweetEntities$Companion</td>
+  <td class="name">SmartDevice</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -104,12 +69,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (2/2)
   </span>
 </td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
+</tr>
+  <tr>
+    <td class="name">SmartDevice$Light</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -120,10 +94,30 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    21.9%
+    100%
   </span>
   <span class="absValue">
-    (7/32)
+    (8/8)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SmartDevice$Thermostat</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
@@ -134,12 +128,60 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     (8/8)
   </span>
 </td>
+  </tr>
+  <tr>
+    <td class="name">SmartDevice$UnknownDevice</td>
 <td class="coverageStat">
   <span class="percent">
-    60.6%
+    100%
   </span>
   <span class="absValue">
-    (160/264)
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (35/35)
   </span>
 </td>
 </tr>
@@ -152,27 +194,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostFlatten
-&nbsp;import com.ghost.serialization.annotations.GhostIgnore
-&nbsp;import com.ghost.serialization.annotations.GhostName
+&nbsp;import com.ghost.serialization.annotations.GhostFallback
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostWrap
-&nbsp;import com.squareup.moshi.Json
-&nbsp;import com.squareup.moshi.JsonClass
-&nbsp;import kotlinx.serialization.SerialName
-&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-<b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class TweetEntities(
-<b class="fc">&nbsp;    val hashtags: List&lt;HashtagItem&gt; = emptyList(),</b>
-<b class="fc">&nbsp;    val symbols: List&lt;SymbolItem&gt; = emptyList(),</b>
-<b class="fc">&nbsp;    val urls: List&lt;UrlItem&gt; = emptyList(),</b>
-<b class="fc">&nbsp;    @Json(name = &quot;user_mentions&quot;)</b>
-<b class="fc">&nbsp;    @SerialName(&quot;user_mentions&quot;) @GhostName(&quot;user_mentions&quot;) val userMentions: List&lt;UserMention&gt; = emptyList(),</b>
-<b class="fc">&nbsp;    val media: List&lt;MediaItem&gt; = emptyList()</b>
-&nbsp;)
+<b class="fc">&nbsp;@GhostSerialization</b>
+&nbsp;sealed class SmartDevice {
+<b class="fc">&nbsp;    @GhostSerialization</b>
+<b class="fc">&nbsp;    data class Light(val brightness: Int) : SmartDevice()</b>
+&nbsp;
+<b class="fc">&nbsp;    @GhostSerialization</b>
+<b class="fc">&nbsp;    data class Thermostat(val temperature: Double) : SmartDevice()</b>
+&nbsp;
+<b class="fc">&nbsp;    @GhostFallback</b>
+&nbsp;    @GhostSerialization
+<b class="fc">&nbsp;    data class UnknownDevice(val rawData: String = &quot;unknown&quot;) : SmartDevice()</b>
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -196,7 +232,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

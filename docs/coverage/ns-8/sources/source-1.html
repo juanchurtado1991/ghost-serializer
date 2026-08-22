@@ -113,6 +113,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_MISSING_TYPE = &quot;Missing discriminator field for sealed class&quot;
 &nbsp;    const val STR_WHEN_TYPENAME = &quot;val result = when (typeName)&quot;
 &nbsp;    const val TEMPLATE_DESERIALIZE_BRANCH = &quot;%S -&gt; %T.deserialize(reader)&quot;
+&nbsp;    // Keep in sync with GhostJsonConstants.ERR_UNKNOWN_DISCRIMINATOR_PREFIX (hint matching).
 &nbsp;    const val STR_UNKNOWN_TYPE =
 &nbsp;        &quot;else -&gt; reader.throwError(\&quot;Unknown type discriminator: \$typeName\&quot;)&quot;
 &nbsp;    const val STR_RETURN_RESULT = &quot;return result&quot;
@@ -203,8 +204,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val TEMPLATE_NULL_CHECK_L =
 &nbsp;        &quot;if (reader.isNextNullValue()) {\n  reader.consumeNull()\n  null\n} else {\n  %L\n}&quot;
 &nbsp;    const val TEMPLATE_THROW_S = &quot;reader.throwError(%S)&quot;
-&nbsp;    const val STR_REQ_FIELD_1 = &quot;Required field &#39;&quot;
-&nbsp;    const val STR_REQ_FIELD_2 = &quot;&#39; missing in JSON&quot;
+&nbsp;    const val TEMPLATE_THROW_MISSING_REQUIRED = &quot;reader.throwMissingRequiredField(%S)&quot;
 &nbsp;    const val STR_COMMA_SPACE = &quot;, &quot;
 &nbsp;    const val STR_BANG_BANG = &quot;!!&quot;
 &nbsp;    const val TEMPLATE_RETURN_T_PAREN = &quot;return %T(&quot;
@@ -215,9 +215,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_COMMA = &quot;,&quot;
 &nbsp;    const val STR_EMPTY = &quot;&quot;
 &nbsp;    const val STR_ELSE = &quot;else&quot;
+&nbsp;    // Keep in sync with GhostJsonConstants.ERR_INVALID_ENUM_VALUE / ERR_UNEXPECTED_ENUM_INDEX_PREFIX.
 &nbsp;    const val STR_ERR_INVALID_ENUM_INDEX = &quot;-1 -&gt; reader.throwError(\&quot;Invalid enum value\&quot;)&quot;
 &nbsp;    const val STR_ERR_UNEXPECTED_INDEX =
-&nbsp;        &quot;else -&gt; throw GhostJsonException(\&quot;Unexpected index: \$index\&quot;)&quot;
+&nbsp;        &quot;else -&gt; reader.throwError(\&quot;Unexpected enum index: \$index\&quot;)&quot;
 &nbsp;    const val STR_FALLBACK_ANNOTATION = &quot;GhostFallback&quot;
 &nbsp;    const val STR_ELSE_BRANCH = &quot;else -&gt;&quot;
 &nbsp;    const val STR_ENUM_SELECT_OPTIONS = &quot;val index = reader.selectString(ENUM_OPTIONS)&quot;
@@ -632,7 +633,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_V_VAR_PREFIX = &quot;v&quot;
 &nbsp;    const val STR_INFERRED_ERROR_MSG =
 &nbsp;        &quot;Could not infer subclass (\$eligibilityMask/\$seenMask)&quot;
-&nbsp;    const val STR_REQUIRED_FIELD_MISSING = &quot;Required field &#39;%s&#39; missing for %s&quot;
 &nbsp;    const val STR_ERR_NO_SUBCLASSES = &quot;Inferred polymorphism requested but no subclasses found.&quot;
 &nbsp;    const val STR_COPY = &quot;copy&quot;
 &nbsp;    const val STR_ONE_L = &quot;1L&quot;
@@ -654,7 +654,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val TEMPLATE_VAL_LONG_INIT = &quot;val %L%L = %L%L&quot;
 &nbsp;    const val TEMPLATE_RESULT_WHEN = &quot;val result = when&quot;
 &nbsp;    const val TEMPLATE_INFERRED_DECISION_BRANCH = &quot;(%L and %L%L) != %L &amp;&amp; (%L and %L) == %L -&gt;&quot;
-&nbsp;    const val TEMPLATE_REQUIRED_ARG = &quot;%L = %L ?: throw %T(%S)&quot;
+&nbsp;    const val TEMPLATE_REQUIRED_ARG = &quot;%L = %L ?: reader.throwMissingRequiredField(%S)&quot;
 &nbsp;    const val TEMPLATE_OPTIONAL_ARG = &quot;%L = %L&quot;
 &nbsp;    const val TEMPLATE_DATA_CLASS_COPY_INIT = &quot;var %L = %T(%L)&quot;
 &nbsp;    const val TEMPLATE_IF_NOT_NULL_COPY = &quot;if (%L != null) %L = %L.%L(%L = %L)&quot;
@@ -955,7 +955,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

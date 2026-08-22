@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    57.8%
+    59.4%
   </span>
   <span class="absValue">
-    (297/514)
+    (300/505)
   </span>
 </td>
 </tr>
@@ -173,10 +173,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val reqMask1 = 2L</b>
 <b class="fc">&nbsp;    val result = when {</b>
 <b class="pc">&nbsp;      (eligibilityMask and 1L) != 0L &amp;&amp; (seenMask and reqMask0) == reqMask0 -&gt; {</b>
-<b class="nc">&nbsp;        OneofPayload.Code(code = v0 ?: throw GhostJsonException(&quot;Required field &#39;code&#39; missing for Code&quot;))</b>
+<b class="nc">&nbsp;        OneofPayload.Code(code = v0 ?: reader.throwMissingRequiredField(&quot;code&quot;))</b>
 &nbsp;      }
 <b class="pc">&nbsp;      (eligibilityMask and 2L) != 0L &amp;&amp; (seenMask and reqMask1) == reqMask1 -&gt; {</b>
-<b class="nc">&nbsp;        OneofPayload.Text(text = v1 ?: throw GhostJsonException(&quot;Required field &#39;text&#39; missing for Text&quot;))</b>
+<b class="nc">&nbsp;        OneofPayload.Text(text = v1 ?: reader.throwMissingRequiredField(&quot;text&quot;))</b>
 &nbsp;      }
 <b class="fc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Could not infer subclass (${&#39;$&#39;}eligibilityMask/${&#39;$&#39;}seenMask)&quot;)</b>
 &nbsp;    }
@@ -214,10 +214,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val reqMask1 = 2L</b>
 <b class="fc">&nbsp;    val result = when {</b>
 <b class="fc">&nbsp;      (eligibilityMask and 1L) != 0L &amp;&amp; (seenMask and reqMask0) == reqMask0 -&gt; {</b>
-<b class="pc">&nbsp;        OneofPayload.Code(code = v0 ?: throw GhostJsonException(&quot;Required field &#39;code&#39; missing for Code&quot;))</b>
+<b class="pc">&nbsp;        OneofPayload.Code(code = v0 ?: reader.throwMissingRequiredField(&quot;code&quot;))</b>
 &nbsp;      }
 <b class="pc">&nbsp;      (eligibilityMask and 2L) != 0L &amp;&amp; (seenMask and reqMask1) == reqMask1 -&gt; {</b>
-<b class="pc">&nbsp;        OneofPayload.Text(text = v1 ?: throw GhostJsonException(&quot;Required field &#39;text&#39; missing for Text&quot;))</b>
+<b class="pc">&nbsp;        OneofPayload.Text(text = v1 ?: reader.throwMissingRequiredField(&quot;text&quot;))</b>
 &nbsp;      }
 <b class="fc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Could not infer subclass (${&#39;$&#39;}eligibilityMask/${&#39;$&#39;}seenMask)&quot;)</b>
 &nbsp;    }
@@ -255,10 +255,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val reqMask1 = 2L</b>
 <b class="fc">&nbsp;    val result = when {</b>
 <b class="pc">&nbsp;      (eligibilityMask and 1L) != 0L &amp;&amp; (seenMask and reqMask0) == reqMask0 -&gt; {</b>
-<b class="nc">&nbsp;        OneofPayload.Code(code = v0 ?: throw GhostJsonException(&quot;Required field &#39;code&#39; missing for Code&quot;))</b>
+<b class="nc">&nbsp;        OneofPayload.Code(code = v0 ?: reader.throwMissingRequiredField(&quot;code&quot;))</b>
 &nbsp;      }
 <b class="pc">&nbsp;      (eligibilityMask and 2L) != 0L &amp;&amp; (seenMask and reqMask1) == reqMask1 -&gt; {</b>
-<b class="nc">&nbsp;        OneofPayload.Text(text = v1 ?: throw GhostJsonException(&quot;Required field &#39;text&#39; missing for Text&quot;))</b>
+<b class="nc">&nbsp;        OneofPayload.Text(text = v1 ?: reader.throwMissingRequiredField(&quot;text&quot;))</b>
 &nbsp;      }
 <b class="fc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Could not infer subclass (${&#39;$&#39;}eligibilityMask/${&#39;$&#39;}seenMask)&quot;)</b>
 &nbsp;    }
@@ -333,7 +333,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

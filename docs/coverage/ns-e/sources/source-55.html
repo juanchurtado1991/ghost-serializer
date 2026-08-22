@@ -163,11 +163,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
 <b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_DEFAULTEVENT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;defaultEvent&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;defaultEvent&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_KINDEVENT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;kindEvent&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;kindEvent&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_STRIPEOBJECT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;stripeObject&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;stripeObject&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -202,8 +202,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    return GhostDiscriminatorTestPayload(</b>
 <b class="nc">&nbsp;      defaultEvent = defaultEventValue!!,</b>
 <b class="nc">&nbsp;      kindEvent = kindEventValue!!,</b>
@@ -214,11 +214,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
 <b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_DEFAULTEVENT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;defaultEvent&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;defaultEvent&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_KINDEVENT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;kindEvent&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;kindEvent&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_STRIPEOBJECT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;stripeObject&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;stripeObject&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -253,8 +253,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    return GhostDiscriminatorTestPayload(</b>
 <b class="nc">&nbsp;      defaultEvent = defaultEventValue!!,</b>
 <b class="nc">&nbsp;      kindEvent = kindEventValue!!,</b>
@@ -265,11 +265,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_DEFAULTEVENT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;defaultEvent&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;defaultEvent&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_KINDEVENT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;kindEvent&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;kindEvent&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_STRIPEOBJECT) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;stripeObject&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;stripeObject&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -304,8 +304,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return GhostDiscriminatorTestPayload(</b>
 <b class="fc">&nbsp;      defaultEvent = defaultEventValue!!,</b>
 <b class="fc">&nbsp;      kindEvent = kindEventValue!!,</b>
@@ -393,7 +393,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

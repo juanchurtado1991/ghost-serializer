@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    65.5%
+    65.7%
   </span>
   <span class="absValue">
-    (1754/2678)
+    (1766/2690)
   </span>
 </td>
 </tr>
@@ -371,35 +371,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
 <b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="fc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;id&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_USERID) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;userId&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;userId&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_NAME) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;name&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;name&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_EMAIL) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;email&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;email&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_SCORE) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;score&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;score&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_RATING) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;rating&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;rating&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_ISACTIVE) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;isActive&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;isActive&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_BIOGRAPHY) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;biography&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;biography&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_PRIORITY) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;priority&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;priority&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_TAGS) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;tags&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;tags&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_SCORES) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;scores&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;scores&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_METADATA) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;metadata&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;metadata&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_ADDRESS) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;address&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;address&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_TAGOBJECTS) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;tagObjects&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;tagObjects&quot;)</b>
 <b class="pc">&nbsp;      } else if ((mask0 and MASK_NESTEDTREE) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;nestedTree&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;nestedTree&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -537,8 +537,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return createInstance(</b>
 <b class="fc">&nbsp;      mask0,</b>
 <b class="fc">&nbsp;      idValue,</b>
@@ -568,35 +568,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
 <b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;id&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_USERID) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;userId&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;userId&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_NAME) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;name&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;name&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_EMAIL) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;email&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;email&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_SCORE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;score&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;score&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RATING) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;rating&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;rating&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_ISACTIVE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;isActive&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;isActive&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_BIOGRAPHY) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;biography&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;biography&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_PRIORITY) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;priority&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;priority&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_TAGS) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;tags&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;tags&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_SCORES) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;scores&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;scores&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_METADATA) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;metadata&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;metadata&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_ADDRESS) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;address&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;address&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_TAGOBJECTS) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;tagObjects&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;tagObjects&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_NESTEDTREE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;nestedTree&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;nestedTree&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -734,8 +734,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    return createInstance(</b>
 <b class="nc">&nbsp;      mask0,</b>
 <b class="nc">&nbsp;      idValue,</b>
@@ -765,35 +765,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
 <b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="fc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;id&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_USERID) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;userId&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;userId&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_NAME) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;name&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;name&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_EMAIL) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;email&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;email&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_SCORE) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;score&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;score&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_RATING) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;rating&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;rating&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_ISACTIVE) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;isActive&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;isActive&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_BIOGRAPHY) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;biography&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;biography&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_PRIORITY) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;priority&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;priority&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_TAGS) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;tags&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;tags&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_SCORES) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;scores&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;scores&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_METADATA) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;metadata&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;metadata&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_ADDRESS) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;address&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;address&quot;)</b>
 <b class="fc">&nbsp;      } else if ((mask0 and MASK_TAGOBJECTS) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;tagObjects&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;tagObjects&quot;)</b>
 <b class="pc">&nbsp;      } else if ((mask0 and MASK_NESTEDTREE) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;nestedTree&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;nestedTree&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -931,8 +931,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return createInstance(</b>
 <b class="fc">&nbsp;      mask0,</b>
 <b class="fc">&nbsp;      idValue,</b>
@@ -1195,7 +1195,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

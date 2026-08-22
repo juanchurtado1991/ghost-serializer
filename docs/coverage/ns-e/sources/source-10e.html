@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UserJsonAdapter</title>
+  <title>GhostSerialization Coverage Report > TweetMetadataJsonAdapter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UserJsonAdapter (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: TweetMetadataJsonAdapter (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UserJsonAdapter</td>
+  <td class="name">TweetMetadataJsonAdapter</td>
 <td class="coverageStat">
   <span class="percent">
     0%
@@ -71,7 +71,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/165)
+    (0/15)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/296)
+    (0/25)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/2343)
+    (0/171)
   </span>
 </td>
 </tr>
@@ -110,241 +110,30 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.moshi.Moshi
 &nbsp;import com.squareup.moshi.`internal`.Util
 &nbsp;import java.lang.NullPointerException
-&nbsp;import java.lang.reflect.Constructor
-&nbsp;import kotlin.Boolean
-&nbsp;import kotlin.Int
-&nbsp;import kotlin.Long
 &nbsp;import kotlin.String
 &nbsp;import kotlin.Suppress
 &nbsp;import kotlin.collections.emptySet
-&nbsp;import kotlin.jvm.Volatile
 &nbsp;import kotlin.text.buildString
 &nbsp;
-<b class="nc">&nbsp;public class UserJsonAdapter(</b>
+<b class="nc">&nbsp;public class TweetMetadataJsonAdapter(</b>
 &nbsp;  moshi: Moshi,
-&nbsp;) : JsonAdapter&lt;User&gt;() {
+&nbsp;) : JsonAdapter&lt;TweetMetadata&gt;() {
 &nbsp;  private val options: JsonReader.Options =
-<b class="nc">&nbsp;      JsonReader.Options.of(&quot;id&quot;, &quot;id_str&quot;, &quot;name&quot;, &quot;screen_name&quot;, &quot;location&quot;, &quot;description&quot;, &quot;url&quot;, &quot;entities&quot;, &quot;protected&quot;, &quot;followers_count&quot;, &quot;friends_count&quot;, &quot;listed_count&quot;, &quot;created_at&quot;, &quot;favourites_count&quot;, &quot;utc_offset&quot;, &quot;time_zone&quot;, &quot;geo_enabled&quot;, &quot;verified&quot;, &quot;statuses_count&quot;, &quot;lang&quot;, &quot;contributors_enabled&quot;, &quot;is_translator&quot;, &quot;is_translation_enabled&quot;, &quot;profile_background_color&quot;, &quot;profile_background_image_url&quot;, &quot;profile_background_image_url_https&quot;, &quot;profile_background_tile&quot;, &quot;profile_image_url&quot;, &quot;profile_image_url_https&quot;, &quot;profile_banner_url&quot;, &quot;profile_link_color&quot;, &quot;profile_sidebar_border_color&quot;, &quot;profile_sidebar_fill_color&quot;, &quot;profile_text_color&quot;, &quot;profile_use_background_image&quot;, &quot;default_profile&quot;, &quot;default_profile_image&quot;, &quot;following&quot;, &quot;follow_request_sent&quot;, &quot;notifications&quot;)</b>
-&nbsp;
-<b class="nc">&nbsp;  private val longAdapter: JsonAdapter&lt;Long&gt; = moshi.adapter(Long::class.java, emptySet(), &quot;id&quot;)</b>
+<b class="nc">&nbsp;      JsonReader.Options.of(&quot;result_type&quot;, &quot;iso_language_code&quot;)</b>
 &nbsp;
 &nbsp;  private val stringAdapter: JsonAdapter&lt;String&gt; =
-<b class="nc">&nbsp;      moshi.adapter(String::class.java, emptySet(), &quot;idStr&quot;)</b>
+<b class="nc">&nbsp;      moshi.adapter(String::class.java, emptySet(), &quot;resultType&quot;)</b>
 &nbsp;
-&nbsp;  private val nullableStringAdapter: JsonAdapter&lt;String?&gt; =
-<b class="nc">&nbsp;      moshi.adapter(String::class.java, emptySet(), &quot;name&quot;)</b>
+<b class="nc">&nbsp;  override fun toString(): String = buildString(35) { append(&quot;GeneratedJsonAdapter(&quot;).append(&quot;TweetMetadata&quot;).append(&#39;)&#39;) }</b>
 &nbsp;
-&nbsp;  private val userEntitiesAdapter: JsonAdapter&lt;UserEntities&gt; =
-<b class="nc">&nbsp;      moshi.adapter(UserEntities::class.java, emptySet(), &quot;entities&quot;)</b>
-&nbsp;
-&nbsp;  private val booleanAdapter: JsonAdapter&lt;Boolean&gt; =
-<b class="nc">&nbsp;      moshi.adapter(Boolean::class.java, emptySet(), &quot;protected&quot;)</b>
-&nbsp;
-&nbsp;  private val intAdapter: JsonAdapter&lt;Int&gt; =
-<b class="nc">&nbsp;      moshi.adapter(Int::class.java, emptySet(), &quot;followersCount&quot;)</b>
-&nbsp;
-&nbsp;  private val nullableIntAdapter: JsonAdapter&lt;Int?&gt; =
-<b class="nc">&nbsp;      moshi.adapter(Int::class.javaObjectType, emptySet(), &quot;utcOffset&quot;)</b>
-&nbsp;
-&nbsp;  @Volatile
-&nbsp;  private var constructorRef: Constructor&lt;User&gt;? = null
-&nbsp;
-<b class="nc">&nbsp;  override fun toString(): String = buildString(26) { append(&quot;GeneratedJsonAdapter(&quot;).append(&quot;User&quot;).append(&#39;)&#39;) }</b>
-&nbsp;
-&nbsp;  override fun fromJson(reader: JsonReader): User {
-<b class="nc">&nbsp;    var id: Long? = null</b>
-<b class="nc">&nbsp;    var idStr: String? = null</b>
-<b class="nc">&nbsp;    var name: String? = null</b>
-<b class="nc">&nbsp;    var screenName: String? = null</b>
-<b class="nc">&nbsp;    var location: String? = null</b>
-<b class="nc">&nbsp;    var description: String? = null</b>
-<b class="nc">&nbsp;    var url: String? = null</b>
-<b class="nc">&nbsp;    var entities: UserEntities? = null</b>
-<b class="nc">&nbsp;    var protected_: Boolean? = false</b>
-<b class="nc">&nbsp;    var followersCount: Int? = 0</b>
-<b class="nc">&nbsp;    var friendsCount: Int? = 0</b>
-<b class="nc">&nbsp;    var listedCount: Int? = 0</b>
-<b class="nc">&nbsp;    var createdAt: String? = null</b>
-<b class="nc">&nbsp;    var favouritesCount: Int? = 0</b>
-<b class="nc">&nbsp;    var utcOffset: Int? = null</b>
-<b class="nc">&nbsp;    var timeZone: String? = null</b>
-<b class="nc">&nbsp;    var geoEnabled: Boolean? = false</b>
-<b class="nc">&nbsp;    var verified: Boolean? = false</b>
-<b class="nc">&nbsp;    var statusesCount: Int? = 0</b>
-<b class="nc">&nbsp;    var lang: String? = null</b>
-<b class="nc">&nbsp;    var contributorsEnabled: Boolean? = false</b>
-<b class="nc">&nbsp;    var isTranslator: Boolean? = false</b>
-<b class="nc">&nbsp;    var isTranslationEnabled: Boolean? = false</b>
-<b class="nc">&nbsp;    var profileBackgroundColor: String? = null</b>
-<b class="nc">&nbsp;    var profileBackgroundImageUrl: String? = null</b>
-<b class="nc">&nbsp;    var profileBackgroundImageUrlHttps: String? = null</b>
-<b class="nc">&nbsp;    var profileBackgroundTile: Boolean? = false</b>
-<b class="nc">&nbsp;    var profileImageUrl: String? = null</b>
-<b class="nc">&nbsp;    var profileImageUrlHttps: String? = null</b>
-<b class="nc">&nbsp;    var profileBannerUrl: String? = null</b>
-<b class="nc">&nbsp;    var profileLinkColor: String? = null</b>
-<b class="nc">&nbsp;    var profileSidebarBorderColor: String? = null</b>
-<b class="nc">&nbsp;    var profileSidebarFillColor: String? = null</b>
-<b class="nc">&nbsp;    var profileTextColor: String? = null</b>
-<b class="nc">&nbsp;    var profileUseBackgroundImage: Boolean? = false</b>
-<b class="nc">&nbsp;    var defaultProfile: Boolean? = false</b>
-<b class="nc">&nbsp;    var defaultProfileImage: Boolean? = false</b>
-<b class="nc">&nbsp;    var following: Boolean? = false</b>
-<b class="nc">&nbsp;    var followRequestSent: Boolean? = false</b>
-<b class="nc">&nbsp;    var notifications: Boolean? = false</b>
-<b class="nc">&nbsp;    var mask0 = -1</b>
-<b class="nc">&nbsp;    var mask1 = -1</b>
+&nbsp;  override fun fromJson(reader: JsonReader): TweetMetadata {
+<b class="nc">&nbsp;    var resultType: String? = null</b>
+<b class="nc">&nbsp;    var isoLanguageCode: String? = null</b>
 <b class="nc">&nbsp;    reader.beginObject()</b>
 <b class="nc">&nbsp;    while (reader.hasNext()) {</b>
 <b class="nc">&nbsp;      when (reader.selectName(options)) {</b>
-<b class="nc">&nbsp;        0 -&gt; id = longAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;id&quot;, &quot;id&quot;, reader)</b>
-<b class="nc">&nbsp;        1 -&gt; idStr = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;idStr&quot;, &quot;id_str&quot;, reader)</b>
-&nbsp;        2 -&gt; {
-<b class="nc">&nbsp;          name = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 2).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffffb.toInt()</b>
-&nbsp;        }
-<b class="nc">&nbsp;        3 -&gt; screenName = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;screenName&quot;, &quot;screen_name&quot;, reader)</b>
-&nbsp;        4 -&gt; {
-<b class="nc">&nbsp;          location = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 4).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffffffef.toInt()</b>
-&nbsp;        }
-&nbsp;        5 -&gt; {
-<b class="nc">&nbsp;          description = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 5).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffffffdf.toInt()</b>
-&nbsp;        }
-&nbsp;        6 -&gt; {
-<b class="nc">&nbsp;          url = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 6).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffffffbf.toInt()</b>
-&nbsp;        }
-<b class="nc">&nbsp;        7 -&gt; entities = userEntitiesAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;entities&quot;, &quot;entities&quot;, reader)</b>
-&nbsp;        8 -&gt; {
-<b class="nc">&nbsp;          protected_ = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;protected_&quot;, &quot;protected&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 8).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffeff.toInt()</b>
-&nbsp;        }
-&nbsp;        9 -&gt; {
-<b class="nc">&nbsp;          followersCount = intAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;followersCount&quot;, &quot;followers_count&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 9).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffdff.toInt()</b>
-&nbsp;        }
-&nbsp;        10 -&gt; {
-<b class="nc">&nbsp;          friendsCount = intAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;friendsCount&quot;, &quot;friends_count&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 10).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffbff.toInt()</b>
-&nbsp;        }
-&nbsp;        11 -&gt; {
-<b class="nc">&nbsp;          listedCount = intAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;listedCount&quot;, &quot;listed_count&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 11).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffff7ff.toInt()</b>
-&nbsp;        }
-<b class="nc">&nbsp;        12 -&gt; createdAt = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;createdAt&quot;, &quot;created_at&quot;, reader)</b>
-&nbsp;        13 -&gt; {
-<b class="nc">&nbsp;          favouritesCount = intAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;favouritesCount&quot;, &quot;favourites_count&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 13).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffffdfff.toInt()</b>
-&nbsp;        }
-&nbsp;        14 -&gt; {
-<b class="nc">&nbsp;          utcOffset = nullableIntAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 14).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffffbfff.toInt()</b>
-&nbsp;        }
-&nbsp;        15 -&gt; {
-<b class="nc">&nbsp;          timeZone = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 15).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffff7fff.toInt()</b>
-&nbsp;        }
-&nbsp;        16 -&gt; {
-<b class="nc">&nbsp;          geoEnabled = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;geoEnabled&quot;, &quot;geo_enabled&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 16).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffeffff.toInt()</b>
-&nbsp;        }
-&nbsp;        17 -&gt; {
-<b class="nc">&nbsp;          verified = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;verified&quot;, &quot;verified&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 17).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffdffff.toInt()</b>
-&nbsp;        }
-&nbsp;        18 -&gt; {
-<b class="nc">&nbsp;          statusesCount = intAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;statusesCount&quot;, &quot;statuses_count&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 18).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfffbffff.toInt()</b>
-&nbsp;        }
-&nbsp;        19 -&gt; {
-<b class="nc">&nbsp;          lang = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 19).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfff7ffff.toInt()</b>
-&nbsp;        }
-&nbsp;        20 -&gt; {
-<b class="nc">&nbsp;          contributorsEnabled = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;contributorsEnabled&quot;, &quot;contributors_enabled&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 20).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffefffff.toInt()</b>
-&nbsp;        }
-&nbsp;        21 -&gt; {
-<b class="nc">&nbsp;          isTranslator = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;isTranslator&quot;, &quot;is_translator&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 21).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffdfffff.toInt()</b>
-&nbsp;        }
-&nbsp;        22 -&gt; {
-<b class="nc">&nbsp;          isTranslationEnabled = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;isTranslationEnabled&quot;, &quot;is_translation_enabled&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 22).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xffbfffff.toInt()</b>
-&nbsp;        }
-<b class="nc">&nbsp;        23 -&gt; profileBackgroundColor = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileBackgroundColor&quot;, &quot;profile_background_color&quot;, reader)</b>
-<b class="nc">&nbsp;        24 -&gt; profileBackgroundImageUrl = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileBackgroundImageUrl&quot;, &quot;profile_background_image_url&quot;, reader)</b>
-<b class="nc">&nbsp;        25 -&gt; profileBackgroundImageUrlHttps = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileBackgroundImageUrlHttps&quot;, &quot;profile_background_image_url_https&quot;, reader)</b>
-&nbsp;        26 -&gt; {
-<b class="nc">&nbsp;          profileBackgroundTile = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileBackgroundTile&quot;, &quot;profile_background_tile&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 26).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xfbffffff.toInt()</b>
-&nbsp;        }
-<b class="nc">&nbsp;        27 -&gt; profileImageUrl = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileImageUrl&quot;, &quot;profile_image_url&quot;, reader)</b>
-<b class="nc">&nbsp;        28 -&gt; profileImageUrlHttps = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileImageUrlHttps&quot;, &quot;profile_image_url_https&quot;, reader)</b>
-&nbsp;        29 -&gt; {
-<b class="nc">&nbsp;          profileBannerUrl = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 29).inv()
-<b class="nc">&nbsp;          mask0 = mask0 and 0xdfffffff.toInt()</b>
-&nbsp;        }
-<b class="nc">&nbsp;        30 -&gt; profileLinkColor = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileLinkColor&quot;, &quot;profile_link_color&quot;, reader)</b>
-<b class="nc">&nbsp;        31 -&gt; profileSidebarBorderColor = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileSidebarBorderColor&quot;, &quot;profile_sidebar_border_color&quot;, reader)</b>
-<b class="nc">&nbsp;        32 -&gt; profileSidebarFillColor = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileSidebarFillColor&quot;, &quot;profile_sidebar_fill_color&quot;, reader)</b>
-&nbsp;        33 -&gt; {
-<b class="nc">&nbsp;          profileTextColor = nullableStringAdapter.fromJson(reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 1).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xfffffffd.toInt()</b>
-&nbsp;        }
-&nbsp;        34 -&gt; {
-<b class="nc">&nbsp;          profileUseBackgroundImage = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;profileUseBackgroundImage&quot;, &quot;profile_use_background_image&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 2).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xfffffffb.toInt()</b>
-&nbsp;        }
-&nbsp;        35 -&gt; {
-<b class="nc">&nbsp;          defaultProfile = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;defaultProfile&quot;, &quot;default_profile&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 3).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xfffffff7.toInt()</b>
-&nbsp;        }
-&nbsp;        36 -&gt; {
-<b class="nc">&nbsp;          defaultProfileImage = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;defaultProfileImage&quot;, &quot;default_profile_image&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 4).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xffffffef.toInt()</b>
-&nbsp;        }
-&nbsp;        37 -&gt; {
-<b class="nc">&nbsp;          following = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;following&quot;, &quot;following&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 5).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xffffffdf.toInt()</b>
-&nbsp;        }
-&nbsp;        38 -&gt; {
-<b class="nc">&nbsp;          followRequestSent = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;followRequestSent&quot;, &quot;follow_request_sent&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 6).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xffffffbf.toInt()</b>
-&nbsp;        }
-&nbsp;        39 -&gt; {
-<b class="nc">&nbsp;          notifications = booleanAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;notifications&quot;, &quot;notifications&quot;, reader)</b>
-&nbsp;          // $mask = $mask and (1 shl 7).inv()
-<b class="nc">&nbsp;          mask1 = mask1 and 0xffffff7f.toInt()</b>
-&nbsp;        }
+<b class="nc">&nbsp;        0 -&gt; resultType = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;resultType&quot;, &quot;result_type&quot;, reader)</b>
+<b class="nc">&nbsp;        1 -&gt; isoLanguageCode = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;isoLanguageCode&quot;, &quot;iso_language_code&quot;, reader)</b>
 &nbsp;        -1 -&gt; {
 &nbsp;          // Unknown name, skip it.
 <b class="nc">&nbsp;          reader.skipName()</b>
@@ -353,187 +142,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;      }
 &nbsp;    }
 <b class="nc">&nbsp;    reader.endObject()</b>
-<b class="nc">&nbsp;    if (mask0 == 0xdb80108b.toInt() &amp;&amp; mask1 == 0xffffff01.toInt()) {</b>
-&nbsp;      // All parameters with defaults are set, invoke the constructor directly
-<b class="nc">&nbsp;      return  User(</b>
-<b class="nc">&nbsp;          id = id ?: throw Util.missingProperty(&quot;id&quot;, &quot;id&quot;, reader),</b>
-<b class="nc">&nbsp;          idStr = idStr ?: throw Util.missingProperty(&quot;idStr&quot;, &quot;id_str&quot;, reader),</b>
-<b class="nc">&nbsp;          name = name,</b>
-<b class="nc">&nbsp;          screenName = screenName ?: throw Util.missingProperty(&quot;screenName&quot;, &quot;screen_name&quot;, reader),</b>
-<b class="nc">&nbsp;          location = location,</b>
-<b class="nc">&nbsp;          description = description,</b>
-<b class="nc">&nbsp;          url = url,</b>
-<b class="nc">&nbsp;          entities = entities ?: throw Util.missingProperty(&quot;entities&quot;, &quot;entities&quot;, reader),</b>
-<b class="nc">&nbsp;          `protected` = protected_ as Boolean,</b>
-<b class="nc">&nbsp;          followersCount = followersCount as Int,</b>
-<b class="nc">&nbsp;          friendsCount = friendsCount as Int,</b>
-<b class="nc">&nbsp;          listedCount = listedCount as Int,</b>
-<b class="nc">&nbsp;          createdAt = createdAt ?: throw Util.missingProperty(&quot;createdAt&quot;, &quot;created_at&quot;, reader),</b>
-<b class="nc">&nbsp;          favouritesCount = favouritesCount as Int,</b>
-<b class="nc">&nbsp;          utcOffset = utcOffset,</b>
-<b class="nc">&nbsp;          timeZone = timeZone,</b>
-<b class="nc">&nbsp;          geoEnabled = geoEnabled as Boolean,</b>
-<b class="nc">&nbsp;          verified = verified as Boolean,</b>
-<b class="nc">&nbsp;          statusesCount = statusesCount as Int,</b>
-<b class="nc">&nbsp;          lang = lang,</b>
-<b class="nc">&nbsp;          contributorsEnabled = contributorsEnabled as Boolean,</b>
-<b class="nc">&nbsp;          isTranslator = isTranslator as Boolean,</b>
-<b class="nc">&nbsp;          isTranslationEnabled = isTranslationEnabled as Boolean,</b>
-<b class="nc">&nbsp;          profileBackgroundColor = profileBackgroundColor ?: throw Util.missingProperty(&quot;profileBackgroundColor&quot;, &quot;profile_background_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBackgroundImageUrl = profileBackgroundImageUrl ?: throw Util.missingProperty(&quot;profileBackgroundImageUrl&quot;, &quot;profile_background_image_url&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBackgroundImageUrlHttps = profileBackgroundImageUrlHttps ?: throw Util.missingProperty(&quot;profileBackgroundImageUrlHttps&quot;, &quot;profile_background_image_url_https&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBackgroundTile = profileBackgroundTile as Boolean,</b>
-<b class="nc">&nbsp;          profileImageUrl = profileImageUrl ?: throw Util.missingProperty(&quot;profileImageUrl&quot;, &quot;profile_image_url&quot;, reader),</b>
-<b class="nc">&nbsp;          profileImageUrlHttps = profileImageUrlHttps ?: throw Util.missingProperty(&quot;profileImageUrlHttps&quot;, &quot;profile_image_url_https&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBannerUrl = profileBannerUrl,</b>
-<b class="nc">&nbsp;          profileLinkColor = profileLinkColor ?: throw Util.missingProperty(&quot;profileLinkColor&quot;, &quot;profile_link_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileSidebarBorderColor = profileSidebarBorderColor ?: throw Util.missingProperty(&quot;profileSidebarBorderColor&quot;, &quot;profile_sidebar_border_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileSidebarFillColor = profileSidebarFillColor ?: throw Util.missingProperty(&quot;profileSidebarFillColor&quot;, &quot;profile_sidebar_fill_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileTextColor = profileTextColor,</b>
-<b class="nc">&nbsp;          profileUseBackgroundImage = profileUseBackgroundImage as Boolean,</b>
-<b class="nc">&nbsp;          defaultProfile = defaultProfile as Boolean,</b>
-<b class="nc">&nbsp;          defaultProfileImage = defaultProfileImage as Boolean,</b>
-<b class="nc">&nbsp;          following = following as Boolean,</b>
-<b class="nc">&nbsp;          followRequestSent = followRequestSent as Boolean,</b>
-<b class="nc">&nbsp;          notifications = notifications as Boolean</b>
-&nbsp;      )
-&nbsp;    } else {
-&nbsp;      // Reflectively invoke the synthetic defaults constructor
-&nbsp;      @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="nc">&nbsp;      val localConstructor: Constructor&lt;User&gt; =</b>
-<b class="nc">&nbsp;          this.constructorRef ?: User::class.java.getDeclaredConstructor(Long::class.javaPrimitiveType, String::class.java, String::class.java, String::class.java, String::class.java, String::class.java, String::class.java, UserEntities::class.java, Boolean::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, String::class.java, Int::class.javaPrimitiveType, Int::class.javaObjectType, String::class.java, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Int::class.javaPrimitiveType, String::class.java, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, String::class.java, String::class.java, String::class.java, Boolean::class.javaPrimitiveType, String::class.java, String::class.java, String::class.java, String::class.java, String::class.java, String::class.java, String::class.java, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Util.DEFAULT_CONSTRUCTOR_MARKER).also { this.constructorRef = it }</b>
-<b class="nc">&nbsp;      return localConstructor.newInstance(</b>
-<b class="nc">&nbsp;          id ?: throw Util.missingProperty(&quot;id&quot;, &quot;id&quot;, reader),</b>
-<b class="nc">&nbsp;          idStr ?: throw Util.missingProperty(&quot;idStr&quot;, &quot;id_str&quot;, reader),</b>
-<b class="nc">&nbsp;          name,</b>
-<b class="nc">&nbsp;          screenName ?: throw Util.missingProperty(&quot;screenName&quot;, &quot;screen_name&quot;, reader),</b>
-<b class="nc">&nbsp;          location,</b>
-<b class="nc">&nbsp;          description,</b>
-<b class="nc">&nbsp;          url,</b>
-<b class="nc">&nbsp;          entities ?: throw Util.missingProperty(&quot;entities&quot;, &quot;entities&quot;, reader),</b>
-<b class="nc">&nbsp;          protected_,</b>
-<b class="nc">&nbsp;          followersCount,</b>
-<b class="nc">&nbsp;          friendsCount,</b>
-<b class="nc">&nbsp;          listedCount,</b>
-<b class="nc">&nbsp;          createdAt ?: throw Util.missingProperty(&quot;createdAt&quot;, &quot;created_at&quot;, reader),</b>
-<b class="nc">&nbsp;          favouritesCount,</b>
-<b class="nc">&nbsp;          utcOffset,</b>
-<b class="nc">&nbsp;          timeZone,</b>
-<b class="nc">&nbsp;          geoEnabled,</b>
-<b class="nc">&nbsp;          verified,</b>
-<b class="nc">&nbsp;          statusesCount,</b>
-<b class="nc">&nbsp;          lang,</b>
-<b class="nc">&nbsp;          contributorsEnabled,</b>
-<b class="nc">&nbsp;          isTranslator,</b>
-<b class="nc">&nbsp;          isTranslationEnabled,</b>
-<b class="nc">&nbsp;          profileBackgroundColor ?: throw Util.missingProperty(&quot;profileBackgroundColor&quot;, &quot;profile_background_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBackgroundImageUrl ?: throw Util.missingProperty(&quot;profileBackgroundImageUrl&quot;, &quot;profile_background_image_url&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBackgroundImageUrlHttps ?: throw Util.missingProperty(&quot;profileBackgroundImageUrlHttps&quot;, &quot;profile_background_image_url_https&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBackgroundTile,</b>
-<b class="nc">&nbsp;          profileImageUrl ?: throw Util.missingProperty(&quot;profileImageUrl&quot;, &quot;profile_image_url&quot;, reader),</b>
-<b class="nc">&nbsp;          profileImageUrlHttps ?: throw Util.missingProperty(&quot;profileImageUrlHttps&quot;, &quot;profile_image_url_https&quot;, reader),</b>
-<b class="nc">&nbsp;          profileBannerUrl,</b>
-<b class="nc">&nbsp;          profileLinkColor ?: throw Util.missingProperty(&quot;profileLinkColor&quot;, &quot;profile_link_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileSidebarBorderColor ?: throw Util.missingProperty(&quot;profileSidebarBorderColor&quot;, &quot;profile_sidebar_border_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileSidebarFillColor ?: throw Util.missingProperty(&quot;profileSidebarFillColor&quot;, &quot;profile_sidebar_fill_color&quot;, reader),</b>
-<b class="nc">&nbsp;          profileTextColor,</b>
-<b class="nc">&nbsp;          profileUseBackgroundImage,</b>
-<b class="nc">&nbsp;          defaultProfile,</b>
-<b class="nc">&nbsp;          defaultProfileImage,</b>
-<b class="nc">&nbsp;          following,</b>
-<b class="nc">&nbsp;          followRequestSent,</b>
-<b class="nc">&nbsp;          notifications,</b>
-<b class="nc">&nbsp;          mask0, mask1,</b>
-<b class="nc">&nbsp;          /* DefaultConstructorMarker */ null</b>
-&nbsp;      )
-&nbsp;    }
+<b class="nc">&nbsp;    return TweetMetadata(</b>
+<b class="nc">&nbsp;        resultType = resultType ?: throw Util.missingProperty(&quot;resultType&quot;, &quot;result_type&quot;, reader),</b>
+<b class="nc">&nbsp;        isoLanguageCode = isoLanguageCode ?: throw Util.missingProperty(&quot;isoLanguageCode&quot;, &quot;iso_language_code&quot;, reader)</b>
+&nbsp;    )
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun toJson(writer: JsonWriter, value_: User?) {
+&nbsp;  override fun toJson(writer: JsonWriter, value_: TweetMetadata?) {
 <b class="nc">&nbsp;    if (value_ == null) {</b>
 <b class="nc">&nbsp;      throw NullPointerException(&quot;value_ was null! Wrap in .nullSafe() to write nullable values.&quot;)</b>
 &nbsp;    }
 <b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.name(&quot;id&quot;)</b>
-<b class="nc">&nbsp;    longAdapter.toJson(writer, value_.id)</b>
-<b class="nc">&nbsp;    writer.name(&quot;id_str&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.idStr)</b>
-<b class="nc">&nbsp;    writer.name(&quot;name&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.name)</b>
-<b class="nc">&nbsp;    writer.name(&quot;screen_name&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.screenName)</b>
-<b class="nc">&nbsp;    writer.name(&quot;location&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.location)</b>
-<b class="nc">&nbsp;    writer.name(&quot;description&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.description)</b>
-<b class="nc">&nbsp;    writer.name(&quot;url&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.url)</b>
-<b class="nc">&nbsp;    writer.name(&quot;entities&quot;)</b>
-<b class="nc">&nbsp;    userEntitiesAdapter.toJson(writer, value_.entities)</b>
-<b class="nc">&nbsp;    writer.name(&quot;protected&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.`protected`)</b>
-<b class="nc">&nbsp;    writer.name(&quot;followers_count&quot;)</b>
-<b class="nc">&nbsp;    intAdapter.toJson(writer, value_.followersCount)</b>
-<b class="nc">&nbsp;    writer.name(&quot;friends_count&quot;)</b>
-<b class="nc">&nbsp;    intAdapter.toJson(writer, value_.friendsCount)</b>
-<b class="nc">&nbsp;    writer.name(&quot;listed_count&quot;)</b>
-<b class="nc">&nbsp;    intAdapter.toJson(writer, value_.listedCount)</b>
-<b class="nc">&nbsp;    writer.name(&quot;created_at&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.createdAt)</b>
-<b class="nc">&nbsp;    writer.name(&quot;favourites_count&quot;)</b>
-<b class="nc">&nbsp;    intAdapter.toJson(writer, value_.favouritesCount)</b>
-<b class="nc">&nbsp;    writer.name(&quot;utc_offset&quot;)</b>
-<b class="nc">&nbsp;    nullableIntAdapter.toJson(writer, value_.utcOffset)</b>
-<b class="nc">&nbsp;    writer.name(&quot;time_zone&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.timeZone)</b>
-<b class="nc">&nbsp;    writer.name(&quot;geo_enabled&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.geoEnabled)</b>
-<b class="nc">&nbsp;    writer.name(&quot;verified&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.verified)</b>
-<b class="nc">&nbsp;    writer.name(&quot;statuses_count&quot;)</b>
-<b class="nc">&nbsp;    intAdapter.toJson(writer, value_.statusesCount)</b>
-<b class="nc">&nbsp;    writer.name(&quot;lang&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.lang)</b>
-<b class="nc">&nbsp;    writer.name(&quot;contributors_enabled&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.contributorsEnabled)</b>
-<b class="nc">&nbsp;    writer.name(&quot;is_translator&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.isTranslator)</b>
-<b class="nc">&nbsp;    writer.name(&quot;is_translation_enabled&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.isTranslationEnabled)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_background_color&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileBackgroundColor)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_background_image_url&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileBackgroundImageUrl)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_background_image_url_https&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileBackgroundImageUrlHttps)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_background_tile&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.profileBackgroundTile)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_image_url&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileImageUrl)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_image_url_https&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileImageUrlHttps)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_banner_url&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.profileBannerUrl)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_link_color&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileLinkColor)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_sidebar_border_color&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileSidebarBorderColor)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_sidebar_fill_color&quot;)</b>
-<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.profileSidebarFillColor)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_text_color&quot;)</b>
-<b class="nc">&nbsp;    nullableStringAdapter.toJson(writer, value_.profileTextColor)</b>
-<b class="nc">&nbsp;    writer.name(&quot;profile_use_background_image&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.profileUseBackgroundImage)</b>
-<b class="nc">&nbsp;    writer.name(&quot;default_profile&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.defaultProfile)</b>
-<b class="nc">&nbsp;    writer.name(&quot;default_profile_image&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.defaultProfileImage)</b>
-<b class="nc">&nbsp;    writer.name(&quot;following&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.following)</b>
-<b class="nc">&nbsp;    writer.name(&quot;follow_request_sent&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.followRequestSent)</b>
-<b class="nc">&nbsp;    writer.name(&quot;notifications&quot;)</b>
-<b class="nc">&nbsp;    booleanAdapter.toJson(writer, value_.notifications)</b>
+<b class="nc">&nbsp;    writer.name(&quot;result_type&quot;)</b>
+<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.resultType)</b>
+<b class="nc">&nbsp;    writer.name(&quot;iso_language_code&quot;)</b>
+<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.isoLanguageCode)</b>
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;}
@@ -560,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

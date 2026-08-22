@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonStructureHelpersKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonQuotedStringSlowKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonStructureHelpersKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostJsonQuotedStringSlowKt (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonStructureHelpersKt</td>
+  <td class="name">GhostJsonQuotedStringSlowKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (17/17)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75.7%
+    100%
   </span>
   <span class="absValue">
-    (131/173)
+    (64/64)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.7%
+    100%
   </span>
   <span class="absValue">
-    (199/235)
+    (91/91)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.1%
+    100%
   </span>
   <span class="absValue">
-    (991/1302)
+    (542/542)
   </span>
 </td>
 </tr>
@@ -99,634 +99,181 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Shared structure / comma kernels for streaming and string JSON readers.
+&nbsp; * Shared UTF-8 slow path for quoted JSON strings that contain escapes.
 &nbsp; *
-&nbsp; * Reader-specific state (depth, comma masks, peek/skip) is supplied via inlined
-&nbsp; * adapters so each call site stays monomorphic after inlining.
-&nbsp; */
-&nbsp;
-&nbsp;internal inline fun beginObjectCore(
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    maxDepth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    setPredictedFieldIndex: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    if (nextNonWhitespace() != C.OPEN_OBJ_INT) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_BEGIN_OBJ)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    setPredictedFieldIndex(C.FIELD_PREDICTION_START)</b>
-<b class="fc">&nbsp;    enterCollectionDepthCore(</b>
-&nbsp;        getDepth = getDepth,
-&nbsp;        setDepth = setDepth,
-<b class="fc">&nbsp;        maxDepth = maxDepth,</b>
-&nbsp;        getNeedsCommaMask = getNeedsCommaMask,
-&nbsp;        setNeedsCommaMask = setNeedsCommaMask,
-&nbsp;        getCommaConsumedMask = getCommaConsumedMask,
-&nbsp;        setCommaConsumedMask = setCommaConsumedMask,
-&nbsp;        throwError = throwError,
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun beginArrayCore(
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    maxDepth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    if (nextNonWhitespace() != C.OPEN_ARR_INT) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_BEGIN_ARR)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    enterCollectionDepthCore(</b>
-&nbsp;        getDepth = getDepth,
-&nbsp;        setDepth = setDepth,
-<b class="fc">&nbsp;        maxDepth = maxDepth,</b>
-&nbsp;        getNeedsCommaMask = getNeedsCommaMask,
-&nbsp;        setNeedsCommaMask = setNeedsCommaMask,
-&nbsp;        getCommaConsumedMask = getCommaConsumedMask,
-&nbsp;        setCommaConsumedMask = setCommaConsumedMask,
-&nbsp;        throwError = throwError,
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun endObjectCore(
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    if (nextNonWhitespace() != C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_END_OBJ)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val depth = getDepth()</b>
-<b class="fc">&nbsp;    if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;        setDepth(depth - 1)</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun endArrayCore(
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    if (nextNonWhitespace() != C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_END_ARR)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val depth = getDepth()</b>
-<b class="pc">&nbsp;    if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;        setDepth(depth - 1)</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun consumeKeySeparatorCore(
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    if (nextNonWhitespace() != C.COLON_INT) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_COLON)</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Shared depth increment + comma-mask clear used by [beginObjectCore] / [beginArrayCore].
-&nbsp; */
-&nbsp;private inline fun enterCollectionDepthCore(
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    maxDepth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    val depth = getDepth() + 1</b>
-<b class="fc">&nbsp;    setDepth(depth)</b>
-<b class="fc">&nbsp;    if (depth &gt; maxDepth) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_DEPTH_EXCEEDED)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;        val bit = C.BITMASK_UNIT shl depth</b>
-<b class="fc">&nbsp;        setNeedsCommaMask(getNeedsCommaMask() and bit.inv())</b>
-<b class="fc">&nbsp;        setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Comma / trailing-comma validation for `hasNext`.
+&nbsp; * Used by flat ([com.ghost.serialization.parser.bytes.GhostJsonFlatReader]) and streaming
+&nbsp; * ([com.ghost.serialization.parser.streaming.GhostJsonReader]) byte readers. The string
+&nbsp; * ([CharArray]) reader keeps a separate Char-based path.
 &nbsp; *
-&nbsp; * @return `false` when the container is closed or input ended; `true` when another element follows.
+&nbsp; * Reader-specific state is supplied via inlined adapters so each call site stays monomorphic
+&nbsp; * after inlining.
 &nbsp; */
-&nbsp;internal inline fun hasNextCore(
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    strictMode: Boolean,
-&nbsp;    depth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    internalSkip: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Boolean {
-<b class="fc">&nbsp;    val token = peekNextToken()</b>
-<b class="fc">&nbsp;    if (</b>
-&nbsp;        token == C.CLOSE_ARR_INT ||
-&nbsp;        token == C.CLOSE_OBJ_INT ||
-&nbsp;        token == C.MATCH_END
-&nbsp;    ) {
-<b class="fc">&nbsp;        return false</b>
-&nbsp;    }
-<b class="pc">&nbsp;    if (strictMode &amp;&amp; depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;        val bit = C.BITMASK_UNIT shl depth</b>
-<b class="pc">&nbsp;        if ((getCommaConsumedMask() and bit) != C.RESULT_NONE) {</b>
-<b class="nc">&nbsp;            if (token == C.COMMA_INT) {</b>
-<b class="nc">&nbsp;                setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-<b class="nc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            }
-&nbsp;        }
-<b class="pc">&nbsp;        if ((getCommaConsumedMask() and bit) != C.RESULT_NONE) {</b>
-<b class="nc">&nbsp;            setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-<b class="nc">&nbsp;            setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            val required = (getNeedsCommaMask() and bit) != C.RESULT_NONE</b>
-<b class="pc">&nbsp;            if (token == C.COMMA_INT) {</b>
-<b class="nc">&nbsp;                if (!required) {</b>
-<b class="nc">&nbsp;                    throwError(C.ERR_UNEXPECTED_COMMA)</b>
-&nbsp;                }
-<b class="nc">&nbsp;                internalSkip(1)</b>
-<b class="nc">&nbsp;                val next = peekNextToken()</b>
-<b class="nc">&nbsp;                if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {</b>
-<b class="nc">&nbsp;                    throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;                }
-<b class="nc">&nbsp;                setCommaConsumedMask(getCommaConsumedMask() or bit)</b>
-<b class="nc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() and bit.inv())</b>
-&nbsp;            } else {
-<b class="pc">&nbsp;                if (required) throwError(C.ERR_EXPECTED_COMMA)</b>
-<b class="fc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    } else {
-<b class="fc">&nbsp;        if (token == C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="fc">&nbsp;            val next = peekNextToken()</b>
-<b class="fc">&nbsp;            if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;                throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return true</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Comma preamble shared by [selectValidateCommasCore] callers (selectName / selectString).
-&nbsp; *
-&nbsp; * @return The token after any consumed comma (original [token] if no comma).
-&nbsp; */
-&nbsp;internal inline fun selectValidateCommasCore(
-&nbsp;    token: Int,
-&nbsp;    consumeSeparator: Boolean,
-&nbsp;    strictMode: Boolean,
-&nbsp;    depth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    internalSkip: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Int {
-<b class="fc">&nbsp;    var currentToken = token</b>
-<b class="pc">&nbsp;    if (strictMode &amp;&amp; depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;        val bit = C.BITMASK_UNIT shl depth</b>
-<b class="pc">&nbsp;        if ((getCommaConsumedMask() and bit) != C.RESULT_NONE) {</b>
-<b class="nc">&nbsp;            setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-<b class="nc">&nbsp;            setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            val required = (getNeedsCommaMask() and bit) != C.RESULT_NONE</b>
-<b class="fc">&nbsp;            if (currentToken == C.COMMA_INT) {</b>
-<b class="pc">&nbsp;                if (!required) {</b>
-<b class="nc">&nbsp;                    throwError(C.ERR_UNEXPECTED_COMMA)</b>
-&nbsp;                }
-<b class="fc">&nbsp;                internalSkip(1)</b>
-<b class="fc">&nbsp;                currentToken = peekNextToken()</b>
-<b class="pc">&nbsp;                if (currentToken == C.CLOSE_OBJ_INT) {</b>
-<b class="nc">&nbsp;                    throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;                }
-<b class="fc">&nbsp;                setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-<b class="fc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            } else {
-<b class="pc">&nbsp;                if (required &amp;&amp; consumeSeparator) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)</b>
-&nbsp;                }
-<b class="fc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    } else {
-<b class="fc">&nbsp;        if (currentToken == C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="fc">&nbsp;            currentToken = peekNextToken()</b>
-<b class="fc">&nbsp;            if (currentToken == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;                throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return currentToken</b>
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun consumeArraySeparatorCore(
-&nbsp;    strictMode: Boolean,
-&nbsp;    depth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    internalSkip: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="pc">&nbsp;    if (strictMode &amp;&amp; depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;        val bit = C.BITMASK_UNIT shl depth</b>
-<b class="pc">&nbsp;        if ((getCommaConsumedMask() and bit) != C.RESULT_NONE) {</b>
-<b class="nc">&nbsp;            setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-<b class="nc">&nbsp;            setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        val token = peekNextToken()</b>
-<b class="fc">&nbsp;        val required = (getNeedsCommaMask() and bit) != C.RESULT_NONE</b>
-<b class="pc">&nbsp;        if (token == C.COMMA_INT) {</b>
-<b class="nc">&nbsp;            internalSkip(1)</b>
-<b class="nc">&nbsp;            val next = peekNextToken()</b>
-<b class="nc">&nbsp;            if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {</b>
-<b class="nc">&nbsp;                throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;            }
-<b class="nc">&nbsp;            setCommaConsumedMask(getCommaConsumedMask() or bit)</b>
-<b class="pc">&nbsp;        } else if (required) {</b>
-<b class="nc">&nbsp;            if (token != C.CLOSE_ARR_INT &amp;&amp; token != C.CLOSE_OBJ_INT) {</b>
-<b class="nc">&nbsp;                throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)</b>
-&nbsp;            }
-&nbsp;        } else {
-<b class="pc">&nbsp;            if (token != C.CLOSE_ARR_INT &amp;&amp; token != C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;                throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)</b>
-&nbsp;            }
-&nbsp;        }
-<b class="nc">&nbsp;        setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        val token = peekNextToken()</b>
-<b class="fc">&nbsp;        if (token == C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="pc">&nbsp;            if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
-<b class="nc">&nbsp;                throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Comma preamble for `nextKey`.
-&nbsp; *
-&nbsp; * @return `false` when the object is closed (`}` peeked); `true` when a key follows.
-&nbsp; */
-&nbsp;internal inline fun nextKeyCommaPreambleCore(
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    strictMode: Boolean,
-&nbsp;    depth: Int,
-&nbsp;    getNeedsCommaMask: () -&gt; Long,
-&nbsp;    setNeedsCommaMask: (Long) -&gt; Unit,
-&nbsp;    getCommaConsumedMask: () -&gt; Long,
-&nbsp;    setCommaConsumedMask: (Long) -&gt; Unit,
-&nbsp;    internalSkip: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Boolean {
-<b class="fc">&nbsp;    val token = peekNextToken()</b>
-<b class="fc">&nbsp;    if (token == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;        return false</b>
-&nbsp;    }
-<b class="pc">&nbsp;    if (strictMode &amp;&amp; depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;        val bit = C.BITMASK_UNIT shl depth</b>
-<b class="pc">&nbsp;        if ((getCommaConsumedMask() and bit) != C.RESULT_NONE) {</b>
-<b class="nc">&nbsp;            setCommaConsumedMask(getCommaConsumedMask() and bit.inv())</b>
-<b class="nc">&nbsp;            setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            val required = (getNeedsCommaMask() and bit) != C.RESULT_NONE</b>
-<b class="fc">&nbsp;            if (token == C.COMMA_INT) {</b>
-<b class="pc">&nbsp;                if (!required) {</b>
-<b class="nc">&nbsp;                    throwError(C.ERR_UNEXPECTED_COMMA)</b>
-&nbsp;                }
-<b class="fc">&nbsp;                internalSkip(1)</b>
-<b class="pc">&nbsp;                if (peekNextToken() == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;                }
-<b class="nc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                if (required) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)</b>
-&nbsp;                }
-<b class="fc">&nbsp;                setNeedsCommaMask(getNeedsCommaMask() or bit)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    } else {
-<b class="fc">&nbsp;        if (token == C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="pc">&nbsp;            if (peekNextToken() == C.CLOSE_OBJ_INT) {</b>
-<b class="nc">&nbsp;                throwError(C.ERR_TRAILING_COMMA)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return true</b>
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun nextBooleanCore(
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    skipAndValidateLiteral: (ByteString) -&gt; Unit,
-&nbsp;    coerceBooleans: Boolean,
-&nbsp;    internalSkip: (Int) -&gt; Unit,
-&nbsp;    matchCoerceBooleanBytes: () -&gt; Boolean,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Boolean {
-<b class="fc">&nbsp;    val token = peekNextToken()</b>
-<b class="fc">&nbsp;    if (token == C.TRUE_CHAR_INT) {</b>
-<b class="fc">&nbsp;        skipAndValidateLiteral(C.TRUE_BS)</b>
-<b class="fc">&nbsp;        return true</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (token == C.FALSE_CHAR_INT) {</b>
-<b class="fc">&nbsp;        skipAndValidateLiteral(C.FALSE_BS)</b>
-<b class="fc">&nbsp;        return false</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (coerceBooleans) {</b>
-<b class="fc">&nbsp;        if (token == C.ONE_INT) {</b>
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="fc">&nbsp;            return true</b>
-&nbsp;        }
-<b class="fc">&nbsp;        if (token == C.ZERO_INT) {</b>
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="fc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (token == C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;            return matchCoerceBooleanBytes()</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    throwError(C.ERR_EXPECTED_BOOLEAN)</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Shared null-or-value preamble for `next*OrNull` wrappers.
-&nbsp; */
-&nbsp;internal inline fun &lt;T&gt; nextOrNullCore(
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    consumeNull: () -&gt; Unit,
-&nbsp;    readValue: () -&gt; T,
-&nbsp;): T? {
-<b class="fc">&nbsp;    if (peekNextToken() == C.NULL_CHAR_INT) {</b>
-<b class="fc">&nbsp;        consumeNull()</b>
-<b class="fc">&nbsp;        return null</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return readValue()</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Packs key bytes into a 32-bit hash (optional collision extension).
-&nbsp; *
-&nbsp; * [getByte] must return an unsigned byte as Int (0..255 / char code).
-&nbsp; */
-&nbsp;internal inline fun computeKeyHashCore(
+&nbsp;internal inline fun readQuotedStringSlowCore(
 &nbsp;    start: Int,
-&nbsp;    length: Int,
-&nbsp;    hasCollisions: Boolean,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;): Int {
-<b class="fc">&nbsp;    var key = 0</b>
-<b class="fc">&nbsp;    if (length &gt;= 4) {</b>
-<b class="fc">&nbsp;        val byte0 = getByte(start)</b>
-<b class="fc">&nbsp;        val byte1 = getByte(start + 1)</b>
-<b class="fc">&nbsp;        val byte2 = getByte(start + 2)</b>
-<b class="fc">&nbsp;        val byte3 = getByte(start + 3)</b>
-<b class="fc">&nbsp;        key = byte0 or</b>
-<b class="fc">&nbsp;                (byte1 shl C.SHIFT_8) or</b>
-<b class="fc">&nbsp;                (byte2 shl C.SHIFT_16) or</b>
-<b class="fc">&nbsp;                (byte3 shl C.SHIFT_24)</b>
-<b class="fc">&nbsp;        if (hasCollisions) {</b>
-<b class="fc">&nbsp;            var ci = C.UNICODE_HEX_LENGTH</b>
-<b class="fc">&nbsp;            while (ci &lt; length) {</b>
-<b class="fc">&nbsp;                key = key * C.COLLISION_HASH_MULTIPLIER + getByte(start + ci); ci++</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    } else {
-<b class="fc">&nbsp;        if (length &gt;= 1) key = key or getByte(start)</b>
-<b class="fc">&nbsp;        if (length &gt;= 2) key = key or (getByte(start + 1) shl C.SHIFT_8)</b>
-<b class="fc">&nbsp;        if (length &gt;= 3) key = key or (getByte(start + 2) shl C.SHIFT_16)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return key</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Advances past an unmatched select key; optionally consumes `:` or throws in strict mode.
-&nbsp; */
-&nbsp;internal inline fun handleSelectNoMatchCore(
-&nbsp;    start: Int,
-&nbsp;    end: Int,
-&nbsp;    consumeSeparator: Boolean,
-&nbsp;    strictMode: Boolean,
 &nbsp;    limit: Int,
 &nbsp;    getByte: (Int) -&gt; Int,
 &nbsp;    setPosition: (Int) -&gt; Unit,
 &nbsp;    setNextTokenByte: (Int) -&gt; Unit,
-&nbsp;    consumeKeySeparator: () -&gt; Unit,
-&nbsp;    decodeUnknownKey: (Int, Int) -&gt; String,
+&nbsp;    parseUnicodeHex: (Int) -&gt; Int,
+&nbsp;    grow: (ByteArray, Int) -&gt; ByteArray,
 &nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Int {
-<b class="fc">&nbsp;    val newPos = end + 1</b>
-<b class="fc">&nbsp;    setPosition(newPos)</b>
-<b class="fc">&nbsp;    setNextTokenByte(C.MATCH_END)</b>
-<b class="fc">&nbsp;    if (consumeSeparator) {</b>
-<b class="pc">&nbsp;        if (newPos &lt; limit &amp;&amp; getByte(newPos) == C.COLON_INT) {</b>
-<b class="fc">&nbsp;            setPosition(newPos + 1)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            consumeKeySeparator()</b>
-&nbsp;        }
-<b class="fc">&nbsp;    } else if (strictMode) {</b>
-<b class="fc">&nbsp;        val unknownKey = decodeUnknownKey(start, end)</b>
-<b class="fc">&nbsp;        throwError(&quot;${C.STRICT_MODE_UNKNOWN_FIELD}$unknownKey&quot;)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return C.MATCH_NONE</b>
-&nbsp;}
+&nbsp;): String {
+<b class="fc">&nbsp;    var outBuffer = acquireScratchBuffer(C.TIER_SMALL_INT)</b>
+<b class="fc">&nbsp;    var outPos = 0</b>
 &nbsp;
-&nbsp;/**
-&nbsp; * Shared skip-value orchestration for streaming and string JSON readers.
-&nbsp; *
-&nbsp; * Structural recursion goes through [skipValue] so each reader keeps a single
-&nbsp; * entry point; adapters stay monomorphic after inlining into that entry point.
-&nbsp; */
-&nbsp;internal inline fun skipValueCore(
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    beginObject: () -&gt; Unit,
-&nbsp;    endObject: () -&gt; Unit,
-&nbsp;    beginArray: () -&gt; Unit,
-&nbsp;    endArray: () -&gt; Unit,
-&nbsp;    hasNext: () -&gt; Boolean,
-&nbsp;    skipQuotedString: () -&gt; Unit,
-&nbsp;    consumeKeySeparator: () -&gt; Unit,
-&nbsp;    skipValue: () -&gt; Unit,
-&nbsp;    skipAndValidateLiteral: (ByteString) -&gt; Unit,
-&nbsp;    skipNumber: () -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    val token = peekNextToken()</b>
-<b class="fc">&nbsp;    when (token) {</b>
-&nbsp;        C.OPEN_OBJ_INT -&gt; {
-<b class="fc">&nbsp;            beginObject()</b>
-<b class="fc">&nbsp;            while (hasNext()) {</b>
-<b class="fc">&nbsp;                if (peekNextToken() != C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_EXPECTED_KEY)</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        var pos = start</b>
+<b class="fc">&nbsp;        while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;            val byteValue = getByte(pos++)</b>
+<b class="fc">&nbsp;            if (byteValue == C.QUOTE_INT) {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                setNextTokenByte(C.RESET_TOKEN_BYTE)</b>
+<b class="fc">&nbsp;                return outBuffer.decodeToString(0, outPos)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            if (byteValue == C.BACKSLASH_INT) {</b>
+<b class="fc">&nbsp;                if (pos &gt;= limit) {</b>
+<b class="fc">&nbsp;                    setPosition(pos)</b>
+<b class="fc">&nbsp;                    throwError(C.UNTERMINATED_ESCAPE_ERROR)</b>
 &nbsp;                }
-<b class="fc">&nbsp;                skipQuotedString()</b>
-<b class="fc">&nbsp;                consumeKeySeparator()</b>
-<b class="fc">&nbsp;                skipValue()</b>
+<b class="fc">&nbsp;                when (val escaped = getByte(pos++)) {</b>
+&nbsp;                    C.UNICODE_PREFIX_U_INT -&gt; {
+<b class="fc">&nbsp;                        if (pos + C.UNICODE_HEX_LENGTH &gt; limit) {</b>
+<b class="fc">&nbsp;                            setPosition(pos)</b>
+<b class="fc">&nbsp;                            throwError(C.UNTERMINATED_UNICODE_ERROR)</b>
+&nbsp;                        }
+&nbsp;
+<b class="fc">&nbsp;                        var code = parseUnicodeHex(pos)</b>
+<b class="fc">&nbsp;                        pos += C.UNICODE_HEX_LENGTH</b>
+&nbsp;
+<b class="fc">&nbsp;                        if (code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END) {</b>
+<b class="fc">&nbsp;                            if (pos + C.SURROGATE_OFFSET &lt;= limit &amp;&amp;</b>
+<b class="fc">&nbsp;                                getByte(pos) == C.BACKSLASH_INT &amp;&amp;</b>
+<b class="fc">&nbsp;                                getByte(pos + C.SINGLE_CHAR_SIZE) == C.UNICODE_PREFIX_U_INT</b>
+&nbsp;                            ) {
+<b class="fc">&nbsp;                                pos += C.UNICODE_ESCAPE_PREFIX_SIZE</b>
+<b class="fc">&nbsp;                                val lowCode = parseUnicodeHex(pos)</b>
+<b class="fc">&nbsp;                                if (lowCode in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END) {</b>
+<b class="fc">&nbsp;                                    pos += C.UNICODE_HEX_LENGTH</b>
+<b class="fc">&nbsp;                                    code = C.UNICODE_BASE +</b>
+<b class="fc">&nbsp;                                            ((code - C.HIGH_SURROGATE_START) shl C.SHIFT_10) +</b>
+<b class="fc">&nbsp;                                            (lowCode - C.LOW_SURROGATE_START)</b>
+&nbsp;                                } else {
+<b class="fc">&nbsp;                                    setPosition(pos)</b>
+<b class="fc">&nbsp;                                    throwError(C.ERR_HIGH_SURROGATE)</b>
+&nbsp;                                }
+&nbsp;                            } else {
+<b class="fc">&nbsp;                                setPosition(pos)</b>
+<b class="fc">&nbsp;                                throwError(C.ERR_HIGH_SURROGATE)</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;
+<b class="fc">&nbsp;                        if (code &lt;= C.UTF8_1BYTE_MAX) {</b>
+<b class="fc">&nbsp;                            if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                                outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] = code.toByte()</b>
+<b class="fc">&nbsp;                        } else if (code &lt;= C.UTF8_2BYTE_MAX) {</b>
+<b class="fc">&nbsp;                            if (outPos + 2 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                                outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_2BYTE_PREFIX or (code shr C.UTF8_SHIFT_6)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        } else if (code &lt;= C.BMP_LIMIT) {</b>
+<b class="fc">&nbsp;                            if (outPos + 3 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                                outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_3BYTE_PREFIX or (code shr C.UTF8_SHIFT_12)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                        } else {
+<b class="fc">&nbsp;                            if (outPos + 4 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                                outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_4BYTE_PREFIX or (code shr C.UTF8_SHIFT_18)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_12) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or ((code shr C.UTF8_SHIFT_6) and C.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                            outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                                (C.UTF8_CONT_PREFIX or (code and C.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+&nbsp;                    C.N_BYTE_INT -&gt; {
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = C.LF_INT.toByte()</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    C.R_BYTE_INT -&gt; {
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = C.CR_INT.toByte()</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    C.T_BYTE_INT -&gt; {
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = C.TAB_INT.toByte()</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    C.B_BYTE_INT -&gt; {
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = C.BS_INT.toByte()</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    C.F_BYTE_INT -&gt; {
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = C.FF_INT.toByte()</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    else -&gt; {
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = escaped.toByte()</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;            } else if (byteValue &lt; C.SPACE_INT) {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                    outBuffer = grow(outBuffer, outPos)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                outBuffer[outPos++] = byteValue.toByte()</b>
 &nbsp;            }
-<b class="fc">&nbsp;            endObject()</b>
 &nbsp;        }
-&nbsp;
-&nbsp;        C.OPEN_ARR_INT -&gt; {
-<b class="fc">&nbsp;            beginArray()</b>
-<b class="fc">&nbsp;            while (hasNext()) {</b>
-<b class="fc">&nbsp;                skipValue()</b>
-&nbsp;            }
-<b class="fc">&nbsp;            endArray()</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        C.QUOTE_INT -&gt; {
-<b class="fc">&nbsp;            skipQuotedString()</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        C.TRUE_CHAR_INT -&gt; {
-<b class="fc">&nbsp;            skipAndValidateLiteral(C.TRUE_BS)</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        C.FALSE_CHAR_INT -&gt; {
-<b class="fc">&nbsp;            skipAndValidateLiteral(C.FALSE_BS)</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        C.NULL_CHAR_INT -&gt; {
-<b class="fc">&nbsp;            skipAndValidateLiteral(C.NULL_BS)</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        else -&gt; {
-<b class="fc">&nbsp;            skipNumber()</b>
-&nbsp;        }
+<b class="fc">&nbsp;        setPosition(pos)</b>
+&nbsp;    } finally {
+<b class="fc">&nbsp;        releaseScratchBuffer(outBuffer)</b>
 &nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Shared array→[List] decode for streaming and string readers.
-&nbsp; *
-&nbsp; * Closing `]` decrements depth only when [getDepth] `&gt; 0`, matching [endArrayCore]
-&nbsp; * (safer than bare decrement if depth were already zero).
-&nbsp; *
-&nbsp; * `@PublishedApi` because public inline `readList` wrappers call this core.
-&nbsp; */
-&nbsp;@PublishedApi
-&nbsp;internal inline fun &lt;T&gt; readListCore(
-&nbsp;    beginArray: () -&gt; Unit,
-&nbsp;    endArray: () -&gt; Unit,
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    initialCapacity: Int,
-&nbsp;    maxSize: Int,
-&nbsp;    itemParser: () -&gt; T,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): List&lt;T&gt; {
-<b class="fc">&nbsp;    beginArray()</b>
-<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;        endArray()</b>
-<b class="fc">&nbsp;        return emptyList()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val list = ArrayList&lt;T&gt;(initialCapacity)</b>
-&nbsp;
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;        list.add(itemParser())</b>
-<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
-<b class="fc">&nbsp;        if (next == C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;            val depth = getDepth()</b>
-<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;                setDepth(depth - 1)</b>
-&nbsp;            }
-&nbsp;            break
-&nbsp;        }
-<b class="fc">&nbsp;        if (next != C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next&quot;)</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (list.size &gt; maxSize) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return list</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Shared array→[Set] decode for streaming and string readers.
-&nbsp; *
-&nbsp; * Depth policy matches [readListCore] / [endArrayCore]: decrement only when depth `&gt; 0`.
-&nbsp; *
-&nbsp; * `@PublishedApi` because public inline `readSet` wrappers call this core.
-&nbsp; */
-&nbsp;@PublishedApi
-&nbsp;internal inline fun &lt;T&gt; readSetCore(
-&nbsp;    beginArray: () -&gt; Unit,
-&nbsp;    endArray: () -&gt; Unit,
-&nbsp;    peekNextToken: () -&gt; Int,
-&nbsp;    nextNonWhitespace: () -&gt; Int,
-&nbsp;    getDepth: () -&gt; Int,
-&nbsp;    setDepth: (Int) -&gt; Unit,
-&nbsp;    initialCapacity: Int,
-&nbsp;    maxSize: Int,
-&nbsp;    itemParser: () -&gt; T,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Set&lt;T&gt; {
-<b class="fc">&nbsp;    beginArray()</b>
-<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;        endArray()</b>
-<b class="fc">&nbsp;        return emptySet()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val set = HashSet&lt;T&gt;(initialCapacity)</b>
-&nbsp;
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;        set.add(itemParser())</b>
-<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
-<b class="fc">&nbsp;        if (next == C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;            val depth = getDepth()</b>
-<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;                setDepth(depth - 1)</b>
-&nbsp;            }
-&nbsp;            break
-&nbsp;        }
-<b class="pc">&nbsp;        if (next != C.COMMA_INT) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next&quot;)</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (set.size &gt; maxSize) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return set</b>
+<b class="fc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
 &nbsp;}
 </code>
 </pre>
@@ -751,7 +298,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

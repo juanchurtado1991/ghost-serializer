@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ReservedWordModel</title>
+  <title>GhostSerialization Coverage Report > ProtoAccountIdsMessage</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: ReservedWordModel (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: ProtoAccountIdsMessage (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,7 +46,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ReservedWordModel</td>
+  <td class="name">ProtoAccountIdsMessage</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -58,6 +55,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     (1/1)
   </span>
 </td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.7%
+  </span>
+  <span class="absValue">
+    (21/31)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ProtoAccountIdsMessage$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (9/9)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,11 +104,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (42/42)
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (25/35)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -94,21 +152,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.annotations.GhostProtoSerialization
+&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-<b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;data class ReservedWordModel(
-<b class="fc">&nbsp;    val `when`: String,</b>
-<b class="fc">&nbsp;    val `val`: Int,</b>
-<b class="fc">&nbsp;    val `fun`: Boolean,</b>
-<b class="fc">&nbsp;    val reader: String,</b>
-<b class="fc">&nbsp;    val writer: String,</b>
-<b class="fc">&nbsp;    val index: Int,</b>
-<b class="fc">&nbsp;    val mask: Long,</b>
-<b class="fc">&nbsp;    val OPTIONS: String</b>
+<b class="pc">&nbsp;@GhostProtoSerialization</b>
+&nbsp;@Serializable
+&nbsp;data class ProtoAccountIdsMessage(
+<b class="fc">&nbsp;    val account_ids: ProtoAccountIds,</b>
 &nbsp;)
-&nbsp;
-&nbsp;
 </code>
 </pre>
 </div>
@@ -132,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

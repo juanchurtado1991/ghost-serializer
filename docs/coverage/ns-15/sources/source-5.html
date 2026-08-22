@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    72.7%
+    78.8%
   </span>
   <span class="absValue">
-    (24/33)
+    (26/33)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    41.3%
+    39.7%
   </span>
   <span class="absValue">
-    (43/104)
+    (46/116)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.6%
+    66.5%
   </span>
   <span class="absValue">
-    (140/207)
+    (169/254)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63.4%
+    60.4%
   </span>
   <span class="absValue">
-    (498/785)
+    (608/1007)
   </span>
 </td>
 </tr>
@@ -101,8 +101,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
+&nbsp;import com.ghost.serialization.yaml.exception.hintForYamlError
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
 &nbsp;/**
@@ -125,6 +127,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * access has to resolve against wherever the class body lives.
 &nbsp; */
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.ensureRootParsed() {
 <b class="fc">&nbsp;    if (!rootParsed) {</b>
 <b class="fc">&nbsp;        rootObject = readDocument()</b>
@@ -134,8 +137,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/** Called once per document by [GhostYamlFlatReader.readAllDocuments] (typed overload). */
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.prepareRootForCurrentDocument() {
 <b class="fc">&nbsp;    traversalStack.clear()</b>
+<b class="fc">&nbsp;    pathTracker.reset()</b>
 <b class="fc">&nbsp;    currentMap = null</b>
 <b class="fc">&nbsp;    mapIterator = null</b>
 <b class="fc">&nbsp;    currentEntry = null</b>
@@ -148,8 +153,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/** Called once per document by [GhostYamlFlatReader.readAllDocuments] (typed overload). */
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.clearAfterDocument() {
 <b class="fc">&nbsp;    traversalStack.clear()</b>
+<b class="fc">&nbsp;    pathTracker.reset()</b>
 <b class="fc">&nbsp;    currentMap = null</b>
 <b class="fc">&nbsp;    mapIterator = null</b>
 <b class="fc">&nbsp;    currentEntry = null</b>
@@ -160,11 +167,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    rootObject = null</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.beginObjectImpl() {
 <b class="fc">&nbsp;    ensureRootParsed()</b>
-<b class="fc">&nbsp;    val map =</b>
-<b class="fc">&nbsp;        nextValue as? Map&lt;*, *&gt; ?: throw GhostYamlException(&quot;${C.ERR_EXPECTED_MAP_PREFIX}$nextValue&quot;)</b>
+<b class="fc">&nbsp;    val map = nextValue as? Map&lt;*, *&gt;</b>
+<b class="fc">&nbsp;        ?: throwError(&quot;${C.ERR_EXPECTED_MAP_PREFIX}$nextValue&quot;)</b>
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.pushObject()</b>
 <b class="fc">&nbsp;    traversalStack.add(</b>
 <b class="fc">&nbsp;        GhostYamlFlatReader.StateFrame(</b>
 <b class="fc">&nbsp;            currentMap,</b>
@@ -185,6 +194,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    nextValue = null</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.endObjectImpl() {
 <b class="pc">&nbsp;    if (traversalStack.isNotEmpty()) {</b>
 <b class="fc">&nbsp;        val frame = traversalStack.removeAt(traversalStack.size - 1)</b>
@@ -201,8 +211,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        listIterator = null</b>
 &nbsp;    }
 <b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    pathTracker.finishObjectValue()</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.selectNameAndConsumeImpl(options: JsonReaderOptions): Int {
 <b class="pc">&nbsp;    val iterator = mapIterator ?: return tokenEndObject</b>
 <b class="fc">&nbsp;    if (!iterator.hasNext()) {</b>
@@ -214,6 +226,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;    val index = options.findOptionIndex(entry.key)</b>
 <b class="pc">&nbsp;    if (index &gt;= 0) {</b>
+<b class="fc">&nbsp;        pathTracker.pushKey(entry.key)</b>
 <b class="fc">&nbsp;        return index</b>
 &nbsp;    }
 <b class="nc">&nbsp;    return tokenUnknownName</b>
@@ -228,8 +241,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    return tokenEndObject</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.skipValueImpl() {
-<b class="nc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    nextValue = null</b>
+&nbsp;    // Drop the owning key when this skip follows a successful selectNameAndConsume / nextKey.
+&nbsp;    // Unknown keys (-2) never push, so this is a no-op for them.
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 &nbsp;}
 &nbsp;
 &nbsp;internal fun GhostYamlFlatReader.isNextNullValueImpl(): Boolean {
@@ -237,8 +254,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    return nextValue == null</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.consumeNullImpl() {
 <b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 &nbsp;}
 &nbsp;
 &nbsp;/** Reads a YAML string, or `null` when the next value is YAML null. */
@@ -277,34 +296,46 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    return nextBoolean()</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextIntImpl(): Int {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
 <b class="fc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;        return value.toInt()</b>
 &nbsp;    }
-<b class="pc">&nbsp;    if (value is String) {</b>
+<b class="fc">&nbsp;    if (value is String) {</b>
 <b class="pc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;            return value.toIntOrNull() ?: 0</b>
 &nbsp;        }
-<b class="fc">&nbsp;        return value.toInt()</b>
+<b class="pc">&nbsp;        val parsed = value.toIntOrNull()</b>
+<b class="fc">&nbsp;            ?: throwError(&quot;${C.ERR_EXPECTED_INT_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;        pathTracker.finishScalarValue()</b>
+<b class="nc">&nbsp;        return parsed</b>
 &nbsp;    }
-<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_INT_PREFIX}$value&quot;)</b>
+<b class="fc">&nbsp;    throwError(&quot;${C.ERR_EXPECTED_INT_PREFIX}$value&quot;)</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextLongImpl(): Long {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
 <b class="pc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;        return value.toLong()</b>
 &nbsp;    }
 <b class="nc">&nbsp;    if (value is String) {</b>
 <b class="nc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;            return value.toLongOrNull() ?: 0L</b>
 &nbsp;        }
-<b class="nc">&nbsp;        return value.toLong()</b>
+<b class="nc">&nbsp;        val parsed = value.toLongOrNull()</b>
+<b class="nc">&nbsp;            ?: throwError(&quot;${C.ERR_EXPECTED_LONG_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;        pathTracker.finishScalarValue()</b>
+<b class="nc">&nbsp;        return parsed</b>
 &nbsp;    }
-<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_LONG_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;    throwError(&quot;${C.ERR_EXPECTED_LONG_PREFIX}$value&quot;)</b>
 &nbsp;}
 &nbsp;
 &nbsp;internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
@@ -318,19 +349,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/** Plain YAML scalar `ULong` — accepts numeric or string scalars (full range via decimal string). */
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextULongImpl(): ULong {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
 <b class="fc">&nbsp;    when (value) {</b>
-<b class="fc">&nbsp;        is Number -&gt; return value.toLong().toULong()</b>
+<b class="fc">&nbsp;        is Number -&gt; {</b>
+<b class="fc">&nbsp;            pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;            return value.toLong().toULong()</b>
+&nbsp;        }
 <b class="pc">&nbsp;        is String -&gt; {</b>
 <b class="pc">&nbsp;            if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;                pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;                return value.toULongOrNull() ?: 0uL</b>
 &nbsp;            }
-<b class="fc">&nbsp;            return value.toULong()</b>
+<b class="pc">&nbsp;            val parsed = value.toULongOrNull()</b>
+<b class="nc">&nbsp;                ?: throwError(&quot;${C.ERR_EXPECTED_ULONG_PREFIX}$value&quot;)</b>
+<b class="fc">&nbsp;            pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;            return parsed</b>
 &nbsp;        }
 &nbsp;    }
-<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_ULONG_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;    throwError(&quot;${C.ERR_EXPECTED_ULONG_PREFIX}$value&quot;)</b>
 &nbsp;}
 &nbsp;
 &nbsp;internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? {
@@ -341,72 +380,96 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    return nextULong()</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextDoubleImpl(): Double {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
 <b class="pc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;        return value.toDouble()</b>
 &nbsp;    }
 <b class="nc">&nbsp;    if (value is String) {</b>
 <b class="nc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;            return value.toDoubleOrNull() ?: 0.0</b>
 &nbsp;        }
-<b class="nc">&nbsp;        return value.toDouble()</b>
+<b class="nc">&nbsp;        val parsed = value.toDoubleOrNull()</b>
+<b class="nc">&nbsp;            ?: throwError(&quot;${C.ERR_EXPECTED_DOUBLE_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;        pathTracker.finishScalarValue()</b>
+<b class="nc">&nbsp;        return parsed</b>
 &nbsp;    }
-<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_DOUBLE_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;    throwError(&quot;${C.ERR_EXPECTED_DOUBLE_PREFIX}$value&quot;)</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
 <b class="pc">&nbsp;    if (value is Number) {</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;        return value.toFloat()</b>
 &nbsp;    }
 <b class="nc">&nbsp;    if (value is String) {</b>
 <b class="nc">&nbsp;        if (coerceStringsToNumbers) {</b>
+<b class="nc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;            return value.toFloatOrNull() ?: 0.0f</b>
 &nbsp;        }
-<b class="nc">&nbsp;        return value.toFloat()</b>
+<b class="nc">&nbsp;        val parsed = value.toFloatOrNull()</b>
+<b class="nc">&nbsp;            ?: throwError(&quot;${C.ERR_EXPECTED_FLOAT_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;        pathTracker.finishScalarValue()</b>
+<b class="nc">&nbsp;        return parsed</b>
 &nbsp;    }
-<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_FLOAT_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;    throwError(&quot;${C.ERR_EXPECTED_FLOAT_PREFIX}$value&quot;)</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextBooleanImpl(): Boolean {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
 <b class="fc">&nbsp;    if (value is Boolean) {</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;        return value</b>
 &nbsp;    }
 <b class="pc">&nbsp;    if (value is String) {</b>
 <b class="pc">&nbsp;        if (coerceBooleans) {</b>
+<b class="nc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;            return value.lowercase() == C.STR_TRUE</b>
 &nbsp;        }
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;        return value.toBoolean()</b>
 &nbsp;    }
-<b class="nc">&nbsp;    throw GhostYamlException(&quot;${C.ERR_EXPECTED_BOOLEAN_PREFIX}$value&quot;)</b>
+<b class="nc">&nbsp;    throwError(&quot;${C.ERR_EXPECTED_BOOLEAN_PREFIX}$value&quot;)</b>
 &nbsp;}
 &nbsp;
 &nbsp;/** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextCharImpl(): Char {
-<b class="nc">&nbsp;    val text = nextString()</b>
+<b class="nc">&nbsp;    val value = nextValue</b>
+<b class="nc">&nbsp;    nextValue = null</b>
+<b class="nc">&nbsp;    val text = if (value == null) &quot;&quot; else value.toString()</b>
 <b class="nc">&nbsp;    if (text.length != 1) {</b>
-<b class="nc">&nbsp;        throw GhostYamlException(&quot;${C.ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX}${text.length}&quot;)</b>
+<b class="nc">&nbsp;        throwError(&quot;${C.ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX}${text.length}&quot;)</b>
 &nbsp;    }
+<b class="nc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="nc">&nbsp;    return text[0]</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextStringImpl(): String {
 <b class="fc">&nbsp;    val value = nextValue</b>
 <b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="pc">&nbsp;    if (value == null) return &quot;&quot;</b>
 <b class="fc">&nbsp;    return value.toString()</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.beginArrayImpl() {
 <b class="fc">&nbsp;    ensureRootParsed()</b>
 <b class="pc">&nbsp;    val list = nextValue as? List&lt;*&gt;</b>
-<b class="nc">&nbsp;        ?: throw GhostYamlException(&quot;${C.ERR_EXPECTED_LIST_PREFIX}$nextValue&quot;)</b>
+<b class="nc">&nbsp;        ?: throwError(&quot;${C.ERR_EXPECTED_LIST_PREFIX}$nextValue&quot;)</b>
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.pushArray()</b>
 <b class="fc">&nbsp;    traversalStack.add(</b>
 <b class="fc">&nbsp;        GhostYamlFlatReader.StateFrame(</b>
 <b class="fc">&nbsp;            currentMap,</b>
@@ -425,6 +488,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    nextValue = null</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.endArrayImpl() {
 <b class="pc">&nbsp;    if (traversalStack.isNotEmpty()) {</b>
 <b class="fc">&nbsp;        val frame = traversalStack.removeAt(traversalStack.size - 1)</b>
@@ -441,15 +505,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        listIterator = null</b>
 &nbsp;    }
 <b class="fc">&nbsp;    nextValue = null</b>
+<b class="fc">&nbsp;    pathTracker.finishArrayValue()</b>
 &nbsp;}
 &nbsp;
 &nbsp;internal fun GhostYamlFlatReader.hasNextImpl(): Boolean {
 <b class="pc">&nbsp;    return mapIterator?.hasNext() == true</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.hasNextArrayElementImpl(): Boolean {
 <b class="pc">&nbsp;    val iterator = listIterator ?: return false</b>
 <b class="fc">&nbsp;    if (iterator.hasNext()) {</b>
+<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
 <b class="fc">&nbsp;        nextValue = iterator.next()</b>
 <b class="fc">&nbsp;        return true</b>
 &nbsp;    }
@@ -461,12 +528,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;    return iterator == null || !iterator.hasNext()</b>
 &nbsp;}
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.nextKeyImpl(): String? {
 <b class="pc">&nbsp;    val iterator = mapIterator ?: return null</b>
 <b class="pc">&nbsp;    if (iterator.hasNext()) {</b>
 <b class="fc">&nbsp;        val entry = iterator.next()</b>
 <b class="fc">&nbsp;        currentEntry = entry</b>
 <b class="fc">&nbsp;        nextValue = entry.value</b>
+<b class="fc">&nbsp;        pathTracker.pushKey(entry.key)</b>
 <b class="fc">&nbsp;        return entry.key</b>
 &nbsp;    }
 <b class="nc">&nbsp;    return null</b>
@@ -476,8 +545,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    // No-op for AST traversal
 <b class="fc">&nbsp;}</b>
 &nbsp;
+&nbsp;@OptIn(InternalGhostApi::class)
 &nbsp;internal fun GhostYamlFlatReader.throwErrorImpl(message: String): Nothing {
-<b class="nc">&nbsp;    throw GhostYamlException(message)</b>
+<b class="fc">&nbsp;    throw GhostYamlException(</b>
+<b class="fc">&nbsp;        baseMessage = message,</b>
+<b class="fc">&nbsp;        path = pathTracker.formatPath(),</b>
+<b class="fc">&nbsp;        hint = hintForYamlError(message),</b>
+&nbsp;    )
 &nbsp;}
 &nbsp;
 &nbsp;internal fun GhostYamlFlatReader.peekStringFieldImpl(name: String): String? {
@@ -508,7 +582,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

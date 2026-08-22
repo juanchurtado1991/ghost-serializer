@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UserEntitiesJsonAdapter</title>
+  <title>GhostSerialization Coverage Report > TweetEntitiesJsonAdapter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UserEntitiesJsonAdapter (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: TweetEntitiesJsonAdapter (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UserEntitiesJsonAdapter</td>
+  <td class="name">TweetEntitiesJsonAdapter</td>
 <td class="coverageStat">
   <span class="percent">
     0%
@@ -71,7 +71,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/17)
+    (0/24)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/36)
+    (0/61)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/246)
+    (0/478)
   </span>
 </td>
 </tr>
@@ -108,45 +108,79 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.moshi.JsonReader
 &nbsp;import com.squareup.moshi.JsonWriter
 &nbsp;import com.squareup.moshi.Moshi
+&nbsp;import com.squareup.moshi.Types
 &nbsp;import com.squareup.moshi.`internal`.Util
 &nbsp;import java.lang.NullPointerException
 &nbsp;import java.lang.reflect.Constructor
 &nbsp;import kotlin.Int
 &nbsp;import kotlin.String
 &nbsp;import kotlin.Suppress
+&nbsp;import kotlin.collections.List
 &nbsp;import kotlin.collections.emptySet
 &nbsp;import kotlin.jvm.Volatile
 &nbsp;import kotlin.text.buildString
 &nbsp;
-<b class="nc">&nbsp;public class UserEntitiesJsonAdapter(</b>
+<b class="nc">&nbsp;public class TweetEntitiesJsonAdapter(</b>
 &nbsp;  moshi: Moshi,
-&nbsp;) : JsonAdapter&lt;UserEntities&gt;() {
-<b class="nc">&nbsp;  private val options: JsonReader.Options = JsonReader.Options.of(&quot;url&quot;, &quot;description&quot;)</b>
+&nbsp;) : JsonAdapter&lt;TweetEntities&gt;() {
+&nbsp;  private val options: JsonReader.Options =
+<b class="nc">&nbsp;      JsonReader.Options.of(&quot;hashtags&quot;, &quot;symbols&quot;, &quot;urls&quot;, &quot;user_mentions&quot;, &quot;media&quot;)</b>
 &nbsp;
-&nbsp;  private val nullableUrlContainerAdapter: JsonAdapter&lt;UrlContainer?&gt; =
-<b class="nc">&nbsp;      moshi.adapter(UrlContainer::class.java, emptySet(), &quot;url&quot;)</b>
+&nbsp;  private val listOfHashtagItemAdapter: JsonAdapter&lt;List&lt;HashtagItem&gt;&gt; =
+<b class="nc">&nbsp;      moshi.adapter(Types.newParameterizedType(List::class.java, HashtagItem::class.java), emptySet(), &quot;hashtags&quot;)</b>
 &nbsp;
-&nbsp;  private val urlContainerAdapter: JsonAdapter&lt;UrlContainer&gt; =
-<b class="nc">&nbsp;      moshi.adapter(UrlContainer::class.java, emptySet(), &quot;description&quot;)</b>
+&nbsp;  private val listOfSymbolItemAdapter: JsonAdapter&lt;List&lt;SymbolItem&gt;&gt; =
+<b class="nc">&nbsp;      moshi.adapter(Types.newParameterizedType(List::class.java, SymbolItem::class.java), emptySet(), &quot;symbols&quot;)</b>
+&nbsp;
+&nbsp;  private val listOfUrlItemAdapter: JsonAdapter&lt;List&lt;UrlItem&gt;&gt; =
+<b class="nc">&nbsp;      moshi.adapter(Types.newParameterizedType(List::class.java, UrlItem::class.java), emptySet(), &quot;urls&quot;)</b>
+&nbsp;
+&nbsp;  private val listOfUserMentionAdapter: JsonAdapter&lt;List&lt;UserMention&gt;&gt; =
+<b class="nc">&nbsp;      moshi.adapter(Types.newParameterizedType(List::class.java, UserMention::class.java), emptySet(), &quot;userMentions&quot;)</b>
+&nbsp;
+&nbsp;  private val listOfMediaItemAdapter: JsonAdapter&lt;List&lt;MediaItem&gt;&gt; =
+<b class="nc">&nbsp;      moshi.adapter(Types.newParameterizedType(List::class.java, MediaItem::class.java), emptySet(), &quot;media&quot;)</b>
 &nbsp;
 &nbsp;  @Volatile
-&nbsp;  private var constructorRef: Constructor&lt;UserEntities&gt;? = null
+&nbsp;  private var constructorRef: Constructor&lt;TweetEntities&gt;? = null
 &nbsp;
-<b class="nc">&nbsp;  override fun toString(): String = buildString(34) { append(&quot;GeneratedJsonAdapter(&quot;).append(&quot;UserEntities&quot;).append(&#39;)&#39;) }</b>
+<b class="nc">&nbsp;  override fun toString(): String = buildString(35) { append(&quot;GeneratedJsonAdapter(&quot;).append(&quot;TweetEntities&quot;).append(&#39;)&#39;) }</b>
 &nbsp;
-&nbsp;  override fun fromJson(reader: JsonReader): UserEntities {
-<b class="nc">&nbsp;    var url: UrlContainer? = null</b>
-<b class="nc">&nbsp;    var description: UrlContainer? = null</b>
+&nbsp;  override fun fromJson(reader: JsonReader): TweetEntities {
+<b class="nc">&nbsp;    var hashtags: List&lt;HashtagItem&gt;? = null</b>
+<b class="nc">&nbsp;    var symbols: List&lt;SymbolItem&gt;? = null</b>
+<b class="nc">&nbsp;    var urls: List&lt;UrlItem&gt;? = null</b>
+<b class="nc">&nbsp;    var userMentions: List&lt;UserMention&gt;? = null</b>
+<b class="nc">&nbsp;    var media: List&lt;MediaItem&gt;? = null</b>
 <b class="nc">&nbsp;    var mask0 = -1</b>
 <b class="nc">&nbsp;    reader.beginObject()</b>
 <b class="nc">&nbsp;    while (reader.hasNext()) {</b>
 <b class="nc">&nbsp;      when (reader.selectName(options)) {</b>
 &nbsp;        0 -&gt; {
-<b class="nc">&nbsp;          url = nullableUrlContainerAdapter.fromJson(reader)</b>
+<b class="nc">&nbsp;          hashtags = listOfHashtagItemAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;hashtags&quot;, &quot;hashtags&quot;, reader)</b>
 &nbsp;          // $mask = $mask and (1 shl 0).inv()
 <b class="nc">&nbsp;          mask0 = mask0 and 0xfffffffe.toInt()</b>
 &nbsp;        }
-<b class="nc">&nbsp;        1 -&gt; description = urlContainerAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;description&quot;, &quot;description&quot;, reader)</b>
+&nbsp;        1 -&gt; {
+<b class="nc">&nbsp;          symbols = listOfSymbolItemAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;symbols&quot;, &quot;symbols&quot;, reader)</b>
+&nbsp;          // $mask = $mask and (1 shl 1).inv()
+<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffffd.toInt()</b>
+&nbsp;        }
+&nbsp;        2 -&gt; {
+<b class="nc">&nbsp;          urls = listOfUrlItemAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;urls&quot;, &quot;urls&quot;, reader)</b>
+&nbsp;          // $mask = $mask and (1 shl 2).inv()
+<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffffb.toInt()</b>
+&nbsp;        }
+&nbsp;        3 -&gt; {
+<b class="nc">&nbsp;          userMentions = listOfUserMentionAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;userMentions&quot;, &quot;user_mentions&quot;, reader)</b>
+&nbsp;          // $mask = $mask and (1 shl 3).inv()
+<b class="nc">&nbsp;          mask0 = mask0 and 0xfffffff7.toInt()</b>
+&nbsp;        }
+&nbsp;        4 -&gt; {
+<b class="nc">&nbsp;          media = listOfMediaItemAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;media&quot;, &quot;media&quot;, reader)</b>
+&nbsp;          // $mask = $mask and (1 shl 4).inv()
+<b class="nc">&nbsp;          mask0 = mask0 and 0xffffffef.toInt()</b>
+&nbsp;        }
 &nbsp;        -1 -&gt; {
 &nbsp;          // Unknown name, skip it.
 <b class="nc">&nbsp;          reader.skipName()</b>
@@ -155,35 +189,47 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;      }
 &nbsp;    }
 <b class="nc">&nbsp;    reader.endObject()</b>
-<b class="nc">&nbsp;    if (mask0 == 0xfffffffe.toInt()) {</b>
+<b class="nc">&nbsp;    if (mask0 == 0xffffffe0.toInt()) {</b>
 &nbsp;      // All parameters with defaults are set, invoke the constructor directly
-<b class="nc">&nbsp;      return  UserEntities(</b>
-<b class="nc">&nbsp;          url = url,</b>
-<b class="nc">&nbsp;          description = description ?: throw Util.missingProperty(&quot;description&quot;, &quot;description&quot;, reader)</b>
+<b class="nc">&nbsp;      return  TweetEntities(</b>
+<b class="nc">&nbsp;          hashtags = hashtags as List&lt;HashtagItem&gt;,</b>
+<b class="nc">&nbsp;          symbols = symbols as List&lt;SymbolItem&gt;,</b>
+<b class="nc">&nbsp;          urls = urls as List&lt;UrlItem&gt;,</b>
+<b class="nc">&nbsp;          userMentions = userMentions as List&lt;UserMention&gt;,</b>
+<b class="nc">&nbsp;          media = media as List&lt;MediaItem&gt;</b>
 &nbsp;      )
 &nbsp;    } else {
 &nbsp;      // Reflectively invoke the synthetic defaults constructor
 &nbsp;      @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="nc">&nbsp;      val localConstructor: Constructor&lt;UserEntities&gt; =</b>
-<b class="nc">&nbsp;          this.constructorRef ?: UserEntities::class.java.getDeclaredConstructor(UrlContainer::class.java, UrlContainer::class.java, Int::class.javaPrimitiveType, Util.DEFAULT_CONSTRUCTOR_MARKER).also { this.constructorRef = it }</b>
+<b class="nc">&nbsp;      val localConstructor: Constructor&lt;TweetEntities&gt; =</b>
+<b class="nc">&nbsp;          this.constructorRef ?: TweetEntities::class.java.getDeclaredConstructor(List::class.java, List::class.java, List::class.java, List::class.java, List::class.java, Int::class.javaPrimitiveType, Util.DEFAULT_CONSTRUCTOR_MARKER).also { this.constructorRef = it }</b>
 <b class="nc">&nbsp;      return localConstructor.newInstance(</b>
-<b class="nc">&nbsp;          url,</b>
-<b class="nc">&nbsp;          description ?: throw Util.missingProperty(&quot;description&quot;, &quot;description&quot;, reader),</b>
+<b class="nc">&nbsp;          hashtags,</b>
+<b class="nc">&nbsp;          symbols,</b>
+<b class="nc">&nbsp;          urls,</b>
+<b class="nc">&nbsp;          userMentions,</b>
+<b class="nc">&nbsp;          media,</b>
 <b class="nc">&nbsp;          mask0,</b>
 <b class="nc">&nbsp;          /* DefaultConstructorMarker */ null</b>
 &nbsp;      )
 &nbsp;    }
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun toJson(writer: JsonWriter, value_: UserEntities?) {
+&nbsp;  override fun toJson(writer: JsonWriter, value_: TweetEntities?) {
 <b class="nc">&nbsp;    if (value_ == null) {</b>
 <b class="nc">&nbsp;      throw NullPointerException(&quot;value_ was null! Wrap in .nullSafe() to write nullable values.&quot;)</b>
 &nbsp;    }
 <b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.name(&quot;url&quot;)</b>
-<b class="nc">&nbsp;    nullableUrlContainerAdapter.toJson(writer, value_.url)</b>
-<b class="nc">&nbsp;    writer.name(&quot;description&quot;)</b>
-<b class="nc">&nbsp;    urlContainerAdapter.toJson(writer, value_.description)</b>
+<b class="nc">&nbsp;    writer.name(&quot;hashtags&quot;)</b>
+<b class="nc">&nbsp;    listOfHashtagItemAdapter.toJson(writer, value_.hashtags)</b>
+<b class="nc">&nbsp;    writer.name(&quot;symbols&quot;)</b>
+<b class="nc">&nbsp;    listOfSymbolItemAdapter.toJson(writer, value_.symbols)</b>
+<b class="nc">&nbsp;    writer.name(&quot;urls&quot;)</b>
+<b class="nc">&nbsp;    listOfUrlItemAdapter.toJson(writer, value_.urls)</b>
+<b class="nc">&nbsp;    writer.name(&quot;user_mentions&quot;)</b>
+<b class="nc">&nbsp;    listOfUserMentionAdapter.toJson(writer, value_.userMentions)</b>
+<b class="nc">&nbsp;    writer.name(&quot;media&quot;)</b>
+<b class="nc">&nbsp;    listOfMediaItemAdapter.toJson(writer, value_.media)</b>
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;}
@@ -210,7 +256,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

@@ -68,10 +68,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.3%
+    88.8%
   </span>
   <span class="absValue">
-    (121/134)
+    (142/160)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,15 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     94.4%
   </span>
   <span class="absValue">
-    (334/354)
+    (368/390)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.5%
+    89.6%
   </span>
   <span class="absValue">
-    (1612/1801)
+    (1727/1927)
   </span>
 </td>
 </tr>
@@ -120,8 +120,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.nextBooleanCore
 &nbsp;import com.ghost.serialization.parser.common.nextKeyCommaPreambleCore
 &nbsp;import com.ghost.serialization.parser.common.nextOrNullCore
-&nbsp;import com.ghost.serialization.parser.common.readListCore
-&nbsp;import com.ghost.serialization.parser.common.readSetCore
 &nbsp;import com.ghost.serialization.parser.common.selectValidateCommasCore
 &nbsp;import com.ghost.serialization.parser.common.skipValueCore
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -140,6 +138,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        setPredictedFieldIndex = { predictedFieldIndex = it },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
+<b class="fc">&nbsp;    pathTracker.pushObject()</b>
 &nbsp;}
 &nbsp;
 &nbsp;fun GhostJsonStringReader.endObject() {
@@ -149,6 +148,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        setDepth = { depth = it },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
+<b class="fc">&nbsp;    pathTracker.finishObjectValue()</b>
 &nbsp;}
 &nbsp;
 &nbsp;fun GhostJsonStringReader.beginArray() {
@@ -163,6 +163,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
+<b class="fc">&nbsp;    pathTracker.pushArray()</b>
 &nbsp;}
 &nbsp;
 &nbsp;fun GhostJsonStringReader.endArray() {
@@ -172,10 +173,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        setDepth = { depth = it },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
+<b class="fc">&nbsp;    pathTracker.finishArrayValue()</b>
 &nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.hasNext(): Boolean =
-<b class="fc">&nbsp;    hasNextCore(</b>
+&nbsp;fun GhostJsonStringReader.hasNext(): Boolean {
+<b class="fc">&nbsp;    val hasMore = hasNextCore(</b>
 <b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
 <b class="fc">&nbsp;        strictMode = strictMode,</b>
 <b class="fc">&nbsp;        depth = depth,</b>
@@ -186,6 +188,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
+<b class="fc">&nbsp;    if (hasMore &amp;&amp; pathTracker.isInArray()) {</b>
+<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return hasMore</b>
+&nbsp;}
 &nbsp;
 &nbsp;fun GhostJsonStringReader.nextKey(): String? {
 <b class="fc">&nbsp;    if (!nextKeyCommaPreambleCore(</b>
@@ -202,7 +209,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    ) {
 <b class="fc">&nbsp;        return null</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return readQuotedString()</b>
+<b class="fc">&nbsp;    val key = readQuotedString()</b>
+<b class="fc">&nbsp;    pathTracker.pushKey(key)</b>
+<b class="fc">&nbsp;    return key</b>
 &nbsp;}
 &nbsp;
 &nbsp;fun GhostJsonStringReader.consumeKeySeparator() {
@@ -226,8 +235,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    )
 &nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.nextBoolean(): Boolean =
-<b class="fc">&nbsp;    nextBooleanCore(</b>
+&nbsp;fun GhostJsonStringReader.nextBoolean(): Boolean {
+<b class="fc">&nbsp;    val value = nextBooleanCore(</b>
 <b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
 <b class="fc">&nbsp;        skipAndValidateLiteral = { skipAndValidateLiteral(it) },</b>
 <b class="fc">&nbsp;        coerceBooleans = coerceBooleans,</b>
@@ -235,8 +244,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        matchCoerceBooleanBytes = { matchCoerceBooleanBytes() },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;fun GhostJsonStringReader.nextString(): String = readQuotedString()</b>
+&nbsp;fun GhostJsonStringReader.nextString(): String {
+<b class="fc">&nbsp;    val value = readQuotedString()</b>
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
 &nbsp;
 &nbsp;/**
 &nbsp; * Reads a JSON string value that must contain exactly one [Char].
@@ -254,7 +270,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
 <b class="pc">&nbsp;        when {</b>
 <b class="nc">&nbsp;            length == 0 -&gt; throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)</b>
-<b class="fc">&nbsp;            length == C.SINGLE_CHAR_JSON_LENGTH -&gt; return rawData[start]</b>
+&nbsp;            length == C.SINGLE_CHAR_JSON_LENGTH -&gt; {
+<b class="fc">&nbsp;                pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;                return rawData[start]</b>
+&nbsp;            }
 <b class="nc">&nbsp;            else -&gt; throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + length)</b>
 &nbsp;        }
 &nbsp;    }
@@ -264,6 +283,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;    if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {</b>
 <b class="nc">&nbsp;        throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)</b>
 &nbsp;    }
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return decoded[0]</b>
 &nbsp;}
 &nbsp;
@@ -282,6 +302,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 <b class="fc">&nbsp;    position = cursor + 4</b>
 <b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 &nbsp;}
 &nbsp;
 &nbsp;/** Reads a JSON string, or `null` when the next token is the `null` literal. */
@@ -410,8 +431,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    )
 &nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.selectNameAndConsume(options: JsonReaderOptions): Int =
-<b class="fc">&nbsp;    internalSelect(options, consumeSeparator = true)</b>
+&nbsp;fun GhostJsonStringReader.selectNameAndConsume(options: JsonReaderOptions): Int {
+<b class="fc">&nbsp;    val index = internalSelect(options, consumeSeparator = true)</b>
+<b class="fc">&nbsp;    if (index &gt;= 0) {</b>
+<b class="fc">&nbsp;        pathTracker.pushKey(options.rawStrings[index])</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return index</b>
+&nbsp;}
 &nbsp;
 &nbsp;fun GhostJsonStringReader.selectString(options: JsonReaderOptions): Int =
 <b class="fc">&nbsp;    internalSelect(options, consumeSeparator = false)</b>
@@ -615,33 +641,65 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    )
 &nbsp;}
 &nbsp;
-&nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readList(crossinline itemParser: () -&gt; T): List&lt;T&gt; =
-<b class="fc">&nbsp;    readListCore(</b>
-<b class="fc">&nbsp;        beginArray = { beginArray() },</b>
-<b class="fc">&nbsp;        endArray = { endArray() },</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        getDepth = { depth },</b>
-<b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="fc">&nbsp;        initialCapacity = initialCollectionCapacity,</b>
-<b class="fc">&nbsp;        maxSize = maxCollectionSize,</b>
-<b class="fc">&nbsp;        itemParser = { itemParser() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
+&nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readList(crossinline itemParser: () -&gt; T): List&lt;T&gt; {
+<b class="fc">&nbsp;    beginArray()</b>
+<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
+<b class="fc">&nbsp;        endArray()</b>
+<b class="fc">&nbsp;        return emptyList()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val list = ArrayList&lt;T&gt;(initialCollectionCapacity)</b>
+<b class="fc">&nbsp;    val maxSize = maxCollectionSize</b>
 &nbsp;
-&nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readSet(crossinline itemParser: () -&gt; T): Set&lt;T&gt; =
-<b class="fc">&nbsp;    readSetCore(</b>
-<b class="fc">&nbsp;        beginArray = { beginArray() },</b>
-<b class="fc">&nbsp;        endArray = { endArray() },</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        getDepth = { depth },</b>
-<b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="fc">&nbsp;        initialCapacity = initialCollectionCapacity,</b>
-<b class="fc">&nbsp;        maxSize = maxCollectionSize,</b>
-<b class="fc">&nbsp;        itemParser = { itemParser() },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
+<b class="fc">&nbsp;        list.add(itemParser())</b>
+<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
+<b class="fc">&nbsp;        if (next == C.CLOSE_ARR_INT) {</b>
+<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
+<b class="fc">&nbsp;                depth--</b>
+&nbsp;            }
+<b class="fc">&nbsp;            pathTracker.finishArrayValue()</b>
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        if (next != C.COMMA_INT) {</b>
+<b class="fc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (list.size &gt; maxSize) {</b>
+<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return list</b>
+&nbsp;}
+&nbsp;
+&nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readSet(crossinline itemParser: () -&gt; T): Set&lt;T&gt; {
+<b class="fc">&nbsp;    beginArray()</b>
+<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
+<b class="fc">&nbsp;        endArray()</b>
+<b class="fc">&nbsp;        return emptySet()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val set = HashSet&lt;T&gt;(initialCollectionCapacity)</b>
+<b class="fc">&nbsp;    val maxSize = maxCollectionSize</b>
+&nbsp;
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
+<b class="fc">&nbsp;        set.add(itemParser())</b>
+<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
+<b class="fc">&nbsp;        if (next == C.CLOSE_ARR_INT) {</b>
+<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
+<b class="fc">&nbsp;                depth--</b>
+&nbsp;            }
+<b class="fc">&nbsp;            pathTracker.finishArrayValue()</b>
+&nbsp;            break
+&nbsp;        }
+<b class="pc">&nbsp;        if (next != C.COMMA_INT) {</b>
+<b class="nc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (set.size &gt; maxSize) {</b>
+<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return set</b>
+&nbsp;}
 &nbsp;
 &nbsp;inline fun &lt;K, V&gt; GhostJsonStringReader.readMap(
 &nbsp;    crossinline keyParser: () -&gt; K,
@@ -667,6 +725,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;            if (depth &gt; 0) {</b>
 <b class="fc">&nbsp;                depth--</b>
 &nbsp;            }
+<b class="fc">&nbsp;            pathTracker.finishObjectValue()</b>
 &nbsp;            break
 &nbsp;        }
 <b class="fc">&nbsp;        if (next != C.COMMA_INT) {</b>
@@ -706,7 +765,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

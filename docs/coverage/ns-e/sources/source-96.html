@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     55.4%
   </span>
   <span class="absValue">
-    (327/590)
+    (329/594)
   </span>
 </td>
 </tr>
@@ -160,7 +160,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_DATA) == 0L) {</b>
-<b class="nc">&nbsp;      reader.throwError(&quot;Required field &#39;data&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;      reader.throwMissingRequiredField(&quot;data&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -190,8 +190,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return NestedGenericModel(</b>
 <b class="fc">&nbsp;      `data` = dataValue!!,</b>
 &nbsp;    )
@@ -199,7 +199,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_DATA) == 0L) {</b>
-<b class="nc">&nbsp;      reader.throwError(&quot;Required field &#39;data&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;      reader.throwMissingRequiredField(&quot;data&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -229,8 +229,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return NestedGenericModel(</b>
 <b class="fc">&nbsp;      `data` = dataValue!!,</b>
 &nbsp;    )
@@ -238,7 +238,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
 <b class="pc">&nbsp;    if ((mask0 and MASK_DATA) == 0L) {</b>
-<b class="nc">&nbsp;      reader.throwError(&quot;Required field &#39;data&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;      reader.throwMissingRequiredField(&quot;data&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -268,8 +268,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return NestedGenericModel(</b>
 <b class="fc">&nbsp;      `data` = dataValue!!,</b>
 &nbsp;    )
@@ -391,7 +391,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

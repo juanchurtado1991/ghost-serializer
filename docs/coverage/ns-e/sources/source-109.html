@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UserEntities</title>
+  <title>GhostSerialization Coverage Report > TweetEntities</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UserEntities (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: TweetEntities (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 
@@ -46,7 +46,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UserEntities</td>
+  <td class="name">TweetEntities</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -57,10 +57,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    30%
+    21.9%
   </span>
   <span class="absValue">
-    (3/10)
+    (7/32)
   </span>
 </td>
 <td class="coverageStat">
@@ -68,20 +68,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (3/3)
+    (7/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    58.6%
+    60%
   </span>
   <span class="absValue">
-    (41/70)
+    (156/260)
   </span>
 </td>
 </tr>
   <tr>
-    <td class="name">UserEntities$Companion</td>
+    <td class="name">TweetEntities$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -120,10 +120,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    30%
+    21.9%
   </span>
   <span class="absValue">
-    (3/10)
+    (7/32)
   </span>
 </td>
 <td class="coverageStat">
@@ -131,15 +131,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    60.8%
+    60.6%
   </span>
   <span class="absValue">
-    (45/74)
+    (160/264)
   </span>
 </td>
 </tr>
@@ -165,9 +165,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
 &nbsp;@Serializable
 &nbsp;@GhostSerialization
-&nbsp;data class UserEntities(
-<b class="fc">&nbsp;    val url: UrlContainer? = null,</b>
-<b class="fc">&nbsp;    val description: UrlContainer</b>
+&nbsp;data class TweetEntities(
+<b class="fc">&nbsp;    val hashtags: List&lt;HashtagItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    val symbols: List&lt;SymbolItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    val urls: List&lt;UrlItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    @Json(name = &quot;user_mentions&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;user_mentions&quot;) @GhostName(&quot;user_mentions&quot;) val userMentions: List&lt;UserMention&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    val media: List&lt;MediaItem&gt; = emptyList()</b>
 &nbsp;)
 </code>
 </pre>
@@ -192,7 +196,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

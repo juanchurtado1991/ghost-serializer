@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostSourceCommonKt</title>
+  <title>GhostSerialization Coverage Report > GhostSource</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostSourceCommonKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostSource (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,13 +46,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostSourceCommonKt</td>
+  <td class="name">GhostSource</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -63,35 +60,89 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (7/7)
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.9%
+    100%
   </span>
   <span class="absValue">
-    (129/136)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.3%
+    100%
   </span>
   <span class="absValue">
-    (183/188)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    99.4%
-  </span>
-  <span class="absValue">
-    (811/816)
+    (15/15)
   </span>
 </td>
 </tr>
-
+  <tr>
+    <td class="name">GhostSource$DefaultImpls</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/10)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (15/25)
+  </span>
+</td>
+</tr>
 </table>
 
 <br/>
@@ -101,360 +152,95 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.bytes.ghostReadLong8
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_SHIFT_UNIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HASH_SHIFT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTES
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MATCH_END
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.RESULT_NONE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SCAN_HASH_NONE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_RUN_LONG
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SWAR_BACKSLASHES
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SWAR_HIGHS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SWAR_ONES
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SWAR_QUOTES
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WHITESPACE_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.packScanResult
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.streaming.StreamingGhostSource
+&nbsp;import okio.BufferedSource
+&nbsp;import okio.ByteString
 &nbsp;
-&nbsp;
-&nbsp;private const val UNROLL_STEP = 4
-&nbsp;private const val INDEX_OFFSET_1 = 1
-&nbsp;private const val INDEX_OFFSET_2 = 2
-&nbsp;private const val INDEX_OFFSET_3 = 3
-&nbsp;
-&nbsp;internal inline fun findNextNonWhitespaceImpl(
-&nbsp;    position: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int
-&nbsp;): Int {
-<b class="fc">&nbsp;    var currentPosition = position</b>
-<b class="fc">&nbsp;    val whitespaceMask = WHITESPACE_MASK</b>
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition + INDEX_OFFSET_3 &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte0 = getByte(currentPosition)</b>
-<b class="fc">&nbsp;        if (byte0 &gt; SPACE_INT || (whitespaceMask shr byte0) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
-<b class="fc">&nbsp;            return currentPosition</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)</b>
-<b class="fc">&nbsp;        if (byte1 &gt; SPACE_INT || (whitespaceMask shr byte1) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
-<b class="fc">&nbsp;            return currentPosition + INDEX_OFFSET_1</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)</b>
-<b class="pc">&nbsp;        if (byte2 &gt; SPACE_INT || (whitespaceMask shr byte2) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
-<b class="fc">&nbsp;            return currentPosition + INDEX_OFFSET_2</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)</b>
-<b class="pc">&nbsp;        if (byte3 &gt; SPACE_INT || (whitespaceMask shr byte3) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
-<b class="fc">&nbsp;            return currentPosition + INDEX_OFFSET_3</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        currentPosition += UNROLL_STEP</b>
-&nbsp;    }
-<b class="fc">&nbsp;    while (currentPosition &lt; limit) {</b>
-<b class="fc">&nbsp;        val singleByte = getByte(currentPosition)</b>
-<b class="fc">&nbsp;        if (singleByte &gt; SPACE_INT || (whitespaceMask shr singleByte) and BYTE_SHIFT_UNIT == RESULT_NONE) {</b>
-<b class="fc">&nbsp;            return currentPosition</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentPosition++</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return MATCH_END</b>
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun findClosingQuoteImpl(
-&nbsp;    position: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int
-&nbsp;): Int {
-<b class="fc">&nbsp;    var currentPosition = position</b>
-<b class="fc">&nbsp;    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS</b>
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition + INDEX_OFFSET_3 &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte0 = getByte(currentPosition)</b>
-<b class="fc">&nbsp;        if (byte0 &lt; ASCII_LIMIT &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte0 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte0 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return currentPosition</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return MATCH_END</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)</b>
-<b class="fc">&nbsp;        if (byte1 &lt; ASCII_LIMIT &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte1 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte1 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return currentPosition + INDEX_OFFSET_1</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return MATCH_END</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)</b>
-<b class="fc">&nbsp;        if (byte2 &lt; ASCII_LIMIT &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte2 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte2 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return currentPosition + INDEX_OFFSET_2</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return MATCH_END</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)</b>
-<b class="fc">&nbsp;        if (byte3 &lt; ASCII_LIMIT &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte3 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte3 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return currentPosition + INDEX_OFFSET_3</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return MATCH_END</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentPosition += UNROLL_STEP</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition &lt; limit) {</b>
-<b class="fc">&nbsp;        val singleByte = getByte(currentPosition)</b>
-<b class="fc">&nbsp;        if (singleByte &lt; ASCII_LIMIT &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[singleByte shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (singleByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (singleByte == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return currentPosition</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return MATCH_END</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentPosition++</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return MATCH_END</b>
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun scanStringImpl(
-&nbsp;    start: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int
-&nbsp;): Long {
-<b class="fc">&nbsp;    var currentPosition = start</b>
-<b class="fc">&nbsp;    var accumulatedHash = 0</b>
-<b class="fc">&nbsp;    var isPureAscii = true</b>
-<b class="fc">&nbsp;    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS</b>
-<b class="fc">&nbsp;    val hashShift = HASH_SHIFT</b>
-<b class="fc">&nbsp;    val asciiLimit = ASCII_LIMIT</b>
-<b class="fc">&nbsp;    val matchEndLong = MATCH_END.toLong()</b>
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition + INDEX_OFFSET_3 &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte0 = getByte(currentPosition)</b>
-<b class="fc">&nbsp;        if (byte0 &lt; asciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte0 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte0 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte0 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return packScanResult(currentPosition - start, accumulatedHash, isPureAscii)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return matchEndLong</b>
-<b class="fc">&nbsp;        } else if (byte0 &gt;= asciiLimit) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte0</b>
-&nbsp;
-<b class="fc">&nbsp;        val byte1 = getByte(currentPosition + INDEX_OFFSET_1)</b>
-<b class="fc">&nbsp;        if (byte1 &lt; asciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte1 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte1 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte1 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return packScanResult(</b>
-<b class="fc">&nbsp;                    currentPosition + INDEX_OFFSET_1 - start,</b>
-<b class="fc">&nbsp;                    accumulatedHash,</b>
-<b class="fc">&nbsp;                    isPureAscii</b>
-&nbsp;                )
-&nbsp;            }
-<b class="fc">&nbsp;            return matchEndLong</b>
-<b class="fc">&nbsp;        } else if (byte1 &gt;= asciiLimit) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte1</b>
-&nbsp;
-<b class="fc">&nbsp;        val byte2 = getByte(currentPosition + INDEX_OFFSET_2)</b>
-<b class="fc">&nbsp;        if (byte2 &lt; asciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte2 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte2 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte2 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return packScanResult(</b>
-<b class="fc">&nbsp;                    currentPosition + INDEX_OFFSET_2 - start,</b>
-<b class="fc">&nbsp;                    accumulatedHash,</b>
-<b class="fc">&nbsp;                    isPureAscii</b>
-&nbsp;                )
-&nbsp;            }
-<b class="fc">&nbsp;            return matchEndLong</b>
-<b class="fc">&nbsp;        } else if (byte2 &gt;= asciiLimit) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte2</b>
-&nbsp;
-<b class="fc">&nbsp;        val byte3 = getByte(currentPosition + INDEX_OFFSET_3)</b>
-<b class="fc">&nbsp;        if (byte3 &lt; asciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte3 shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (byte3 and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte3 == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return packScanResult(</b>
-<b class="fc">&nbsp;                    currentPosition + INDEX_OFFSET_3 - start,</b>
-<b class="fc">&nbsp;                    accumulatedHash,</b>
-<b class="fc">&nbsp;                    isPureAscii</b>
-&nbsp;                )
-&nbsp;            }
-<b class="fc">&nbsp;            return matchEndLong</b>
-<b class="fc">&nbsp;        } else if (byte3 &gt;= asciiLimit) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + byte3</b>
-<b class="fc">&nbsp;        currentPosition += UNROLL_STEP</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition &lt; limit) {</b>
-<b class="fc">&nbsp;        val singleByte = getByte(currentPosition)</b>
-<b class="fc">&nbsp;        if (singleByte &lt; asciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[singleByte shr BITMASK_SHIFT] shr</b>
-<b class="fc">&nbsp;                    (singleByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (singleByte == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return packScanResult(currentPosition - start, accumulatedHash, isPureAscii)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return matchEndLong</b>
-<b class="fc">&nbsp;        } else if (singleByte &gt;= asciiLimit) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        accumulatedHash = (accumulatedHash shl hashShift) - accumulatedHash + singleByte</b>
-<b class="fc">&nbsp;        currentPosition++</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return matchEndLong</b>
-&nbsp;}
-&nbsp;
-&nbsp;/** Branch-free &quot;does any byte of [v] equal zero?&quot; (McIlroy). Non-zero result ⇒ yes. */
-&nbsp;internal inline fun swarHasZeroByte(v: Long): Long =
-<b class="fc">&nbsp;    (v - SWAR_ONES) and v.inv() and SWAR_HIGHS</b>
 &nbsp;
 &nbsp;/**
-&nbsp; * SWAR variant of [scanStringImpl] that does NOT accumulate the pool hash. Detects the closing
-&nbsp; * quote, escapes/control bytes, and non-ASCII content eight bytes at a time using branch-free
-&nbsp; * bit tricks, falling back to a byte scan only for the word that contains a boundary byte.
+&nbsp; * Core data source abstraction for the Ghost JSON parser.
 &nbsp; *
-&nbsp; * Returns [packScanResult] with [SCAN_HASH_NONE] hash bits on success, or [MATCH_END] as a Long
-&nbsp; * when an escape or control byte requires the slow path. The rolling hash — needed only for the
-&nbsp; * small string pool — is recomputed cheaply by [rollingHashImpl] over short spans, so the bulk
-&nbsp; * of the byte volume (long, never-pooled values) is never hashed.
+&nbsp; * This interface allows the parser to operate on both [ByteArray] and streaming `okio.BufferedSource`
+&nbsp; * with a unified, high-performance API.
+&nbsp; *
+&nbsp; * **Key Constraints:**
+&nbsp; * - Implementations MUST return bytes as [Int] values in the range 0-255 (unsigned).
+&nbsp; * - This prevents sign-extension bugs and allows direct comparisons with [GhostJsonConstants].
 &nbsp; */
-&nbsp;internal fun scanStringSwarNoHash(data: ByteArray, start: Int, limit: Int): Long {
-<b class="fc">&nbsp;    var cursor = start</b>
-<b class="fc">&nbsp;    var isPureAscii = true</b>
-<b class="fc">&nbsp;    val matchEndLong = MATCH_END.toLong()</b>
+&nbsp;@InternalGhostApi
+&nbsp;interface GhostSource {
+&nbsp;    val size: Int
 &nbsp;
-&nbsp;    // SWAR fast path: consume LONG_BYTES windows with no quote, backslash, or control byte.
-<b class="fc">&nbsp;    while (cursor + LONG_BYTES &lt;= limit) {</b>
-<b class="fc">&nbsp;        val packedWindow = ghostReadLong8(data, cursor)</b>
-<b class="fc">&nbsp;        val hasQuote = swarHasZeroByte(packedWindow xor SWAR_QUOTES)</b>
-<b class="fc">&nbsp;        val hasBackslash = swarHasZeroByte(packedWindow xor SWAR_BACKSLASHES)</b>
-&nbsp;        // Bytes strictly below SPACE_INT (control chars); space itself is intentionally excluded.
-<b class="fc">&nbsp;        val hasControl =</b>
-<b class="fc">&nbsp;            (packedWindow - SPACE_RUN_LONG) and packedWindow.inv() and SWAR_HIGHS</b>
-<b class="fc">&nbsp;        if ((hasQuote or hasBackslash or hasControl) != RESULT_NONE) {</b>
-&nbsp;            break
-&nbsp;        }
-<b class="fc">&nbsp;        if ((packedWindow and SWAR_HIGHS) != RESULT_NONE) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        cursor += LONG_BYTES</b>
-&nbsp;    }
+&nbsp;    operator fun get(index: Int): Int
 &nbsp;
-&nbsp;    // Byte tail: boundary window + remainder.
-<b class="fc">&nbsp;    val escapeMasks = GhostJsonConstants.ESCAPE_MASKS</b>
-<b class="fc">&nbsp;    val asciiLimit = ASCII_LIMIT</b>
-<b class="fc">&nbsp;    while (cursor &lt; limit) {</b>
-<b class="fc">&nbsp;        val tokenByte = data[cursor].toInt() and BYTE_MASK</b>
-<b class="fc">&nbsp;        if (tokenByte &lt; asciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[tokenByte shr BITMASK_SHIFT] shr (tokenByte and BITMASK_INDEX_MASK)) and BITMASK_UNIT != RESULT_NONE)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (tokenByte == QUOTE_INT) {</b>
-<b class="fc">&nbsp;                return packScanResult(cursor - start, SCAN_HASH_NONE, isPureAscii)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return matchEndLong</b>
-<b class="fc">&nbsp;        } else if (tokenByte &gt;= asciiLimit) {</b>
-<b class="fc">&nbsp;            isPureAscii = false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        cursor++</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return matchEndLong</b>
+&nbsp;    /**
+&nbsp;     * Like [get], but returns [GhostJsonConstants.MATCH_END] instead of throwing when [index]
+&nbsp;     * is past the available data. Streaming sources report [size] as [Int.MAX_VALUE] because
+&nbsp;     * the document length is unknown, so callers that speculatively read ahead (such as the
+&nbsp;     * in-order field prediction) cannot bounds-check against [size] and need this instead.
+&nbsp;     */
+<b class="nc">&nbsp;    fun byteOrEof(index: Int): Int =</b>
+<b class="fc">&nbsp;        if (index &lt; size) get(index) else GhostJsonConstants.MATCH_END</b>
+&nbsp;
+&nbsp;    fun decodeToString(start: Int, end: Int): String
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Decodes bytes [start, end) as UTF-8. When [isKnown7BitContent] is true, the caller guarantees
+&nbsp;     * every byte in the range had bit 7 clear (ASCII); JVM/Android may use a faster decoder.
+&nbsp;     */
+<b class="nc">&nbsp;    fun decodeJsonStringRange(start: Int, end: Int, isKnown7BitContent: Boolean): String =</b>
+<b class="fc">&nbsp;        decodeToString(start, end)</b>
+&nbsp;
+&nbsp;    fun contentEquals(start: Int, expected: ByteString): Boolean
+&nbsp;
+&nbsp;
+&nbsp;    /** Access to the raw byte array if the source is backed by one. Returns EMPTY_BYTES otherwise. */
+<b class="pc">&nbsp;    val rawSourceData: ByteArray get() = GhostJsonConstants.EMPTY_BYTES</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Finds the next non-whitespace byte (&gt; 32) starting from [position].
+&nbsp;     * Returns the position or -1 if not found.
+&nbsp;     */
+&nbsp;    fun findNextNonWhitespace(position: Int, limit: Int): Int
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Finds the closing quote (&quot;) starting from [position], stopping at [limit].
+&nbsp;     *
+&nbsp;     * This is a &quot;Fast-Path&quot; scan:
+&nbsp;     * - Returns the position of the closing quote.
+&nbsp;     * - Returns -1 if it hits a backslash (\) or control character, signaling that the
+&nbsp;     *   parser must switch to the &quot;Slow-Path&quot; ( StringBuilder/escaping logic).
+&nbsp;     */
+&nbsp;    fun findClosingQuote(position: Int, limit: Int): Int
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Scans for the closing quote while calculating a rolling hash in a single pass.
+&nbsp;     *
+&nbsp;     * This is the &quot;Ultra-Fast-Path&quot; for string reading:
+&nbsp;     * - Returns the rolling hash (low 31 bits) AND the length (high 32 bits) if successful.
+&nbsp;     * - Returns -1L if an escape sequence or control character is encountered.
+&nbsp;     */
+&nbsp;    fun scanString(start: Int, limit: Int): Long
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Compares the source bytes against a cached [String] instance.
+&nbsp;     *
+&nbsp;     * This optimization is crucial for the [GhostJsonReader] string pool.
+&nbsp;     * It allows checking if a pool-cached string matches the source bytes WITHOUT
+&nbsp;     * allocating a new [String] for the comparison.
+&nbsp;     */
+&nbsp;    fun contentEqualsString(start: Int, length: Int, expected: String): Boolean
 &nbsp;}
 &nbsp;
-&nbsp;/**
-&nbsp; * Recomputes the small-string-pool rolling hash over `[start, start+length)`. Must stay
-&nbsp; * bit-for-bit identical to the accumulation in [scanStringImpl].
-&nbsp; */
-&nbsp;internal fun rollingHashImpl(data: ByteArray, start: Int, length: Int): Int {
-<b class="fc">&nbsp;    var accumulatedHash = SCAN_HASH_NONE</b>
-<b class="fc">&nbsp;    var byteOffset = 0</b>
-<b class="fc">&nbsp;    while (byteOffset &lt; length) {</b>
-<b class="fc">&nbsp;        accumulatedHash =</b>
-<b class="fc">&nbsp;            (accumulatedHash shl HASH_SHIFT) - accumulatedHash +</b>
-<b class="fc">&nbsp;                (data[start + byteOffset].toInt() and BYTE_MASK)</b>
-<b class="fc">&nbsp;        byteOffset++</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return accumulatedHash</b>
-&nbsp;}
+&nbsp;@InternalGhostApi
+&nbsp;expect fun createByteArraySource(data: ByteArray): GhostSource
 &nbsp;
-&nbsp;internal inline fun contentEqualsStringImpl(
-&nbsp;    start: Int,
-&nbsp;    length: Int,
-&nbsp;    targetString: String,
-&nbsp;    getByte: (Int) -&gt; Int
-&nbsp;): Boolean {
-<b class="fc">&nbsp;    if (targetString.length != length) {</b>
-<b class="fc">&nbsp;        return false</b>
-&nbsp;    }
-<b class="fc">&nbsp;    var currentIndex = 0</b>
-&nbsp;
-<b class="fc">&nbsp;    while (currentIndex + 3 &lt; length) {</b>
-<b class="pc">&nbsp;        if (targetString[currentIndex].code != getByte(start + currentIndex)) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (targetString[currentIndex + 1].code != getByte(start + currentIndex + 1)) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (targetString[currentIndex + 2].code != getByte(start + currentIndex + 2)) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (targetString[currentIndex + 3].code != getByte(start + currentIndex + 3)) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentIndex += 4</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    while (currentIndex &lt; length) {</b>
-<b class="pc">&nbsp;        if (targetString[currentIndex].code != getByte(start + currentIndex)) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentIndex++</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return true</b>
-&nbsp;}
+&nbsp;@InternalGhostApi
+&nbsp;fun createSourceBridge(source: BufferedSource): GhostSource =
+&nbsp;    StreamingGhostSource(source)
 </code>
 </pre>
 </div>
@@ -478,7 +264,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

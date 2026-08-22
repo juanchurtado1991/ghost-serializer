@@ -73,10 +73,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    58.7%
+    59.3%
   </span>
   <span class="absValue">
-    (142/242)
+    (140/236)
   </span>
 </td>
 </tr>
@@ -112,10 +112,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    58.7%
+    59.3%
   </span>
   <span class="absValue">
-    (142/242)
+    (140/236)
   </span>
 </td>
 </tr>
@@ -132,7 +132,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.exception.GhostJsonException
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
@@ -170,7 +169,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;      1 -&gt; GhostStandardsEnum.GhostMatch</b>
 <b class="nc">&nbsp;      2 -&gt; GhostStandardsEnum.Standard</b>
 <b class="nc">&nbsp;      -1 -&gt; reader.throwError(&quot;Invalid enum value&quot;)</b>
-<b class="nc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
+<b class="nc">&nbsp;      else -&gt; reader.throwError(&quot;Unexpected enum index: $index&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -184,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;      1 -&gt; GhostStandardsEnum.GhostMatch</b>
 <b class="nc">&nbsp;      2 -&gt; GhostStandardsEnum.Standard</b>
 <b class="nc">&nbsp;      -1 -&gt; reader.throwError(&quot;Invalid enum value&quot;)</b>
-<b class="nc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
+<b class="nc">&nbsp;      else -&gt; reader.throwError(&quot;Unexpected enum index: $index&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -198,7 +197,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;      1 -&gt; GhostStandardsEnum.GhostMatch</b>
 <b class="fc">&nbsp;      2 -&gt; GhostStandardsEnum.Standard</b>
 <b class="nc">&nbsp;      -1 -&gt; reader.throwError(&quot;Invalid enum value&quot;)</b>
-<b class="fc">&nbsp;      else -&gt; throw GhostJsonException(&quot;Unexpected index: $index&quot;)</b>
+<b class="fc">&nbsp;      else -&gt; reader.throwError(&quot;Unexpected enum index: $index&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -273,7 +272,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

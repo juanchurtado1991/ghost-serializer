@@ -167,11 +167,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
 <b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="pc">&nbsp;      if ((mask0 and MASK_W) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;w&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;w&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_H) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;h&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;h&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RESIZE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;resize&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;resize&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -206,8 +206,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return MediaSize(</b>
 <b class="fc">&nbsp;      w = wValue,</b>
 <b class="fc">&nbsp;      h = hValue,</b>
@@ -218,11 +218,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
 <b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="pc">&nbsp;      if ((mask0 and MASK_W) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;w&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;w&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_H) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;h&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;h&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RESIZE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;resize&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;resize&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -257,8 +257,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return MediaSize(</b>
 <b class="fc">&nbsp;      w = wValue,</b>
 <b class="fc">&nbsp;      h = hValue,</b>
@@ -269,11 +269,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
 <b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="pc">&nbsp;      if ((mask0 and MASK_W) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwError(&quot;Required field &#39;w&#39; missing in JSON&quot;)</b>
+<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;w&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_H) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;h&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;h&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_RESIZE) == 0L) {</b>
-<b class="nc">&nbsp;        reader.throwError(&quot;Required field &#39;resize&#39; missing in JSON&quot;)</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;resize&quot;)</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -308,8 +308,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
 <b class="fc">&nbsp;    return MediaSize(</b>
 <b class="fc">&nbsp;      w = wValue,</b>
 <b class="fc">&nbsp;      h = hValue,</b>
@@ -388,7 +388,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

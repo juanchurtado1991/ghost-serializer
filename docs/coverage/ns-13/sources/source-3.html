@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.2%
+    91.4%
   </span>
   <span class="absValue">
-    (124/136)
+    (128/140)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.5%
+    90.7%
   </span>
   <span class="absValue">
-    (696/769)
+    (708/781)
   </span>
 </td>
 </tr>
@@ -151,6 +151,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return result</b>
 &nbsp;}
 &nbsp;
@@ -186,6 +187,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return result</b>
 &nbsp;}
 &nbsp;
@@ -235,6 +237,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    if (isQuoted) {</b>
 <b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return finalIntResult</b>
 &nbsp;}
 &nbsp;
@@ -272,6 +275,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;    if (isQuoted) {</b>
 <b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return finalLongResult</b>
 &nbsp;}
 &nbsp;
@@ -430,7 +434,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

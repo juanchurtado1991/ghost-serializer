@@ -63,24 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    50%
   </span>
   <span class="absValue">
-    (3/3)
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.1%
+  </span>
+  <span class="absValue">
+    (37/44)
   </span>
 </td>
 </tr>
@@ -94,12 +101,76 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml.exception
 &nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.exception.hintForJsonError
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as Y
+&nbsp;
 &nbsp;/**
 &nbsp; * Exception thrown when Ghost encounters invalid or unsupported YAML content.
 &nbsp; *
-&nbsp; * @param message Human-readable description including byte position.
+&nbsp; * Cursor-phase errors (typed deserialize walking the AST) include a JSONPath-style [path]
+&nbsp; * (e.g. `$.user.age`) and an optional [hint]. Byte-parse errors keep [path] as `&quot;$&quot;` — the
+&nbsp; * document is not yet a navigable AST, so inventing a deeper path would be misleading.
 &nbsp; */
-<b class="fc">&nbsp;class GhostYamlException(message: String) : RuntimeException(message)</b>
+&nbsp;class GhostYamlException(
+<b class="fc">&nbsp;    private val baseMessage: String,</b>
+&nbsp;    /**
+&nbsp;     * JSONPath-style location for cursor-phase failures (e.g. `$.addresses[1].zip`).
+&nbsp;     * Defaults to `&quot;$&quot;` for parse-phase errors and unknown locations.
+&nbsp;     */
+<b class="fc">&nbsp;    val path: String = &quot;$&quot;,</b>
+&nbsp;    /**
+&nbsp;     * Optional fix suggestion. Omitted when there is no clear remediation.
+&nbsp;     */
+<b class="fc">&nbsp;    val hint: String? = null,</b>
+&nbsp;) : RuntimeException() {
+&nbsp;
+&nbsp;    override val message: String
+&nbsp;        get() {
+<b class="fc">&nbsp;            val location = &quot;[path $path]&quot;</b>
+<b class="pc">&nbsp;            return if (hint.isNullOrEmpty()) {</b>
+<b class="nc">&nbsp;                &quot;$baseMessage $location&quot;</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                &quot;$baseMessage $location\nHint: $hint&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Maps well-known YAML / shared decode error prefixes to short fix suggestions.
+&nbsp; * Prefers [hintForJsonError] for shared messages (required field, discriminator, enum, …),
+&nbsp; * then adds only YAML-specific remediations that are clearly actionable.
+&nbsp; */
+&nbsp;@InternalGhostApi
+&nbsp;internal fun hintForYamlError(message: String): String? {
+&nbsp;    hintForJsonError(message)?.let { return it }
+&nbsp;
+&nbsp;    return when {
+&nbsp;        message.startsWith(Y.ERR_EXPECTED_MAP_PREFIX) -&gt;
+&nbsp;            &quot;Expected a YAML mapping here — check the value type at this path.&quot;
+&nbsp;
+&nbsp;        message.startsWith(Y.ERR_EXPECTED_LIST_PREFIX) -&gt;
+&nbsp;            &quot;Expected a YAML sequence/list here — check the value type at this path.&quot;
+&nbsp;
+&nbsp;        message.startsWith(Y.ERR_EXPECTED_INT_PREFIX) ||
+&nbsp;            message.startsWith(Y.ERR_EXPECTED_LONG_PREFIX) ||
+&nbsp;            message.startsWith(Y.ERR_EXPECTED_DOUBLE_PREFIX) ||
+&nbsp;            message.startsWith(Y.ERR_EXPECTED_FLOAT_PREFIX) ||
+&nbsp;            message.startsWith(Y.ERR_EXPECTED_ULONG_PREFIX) -&gt;
+&nbsp;            &quot;Check the scalar type at this path. For numeric strings, enable coerceStringsToNumbers.&quot;
+&nbsp;
+&nbsp;        message.startsWith(Y.ERR_EXPECTED_BOOLEAN_PREFIX) -&gt;
+&nbsp;            &quot;If the API sends string booleans, enable coerceBooleans on the reader options.&quot;
+&nbsp;
+&nbsp;        message.startsWith(Y.ERR_MAX_NESTING_DEPTH_PREFIX) -&gt;
+&nbsp;            &quot;Reduce nesting, or raise maxDepth on the YAML reader if this document is intentionally deep.&quot;
+&nbsp;
+&nbsp;        message.startsWith(Y.ERR_ANCHOR_NOT_FOUND_PREFIX) -&gt;
+&nbsp;            &quot;Define the anchor with &amp;name before referencing it with *name in this document.&quot;
+&nbsp;
+&nbsp;        else -&gt; null
+&nbsp;    }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -123,7 +194,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

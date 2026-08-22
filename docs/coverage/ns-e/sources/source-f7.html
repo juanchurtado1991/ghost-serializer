@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > TwitterResponse</title>
+  <title>GhostSerialization Coverage Report > SseEventEnvelopeSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: TwitterResponse (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: SseEventEnvelopeSerializer (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,13 +49,37 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">TwitterResponse</td>
+  <td class="name">SseEventEnvelopeSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
     (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.6%
+  </span>
+  <span class="absValue">
+    (11/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    29.6%
+  </span>
+  <span class="absValue">
+    (21/71)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.4%
+  </span>
+  <span class="absValue">
+    (117/204)
   </span>
 </td>
 <td class="coverageStat">
@@ -60,89 +87,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     50%
   </span>
   <span class="absValue">
-    (1/2)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (2/2)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    89.1%
-  </span>
-  <span class="absValue">
-    (41/46)
+    (379/758)
   </span>
 </td>
 </tr>
-  <tr>
-    <td class="name">TwitterResponse$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (4/4)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (2/2)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    50%
-  </span>
-  <span class="absValue">
-    (1/2)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    90%
-  </span>
-  <span class="absValue">
-    (45/50)
-  </span>
-</td>
-</tr>
+
 </table>
 
 <br/>
@@ -150,24 +99,431 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostFlatten
-&nbsp;import com.ghost.serialization.annotations.GhostIgnore
-&nbsp;import com.ghost.serialization.annotations.GhostName
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostWrap
-&nbsp;import com.squareup.moshi.Json
-&nbsp;import com.squareup.moshi.JsonClass
-&nbsp;import kotlinx.serialization.SerialName
-&nbsp;import kotlinx.serialization.Serializable
+&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-<b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
-&nbsp;@Serializable
-&nbsp;@GhostSerialization(textChannel = true)
-&nbsp;data class TwitterResponse(
-<b class="fc">&nbsp;    val statuses: List&lt;Tweet&gt;</b>
-&nbsp;)
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.bytes.captureRawJson
+&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.streaming.beginObject
+&nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
+&nbsp;import com.ghost.serialization.parser.streaming.consumeNull
+&nbsp;import com.ghost.serialization.parser.streaming.endObject
+&nbsp;import com.ghost.serialization.parser.streaming.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.streaming.nextLong
+&nbsp;import com.ghost.serialization.parser.streaming.nextString
+&nbsp;import com.ghost.serialization.parser.streaming.selectNameAndConsume
+&nbsp;import com.ghost.serialization.parser.streaming.skipValue
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.beginObject
+&nbsp;import com.ghost.serialization.parser.strings.captureRawJson
+&nbsp;import com.ghost.serialization.parser.strings.consumeNull
+&nbsp;import com.ghost.serialization.parser.strings.endObject
+&nbsp;import com.ghost.serialization.parser.strings.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.strings.nextLong
+&nbsp;import com.ghost.serialization.parser.strings.nextString
+&nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
+&nbsp;import com.ghost.serialization.parser.strings.skipValue
+&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;import com.ghost.serialization.types.RawJsonDecode
+&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import kotlin.ByteArray
+&nbsp;import okio.ByteString
+&nbsp;import okio.ByteString.Companion.encodeUtf8
+&nbsp;
+&nbsp;/**
+&nbsp; * High-performance serializer for [SseEventEnvelope].
+&nbsp; * Generated by GhostSerialization. Do not modify manually.
+&nbsp; */
+&nbsp;object SseEventEnvelopeSerializer : GhostSerializer&lt;SseEventEnvelope&gt; {
+<b class="fc">&nbsp;  override val typeName: String = &quot;SseEventEnvelope&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val OPTIONS: JsonReaderOptions = JsonReaderOptions.of(</b>
+<b class="fc">&nbsp;        0,</b>
+<b class="fc">&nbsp;        31,</b>
+<b class="fc">&nbsp;        128,</b>
+<b class="fc">&nbsp;        true,</b>
+<b class="fc">&nbsp;        &quot;eventType&quot;,</b>
+<b class="fc">&nbsp;        &quot;eventTime&quot;,</b>
+<b class="fc">&nbsp;        &quot;deviceEvent&quot;,</b>
+<b class="fc">&nbsp;        &quot;modeEvent&quot;,</b>
+<b class="fc">&nbsp;        &quot;unknownEvent&quot;,</b>
+&nbsp;      )
+&nbsp;
+<b class="fc">&nbsp;  private val H_DEVICEEVENT: ByteString = &quot;\&quot;deviceEvent\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_DEVICEEVENT: String = &quot;\&quot;deviceEvent\&quot;:&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val H_EVENTTIME: ByteString = &quot;\&quot;eventTime\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_EVENTTIME: String = &quot;\&quot;eventTime\&quot;:&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val H_EVENTTYPE: ByteString = &quot;\&quot;eventType\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_EVENTTYPE: String = &quot;\&quot;eventType\&quot;:&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val H_MODEEVENT: ByteString = &quot;\&quot;modeEvent\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_MODEEVENT: String = &quot;\&quot;modeEvent\&quot;:&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val H_UNKNOWNEVENT: ByteString = &quot;\&quot;unknownEvent\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_UNKNOWNEVENT: String = &quot;\&quot;unknownEvent\&quot;:&quot;</b>
+&nbsp;
+&nbsp;  private const val MASK_EVENTTYPE: Long = 1L
+&nbsp;
+&nbsp;  private const val MASK_TIMEMILLIS: Long = 2L
+&nbsp;
+&nbsp;  private const val MASK_DEVICEEVENT: Long = 4L
+&nbsp;
+&nbsp;  private const val MASK_MODEEVENT: Long = 8L
+&nbsp;
+&nbsp;  private const val MASK_UNKNOWNEVENT: Long = 16L
+&nbsp;
+&nbsp;  private val deviceEventTargetSerializer: GhostSerializer&lt;DeviceEventPayload&gt; =
+<b class="fc">&nbsp;      Ghost.getSerializer(DeviceEventPayload::class)!!</b>
+&nbsp;
+&nbsp;  private val modeEventTargetSerializer: GhostSerializer&lt;ModeEventPayload&gt; =
+<b class="fc">&nbsp;      Ghost.getSerializer(ModeEventPayload::class)!!</b>
+&nbsp;
+&nbsp;  private fun createInstance(
+&nbsp;    mask0: Long,
+&nbsp;    eventTypeValue: String?,
+&nbsp;    timeMillisValue: Long,
+&nbsp;    deviceEventValue: RawJson?,
+&nbsp;    modeEventValue: RawJson?,
+&nbsp;    unknownEventValue: RawJson?,
+&nbsp;  ): SseEventEnvelope {
+<b class="fc">&nbsp;    val result = SseEventEnvelope(</b>
+<b class="fc">&nbsp;      eventType = if ((mask0 and MASK_EVENTTYPE) != 0L) eventTypeValue!! else &quot;&quot;,</b>
+<b class="fc">&nbsp;      timeMillis = timeMillisValue,</b>
+<b class="fc">&nbsp;      deviceEvent = deviceEventValue,</b>
+<b class="fc">&nbsp;      modeEvent = modeEventValue,</b>
+<b class="fc">&nbsp;      unknownEvent = unknownEventValue,</b>
+&nbsp;    )
+<b class="fc">&nbsp;    return result</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [SseEventEnvelope].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonReader): SseEventEnvelope {
+<b class="fc">&nbsp;    var eventTypeValue: String? = null</b>
+<b class="fc">&nbsp;    var timeMillisValue: Long = 0L</b>
+<b class="fc">&nbsp;    var deviceEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var modeEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var unknownEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="nc">&nbsp;          eventTypeValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_EVENTTYPE</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="nc">&nbsp;          timeMillisValue = reader.nextLong()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_TIMEMILLIS</b>
+&nbsp;        }
+&nbsp;        2 -&gt; {
+<b class="nc">&nbsp;          deviceEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_DEVICEEVENT</b>
+&nbsp;        }
+&nbsp;        3 -&gt; {
+<b class="nc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
+&nbsp;        }
+&nbsp;        4 -&gt; {
+<b class="nc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    return createInstance(</b>
+<b class="fc">&nbsp;      mask0,</b>
+<b class="fc">&nbsp;      eventTypeValue,</b>
+<b class="fc">&nbsp;      timeMillisValue,</b>
+<b class="fc">&nbsp;      deviceEventValue,</b>
+<b class="fc">&nbsp;      modeEventValue,</b>
+<b class="fc">&nbsp;      unknownEventValue,</b>
+&nbsp;    )
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [SseEventEnvelope].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonFlatReader): SseEventEnvelope {
+<b class="fc">&nbsp;    var eventTypeValue: String? = null</b>
+<b class="fc">&nbsp;    var timeMillisValue: Long = 0L</b>
+<b class="fc">&nbsp;    var deviceEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var modeEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var unknownEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="fc">&nbsp;          eventTypeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_EVENTTYPE</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          timeMillisValue = reader.nextLong()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_TIMEMILLIS</b>
+&nbsp;        }
+&nbsp;        2 -&gt; {
+<b class="pc">&nbsp;          deviceEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="fc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_DEVICEEVENT</b>
+&nbsp;        }
+&nbsp;        3 -&gt; {
+<b class="pc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="fc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
+&nbsp;        }
+&nbsp;        4 -&gt; {
+<b class="pc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="fc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    return createInstance(</b>
+<b class="fc">&nbsp;      mask0,</b>
+<b class="fc">&nbsp;      eventTypeValue,</b>
+<b class="fc">&nbsp;      timeMillisValue,</b>
+<b class="fc">&nbsp;      deviceEventValue,</b>
+<b class="fc">&nbsp;      modeEventValue,</b>
+<b class="fc">&nbsp;      unknownEventValue,</b>
+&nbsp;    )
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [SseEventEnvelope].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonStringReader): SseEventEnvelope {
+<b class="fc">&nbsp;    var eventTypeValue: String? = null</b>
+<b class="fc">&nbsp;    var timeMillisValue: Long = 0L</b>
+<b class="fc">&nbsp;    var deviceEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var modeEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var unknownEventValue: RawJson? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="nc">&nbsp;          eventTypeValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_EVENTTYPE</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="nc">&nbsp;          timeMillisValue = reader.nextLong()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_TIMEMILLIS</b>
+&nbsp;        }
+&nbsp;        2 -&gt; {
+<b class="nc">&nbsp;          deviceEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_DEVICEEVENT</b>
+&nbsp;        }
+&nbsp;        3 -&gt; {
+<b class="nc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
+&nbsp;        }
+&nbsp;        4 -&gt; {
+<b class="nc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    return createInstance(</b>
+<b class="fc">&nbsp;      mask0,</b>
+<b class="fc">&nbsp;      eventTypeValue,</b>
+<b class="fc">&nbsp;      timeMillisValue,</b>
+<b class="fc">&nbsp;      deviceEventValue,</b>
+<b class="fc">&nbsp;      modeEventValue,</b>
+<b class="fc">&nbsp;      unknownEventValue,</b>
+&nbsp;    )
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Routes [SseEventEnvelope] to its matching opaque JSON payload without re-parsing.
+&nbsp;   */
+<b class="fc">&nbsp;  fun routePayload(envelope: SseEventEnvelope): RawJson? = when (envelope.eventType) {</b>
+<b class="fc">&nbsp;  &quot;DEVICE_EVENT&quot; -&gt; envelope.deviceEvent</b>
+<b class="pc">&nbsp;  &quot;MODE_EVENT&quot; -&gt; envelope.modeEvent</b>
+<b class="fc">&nbsp;  else -&gt; envelope.unknownEvent</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Deserializes [SseEventEnvelope] from bytes and routes to payload (zero-copy RawJson slice on flat reader).
+&nbsp;   */
+&nbsp;  fun parsePayload(bytes: ByteArray): RawJson? {
+<b class="fc">&nbsp;    val envelope = deserialize(GhostJsonFlatReader(bytes))</b>
+<b class="fc">&nbsp;    return routePayload(envelope)</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Routes [SseEventEnvelope] and decodes annotated payload targets.
+&nbsp;   */
+<b class="fc">&nbsp;  fun routeTyped(envelope: SseEventEnvelope): Any? = when (envelope.eventType) {</b>
+<b class="pc">&nbsp;  &quot;DEVICE_EVENT&quot; -&gt; envelope.deviceEvent?.let { RawJsonDecode.decode(it, deviceEventTargetSerializer) }</b>
+<b class="pc">&nbsp;  &quot;MODE_EVENT&quot; -&gt; envelope.modeEvent?.let { RawJsonDecode.decode(it, modeEventTargetSerializer) }</b>
+<b class="nc">&nbsp;  else -&gt; envelope.unknownEvent</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Deserializes [SseEventEnvelope] from bytes and returns typed payload when configured.
+&nbsp;   */
+&nbsp;  fun parseTyped(bytes: ByteArray): Any? {
+<b class="fc">&nbsp;    val envelope = deserialize(GhostJsonFlatReader(bytes))</b>
+<b class="fc">&nbsp;    return routeTyped(envelope)</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: SseEventEnvelope) {
+<b class="nc">&nbsp;    writer.beginObject()</b>
+<b class="nc">&nbsp;    writer.writeField(H_EVENTTYPE, value.eventType)</b>
+<b class="nc">&nbsp;    writer.writeField(H_EVENTTIME, value.timeMillis)</b>
+<b class="nc">&nbsp;    if (value.deviceEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(H_DEVICEEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.deviceEvent.storage, value.deviceEvent.storageOffset, value.deviceEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value.modeEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(H_MODEEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.modeEvent.storage, value.modeEvent.storageOffset, value.modeEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value.unknownEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(H_UNKNOWNEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.unknownEvent.storage, value.unknownEvent.storageOffset, value.unknownEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: SseEventEnvelope) {
+<b class="nc">&nbsp;    writer.beginObject()</b>
+<b class="nc">&nbsp;    writer.writeField(H_EVENTTYPE, value.eventType)</b>
+<b class="nc">&nbsp;    writer.writeField(H_EVENTTIME, value.timeMillis)</b>
+<b class="nc">&nbsp;    if (value.deviceEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(H_DEVICEEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.deviceEvent.storage, value.deviceEvent.storageOffset, value.deviceEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value.modeEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(H_MODEEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.modeEvent.storage, value.modeEvent.storageOffset, value.modeEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value.unknownEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(H_UNKNOWNEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.unknownEvent.storage, value.unknownEvent.storageOffset, value.unknownEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: SseEventEnvelope) {
+<b class="nc">&nbsp;    writer.beginObject()</b>
+<b class="nc">&nbsp;    writer.writeField(HS_EVENTTYPE, value.eventType)</b>
+<b class="nc">&nbsp;    writer.writeField(HS_EVENTTIME, value.timeMillis)</b>
+<b class="nc">&nbsp;    if (value.deviceEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(HS_DEVICEEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.deviceEvent.storage, value.deviceEvent.storageOffset, value.deviceEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value.modeEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(HS_MODEEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.modeEvent.storage, value.modeEvent.storageOffset, value.modeEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    if (value.unknownEvent != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(HS_UNKNOWNEVENT)</b>
+<b class="nc">&nbsp;      writer.rawValue(value.unknownEvent.storage, value.unknownEvent.storageOffset, value.unknownEvent.storageLength)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun warmUp() {
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader1 = GhostJsonReader(</b>
+<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader1)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
+<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader2)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
+<b class="fc">&nbsp;            &quot;{}&quot;</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader3)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;  }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -191,7 +547,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

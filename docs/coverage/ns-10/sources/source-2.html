@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     98.3%
   </span>
   <span class="absValue">
-    (58/59)
+    (59/60)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.2%
+    77.2%
   </span>
   <span class="absValue">
-    (147/193)
+    (152/197)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.1%
+    92.1%
   </span>
   <span class="absValue">
-    (338/371)
+    (374/406)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.3%
+    89.5%
   </span>
   <span class="absValue">
-    (1572/1780)
+    (1697/1897)
   </span>
 </td>
 </tr>
@@ -107,10 +107,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.exception.hintForJsonError
 &nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
 &nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonPathTracker
 &nbsp;import com.ghost.serialization.parser.common.GhostSource
 &nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.common.createByteArraySource
@@ -200,6 +202,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    @PublishedApi
 <b class="fc">&nbsp;    internal var commaConsumedMask: Long = 0L</b>
 &nbsp;
+&nbsp;    /** JSONPath breadcrumbs — formatted only when [throwError] builds an exception. */
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()</b>
+&nbsp;
 &nbsp;    /**
 &nbsp;     * Gets the byte at the specified index, masking it to a positive integer.
 &nbsp;     */
@@ -209,7 +215,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
+&nbsp;     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
 &nbsp;     */
 &nbsp;    fun throwError(message: String): Nothing {
 <b class="fc">&nbsp;        val errorPosition = position</b>
@@ -218,6 +224,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        } else {
 <b class="fc">&nbsp;            errorPosition</b>
 &nbsp;        }
+<b class="fc">&nbsp;        val errorPath = pathTracker.formatPath()</b>
 &nbsp;
 <b class="fc">&nbsp;        throw GhostJsonException(</b>
 <b class="fc">&nbsp;            baseMessage = &quot;$message${C.ERR_AT_POSITION_PREFIX}$errorPosition&quot;,</b>
@@ -235,8 +242,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    byteIndex++</b>
 &nbsp;                }
 <b class="fc">&nbsp;                intArrayOf(lineNumber, columnNumber)</b>
-&nbsp;            }
+&nbsp;            },
+<b class="fc">&nbsp;            path = errorPath,</b>
+<b class="fc">&nbsp;            hint = hintForJsonError(message),</b>
 &nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
+&nbsp;     * exception points at `$.….&lt;jsonName&gt;` even though the object loop has already finished
+&nbsp;     * selecting keys (validation runs before [endObject]).
+&nbsp;     */
+&nbsp;    fun throwMissingRequiredField(jsonName: String): Nothing {
+<b class="fc">&nbsp;        pathTracker.pushKey(jsonName)</b>
+<b class="fc">&nbsp;        throwError(&quot;${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}&quot;)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -407,14 +426,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        maxDepth = C.MAX_DEPTH</b>
 <b class="fc">&nbsp;        maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
 <b class="fc">&nbsp;        lastScanContentWas7BitOnly = false</b>
+<b class="fc">&nbsp;        pathTracker.reset()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Begins consumption of a JSON object &#39;{&#39;. Increments validation depth.
 &nbsp;     */
 &nbsp;    fun beginObject() {
-<b class="pc">&nbsp;        if (nextNonWhitespace() != C.OPEN_OBJ_INT) {</b>
-<b class="nc">&nbsp;            throwError(C.ERR_EXPECTED_BEGIN_OBJ)</b>
+<b class="fc">&nbsp;        if (nextNonWhitespace() != C.OPEN_OBJ_INT) {</b>
+<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_BEGIN_OBJ)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        predictedFieldIndex = C.FIELD_PREDICTION_START</b>
 <b class="fc">&nbsp;        depth++</b>
@@ -426,6 +446,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            needsCommaMask = needsCommaMask and bit.inv()</b>
 <b class="fc">&nbsp;            commaConsumedMask = commaConsumedMask and bit.inv()</b>
 &nbsp;        }
+<b class="fc">&nbsp;        pathTracker.pushObject()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -438,6 +459,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        if (depth &gt; 0) {</b>
 <b class="fc">&nbsp;            depth--</b>
 &nbsp;        }
+<b class="fc">&nbsp;        pathTracker.finishObjectValue()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -456,6 +478,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            needsCommaMask = needsCommaMask and bit.inv()</b>
 <b class="fc">&nbsp;            commaConsumedMask = commaConsumedMask and bit.inv()</b>
 &nbsp;        }
+<b class="fc">&nbsp;        pathTracker.pushArray()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -468,6 +491,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        if (depth &gt; 0) {</b>
 <b class="fc">&nbsp;            depth--</b>
 &nbsp;        }
+<b class="fc">&nbsp;        pathTracker.finishArrayValue()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -520,6 +544,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
+<b class="fc">&nbsp;        if (pathTracker.isInArray()) {</b>
+<b class="fc">&nbsp;            pathTracker.enterArrayElement()</b>
+&nbsp;        }
 <b class="fc">&nbsp;        return true</b>
 &nbsp;    }
 &nbsp;
@@ -563,7 +590,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
-<b class="fc">&nbsp;        return readQuotedString()</b>
+<b class="fc">&nbsp;        val key = readQuotedString()</b>
+<b class="fc">&nbsp;        pathTracker.pushKey(key)</b>
+<b class="fc">&nbsp;        return key</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -628,24 +657,30 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val token = peekNextToken()</b>
 <b class="fc">&nbsp;        if (token == C.TRUE_CHAR_INT) {</b>
 <b class="fc">&nbsp;            skipAndValidateLiteral(C.TRUE_BS)</b>
+<b class="fc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;            return true</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (token == C.FALSE_CHAR_INT) {</b>
 <b class="fc">&nbsp;            skipAndValidateLiteral(C.FALSE_BS)</b>
+<b class="fc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;            return false</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (coerceBooleans) {</b>
 <b class="fc">&nbsp;            if (token == C.ONE_INT) {</b>
 <b class="fc">&nbsp;                internalSkip(1)</b>
+<b class="fc">&nbsp;                pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;                return true</b>
 &nbsp;            }
 <b class="fc">&nbsp;            if (token == C.ZERO_INT) {</b>
 <b class="fc">&nbsp;                internalSkip(1)</b>
+<b class="fc">&nbsp;                pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;                return false</b>
 &nbsp;            }
 <b class="pc">&nbsp;            if (token == C.QUOTE_INT) {</b>
 &nbsp;                // can the quoted string bytes directly. No String allocation.
-<b class="fc">&nbsp;                return matchCoerceBooleanBytes()</b>
+<b class="fc">&nbsp;                val coerced = matchCoerceBooleanBytes()</b>
+<b class="fc">&nbsp;                pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;                return coerced</b>
 &nbsp;            }
 &nbsp;        }
 <b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_BOOLEAN)</b>
@@ -654,7 +689,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Parses and returns the next string literal.
 &nbsp;     */
-<b class="fc">&nbsp;    fun nextString(): String = readQuotedString()</b>
+&nbsp;    fun nextString(): String {
+<b class="fc">&nbsp;        val value = readQuotedString()</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;        return value</b>
+&nbsp;    }
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Peeks whether the next JSON token is the null value token.
@@ -680,6 +719,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="fc">&nbsp;        position = cursor + 4</b>
 <b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        pathTracker.finishScalarValue()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /** Reads a JSON string, or `null` when the next token is the `null` literal. */
@@ -744,8 +784,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Selects name and consumes the key separator.
 &nbsp;     */
-&nbsp;    fun selectNameAndConsume(options: JsonReaderOptions): Int =
-<b class="fc">&nbsp;        internalSelect(options, consumeSeparator = true)</b>
+&nbsp;    fun selectNameAndConsume(options: JsonReaderOptions): Int {
+<b class="fc">&nbsp;        val index = internalSelect(options, consumeSeparator = true)</b>
+<b class="fc">&nbsp;        if (index &gt;= 0) {</b>
+<b class="fc">&nbsp;            pathTracker.pushKey(options.rawStrings[index])</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return index</b>
+&nbsp;    }
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Selects matching string options.
@@ -793,12 +838,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val maxSize = maxCollectionSize</b>
 &nbsp;
 <b class="fc">&nbsp;        while (true) {</b>
+<b class="fc">&nbsp;            pathTracker.enterArrayElement()</b>
 <b class="fc">&nbsp;            list.add(itemParser())</b>
 <b class="fc">&nbsp;            val next = nextNonWhitespace()</b>
 <b class="fc">&nbsp;            if (next == C.CLOSE_ARR_INT) {</b>
 <b class="pc">&nbsp;                if (depth &gt; 0) {</b>
 <b class="fc">&nbsp;                    depth--</b>
 &nbsp;                }
+<b class="fc">&nbsp;                pathTracker.finishArrayValue()</b>
 &nbsp;                break
 &nbsp;            }
 <b class="pc">&nbsp;            if (next != C.COMMA_INT) {</b>
@@ -825,12 +872,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val maxSize = maxCollectionSize</b>
 &nbsp;
 <b class="fc">&nbsp;        while (true) {</b>
+<b class="fc">&nbsp;            pathTracker.enterArrayElement()</b>
 <b class="fc">&nbsp;            set.add(itemParser())</b>
 <b class="fc">&nbsp;            val next = nextNonWhitespace()</b>
 <b class="fc">&nbsp;            if (next == C.CLOSE_ARR_INT) {</b>
 <b class="pc">&nbsp;                if (depth &gt; 0) {</b>
 <b class="fc">&nbsp;                    depth--</b>
 &nbsp;                }
+<b class="fc">&nbsp;                pathTracker.finishArrayValue()</b>
 &nbsp;                break
 &nbsp;            }
 <b class="pc">&nbsp;            if (next != C.COMMA_INT) {</b>
@@ -870,6 +919,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                if (depth &gt; 0) {</b>
 <b class="fc">&nbsp;                    depth--</b>
 &nbsp;                }
+<b class="fc">&nbsp;                pathTracker.finishObjectValue()</b>
 &nbsp;                break
 &nbsp;            }
 <b class="pc">&nbsp;            if (next != C.COMMA_INT) {</b>
@@ -898,6 +948,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val savedDepth = depth</b>
 <b class="fc">&nbsp;        val savedNeedsCommaMask = needsCommaMask</b>
 <b class="fc">&nbsp;        val savedCommaConsumedMask = commaConsumedMask</b>
+<b class="fc">&nbsp;        val savedPathMark = pathTracker.mark()</b>
 &nbsp;        try {
 <b class="fc">&nbsp;            return block()</b>
 &nbsp;        } catch (_: GhostJsonException) {
@@ -906,7 +957,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            depth = savedDepth</b>
 <b class="fc">&nbsp;            needsCommaMask = savedNeedsCommaMask</b>
 <b class="fc">&nbsp;            commaConsumedMask = savedCommaConsumedMask</b>
+<b class="fc">&nbsp;            pathTracker.resetTo(savedPathMark)</b>
 <b class="fc">&nbsp;            skipValue()</b>
+<b class="fc">&nbsp;            pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;            return null</b>
 &nbsp;        }
 &nbsp;    }
@@ -935,7 +988,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

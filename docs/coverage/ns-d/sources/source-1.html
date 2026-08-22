@@ -57,10 +57,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.4%
+    67.4%
   </span>
   <span class="absValue">
-    (190/286)
+    (213/316)
   </span>
 </td>
 <td class="coverageStat">
@@ -68,15 +68,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     99.7%
   </span>
   <span class="absValue">
-    (294/295)
+    (324/325)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.7%
+    87.1%
   </span>
   <span class="absValue">
-    (1887/2176)
+    (2091/2401)
   </span>
 </td>
 </tr>
@@ -96,10 +96,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.4%
+    67.4%
   </span>
   <span class="absValue">
-    (190/286)
+    (213/316)
   </span>
 </td>
 <td class="coverageStat">
@@ -107,15 +107,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     99.7%
   </span>
   <span class="absValue">
-    (294/295)
+    (324/325)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.7%
+    87.1%
   </span>
   <span class="absValue">
-    (1887/2176)
+    (2091/2401)
   </span>
 </td>
 </tr>
@@ -285,6 +285,32 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevices
 &nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevicesSerializer
 &nbsp;import com.ghost.serialization.integration.model.PageWithNestedDevices_LoggedInSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintAddress
+&nbsp;import com.ghost.serialization.integration.model.PathHintAddressSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintEnumHolder
+&nbsp;import com.ghost.serialization.integration.model.PathHintEnumHolderSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintInferredHolder
+&nbsp;import com.ghost.serialization.integration.model.PathHintInferredHolderSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintInferredPayload
+&nbsp;import com.ghost.serialization.integration.model.PathHintInferredPayloadSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintInferredPayload_AlphaSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintInferredPayload_BetaSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintNestedRoot
+&nbsp;import com.ghost.serialization.integration.model.PathHintNestedRootSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintRequiredModel
+&nbsp;import com.ghost.serialization.integration.model.PathHintRequiredModelSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintResilientHolder
+&nbsp;import com.ghost.serialization.integration.model.PathHintResilientHolderSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintShape
+&nbsp;import com.ghost.serialization.integration.model.PathHintShapeHolder
+&nbsp;import com.ghost.serialization.integration.model.PathHintShapeHolderSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintShapeSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintShape_CircleSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintShape_SquareSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintStrictEnum
+&nbsp;import com.ghost.serialization.integration.model.PathHintStrictEnumSerializer
+&nbsp;import com.ghost.serialization.integration.model.PathHintUser
+&nbsp;import com.ghost.serialization.integration.model.PathHintUserSerializer
 &nbsp;import com.ghost.serialization.integration.model.Priority
 &nbsp;import com.ghost.serialization.integration.model.PrioritySerializer
 &nbsp;import com.ghost.serialization.integration.model.ProtoAccountId
@@ -492,6 +518,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            OverlappingKeyModel::class to OverlappingKeyModelSerializer,</b>
 <b class="fc">&nbsp;            PageWithNestedDevices::class to PageWithNestedDevicesSerializer,</b>
 <b class="fc">&nbsp;            PageWithNestedDevices.LoggedIn::class to PageWithNestedDevices_LoggedInSerializer,</b>
+<b class="fc">&nbsp;            PathHintAddress::class to PathHintAddressSerializer,</b>
+<b class="fc">&nbsp;            PathHintEnumHolder::class to PathHintEnumHolderSerializer,</b>
+<b class="fc">&nbsp;            PathHintInferredHolder::class to PathHintInferredHolderSerializer,</b>
+<b class="fc">&nbsp;            PathHintInferredPayload::class to PathHintInferredPayloadSerializer,</b>
+<b class="fc">&nbsp;            PathHintInferredPayload.Alpha::class to PathHintInferredPayload_AlphaSerializer,</b>
+<b class="fc">&nbsp;            PathHintInferredPayload.Beta::class to PathHintInferredPayload_BetaSerializer,</b>
+<b class="fc">&nbsp;            PathHintNestedRoot::class to PathHintNestedRootSerializer,</b>
+<b class="fc">&nbsp;            PathHintRequiredModel::class to PathHintRequiredModelSerializer,</b>
+<b class="fc">&nbsp;            PathHintResilientHolder::class to PathHintResilientHolderSerializer,</b>
+<b class="fc">&nbsp;            PathHintShape::class to PathHintShapeSerializer,</b>
+<b class="fc">&nbsp;            PathHintShape.Circle::class to PathHintShape_CircleSerializer,</b>
+<b class="fc">&nbsp;            PathHintShape.Square::class to PathHintShape_SquareSerializer,</b>
+<b class="fc">&nbsp;            PathHintShapeHolder::class to PathHintShapeHolderSerializer,</b>
+<b class="fc">&nbsp;            PathHintStrictEnum::class to PathHintStrictEnumSerializer,</b>
+<b class="fc">&nbsp;            PathHintUser::class to PathHintUserSerializer,</b>
 <b class="fc">&nbsp;            Priority::class to PrioritySerializer,</b>
 <b class="fc">&nbsp;            ProtoAccountId::class to ProtoAccountIdSerializer,</b>
 <b class="fc">&nbsp;            ProtoAccountIdsMessage::class to ProtoAccountIdsMessageSerializer,</b>
@@ -588,7 +629,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;      EvolutionModel::class -&gt; EvolutionModelSerializer</b>
 <b class="pc">&nbsp;      ExtendedScalarsModel::class -&gt; ExtendedScalarsModelSerializer</b>
 <b class="pc">&nbsp;      ExtremeMetadata::class -&gt; ExtremeMetadataSerializer</b>
-<b class="pc">&nbsp;      FlattenedModel::class -&gt; FlattenedModelSerializer</b>
+<b class="fc">&nbsp;      FlattenedModel::class -&gt; FlattenedModelSerializer</b>
 <b class="fc">&nbsp;      GhostAdvancedProfile::class -&gt; GhostAdvancedProfileSerializer</b>
 <b class="fc">&nbsp;      GhostDiscriminatorTestPayload::class -&gt; GhostDiscriminatorTestPayloadSerializer</b>
 <b class="fc">&nbsp;      GhostEnumWrapper::class -&gt; GhostEnumWrapperSerializer</b>
@@ -639,6 +680,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;      OverlappingKeyModel::class -&gt; OverlappingKeyModelSerializer</b>
 <b class="fc">&nbsp;      PageWithNestedDevices::class -&gt; PageWithNestedDevicesSerializer</b>
 <b class="pc">&nbsp;      PageWithNestedDevices.LoggedIn::class -&gt; PageWithNestedDevices_LoggedInSerializer</b>
+<b class="pc">&nbsp;      PathHintAddress::class -&gt; PathHintAddressSerializer</b>
+<b class="fc">&nbsp;      PathHintEnumHolder::class -&gt; PathHintEnumHolderSerializer</b>
+<b class="fc">&nbsp;      PathHintInferredHolder::class -&gt; PathHintInferredHolderSerializer</b>
+<b class="fc">&nbsp;      PathHintInferredPayload::class -&gt; PathHintInferredPayloadSerializer</b>
+<b class="pc">&nbsp;      PathHintInferredPayload.Alpha::class -&gt; PathHintInferredPayload_AlphaSerializer</b>
+<b class="pc">&nbsp;      PathHintInferredPayload.Beta::class -&gt; PathHintInferredPayload_BetaSerializer</b>
+<b class="fc">&nbsp;      PathHintNestedRoot::class -&gt; PathHintNestedRootSerializer</b>
+<b class="fc">&nbsp;      PathHintRequiredModel::class -&gt; PathHintRequiredModelSerializer</b>
+<b class="fc">&nbsp;      PathHintResilientHolder::class -&gt; PathHintResilientHolderSerializer</b>
+<b class="pc">&nbsp;      PathHintShape::class -&gt; PathHintShapeSerializer</b>
+<b class="pc">&nbsp;      PathHintShape.Circle::class -&gt; PathHintShape_CircleSerializer</b>
+<b class="pc">&nbsp;      PathHintShape.Square::class -&gt; PathHintShape_SquareSerializer</b>
+<b class="fc">&nbsp;      PathHintShapeHolder::class -&gt; PathHintShapeHolderSerializer</b>
+<b class="pc">&nbsp;      PathHintStrictEnum::class -&gt; PathHintStrictEnumSerializer</b>
+<b class="pc">&nbsp;      PathHintUser::class -&gt; PathHintUserSerializer</b>
 <b class="pc">&nbsp;      Priority::class -&gt; PrioritySerializer</b>
 <b class="pc">&nbsp;      ProtoAccountId::class -&gt; ProtoAccountIdSerializer</b>
 <b class="pc">&nbsp;      ProtoAccountIdsMessage::class -&gt; ProtoAccountIdsMessageSerializer</b>
@@ -704,7 +760,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    serializersByClass.size</b>
 &nbsp;  }
 &nbsp;
-<b class="nc">&nbsp;  override fun registeredCount(): Int = 143</b>
+<b class="nc">&nbsp;  override fun registeredCount(): Int = 158</b>
 &nbsp;
 <b class="fc">&nbsp;  override fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = serializersByClass</b>
 &nbsp;
@@ -736,7 +792,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

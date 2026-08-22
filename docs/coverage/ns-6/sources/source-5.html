@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/1077)
+    (0/1076)
   </span>
 </td>
 </tr>
@@ -174,7 +174,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        }</b>
 &nbsp;
 <b class="nc">&nbsp;        emitMainParseLoop(body, chunks, chunkSize)</b>
+&nbsp;        // Validate before endObject so JSONPath still includes the current object frame.
 <b class="nc">&nbsp;        emitValidation(body)</b>
+<b class="nc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
 <b class="nc">&nbsp;        emitReturn(body, typeSpecBuilder)</b>
 &nbsp;
 <b class="nc">&nbsp;        emitValidationHelper(typeSpecBuilder, contextClassName)</b>
@@ -265,7 +267,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        body.endControlFlow()</b>
 <b class="nc">&nbsp;        body.endControlFlow() // when</b>
 <b class="nc">&nbsp;        body.endControlFlow() // while</b>
-<b class="nc">&nbsp;        body.addStatement(C.STR_END_OBJECT)</b>
+&nbsp;        // endObject emitted after validation (see emit)
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -401,8 +403,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                        }
 &nbsp;
 <b class="nc">&nbsp;                        funBody.addStatement(</b>
-<b class="nc">&nbsp;                            C.TEMPLATE_THROW_S,</b>
-<b class="nc">&nbsp;                            C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2</b>
+<b class="nc">&nbsp;                            C.TEMPLATE_THROW_MISSING_REQUIRED,</b>
+<b class="nc">&nbsp;                            prop.jsonName</b>
 &nbsp;                        )
 &nbsp;                    }
 <b class="nc">&nbsp;                }</b>
@@ -523,7 +525,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

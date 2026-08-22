@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostSource_jvmKt</title>
+  <title>GhostSerialization Coverage Report > GhostSource_androidKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostSource_jvmKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostSource_androidKt (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostSource_jvmKt</td>
+  <td class="name">GhostSource_androidKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -100,12 +100,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * JVM-optimized [GhostSource] that overrides [decodeJsonStringRange]
-&nbsp; * to use [StandardCharsets.US_ASCII] for known 7-bit content,
-&nbsp; * bypassing full UTF-8 validation.
+&nbsp; * Android-optimized [GhostSource] that overrides [decodeJsonStringRange]
+&nbsp; * to use [StandardCharsets.ISO_8859_1] for known 7-bit content.
+&nbsp; * ISO_8859_1 does a direct byte copy without ASCII validation — safe here
+&nbsp; * because isKnown7BitContent already guarantees all bytes are &lt; 128.
 &nbsp; */
 &nbsp;@InternalGhostApi
-&nbsp;class JvmByteArraySource(
+&nbsp;class AndroidByteArraySource(
 &nbsp;    data: ByteArray
 &nbsp;) : ByteArrayGhostSource(data) {
 &nbsp;
@@ -129,7 +130,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;@InternalGhostApi
 &nbsp;actual fun createByteArraySource(
 &nbsp;    data: ByteArray
-<b class="fc">&nbsp;): GhostSource = JvmByteArraySource(data)</b>
+<b class="fc">&nbsp;): GhostSource = AndroidByteArraySource(data)</b>
 </code>
 </pre>
 </div>
@@ -153,7 +154,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

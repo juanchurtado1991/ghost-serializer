@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.1%
+    83.9%
   </span>
   <span class="absValue">
-    (254/302)
+    (250/298)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.7%
+    83.4%
   </span>
   <span class="absValue">
-    (1307/1562)
+    (1277/1532)
   </span>
 </td>
 </tr>
@@ -128,18 +128,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.4%
+    84.2%
   </span>
   <span class="absValue">
-    (260/308)
+    (256/304)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84%
+    83.6%
   </span>
   <span class="absValue">
-    (1334/1589)
+    (1304/1559)
   </span>
 </td>
 </tr>
@@ -639,16 +639,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                val pIdx = context.nameToIndex[prop.jsonName]!!</b>
 <b class="fc">&nbsp;                val vVar = &quot;${C.STR_V_VAR_PREFIX}$pIdx&quot;</b>
 <b class="pc">&nbsp;                if (!prop.isNullable) {</b>
-<b class="fc">&nbsp;                    val msg = C.STR_REQUIRED_FIELD_MISSING.format(</b>
-<b class="fc">&nbsp;                        prop.jsonName,</b>
-<b class="fc">&nbsp;                        subclassClassName.simpleName</b>
-&nbsp;                    )
 <b class="fc">&nbsp;                    requiredArgs.add(</b>
 <b class="fc">&nbsp;                        C.TEMPLATE_REQUIRED_ARG,</b>
 <b class="fc">&nbsp;                        prop.kotlinName,</b>
 <b class="fc">&nbsp;                        vVar,</b>
-<b class="fc">&nbsp;                        jsonExClass,</b>
-<b class="fc">&nbsp;                        msg</b>
+<b class="fc">&nbsp;                        prop.jsonName</b>
 &nbsp;                    )
 &nbsp;                } else {
 <b class="fc">&nbsp;                    requiredArgs.add(</b>
@@ -771,7 +766,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

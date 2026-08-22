@@ -76,18 +76,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.2%
+    92.5%
   </span>
   <span class="absValue">
-    (107/116)
+    (111/120)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.2%
+    92.3%
   </span>
   <span class="absValue">
-    (634/688)
+    (646/700)
   </span>
 </td>
 </tr>
@@ -132,6 +132,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 <b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return if (isNegativeValue) -accumulatedValue else accumulatedValue</b>
 &nbsp;}
 &nbsp;
@@ -150,6 +151,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 <b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return if (isNegativeValue) -accumulatedValue else accumulatedValue</b>
 &nbsp;}
 &nbsp;
@@ -184,6 +186,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return result</b>
 &nbsp;}
 &nbsp;
@@ -211,6 +214,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
 &nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
 <b class="fc">&nbsp;    return result</b>
 &nbsp;}
 &nbsp;
@@ -329,7 +333,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

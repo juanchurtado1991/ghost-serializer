@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ProtoAccountIds</title>
+  <title>GhostSerialization Coverage Report > PathHintInferredHolder</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: ProtoAccountIds (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: PathHintInferredHolder (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,89 +49,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ProtoAccountIds</td>
+  <td class="name">PathHintInferredHolder</td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (2/2)
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (2/2)
+    (0/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (22/22)
+    (0/7)
   </span>
 </td>
 </tr>
-  <tr>
-    <td class="name">ProtoAccountIds$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (4/4)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (26/26)
-  </span>
-</td>
-</tr>
+
 </table>
 
 <br/>
@@ -138,12 +94,83 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostProtoSerialization
-&nbsp;import kotlinx.serialization.Serializable
+&nbsp;import com.ghost.serialization.annotations.GhostResilient
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.annotations.GhostYamlSerialization
 &nbsp;
-<b class="fc">&nbsp;@JvmInline</b>
-&nbsp;@Serializable
-<b class="fc">&nbsp;value class ProtoAccountIds(val value: List&lt;Long&gt;)</b>
+&nbsp;/** Minimal required-field probe for JSONPath / hint DX tests. */
+&nbsp;@GhostSerialization
+&nbsp;@GhostYamlSerialization
+&nbsp;data class PathHintRequiredModel(
+&nbsp;    val id: Int,
+&nbsp;    val name: String,
+&nbsp;)
+&nbsp;
+&nbsp;/** Enum without UNKNOWN / @GhostFallback — invalid wire values must throw. */
+&nbsp;@GhostSerialization
+&nbsp;enum class PathHintStrictEnum {
+&nbsp;    Alpha,
+&nbsp;    Beta,
+&nbsp;}
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class PathHintEnumHolder(
+&nbsp;    val status: PathHintStrictEnum,
+&nbsp;)
+&nbsp;
+&nbsp;/** Sealed without @GhostFallback — unknown/missing discriminator must throw. */
+&nbsp;@GhostSerialization
+&nbsp;sealed class PathHintShape {
+&nbsp;    @GhostSerialization
+&nbsp;    data class Circle(val r: Double) : PathHintShape()
+&nbsp;
+&nbsp;    @GhostSerialization
+&nbsp;    data class Square(val side: Double) : PathHintShape()
+&nbsp;}
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class PathHintShapeHolder(
+&nbsp;    val shape: PathHintShape,
+&nbsp;)
+&nbsp;
+&nbsp;/** Nested list path: `$.user.addresses[1].zip`. */
+&nbsp;@GhostSerialization
+&nbsp;data class PathHintAddress(
+&nbsp;    val zip: Int,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class PathHintUser(
+&nbsp;    val addresses: List&lt;PathHintAddress&gt;,
+&nbsp;)
+&nbsp;
+&nbsp;@GhostSerialization
+&nbsp;data class PathHintNestedRoot(
+&nbsp;    val user: PathHintUser,
+&nbsp;)
+&nbsp;
+&nbsp;/** Soft field recovers; hard field must still report a clean path. */
+&nbsp;@GhostSerialization
+&nbsp;data class PathHintResilientHolder(
+&nbsp;    @GhostResilient
+&nbsp;    val soft: Int? = null,
+&nbsp;    val hard: Int,
+&nbsp;)
+&nbsp;
+&nbsp;/** Inferred sealed for required-field path via throwMissingRequiredField. */
+&nbsp;@GhostSerialization(inferred = true)
+&nbsp;sealed class PathHintInferredPayload {
+&nbsp;    @GhostSerialization
+&nbsp;    data class Alpha(val code: Int) : PathHintInferredPayload()
+&nbsp;
+&nbsp;    @GhostSerialization
+&nbsp;    data class Beta(val label: String) : PathHintInferredPayload()
+&nbsp;}
+&nbsp;
+<b class="nc">&nbsp;@GhostSerialization</b>
+&nbsp;data class PathHintInferredHolder(
+<b class="nc">&nbsp;    val payload: PathHintInferredPayload,</b>
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -167,7 +194,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>

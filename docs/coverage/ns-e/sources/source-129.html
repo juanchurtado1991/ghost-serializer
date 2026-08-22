@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > YamlShardCounter</title>
+  <title>GhostSerialization Coverage Report > UserMention</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: YamlShardCounter (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: UserMention (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,15 +46,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">YamlShardCounter</td>
+  <td class="name">UserMention</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (3/3)
   </span>
 </td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.8%
+  </span>
+  <span class="absValue">
+    (113/118)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">UserMention$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,11 +104,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (7/7)
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.9%
+  </span>
+  <span class="absValue">
+    (117/122)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -94,13 +152,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostFlatten
+&nbsp;import com.ghost.serialization.annotations.GhostIgnore
+&nbsp;import com.ghost.serialization.annotations.GhostName
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostYamlSerialization
+&nbsp;import com.ghost.serialization.annotations.GhostWrap
+&nbsp;import com.squareup.moshi.Json
+&nbsp;import com.squareup.moshi.JsonClass
+&nbsp;import kotlinx.serialization.SerialName
+&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-<b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;@GhostYamlSerialization
-&nbsp;data class YamlShardCounter(
-<b class="fc">&nbsp;    val shard_id: ULong,</b>
+<b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class UserMention(
+<b class="fc">&nbsp;    @Json(name = &quot;screen_name&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;screen_name&quot;) @GhostName(&quot;screen_name&quot;) val screenName: String,</b>
+<b class="fc">&nbsp;    val name: String,</b>
+<b class="fc">&nbsp;    val id: Long,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;id_str&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,</b>
+<b class="fc">&nbsp;    val indices: List&lt;Int&gt;</b>
 &nbsp;)
 </code>
 </pre>
@@ -125,7 +197,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-19 18:02</div>
+    <div style="float:right;">generated on 2026-08-22 09:25</div>
 </div>
 </body>
 </html>
