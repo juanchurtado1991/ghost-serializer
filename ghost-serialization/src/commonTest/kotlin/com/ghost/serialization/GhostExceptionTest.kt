@@ -24,6 +24,26 @@ class GhostExceptionTest {
     }
 
     @Test
+    fun exceptionContainsHintWhenProvided() {
+        val ex = GhostJsonException(
+            message = "Unexpected string for numeric type (coercion disabled)",
+            line = 1,
+            column = 2,
+            path = "$.age",
+            hint = "Enable coerceStringsToNumbers",
+        )
+        assertEquals("Enable coerceStringsToNumbers", ex.hint)
+        assertTrue(ex.message.contains("Hint: Enable coerceStringsToNumbers"))
+    }
+
+    @Test
+    fun exceptionOmitsHintLineWhenAbsent() {
+        val ex = GhostJsonException("Invalid token", 1, 1)
+        assertEquals(null, ex.hint)
+        assertTrue(!ex.message.contains("Hint:"))
+    }
+
+    @Test
     fun exceptionContainsMessage() {
         val ex = GhostJsonException("Invalid token")
         assertTrue(ex.message.contains("Invalid token"))
