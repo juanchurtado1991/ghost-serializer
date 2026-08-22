@@ -73,7 +73,9 @@ internal class FragmentedEmitter(
         }
 
         emitMainParseLoop(body, chunks, chunkSize)
+        // Validate before endObject so JSONPath still includes the current object frame.
         emitValidation(body)
+        body.addStatement(C.STR_END_OBJECT)
         emitReturn(body, typeSpecBuilder)
 
         emitValidationHelper(typeSpecBuilder, contextClassName)
@@ -164,7 +166,7 @@ internal class FragmentedEmitter(
         body.endControlFlow()
         body.endControlFlow() // when
         body.endControlFlow() // while
-        body.addStatement(C.STR_END_OBJECT)
+        // endObject emitted after validation (see emit)
     }
 
     /**
@@ -300,8 +302,8 @@ internal class FragmentedEmitter(
                         }
 
                         funBody.addStatement(
-                            C.TEMPLATE_THROW_S,
-                            C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
+                            C.TEMPLATE_THROW_MISSING_REQUIRED,
+                            prop.jsonName
                         )
                     }
                 }

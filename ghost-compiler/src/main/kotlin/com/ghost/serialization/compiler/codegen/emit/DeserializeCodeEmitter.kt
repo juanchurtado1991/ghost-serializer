@@ -487,16 +487,11 @@ internal class DeserializeCodeEmitter(
                 val pIdx = context.nameToIndex[prop.jsonName]!!
                 val vVar = "${C.STR_V_VAR_PREFIX}$pIdx"
                 if (!prop.isNullable) {
-                    val msg = C.STR_REQUIRED_FIELD_MISSING.format(
-                        prop.jsonName,
-                        subclassClassName.simpleName
-                    )
                     requiredArgs.add(
                         C.TEMPLATE_REQUIRED_ARG,
                         prop.kotlinName,
                         vVar,
-                        jsonExClass,
-                        msg
+                        prop.jsonName
                     )
                 } else {
                     requiredArgs.add(

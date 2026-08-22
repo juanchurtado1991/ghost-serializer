@@ -298,9 +298,6 @@ internal class SerializerImportResolver(
             mirrorStringChannelImports(fileBuilder, C.STR_CAPTURE_RAW_JSON_NAME)
             fileBuilder.addImport(C.PKG_TYPES, C.STR_RAW_JSON_TYPE)
         }
-        if (ctx.isEnum) {
-            fileBuilder.addImport(C.PKG_EXCEPTION, C.STR_GHOST_JSON_EXCEPTION)
-        }
     }
 
     private fun mirrorStringChannelImports(

@@ -19,6 +19,7 @@ internal object GhostEmitterConstants {
     const val STR_MISSING_TYPE = "Missing discriminator field for sealed class"
     const val STR_WHEN_TYPENAME = "val result = when (typeName)"
     const val TEMPLATE_DESERIALIZE_BRANCH = "%S -> %T.deserialize(reader)"
+    // Keep in sync with GhostJsonConstants.ERR_UNKNOWN_DISCRIMINATOR_PREFIX (hint matching).
     const val STR_UNKNOWN_TYPE =
         "else -> reader.throwError(\"Unknown type discriminator: \$typeName\")"
     const val STR_RETURN_RESULT = "return result"
@@ -109,8 +110,7 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_NULL_CHECK_L =
         "if (reader.isNextNullValue()) {\n  reader.consumeNull()\n  null\n} else {\n  %L\n}"
     const val TEMPLATE_THROW_S = "reader.throwError(%S)"
-    const val STR_REQ_FIELD_1 = "Required field '"
-    const val STR_REQ_FIELD_2 = "' missing in JSON"
+    const val TEMPLATE_THROW_MISSING_REQUIRED = "reader.throwMissingRequiredField(%S)"
     const val STR_COMMA_SPACE = ", "
     const val STR_BANG_BANG = "!!"
     const val TEMPLATE_RETURN_T_PAREN = "return %T("
@@ -121,9 +121,10 @@ internal object GhostEmitterConstants {
     const val STR_COMMA = ","
     const val STR_EMPTY = ""
     const val STR_ELSE = "else"
+    // Keep in sync with GhostJsonConstants.ERR_INVALID_ENUM_VALUE / ERR_UNEXPECTED_ENUM_INDEX_PREFIX.
     const val STR_ERR_INVALID_ENUM_INDEX = "-1 -> reader.throwError(\"Invalid enum value\")"
     const val STR_ERR_UNEXPECTED_INDEX =
-        "else -> throw GhostJsonException(\"Unexpected index: \$index\")"
+        "else -> reader.throwError(\"Unexpected enum index: \$index\")"
     const val STR_FALLBACK_ANNOTATION = "GhostFallback"
     const val STR_ELSE_BRANCH = "else ->"
     const val STR_ENUM_SELECT_OPTIONS = "val index = reader.selectString(ENUM_OPTIONS)"
@@ -538,7 +539,6 @@ internal object GhostEmitterConstants {
     const val STR_V_VAR_PREFIX = "v"
     const val STR_INFERRED_ERROR_MSG =
         "Could not infer subclass (\$eligibilityMask/\$seenMask)"
-    const val STR_REQUIRED_FIELD_MISSING = "Required field '%s' missing for %s"
     const val STR_ERR_NO_SUBCLASSES = "Inferred polymorphism requested but no subclasses found."
     const val STR_COPY = "copy"
     const val STR_ONE_L = "1L"
@@ -560,7 +560,7 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_VAL_LONG_INIT = "val %L%L = %L%L"
     const val TEMPLATE_RESULT_WHEN = "val result = when"
     const val TEMPLATE_INFERRED_DECISION_BRANCH = "(%L and %L%L) != %L && (%L and %L) == %L ->"
-    const val TEMPLATE_REQUIRED_ARG = "%L = %L ?: throw %T(%S)"
+    const val TEMPLATE_REQUIRED_ARG = "%L = %L ?: reader.throwMissingRequiredField(%S)"
     const val TEMPLATE_OPTIONAL_ARG = "%L = %L"
     const val TEMPLATE_DATA_CLASS_COPY_INIT = "var %L = %T(%L)"
     const val TEMPLATE_IF_NOT_NULL_COPY = "if (%L != null) %L = %L.%L(%L = %L)"

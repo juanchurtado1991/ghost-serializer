@@ -67,7 +67,10 @@ internal class StandardEmitter(
             propertyIndices,
             readerClass,
         )
+        // Validate before endObject so JSONPath still includes the current object frame
+        // (and throwMissingRequiredField can append the missing key).
         emitFieldValidationCall(body)
+        body.addStatement(C.STR_END_OBJECT)
         emitReturnStatement(body, typeSpecBuilder)
 
         emitValidationHelper(typeSpecBuilder)
@@ -163,7 +166,7 @@ internal class StandardEmitter(
         body.endControlFlow()
         body.endControlFlow()
         body.endControlFlow()
-        body.addStatement(C.STR_END_OBJECT)
+        // endObject is emitted after required-field validation (see emit)
     }
 
     /**
@@ -334,8 +337,8 @@ internal class StandardEmitter(
 
             funBody.beginControlFlow(C.TEMPLATE_IF_MASK_ZERO_STMT, constName)
             funBody.addStatement(
-                C.TEMPLATE_THROW_S,
-                C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
+                C.TEMPLATE_THROW_MISSING_REQUIRED,
+                prop.jsonName
             )
             funBody.endControlFlow()
         } else {
@@ -353,8 +356,8 @@ internal class StandardEmitter(
                     funBody.nextControlFlow(C.TEMPLATE_ELSE_IF_MASK_ZERO_STMT_NEW, constName)
                 }
                 funBody.addStatement(
-                    C.TEMPLATE_THROW_S,
-                    C.STR_REQ_FIELD_1 + prop.jsonName + C.STR_REQ_FIELD_2
+                    C.TEMPLATE_THROW_MISSING_REQUIRED,
+                    prop.jsonName
                 )
             }
             funBody.endControlFlow()
