@@ -2,8 +2,11 @@ package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.GhostJsonConstants as JC
 import com.ghost.serialization.yaml.exception.GhostYamlException
+import com.ghost.serialization.yaml.exception.hintForYamlError
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 
@@ -69,6 +72,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         currentList = null
         listIterator = null
         nextValue = null
+        pathTracker.reset()
         strictMode = false
         coerceStringsToNumbers = false
         coerceBooleans = false
@@ -756,8 +760,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     // ── Error handling ────────────────────────────────────────────────────────
 
     internal fun yamlError(message: String): Nothing {
+        // Parse phase: no AST cursor yet — keep path at root so we never invent a fake location.
         throw GhostYamlException(
-            "$message${C.ERR_AT_POSITION_PAREN_PREFIX}$position${C.ERR_AT_POSITION_PAREN_SUFFIX}"
+            baseMessage = "$message${C.ERR_AT_POSITION_PAREN_PREFIX}$position${C.ERR_AT_POSITION_PAREN_SUFFIX}",
+            path = "$",
+            hint = hintForYamlError(message),
         )
     }
 
@@ -834,6 +841,12 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     var nextValue: Any? = null
 
+    /**
+     * Cursor-phase JSONPath breadcrumbs (same tracker as JSON). Format only on throw.
+     * Parse-phase [yamlError] does not use this stack (path stays `"$"`).
+     */
+    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
+
     var strictMode: Boolean = false
     var coerceStringsToNumbers: Boolean = false
     var coerceBooleans: Boolean = false
@@ -894,6 +907,16 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     fun nextKey(): String? = nextKeyImpl()
     fun consumeKeySeparator() = consumeKeySeparatorImpl()
     fun throwError(message: String): Nothing = throwErrorImpl(message)
+
+    /**
+     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
+     * exception points at `$.….<jsonName>` (validation runs before [endObject]).
+     */
+    fun throwMissingRequiredField(jsonName: String): Nothing {
+        pathTracker.pushKey(jsonName)
+        throwError("${JC.ERR_REQUIRED_FIELD_PREFIX}$jsonName${JC.ERR_REQUIRED_FIELD_SUFFIX}")
+    }
+
     fun peekStringField(name: String): String? = peekStringFieldImpl(name)
 
     inline fun <T> readList(crossinline itemParser: () -> T): List<T> {
