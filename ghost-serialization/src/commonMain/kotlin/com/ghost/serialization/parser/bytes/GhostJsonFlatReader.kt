@@ -6,10 +6,12 @@ package com.ghost.serialization.parser.bytes
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.common.GhostJsonConstants
+import com.ghost.serialization.parser.common.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.createByteArraySource
@@ -99,6 +101,10 @@ open class GhostJsonFlatReader(
     @PublishedApi
     internal var commaConsumedMask: Long = 0L
 
+    /** JSONPath breadcrumbs — formatted only when [throwError] builds an exception. */
+    @PublishedApi
+    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
+
     /**
      * Gets the byte at the specified index, masking it to a positive integer.
      */
@@ -108,7 +114,7 @@ open class GhostJsonFlatReader(
     }
 
     /**
-     * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
+     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
      */
     fun throwError(message: String): Nothing {
         val errorPosition = position
@@ -117,6 +123,7 @@ open class GhostJsonFlatReader(
         } else {
             errorPosition
         }
+        val errorPath = pathTracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
@@ -134,8 +141,20 @@ open class GhostJsonFlatReader(
                     byteIndex++
                 }
                 intArrayOf(lineNumber, columnNumber)
-            }
+            },
+            path = errorPath,
+            hint = hintForJsonError(message),
         )
+    }
+
+    /**
+     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
+     * exception points at `$.….<jsonName>` even though the object loop has already finished
+     * selecting keys (validation runs before [endObject]).
+     */
+    fun throwMissingRequiredField(jsonName: String): Nothing {
+        pathTracker.pushKey(jsonName)
+        throwError("${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}")
     }
 
     /**
@@ -306,6 +325,7 @@ open class GhostJsonFlatReader(
         maxDepth = C.MAX_DEPTH
         maxCollectionSize = GhostHeuristics.maxCollectionSize
         lastScanContentWas7BitOnly = false
+        pathTracker.reset()
     }
 
     /**
@@ -325,6 +345,7 @@ open class GhostJsonFlatReader(
             needsCommaMask = needsCommaMask and bit.inv()
             commaConsumedMask = commaConsumedMask and bit.inv()
         }
+        pathTracker.pushObject()
     }
 
     /**
@@ -337,6 +358,7 @@ open class GhostJsonFlatReader(
         if (depth > 0) {
             depth--
         }
+        pathTracker.finishObjectValue()
     }
 
     /**
@@ -355,6 +377,7 @@ open class GhostJsonFlatReader(
             needsCommaMask = needsCommaMask and bit.inv()
             commaConsumedMask = commaConsumedMask and bit.inv()
         }
+        pathTracker.pushArray()
     }
 
     /**
@@ -367,6 +390,7 @@ open class GhostJsonFlatReader(
         if (depth > 0) {
             depth--
         }
+        pathTracker.finishArrayValue()
     }
 
     /**
@@ -419,6 +443,9 @@ open class GhostJsonFlatReader(
                 }
             }
         }
+        if (pathTracker.isInArray()) {
+            pathTracker.enterArrayElement()
+        }
         return true
     }
 
@@ -462,7 +489,9 @@ open class GhostJsonFlatReader(
                 }
             }
         }
-        return readQuotedString()
+        val key = readQuotedString()
+        pathTracker.pushKey(key)
+        return key
     }
 
     /**
@@ -527,24 +556,30 @@ open class GhostJsonFlatReader(
         val token = peekNextToken()
         if (token == C.TRUE_CHAR_INT) {
             skipAndValidateLiteral(C.TRUE_BS)
+            pathTracker.finishScalarValue()
             return true
         }
         if (token == C.FALSE_CHAR_INT) {
             skipAndValidateLiteral(C.FALSE_BS)
+            pathTracker.finishScalarValue()
             return false
         }
         if (coerceBooleans) {
             if (token == C.ONE_INT) {
                 internalSkip(1)
+                pathTracker.finishScalarValue()
                 return true
             }
             if (token == C.ZERO_INT) {
                 internalSkip(1)
+                pathTracker.finishScalarValue()
                 return false
             }
             if (token == C.QUOTE_INT) {
                 // can the quoted string bytes directly. No String allocation.
-                return matchCoerceBooleanBytes()
+                val coerced = matchCoerceBooleanBytes()
+                pathTracker.finishScalarValue()
+                return coerced
             }
         }
         throwError(C.ERR_EXPECTED_BOOLEAN)
@@ -553,7 +588,11 @@ open class GhostJsonFlatReader(
     /**
      * Parses and returns the next string literal.
      */
-    fun nextString(): String = readQuotedString()
+    fun nextString(): String {
+        val value = readQuotedString()
+        pathTracker.finishScalarValue()
+        return value
+    }
 
     /**
      * Peeks whether the next JSON token is the null value token.
@@ -579,6 +618,7 @@ open class GhostJsonFlatReader(
         }
         position = cursor + 4
         nextTokenByte = C.RESET_TOKEN_BYTE
+        pathTracker.finishScalarValue()
     }
 
     /** Reads a JSON string, or `null` when the next token is the `null` literal. */
@@ -643,8 +683,13 @@ open class GhostJsonFlatReader(
     /**
      * Selects name and consumes the key separator.
      */
-    fun selectNameAndConsume(options: JsonReaderOptions): Int =
-        internalSelect(options, consumeSeparator = true)
+    fun selectNameAndConsume(options: JsonReaderOptions): Int {
+        val index = internalSelect(options, consumeSeparator = true)
+        if (index >= 0) {
+            pathTracker.pushKey(options.rawStrings[index])
+        }
+        return index
+    }
 
     /**
      * Selects matching string options.
@@ -692,12 +737,14 @@ open class GhostJsonFlatReader(
         val maxSize = maxCollectionSize
 
         while (true) {
+            pathTracker.enterArrayElement()
             list.add(itemParser())
             val next = nextNonWhitespace()
             if (next == C.CLOSE_ARR_INT) {
                 if (depth > 0) {
                     depth--
                 }
+                pathTracker.finishArrayValue()
                 break
             }
             if (next != C.COMMA_INT) {
@@ -724,12 +771,14 @@ open class GhostJsonFlatReader(
         val maxSize = maxCollectionSize
 
         while (true) {
+            pathTracker.enterArrayElement()
             set.add(itemParser())
             val next = nextNonWhitespace()
             if (next == C.CLOSE_ARR_INT) {
                 if (depth > 0) {
                     depth--
                 }
+                pathTracker.finishArrayValue()
                 break
             }
             if (next != C.COMMA_INT) {
@@ -769,6 +818,7 @@ open class GhostJsonFlatReader(
                 if (depth > 0) {
                     depth--
                 }
+                pathTracker.finishObjectValue()
                 break
             }
             if (next != C.COMMA_INT) {
@@ -797,6 +847,7 @@ open class GhostJsonFlatReader(
         val savedDepth = depth
         val savedNeedsCommaMask = needsCommaMask
         val savedCommaConsumedMask = commaConsumedMask
+        val savedPathMark = pathTracker.mark()
         try {
             return block()
         } catch (_: GhostJsonException) {
@@ -805,7 +856,9 @@ open class GhostJsonFlatReader(
             depth = savedDepth
             needsCommaMask = savedNeedsCommaMask
             commaConsumedMask = savedCommaConsumedMask
+            pathTracker.resetTo(savedPathMark)
             skipValue()
+            pathTracker.finishScalarValue()
             return null
         }
     }

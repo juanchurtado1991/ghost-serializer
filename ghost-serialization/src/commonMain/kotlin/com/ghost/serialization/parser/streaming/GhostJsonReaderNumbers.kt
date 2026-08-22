@@ -50,6 +50,7 @@ fun GhostJsonReader.nextFloat(): Float {
         consumeNumericCoercionFooter()
     }
 
+    pathTracker.finishScalarValue()
     return result
 }
 
@@ -85,6 +86,7 @@ fun GhostJsonReader.nextDouble(): Double {
         consumeNumericCoercionFooter()
     }
 
+    pathTracker.finishScalarValue()
     return result
 }
 
@@ -134,6 +136,7 @@ fun GhostJsonReader.nextInt(): Int {
     if (isQuoted) {
         consumeNumericCoercionFooter()
     }
+    pathTracker.finishScalarValue()
     return finalIntResult
 }
 
@@ -171,6 +174,7 @@ fun GhostJsonReader.nextLong(): Long {
     if (isQuoted) {
         consumeNumericCoercionFooter()
     }
+    pathTracker.finishScalarValue()
     return finalLongResult
 }
 

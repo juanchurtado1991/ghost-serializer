@@ -5,7 +5,9 @@ package com.ghost.serialization.parser.strings
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.byteToCharPosition
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.writer.strings.copyRangeToCharArray
@@ -37,6 +39,10 @@ class GhostJsonStringReader(
     var depth: Int = 0
     var needsCommaMask: Long = 0L
     var commaConsumedMask: Long = 0L
+
+    /** JSONPath breadcrumbs — formatted only when [throwError] builds an exception. */
+    @PublishedApi
+    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
 
     /**
      * Optimistic hint for [internalSelect]: next expected field index when JSON objects list
@@ -83,6 +89,7 @@ class GhostJsonStringReader(
     fun throwError(message: String): Nothing {
         val errorPosition = position
         val errorEnd = if (errorPosition > limit) limit else errorPosition
+        val errorPath = pathTracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
@@ -101,8 +108,19 @@ class GhostJsonStringReader(
                     byteIndex++
                 }
                 intArrayOf(lineNumber, columnNumber)
-            }
+            },
+            path = errorPath,
+            hint = hintForJsonError(message),
         )
+    }
+
+    /**
+     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
+     * exception points at `$.….<jsonName>` (validation runs before [endObject]).
+     */
+    fun throwMissingRequiredField(jsonName: String): Nothing {
+        pathTracker.pushKey(jsonName)
+        throwError("${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}")
     }
 
     fun internalSkip(charCount: Int) {
@@ -188,6 +206,7 @@ class GhostJsonStringReader(
         maxCollectionSize = GhostHeuristics.maxCollectionSize
         lastScanContentWas7BitOnly = false
         predictedFieldIndex = C.FIELD_PREDICTION_START
+        pathTracker.reset()
         invalidateUtf8Cache()
 
         if (newData !== oldData) {
@@ -467,6 +486,7 @@ class GhostJsonStringReader(
         val savedDepth = depth
         val savedNeedsCommaMask = needsCommaMask
         val savedCommaConsumedMask = commaConsumedMask
+        val savedPathMark = pathTracker.mark()
         try {
             return block()
         } catch (_: GhostJsonException) {
@@ -475,7 +495,9 @@ class GhostJsonStringReader(
             depth = savedDepth
             needsCommaMask = savedNeedsCommaMask
             commaConsumedMask = savedCommaConsumedMask
+            pathTracker.resetTo(savedPathMark)
             skipValue()
+            pathTracker.finishScalarValue()
             return null
         }
     }

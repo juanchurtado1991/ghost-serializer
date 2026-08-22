@@ -28,6 +28,7 @@ fun GhostJsonFlatReader.nextChar(): Char {
         if (length == C.SINGLE_CHAR_JSON_LENGTH && only7Bit) {
             position = end + 1
             nextTokenByte = C.RESET_TOKEN_BYTE
+            pathTracker.finishScalarValue()
             return (localData[start].toInt() and C.BYTE_MASK).toChar()
         }
         if (length == 0) {
@@ -41,6 +42,7 @@ fun GhostJsonFlatReader.nextChar(): Char {
     if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {
         throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)
     }
+    pathTracker.finishScalarValue()
     return decoded[0]
 }
 

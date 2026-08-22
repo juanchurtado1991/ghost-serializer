@@ -6,9 +6,11 @@ package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.createByteArraySource
@@ -102,6 +104,10 @@ class GhostJsonReader(
     @PublishedApi
     internal var commaConsumedMask: Long = 0L
 
+    /** JSONPath breadcrumbs — formatted only when [throwError] builds an exception. */
+    @PublishedApi
+    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
+
     /** Convenience constructor for ByteArray —
      * used by KSP-generated serializers and tests. */
     constructor(
@@ -154,7 +160,7 @@ class GhostJsonReader(
     }
 
     /**
-     * Throws a structured [GhostJsonException] with exact position, line, and column numbers.
+     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
      */
     fun throwError(message: String): Nothing {
         val errorPosition = position
@@ -164,6 +170,7 @@ class GhostJsonReader(
         } else {
             errorPosition
         }
+        val errorPath = pathTracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
@@ -181,8 +188,19 @@ class GhostJsonReader(
                     byteIndex++
                 }
                 intArrayOf(lineNumber, columnNumber)
-            }
+            },
+            path = errorPath,
+            hint = hintForJsonError(message),
         )
+    }
+
+    /**
+     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
+     * exception points at `$.….<jsonName>` (validation runs before [endObject]).
+     */
+    fun throwMissingRequiredField(jsonName: String): Nothing {
+        pathTracker.pushKey(jsonName)
+        throwError("${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}")
     }
 
     /**
@@ -523,5 +541,6 @@ class GhostJsonReader(
         this.maxCollectionSize = GhostHeuristics.maxCollectionSize
         this.lastScanContentWas7BitOnly = false
         this.predictedFieldIndex = C.FIELD_PREDICTION_START
+        this.pathTracker.reset()
     }
 }

@@ -31,6 +31,7 @@ fun GhostJsonStringReader.nextInt(): Int {
     }
     nextTokenByte = C.RESET_TOKEN_BYTE
 
+    pathTracker.finishScalarValue()
     return if (isNegativeValue) -accumulatedValue else accumulatedValue
 }
 
@@ -49,6 +50,7 @@ fun GhostJsonStringReader.nextLong(): Long {
     }
     nextTokenByte = C.RESET_TOKEN_BYTE
 
+    pathTracker.finishScalarValue()
     return if (isNegativeValue) -accumulatedValue else accumulatedValue
 }
 
@@ -83,6 +85,7 @@ fun GhostJsonStringReader.nextFloat(): Float {
         consumeNumericCoercionFooter()
     }
 
+    pathTracker.finishScalarValue()
     return result
 }
 
@@ -110,6 +113,7 @@ fun GhostJsonStringReader.nextDouble(): Double {
         consumeNumericCoercionFooter()
     }
 
+    pathTracker.finishScalarValue()
     return result
 }
 
