@@ -108,6 +108,30 @@ val user = Ghost.deserialize<User>(json) {
 }
 ```
 
+### Decode errors with JSONPath + fix hints
+`GhostJsonException.path` / `GhostYamlException.path` is a JSONPath-style location (e.g. `$.user.addresses[1].zip`). Readers keep a lightweight breadcrumb stack (push/pop only); the path string is built **only when throwing**, so successful parses do not pay string concatenation.
+
+- **JSON** (flat, string, streaming) and **Proto3 JSON** (inherits flat): full cursor path + hints.
+- **YAML** (cursor / typed deserialize on the AST): same tracker and `Hint:` line. Byte-parse errors (lexer/anchors before the AST exists) keep `path = "$"` on purpose — inventing a deeper path would be wrong. Alias use-sites report the **referencing** path (e.g. `$.user.age`), not the `&anchor` definition site. Merge keys (`<<`) appear as local fields after expansion.
+
+When the error kind has a clear remediation, `.hint` (also appended as `Hint: …` on `message`, so stack traces show it) suggests the fix. Unknown/generic failures omit the hint to avoid noise.
+
+Missing required fields are validated **before** `endObject`, and codegen calls `throwMissingRequiredField` so the path includes the missing key (e.g. `$.name`).
+
+```kotlin
+try {
+    Ghost.deserialize<User>(bytes)
+    // or Ghost.decodeFromYaml<User>(yaml)
+} catch (e: GhostJsonException) {
+    println(e.path)     // $.user.age
+    println(e.hint)     // Enable coerceStringsToNumbers: …
+    println(e.message)  // … [at line …, col …, path $.user.age]\nHint: …
+} catch (e: GhostYamlException) {
+    println(e.path)     // $.user.age
+    println(e.message)  // … [path $.user.age]\nHint: …
+}
+```
+
 ---
 
 ## 2. Custom Field Decoders & Encoders

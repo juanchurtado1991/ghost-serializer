@@ -37,7 +37,7 @@ data class User(
 )
 ```
 
-Unknown sealed variants → `@GhostFallback`. Opaque blobs → `RawJson`. Details → **[Advanced Features](docs/wiki/advanced-features.md)**
+Unknown sealed variants → `@GhostFallback`. Opaque blobs → `RawJson`. Decode errors include a **JSONPath** (e.g. `$.user.age`) and, when useful, a **fix hint** in [GhostJsonException](ghost-serialization/src/commonMain/kotlin/com/ghost/serialization/exception/GhostJsonException.kt) / [GhostYamlException](ghost-serialization/src/commonMain/kotlin/com/ghost/serialization/yaml/exception/GhostYamlException.kt) (JSON, Proto3 JSON, YAML cursor). Details → **[Advanced Features](docs/wiki/advanced-features.md)**
 
 ---
 

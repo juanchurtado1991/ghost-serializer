@@ -233,6 +233,8 @@ object GhostSpecialFeaturesBenchmark {
             jsonSamples = listOf("")
         ) { Ghost.encodeToString(bytesVal1) }
 
+        JsonPathTrackerBenchmark.run()
+
         println("════════════════════════════════════════════════════════════════\n")
     }
 
