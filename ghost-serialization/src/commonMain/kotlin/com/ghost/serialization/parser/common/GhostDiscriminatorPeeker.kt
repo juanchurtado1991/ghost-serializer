@@ -122,7 +122,6 @@ object GhostDiscriminatorPeeker {
                 position = skipBalanced(
                     start = position,
                     open = OPEN_OBJ_INT,
-                    close = CLOSE_OBJ_INT,
                     limit = scanLimit,
                     getByte = getByte,
                 )
@@ -130,7 +129,6 @@ object GhostDiscriminatorPeeker {
                 position = skipBalanced(
                     start = position,
                     open = OPEN_ARR_INT,
-                    close = CLOSE_ARR_INT,
                     limit = scanLimit,
                     getByte = getByte,
                 )
@@ -219,7 +217,6 @@ object GhostDiscriminatorPeeker {
     internal inline fun skipBalanced(
         start: Int,
         open: Int,
-        close: Int,
         limit: Int,
         crossinline getByte: (Int) -> Int,
     ): Int {
@@ -229,7 +226,7 @@ object GhostDiscriminatorPeeker {
         var position = start + 1
         var depth = 1
         while (position < limit && depth > 0) {
-            when (val byte = getByte(position)) {
+            when (getByte(position)) {
                 QUOTE_INT -> position = skipString(position + 1, limit, getByte)
                 OPEN_OBJ_INT, OPEN_ARR_INT -> {
                     depth++
