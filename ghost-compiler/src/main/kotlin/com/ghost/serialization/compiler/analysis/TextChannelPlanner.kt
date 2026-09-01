@@ -64,12 +64,10 @@ internal object TextChannelPlanner {
     }
 
     /**
-     * A class's own stated preference, ignoring transitive requirements from callers.
-     * Only `@GhostSerialization`-annotated classes have an opinion here (defaults to `true`,
-     * matching the annotation's default) — classes annotated with something else (e.g.
-     * `@GhostProtoSerialization`, which has no `textChannel` concept) return `false`, same as
-     * before this default flipped; they still get pulled in via transitive propagation if an
-     * enabled model depends on them.
+     * A class's own stated preference, ignoring transitive requirements from callers. Only
+     * `@GhostSerialization`-annotated classes have an opinion (defaults to `true`); anything
+     * else (e.g. `@GhostProtoSerialization`) returns `false` but can still be pulled in
+     * transitively.
      */
     private fun KSClassDeclaration.effectiveOwnTextChannelValue(): Boolean {
         val annotation = annotations.firstOrNull {
@@ -94,15 +92,7 @@ internal object TextChannelPlanner {
         }
 
         for (property in properties) {
-            if (property.isGhost) {
-                property.type.toGhostDeclaration()?.let { deps.add(it) }
-            }
-            if (property.listInnerIsGhost) {
-                property.listInnerType?.toGhostDeclaration()?.let { deps.add(it) }
-            }
-            if (property.mapValueIsGhost) {
-                property.mapValueType?.toGhostDeclaration()?.let { deps.add(it) }
-            }
+            collectPropertyDependencies(property, deps)
             property.valueClassProperty?.let { inner ->
                 if (inner.isGhost) {
                     inner.type.toGhostDeclaration()?.let { deps.add(it) }
@@ -134,13 +124,8 @@ internal object TextChannelPlanner {
         }
     }
 
-    private fun KSType.toGhostDeclaration(): KSClassDeclaration? {
-        val declaration = declaration as? KSClassDeclaration ?: return null
-        if (!declaration.annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }) {
-            return null
-        }
-        return declaration
-    }
+    private fun KSType.toGhostDeclaration(): KSClassDeclaration? =
+        (declaration as? KSClassDeclaration)?.toGhostDeclaration()
 
     private fun KSClassDeclaration.toGhostDeclaration(): KSClassDeclaration? {
         if (!annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }) {

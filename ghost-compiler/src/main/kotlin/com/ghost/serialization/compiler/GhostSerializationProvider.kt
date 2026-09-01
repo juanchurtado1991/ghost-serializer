@@ -6,8 +6,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
 /**
- * Entry point for the KSP plugin. It provides the environment
- * needed for the processor to run.
+ * Entry point for the KSP plugin.
  */
 class GhostSerializationProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {

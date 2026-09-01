@@ -77,51 +77,10 @@ internal class GhostCodeGenerator(
             context.sealedDiscriminatorKey
         )
 
-        val deserializeEmitterStreaming = DeserializeCodeEmitter(
-            context.properties,
-            context.originalClassName,
-            context.streamingReaderClass,
-            context.isSealed,
-            context.isValue,
-            context.isEnum,
-            context.sealedSubclasses,
-            context.sealedDiscriminatorKey,
-            context.isResilient,
-            context.isInferred,
-            context.isObject,
-            hasFallback = context.hasFallbackEnum
-        )
-
-        val deserializeEmitterFlat = DeserializeCodeEmitter(
-            context.properties,
-            context.originalClassName,
-            context.flatReaderClass,
-            context.isSealed,
-            context.isValue,
-            context.isEnum,
-            context.sealedSubclasses,
-            context.sealedDiscriminatorKey,
-            context.isResilient,
-            context.isInferred,
-            context.isObject,
-            hasFallback = context.hasFallbackEnum
-        )
-
+        val deserializeEmitterStreaming = deserializeEmitterFor(context.streamingReaderClass)
+        val deserializeEmitterFlat = deserializeEmitterFor(context.flatReaderClass)
         val deserializeEmitterString = if (context.textChannel) {
-            DeserializeCodeEmitter(
-                context.properties,
-                context.originalClassName,
-                context.stringReaderClass,
-                context.isSealed,
-                context.isValue,
-                context.isEnum,
-                context.sealedSubclasses,
-                context.sealedDiscriminatorKey,
-                context.isResilient,
-                context.isInferred,
-                context.isObject,
-                hasFallback = context.hasFallbackEnum
-            )
+            deserializeEmitterFor(context.stringReaderClass)
         } else {
             null
         }
@@ -178,19 +137,9 @@ internal class GhostCodeGenerator(
         }
 
         if (context.hasYaml) {
-            val yamlDeserializeEmitterFlat = DeserializeCodeEmitter(
-                context.properties,
-                context.originalClassName,
+            val yamlDeserializeEmitterFlat = deserializeEmitterFor(
                 context.yamlFlatReaderClass,
-                context.isSealed,
-                context.isValue,
-                context.isEnum,
-                context.sealedSubclasses,
-                context.sealedDiscriminatorKey,
                 isResilientClass = false,
-                context.isInferred,
-                context.isObject,
-                hasFallback = context.hasFallbackEnum,
                 supportsResilience = false,
             )
             yamlDeserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
@@ -202,28 +151,41 @@ internal class GhostCodeGenerator(
             EnvelopeRouterEmitter(
                 envelope = envelope,
                 originalClassName = context.originalClassName,
-                flatReaderClass = context.flatReaderClass
+                readerClass = context.streamingReaderClass
             ).emit(typeSpecBuilder)
         }
 
         return typeSpecBuilder
             .addFunction(serializeEmitter.build(context.streamingWriterClass, typeSpecBuilder))
-            .addFunction(serializeEmitter.build(context.flatWriterClass, typeSpecBuilder))
             .apply {
                 if (context.textChannel) {
                     addFunction(serializeEmitter.build(context.stringWriterClass, typeSpecBuilder))
                 }
                 if (context.hasYaml) {
                     addFunction(serializeEmitter.build(context.yamlWriterClass, typeSpecBuilder))
-                    addFunction(
-                        serializeEmitter.build(
-                            context.yamlFlatWriterClass,
-                            typeSpecBuilder
-                        )
-                    )
                 }
             }
             .addFunction(setupEmitter.buildWarmUpMethod())
             .build()
     }
+
+    private fun deserializeEmitterFor(
+        readerClass: ClassName,
+        isResilientClass: Boolean = context.isResilient,
+        supportsResilience: Boolean = true,
+    ): DeserializeCodeEmitter = DeserializeCodeEmitter(
+        context.properties,
+        context.originalClassName,
+        readerClass,
+        context.isSealed,
+        context.isValue,
+        context.isEnum,
+        context.sealedSubclasses,
+        context.sealedDiscriminatorKey,
+        isResilientClass,
+        context.isInferred,
+        context.isObject,
+        hasFallback = context.hasFallbackEnum,
+        supportsResilience = supportsResilience,
+    )
 }

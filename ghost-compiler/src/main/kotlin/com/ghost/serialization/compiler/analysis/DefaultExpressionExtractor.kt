@@ -7,13 +7,10 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Extracts constructor-parameter default expressions from Kotlin source text.
- *
- * KSP only exposes [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the
- * expression itself. When the declaring file is available via
- * [com.google.devtools.ksp.symbol.FileLocation], this extractor reads the source, isolates
- * the parameter's RHS, and accepts it only when it matches a strict literal whitelist.
- * Anything unrecognized returns `null` so callers can fall back to `.copy()`.
+ * Extracts constructor-parameter default expressions from Kotlin source text, since KSP only
+ * exposes [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the expression
+ * itself. Reads the declaring file and accepts the parameter's RHS only when it matches a
+ * strict literal whitelist; anything unrecognized returns `null` so callers fall back to `.copy()`.
  */
 internal object DefaultExpressionExtractor {
 
@@ -92,19 +89,16 @@ internal object DefaultExpressionExtractor {
                 else -> {
                     if (ch.isJavaIdentifierStart() && matchesIdentifier(source, index, paramName)) {
                         val after = index + paramName.length
-                        // Must look like a parameter binder: name followed by ':' or annotation-free type start.
-                        // Reject when the identifier is a receiver/qualifier (name.) or call (name().
+                        // Parameter binder form: name followed by ':' — rejects receiver/call
+                        // sites like `name.` or `name(`.
                         if (after < source.length) {
                             val nextSignificant = skipTrivia(source, after)
                             if (nextSignificant < source.length) {
                                 val nextChar = source[nextSignificant]
-                                // Parameter form: `name:` or `name /* */ :` — also allow `@Ann name:`
-                                // after we already landed on the name.
                                 if (nextChar == CHAR_COLON) return index
                             }
                         }
                     }
-                    // Advance one identifier or one char.
                     if (ch.isJavaIdentifierStart()) {
                         index++
                         while (index < end && source[index].isJavaIdentifierPart()) index++
@@ -114,8 +108,7 @@ internal object DefaultExpressionExtractor {
                 }
             }
         }
-        // Fallback: scan from file start near the same line window if the location pointed
-        // at an annotation above the parameter.
+        // Fallback: the location may have pointed at an annotation above the parameter.
         if (from > 0) {
             val back = (from - C.DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS).coerceAtLeast(0)
             return findParameterName(source, paramName, back)?.takeIf { it >= back }
@@ -301,7 +294,7 @@ internal object DefaultExpressionExtractor {
                 }
 
                 CHAR_NEWLINE -> {
-                    // Allow multiline defaults while nested; at depth 0 keep going until `,` / `)`.
+                    // Newlines don't end the expression; only unnested `,`/`)` do.
                     index++
                 }
 
@@ -344,7 +337,6 @@ internal object DefaultExpressionExtractor {
         if (from >= source.length) return from
         val quote = source[from]
         if (quote != CHAR_DOUBLE_QUOTE && quote != CHAR_SINGLE_QUOTE) return from + 1
-        // Triple-quoted string.
         if (quote == CHAR_DOUBLE_QUOTE && from + 2 < source.length &&
             source[from + 1] == CHAR_DOUBLE_QUOTE && source[from + 2] == CHAR_DOUBLE_QUOTE
         ) {
@@ -435,10 +427,8 @@ internal object DefaultExpressionExtractor {
     }
 
     private fun isEnumOrConstRef(value: String): Boolean {
-        // Qual.Name or Name — identifiers joined by dots, no calls/generics.
+        // Qual.Name or Name only — reject lowercase-only identifiers (likely variables).
         if (!ENUM_REF_REGEX.matches(value)) return false
-        // Reject lowercase-only single identifiers that look like variables (a, foo).
-        // Allow ALL_CAPS consts and Capitalized enum entries / class refs.
         val parts = value.split(CHAR_DOT)
         return parts.all { part ->
             part.first().isUpperCase() ||

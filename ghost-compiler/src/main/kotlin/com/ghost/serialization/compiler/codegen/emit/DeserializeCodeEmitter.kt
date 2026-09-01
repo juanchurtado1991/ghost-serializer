@@ -16,24 +16,13 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main coordinator for deserialization code generation.
+ * Main coordinator for deserialization code generation. Selects a strategy from DTO metadata
+ * (sealed hierarchy, enum, size, structural complexity) and delegates to specialized emitters:
+ * direct dispatch for sealed/enum types, [FragmentedEmitter] for DTOs above `PROPERTY_MAX_SIZE`
+ * (to stay under the JVM 64KB method limit), and [StandardEmitter] otherwise.
  *
- * Selects a strategy from DTO metadata (sealed hierarchy, enum, size, structural complexity)
- * and delegates to specialized emitters.
- *
- * ### Orchestration Strategy:
- * - **Polymorphic Types:** Direct delegation for sealed or `Enum` types.
- * - **Large DTOs (> `PROPERTY_MAX_SIZE`):** Delegates to [FragmentedEmitter] to bypass JVM 64KB method limits.
- * - **Standard DTOs:** Delegates to [StandardEmitter] for highly-optimized, inlinable code.
- *
- * @param properties The list of property metadata to be deserialized.
- * @param originalClassName The canonical name of the class being generated.
- * @param readerClass The specific reader implementation (e.g., `GhostJsonFlatReader`).
- * @param isSealed Identifies if the class is part of a sealed hierarchy.
- * @param isValue Identifies if the class is a Kotlin value class (inline class).
- * @param isEnum Identifies if the class is an enum.
- * @param isInferred Handles polymorphic types where the discriminator is absent,
- * relying on property presence to identify the subclass.
+ * @param isInferred Handles polymorphic types where the discriminator is absent, relying on
+ * property presence to identify the subclass.
  */
 internal class DeserializeCodeEmitter(
     properties: List<GhostPropertyModel>,
@@ -52,14 +41,8 @@ internal class DeserializeCodeEmitter(
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
-     * Entry point for the code generation pipeline.
-     *
-     * Evaluates the DTO structure to determine the optimal generation strategy,
-     * injects contextual serializers, and propagates resilience metadata to the generated
-     * serializer when the enclosing class is marked resilient.
-     *
-     * @param typeSpecBuilder The builder for the serializer object/class.
-     * @param isFlatPath Whether the code is generating for a flat reader vs standard.
+     * Entry point for the code generation pipeline: picks the generation strategy, injects
+     * contextual serializers, and propagates resilience metadata when the class is resilient.
      */
     fun build(
         typeSpecBuilder: TypeSpec.Builder,

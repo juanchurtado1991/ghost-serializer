@@ -7,33 +7,11 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 internal object PerfectHashFinder {
 
     /**
-     * Utility to find a collision-free hash multiplier and shift configuration
-     * mapping a set of field names to unique index slots inside a 1024-entry table.
+     * Finds a collision-free hash multiplier/shift pair mapping [names] to unique index slots
+     * in a dispatch table, used by the generated reader's `selectNameAndConsume`. The first four
+     * bytes of each name are packed into a 32-bit key; names longer than that fall back to an
+     * extended (polynomial) hash if the prefix alone collides.
      *
-     * ### How the Reader uses these parameters (Runtime Walkthrough):
-     *
-     * For a field named **"age"** (3 bytes: 'a'=97, 'g'=103, 'e'=101)
-     * and optimizer parameters `multiplier = 31` and `shift = 5`:
-     *
-     * | Step | Action | Description | Resulting Value |
-     * | :--- | :--- | :--- | :--- |
-     * | **1. Bytes** | Capture | Read the first 4 bytes of "age" | `[97, 103, 101]` |
-     * | **2. Packing** | Create `key` | Place bytes into 4 slots (32-bit container) | `0x00656761` (hex) |
-     * | **3. Hash** | Apply formula | Calculate: `((key * mult + size) >> shift) & 1023` | `((6645601 * 31 + 3) >> 5) & 1023` |
-     * | **4. Lookup** | Index | Access the dispatch table | `dispatch(hash)` -> Returns index |
-     *
-     * #### Deep dive into "Packing" (Step 2):
-     * A 32-bit integer is treated as four byte slots. Each input byte is placed in its slot,
-     * shifted left so the slots do not overlap:
-     *
-     * ```text
-     * Slot 4 (24-31) | Slot 3 (16-23) | Slot 2 (8-15) | Slot 1 (0-7)
-     * --------------------------------------------------------------
-     * Empty      |     'e' (101)  |   'g' (103)   |  'a' (97)
-     * ```
-     * *Each shift (<< 8, << 16, etc.) just pushes the byte into its assigned slot.*
-     *
-     * @param names The list of unique field names to index.
      * @return Optimal hash parameters and whether extended key hashing is required at runtime.
      */
     fun findPerfectHash(names: List<String>): PerfectHashConfig {

@@ -15,6 +15,8 @@ import com.ghost.serialization.compiler.analysis.isPrimitiveULong
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isString
+import com.ghost.serialization.compiler.analysis.isValueClassType
+import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.GhostSerializerContext
 import com.google.devtools.ksp.symbol.KSType
@@ -58,8 +60,8 @@ internal class SerializerImportResolver(
                 if (type.isMarkedNullable) {
                     hasNullable = true
                 }
-                if (isValueClassType(type)) {
-                    val inner = resolveValueClassInnerType(type)
+                if (type.isValueClassType()) {
+                    val inner = type.resolveValueClassInnerType()
                     if (inner != null) {
                         collectTypes(inner)
                     }
@@ -212,7 +214,9 @@ internal class SerializerImportResolver(
         val hasRawJson = allTypes.any { it.isRawJson() }
         val needsNextString = needsNextStringImport() ||
                 byteArrayClassifications.contains(ByteArrayCoverage.COVERED)
-        // Streaming reader extensions (GhostJsonReader.deserialize).
+        // GhostJsonReader.deserialize: nextInt/nextLong/nextFloat/nextDouble/nextULong/
+        // nextString/nextChar/nextBoolean are all top-level extensions on the streaming
+        // reader package and need an explicit import.
         if (needsNextIntImport()) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_INT_NAME)
         }
@@ -221,9 +225,6 @@ internal class SerializerImportResolver(
         }
         if (needsNextULongImport()) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_ULONG_NAME)
-        }
-        if (needsNextProtoUInt64Import()) {
-            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_PROTO_UINT64_NAME)
         }
         if (needsNextString) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_STRING_NAME)
@@ -240,6 +241,9 @@ internal class SerializerImportResolver(
         }
         if (needsNextBooleanImport()) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_BOOLEAN_NAME)
+        }
+        if (needsNextProtoUInt64Import()) {
+            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_PROTO_UINT64_NAME)
         }
         if (ctx.textChannel) {
             if (needsNextIntImport()) {
@@ -325,8 +329,8 @@ internal class SerializerImportResolver(
             if (type.isByteArray()) {
                 return if (isProto) ByteArrayCoverage.COVERED else ByteArrayCoverage.UNCOVERED
             }
-            if (isValueClassType(type)) {
-                val inner = resolveValueClassInnerType(type) ?: return null
+            if (type.isValueClassType()) {
+                val inner = type.resolveValueClassInnerType() ?: return null
                 return classify(inner, isProto)
             }
             if (type.isList() || type.isSet()) {
@@ -461,8 +465,8 @@ internal class SerializerImportResolver(
 
     private fun typeNeedsNestedScalar(type: KSType, leaf: (KSType) -> Boolean): Boolean {
         // List<AccountId> where AccountId is a value class over Long still emits nextLong().
-        if (isValueClassType(type)) {
-            val inner = resolveValueClassInnerType(type) ?: return false
+        if (type.isValueClassType()) {
+            val inner = type.resolveValueClassInnerType() ?: return false
             return leaf(inner)
         }
         if (type.isList() || type.isSet()) {
@@ -474,20 +478,5 @@ internal class SerializerImportResolver(
             return leaf(value)
         }
         return false
-    }
-
-    private fun isValueClassType(type: KSType): Boolean {
-        val declaration =
-            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
-        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
-                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
-    }
-
-    private fun resolveValueClassInnerType(type: KSType): KSType? {
-        val declaration =
-            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
-        val primaryConstructor = declaration.primaryConstructor ?: return null
-        val param = primaryConstructor.parameters.firstOrNull() ?: return null
-        return param.type.resolve()
     }
 }

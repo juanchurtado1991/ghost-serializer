@@ -17,7 +17,7 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 internal class EnvelopeRouterEmitter(
     private val envelope: GhostEnvelopeModel,
     private val originalClassName: ClassName,
-    private val flatReaderClass: ClassName
+    private val readerClass: ClassName
 ) {
 
     private val typedMappings = envelope.payloadMappings.filter { it.targetType != null }
@@ -77,7 +77,7 @@ internal class EnvelopeRouterEmitter(
             .addCode(
                 CodeBlock.of(
                     C.STR_ENVELOPE_PARSE_BYTES_ROUTE,
-                    flatReaderClass,
+                    readerClass,
                     C.STR_PARAM_BYTES,
                     C.STR_FUN_ROUTE_PAYLOAD
                 )
@@ -107,7 +107,7 @@ internal class EnvelopeRouterEmitter(
             .addCode(
                 CodeBlock.of(
                     C.STR_ENVELOPE_PARSE_BYTES_ROUTE,
-                    flatReaderClass,
+                    readerClass,
                     C.STR_PARAM_BYTES,
                     C.STR_FUN_ROUTE_TYPED
                 )

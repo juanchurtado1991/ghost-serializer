@@ -19,15 +19,9 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Emitter for fragmented deserialization logic.
- *
- * This emitter is designed for large classes (typically > `PROPERTY_MAX_SIZE` properties) to
- * bypass JVM method size limits (64KB bytecode). It fragments decoding via a `DecodingContext`
- * helper and chunk methods (e.g. `decodeChunk0`, `decodeChunk1`).
- *
- * @param properties The list of property models.
- * @param originalClassName The target class to deserialize.
- * @param readerClass The reader implementation class used.
+ * Emitter for fragmented deserialization logic, used for large classes (> `PROPERTY_MAX_SIZE`
+ * properties) to avoid JVM method size limits. Fragments decoding across a `DecodingContext`
+ * class and per-chunk methods (`decodeChunk0`, `decodeChunk1`, ...).
  */
 internal class FragmentedEmitter(
     properties: List<GhostPropertyModel>,
@@ -37,15 +31,8 @@ internal class FragmentedEmitter(
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
-     * Emits the fragmented deserialization logic.
-     *
-     * It delegates the construction of the private `DecodingContext` class, declarations
-     * of chunk functions, and the emission of the main parsing loop to smaller helper methods,
-     * then validates and instantiates the target DTO.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param typeSpecBuilder The serializer class builder.
-     * @param isFlatPath Whether the flat reader path is used.
+     * Emits the fragmented deserialization logic: builds the `DecodingContext`, chunk
+     * functions, and the main parsing loop, then validates and instantiates the target DTO.
      */
     fun emit(
         body: CodeBlock.Builder,
@@ -83,10 +70,6 @@ internal class FragmentedEmitter(
 
     /**
      * Builds and registers the private `DecodingContext` class to track properties and masks.
-     *
-     * @param typeSpecBuilder The serializer class builder.
-     * @param contextClassName Class name of the context object holding property variables.
-     * @param isFlatPath Whether the flat reader path is used.
      */
     private fun buildDecodingContext(
         typeSpecBuilder: TypeSpec.Builder,
@@ -129,10 +112,6 @@ internal class FragmentedEmitter(
 
     /**
      * Emits the main parse loop mapping selector indexes to fragmented chunk calls.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param chunks Grouped DTO properties.
-     * @param chunkSize Size of a chunk.
      */
     private fun emitMainParseLoop(
         body: CodeBlock.Builder,
@@ -170,16 +149,8 @@ internal class FragmentedEmitter(
     }
 
     /**
-     * Emits a private chunk decoding helper function.
-     *
-     * This generated method maps index selections directly to field assignments and tracking masks
-     * in the `DecodingContext` instance, keeping the size of each method small.
-     *
-     * @param chunkIdx The chunk index.
-     * @param chunkProps The list of DTO properties assigned to this chunk.
-     * @param chunkSize Size of a chunk.
-     * @param contextClassName Class name of the context object holding property variables.
-     * @param typeSpecBuilder Serializer class builder.
+     * Emits a private chunk decoding helper that maps index selections to field assignments
+     * and tracking masks in `DecodingContext`, keeping each generated method small.
      */
     private fun emitChunkFunction(
         chunkIdx: Int,
@@ -224,12 +195,7 @@ internal class FragmentedEmitter(
     }
 
     /**
-     * Emits required properties validation logic.
-     *
-     * Iterates over bitmasks. If a mask has required fields, it emits validation code that
-     * checks the tracking mask in `DecodingContext`.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
+     * Emits a call to validate required properties against the tracking masks in `DecodingContext`.
      */
     private fun emitValidation(body: CodeBlock.Builder) {
         val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
@@ -244,11 +210,8 @@ internal class FragmentedEmitter(
     }
 
     /**
-     * Generates a descriptive private helper method validating that all required properties
-     * were present in the bitmask of the context class, throwing a GhostJsonException for any missing field.
-     *
-     * @param typeSpecBuilder The serializer class builder.
-     * @param contextClassName Class name of the context object holding property variables.
+     * Generates a private helper validating that all required properties were present in the
+     * bitmask, throwing a GhostJsonException for a missing field.
      */
     private fun emitValidationHelper(
         typeSpecBuilder: TypeSpec.Builder,
@@ -319,12 +282,8 @@ internal class FragmentedEmitter(
     }
 
     /**
-     * Emits the target class instantiation return statement.
-     *
-     * Resolves variables from `DecodingContext`. Uses copy-based updates for default properties.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param typeSpecBuilder The serializer class builder.
+     * Emits the target class instantiation return statement, resolving variables from
+     * `DecodingContext` and using copy-based updates for default properties.
      */
     private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }

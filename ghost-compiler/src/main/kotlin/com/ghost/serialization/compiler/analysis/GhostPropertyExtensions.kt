@@ -6,19 +6,13 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Extension methods for [GhostPropertyModel] to facilitate code generation.
- *
- * These helpers encapsulate the logic for determining variable types, initial values,
- * and return expressions based on the property's metadata (e.g., nullability,
- * primitive types, value classes).
+ * Extension methods for [GhostPropertyModel] used during codegen to compute variable types,
+ * initial values, and return expressions from a property's metadata.
  */
 
 /**
- * Resolves the appropriate KotlinPoet [TypeName] to declare the local tracking variable
- * for this property. Handled cases include:
- * - Non-nullable primitives: mapped directly to their unboxed Kotlin/JVM types.
- * - Non-nullable inline/value classes: mapped to the underlying unboxed primitive type.
- * - Nullable/Object types: coerced to a nullable KotlinPoet type representation.
+ * Resolves the [TypeName] for this property's local tracking variable: unboxed for
+ * non-nullable primitives and inline/value classes, nullable otherwise.
  */
 internal fun GhostPropertyModel.getVariableType(): TypeName {
     val isPrimitive = type.isPrimitive() && !isNullable
@@ -94,9 +88,8 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
 }
 
 /**
- * Generates the conditional fallback return expression when standard deserialization
- * supports default arguments. If the property mask bit is set, it resolves to the parsed variable,
- * otherwise it resolves to the copy-based result field value.
+ * Fallback return expression for standard deserialization: the parsed variable when the mask
+ * bit is set, otherwise the copy-based result field value.
  *
  * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
  * @param bitMaskStr String representation of the bitmask representing this property.
@@ -151,10 +144,8 @@ internal fun List<GhostPropertyModel>.allDefaultsHaveExpressions(): Boolean =
 
 /**
  * True when the whitelisted ctor default equals the local placeholder init
- * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed`.
- *
- * Safe because absent fields leave the local at its init value, which is already the
- * Kotlin default (`null` / `false` / `0` / `0L` / …).
+ * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed` — safe
+ * because absent fields already leave the local at that same default.
  */
 internal fun GhostPropertyModel.defaultMatchesLocalInit(): Boolean {
     val expr = defaultExpression ?: return false
@@ -163,10 +154,8 @@ internal fun GhostPropertyModel.defaultMatchesLocalInit(): Boolean {
 
 /**
  * Single-ctor arg for a default property: parsed value when the mask bit is set, otherwise the
- * whitelisted source default expression.
- *
- * When [defaultMatchesLocalInit] is true, emits only the parsed local — the mask ternary is
- * redundant because an absent field already left the local at the Kotlin default.
+ * whitelisted source default expression. Emits only the parsed local when
+ * [defaultMatchesLocalInit] holds, since the mask ternary would be redundant.
  */
 internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
     maskIdx: Int,
@@ -239,9 +228,8 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
 }
 
 /**
- * Generates the conditional fallback return expression when fragmented deserialization
- * supports default arguments. It maps tracking mask checks directly to the fields on
- * the `DecodingContext` instance.
+ * Fragmented variant of [getDefaultValueReturnExpression]: maps tracking mask checks directly
+ * to fields on the `DecodingContext` instance.
  *
  * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
  * @param bitMaskStr String representation of the bitmask representing this property.

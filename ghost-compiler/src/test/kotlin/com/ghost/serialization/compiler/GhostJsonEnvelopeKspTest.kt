@@ -48,7 +48,7 @@ class GhostJsonEnvelopeKspTest {
         assertTrue("\"MODE_EVENT\" -> envelope.modeEvent" in generated, generated)
         assertTrue("else -> null" in generated, generated)
         assertTrue(
-            "val envelope = deserialize(GhostJsonFlatReader(bytes))" in generated,
+            "val envelope = deserialize(GhostJsonReader(bytes))" in generated,
             generated
         )
     }

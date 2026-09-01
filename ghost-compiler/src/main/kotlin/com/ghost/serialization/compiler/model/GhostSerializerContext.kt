@@ -34,7 +34,6 @@ internal class GhostSerializerContext private constructor(
     val hasFallbackEnum: Boolean,
     val serializerInterface: ClassName,
     val streamingWriterClass: ClassName,
-    val flatWriterClass: ClassName,
     val stringWriterClass: ClassName,
     val streamingReaderClass: ClassName,
     val flatReaderClass: ClassName,
@@ -42,7 +41,6 @@ internal class GhostSerializerContext private constructor(
     val hasYaml: Boolean,
     val yamlSerializerInterface: ClassName,
     val yamlWriterClass: ClassName,
-    val yamlFlatWriterClass: ClassName,
     val yamlFlatReaderClass: ClassName,
 ) {
     val serializerName: String = baseClassName + C.STR_SERIALIZER_SUFFIX
@@ -189,7 +187,6 @@ internal class GhostSerializerContext private constructor(
                 hasFallbackEnum = hasFallbackEnum,
                 serializerInterface = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER),
                 streamingWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER),
-                flatWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_FLAT_WRITER),
                 stringWriterClass = ClassName(C.PKG_WRITER_STRINGS, C.STR_GHOST_JSON_STRING_WRITER),
                 streamingReaderClass = ClassName(C.PKG_PARSER_STREAMING, C.STR_GHOST_JSON_READER),
                 flatReaderClass = ClassName(C.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),
@@ -200,7 +197,6 @@ internal class GhostSerializerContext private constructor(
                     C.STR_GHOST_YAML_SERIALIZER
                 ),
                 yamlWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_WRITER),
-                yamlFlatWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_FLAT_WRITER),
                 yamlFlatReaderClass = yamlFlatReaderClass,
             )
         }

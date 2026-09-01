@@ -3,21 +3,16 @@ package com.ghost.serialization.compiler.ksp
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
- * Heuristics / options for deciding whether annotated sources belong to a test compilation
- * so the default module registry can take a `_Test` suffix.
+ * Heuristics for whether annotated sources belong to a test compilation, so the default
+ * module registry can take a `_Test` suffix.
  *
- * **Why this exists:** KSP does not expose a stable `isTest` / source-set API on
- * [com.google.devtools.ksp.symbol.KSFile]. Main and test compilations are separate processor
- * runs, but when `@GhostSerialization` models live under test roots and
- * [C.OPTION_MODULE_NAME] is unset (Default), production and test would both emit
- * `GhostModuleRegistry_Default` without a distinguishing suffix.
+ * KSP exposes no stable `isTest` / source-set API on [com.google.devtools.ksp.symbol.KSFile], so
+ * without this, main and test compilations with [C.OPTION_MODULE_NAME] unset would both emit
+ * `GhostModuleRegistry_Default` with no distinguishing suffix.
  *
- * **Preference order:**
- * 1. Explicit [C.OPTION_IS_TEST] (`"true"` / `"false"`) when present.
- * 2. Path sniffing for common Gradle layouts (`src/test`, `src/androidTest`, `src/testKsp`).
- *
- * Path sniffing is intentionally narrow: custom source-set directory names will not match;
- * pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) in those layouts.
+ * Preference order: explicit [C.OPTION_IS_TEST] first, then path sniffing for common Gradle
+ * layouts (`src/test`, `src/androidTest`, `src/testKsp`). Sniffing is narrow — custom source-set
+ * names won't match; pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) instead.
  */
 internal object TestSourceSetDetection {
 

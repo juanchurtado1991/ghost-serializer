@@ -13,11 +13,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main coordinator (Orchestrator) for the serialization code generation process.
- *
- * This class implements the Strategy Pattern to select the most efficient serialization
- * strategy for a given DTO. It inspects the DTO's metadata (sealed hierarchy, enum, size)
- * and delegates the generation task to specialized emitters.
+ * Coordinates serialization code generation: inspects the DTO's metadata (sealed hierarchy,
+ * enum, size) and delegates to the appropriate specialized emitter.
  */
 internal class SerializeCodeEmitter(
     private val properties: List<GhostPropertyModel>,
@@ -71,10 +68,6 @@ internal class SerializeCodeEmitter(
 
     /**
      * Builds the `FunSpec` of the serialize function.
-     *
-     * @param writerClass The JSON writer class being targeted.
-     * @param typeSpecBuilder Companion object builder where nested options or shards can be registered.
-     * @return Generated KotlinPoet FunSpec for serialization.
      */
     fun build(
         writerClass: ClassName,

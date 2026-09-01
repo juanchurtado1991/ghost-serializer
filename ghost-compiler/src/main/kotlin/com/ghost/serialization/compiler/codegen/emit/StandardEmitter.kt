@@ -22,16 +22,9 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Emitter for standard deserialization logic.
- *
- * This emitter orchestrates code generation for classes that fit within standard JVM limits
- * (typically under 40 properties). It implements the strategy to declare local tracking variables,
- * initialize validation bitmasks, emit parsing loops for incoming JSON, validate required fields,
- * and instantiate the target class with an optimized return statement.
- *
- * @property properties The list of property models containing metadata for code generation.
- * @property originalClassName The target class name to instantiate.
- * @property readerClass The reader class used for deserialization.
+ * Emitter for standard deserialization logic: classes within standard JVM limits (typically
+ * under 40 properties). Declares local tracking variables, emits the parsing loop and
+ * validation bitmasks, then instantiates the target class.
  */
 internal class StandardEmitter(
     properties: List<GhostPropertyModel>,
@@ -41,13 +34,8 @@ internal class StandardEmitter(
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
     /**
-     * Entry point to emit all standard deserialization code block builders.
-     *
-     * This method delegates the emission of variable declarations, parsing loops,
-     * field validation checks, and DTO construction to specialized helper functions.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder] to append generated code to.
-     * @param typeSpecBuilder The serializer class builder.
+     * Emits all standard deserialization code: variable declarations, parsing loop, field
+     * validation, and DTO construction.
      */
     fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredPropCount = properties.count { !it.isNullable && !it.hasDefaultValue }
@@ -78,8 +66,6 @@ internal class StandardEmitter(
 
     /**
      * Emits the local placeholder variable declarations for tracking property values.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
      */
     private fun emitLocalVariables(body: CodeBlock.Builder) {
         properties.forEach {
@@ -104,15 +90,8 @@ internal class StandardEmitter(
     }
 
     /**
-     * Generates the main field parsing loop using the perfect hash options.
-     *
-     * This method writes:
-     * - `reader.beginObject()`
-     * - A `while (true)` loop with a `reader.selectNameAndConsume(OPTIONS)` index match.
-     * - A `when (index)` routing table that dispatches fields based on pre-compiled indices.
-     * Handles single-depth fields directly, and delegates multi-depth fields to [emitFlattenedGroup].
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
+     * Generates the main field parsing loop using the perfect-hash options table. Handles
+     * single-depth fields directly and delegates multi-depth fields to [emitFlattenedGroup].
      */
     private fun emitParseLoop(body: CodeBlock.Builder) {
         body.addStatement(C.STR_BEGIN_OBJECT)
@@ -170,16 +149,8 @@ internal class StandardEmitter(
     }
 
     /**
-     * Recursively generates nested parsing loops for flattened structure properties.
-     *
-     * This handles `@GhostFlatten` properties by nesting `beginObject()` loops corresponding
-     * to the structured hierarchy of keys inside the JSON source.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param name The name of the current node in the property path hierarchy.
-     * @param props The list of property models sharing this path prefix.
-     * @param pathIndex The current depth level of recursion.
-     * @param parentPrefix Cumulative path key prefix to locate nested perfect-hash lookup tables.
+     * Recursively generates nested parsing loops for `@GhostFlatten` properties, nesting
+     * `beginObject()` loops to match the structured key hierarchy in the JSON source.
      */
     private fun emitFlattenedGroup(
         body: CodeBlock.Builder,
@@ -266,11 +237,7 @@ internal class StandardEmitter(
     }
 
     /**
-     * Emits property value assignment statement and bitwise mask update.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param prop The property model.
-     * @param index The global index of this property.
+     * Emits the property value assignment statement and its bitwise mask update.
      */
     private fun emitPropertyAssignment(
         body: CodeBlock.Builder,
@@ -294,10 +261,7 @@ internal class StandardEmitter(
     }
 
     /**
-     * Emits a call to the descriptive private helper method validating that all required properties
-     * were present in the parsed JSON stream.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
+     * Emits a call to the private helper that validates all required properties were present.
      */
     private fun emitFieldValidationCall(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
@@ -312,10 +276,8 @@ internal class StandardEmitter(
     }
 
     /**
-     * Generates a descriptive private helper method validating that all required properties
-     * were present in the bitmask, throwing a GhostJsonException for any missing field.
-     *
-     * @param typeSpecBuilder The serializer class builder.
+     * Generates a private helper validating that all required properties were present in the
+     * bitmask, throwing a GhostJsonException for a missing field.
      */
     private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
@@ -370,10 +332,7 @@ internal class StandardEmitter(
 
     /**
      * Emits a private `createInstance` helper when default-property count exceeds
-     * GhostEmitterConstants.MAX_DEFAULT_BRANCH_COUNT. The body is single-shot or
-     * required-ctor + `.copy(...)` via [emitCopyReturn].
-     *
-     * @param typeSpecBuilder The serializer class builder.
+     * `MAX_DEFAULT_BRANCH_COUNT`; its body is built via [emitCopyReturn].
      */
     private fun emitCreateInstanceHelper(typeSpecBuilder: TypeSpec.Builder) {
         val hasCreateInstance =
@@ -449,16 +408,9 @@ internal class StandardEmitter(
     }
 
     /**
-     * Generates 2^N if-branches, each calling the primary constructor exactly once.
-     *
-     * Subsets of default values present in the input JSON are evaluated using bitmask checking.
-     * Iterates subsets from most bits set to fewest. If all else fails, it calls the constructor
-     * omitting all default properties so Kotlin's default values are used.
-     *
-     * @param body The target KotlinPoet [CodeBlock.Builder].
-     * @param requiredProps Required (non-default) property models.
-     * @param defaultPropsWithIndex Property models with default values and their index.
-     * @param typeSpecBuilder The serializer class builder.
+     * Generates 2^N if-branches, each calling the primary constructor exactly once for a
+     * subset of default values present in the input, ordered from most bits set to fewest,
+     * falling back to Kotlin's own defaults when none are present.
      */
     private fun emitMultiBranchReturn(
         body: CodeBlock.Builder,
@@ -503,15 +455,8 @@ internal class StandardEmitter(
     }
 
     /**
-     * Builds the condition string for a subset bitmask of default props.
-     *
-     * Groups properties by their mask index and builds conditions checking if
-     * all subset bits are active in the target mask.
-     *
-     * @param subsetBits Bitmask of default properties present in the subset.
-     * @param defaultPropsWithIndex Default properties and their global indices.
-     * @param typeSpecBuilder The serializer class builder.
-     * @return Formatted boolean logic string.
+     * Builds the condition string for a subset bitmask of default props, grouping properties
+     * by mask index and checking that all subset bits are active in the target mask.
      */
     private fun buildSubsetCondition(
         subsetBits: Int,

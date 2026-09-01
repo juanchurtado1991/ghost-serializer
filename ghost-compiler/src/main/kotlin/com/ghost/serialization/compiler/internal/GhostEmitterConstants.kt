@@ -235,8 +235,8 @@ internal object GhostEmitterConstants {
     const val STR_WHEN_ELSE_NULL = "    else -> null\n"
     const val STR_WHEN_CLOSE_CAST = "} as %T\n"
     const val PKG_PARSER_COMMON = "com.ghost.serialization.parser.common"
-    const val PKG_PARSER_BYTES = "com.ghost.serialization.parser.bytes"
     const val PKG_PARSER_STRINGS = "com.ghost.serialization.parser.strings"
+    const val PKG_PARSER_BYTES = "com.ghost.serialization.parser.bytes"
     const val PKG_PARSER_STREAMING = "com.ghost.serialization.parser.streaming"
     const val STR_RETURN_L = "return %L"
 
@@ -392,7 +392,6 @@ internal object GhostEmitterConstants {
     const val OKIO_PACKAGE = "okio"
     const val DECODE_RESILIENT = "decodeResilient"
     const val STR_GHOST_JSON_WRITER = "GhostJsonWriter"
-    const val STR_GHOST_JSON_FLAT_WRITER = "GhostJsonFlatWriter"
     const val STR_FLAT_BYTE_ARRAY_WRITER = "FlatByteArrayWriter"
     const val STR_GHOST_JSON_STRING_WRITER = "GhostJsonStringWriter"
     const val STR_GHOST_JSON_READER = "GhostJsonReader"
@@ -411,7 +410,6 @@ internal object GhostEmitterConstants {
     const val PKG_YAML_SERIALIZER = "com.ghost.serialization.yaml.serializer"
     const val STR_GHOST_YAML_SERIALIZER = "GhostYamlSerializer"
     const val STR_GHOST_YAML_WRITER = "GhostYamlWriter"
-    const val STR_GHOST_YAML_FLAT_WRITER = "GhostYamlFlatWriter"
     const val STR_GHOST_YAML_FLAT_READER = "GhostYamlFlatReader"
     const val STR_GHOST_YAML_PREFIX = "GhostYaml"
     const val TEMPLATE_YAML_ARRAY_SERIALIZER = "GhostYaml%sSerializer"
@@ -455,7 +453,6 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_WARM_UP_STRING_READER_INIT = "val %L = %T(\n  %S\n)"
     const val TEMPLATE_WARM_UP_DESERIALIZE = "deserialize(%L)"
     const val STR_READER1 = "reader1"
-    const val STR_READER2 = "reader2"
     const val STR_READER3 = "reader3"
 
     // Import names (raw function names)
@@ -633,12 +630,12 @@ internal object GhostEmitterConstants {
     const val STR_NULLABLE_SUFFIX = "Nullable"
     const val STR_ENUM_UNKNOWN = "UNKNOWN"
     const val STR_TEMP_FLAT_WRITER = "bridgeFlatWriter"
-    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = "val %L = %T(\n"
-    const val TEMPLATE_TEMP_FLAT_WRITER_BUFFER = "%T()\n"
-    const val TEMPLATE_TEMP_FLAT_WRITER_CLOSE = ")\n"
+    const val STR_TEMP_FLAT_BUFFER = "bridgeFlatBuffer"
+    const val TEMPLATE_TEMP_FLAT_BUFFER_DECL = "val %L = %T()"
+    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = "val %L = %T(%L)"
     const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = "%T.%L(%L, %L)"
     const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
-        "writer.buffer.writeString(%L.buffer.toStringUtf8())"
+        "writer.buffer.writeString(%L.toStringUtf8())"
     const val TEMPLATE_ENUM_ELSE_FALLBACK = "else -> %T.%L"
     const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
         "Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class "

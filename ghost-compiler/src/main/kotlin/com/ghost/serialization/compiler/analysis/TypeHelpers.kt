@@ -160,6 +160,26 @@ internal fun KSType.isEnum(): Boolean {
 }
 
 /**
+ * Checks whether this type's declaration is a Kotlin `value`/`inline` class.
+ */
+internal fun KSType.isValueClassType(): Boolean {
+    val classDeclaration = declaration as? KSClassDeclaration ?: return false
+    return classDeclaration.modifiers.contains(Modifier.VALUE) ||
+            classDeclaration.modifiers.contains(Modifier.INLINE)
+}
+
+/**
+ * Resolves the wrapped inner type of a Kotlin `value`/`inline` class, or `null` if this
+ * type isn't a value class or has no resolvable primary-constructor parameter.
+ */
+internal fun KSType.resolveValueClassInnerType(): KSType? {
+    val classDeclaration = declaration as? KSClassDeclaration ?: return null
+    val primaryConstructor = classDeclaration.primaryConstructor ?: return null
+    val param = primaryConstructor.parameters.firstOrNull() ?: return null
+    return param.type.resolve()
+}
+
+/**
  * Checks whether this type is [kotlin.ByteArray].
  * Fields of this type capture raw JSON bytes via the reader's
  * `captureRawJsonBytes` extension.

@@ -2,7 +2,6 @@ package com.ghost.serialization.compiler
 
 import com.ghost.serialization.compiler.hash.PerfectHashConfig
 import com.ghost.serialization.compiler.hash.PerfectHashFinder
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
@@ -22,12 +21,8 @@ import kotlin.test.assertTrue
 
 
 /**
- * Verifies that PerfectHashFinder scales the dispatch table correctly (128→256→512→1024→2048)
- * and that JsonReaderOptions dispatches every field correctly at runtime for each table size.
- *
- * Strategy: generate enough fields with intentional prefix collisions to force the brute-force
- * search to exhaust smaller table sizes and fall through to the target size. Then verify that
- * the resulting (shift, multiplier, tableSize) dispatches correctly in all three readers.
+ * Verifies PerfectHashFinder scales the dispatch table correctly (128→256→512→1024→2048) and
+ * that JsonReaderOptions dispatches every field correctly at runtime for each table size.
  */
 class PerfectHashTableScalingTest {
 
@@ -57,22 +52,15 @@ class PerfectHashTableScalingTest {
     // ─── field generators ───────────────────────────────────────────────────────
 
     /**
-     * Generate N fields that all start with the same 4-byte prefix but have unique lengths.
-     * When hasCollisions=true (triggered if any two share prefix+length) the polynomial
-     * accumulation runs over all extra bytes. Using a shared prefix maximises hash entropy
-     * concentration, making the perfect-hash search harder and forcing larger tables.
-     *
-     * Fields: "field_00000", "field_00001", ..., "field_NNNNN"
-     * All share prefix `fiel` (102,105,101,108) and have unique lengths (no collisions).
+     * Fields sharing a 4-byte prefix but with unique lengths, so no two collide. A shared
+     * prefix concentrates hash entropy, making the perfect-hash search harder.
      */
     private fun generateDiverseFields(n: Int): List<String> =
         (0 until n).map { i -> "field_${i.toString().padStart(5, '0')}" }
 
     /**
-     * Generate N fields that share prefix `coll` AND some share the same length,
-     * triggering hasCollisions=true and forcing the polynomial path.
-     * Fields: "coll_a0", "coll_b0", "coll_a1", "coll_b1", ...
-     * Pairs (coll_aX, coll_bX) share prefix `coll` + same length → collision.
+     * Fields sharing prefix `coll`, with pairs also sharing length so they collide,
+     * forcing the polynomial hash path.
      */
     private fun generateCollidingFields(n: Int): List<String> {
         val result = mutableListOf<String>()
@@ -102,7 +90,6 @@ class PerfectHashTableScalingTest {
         }
         val bytes = json.encodeToByteArray()
 
-        // Streaming reader
         val streaming = GhostJsonReader(bytes)
         streaming.beginObject()
         repeat(fields.size) {
@@ -113,18 +100,6 @@ class PerfectHashTableScalingTest {
         }
         streaming.endObject()
 
-        // Flat reader
-        val flat = GhostJsonFlatReader(bytes)
-        flat.beginObject()
-        repeat(fields.size) {
-            val idx = flat.selectString(options)
-            flat.consumeKeySeparator()
-            val value = flat.nextInt()
-            assertEquals(value, idx, "$label flat: '${fields.getOrElse(value) { "?" }}'")
-        }
-        flat.endObject()
-
-        // String reader
         val string = GhostJsonStringReader(json)
         string.beginObject()
         repeat(fields.size) {
@@ -277,8 +252,7 @@ class PerfectHashTableScalingTest {
 
     @Test
     fun finderOutputMatchesRuntimeDispatch_allTableSizes() {
-        // For each size boundary, confirm that the finder's chosen parameters
-        // actually produce correct dispatch — not just that the size is right.
+        // Confirms the finder's chosen parameters produce correct dispatch, not just the right size.
         val boundaries = listOf(60, 130, 260, 520)
         for (n in boundaries) {
             val fields = generateDiverseFields(n)
@@ -292,11 +266,11 @@ class PerfectHashTableScalingTest {
                 val json = "{\"$name\":$i}"
                 val bytes = json.encodeToByteArray()
 
-                val flat = GhostJsonFlatReader(bytes)
-                flat.beginObject()
+                val reader = GhostJsonReader(bytes)
+                reader.beginObject()
                 assertEquals(
                     i,
-                    flat.selectString(options),
+                    reader.selectString(options),
                     "n=$n tableSize=${hashConfig.tableSize} field='$name'"
                 )
             }
@@ -341,10 +315,10 @@ class PerfectHashTableScalingTest {
 
         val geoIndex = wireValues.indexOf("w:locations:geo")
         val geoJson = "\"w:locations:geo\"".encodeToByteArray()
-        val flat = GhostJsonFlatReader(geoJson)
+        val reader = GhostJsonReader(geoJson)
         assertEquals(
             geoIndex,
-            flat.selectString(options),
+            reader.selectString(options),
             "w:locations:geo should dispatch to its index"
         )
     }

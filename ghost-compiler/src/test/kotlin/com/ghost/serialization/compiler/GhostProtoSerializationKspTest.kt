@@ -35,7 +35,6 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "ProtoCounterSerializer.kt"
         )
 
-        // Serialize: int64 field must be quoted (proto3 JSON), never the fused unquoted writeField.
         assertTrue(
             "writer.value(value.request_id.toString())" in generated,
             "Expected quoted int64 write for request_id:\n$generated"
@@ -45,13 +44,12 @@ class GhostProtoSerializationKspTest {
             "Long field must not use the unquoted fused writeField path under @GhostProtoSerialization:\n$generated"
         )
 
-        // Deserialize: must accept both quoted and bare numeric int64 via coerceStringsToNumbers.
         assertTrue(
             "reader.coerceStringsToNumbers" in generated,
             "Expected quoted-int64 coercion toggle for request_id:\n$generated"
         )
 
-        // int32 (Int) is unaffected — proto3 keeps int32 as a bare JSON number.
+        // int32 stays a bare JSON number under proto3, unlike int64.
         assertTrue(
             "writer.writeField(H_RETRIES, value.retries)" in generated,
             "Int32 field should still use the fast fused writeField path:\n$generated"
@@ -387,12 +385,10 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "ProtoAccountIdListSerializer.kt"
         )
 
-        // Verificamos que al serializar se llame a la propiedad desenvuelta (itemX.value.toString())
         assertTrue(
             "writer.value(item0.value.toString())" in generated,
             "Expected List<AccountId> value class elements to be unboxed and quoted under proto:\n$generated"
         )
-        // Verificamos que al deserializar se instancie la value class envolviendo el long leido con coercion
         assertTrue(
             "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
             "Expected List<AccountId> elements to be deserialized by instantiating value class with coerced long:\n$generated"
@@ -556,9 +552,8 @@ class GhostProtoSerializationKspTest {
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc (2.1.0) can't read metadata from our project's own
-            // jars once they're compiled with a newer Kotlin (2.4.0 as of this bump) via
-            // inheritClassPath — this flag skips that strict metadata-version check.
+            // kctfork's embedded kotlinc can't read metadata from jars built with a newer
+            // Kotlin via inheritClassPath; this flag skips that version check.
             kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }

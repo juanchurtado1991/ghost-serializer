@@ -194,9 +194,8 @@ internal object GeneratedCodeHygiene {
     }
 
     /**
-     * Flags generated local `val`/`var` names that contain underscores.
-     * Property names on the model (named ctor args / `result.foo_bar`) may keep underscores;
-     * invented locals must be camelCase.
+     * Flags generated local `val`/`var` names that contain underscores. Model property names
+     * (ctor args / `result.foo_bar`) may keep underscores — only invented locals must be camelCase.
      */
     fun analyzeLocalVariableNaming(
         source: String,

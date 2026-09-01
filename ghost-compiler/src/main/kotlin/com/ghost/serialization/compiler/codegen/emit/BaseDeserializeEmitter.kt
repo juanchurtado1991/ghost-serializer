@@ -18,6 +18,8 @@ import com.ghost.serialization.compiler.analysis.isPrimitiveULong
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isString
+import com.ghost.serialization.compiler.analysis.isValueClassType
+import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 import com.ghost.serialization.compiler.analysis.serializerClassName
 import com.ghost.serialization.compiler.model.CustomCoderModel
 import com.ghost.serialization.compiler.model.CustomCoderReaderKind
@@ -26,7 +28,6 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -35,24 +36,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
  * Abstract base class for all deserialization emitters within the Ghost compiler.
- *
- * This class serves as the foundation for generating deserialization logic. It manages
- * shared state and provides a suite of helper methods to transform KSP symbols into
- * executable [CodeBlock] instructions via KotlinPoet.
- *
- * ### Responsibilities:
- * - **Schema Validation:** Pre-calculates [requiredMasks] and [defaultMasks] using bitwise operations
- * to ensure data integrity during runtime with minimal CPU overhead.
- * - **Path Resolution:** Flattens nested property paths (e.g., "user.profile.id") to allow mapping
- * deeply nested JSON structures directly to flat DTOs.
- * - **Type Resolution:** Encapsulates the logic for determining which deserialization strategy
- * to apply (primitives vs. lists vs. recursive calls to other serializers).
- * - **Code Generation Helpers:** Provides common templates for `null` handling, custom decoders,
- * and contextual serializer injection.
- *
- * @param properties The list of [GhostPropertyModel] describing the fields of the target class.
- * @param originalClassName The [ClassName] of the DTO being deserialized.
- * @param readerClass The [ClassName] of the reader being used (e.g., GhostJsonReader or GhostJsonFlatReader).
+ * Manages shared state (property masks, flattened paths, contextual serializers) and
+ * provides helper methods to transform KSP symbols into [CodeBlock] instructions via KotlinPoet.
  */
 internal abstract class BaseDeserializeEmitter(
     protected val properties: List<GhostPropertyModel>,
@@ -60,17 +45,14 @@ internal abstract class BaseDeserializeEmitter(
     protected val readerClass: ClassName
 ) {
 
-    protected val contextualSerializers = mutableMapOf<KSType, String>()
+    private val contextualSerializerRegistry = ContextualSerializerRegistry()
 
     protected val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
             C.MASK_SIZE_BITS.toInt()
 
     /**
-     * Resolves the flatten path for nested properties.
-     * This allows Ghost to map deeply nested JSON structures (e.g., "user.profile.id")
-     * directly to a flat DTO field without needing intermediate data classes.
-     * This is an optimization to keep the domain model clean while maintaining
-     * compatibility with non-flat JSON structures.
+     * The flattened path for each property, allowing deeply nested JSON structures
+     * (e.g. "user.profile.id") to map directly to a flat DTO field.
      */
     protected val fullPaths = properties.map {
         it.flattenPath ?: (it.wrapPath?.let { path ->
@@ -79,32 +61,16 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Maps each property model to its unique zero-based index.
-     * This is essential for calculating the maskIdx and bitIdx used in bitwise operations.
+     * Maps each property to its zero-based index, used to compute maskIdx/bitIdx for bitmasks.
      */
     protected val propertyIndices = properties
         .mapIndexed { index, prop -> prop to index }
         .toMap()
 
     /**
-     * Calculates the validation bitmask for required fields of the DTO.
-     *
-     * This property identifies which fields must be present in the JSON during deserialization.
-     * A field is considered mandatory if:
-     * 1. It is not nullable (`!isNullable`).
-     * 2. It does not have a default value (`!hasDefaultValue`).
-     *
-     * **Validation Architecture:**
-     * The bits are distributed across a [LongArray] to support schemas with more than 64 properties.
-     * Each field is assigned to a position (maskIdx, bitIdx) based on its index in the property list.
-     *
-     * During runtime, the generated serializer uses this mask to perform high-performance schema validation.
-     * By comparing the received mask against this required mask using a binary AND operation
-     * (`mask & requiredMask == requiredMask`), the generated serializer validates object
-     * integrity in a single CPU cycle.
-     *
-     * @return A [LongArray] where each set bit represents a mandatory field that must be validated
-     * after the deserialization process completes.
+     * Bitmask of fields that are mandatory (non-nullable, no default). Split across a [LongArray]
+     * to support schemas with more than 64 properties; the generated code validates presence with
+     * a single `mask & requiredMask == requiredMask` check.
      */
     protected val requiredMasks: LongArray by lazy {
         val masks = LongArray(maskCount)
@@ -119,20 +85,9 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Calculates the bitmask for properties that have defined default values.
-     *
-     * This mask identifies fields for which the generated deserializer can safely
-     * fall back to the class-level default values if the property is missing from the JSON input.
-     *
-     * **Architectural Purpose:**
-     * During the final return/instantiation stage, the generated deserializer uses this mask
-     * to perform "Constructor Dispatching". If a field is missing, instead of throwing an error
-     * (as it would for [requiredMasks]), it relies on this mask to know that it is safe
-     * to omit the argument from the constructor call, allowing Kotlin's default
-     * parameter logic to take over.
-     *
-     * @return A [LongArray] where each set bit represents a property that possesses a
-     * default value, assisting in optimal constructor selection and object instantiation.
+     * Bitmask of fields with a default value. When a field is missing and its bit is set here,
+     * the generated deserializer omits the constructor argument instead of throwing, letting
+     * Kotlin's default parameter logic take over.
      */
     protected val defaultMasks: LongArray by lazy {
         val masks = LongArray(maskCount)
@@ -301,18 +256,13 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Dispatches the correct [CodeBlock] to read a specific [KSType] from the JSON reader.
-     * * This acts as the recursive entry point for the emitter. It follows these resolution rules:
-     * 1. **Ghost/Enum types:** Delegates to an existing serializer (recursive call).
-     * 2. **Primitives:** Maps directly to optimized `GhostJsonReader` methods (e.g. `nextInt()`).
-     * 3. **Collections (List/Map):** Applies a recursive template to handle generic types.
-     * 4. **Fallbacks:** Uses contextual resolution for unknown or custom types.
+     * Recursive entry point that dispatches the correct [CodeBlock] to read a given [KSType]:
+     * delegates to an existing serializer for Ghost/enum types, maps primitives to optimized
+     * reader methods, and recurses into collection element types.
      *
-     * @param type The KSP type being resolved.
      * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
      *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
      *   proto3 quoted-int64/Base64 decoding.
-     * @return A [CodeBlock] containing the optimized reader instruction.
      */
     protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {
         return when {
@@ -330,8 +280,8 @@ internal abstract class BaseDeserializeEmitter(
                 if (type.isMarkedNullable) nullGuarded(call) else call
             }
 
-            isValueClassType(type) && !type.isKotlinUnsignedPrimitive() -> {
-                val innerType = resolveValueClassInnerType(type)
+            type.isValueClassType() && !type.isKotlinUnsignedPrimitive() -> {
+                val innerType = type.resolveValueClassInnerType()
                 val call = if (innerType != null) {
                     val constructorCall = buildTypeReaderCall(innerType, isProto)
                     val className =
@@ -493,22 +443,13 @@ internal abstract class BaseDeserializeEmitter(
      * Generates a unique variable name for a contextual serializer.
      * Example: "User" -> "contextualUserSerializer".
      */
-    private fun getContextualSerializerName(type: KSType): String {
-        return contextualSerializers.getOrPut(type) {
-            val simpleName = type.declaration.simpleName.asString()
-            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else ""
-            C.STR_CONTEXTUAL_PREFIX +
-                    simpleName.replaceFirstChar { it.lowercase() } +
-                    nullableSuffix +
-                    C.STR_SERIALIZER_SUFFIX
-        }
-    }
+    private fun getContextualSerializerName(type: KSType): String =
+        contextualSerializerRegistry.nameFor(type)
 
     /**
-     * Registers descriptive private bitmask constants on the companion/object builder
-     * for every property and all validation/defaults masks, completely eliminating magic numbers.
+     * Registers named private bitmask constants on the companion/object builder for every
+     * property and all validation/defaults masks, avoiding magic numbers in generated code.
      *
-     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
      * @param emitRequiredAggregateMasks When false, skip aggregate `MASK_REQUIRED_N` constants
      * (e.g. StandardEmitter with a single required field validates via the property mask only).
      */
@@ -526,7 +467,7 @@ internal abstract class BaseDeserializeEmitter(
                 typeSpecBuilder.addProperty(
                     PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)
                         .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                        .initializer("%L", bitMaskStr)
+                        .initializer(C.TEMPLATE_L, bitMaskStr)
                         .build()
                 )
             }
@@ -545,7 +486,7 @@ internal abstract class BaseDeserializeEmitter(
                     typeSpecBuilder.addProperty(
                         PropertySpec.builder(name, com.squareup.kotlinpoet.LONG)
                             .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                            .initializer("%L", reqMaskStr)
+                            .initializer(C.TEMPLATE_L, reqMaskStr)
                             .build()
                     )
                 }
@@ -568,7 +509,7 @@ internal abstract class BaseDeserializeEmitter(
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
                     .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                    .initializer("%L", formatMaskString(defMask))
+                    .initializer(C.TEMPLATE_L, formatMaskString(defMask))
                     .build()
             )
         }
@@ -576,63 +517,15 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Injects private property references for contextual serializers into the generated class.
-     *
-     * This implements a static dependency-injection strategy. Instead of looking up
-     * serializers at runtime (which would require reflection), the compiler pre-resolves
-     * and injects them as private final fields during code generation.
-     *
-     * @param typeSpecBuilder The [TypeSpec.Builder] where the serializer properties will be added.
+     * Injects private fields for contextual serializers, pre-resolved at compile time instead
+     * of looked up via reflection at runtime.
      */
-    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
-        val ghostClass = ClassName(
-            C.PKG_GHOST,
-            C.STR_GHOST
-        )
-
-        contextualSerializers.forEach { (type, name) ->
-            val nonNullableType = type.makeNotNullable()
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(
-                    name,
-                    ClassName(
-                        C.PKG_CONTRACT,
-                        C.STR_GHOST_SERIALIZER
-                    )
-                        .parameterizedBy(nonNullableType.toTypeName()),
-                    KModifier.PRIVATE
-                )
-                    .initializer(
-                        C.TEMPLATE_RESOLVE_SERIALIZER,
-                        ghostClass,
-                        nonNullableType.toTypeName()
-                    )
-                    .build()
-            )
-        }
-    }
+    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) =
+        contextualSerializerRegistry.injectInto(typeSpecBuilder)
 
     /**
-     * Wraps a deserialization reader instruction with a null-check condition.
-     *
-     * In the generated code, this wraps the reader call with a check:
-     * `if (reader.isNextNullValue()) { reader.consumeNull(); null } else { ... }`
+     * Wraps a reader instruction with a null-check: `if (reader.isNextNullValue()) { ... } else { ... }`.
      */
     protected fun nullGuarded(inner: CodeBlock): CodeBlock =
         CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)
-
-    private fun isValueClassType(type: KSType): Boolean {
-        val declaration =
-            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false
-        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||
-                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)
-    }
-
-    private fun resolveValueClassInnerType(type: KSType): KSType? {
-        val declaration =
-            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null
-        val primaryConstructor = declaration.primaryConstructor ?: return null
-        val param = primaryConstructor.parameters.firstOrNull() ?: return null
-        return param.type.resolve()
-    }
 }

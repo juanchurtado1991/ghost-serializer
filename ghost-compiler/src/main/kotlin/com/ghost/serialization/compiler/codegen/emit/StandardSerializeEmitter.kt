@@ -18,10 +18,6 @@ internal class StandardSerializeEmitter(
 
     /**
      * Emits the standard object serialization instructions.
-     *
-     * @param code The target [CodeBlock.Builder].
-     * @param discriminator Optional polymorphic sealed class discriminator value.
-     * @param sealedDiscriminatorKey Discriminator key name.
      */
     fun emit(
         code: CodeBlock.Builder,

@@ -38,15 +38,9 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main KSP Processor for Ghost Serialization.
- *
- * It analyzes classes annotated with `@GhostSerialization`, generates their respective
- * specialized serializers, and builds a global registry mapping classes to serializers
+ * Main KSP processor for Ghost Serialization: analyzes `@GhostSerialization`-annotated classes,
+ * generates their serializers, and builds a per-module registry mapping classes to serializers
  * to avoid reflection at runtime.
- *
- * @property codeGenerator KSP `CodeGenerator` used to create serializer and registry files.
- * @property logger KSP `KSPLogger` used to report compilation errors, warnings, and messages.
- * @property options Map of key-value pairs representing processor options passed from build scripts.
  */
 class GhostSerializationProcessor(
     private val codeGenerator: CodeGenerator,
@@ -69,9 +63,6 @@ class GhostSerializationProcessor(
      */
     private val processedFiles = mutableSetOf<String>()
 
-    /**
-     * Analyzer that reads declarations and constructs property metadata models.
-     */
     private val analyzer = GhostAnalyzer(logger)
     private val envelopeAnalyzer = EnvelopeAnalyzer(logger)
 
@@ -100,12 +91,10 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Entry point of the processor phase.
-     * Searches for `@GhostSerialization` annotated classes, generates their serializers,
-     * and compiles the final module registry if any class was successfully processed.
+     * Entry point of the processor phase. Searches for `@GhostSerialization`-annotated classes,
+     * generates their serializers, and compiles the module registry.
      *
-     * @param resolver KSP [com.google.devtools.ksp.processing.Resolver] used to query symbols and types.
-     * @return List of symbols that couldn't be processed in this round.
+     * @return Symbols that could not be processed in this round (deferred to KSP's next round).
      */
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val symbols = (resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION) +
@@ -160,9 +149,7 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Analyzes, compiles code specs, and writes the serializer companion class file for a target class.
-     *
-     * @param classDeclaration KSP class declaration of the target serializable model.
+     * Compiles and writes the serializer companion file for a target class.
      */
     private fun processClass(
         classDeclaration: KSClassDeclaration,
@@ -199,9 +186,7 @@ class GhostSerializationProcessor(
     /**
      * Generates and writes the serializer class file for the target class declaration.
      *
-     * @param classDeclaration KSP class declaration of the target serializable model.
-     * @param propertiesModel The properties metadata model parsed from the declaration.
-     * @return The [com.squareup.kotlinpoet.ClassName] of the generated serializer class, or null if it was already processed.
+     * @return The generated serializer's [ClassName], or null if this file was already processed.
      */
     private fun generateSerializer(
         classDeclaration: KSClassDeclaration,
@@ -387,11 +372,9 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Registers the generated serializer class name mapping for a given model, tracking sealed subclasses
-     * and recording originating files for incremental compilation.
-     *
-     * @param classDeclaration KSP class declaration of the target serializable model.
-     * @param serializerClassName The [com.squareup.kotlinpoet.ClassName] of the generated serializer.
+     * Registers the generated serializer for [classDeclaration], also mapping any sealed
+     * subclasses to the same serializer, and records the originating file for incremental
+     * compilation.
      */
     private fun registerSerializer(
         classDeclaration: KSClassDeclaration,
@@ -428,29 +411,16 @@ class GhostSerializationProcessor(
 
         val chunks = entries.chunked(C.REGISTRY_CHUNK_SIZE)
 
-        // 1. Generate full serializers map (Lazy + Fragmented)
         generateSerializersMapProperty(registrySpec, chunks, entries, mapType)
-
-        // 2. Generate getSerializer method (Fragmented when)
         generateGetSerializerMethod(registrySpec, chunks, entries, serializerType, type)
-
-        // 3. Generate Shard Methods if fragmented
         generateShardMethods(registrySpec, chunks, mapType, serializerType)
-
-        // 4. Generate Metadata Methods & Companion
         generateMetadataMethodsAndCompanion(registrySpec, entries.size, mapType)
 
-        // Write the spec to file
         writeRegistryFile(registrySpec.build())
     }
 
     /**
      * Generates the lazily-initialized full serializers map property for the registry.
-     *
-     * @param registrySpec The type spec builder for the module registry.
-     * @param chunks Chunked lists of serializable class entry mappings.
-     * @param entries All serializable class entry mappings.
-     * @param mapType The parameterized type description of the mapping.
      */
     private fun generateSerializersMapProperty(
         registrySpec: TypeSpec.Builder,
@@ -485,12 +455,6 @@ class GhostSerializationProcessor(
 
     /**
      * Generates the polymorphic `getSerializer` method routing requests to matches or shards.
-     *
-     * @param registrySpec The type spec builder for the module registry.
-     * @param chunks Chunked lists of serializable class entry mappings.
-     * @param entries All serializable class entry mappings.
-     * @param serializerType The parameterized serializer type description.
-     * @param type The type variable representation for return type casting.
      */
     private fun generateGetSerializerMethod(
         registrySpec: TypeSpec.Builder,
@@ -532,11 +496,6 @@ class GhostSerializationProcessor(
 
     /**
      * Generates private helper lookup/mapping shard methods if the registry size warrants fragmentation.
-     *
-     * @param registrySpec The type spec builder for the module registry.
-     * @param chunks Chunked lists of serializable class entry mappings.
-     * @param mapType The parameterized type description of the mapping.
-     * @param serializerType The parameterized serializer type description.
      */
     private fun generateShardMethods(
         registrySpec: TypeSpec.Builder,
@@ -572,10 +531,6 @@ class GhostSerializationProcessor(
 
     /**
      * Generates metadata info methods (prewarm, registry size count, and global companion instance).
-     *
-     * @param registrySpec The type spec builder for the module registry.
-     * @param entriesCount The total number of serializable class entry mappings.
-     * @param mapType The parameterized type description of the mapping.
      */
     private fun generateMetadataMethodsAndCompanion(
         registrySpec: TypeSpec.Builder,
@@ -622,8 +577,6 @@ class GhostSerializationProcessor(
 
     /**
      * Writes the completed registry type specification to a file.
-     *
-     * @param registrySpec The built registry type specification.
      */
     private fun writeRegistryFile(registrySpec: TypeSpec) {
         GeneratedSourceTrimmer.write(
@@ -636,10 +589,7 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Generates a KotlinPoet [com.squareup.kotlinpoet.CodeBlock] mapping class types to their serializer instances.
-     *
-     * @param entries Serializable class entry mappings.
-     * @return Pre-compiled registry map code block.
+     * Generates a KotlinPoet [CodeBlock] mapping class types to their serializer instances.
      */
     private fun buildMapBlock(
         entries: List<Map.Entry<ClassName, ClassName>>
@@ -660,12 +610,7 @@ class GhostSerializationProcessor(
     }
 
     /**
-     * Generates a high-performance Kotlin `when (clazz)` lookup expression.
-     *
-     * @param entries Registry entry mappings.
-     * @param serializerType Serializer class name representation.
-     * @param type Generic type variable for mapping return types safely.
-     * @return Generated routing when code block.
+     * Generates a `when (clazz)` lookup expression mapping classes to serializer instances.
      */
     private fun buildWhenBlock(
         entries: List<Map.Entry<ClassName, ClassName>>,
@@ -755,5 +700,4 @@ class GhostSerializationProcessor(
             )
         }
     }
-
 }

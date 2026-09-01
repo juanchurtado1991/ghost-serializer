@@ -103,7 +103,6 @@ internal class EnvelopeAnalyzer(private val logger: KSPLogger) {
         }
 
         val payloadMappings = if (isGenericMode) {
-            val genericProp = genericDataProperty!!
             properties.filter { prop ->
                 prop.kotlinName != discriminatorProperty.kotlinName &&
                         prop.kotlinName != timeKotlinName &&
@@ -112,16 +111,8 @@ internal class EnvelopeAnalyzer(private val logger: KSPLogger) {
                 val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null
                 val payloadAnnotation = declaration.annotations.find {
                     it.shortName.asString() == C.STR_GHOST_ENVELOPE_PAYLOAD
-                }
-                if (payloadAnnotation == null) {
-                    if (prop.kotlinName == genericProp.kotlinName) {
-                        null
-                    } else {
-                        null
-                    }
-                } else {
-                    buildPayloadMapping(payloadAnnotation, prop, classDeclaration)
-                }
+                } ?: return@mapNotNull null
+                buildPayloadMapping(payloadAnnotation, prop, classDeclaration)
             }
         } else {
             properties.mapNotNull { prop ->

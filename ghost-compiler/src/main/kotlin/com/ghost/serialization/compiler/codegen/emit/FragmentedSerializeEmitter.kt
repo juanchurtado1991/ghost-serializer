@@ -23,11 +23,6 @@ internal class FragmentedSerializeEmitter(
 
     /**
      * Emits the fragmented chunk-based serialization logic.
-     *
-     * @param code The target [CodeBlock.Builder].
-     * @param typeSpecBuilder The KotlinPoet companion [TypeSpec.Builder].
-     * @param discriminator Optional polymorphic sealed class discriminator value.
-     * @param sealedDiscriminatorKey Discriminator key name.
      */
     fun emit(
         code: CodeBlock.Builder,

@@ -23,16 +23,12 @@ import kotlin.test.assertTrue
 class GhostTextChannelKspTest {
 
     @Test
-    fun textChannelTrueGeneratesThreeDeserializeOverloads() {
+    fun textChannelTrueGeneratesTwoDeserializeOverloads() {
         val generated = compileAndReadSerializer(textChannel = true)
 
         assertTrue(
             "override fun deserialize(reader: GhostJsonReader)" in generated,
-            "Expected streaming deserialize overload"
-        )
-        assertTrue(
-            "override fun deserialize(reader: GhostJsonFlatReader)" in generated,
-            "Expected flat deserialize overload"
+            "Expected the unified in-memory/streaming deserialize overload"
         )
         assertTrue(
             "override fun deserialize(reader: GhostJsonStringReader)" in generated,
@@ -41,16 +37,12 @@ class GhostTextChannelKspTest {
     }
 
     @Test
-    fun textChannelTrueGeneratesThreeSerializeOverloads() {
+    fun textChannelTrueGeneratesTwoSerializeOverloads() {
         val generated = compileAndReadSerializer(textChannel = true)
 
         assertTrue(
             "override fun serialize(writer: GhostJsonWriter," in generated,
-            "Expected streaming serialize overload"
-        )
-        assertTrue(
-            "override fun serialize(writer: GhostJsonFlatWriter," in generated,
-            "Expected flat serialize overload"
+            "Expected the unified in-memory/streaming serialize overload"
         )
         assertTrue(
             "override fun serialize(writer: GhostJsonStringWriter," in generated,
@@ -74,11 +66,7 @@ class GhostTextChannelKspTest {
 
         assertTrue(
             "override fun deserialize(reader: GhostJsonReader)" in generated,
-            "Expected streaming deserialize overload"
-        )
-        assertTrue(
-            "override fun deserialize(reader: GhostJsonFlatReader)" in generated,
-            "Expected flat deserialize overload"
+            "Expected the unified in-memory/streaming deserialize overload"
         )
         assertFalse(
             "override fun deserialize(reader: GhostJsonStringReader)" in generated,
@@ -193,9 +181,8 @@ class GhostTextChannelKspTest {
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc (2.1.0) can't read metadata from our project's own
-            // jars once they're compiled with a newer Kotlin (2.4.0 as of this bump) via
-            // inheritClassPath — this flag skips that strict metadata-version check.
+            // kctfork's embedded kotlinc can't read metadata from jars built with a newer
+            // Kotlin via inheritClassPath; this flag skips that version check.
             kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }

@@ -18,11 +18,6 @@ internal object FlattenOptionsGenerator {
     /**
      * Collects and triggers recursive generation of nested perfect hash lookup options
      * for flattened properties structures.
-     *
-     * @param typeSpecBuilder The target class builder to inject the options properties into.
-     * @param properties The list of target properties.
-     * @param fullPaths The pre-extracted paths for each property.
-     * @param textChannel Whether generated OPTIONS tables target the string channel.
      */
     fun generateNestedOptions(
         typeSpecBuilder: TypeSpec.Builder,
@@ -61,13 +56,6 @@ internal object FlattenOptionsGenerator {
 
     /**
      * Recursively traverses nodes and emits private nested perfect hash options properties.
-     *
-     * @param typeSpecBuilder The target class builder to inject the options property into.
-     * @param properties The list of target properties.
-     * @param fullPaths The pre-extracted paths for each property.
-     * @param node The current flattened node.
-     * @param parentPrefix Prefix derived from parent segments.
-     * @param currentPath Path segments list up to this node.
      */
     private fun emitNestedOptionsRecursive(
         typeSpecBuilder: TypeSpec.Builder,
