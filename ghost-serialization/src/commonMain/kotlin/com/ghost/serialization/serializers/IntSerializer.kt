@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -21,10 +20,6 @@ object IntSerializer : GhostSerializer<Int> {
     override val typeName: String get() = C.TYPE_NAME_INT
 
     override fun serialize(writer: GhostJsonWriter, value: Int) {
-        writer.value(value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: Int) {
         writer.value(value)
     }
 

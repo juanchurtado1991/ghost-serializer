@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.serializers
 
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
@@ -16,9 +15,9 @@ import com.ghost.serialization.parser.strings.beginObject
 import com.ghost.serialization.parser.strings.consumeKeySeparator
 import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.parser.strings.nextKey
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * Serializer implementation for standard Kotlin [Map] collections with String keys.
@@ -33,18 +32,6 @@ class MapSerializer<V>(
 
     override fun serialize(
         writer: GhostJsonWriter,
-        value: Map<String, V>
-    ) {
-        writer.beginObject()
-        for (entry in value.entries) {
-            writer.name(entry.key)
-            valueSerializer.serialize(writer, entry.value)
-        }
-        writer.endObject()
-    }
-
-    override fun serialize(
-        writer: GhostJsonFlatWriter,
         value: Map<String, V>
     ) {
         writer.beginObject()

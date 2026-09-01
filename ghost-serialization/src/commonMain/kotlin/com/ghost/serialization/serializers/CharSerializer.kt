@@ -11,7 +11,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextChar
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextChar
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -22,10 +21,6 @@ object CharSerializer : GhostSerializer<Char> {
     override val typeName: String get() = C.TYPE_NAME_CHAR
 
     override fun serialize(writer: GhostJsonWriter, value: Char) {
-        writer.value(value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: Char) {
         writer.value(value)
     }
 

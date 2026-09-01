@@ -18,7 +18,6 @@ import com.ghost.serialization.parser.strings.consumeArraySeparator
 import com.ghost.serialization.parser.strings.endArray
 import com.ghost.serialization.parser.strings.hasNext
 import com.ghost.serialization.parser.strings.nextDouble
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -32,27 +31,14 @@ object DoubleArraySerializer : GhostSerializer<DoubleArray> {
     override fun serialize(writer: GhostJsonWriter, value: DoubleArray) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
-        writer.endArray()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: DoubleArray) {
-        writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
+        for (i in 0 until size) { writer.value(value[i]) }
         writer.endArray()
     }
 
     override fun serialize(writer: GhostJsonStringWriter, value: DoubleArray) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
+        for (i in 0 until size) { writer.value(value[i]) }
         writer.endArray()
     }
 
@@ -63,10 +49,24 @@ object DoubleArraySerializer : GhostSerializer<DoubleArray> {
             return DoubleArray(0)
         }
         val list = ArrayList<Double>()
+        val fastSucceeded = tryFastDecimalArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            getPosition = { reader.position },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+            addTo = list,
+            parseNext = { reader.nextDouble() },
+        )
+        if (fastSucceeded) {
+            reader.endArray()
+            return list.toDoubleArray()
+        }
+        list.clear()
+
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (list.isNotEmpty()) {
-                reader.consumeArraySeparator()
-            }
+            if (strict && list.isNotEmpty()) { reader.consumeArraySeparator() }
             list.add(reader.nextDouble())
         }
         reader.endArray()
@@ -80,10 +80,24 @@ object DoubleArraySerializer : GhostSerializer<DoubleArray> {
             return DoubleArray(0)
         }
         val list = ArrayList<Double>()
+        val fastSucceeded = tryFastDecimalArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            getPosition = { reader.position },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+            addTo = list,
+            parseNext = { reader.nextDouble() },
+        )
+        if (fastSucceeded) {
+            reader.endArray()
+            return list.toDoubleArray()
+        }
+        list.clear()
+
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (list.isNotEmpty()) {
-                reader.consumeArraySeparator()
-            }
+            if (strict && list.isNotEmpty()) { reader.consumeArraySeparator() }
             list.add(reader.nextDouble())
         }
         reader.endArray()
@@ -97,10 +111,24 @@ object DoubleArraySerializer : GhostSerializer<DoubleArray> {
             return DoubleArray(0)
         }
         val list = ArrayList<Double>()
+        val fastSucceeded = tryFastDecimalArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            getPosition = { reader.position },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+            addTo = list,
+            parseNext = { reader.nextDouble() },
+        )
+        if (fastSucceeded) {
+            reader.endArray()
+            return list.toDoubleArray()
+        }
+        list.clear()
+
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (list.isNotEmpty()) {
-                reader.consumeArraySeparator()
-            }
+            if (strict && list.isNotEmpty()) { reader.consumeArraySeparator() }
             list.add(reader.nextDouble())
         }
         reader.endArray()

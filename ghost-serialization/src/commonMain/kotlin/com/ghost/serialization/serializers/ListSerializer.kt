@@ -2,22 +2,17 @@
 
 package com.ghost.serialization.serializers
 
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.decodeResilient
-import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.readList
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.parser.strings.beginArray
-import com.ghost.serialization.parser.strings.endArray
 import com.ghost.serialization.parser.strings.readList
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * Serializer implementation for standard Kotlin [List] collections.
@@ -31,28 +26,6 @@ class ListSerializer<T>(
 
     override fun serialize(
         writer: GhostJsonWriter,
-        value: List<T>
-    ) {
-        writer.beginArray()
-        val size = value.size
-        if (size == 0) {
-            writer.endArray()
-            return
-        }
-        if (value is RandomAccess) {
-            for (i in 0 until size) {
-                itemSerializer.serialize(writer, value[i])
-            }
-        } else {
-            for (item in value) {
-                itemSerializer.serialize(writer, item)
-            }
-        }
-        writer.endArray()
-    }
-
-    override fun serialize(
-        writer: GhostJsonFlatWriter,
         value: List<T>
     ) {
         writer.beginArray()

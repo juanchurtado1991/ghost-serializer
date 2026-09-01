@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextBoolean
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextBoolean
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -21,10 +20,6 @@ object BooleanSerializer : GhostSerializer<Boolean> {
     override val typeName: String get() = C.TYPE_NAME_BOOLEAN
 
     override fun serialize(writer: GhostJsonWriter, value: Boolean) {
-        writer.value(value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: Boolean) {
         writer.value(value)
     }
 

@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextLong
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -24,9 +23,6 @@ object LongSerializer : GhostSerializer<Long> {
         writer.value(value)
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: Long) {
-        writer.value(value)
-    }
 
     override fun serialize(writer: GhostJsonStringWriter, value: Long) {
         writer.value(value)

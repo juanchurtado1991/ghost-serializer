@@ -18,7 +18,6 @@ import com.ghost.serialization.parser.strings.consumeArraySeparator
 import com.ghost.serialization.parser.strings.endArray
 import com.ghost.serialization.parser.strings.hasNext
 import com.ghost.serialization.parser.strings.nextInt
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -31,18 +30,6 @@ object IntArraySerializer : GhostSerializer<IntArray> {
 
     override fun serialize(
         writer: GhostJsonWriter,
-        value: IntArray
-    ) {
-        writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
-        writer.endArray()
-    }
-
-    override fun serialize(
-        writer: GhostJsonFlatWriter,
         value: IntArray
     ) {
         writer.beginArray()
@@ -75,9 +62,21 @@ object IntArraySerializer : GhostSerializer<IntArray> {
             return IntArray(0)
         }
 
+        val fast = tryFastIntArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+        )
+        if (fast != null) {
+            reader.endArray()
+            return fast
+        }
+
         val list = GhostIntList()
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (!list.isEmpty()) {
+            if (strict && !list.isEmpty()) {
                 reader.consumeArraySeparator()
             }
             list.add(reader.nextInt())
@@ -97,9 +96,21 @@ object IntArraySerializer : GhostSerializer<IntArray> {
             return IntArray(0)
         }
 
+        val fast = tryFastIntArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+        )
+        if (fast != null) {
+            reader.endArray()
+            return fast
+        }
+
         val list = GhostIntList()
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (!list.isEmpty()) {
+            if (strict && !list.isEmpty()) {
                 reader.consumeArraySeparator()
             }
             list.add(reader.nextInt())
@@ -119,9 +130,21 @@ object IntArraySerializer : GhostSerializer<IntArray> {
             return IntArray(0)
         }
 
+        val fast = tryFastIntArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+        )
+        if (fast != null) {
+            reader.endArray()
+            return fast
+        }
+
         val list = GhostIntList()
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (!list.isEmpty()) {
+            if (strict && !list.isEmpty()) {
                 reader.consumeArraySeparator()
             }
             list.add(reader.nextInt())

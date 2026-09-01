@@ -18,7 +18,6 @@ import com.ghost.serialization.parser.strings.consumeArraySeparator
 import com.ghost.serialization.parser.strings.endArray
 import com.ghost.serialization.parser.strings.hasNext
 import com.ghost.serialization.parser.strings.nextFloat
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -32,27 +31,14 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
     override fun serialize(writer: GhostJsonWriter, value: FloatArray) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
-        writer.endArray()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: FloatArray) {
-        writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
+        for (i in 0 until size) { writer.value(value[i]) }
         writer.endArray()
     }
 
     override fun serialize(writer: GhostJsonStringWriter, value: FloatArray) {
         writer.beginArray()
         val size = value.size
-        for (i in 0 until size) {
-            writer.value(value[i])
-        }
+        for (i in 0 until size) { writer.value(value[i]) }
         writer.endArray()
     }
 
@@ -63,8 +49,24 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
             return FloatArray(0)
         }
         val list = ArrayList<Float>()
+        val fastSucceeded = tryFastDecimalArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            getPosition = { reader.position },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+            addTo = list,
+            parseNext = { reader.nextFloat() },
+        )
+        if (fastSucceeded) {
+            reader.endArray()
+            return list.toFloatArray()
+        }
+        list.clear()
+
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (list.isNotEmpty()) {
+            if (strict && list.isNotEmpty()) {
                 reader.consumeArraySeparator()
             }
             list.add(reader.nextFloat())
@@ -80,8 +82,24 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
             return FloatArray(0)
         }
         val list = ArrayList<Float>()
+        val fastSucceeded = tryFastDecimalArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            getPosition = { reader.position },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+            addTo = list,
+            parseNext = { reader.nextFloat() },
+        )
+        if (fastSucceeded) {
+            reader.endArray()
+            return list.toFloatArray()
+        }
+        list.clear()
+
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (list.isNotEmpty()) {
+            if (strict && list.isNotEmpty()) {
                 reader.consumeArraySeparator()
             }
             list.add(reader.nextFloat())
@@ -97,8 +115,24 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
             return FloatArray(0)
         }
         val list = ArrayList<Float>()
+        val fastSucceeded = tryFastDecimalArrayCore(
+            startPosition = reader.position,
+            limit = reader.limit,
+            getByte = { reader.getByte(it) },
+            getPosition = { reader.position },
+            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },
+            addTo = list,
+            parseNext = { reader.nextFloat() },
+        )
+        if (fastSucceeded) {
+            reader.endArray()
+            return list.toFloatArray()
+        }
+        list.clear()
+
+        val strict = reader.strictMode
         while (reader.hasNext()) {
-            if (list.isNotEmpty()) {
+            if (strict && list.isNotEmpty()) {
                 reader.consumeArraySeparator()
             }
             list.add(reader.nextFloat())

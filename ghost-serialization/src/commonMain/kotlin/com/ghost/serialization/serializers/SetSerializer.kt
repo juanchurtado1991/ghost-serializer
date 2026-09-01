@@ -17,7 +17,6 @@ import com.ghost.serialization.parser.strings.beginArray
 import com.ghost.serialization.parser.strings.endArray
 import com.ghost.serialization.parser.strings.hasNext
 import com.ghost.serialization.parser.strings.readSet
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -33,21 +32,6 @@ class SetSerializer<T>(
 
     override fun serialize(
         writer: GhostJsonWriter,
-        value: Set<T>
-    ) {
-        writer.beginArray()
-        if (value.isEmpty()) {
-            writer.endArray()
-            return
-        }
-        for (item in value) {
-            itemSerializer.serialize(writer, item)
-        }
-        writer.endArray()
-    }
-
-    override fun serialize(
-        writer: GhostJsonFlatWriter,
         value: Set<T>
     ) {
         writer.beginArray()
