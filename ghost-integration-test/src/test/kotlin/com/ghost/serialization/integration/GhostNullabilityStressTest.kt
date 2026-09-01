@@ -39,22 +39,20 @@ class GhostNullabilityStressTest {
 
     @Test
     fun testExplicitNullVsMissingKey() {
-        // Case 1: Missing key for field with default
         val jsonMissing = "{}"
         val decoded1 = Ghost.deserialize<DefaultValueNullModel>(jsonMissing)
         assertEquals("Default", decoded1.name)
         assertEquals(42, decoded1.age)
 
-        // Case 2: Explicit null for NON-NULLABLE field with default
-        // Ghost should fail if a required non-nullable field is explicitly null
+        // Explicit null on a non-nullable field must fail, not fall back to the default
         assertFailsWith<GhostJsonException> {
             Ghost.deserialize<DefaultValueNullModel>("{\"name\":null}")
         }
 
-        // Case 3: Explicit null for nullable field with default
+        // Explicit null on a nullable field overrides its default instead of failing
         val jsonExplicitNull = "{\"age\":null}"
         val decoded3 = Ghost.deserialize<DefaultValueNullModel>(jsonExplicitNull)
         assertEquals("Default", decoded3.name)
-        assertNull(decoded3.age) // It should be null, overriding the default 42
+        assertNull(decoded3.age)
     }
 }

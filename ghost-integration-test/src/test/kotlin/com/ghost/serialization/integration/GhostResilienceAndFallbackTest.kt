@@ -36,15 +36,13 @@ class GhostResilienceAndFallbackTest {
 
         val unknown = home.devices[1]
         assertTrue(unknown is SmartDevice.UnknownDevice)
-        // Note: rawData gets the default value because we didn't add a mechanism to capture unknown data yet,
-        // but it safely avoids throwing an exception!
+        // rawData falls back to its default — there's no mechanism yet to capture unknown data
         assertEquals("unknown", unknown.rawData)
     }
 
     @Test
     fun testGhostResilientWithTypeMismatch() {
-        // active is expected to be Boolean, deviceCount is Int
-        // We'll pass an array for active and an object for deviceCount
+        // active (Boolean) gets an array, deviceCount (Int) gets an object
         val json = """
         {
             "id": "home_2",
@@ -69,7 +67,6 @@ class GhostResilienceAndFallbackTest {
 
     @Test
     fun testGhostResilientWithUnknownEnum() {
-        // status is an Enum, we pass an unknown value
         val json = """
         {
             "id": "home_3",
@@ -121,7 +118,7 @@ class GhostResilienceAndFallbackTest {
 
     @Test
     fun testGhostResilientWithMalformedNestedObject() {
-        // HomeConfig requires wifiSsid and autoLock. We pass an empty object.
+        // Empty object is malformed: HomeConfig requires wifiSsid and autoLock
         val json = """
         {
             "id": "home_5",

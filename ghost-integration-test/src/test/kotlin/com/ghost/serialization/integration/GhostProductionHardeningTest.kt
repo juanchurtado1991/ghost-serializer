@@ -12,7 +12,7 @@ class GhostProductionHardeningTest {
         val model = Ghost.deserialize<HugeModel>(json)
         assertEquals(100, model.p1)
         assertEquals(450, model.p45)
-        assertEquals(2, model.p2) // Default value
+        assertEquals(2, model.p2)
     }
 
     @Test

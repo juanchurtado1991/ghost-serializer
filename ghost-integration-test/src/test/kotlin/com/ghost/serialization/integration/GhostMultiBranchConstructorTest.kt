@@ -12,10 +12,7 @@ import kotlin.test.assertEquals
  */
 class GhostMultiBranchConstructorTest {
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ApiProductConfig — N=2 default props → 4 constructor branches
-    // Properties: id (req), name (req), maxRetries (default=3), isEnabled (default=true)
-    // ══════════════════════════════════════════════════════════════════════════
+    // ApiProductConfig: N=2 default props (maxRetries=3, isEnabled=true) -> 4 branches
 
     @Test
     fun productConfig_allFieldsPresent_usesAllParsedValues() {
@@ -23,8 +20,8 @@ class GhostMultiBranchConstructorTest {
         val result = Ghost.deserialize<ApiProductConfig>(json)
         assertEquals(1, result.id)
         assertEquals("Sync", result.name)
-        assertEquals(5, result.maxRetries)       // parsed, NOT default
-        assertEquals(false, result.isEnabled)    // parsed, NOT default
+        assertEquals(5, result.maxRetries)
+        assertEquals(false, result.isEnabled)
     }
 
     @Test
@@ -33,24 +30,24 @@ class GhostMultiBranchConstructorTest {
         val result = Ghost.deserialize<ApiProductConfig>(json)
         assertEquals(2, result.id)
         assertEquals("Batch", result.name)
-        assertEquals(3, result.maxRetries)       // default value
-        assertEquals(true, result.isEnabled)     // default value
+        assertEquals(3, result.maxRetries)
+        assertEquals(true, result.isEnabled)
     }
 
     @Test
     fun productConfig_onlyMaxRetriesPresent_isEnabledGetsDefault() {
         val json = """{"id":3,"name":"Worker","maxRetries":10}"""
         val result = Ghost.deserialize<ApiProductConfig>(json)
-        assertEquals(10, result.maxRetries)      // parsed
-        assertEquals(true, result.isEnabled)     // default value
+        assertEquals(10, result.maxRetries)
+        assertEquals(true, result.isEnabled)
     }
 
     @Test
     fun productConfig_onlyIsEnabledPresent_maxRetriesGetsDefault() {
         val json = """{"id":4,"name":"Webhook","isEnabled":false}"""
         val result = Ghost.deserialize<ApiProductConfig>(json)
-        assertEquals(3, result.maxRetries)       // default value
-        assertEquals(false, result.isEnabled)    // parsed
+        assertEquals(3, result.maxRetries)
+        assertEquals(false, result.isEnabled)
     }
 
     @Test
@@ -62,11 +59,7 @@ class GhostMultiBranchConstructorTest {
         assertEquals(original, result)
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ApiUserEvent — N=3 default props → 8 constructor branches
-    // Properties: userId (req), eventType (req),
-    //             version (default=1), retryCount (default=0), isProcessed (default=false)
-    // ══════════════════════════════════════════════════════════════════════════
+    // ApiUserEvent: N=3 default props (version=1, retryCount=0, isProcessed=false) -> 8 branches
 
     @Test
     fun userEvent_allFieldsPresent_usesAllParsedValues() {
@@ -75,72 +68,72 @@ class GhostMultiBranchConstructorTest {
         val result = Ghost.deserialize<ApiUserEvent>(json)
         assertEquals(10, result.userId)
         assertEquals("purchase", result.eventType)
-        assertEquals(3, result.version)         // parsed
-        assertEquals(2, result.retryCount)      // parsed
-        assertEquals(true, result.isProcessed)  // parsed
+        assertEquals(3, result.version)
+        assertEquals(2, result.retryCount)
+        assertEquals(true, result.isProcessed)
     }
 
     @Test
     fun userEvent_onlyRequiredFields_usesAllThreeDefaults() {
         val json = """{"userId":11,"eventType":"click"}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(1, result.version)         // default
-        assertEquals(0, result.retryCount)      // default
-        assertEquals(false, result.isProcessed) // default
+        assertEquals(1, result.version)
+        assertEquals(0, result.retryCount)
+        assertEquals(false, result.isProcessed)
     }
 
     @Test
     fun userEvent_versionOnly_otherTwoDefault() {
         val json = """{"userId":12,"eventType":"view","version":5}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(5, result.version)         // parsed
-        assertEquals(0, result.retryCount)      // default
-        assertEquals(false, result.isProcessed) // default
+        assertEquals(5, result.version)
+        assertEquals(0, result.retryCount)
+        assertEquals(false, result.isProcessed)
     }
 
     @Test
     fun userEvent_retryCountOnly_otherTwoDefault() {
         val json = """{"userId":13,"eventType":"retry","retryCount":4}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(1, result.version)         // default
-        assertEquals(4, result.retryCount)      // parsed
-        assertEquals(false, result.isProcessed) // default
+        assertEquals(1, result.version)
+        assertEquals(4, result.retryCount)
+        assertEquals(false, result.isProcessed)
     }
 
     @Test
     fun userEvent_isProcessedOnly_otherTwoDefault() {
         val json = """{"userId":14,"eventType":"ack","isProcessed":true}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(1, result.version)         // default
-        assertEquals(0, result.retryCount)      // default
-        assertEquals(true, result.isProcessed)  // parsed
+        assertEquals(1, result.version)
+        assertEquals(0, result.retryCount)
+        assertEquals(true, result.isProcessed)
     }
 
     @Test
     fun userEvent_versionAndRetryCount_isProcessedDefault() {
         val json = """{"userId":15,"eventType":"sync","version":2,"retryCount":3}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(2, result.version)         // parsed
-        assertEquals(3, result.retryCount)      // parsed
-        assertEquals(false, result.isProcessed) // default
+        assertEquals(2, result.version)
+        assertEquals(3, result.retryCount)
+        assertEquals(false, result.isProcessed)
     }
 
     @Test
     fun userEvent_versionAndIsProcessed_retryCountDefault() {
         val json = """{"userId":16,"eventType":"done","version":4,"isProcessed":true}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(4, result.version)         // parsed
-        assertEquals(0, result.retryCount)      // default
-        assertEquals(true, result.isProcessed)  // parsed
+        assertEquals(4, result.version)
+        assertEquals(0, result.retryCount)
+        assertEquals(true, result.isProcessed)
     }
 
     @Test
     fun userEvent_retryCountAndIsProcessed_versionDefault() {
         val json = """{"userId":17,"eventType":"fail","retryCount":9,"isProcessed":true}"""
         val result = Ghost.deserialize<ApiUserEvent>(json)
-        assertEquals(1, result.version)         // default
-        assertEquals(9, result.retryCount)      // parsed
-        assertEquals(true, result.isProcessed)  // parsed
+        assertEquals(1, result.version)
+        assertEquals(9, result.retryCount)
+        assertEquals(true, result.isProcessed)
     }
 
     @Test

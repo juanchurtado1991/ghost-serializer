@@ -12,7 +12,6 @@ import com.ghost.serialization.parser.strings.consumeNull
 import com.ghost.serialization.parser.strings.isNextNullValue
 import com.ghost.serialization.parser.strings.nextInt
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 
@@ -36,10 +35,6 @@ object EncoderHexUtils {
     }
 
     fun encodeHex(writer: GhostJsonWriter, value: String) {
-        writer.value(value.removePrefix(HEX_VALUE_PREFIX))
-    }
-
-    fun encodeHex(writer: GhostJsonFlatWriter, value: String) {
         writer.value(value.removePrefix(HEX_VALUE_PREFIX))
     }
 

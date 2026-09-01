@@ -21,7 +21,6 @@ class GhostContextualTest {
     fun setup() {
         Ghost.resetForTest()
 
-        // Register the external serializer manually
         val manualRegistry = object : GhostRegistry {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
                 return if (clazz == ExternalDate::class) {

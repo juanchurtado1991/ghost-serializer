@@ -51,7 +51,7 @@ class GhostStructuralTransformationTest {
         FlattenedModelSerializer.serialize(buffer, model)
 
         val json = buffer.readUtf8()
-        // Note: order might vary based on how we sort properties, but the structure must be correct
+        // Property order may vary; only the structure needs to round-trip correctly
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = FlattenedModelSerializer.deserialize(reader)
 
@@ -65,10 +65,8 @@ class GhostStructuralTransformationTest {
         WrappedModelSerializer.serialize(buffer, model)
 
         val json = buffer.readUtf8()
-        // We verify the structure manually here to ensure @GhostWrap works as intended
-        // Expected something like: {"id":1,"metadata":{"info":{"name":"Juan","age":30}},"system":{"flags":{"active":true}}}
+        // Expected @GhostWrap structure: {"id":1,"metadata":{"info":{"name":"Juan","age":30}},"system":{"flags":{"active":true}}}
 
-        // Deserialize back to verify parity
         val result = WrappedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(model, result)
     }

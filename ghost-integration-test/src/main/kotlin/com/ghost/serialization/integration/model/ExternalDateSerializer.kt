@@ -3,7 +3,6 @@ package com.ghost.serialization.integration.model
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 
@@ -13,10 +12,6 @@ object ExternalDateSerializer : GhostSerializer<ExternalDate> {
     override val typeName: String = TYPE_NAME
 
     override fun serialize(writer: GhostJsonWriter, value: ExternalDate) {
-        writer.value(value.timestamp.toString())
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ExternalDate) {
         writer.value(value.timestamp.toString())
     }
 

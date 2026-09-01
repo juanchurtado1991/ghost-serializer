@@ -33,18 +33,15 @@ class GhostMaliceTest {
 
     @Test
     fun testPrecisionInjection() {
-        // Test with a massive number of decimals (500+)
         val massiveDecimal = "0." + "1".repeat(500)
         val json = """{"big": $massiveDecimal, "small": 0.1, "precise": 0.2}"""
 
-        // This should not throw NumberFormatException,
-        // but parse as much as possible or fail gracefully
+        // Must not throw NumberFormatException; parsing as much as possible or failing gracefully is fine
         Ghost.deserialize<DecimalStress>(json.encodeToByteArray())
     }
 
     @Test
     fun testMalformedUnicode() {
-        // Truncated unicode at the end
         val json = """{"simple": "hello \u12"}"""
         assertFailsWith<GhostJsonException> {
             Ghost.deserialize<MaliceModel>(json.encodeToByteArray())
@@ -53,7 +50,6 @@ class GhostMaliceTest {
 
     @Test
     fun testCollisionStress() {
-        // Test 100 fields with similar prefixes (a1, a2, ..., a100)
         val json = buildString {
             append("{")
             for (i in 1..100) {

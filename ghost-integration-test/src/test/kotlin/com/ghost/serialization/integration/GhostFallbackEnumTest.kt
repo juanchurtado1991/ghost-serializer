@@ -9,8 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Auto-UNKNOWN fallback for enum deserialization.
- *
  * When an enum defines an UNKNOWN constant (any case), the compiler generates an else branch
  * so unrecognized wire values map to it instead of throwing GhostJsonException.
  */

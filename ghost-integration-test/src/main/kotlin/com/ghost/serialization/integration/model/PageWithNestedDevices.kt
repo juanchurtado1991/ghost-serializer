@@ -2,10 +2,7 @@ package com.ghost.serialization.integration.model
 
 import com.ghost.serialization.annotations.GhostSerialization
 
-/**
- * Minimal sealed hierarchy for SmartThings ViperPage wire shape:
- * nested `devices` array before custom `pageType` discriminator.
- */
+/** SmartThings ViperPage wire shape: nested `devices` array before custom `pageType` discriminator. */
 @GhostSerialization(discriminator = "pageType")
 sealed class PageWithNestedDevices {
     @GhostSerialization

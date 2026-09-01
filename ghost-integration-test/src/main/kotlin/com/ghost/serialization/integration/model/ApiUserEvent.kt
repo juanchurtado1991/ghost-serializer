@@ -4,10 +4,7 @@ import com.ghost.serialization.annotations.GhostSerialization
 import com.squareup.moshi.JsonClass
 import kotlinx.serialization.Serializable
 
-/**
- * Multi-branch constructor fixture with 2 required + 3 default-valued properties (N=3, 8 branches).
- * Stays below the compiler limit of N=4 (`MAX_DEFAULT_BRANCH_COUNT`).
- */
+/** N=3 default-branch fixture (2 required + 3 defaulted) — below the N=4 `MAX_DEFAULT_BRANCH_COUNT` compiler limit. */
 @Serializable
 @JsonClass(generateAdapter = true)
 @GhostSerialization

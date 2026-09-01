@@ -62,7 +62,6 @@ class GhostInferredPolymorphismTest {
 
     @Test
     fun testResilienceToUnknownFields() {
-        // Even with many unknown fields, it should still identify the signature
         val json = """
             {
                 "extra1": "foo",
@@ -86,9 +85,8 @@ class GhostInferredPolymorphismTest {
 
     @Test
     fun testPartialSignatureFailure() {
-        // temperature is present, but unit (required) is missing for TempEvent
-        // humidity is also missing for MixedEvent
-        // So eligibilityMask might have bits, but reqMasks won't match
+        // unit is missing for TempEvent and humidity for MixedEvent, so eligibilityMask
+        // has bits set but no candidate's reqMask is satisfied
         val json = """{"temperature": 25.5}"""
         assertFailsWith<GhostJsonException> {
             Ghost.deserialize<SmartEvent>(json)

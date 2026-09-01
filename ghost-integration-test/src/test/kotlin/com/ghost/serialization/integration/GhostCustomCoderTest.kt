@@ -22,7 +22,6 @@ class GhostCustomCoderTest {
 
     @Test
     fun testCustomDateCoder() {
-        // Test date format YYYY-MM-DD -> Long YYYYMMDD
         val json = """{"id": 100, "createdAt": "2023-10-15"}"""
         val result = Ghost.deserialize<CustomDateUser>(json)
 

@@ -15,15 +15,12 @@ class GhostCoercionTest {
 
     @Test
     fun testBooleanCoercion() {
-        // "1" and "0" as booleans
         val json = """{"isActive": 1, "isEnabled": 0}"""
 
-        // Should fail by default
         assertFails {
             Ghost.deserialize<BooleanCoercionModel>(json.encodeToByteArray())
         }
 
-        // Should pass with coercion enabled
         val result = Ghost.deserialize<BooleanCoercionModel>(
             json.encodeToByteArray(),
             options = { it.coerceBooleans = true }
@@ -35,15 +32,12 @@ class GhostCoercionTest {
 
     @Test
     fun testNumericCoercion() {
-        // "123" instead of 123
         val json = """{"id": "123", "name": "Coerced User"}"""
 
-        // Should fail by default
         assertFails {
             Ghost.deserialize<UserWithValueClass>(json.encodeToByteArray())
         }
 
-        // Should pass with coercion enabled
         val result = Ghost.deserialize<UserWithValueClass>(
             json.encodeToByteArray(),
             options = { it.coerceStringsToNumbers = true }

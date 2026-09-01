@@ -6,7 +6,6 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 
@@ -15,17 +14,8 @@ object ExternalColorSerializer : GhostSerializer<ExternalColor> {
     override val typeName: String = "ExternalColor"
 
     override fun serialize(writer: GhostJsonWriter, value: ExternalColor) {
-        serializeInternal(writer, value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ExternalColor) {
-        serializeInternal(writer, value)
-    }
-
-    private fun serializeInternal(writer: Any, value: ExternalColor) {
         val hex = "#%02x%02x%02x".format(value.r, value.g, value.b)
-        if (writer is GhostJsonWriter) writer.value(hex)
-        else if (writer is GhostJsonFlatWriter) writer.value(hex)
+        writer.value(hex)
     }
 
     override fun deserialize(reader: GhostJsonReader): ExternalColor {

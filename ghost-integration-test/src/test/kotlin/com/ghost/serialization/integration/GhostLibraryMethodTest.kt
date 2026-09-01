@@ -22,11 +22,9 @@ class GhostLibraryMethodTest {
 
     @Test
     fun testPrewarm() {
-        // Prewarm should not crash and should populate caches
         Ghost.prewarm()
 
-        // After prewarm, common serializers should be in cache
-        // Note: they are in discovered registries, so prewarm should have pulled them
+        // IgnoreModel lives in a discovered registry; prewarm should have pulled it in
         val serializer = Ghost.getSerializer(IgnoreModel::class)
         assertNotNull(serializer)
     }
@@ -40,7 +38,7 @@ class GhostLibraryMethodTest {
         }
 
         Ghost.addRegistry(myRegistry)
-        // Verify it was added (indirectly by checking if we can still get standard ones)
+        // myRegistry returns null, so this only proves discovery still works alongside it
         assertNotNull(Ghost.getSerializer(NamingModel::class))
     }
 
@@ -65,7 +63,6 @@ class GhostLibraryMethodTest {
         })
 
         Ghost.resetForTest()
-        // Caches should be empty (though they might re-populate on demand via discovery)
-        // But manual registries should be gone.
+        // No assertion: this only checks resetForTest doesn't throw after a manual registry was added.
     }
 }

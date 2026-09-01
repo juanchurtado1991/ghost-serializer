@@ -26,9 +26,7 @@ class GhostEliteHardeningTest {
 
     @Test
     fun testFlatteningCollision() {
-        // CollisionModel has 'name' and child.name flattened into 'meta'.
-        // The JSON should have two 'name' fields if we aren't careful, 
-        // but Ghost handles paths by nesting them.
+        // 'name' and child.name both flatten toward 'meta' — Ghost must nest by path, not collide
         val json = """
         {
             "name": "parent",
@@ -55,7 +53,7 @@ class GhostEliteHardeningTest {
         val model = WrapSharedPathModel(name = "Ghost", token = "SECRET", active = true)
         val json = Ghost.serialize(model)
 
-        // Should produce nested structure: {"metadata":{"info":{"name":"Ghost"},"auth":{"token":"SECRET"}},"system":{"flags":{"active":true}}}
+        // Expected: {"metadata":{"info":{"name":"Ghost"},"auth":{"token":"SECRET"}},"system":{"flags":{"active":true}}}
         assertTrue(json.contains("\"metadata\":{"))
         assertTrue(json.contains("\"info\":{"))
         assertTrue(json.contains("\"auth\":{"))
@@ -111,7 +109,7 @@ class GhostEliteHardeningTest {
 
     @Test
     fun testDeepListResilience() {
-        // One item is good, one is bad (value has type mismatch but is resilient).
+        // Second item's value has a type mismatch but the field is resilient
         val json = """
         {
             "id": "deep_1",
@@ -125,7 +123,6 @@ class GhostEliteHardeningTest {
         val model = Ghost.deserialize<DeepResilientModel>(json)
         assertEquals(2, model.list.size)
         assertEquals(10, model.list[0].value)
-        // Item 1 value should be null due to resilience
         assertEquals(null, model.list[1].value)
     }
 
@@ -150,7 +147,7 @@ class GhostEliteHardeningTest {
 
     @Test
     fun testMissingPolymorphicDiscriminatorWithFallback() {
-        // SmartDevice has UnknownDevice as fallback. We provide NO type.
+        // No "type" key at all — should route to SmartDevice's UnknownDevice fallback
         val json = """
         {
             "id": "h_missing",
@@ -190,8 +187,7 @@ class GhostEliteHardeningTest {
 
     @Test
     fun testUltimateResilience() {
-        // ResilientItem is marked @GhostResilient
-        // If an item is TOTALLY malformed (not an object), it should be skipped
+        // ResilientItem is @GhostResilient: a non-object array element should be skipped, not thrown
         val json = """
         [
             {"id": "v1", "value": 10},
@@ -201,7 +197,6 @@ class GhostEliteHardeningTest {
         """.trimIndent()
 
         val list = Ghost.deserialize<List<ResilientItem>>(json)
-        // Should skip the second item
         assertEquals(2, list.size)
         assertEquals("v1", list[0].id)
         assertEquals("v3", list[1].id)

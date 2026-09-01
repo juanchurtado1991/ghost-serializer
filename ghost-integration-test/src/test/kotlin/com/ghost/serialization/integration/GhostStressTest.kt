@@ -94,13 +94,13 @@ class GhostStressTest {
 
     @Test
     fun testDepthProtection() {
-        // Create a deeply nested object that exceeds default 255 depth
+        // 300 levels exceeds the default 255 depth limit
         var current = RecursiveNode(id = 0, name = "leaf")
         for (i in 1..300) {
             current = RecursiveNode(id = i, name = "node_$i", children = listOf(current))
         }
 
-        // Should fail due to depth protection (either in serialize or deserialize)
+        // Depth protection may trip in either serialize or deserialize
         try {
             val json = Ghost.serialize(current)
             Ghost.deserialize<RecursiveNode>(json)

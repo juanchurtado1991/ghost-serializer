@@ -1,6 +1,5 @@
 package com.ghost.serialization.integration.model
 
-import com.ghost.serialization.annotations.GhostProtoSerialization
 import com.ghost.serialization.annotations.GhostSerialization
 import kotlinx.serialization.Serializable
 

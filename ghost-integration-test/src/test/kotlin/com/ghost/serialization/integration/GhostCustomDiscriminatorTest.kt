@@ -62,10 +62,8 @@ class GhostCustomDiscriminatorTest {
         val jsonImplicit = Ghost.serialize(implicit)
         val jsonExplicit = Ghost.serialize(explicit)
 
-        // Both must use "type" as the field name
         assertContains(jsonImplicit, "\"type\"")
         assertContains(jsonExplicit, "\"type\"")
-        // The content structure must be identical
         assertEquals(jsonImplicit, jsonExplicit)
     }
 
@@ -192,7 +190,7 @@ class GhostCustomDiscriminatorTest {
 
     @Test
     fun `missing kind field throws not silently corrupts`() {
-        val json = """{"id":"e_1","name":"Ghost"}""" // missing "kind"
+        val json = """{"id":"e_1","name":"Ghost"}"""
         assertFailsWith<Exception> {
             Ghost.deserialize<GhostKindEvent>(json)
         }
@@ -200,7 +198,7 @@ class GhostCustomDiscriminatorTest {
 
     @Test
     fun `missing type field throws for default discriminator`() {
-        val json = """{"userId":"u_001"}""" // missing "type"
+        val json = """{"userId":"u_001"}"""
         assertFailsWith<Exception> {
             Ghost.deserialize<ApiEventDefault>(json)
         }
@@ -208,7 +206,7 @@ class GhostCustomDiscriminatorTest {
 
     @Test
     fun `missing object field throws for stripe-style discriminator`() {
-        val json = """{"amount":2000,"currency":"usd"}""" // missing "object"
+        val json = """{"amount":2000,"currency":"usd"}"""
         assertFailsWith<Exception> {
             Ghost.deserialize<StripeObject>(json)
         }
@@ -263,14 +261,13 @@ class GhostCustomDiscriminatorTest {
             GhostKindEvent.Deleted("e_2"),
             GhostKindEvent.Updated("e_3", "v2")
         )
-        // Serialize and deserialize each element individually — Ghost works on single model roots.
-        // List-level serialization requires a wrapping data class with @GhostSerialization.
+        // Per-element, not list-level — Ghost only serializes single model roots; a list needs
+        // a wrapping data class with @GhostSerialization.
         events.forEach { event ->
             val singleJson = Ghost.serialize(event)
             val decoded = Ghost.deserialize<GhostKindEvent>(singleJson)
             assertEquals(event, decoded)
         }
-        // Verify each subclass produces the "kind" discriminator
         events.forEach { event ->
             val json = Ghost.serialize(event)
             assertContains(json, "\"kind\"")
@@ -289,7 +286,6 @@ class GhostCustomDiscriminatorTest {
         )
         val json = Ghost.serialize(payload)
 
-        // Verify all three discriminator keys appear in the JSON
         assertContains(json, "\"type\"")    // from ApiEventDefault
         assertContains(json, "\"kind\"")    // from GhostKindEvent
         assertContains(json, "\"object\"")  // from StripeObject

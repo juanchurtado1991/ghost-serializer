@@ -43,7 +43,6 @@ class GhostConcurrencyExpansionTest {
                             }
                         } catch (e: Throwable) {
                             errorCount.incrementAndGet()
-                            // e.printStackTrace()
                         }
                     }
                 }

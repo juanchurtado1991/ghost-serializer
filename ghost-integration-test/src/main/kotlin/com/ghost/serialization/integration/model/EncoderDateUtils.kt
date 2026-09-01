@@ -5,7 +5,6 @@ package com.ghost.serialization.integration.model
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 
@@ -24,20 +23,6 @@ object EncoderDateUtils {
         return reader.nextString().replace("-", "").toLong()
     }
 
-    // Support for GhostJsonFlatWriter (Flat path)
-    fun encodeLegacyDate(writer: GhostJsonFlatWriter, value: Long) {
-        val stringValue = value.toString()
-        val formatted = "${
-            stringValue.take(4)
-        }-${
-            stringValue.substring(4, 6)
-        }-${
-            stringValue.substring(6, 8)
-        }"
-        writer.value(formatted)
-    }
-
-    // Support for GhostJsonWriter (Streaming path)
     fun encodeLegacyDate(writer: GhostJsonWriter, value: Long) {
         val stringValue = value.toString()
         val formatted = "${

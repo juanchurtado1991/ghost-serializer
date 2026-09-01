@@ -4,9 +4,7 @@ import com.ghost.serialization.annotations.GhostSerialization
 import com.squareup.moshi.JsonClass
 import kotlinx.serialization.Serializable
 
-/**
- * Multi-branch constructor fixture with 2 required + 2 default-valued properties (N=2, 4 branches).
- */
+/** N=2 default-branch fixture (2 required + 2 defaulted, 4 branches). */
 @Serializable
 @JsonClass(generateAdapter = true)
 @GhostSerialization

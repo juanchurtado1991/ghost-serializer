@@ -3,7 +3,6 @@ package com.ghost.serialization.integration.model
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 
@@ -21,10 +20,6 @@ object EncoderBooleanUtils {
 
     fun decodeLegacyBool(reader: GhostJsonStringReader): Boolean {
         return reader.nextString() == LEGACY_TRUE
-    }
-
-    fun encodeLegacyBool(writer: GhostJsonFlatWriter, value: Boolean) {
-        writer.value(if (value) LEGACY_TRUE else LEGACY_FALSE)
     }
 
     fun encodeLegacyBool(writer: GhostJsonWriter, value: Boolean) {

@@ -102,7 +102,6 @@ class GhostAdvancedTypesTest {
         val created = com.ghost.serialization.integration.model.GhostKindEvent.Created("1", "juan")
         val json = Ghost.serialize(created)
 
-        // Should contain "kind":"Created"
         assertTrue(json.contains("\"kind\":\"Created\""), "Should use 'kind' as discriminator")
 
         val decoded =
@@ -129,13 +128,11 @@ class GhostAdvancedTypesTest {
 
     @Test
     fun testCircularReferenceProtection() {
-        // Since Ghost doesn't have an explicit circular reference detector yet,
-        // it should be caught by the maxDepth check (default 255) during deserialization
-        // if we try to simulate one.
+        // Ghost has no explicit circular reference detector; the maxDepth check (default 255)
+        // catches a simulated cycle instead.
         val depth = 300
         val nestedJson = "{\"next\":".repeat(depth) + "null" + "}".repeat(depth)
 
-        // This should fail with GhostJsonException due to depth limit
         kotlin.test.assertFailsWith<com.ghost.serialization.exception.GhostJsonException> {
             Ghost.deserialize<com.ghost.serialization.integration.model.GodObject>(nestedJson)
         }

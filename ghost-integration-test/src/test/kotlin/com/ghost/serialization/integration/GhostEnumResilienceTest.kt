@@ -14,7 +14,6 @@ class GhostEnumResilienceTest {
 
     @Test
     fun testStrictEnumFailure() {
-        // Unknown enum value in a standard model should fail
         val json = "{\"status\":\"UNKNOWN_VALUE\"}"
         assertFailsWith<GhostJsonException> {
             Ghost.deserialize<GhostEnumWrapper>(json)
@@ -23,21 +22,17 @@ class GhostEnumResilienceTest {
 
     @Test
     fun testResilientEnumDefault() {
-        // Unknown enum value with @GhostResilient and default value
         val json = "{\"status\":\"UNKNOWN_VALUE\"}"
         val decoded = Ghost.deserialize<ResilientEnumModel>(json)
 
-        // Should fall back to default "Standard"
         assertEquals(GhostStandardsEnum.Standard, decoded.status)
     }
 
     @Test
     fun testResilientEnumNullable() {
-        // Unknown enum value with @GhostResilient and nullable
         val json = "{\"nullableStatus\":\"UNKNOWN_VALUE\"}"
         val decoded = Ghost.deserialize<ResilientEnumModel>(json)
 
-        // Should fall back to null
         assertNull(decoded.nullableStatus)
     }
 }

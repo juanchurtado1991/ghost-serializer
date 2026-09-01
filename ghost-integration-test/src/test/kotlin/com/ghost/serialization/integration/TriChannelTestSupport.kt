@@ -8,10 +8,8 @@ import kotlin.test.assertEquals
 
 
 /**
- * Asserts semantic equality after serialize → deserialize on all three public channels.
- *
- * Streaming decode uses an Okio `Buffer` source ([GhostJsonReader] path). Streaming encode
- * is checked separately because Buffer read positions are not rewound after Ghost drains the sink.
+ * Streaming encode is checked separately from decode because Buffer read positions
+ * aren't rewound after Ghost drains the sink.
  */
 internal inline fun <reified T : Any> assertTriChannelRoundTrip(expected: T, value: T = expected) {
     val bytes = Ghost.encodeToBytes(value)
