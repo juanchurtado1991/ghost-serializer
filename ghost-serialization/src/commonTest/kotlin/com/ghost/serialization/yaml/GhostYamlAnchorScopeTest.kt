@@ -5,14 +5,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * An anchor/alias at the start of a block-context line is ambiguous on sight: it may anchor a
- * *value*, or it may anchor (or resolve to) the *key* of an implicit mapping entry. Before this
- * fix, `readValue`'s `&`/`*` dispatch always assumed the former — when the anchored/aliased
- * content actually redirected into a nested block mapping, that mapping greedily consumed every
- * sibling entry at its indent before ever returning, so the anchor ended up bound to (or the
- * result silently merged with) the whole resulting map instead of just the bare key. yaml-test-
- * suite cases `E76Z`, `HMQ5`, `26DV` (see `YamlTestSuiteDeviations.kt`'s git history for the
- * removed entries).
+ * An anchor/alias at the start of a block-context line is ambiguous: it may anchor a *value*, or
+ * it may anchor/resolve to the *key* of an implicit mapping entry. `readValue`'s `&`/`*` dispatch
+ * used to always assume the former, so a redirect into a nested block mapping would greedily
+ * consume sibling entries instead of binding just the bare key. Covers yaml-test-suite cases
+ * `E76Z`, `HMQ5`, `26DV`.
  */
 class GhostYamlAnchorScopeTest {
 

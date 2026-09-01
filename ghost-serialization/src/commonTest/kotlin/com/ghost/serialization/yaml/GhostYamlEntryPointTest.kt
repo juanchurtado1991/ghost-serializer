@@ -12,8 +12,10 @@ import com.ghost.serialization.encodeAllToYaml
 import com.ghost.serialization.encodeAllToYamlBytes
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.encodeToYamlBytes
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import okio.Buffer
@@ -38,31 +40,15 @@ class GhostYamlEntryPointTest {
         override val typeName: String = "YamlScalarBox"
 
         override fun serialize(
-            writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+            writer: GhostJsonWriter,
             value: YamlScalarBox
         ) = Unit
 
-        override fun serialize(
-            writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
-            value: YamlScalarBox
-        ) = Unit
-
-        override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): YamlScalarBox =
+        override fun deserialize(reader: GhostJsonReader): YamlScalarBox =
             YamlScalarBox("", 0)
 
-        override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): YamlScalarBox =
+        override fun deserialize(reader: GhostJsonStringReader): YamlScalarBox =
             YamlScalarBox("", 0)
-
-        override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): YamlScalarBox =
-            YamlScalarBox("", 0)
-
-        override fun serialize(writer: GhostYamlFlatWriter, value: YamlScalarBox) {
-            writer.beginObject()
-            writer.name("label").value(value.label)
-            writer.name("count").value(value.count)
-            writer.name("active").value(value.active)
-            writer.endObject()
-        }
 
         override fun serialize(writer: GhostYamlWriter, value: YamlScalarBox) {
             writer.beginObject()
@@ -204,9 +190,9 @@ class GhostYamlEntryPointTest {
     fun flatAndStreamingWritersRoundTripIdentically() {
         val value = YamlScalarBox("tri", 5)
 
-        val flatBytes = ghostYamlInternalUseFlatWriter { writer ->
+        val flatBytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             YamlScalarBoxSerializer.serialize(writer, value)
-            writer.buffer.toByteArray()
+            buffer.toByteArray()
         }
         val streamSink = Buffer()
         YamlScalarBoxSerializer.serialize(GhostYamlWriter(streamSink), value)
@@ -220,11 +206,9 @@ class GhostYamlEntryPointTest {
 
     @Test
     fun flatAndStreamingWritersAgreeOnEmptyNestedCollections() {
-        // GhostYamlFlatWriter has dedicated empty-collection regression coverage
-        // (GhostYamlFlatWriterEdgeCaseTest, section F); GhostYamlWriter shares the exact same
-        // beginObject/endObject/beginArray/endArray logic but had no coverage of its own.
-        // Confirm both writers stay byte-identical for the empty case too.
-        val flatBytes = ghostYamlInternalUseFlatWriter { writer ->
+        // Confirm the Buffer-backed and FlatByteArrayWriter-backed sinks stay byte-identical
+        // for the empty-collection case.
+        val flatBytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             writer.beginObject()
             writer.name("meta")
             writer.beginObject()
@@ -235,7 +219,7 @@ class GhostYamlEntryPointTest {
             writer.name("count")
             writer.value(2)
             writer.endObject()
-            writer.buffer.toByteArray()
+            buffer.toByteArray()
         }
 
         val streamSink = Buffer()

@@ -1,7 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -12,7 +12,6 @@ import kotlin.test.assertNull
  */
 class GhostYamlRoundtripTest {
 
-    // Helper data structure for representation
     data class TestUser(
         val name: String,
         val age: Int,
@@ -33,11 +32,9 @@ class GhostYamlRoundtripTest {
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         val map = reader.readDocument() as Map<*, *>
 
-        // Now test serialization output
         val buffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter()
-        val writer = GhostYamlFlatWriter(buffer)
+        val writer = GhostYamlWriter(buffer)
 
-        // Write manually representing a map structure
         writer.beginObject()
         writer.name("name").value("Alice Smith")
         writer.name("age").value(30)
@@ -48,7 +45,6 @@ class GhostYamlRoundtripTest {
 
         val serializedYaml = buffer.toStringUtf8()
 
-        // Deserialize again
         val secondReader = GhostYamlFlatReader(serializedYaml.encodeToByteArray())
         val resultMap = secondReader.readDocument() as Map<*, *>
 
@@ -75,7 +71,7 @@ class GhostYamlRoundtripTest {
         val map = reader.readDocument() as Map<*, *>
 
         val buffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter()
-        val writer = GhostYamlFlatWriter(buffer)
+        val writer = GhostYamlWriter(buffer)
 
         writer.beginObject()
         writer.name("user")

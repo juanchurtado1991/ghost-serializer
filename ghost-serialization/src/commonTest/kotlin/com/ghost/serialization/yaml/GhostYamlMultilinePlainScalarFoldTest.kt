@@ -7,15 +7,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * A plain scalar mapping value that starts on its own line (not inline after the key's ':')
- * failed to fold its continuation lines whenever they sat at the *same* indent as the value's own
- * first line — the overwhelmingly common style. `resolveValueAfterColon`'s newline branch passed
- * the value's own auto-detected column as the fold boundary, instead of the enclosing mapping's
- * indent (matching the inline-value case, which already worked): a continuation line only needs
- * to be indented *more than the enclosing mapping*, not more than the value's own first line.
- * yaml-test-suite cases `4CQQ`/`NB6Z`/`RZT7`/`UGM3` (valid YAML wrongly rejected) and `HU3P` (a
- * continuation line that looks like a mapping key must still be rejected — confirms the fix
- * didn't accidentally fold content it shouldn't).
+ * A plain scalar value starting on its own line failed to fold continuation lines sitting at the
+ * *same* indent as its first line. `resolveValueAfterColon`'s newline branch used the value's own
+ * auto-detected column as the fold boundary instead of the enclosing mapping's indent — a
+ * continuation line only needs to be indented more than the enclosing mapping. Covers
+ * yaml-test-suite cases `4CQQ`/`NB6Z`/`RZT7`/`UGM3`/`HU3P`.
  */
 class GhostYamlMultilinePlainScalarFoldTest {
 

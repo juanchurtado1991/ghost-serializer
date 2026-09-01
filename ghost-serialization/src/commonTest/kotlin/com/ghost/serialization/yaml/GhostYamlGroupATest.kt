@@ -392,17 +392,11 @@ class GhostYamlGroupATest {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    /**
-     * Parses a YAML string and returns the top-level mapping as Map<String, Any?>.
-     */
     private fun parseMap(yaml: String): Map<String, Any?> {
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         return reader.readDocument() as Map<String, Any?>
     }
 
-    /**
-     * Parses a YAML string containing multiple documents.
-     */
     private fun parseAllDocuments(yaml: String): List<Any?> {
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         return reader.readAllDocuments()

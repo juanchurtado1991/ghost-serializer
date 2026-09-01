@@ -1,7 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,12 +11,7 @@ class GhostYamlMultiDocumentTest {
     private data class Widget(val id: Int, val label: String)
 
     private object WidgetSerializer : GhostYamlSerializer<Widget> {
-        override fun serialize(
-            writer: com.ghost.serialization.writer.yaml.GhostYamlWriter,
-            value: Widget
-        ) = Unit
-
-        override fun serialize(writer: GhostYamlFlatWriter, value: Widget) {
+        override fun serialize(writer: GhostYamlWriter, value: Widget) {
             writer.beginObject()
             writer.name("id").value(value.id)
             writer.name("label").value(value.label)

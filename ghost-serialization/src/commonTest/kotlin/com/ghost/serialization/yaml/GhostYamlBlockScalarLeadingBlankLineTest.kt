@@ -5,21 +5,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Two compounding bugs in `readBlockScalarContent`
- * (found via yaml-test-suite cases `DWX9`/`T26H`/`4QFQ`/`R4YG`/`6FWR`/`F6MC`/`H2RW`/`L24T_00`/`L24T_01`):
- *
- * 1. Leading blank lines (before the first real content line) were unconditionally discarded
- *    instead of contributing their newlines to the decoded value — real content per the spec, not
- *    just structural padding used to auto-detect `blockIndent`.
- * 2. A "blank-looking" line (nothing but spaces) with *more* spaces than `blockIndent` isn't
- *    actually blank: the leftover spaces beyond `blockIndent` are real content and must be
- *    preserved, not discarded as if the whole line were empty.
- *
- * Fixing both together required a third fix: when `detectBlockScalarIndent`
- * falls back to a guessed `blockIndent` (no real content line ever found in the whole scalar, e.g.
- * `JEF9_01`/`JEF9_02` — a scalar consisting *only* of blank lines), that guess must stay at least
- * as large as any blank line already scanned past, or fix #2 would wrongly treat those as having
- * leftover content when there was never a genuine content line to establish `blockIndent` against.
+ * Covers two compounding bugs in `readBlockScalarContent`: leading blank lines were discarded
+ * instead of contributing their newlines to the decoded value, and a "blank-looking" line with
+ * more spaces than `blockIndent` actually has leftover real content that must be preserved.
+ * Fixing both required `detectBlockScalarIndent`'s guessed fallback (scalars with no real content
+ * line) to stay at least as large as any blank line already scanned. Covers yaml-test-suite cases
+ * `DWX9`/`T26H`/`4QFQ`/`R4YG`/`6FWR`/`F6MC`/`H2RW`/`L24T_00`/`L24T_01`/`JEF9_01`/`JEF9_02`.
  */
 class GhostYamlBlockScalarLeadingBlankLineTest {
 

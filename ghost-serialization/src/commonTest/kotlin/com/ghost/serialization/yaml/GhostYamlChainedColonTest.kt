@@ -7,12 +7,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * `key: value` only redirects into a nested block mapping when `value` starts a fresh, more-
- * indented line — never when it's read inline on the same line as an enclosing key's own `:`.
- * Before this fix, `readPlainScalarOrMapping`'s colon-redirect fired unconditionally, so
- * `a: b: c: d` silently parsed as `{"a": {"b": {"c": "d"}}}` instead of being rejected — a wrong
- * parse tree for invalid YAML, not an obvious failure. yaml-test-suite case `ZCZ6` (see
- * `YamlTestSuiteDeviations.kt`, `REASON_MISC`).
+ * `key: value` only redirects into a nested block mapping when `value` starts a fresh,
+ * more-indented line — never inline on the same line as an enclosing key's own `:`.
+ * `readPlainScalarOrMapping`'s colon-redirect used to fire unconditionally, silently parsing
+ * `a: b: c: d` as nested maps instead of rejecting it. Covers yaml-test-suite case `ZCZ6`.
  */
 class GhostYamlChainedColonTest {
 

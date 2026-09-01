@@ -165,7 +165,7 @@ class GhostYamlPathErrorTest {
             """.trimIndent()
         val r = reader(yaml)
         val docs = r.readAllDocuments { doc ->
-            // Force a cursor walk so pathTracker is used, then leave via clearAfterDocument.
+            // Force a cursor walk so pathTracker engages before clearAfterDocument resets it.
             doc.beginObject()
             val key = doc.nextKey()
             if (key == "a") {

@@ -13,14 +13,9 @@ import com.ghost.serialization.yaml.GhostYamlConstants as Y
  */
 class GhostYamlException(
     private val baseMessage: String,
-    /**
-     * JSONPath-style location for cursor-phase failures (e.g. `$.addresses[1].zip`).
-     * Defaults to `"$"` for parse-phase errors and unknown locations.
-     */
+    /** JSONPath-style location for cursor-phase failures; `"$"` for parse-phase/unknown. */
     val path: String = "$",
-    /**
-     * Optional fix suggestion. Omitted when there is no clear remediation.
-     */
+    /** Optional fix suggestion. */
     val hint: String? = null,
 ) : RuntimeException() {
 

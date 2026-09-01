@@ -5,7 +5,6 @@ package com.ghost.serialization.yaml
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.exception.GhostYamlException
@@ -25,13 +24,6 @@ class GhostYamlChaosTest {
 
     private object PairBoxSerializer : GhostYamlSerializer<PairBox> {
         override fun serialize(writer: GhostYamlWriter, value: PairBox) {
-            writer.beginObject()
-            writer.name("left").value(value.left)
-            writer.name("right").value(value.right)
-            writer.endObject()
-        }
-
-        override fun serialize(writer: GhostYamlFlatWriter, value: PairBox) {
             writer.beginObject()
             writer.name("left").value(value.left)
             writer.name("right").value(value.right)
@@ -103,9 +95,8 @@ class GhostYamlChaosTest {
 
     @Test
     fun flowMappingWithDuplicateCommaIsRejected() {
-        // A double comma is an empty entry, which YAML's flow mapping grammar disallows — see
-        // yaml-test-suite case CTN5 (the flow-sequence equivalent). Ghost used to silently skip
-        // the empty entry; it now rejects it like any other malformed flow-collection input.
+        // A double comma is an empty entry, which YAML's flow mapping grammar disallows
+        // (yaml-test-suite CTN5). Ghost used to silently skip it instead of rejecting it.
         assertFailsWith<GhostYamlException> {
             GhostYamlFlatReader("{a: 1,, b: 2}".encodeToByteArray()).readDocument()
         }
@@ -129,7 +120,7 @@ class GhostYamlChaosTest {
     fun longValuePastBufferBoundaryRoundTripsViaWriter() {
         val longValue = "x".repeat(9000)
         val buffer = FlatByteArrayWriter()
-        val writer = GhostYamlFlatWriter(buffer)
+        val writer = GhostYamlWriter(buffer)
         writer.beginObject().name("payload").value(longValue).endObject()
         val map = GhostYamlFlatReader(buffer.toByteArray()).readDocument() as Map<*, *>
         assertEquals(longValue, map["payload"])
@@ -140,7 +131,7 @@ class GhostYamlChaosTest {
         val value = PairBox("chaos", 42)
 
         val flatBuffer = FlatByteArrayWriter()
-        PairBoxSerializer.serialize(GhostYamlFlatWriter(flatBuffer), value)
+        PairBoxSerializer.serialize(GhostYamlWriter(flatBuffer), value)
         val flatBytes = flatBuffer.toByteArray()
 
         val streamSink = Buffer()

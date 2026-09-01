@@ -3,7 +3,6 @@ package com.ghost.serialization.yaml.serializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.serializers.SetSerializer
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
@@ -36,12 +35,6 @@ class GhostYamlSetSerializer<T>(
         jsonSet.serialize(writer, value)
 
     override fun serialize(
-        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
-        value: Set<T>
-    ) =
-        jsonSet.serialize(writer, value)
-
-    override fun serialize(
         writer: com.ghost.serialization.writer.strings.GhostJsonStringWriter,
         value: Set<T>
     ) =
@@ -55,18 +48,7 @@ class GhostYamlSetSerializer<T>(
         writer.endArray()
     }
 
-    override fun serialize(writer: GhostYamlFlatWriter, value: Set<T>) {
-        writer.beginArray()
-        for (item in value) {
-            yamlItem.serialize(writer, item)
-        }
-        writer.endArray()
-    }
-
     override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): Set<T> =
-        jsonSet.deserialize(reader)
-
-    override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): Set<T> =
         jsonSet.deserialize(reader)
 
     override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): Set<T> =

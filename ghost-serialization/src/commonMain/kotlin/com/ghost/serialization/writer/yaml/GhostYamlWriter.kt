@@ -1,6 +1,9 @@
 package com.ghost.serialization.writer.yaml
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.writer.bytes.BufferGhostByteSink
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.bytes.GhostByteSink
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import okio.BufferedSink
 import okio.ByteString
@@ -8,13 +11,22 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
  * A highly optimized, low-allocation YAML writer for Kotlin Multiplatform.
+ *
+ * Backed by either a streaming Okio [BufferedSink] or, for in-memory encodes, a
+ * [FlatByteArrayWriter] — both funnel through [GhostByteSink], so the body of
+ * this class is written once and shared by both channels.
  */
 @OptIn(InternalGhostApi::class)
-class GhostYamlWriter(
-    internal val sink: BufferedSink
+class GhostYamlWriter private constructor(
+    @PublishedApi internal val sink: GhostByteSink
 ) {
-    @PublishedApi
-    internal val buffer = sink.buffer
+
+    /** Streaming constructor — writes flow through an Okio [BufferedSink]. */
+    constructor(sink: BufferedSink) : this(BufferGhostByteSink(sink))
+
+    /** In-memory constructor — writes accumulate in a [FlatByteArrayWriter]. */
+    @InternalGhostApi
+    constructor(flatBuffer: FlatByteArrayWriter) : this(flatBuffer as GhostByteSink)
 
     internal var depth = 0
     internal var scratch: ByteArray? = null
@@ -50,7 +62,7 @@ class GhostYamlWriter(
 
     @InternalGhostApi
     fun flush() {
-        sink.emit()
+        sink.flush()
     }
 
     private fun prepareValue(isStructural: Boolean) {
@@ -61,7 +73,7 @@ class GhostYamlWriter(
             contextAtDepth = contexts[currentDepth],
             justWroteDash = justWroteDash,
             pendingSpace = pendingSpace,
-            writeByte = { buffer.writeByte(it) },
+            writeByte = { sink.writeByte(it) },
         )
         justWroteDash = (flags and GhostYamlWriterHelpers.PREPARE_JUST_WROTE_DASH) != 0
         pendingSpace = (flags and GhostYamlWriterHelpers.PREPARE_PENDING_SPACE) != 0
@@ -126,11 +138,8 @@ class GhostYamlWriter(
             parentContext = if (parentDepth > 0) contexts[parentDepth] else 0,
             openInt = openInt,
             closeInt = closeInt,
-            writeByte = { buffer.writeByte(it) },
-            writeOpenClose = { open, close ->
-                buffer.writeByte(open)
-                buffer.writeByte(close)
-            },
+            writeByte = { sink.writeByte(it) },
+            writeOpenClose = { open, close -> sink.write2Bytes(open, close) },
         )
     }
 
@@ -139,15 +148,15 @@ class GhostYamlWriter(
             depth = depth,
             itemCountAtDepth = itemCounts[depth],
             justWroteDash = justWroteDash,
-            writeByte = { buffer.writeByte(it) },
+            writeByte = { sink.writeByte(it) },
         )
         justWroteDash = false
         if (GhostYamlWriterHelpers.keyNeedsQuoting(key)) {
             writeStringValueRaw(key)
         } else {
-            buffer.writeUtf8(key)
+            sink.writeUtf8(key)
         }
-        buffer.writeByte(C.COLON_INT)
+        sink.writeByte(C.COLON_INT)
         itemCounts[currentDepth]++
         pendingSpace = true
         return this
@@ -158,10 +167,10 @@ class GhostYamlWriter(
             depth = depth,
             itemCountAtDepth = itemCounts[depth],
             justWroteDash = justWroteDash,
-            writeByte = { buffer.writeByte(it) },
+            writeByte = { sink.writeByte(it) },
         )
         justWroteDash = false
-        buffer.write(key)
+        sink.write(key)
         itemCounts[currentDepth]++
         pendingSpace = false
         return this
@@ -188,48 +197,48 @@ class GhostYamlWriter(
     fun value(number: ULong): GhostYamlWriter {
         prepareValue(isStructural = false)
         if (number > Long.MAX_VALUE.toULong()) {
-            buffer.writeByte(C.DOUBLE_QUOTE_INT)
-            buffer.writeUtf8(number.toString())
-            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            sink.writeByte(C.DOUBLE_QUOTE_INT)
+            sink.writeUtf8(number.toString())
+            sink.writeByte(C.DOUBLE_QUOTE_INT)
         } else {
-            buffer.writeUtf8(number.toString())
+            sink.writeUtf8(number.toString())
         }
         return this
     }
 
     fun value(number: Double): GhostYamlWriter {
         prepareValue(isStructural = false)
-        buffer.writeUtf8(number.toString())
+        sink.writeUtf8(number.toString())
         return this
     }
 
     fun value(number: Float): GhostYamlWriter {
         prepareValue(isStructural = false)
-        buffer.writeUtf8(number.toString())
+        sink.writeUtf8(number.toString())
         return this
     }
 
     fun value(value: Boolean): GhostYamlWriter {
         prepareValue(isStructural = false)
         if (value) {
-            buffer.writeUtf8(C.STR_TRUE)
+            sink.writeUtf8(C.STR_TRUE)
         } else {
-            buffer.writeUtf8(C.STR_FALSE)
+            sink.writeUtf8(C.STR_FALSE)
         }
         return this
     }
 
     fun value(value: Char): GhostYamlWriter {
         prepareValue(isStructural = false)
-        buffer.writeByte(C.DOUBLE_QUOTE_INT)
-        buffer.writeUtf8(value.toString())
-        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        sink.writeByte(C.DOUBLE_QUOTE_INT)
+        sink.writeUtf8(value.toString())
+        sink.writeByte(C.DOUBLE_QUOTE_INT)
         return this
     }
 
     fun nullValue(): GhostYamlWriter {
         prepareValue(isStructural = false)
-        buffer.writeUtf8(C.STR_NULL)
+        sink.writeUtf8(C.STR_NULL)
         return this
     }
 
@@ -237,8 +246,7 @@ class GhostYamlWriter(
     fun writeStringValueRaw(value: String) {
         val length = value.length
         if (length == 0) {
-            buffer.writeByte(C.DOUBLE_QUOTE_INT)
-            buffer.writeByte(C.DOUBLE_QUOTE_INT)
+            sink.write2Bytes(C.DOUBLE_QUOTE_INT, C.DOUBLE_QUOTE_INT)
             return
         }
 
@@ -247,33 +255,30 @@ class GhostYamlWriter(
             var index = 0
             while (index < length) {
                 val code = value[index].code
-                if (code !in C.SPACE_INT..C.TILDE_INT ||
-                    code == C.DOUBLE_QUOTE_INT ||
-                    code == C.BACKSLASH_INT
-                ) {
+                if (code !in C.SPACE_INT..C.TILDE_INT || code == C.DOUBLE_QUOTE_INT || code == C.BACKSLASH_INT) {
                     allPlain = false
                     break
                 }
                 index++
             }
             if (allPlain) {
-                buffer.writeByte(C.DOUBLE_QUOTE_INT)
-                buffer.writeUtf8(value)
-                buffer.writeByte(C.DOUBLE_QUOTE_INT)
+                sink.writeByte(C.DOUBLE_QUOTE_INT)
+                sink.writeUtf8(value)
+                sink.writeByte(C.DOUBLE_QUOTE_INT)
                 return
             }
         }
 
-        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        sink.writeByte(C.DOUBLE_QUOTE_INT)
         writeEscaped(value)
-        buffer.writeByte(C.DOUBLE_QUOTE_INT)
+        sink.writeByte(C.DOUBLE_QUOTE_INT)
     }
 
     private fun writeEscaped(text: String) {
         GhostYamlWriterHelpers.writeEscaped(
             text = text,
-            writeByte = { buffer.writeByte(it) },
-            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+            writeByte = { sink.writeByte(it) },
+            writeUtf8Range = { s, begin, end -> sink.writeUtf8(s, begin, end) },
         )
     }
 
@@ -282,9 +287,9 @@ class GhostYamlWriter(
             value = value,
             scratch = scratch,
             acquireScratch = { acquireScratch() },
-            writeByte = { buffer.writeByte(it) },
-            writeUtf8 = { buffer.writeUtf8(it) },
-            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
+            writeByte = { sink.writeByte(it) },
+            writeUtf8 = { sink.writeUtf8(it) },
+            writeBytes = { buf, offset, len -> sink.write(buf, offset, len) },
         )
     }
 

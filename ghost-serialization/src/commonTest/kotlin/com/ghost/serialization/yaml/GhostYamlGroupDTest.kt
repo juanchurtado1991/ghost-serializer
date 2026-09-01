@@ -32,7 +32,6 @@ class GhostYamlGroupDTest {
         assertEquals("true", result["boolean_as_string"])
         assertEquals("0xFF", result["hex_as_string"])
         assertEquals(42L, result["explicit_int"])
-        // Hex/octal/binary parsed to Long if we support them
         assertEquals(255L, result["hex_int"])
         assertEquals(15L, result["octal_int"])
         assertEquals(10L, result["binary_int"])
@@ -43,8 +42,8 @@ class GhostYamlGroupDTest {
 
     @Test
     fun `reads negative hex octal and binary scalars`() {
-        // readNumber()'s digit scanner used to stop right after the leading "-0", leaving
-        // "x10"/"o17"/"b1010" unconsumed and corrupting the next key. Regression test.
+        // Regression: readNumber() used to stop after leading "-0", leaving "x10"/"o17"/"b1010"
+        // unconsumed and corrupting the next key.
         val yaml = """
             hex_negative: -0x10
             octal_negative: -0o17
@@ -60,9 +59,8 @@ class GhostYamlGroupDTest {
 
     @Test
     fun `reads negative hex octal and binary in flow style and as array items`() {
-        // Same readNumber() code path as the block-mapping case above, but exercised through
-        // flow collections and block-sequence items to make sure the fix isn't accidentally
-        // scoped to just one caller.
+        // Same readNumber() path as above, exercised via flow/sequence to confirm the fix isn't
+        // scoped to just the block-mapping caller.
         val flow = parseMap("v: {a: -0x10, b: -0o17, c: -0b1010}")
 
         @Suppress("UNCHECKED_CAST")

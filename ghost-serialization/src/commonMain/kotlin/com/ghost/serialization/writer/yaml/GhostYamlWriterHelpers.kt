@@ -9,14 +9,14 @@ import okio.ByteString
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
- * Shared YAML writer kernels used by [GhostYamlWriter] (okio Buffer) and
- * [GhostYamlFlatWriter] (FlatByteArrayWriter).
+ * Shared YAML writer kernels used by [GhostYamlWriter], regardless of whether it's
+ * constructed over an okio `BufferedSink` or a `FlatByteArrayWriter`.
  *
- * Sink flushes stay at call sites via inlined lambdas so both backends keep
- * monomorphic writes. [keyNeedsQuoting] is pure (no I/O), so both backends call it directly
- * instead of duplicating it — it used to live only on [GhostYamlFlatWriter], which left
- * [GhostYamlWriter] writing every mapping key bare/unescaped (found by fuzzing:
- * `GhostYamlWriter.name("a: b")` produced YAML `GhostYamlFlatReader` itself couldn't parse back).
+ * Sink flushes stay at call sites via inlined lambdas. [keyNeedsQuoting] is pure
+ * (no I/O), so it's called directly instead of duplicated — it used to live only on
+ * the (now-merged) flat writer, which left the streaming path writing every mapping
+ * key bare/unescaped (found by fuzzing: `GhostYamlWriter.name("a: b")` produced YAML
+ * `GhostYamlFlatReader` itself couldn't parse back).
  */
 @OptIn(InternalGhostApi::class)
 internal object GhostYamlWriterHelpers {

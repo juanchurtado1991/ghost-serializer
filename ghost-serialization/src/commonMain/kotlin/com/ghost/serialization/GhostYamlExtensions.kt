@@ -74,9 +74,9 @@ inline fun <reified T : Any> Ghost.decodeAllFromYaml(bytes: ByteArray): List<T> 
  */
 inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
     val yamlSerializer = resolveYamlSerializer(T::class)
-    return ghostYamlInternalUseFlatWriter { writer ->
+    return ghostYamlInternalUseFlatWriter { writer, buffer ->
         yamlSerializer.serialize(writer, value)
-        writer.buffer.toStringUtf8()
+        buffer.toStringUtf8()
     }
 }
 
@@ -85,9 +85,9 @@ inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
  */
 inline fun <reified T : Any> Ghost.encodeToYamlBytes(value: T): ByteArray {
     val yamlSerializer = resolveYamlSerializer(T::class)
-    return ghostYamlInternalUseFlatWriter { writer ->
+    return ghostYamlInternalUseFlatWriter { writer, buffer ->
         yamlSerializer.serialize(writer, value)
-        writer.buffer.toByteArray()
+        buffer.toByteArray()
     }
 }
 
@@ -98,9 +98,9 @@ inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
     if (values.isEmpty()) return ""
     val yamlSerializer = resolveYamlSerializer(T::class)
     return values.joinToString(separator = "\n---\n") { value ->
-        ghostYamlInternalUseFlatWriter { writer ->
+        ghostYamlInternalUseFlatWriter { writer, buffer ->
             yamlSerializer.serialize(writer, value)
-            writer.buffer.toStringUtf8()
+            buffer.toStringUtf8()
         }
     }
 }
@@ -112,18 +112,18 @@ inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
 inline fun <reified T : Any> Ghost.encodeAllToYamlBytes(values: List<T>): ByteArray {
     if (values.isEmpty()) return ByteArray(0)
     val yamlSerializer = resolveYamlSerializer(T::class)
-    return ghostYamlInternalUseFlatWriter { writer ->
+    return ghostYamlInternalUseFlatWriter { writer, buffer ->
         var index = 0
         val size = values.size
         while (index < size) {
             if (index > 0) {
-                writer.buffer.writeByte(C.NEWLINE_INT)
-                writer.buffer.writeUtf8(C.STR_DOC_START)
-                writer.buffer.writeByte(C.NEWLINE_INT)
+                buffer.writeByte(C.NEWLINE_INT)
+                buffer.writeUtf8(C.STR_DOC_START)
+                buffer.writeByte(C.NEWLINE_INT)
             }
             yamlSerializer.serialize(writer, values[index])
             index++
         }
-        writer.buffer.toByteArray()
+        buffer.toByteArray()
     }
 }

@@ -185,27 +185,14 @@ internal object GhostYamlConstants {
 
     // ── Bitwise masks for hot-path validations ────────────────────────────────
 
-    /**
-     * Mask to check if a byte is an ASCII decimal digit (0-9).
-     *
-     * Usage: `(b.toInt() - 0x30) ushr 4 == 0` is cheaper but
-     * `b in ZERO_BYTE..NINE_BYTE` compiles to the same range check.
-     * For bitwise: `(b.toInt() and 0xF0) == 0x30` does NOT work for all digits.
-     * Correct fast check: `(b - 0x30).toUByte() <= 9u`
-     */
+    /** Bounds for an ASCII decimal digit (0-9), used as `b in DIGIT_LOWER_BOUND..DIGIT_UPPER_BOUND`. */
     const val DIGIT_LOWER_BOUND: Byte = ZERO_BYTE   // 0x30
     const val DIGIT_UPPER_BOUND: Byte = NINE_BYTE   // 0x39
 
-    /**
-     * Mask to convert lowercase ASCII letter to uppercase.
-     * Apply: `b.toInt() and ASCII_UPPER_MASK` on a known letter byte.
-     * Use only when the byte is confirmed to be alphabetic.
-     */
+    /** Mask to convert a known-alphabetic lowercase ASCII byte to uppercase. */
     const val ASCII_TO_UPPER_MASK: Int = 0xDF
 
-    /**
-     * Mask to convert uppercase ASCII letter to lowercase.
-     */
+    /** Mask to convert a known-alphabetic uppercase ASCII byte to lowercase. */
     const val ASCII_TO_LOWER_MASK: Int = 0x20
 
     // ── Scalar byte packing (same as JSON reader) ─────────────────────────────
