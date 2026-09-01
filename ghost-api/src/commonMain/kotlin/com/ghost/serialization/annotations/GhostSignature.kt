@@ -1,14 +1,12 @@
 package com.ghost.serialization.annotations
 
 /**
- * Marks a property as a "Signature Key" for inferred polymorphism.
+ * Marks a property as a signature key for inferred polymorphism: with
+ * `@GhostSerialization(inferred = true)` on a sealed class, Ghost uses key presence to pick
+ * the concrete subclass.
  *
- * When a `sealed class` is annotated with `@GhostSerialization(inferred = true)`,
- * Ghost uses the presence of specific keys to decide which concrete subclass to instantiate.
- *
- * By default, all non-nullable fields that are unique to a subclass are treated as signatures.
- * Use this annotation to explicitly mark a field as an identifier, even if it's shared
- * with other classes (as long as the combination of signatures is unique).
+ * By default, non-nullable fields unique to a subclass are signatures. Use this to mark a
+ * shared field explicitly, as long as the combination of signatures stays unique.
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)

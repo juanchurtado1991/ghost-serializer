@@ -1,8 +1,8 @@
 package com.ghost.serialization.annotations
 
 /**
- * Enforces strict JSON syntax checking (missing or duplicate commas, trailing commas,
- * and unmapped fields) during deserialization for the annotated endpoint, parameter, or controller.
+ * Enforces strict JSON syntax checking (missing/duplicate/trailing commas, unmapped fields)
+ * during deserialization, on the annotated endpoint, parameter, or controller.
  */
 @Target(
     AnnotationTarget.FUNCTION,

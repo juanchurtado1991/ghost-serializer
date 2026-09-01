@@ -230,9 +230,8 @@ internal object RawJsonValueScanner {
                 else -> return null
             }
         }
-        // A positive token whose magnitude is exactly -Long.MIN_VALUE accumulates to
-        // Long.MIN_VALUE here; negating it would silently wrap back to Long.MIN_VALUE
-        // instead of overflowing, so treat it as out of range.
+        // A positive token with magnitude exactly -Long.MIN_VALUE accumulates to Long.MIN_VALUE;
+        // negating it would wrap back instead of overflowing, so treat it as out of range.
         if (!negative && value == Long.MIN_VALUE) return null
         return if (negative) value else -value
     }

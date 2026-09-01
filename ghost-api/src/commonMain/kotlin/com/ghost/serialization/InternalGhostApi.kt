@@ -1,11 +1,9 @@
 package com.ghost.serialization
 
 /**
- * Marks declarations that are internal to Ghost Serialization.
- *
- * Declarations annotated with this annotation are not intended for public use and might change
- * or be removed in future versions without notice. Generated code from the Ghost KSP compiler plugin
- * uses this annotation to access internal optimized helper functions.
+ * Marks declarations internal to Ghost Serialization: not for public use, may change or be
+ * removed without notice. Generated code from the KSP compiler plugin uses this to access
+ * internal optimized helpers.
  */
 @RequiresOptIn(
     level = RequiresOptIn.Level.WARNING,

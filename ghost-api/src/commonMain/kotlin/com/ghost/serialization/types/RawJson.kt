@@ -1,18 +1,12 @@
 package com.ghost.serialization.types
 
 /**
- * Opaque JSON held as verbatim UTF-8 bytes of the wire representation.
+ * Opaque JSON held as verbatim UTF-8 bytes of the wire representation, captured zero-copy from a
+ * [ByteArray] source without building an intermediate parse tree. Prefer over [ByteArray] on
+ * model fields: it documents intent and provides value-based [equals]/[hashCode].
  *
- * Ghost serializes and deserializes [RawJson] as an inline JSON value (object, array, string,
- * number, boolean, or null) using zero-copy capture when parsed from a [ByteArray] source,
- * without building an intermediate parse tree.
- *
- * Prefer [RawJson] over [ByteArray] on public model fields: it documents intent and provides
- * value-based [equals] / [hashCode].
- *
- * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength]
- * alias the parse input buffer until [bytes] is accessed (which materializes an
- * exact-length copy for slice values).
+ * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength] alias
+ * the parse input buffer until [bytes] is accessed, which materializes an exact-length copy.
  */
 class RawJson internal constructor(
     val storage: ByteArray,

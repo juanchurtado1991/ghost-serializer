@@ -5,32 +5,9 @@ package com.ghost.serialization.annotations
  *
  * The KSP plugin generates zero-copy payload routing on the companion serializer:
  * `routePayload(envelope)`, `parsePayload(bytes)`, and optional typed variants when
- * [GhostEnvelopePayload.target] is set.
- *
- * ### Fat envelope (SmartThings SSE)
- * One nullable `RawJson` field per event type, each tagged with
- * [GhostEnvelopePayload]:
- * ```kotlin
- * @GhostJsonEnvelope(discriminator = "eventType", timeField = "eventTime")
- * @GhostSerialization
- * data class RawSseEventEnvelope(
- *     @GhostName("eventType") val eventType: String = "",
- *     @GhostName("eventTime") val timeMillis: Long = 0L,
- *     @GhostEnvelopePayload("DEVICE_EVENT")
- *     @GhostName("deviceEvent") val deviceEvent: RawJson? = null,
- * )
- * ```
- *
- * ### Generic envelope (Stripe / GitHub / CloudEvents-like)
- * Single payload field shared by all types:
- * ```kotlin
- * @GhostJsonEnvelope(discriminator = "type", dataField = "data")
- * @GhostSerialization
- * data class WebhookEnvelope(
- *     val type: String = "",
- *     val data: RawJson? = null,
- * )
- * ```
+ * [GhostEnvelopePayload.target] is set. Supports either a "fat" envelope (one nullable `RawJson`
+ * field per event type, each tagged with [GhostEnvelopePayload]) or a generic envelope with a
+ * single shared payload field (via [dataField]).
  *
  * @param discriminator JSON field holding the wire type name (default `"type"`).
  * @param timeField Optional JSON field copied into routed results metadata (e.g. `"eventTime"`).

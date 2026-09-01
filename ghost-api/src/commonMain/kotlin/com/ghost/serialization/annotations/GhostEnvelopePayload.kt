@@ -5,9 +5,8 @@ import kotlin.reflect.KClass
 /**
  * Maps a wire discriminator value to a nullable payload field on a [GhostJsonEnvelope] class.
  *
- * The generated router selects this property when the envelope discriminator matches [value].
- * When [target] is set to a [GhostSerialization] model, `routeTyped` / `parseTyped` decode via
- * zero-copy `RawJson` slice parsing.
+ * The router selects this property when the discriminator matches [value]. If [target] is a
+ * [GhostSerialization] model, `routeTyped`/`parseTyped` decode via zero-copy `RawJson` slicing.
  *
  * @param value Wire discriminator string (e.g. `"DEVICE_EVENT"`, `"invoice.paid"`).
  * @param target Typed model to decode into; default means return `RawJson` only.

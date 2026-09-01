@@ -3,10 +3,8 @@ package com.ghost.serialization.annotations
 /**
  * Marks the fallback payload field when an envelope discriminator is unknown.
  *
- * Must be a nullable `RawJson` (or `ByteArray`) property.
- * At most one fallback property is allowed per envelope class.
- *
- * When no fallback is declared, unknown discriminators route to `null`.
+ * Must be a nullable `RawJson` (or `ByteArray`) property; at most one per envelope class.
+ * Unknown discriminators route to `null` when no fallback is declared.
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)

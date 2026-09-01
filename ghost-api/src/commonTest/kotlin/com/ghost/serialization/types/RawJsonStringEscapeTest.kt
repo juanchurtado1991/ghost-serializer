@@ -31,7 +31,7 @@ class RawJsonStringEscapeTest {
 
     @Test
     fun asStringOrNull_decodesSurrogatePairEscapeAsSingleCodePoint() {
-        // U+1F600 GRINNING FACE, encoded as a UTF-16 surrogate pair in the JSON escape form.
+        // U+1F600, encoded as a UTF-16 surrogate pair in the JSON escape form.
         assertEquals("😀", raw("\"\\uD83D\\uDE00\"").asStringOrNull())
     }
 
@@ -42,7 +42,7 @@ class RawJsonStringEscapeTest {
 
     @Test
     fun asStringOrNull_truncatedUnicodeEscapeAtBufferBoundaryStopsGracefully() {
-        // "\uD8" has only 2 of the 4 required hex digits before the closing quote.
+        // Only 2 of 4 required hex digits before the closing quote.
         assertEquals("", raw("\"\\uD8\"").asStringOrNull())
     }
 

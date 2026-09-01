@@ -6,10 +6,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Covers the zero-copy slice path ([RawJson.fromBufferSlice]) that the flat-byte reader uses
- * to alias parse-buffer regions without materializing [RawJson.bytes]. Full-buffer content
- * (offset 0, length == storage.size) takes a different [equals]/[hashCode] fast path than a
- * slice into a larger buffer, so both need to agree.
+ * Covers the zero-copy slice path ([RawJson.fromBufferSlice]), which aliases parse-buffer
+ * regions without materializing [RawJson.bytes]. Full-buffer content takes a different
+ * [equals]/[hashCode] fast path than a slice, so both must agree.
  */
 class RawJsonSliceEqualityTest {
 

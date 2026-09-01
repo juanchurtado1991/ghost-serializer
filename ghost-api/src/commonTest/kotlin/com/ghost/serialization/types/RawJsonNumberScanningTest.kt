@@ -5,9 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * [RawJsonValueScanner] is internal, so these edge cases can only be exercised from within
- * ghost-api. Elsewhere in the repo it is only reached indirectly through KSP-generated
- * round-trips, which don't guarantee coverage of grammar/overflow boundaries.
+ * [RawJsonValueScanner] is internal, so these edge cases can only be tested from within
+ * ghost-api — elsewhere it's only reached indirectly through KSP-generated round-trips, which
+ * don't guarantee grammar/overflow boundary coverage.
  */
 class RawJsonNumberScanningTest {
 
