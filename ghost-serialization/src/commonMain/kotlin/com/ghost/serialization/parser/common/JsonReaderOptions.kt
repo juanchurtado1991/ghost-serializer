@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.parser.common
 
+import com.ghost.serialization.parser.strings.packChars4
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -27,6 +28,32 @@ class JsonReaderOptions(
     internal val rawChars: Array<CharArray> = Array(rawStrings.size) { i ->
         rawStrings[i].toCharArray()
     }
+
+    /**
+     * [rawBytes] entries of at most [C.LONG_BYTES] bytes, zero-padded up to exactly
+     * [C.LONG_BYTES] (`ByteArray.copyOf` zero-fills on growth) — lets the predicted-field fast
+     * path compare a short key with a single masked [com.ghost.serialization.parser.bytes.ghostReadLong8]
+     * read instead of a byte-by-byte loop. Entries longer than [C.LONG_BYTES] map to
+     * [EMPTY_PADDED_KEY] and stay on the existing loop+tail path.
+     */
+    @PublishedApi
+    internal val predictedKeyPadded: Array<ByteArray> = Array(rawBytes.size) { i ->
+        val bytes = rawBytes[i]
+        if (bytes.size in 1..C.LONG_BYTES) bytes.copyOf(C.LONG_BYTES) else EMPTY_PADDED_KEY
+    }
+
+    /**
+     * Two packed-Long words per candidate (see [com.ghost.serialization.parser.strings.packChars4]),
+     * covering predicted-key names up to [C.MAX_CHAR_FASTPATH_LEN] chars for the String-channel
+     * fast path in [com.ghost.serialization.parser.strings.internalSelect]. Both entries stay `0L`
+     * for candidates outside that range — the `candidateLength` guard at the call site keeps those
+     * on the existing loop+tail path, so the zero value is never read.
+     */
+    @PublishedApi
+    internal val predictedCharWord0: LongArray = LongArray(rawChars.size)
+
+    @PublishedApi
+    internal val predictedCharWord1: LongArray = LongArray(rawChars.size)
 
     @PublishedApi
     internal val dispatch = IntArray(tableSize) { -1 }
@@ -116,6 +143,17 @@ class JsonReaderOptions(
 
         if (enableStringDispatch) {
             buildStringDispatchTable(stringDispatch)
+        }
+
+        for (i in rawChars.indices) {
+            val candidate = rawChars[i]
+            if (candidate.size in 1..C.MAX_CHAR_FASTPATH_LEN) {
+                val padded = candidate.copyOf(C.MAX_CHAR_FASTPATH_LEN)
+                predictedCharWord0[i] = packChars4(padded, 0)
+                if (candidate.size > C.LONG_CHARS) {
+                    predictedCharWord1[i] = packChars4(padded, C.LONG_CHARS)
+                }
+            }
         }
     }
 
@@ -279,5 +317,6 @@ class JsonReaderOptions(
         }
 
         private val EMPTY_DISPATCH_TABLE = IntArray(0)
+        private val EMPTY_PADDED_KEY = ByteArray(0)
     }
 }

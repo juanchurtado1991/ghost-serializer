@@ -9,6 +9,7 @@ import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.byteToCharPosition
+import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.writer.strings.copyRangeToCharArray
 import okio.ByteString
@@ -128,29 +129,15 @@ class GhostJsonStringReader(
     }
 
     fun skipWhitespace() {
-        var scanPosition = position
-        val localLimit = limit
         val chars = rawChars
-        val localSpaceInt = C.SPACE_INT
-        val localWhitespaceMask = C.WHITESPACE_MASK
-        val localByteShiftUnit = C.BYTE_SHIFT_UNIT
-        val localResultNone = C.RESULT_NONE
-        while (scanPosition < localLimit) {
-            val code = chars[scanPosition].code
-            if (
-                code <= localSpaceInt &&
-                ((localWhitespaceMask shr code) and localByteShiftUnit) !=
-                localResultNone
-            ) {
-                scanPosition++
-            } else {
-                position = scanPosition
-                nextTokenByte = code
-                return
-            }
+        val newPosition = findNextNonWhitespaceImpl(position, limit) { chars[it].code }
+        if (newPosition == C.MATCH_END) {
+            position = limit
+            nextTokenByte = C.MATCH_END
+        } else {
+            position = newPosition
+            nextTokenByte = chars[newPosition].code
         }
-        position = localLimit
-        nextTokenByte = C.MATCH_END
     }
 
     fun peekNextToken(): Int {

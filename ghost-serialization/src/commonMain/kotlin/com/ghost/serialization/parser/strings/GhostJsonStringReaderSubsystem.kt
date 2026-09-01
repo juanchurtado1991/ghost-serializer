@@ -14,6 +14,7 @@ import com.ghost.serialization.parser.common.consumeArraySeparatorCore
 import com.ghost.serialization.parser.common.consumeKeySeparatorCore
 import com.ghost.serialization.parser.common.endArrayCore
 import com.ghost.serialization.parser.common.endObjectCore
+import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.handleSelectNoMatchCore
 import com.ghost.serialization.parser.common.hasNextCore
 import com.ghost.serialization.parser.common.nextBooleanCore
@@ -245,72 +246,8 @@ fun GhostJsonStringReader.nextBooleanOrNull(): Boolean? =
     )
 
 internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, limit: Int): Int {
-    var currentPosition = start
     val chars = rawChars
-    val escapeMasks = C.ESCAPE_MASKS
-    val unrollStep = 4
-    val indexOffset1 = 1
-    val indexOffset2 = 2
-    val indexOffset3 = 3
-
-    val localAsciiLimit = C.ASCII_LIMIT
-    val localBitmaskShift = C.BITMASK_SHIFT
-    val localBitmaskIndexMask = C.BITMASK_INDEX_MASK
-    val localBitmaskUnit = C.BITMASK_UNIT
-    val localResultNone = C.RESULT_NONE
-    val localQuoteInt = C.QUOTE_INT
-    val localMatchEnd = C.MATCH_END
-
-    while (currentPosition + indexOffset3 < limit) {
-        val byte0 = chars[currentPosition].code
-        if (byte0 < localAsciiLimit &&
-            ((escapeMasks[byte0 shr localBitmaskShift] shr
-                    (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
-        ) {
-            if (byte0 == localQuoteInt) return currentPosition
-            return localMatchEnd
-        }
-        val byte1 = chars[currentPosition + indexOffset1].code
-        if (byte1 < localAsciiLimit &&
-            ((escapeMasks[byte1 shr localBitmaskShift] shr
-                    (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
-        ) {
-            if (byte1 == localQuoteInt) return currentPosition + indexOffset1
-            return localMatchEnd
-        }
-        val byte2 = chars[currentPosition + indexOffset2].code
-        if (byte2 < localAsciiLimit &&
-            ((escapeMasks[byte2 shr localBitmaskShift] shr
-                    (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
-        ) {
-            if (byte2 == localQuoteInt) return currentPosition + indexOffset2
-            return localMatchEnd
-        }
-        val byte3 = chars[currentPosition + indexOffset3].code
-        if (byte3 < localAsciiLimit &&
-            ((escapeMasks[byte3 shr localBitmaskShift] shr
-                    (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
-        ) {
-            if (byte3 == localQuoteInt) return currentPosition + indexOffset3
-            return localMatchEnd
-        }
-        currentPosition += unrollStep
-    }
-
-    while (currentPosition < limit) {
-        val singleByte = chars[currentPosition].code
-        if (singleByte < localAsciiLimit &&
-            ((escapeMasks[singleByte shr localBitmaskShift] shr
-                    (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)
-        ) {
-            if (singleByte == localQuoteInt) {
-                return currentPosition
-            }
-            return localMatchEnd
-        }
-        currentPosition++
-    }
-    return localMatchEnd
+    return findClosingQuoteImpl(start, limit) { chars[it].code }
 }
 
 private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
@@ -368,21 +305,37 @@ private fun GhostJsonStringReader.internalSelect(
         val candidateLength = candidate.size
         val keyEnd = start + candidateLength
         if (candidateLength > 0 && keyEnd < charLimit && chars[keyEnd].code == C.QUOTE_INT) {
-            var matchedOffset = 0
-            while (matchedOffset + 3 < candidateLength &&
-                chars[start + matchedOffset] == candidate[matchedOffset] &&
-                chars[start + matchedOffset + 1] == candidate[matchedOffset + 1] &&
-                chars[start + matchedOffset + 2] == candidate[matchedOffset + 2] &&
-                chars[start + matchedOffset + 3] == candidate[matchedOffset + 3]
-            ) {
-                matchedOffset += 4
+            // Masked-word compare for typical short field names: one or two packed-char Long
+            // reads/compares beat the loop below, which for a short candidateLength never enters
+            // its 4-char unrolled body at all. See ghostCharSwarLengthMasks's doc comment.
+            val matched = if (candidateLength <= C.MAX_CHAR_FASTPATH_LEN && start + C.MAX_CHAR_FASTPATH_LEN <= chars.size) {
+                val word0 = packChars4(chars, start)
+                if (candidateLength <= C.LONG_CHARS) {
+                    (word0 and ghostCharSwarLengthMasks[candidateLength]) == options.predictedCharWord0[predicted]
+                } else {
+                    word0 == options.predictedCharWord0[predicted] &&
+                        (packChars4(chars, start + C.LONG_CHARS) and
+                            ghostCharSwarLengthMasks[candidateLength - C.LONG_CHARS]) ==
+                            options.predictedCharWord1[predicted]
+                }
+            } else {
+                var matchedOffset = 0
+                while (matchedOffset + 3 < candidateLength &&
+                    chars[start + matchedOffset] == candidate[matchedOffset] &&
+                    chars[start + matchedOffset + 1] == candidate[matchedOffset + 1] &&
+                    chars[start + matchedOffset + 2] == candidate[matchedOffset + 2] &&
+                    chars[start + matchedOffset + 3] == candidate[matchedOffset + 3]
+                ) {
+                    matchedOffset += 4
+                }
+                while (matchedOffset < candidateLength &&
+                    chars[start + matchedOffset] == candidate[matchedOffset]
+                ) {
+                    matchedOffset++
+                }
+                matchedOffset == candidateLength
             }
-            while (matchedOffset < candidateLength &&
-                chars[start + matchedOffset] == candidate[matchedOffset]
-            ) {
-                matchedOffset++
-            }
-            if (matchedOffset == candidateLength) {
+            if (matched) {
                 predictedFieldIndex = predicted + 1
                 val newPos = keyEnd + 1
                 position = newPos

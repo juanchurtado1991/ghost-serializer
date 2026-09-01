@@ -6,6 +6,7 @@ package com.ghost.serialization.parser.streaming
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostSWARLengthMasks
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
 import com.ghost.serialization.parser.common.GhostJsonConstants
@@ -474,6 +475,12 @@ private fun GhostJsonReader.internalSelect(
                 val localData = rawData
                 if ((localData[keyEnd].toInt() and C.BYTE_MASK) != C.QUOTE_INT) {
                     false
+                } else if (candidateLength <= C.LONG_BYTES && start + C.LONG_BYTES <= localData.size) {
+                    // Most real field names are short: a single masked read/compare beats the
+                    // loop-then-scalar-tail path below, which for a short candidateLength never
+                    // enters its SWAR loop body at all.
+                    val inputLong = ghostReadLong8(localData, start) and ghostSWARLengthMasks[candidateLength]
+                    inputLong == ghostReadLong8(options.predictedKeyPadded[predicted], 0)
                 } else {
                     var matchedOffset = 0
                     while (matchedOffset + C.LONG_BYTES <= candidateLength &&

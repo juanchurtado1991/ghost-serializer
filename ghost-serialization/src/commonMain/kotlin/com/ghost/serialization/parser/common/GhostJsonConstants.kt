@@ -423,6 +423,12 @@ object GhostJsonConstants {
     /** Number of bytes packed into a Long by [com.ghost.serialization.parser.bytes.ghostReadLong8] for SWAR scanning. */
     const val LONG_BYTES = 8
 
+    /** Number of UTF-16 chars packed into a Long by [com.ghost.serialization.parser.strings.packChars4]. */
+    const val LONG_CHARS = 4
+
+    /** Max predicted-key length (in chars) covered by the string-channel SWAR fast path (2 packed Longs). */
+    const val MAX_CHAR_FASTPATH_LEN = 2 * LONG_CHARS
+
     /** A Long whose 8 bytes are all ASCII space (0x20); byte-order-independent (symmetric). */
     const val SPACE_RUN_LONG = 0x2020202020202020L
 

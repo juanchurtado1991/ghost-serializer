@@ -52,22 +52,33 @@ internal fun GhostJsonFlatReader.internalSelect(
         if (candidateLength > 0 && keyEnd < byteLimit &&
             (localData[keyEnd].toInt() and C.BYTE_MASK) == C.QUOTE_INT
         ) {
-            var matchedOffset = 0
-            // Compare LONG_BYTES at a time for longer field names.
-            // Comparing two ghostReadLong8 results is byte-order independent (equality is
-            // symmetric).
-            while (matchedOffset + C.LONG_BYTES <= candidateLength &&
-                ghostReadLong8(localData, start + matchedOffset) ==
-                ghostReadLong8(candidate, matchedOffset)
-            ) {
-                matchedOffset += C.LONG_BYTES
+            // Most real field names are short (well under LONG_BYTES): a single masked
+            // ghostReadLong8 read/compare beats the loop-then-scalar-tail path below, which
+            // for a short candidateLength never enters its SWAR loop body at all. The masked
+            // compare is byte-order independent for the same reason plain equality of two
+            // ghostReadLong8 reads is: see ghostSWARLengthMasks's doc comment.
+            val matched = if (candidateLength <= C.LONG_BYTES && start + C.LONG_BYTES <= localData.size) {
+                val inputLong = ghostReadLong8(localData, start) and ghostSWARLengthMasks[candidateLength]
+                inputLong == ghostReadLong8(options.predictedKeyPadded[predicted], 0)
+            } else {
+                var matchedOffset = 0
+                // Compare LONG_BYTES at a time for longer field names.
+                // Comparing two ghostReadLong8 results is byte-order independent (equality is
+                // symmetric).
+                while (matchedOffset + C.LONG_BYTES <= candidateLength &&
+                    ghostReadLong8(localData, start + matchedOffset) ==
+                    ghostReadLong8(candidate, matchedOffset)
+                ) {
+                    matchedOffset += C.LONG_BYTES
+                }
+                while (matchedOffset < candidateLength &&
+                    localData[start + matchedOffset] == candidate[matchedOffset]
+                ) {
+                    matchedOffset++
+                }
+                matchedOffset == candidateLength
             }
-            while (matchedOffset < candidateLength &&
-                localData[start + matchedOffset] == candidate[matchedOffset]
-            ) {
-                matchedOffset++
-            }
-            if (matchedOffset == candidateLength) {
+            if (matched) {
                 predictedFieldIndex = predicted + 1
                 val newPos = keyEnd + 1
                 position = newPos
