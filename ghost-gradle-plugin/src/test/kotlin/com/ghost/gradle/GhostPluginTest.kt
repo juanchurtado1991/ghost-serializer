@@ -38,14 +38,12 @@ class GhostPluginTest {
     fun `plugin injects dependencies into jvm project`() {
         val project = ProjectBuilder.builder().build()
 
-        // Simulate a JVM project
         project.pluginManager.apply("org.jetbrains.kotlin.jvm")
         project.pluginManager.apply(GhostPlugin::class.java)
 
-        // Force the afterEvaluate block to run
+        // Dependency injection happens inside afterEvaluate, so it must be forced to run.
         evaluated(project)
 
-        // Verify dependencies are added to "implementation"
         val implDependencies = project.configurations.getByName("implementation").dependencies
 
         assertTrue(

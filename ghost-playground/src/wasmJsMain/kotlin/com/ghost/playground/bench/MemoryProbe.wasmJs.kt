@@ -6,6 +6,6 @@ actual fun currentMemoryUsedBytes(): Long? {
 }
 
 /** Reads Chrome `performance.memory.usedJSHeapSize`, or `-1` when the API is unavailable. */
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun jsUsedJsHeapSizeOrNegative(): Double =
     js("(typeof performance !== 'undefined' && performance.memory ? performance.memory.usedJSHeapSize : -1)")

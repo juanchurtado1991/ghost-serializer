@@ -3,16 +3,7 @@ package com.ghost.gradle
 import org.gradle.api.provider.Property
 
 /**
- * Gradle extension for configuring the Ghost Serialization plugin.
- *
- * Registered under the `ghost` block when [GhostPlugin] is applied:
- * ```
- * ghost {
- *     version.set("1.3.1")
- *     autoInjectKtor.set(true)
- *     autoInjectRetrofit.set(true)
- * }
- * ```
+ * Gradle extension for configuring the Ghost Serialization plugin, registered under the `ghost` block when [GhostPlugin] is applied.
  */
 interface GhostExtension {
     /**

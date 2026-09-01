@@ -395,10 +395,10 @@ object FeatureCatalog {
                 Ghost.encodeToYaml(user)
             },
             explainEn = { _, out ->
-                "Ghost parsed YAML with the generated GhostYamlFlatReader and wrote YAML again with GhostYamlFlatWriter. Output: $out"
+                "Ghost parsed YAML with the generated GhostYamlFlatReader and wrote YAML again with GhostYamlWriter. Output: $out"
             },
             explainEs = { _, out ->
-                "Ghost parseó YAML con GhostYamlFlatReader generado y reescribió YAML con GhostYamlFlatWriter. Salida: $out"
+                "Ghost parseó YAML con GhostYamlFlatReader generado y reescribió YAML con GhostYamlWriter. Salida: $out"
             },
         ),
     )

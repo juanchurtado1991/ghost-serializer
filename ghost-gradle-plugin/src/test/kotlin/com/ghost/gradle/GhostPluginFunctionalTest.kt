@@ -52,14 +52,12 @@ class GhostPluginFunctionalTest {
             .withPluginClasspath()
             .forwardOutput()
 
-        // First run - calculates cache
         val result1 = runner.build()
         assertTrue(
             result1.output.contains("Configuration cache entry stored."),
             "Should store configuration cache"
         )
 
-        // Second run - reuses cache
         val result2 = runner.build()
         assertTrue(
             result2.output.contains("Reusing configuration cache."),
@@ -110,10 +108,8 @@ class GhostPluginFunctionalTest {
             .withPluginClasspath()
             .forwardOutput()
 
-        // First build
         runner.build()
 
-        // Change model
         modelFile.writeText(
             """
             package com.example
@@ -123,7 +119,6 @@ class GhostPluginFunctionalTest {
         """.trimIndent()
         )
 
-        // Second build - should be successful and incremental
         val result = runner.build()
         assertTrue(result.output.contains("SUCCESS"), "Incremental build should succeed")
     }

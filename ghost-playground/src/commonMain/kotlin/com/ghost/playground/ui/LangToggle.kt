@@ -22,10 +22,8 @@ import com.ghost.playground.ui.theme.Teal
 /** English/Spanish language toggle in the header. */
 @Composable
 internal fun LangToggle(label: String, on: Boolean, click: () -> Unit) {
-    // Border matches the fill (instead of a light CardBorder over a near-black fill) — a 1dp
-    // ring with that much contrast on a 10dp corner reads as jagged/pixelated on Skia's wasm
-    // canvas. Using the brand accent instead of near-black for the selected state also keeps it
-    // consistent with every other "selected" control in the app.
+    // Border matches the fill rather than using CardBorder: that much contrast on a 10dp
+    // corner reads as jagged/pixelated on Skia's wasm canvas.
     Box(
         Modifier
             .clip(RoundedCornerShape(10.dp))

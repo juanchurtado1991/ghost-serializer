@@ -6,14 +6,10 @@ import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
- * Gradle plugin that wires Ghost Serialization into Android, JVM, and Kotlin Multiplatform projects.
- *
- * Apply with plugin id `com.ghostserializer.ghost`. The plugin:
- * - Adds `ghost-compiler` to KSP when the KSP plugin is present
- * - Adds `ghost-serialization` and `ghost-api` to the appropriate source set or configuration
- * - Optionally adds `ghost-ktor` or `ghost-retrofit` when matching network libraries are detected
- *
- * Configure behavior through the [GhostExtension] `ghost` block.
+ * Gradle plugin (id `com.ghostserializer.ghost`) that wires Ghost Serialization into Android, JVM,
+ * and KMP projects: adds `ghost-compiler` to KSP, adds the runtime/API dependencies, and optionally
+ * injects `ghost-ktor`/`ghost-retrofit` when those libraries are detected. Configure via the
+ * [GhostExtension] `ghost` block.
  */
 class GhostPlugin : Plugin<Project> {
 
@@ -24,7 +20,8 @@ class GhostPlugin : Plugin<Project> {
         val extension = createExtension(project)
         val ghostVersion = extension.version
 
-        // 1. Core & KSP (Reactive)
+        // Wired reactively via withId listeners so this works regardless of whether KSP/KMP/Android
+        // plugins are applied before or after this plugin.
         var kspSetupDone = false
         fun configureKspDependencies() {
             if (kspSetupDone) return
@@ -79,7 +76,7 @@ class GhostPlugin : Plugin<Project> {
             }
         }
 
-        // 2. Network Adapters (Safe afterEvaluate)
+        // afterEvaluate: configurations must be fully resolved before we can detect ktor/retrofit deps.
         project.afterEvaluate {
             val version = ghostVersion.get()
             if (extension.autoInjectKtor.get() && hasKtorDependency(project)) {
