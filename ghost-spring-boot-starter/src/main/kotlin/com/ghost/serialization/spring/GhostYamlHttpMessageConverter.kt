@@ -76,9 +76,9 @@ class GhostYamlHttpMessageConverter : AbstractGenericHttpMessageConverter<Any>(
         val serializer = resolveWriteSerializer(t, type)
         @Suppress("UNCHECKED_CAST")
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
-        val bytes = ghostYamlInternalUseFlatWriter { writer ->
+        val bytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             yamlSerializer.serialize(writer, t)
-            writer.buffer.toByteArray()
+            buffer.toByteArray()
         }
         outputMessage.body.write(bytes)
         outputMessage.body.flush()

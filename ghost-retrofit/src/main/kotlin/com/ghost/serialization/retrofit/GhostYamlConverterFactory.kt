@@ -72,9 +72,9 @@ class GhostYamlConverterFactory private constructor() : Converter.Factory() {
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
 
         return Converter<Any, RequestBody> { value ->
-            val bytes = ghostYamlInternalUseFlatWriter { writer ->
+            val bytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
                 yamlSerializer.serialize(writer, value)
-                writer.buffer.toByteArray()
+                buffer.toByteArray()
             }
             bytes.toRequestBody(MEDIA_TYPE)
         }

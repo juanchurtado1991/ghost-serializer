@@ -13,14 +13,12 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Ghost-only YAML round-trip benchmark, plus a Ghost-vs-kaml decode/encode comparison.
+ * Ghost-only YAML round-trip benchmark, plus a Ghost-vs-kaml decode/encode comparison, both
+ * exercising KSP-generated `GhostYamlSerializer` on the `YamlBenchUser` fixture.
  *
- * Exercises KSP-generated `GhostYamlSerializer` paths on the
- * integration fixture `YamlBenchUser`.
- *
- * The kaml comparison below is fixture-only (this file's `YAML_USER` sample) — it is NOT a run
- * against the official yaml-test-suite / matrix.yaml.info spec-compliance matrix. Tracked
- * separately: https://github.com/juanchurtado1991/ghost-serializer/issues/17
+ * The kaml comparison is fixture-only — it is NOT a run against the official yaml-test-suite /
+ * matrix.yaml.info spec-compliance matrix. Tracked separately:
+ * https://github.com/juanchurtado1991/ghost-serializer/issues/17
  */
 object GhostYamlBenchmark {
 
@@ -107,11 +105,7 @@ score: 100.0
         return true
     }
 
-    /**
-     * Ghost vs kaml decode/encode comparison on the same [YamlBenchUser] fixture.
-     *
-     * Fixture-only — not a run against the yaml-test-suite / matrix.yaml.info matrix.
-     */
+    /** Ghost vs kaml decode/encode comparison on the same [YamlBenchUser] fixture (see class doc). */
     private fun runKamlComparison(threadBean: ThreadMXBean) {
         val yamlText = YAML_USER.trimIndent()
         val payloadBytes = yamlText.encodeToByteArray().size.toLong()

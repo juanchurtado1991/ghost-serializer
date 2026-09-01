@@ -57,9 +57,9 @@ class GhostYamlReactiveEncoder : AbstractEncoder<Any>(
 
         @Suppress("UNCHECKED_CAST")
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
-        val encoded = ghostYamlInternalUseFlatWriter { writer ->
+        val encoded = ghostYamlInternalUseFlatWriter { writer, buffer ->
             yamlSerializer.serialize(writer, value)
-            writer.buffer.toByteArray()
+            buffer.toByteArray()
         }
         return bufferFactory.wrap(encoded)
     }

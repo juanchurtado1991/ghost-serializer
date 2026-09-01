@@ -45,9 +45,9 @@ class GhostYamlContentConverter(
         }
 
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
-        val bytes = ghostYamlInternalUseFlatWriter { writer ->
+        val bytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             yamlSerializer.serialize(writer, value)
-            writer.buffer.toByteArray()
+            buffer.toByteArray()
         }
         return ByteArrayContent(bytes, contentType)
     }

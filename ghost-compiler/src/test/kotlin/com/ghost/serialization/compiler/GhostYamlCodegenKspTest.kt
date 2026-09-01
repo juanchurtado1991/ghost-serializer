@@ -40,8 +40,8 @@ class GhostYamlCodegenKspTest {
             "Expected GhostYamlSerializer superinterface:\n$generated"
         )
         assertTrue(
-            "override fun serialize(writer: GhostYamlFlatWriter" in generated,
-            "Expected YAML flat serialize method:\n$generated"
+            "override fun serialize(writer: GhostYamlWriter" in generated,
+            "Expected YAML serialize method:\n$generated"
         )
         assertTrue(
             "override fun deserialize(reader: GhostYamlFlatReader" in generated,
@@ -87,7 +87,7 @@ class GhostYamlCodegenKspTest {
                 import com.ghost.serialization.annotations.GhostEncoder
                 import com.ghost.serialization.annotations.GhostSerialization
                 import com.ghost.serialization.annotations.GhostYamlSerialization
-                import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+                import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
                 @GhostSerialization
                 @GhostYamlSerialization
@@ -97,7 +97,7 @@ class GhostYamlCodegenKspTest {
                 )
 
                 object Encoder {
-                    fun encode(writer: GhostJsonFlatWriter, value: String) {
+                    fun encode(writer: GhostJsonWriter, value: String) {
                         writer.value(value)
                     }
                 }
