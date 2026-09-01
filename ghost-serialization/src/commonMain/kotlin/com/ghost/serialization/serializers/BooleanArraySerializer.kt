@@ -30,15 +30,13 @@ object BooleanArraySerializer : GhostSerializer<BooleanArray> {
 
     override fun serialize(writer: GhostJsonWriter, value: BooleanArray) {
         writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) { writer.value(value[i]) }
+        writeArrayElements(value.size) { writer.value(value[it]) }
         writer.endArray()
     }
 
     override fun serialize(writer: GhostJsonStringWriter, value: BooleanArray) {
         writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) { writer.value(value[i]) }
+        writeArrayElements(value.size) { writer.value(value[it]) }
         writer.endArray()
     }
 

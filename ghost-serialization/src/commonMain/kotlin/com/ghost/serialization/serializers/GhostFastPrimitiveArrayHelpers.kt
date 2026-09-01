@@ -15,6 +15,15 @@ internal inline fun matchesLiteral(getByte: (Int) -> Int, pos: Int, limit: Int, 
 }
 
 /**
+ * Writes [size] array elements via [writeAt] (comma/separator bookkeeping is already handled
+ * by each `writer.value(...)` overload internally, so this is pure iteration) — shared by every
+ * primitive array serializer's write path instead of each hand-rolling the same `for` loop.
+ */
+internal inline fun writeArrayElements(size: Int, writeAt: (Int) -> Unit) {
+    for (i in 0 until size) writeAt(i)
+}
+
+/**
  * Fast path for a compact (no embedded whitespace), comma-separated run of bare integers
  * inside `[...]` — the common shape for encoder-produced JSON, and the dominant cost in
  * large numeric arrays (e.g. a 1000-element history/metrics array). Falls back to `null`

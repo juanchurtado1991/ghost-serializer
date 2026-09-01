@@ -30,15 +30,13 @@ object FloatArraySerializer : GhostSerializer<FloatArray> {
 
     override fun serialize(writer: GhostJsonWriter, value: FloatArray) {
         writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) { writer.value(value[i]) }
+        writeArrayElements(value.size) { writer.value(value[it]) }
         writer.endArray()
     }
 
     override fun serialize(writer: GhostJsonStringWriter, value: FloatArray) {
         writer.beginArray()
-        val size = value.size
-        for (i in 0 until size) { writer.value(value[i]) }
+        writeArrayElements(value.size) { writer.value(value[it]) }
         writer.endArray()
     }
 
