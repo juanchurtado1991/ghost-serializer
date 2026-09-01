@@ -29,11 +29,11 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
  * A growing flat-array byte buffer used as the in-memory output target for
- * [GhostJsonFlatWriter]. It is intentionally a `final` concrete class with no
- * interface or superclass so every byte-write made by [GhostJsonFlatWriter]
- * resolves as a monomorphic call the JIT (HotSpot/ART) and Kotlin/Native AOT
- * compiler can fully inline — no v-table lookup, no segment management, just
- * direct array stores.
+ * [GhostJsonWriter] when constructed over a flat buffer. Every byte-write
+ * made from within this class resolves as a monomorphic call the JIT
+ * (HotSpot/ART) and Kotlin/Native AOT compiler can fully inline — the
+ * [GhostByteSink] conformance only adds virtual dispatch at
+ * [GhostJsonWriter]'s call sites, not inside this class's own methods.
  *
  * Compared to the streaming path that writes through `okio.Buffer` segments,
  * this class trades the ability to incrementally drain bytes for ~2-3x
@@ -42,7 +42,9 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * directly via [array] + [size] for zero-copy fast paths).
  */
 @InternalGhostApi
-class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE) {
+class FlatByteArrayWriter(
+    private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE
+) : GhostByteSink {
 
     /**
      * Backing store. The slice `array[0 until size]` is the live encoded
@@ -86,7 +88,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Appends a single byte (low 8 bits of [byteAsInt]). Optimized for inlining. */
-    fun writeByte(byteAsInt: Int) {
+    override fun writeByte(byteAsInt: Int) {
         val currentSize = size
         val backingArray = array
         if (currentSize < backingArray.size) {
@@ -107,7 +109,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      * Use instead of two consecutive [writeByte] calls whenever both bytes
      * are known at the call site (e.g. opening + closing quotes, escape pairs).
      */
-    fun write2Bytes(firstByte: Int, secondByte: Int) {
+    override fun write2Bytes(firstByte: Int, secondByte: Int) {
         val currentSize = size
         val backingArray = array
         if (currentSize + 1 < backingArray.size) {
@@ -130,7 +132,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      * Avoids the scratch-buffer accumulation used by the generic escape path,
      * saving one intermediate copy + thread-local acquire for the common case.
      */
-    fun writeQuotedAscii(text: String, length: Int) {
+    override fun writeQuotedAscii(text: String, length: Int) {
         ensureCapacity(length + C.STRING_QUOTE_PAIR_BYTES)
         val backingArray = array
         var writeIndex = size
@@ -154,14 +156,14 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Appends every byte from [bytes] to the live payload. */
-    fun write(bytes: ByteArray) {
+    override fun write(bytes: ByteArray) {
         ensureCapacity(bytes.size)
         bytes.copyInto(array, size)
         size += bytes.size
     }
 
     /** Appends `bytes[offset until offset + length]` to the live payload. */
-    fun write(bytes: ByteArray, offset: Int, length: Int) {
+    override fun write(bytes: ByteArray, offset: Int, length: Int) {
         ensureCapacity(length)
         bytes.copyInto(
             array,
@@ -173,7 +175,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Appends every byte of the immutable [byteString] to the live payload. */
-    fun write(byteString: ByteString) {
+    override fun write(byteString: ByteString) {
         val length = byteString.size
         ensureCapacity(length)
         byteString.copyInto(
@@ -186,7 +188,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** UTF-8 encodes the entire string [text] directly into the payload. */
-    fun writeUtf8(text: String) {
+    override fun writeUtf8(text: String) {
         writeUtf8(text, 0, text.length)
     }
 
@@ -199,7 +201,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
      * array store per character. Surrogate pairs are decoded into a 4-byte
      * sequence; lone surrogates emit [UTF8_REPLACEMENT_CHAR].
      */
-    fun writeUtf8(text: String, beginIndex: Int, endIndex: Int) {
+    override fun writeUtf8(text: String, beginIndex: Int, endIndex: Int) {
         val count = endIndex - beginIndex
         ensureCapacity(count * UTF8_MAX_BMP_BYTES)
         var sourceIndex = beginIndex
@@ -282,7 +284,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     /**
      * Writes a JSON string containing a single BMP code point, without allocating a [String].
      */
-    fun writeQuotedBmpCodeUnit(codePoint: Int) {
+    override fun writeQuotedBmpCodeUnit(codePoint: Int) {
         ensureCapacity(C.STRING_QUOTE_PAIR_BYTES + C.UTF8_3BYTE_SIZE)
         writeByte(C.QUOTE_INT)
         writeBmpUtf8CodeUnit(codePoint)
@@ -306,7 +308,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Writes the literal "true" directly. */
-    fun writeTrue() {
+    override fun writeTrue() {
         ensureCapacity(4)
         val backingArray = array
         var writeIndex = size
@@ -318,7 +320,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Writes the literal "false" directly. */
-    fun writeFalse() {
+    override fun writeFalse() {
         ensureCapacity(5)
         val backingArray = array
         var writeIndex = size
@@ -331,7 +333,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Writes the literal "null" directly. */
-    fun writeNull() {
+    override fun writeNull() {
         ensureCapacity(4)
         val backingArray = array
         var writeIndex = size
@@ -343,7 +345,7 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     }
 
     /** Writes the literal ".0" directly. */
-    fun writeDotZero() {
+    override fun writeDotZero() {
         ensureCapacity(2)
         val backingArray = array
         var writeIndex = size
@@ -368,4 +370,9 @@ class FlatByteArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
 
     /** Decodes the encoded payload back into a [String] (UTF-8). */
     fun toStringUtf8(): String = array.decodeToString(0, size)
+
+    /** No-op — the flat-array path has nothing to drain. */
+    override fun flush() {
+        /* No Ops */
+    }
 }

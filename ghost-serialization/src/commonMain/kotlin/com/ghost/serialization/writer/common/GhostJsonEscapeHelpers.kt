@@ -28,6 +28,15 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
 internal object GhostJsonEscapeHelpers {
 
     /**
+     * True when [code] is a plain ASCII character that can be emitted unescaped
+     * (not a control char, `"`, `\`, or non-ASCII). Single source of truth for the
+     * bitmask check duplicated across both byte JSON writers and this file.
+     */
+    fun isPlainAsciiSafe(code: Int): Boolean =
+        code < ASCII_LIMIT &&
+                (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+
+    /**
      * Formats `\uXXXX` into [scratchBuf] at indices `0..5` and flushes via [write].
      */
     inline fun writeUnicodeEscapeBytes(
@@ -82,7 +91,6 @@ internal object GhostJsonEscapeHelpers {
         }
 
         val replacements = ESCAPE_REPLACEMENTS
-        val escapeMasks = ESCAPE_MASKS
         val scratchSize = scratchBuf.size
 
         if (remaining <= scratchSize) {
@@ -92,14 +100,10 @@ internal object GhostJsonEscapeHelpers {
                 val charCode = text[index].code
 
                 // Unrolled fast path for plain ASCII
-                if (charCode < ASCII_LIMIT) {
-                    val maskIdx = charCode shr BITMASK_SHIFT
-                    val bitIdx = charCode and BITMASK_INDEX_MASK
-                    if ((escapeMasks[maskIdx] shr bitIdx) and BITMASK_UNIT == 0L) {
-                        scratchBuf[scratchPos++] = charCode.toByte()
-                        index++
-                        continue
-                    }
+                if (isPlainAsciiSafe(charCode)) {
+                    scratchBuf[scratchPos++] = charCode.toByte()
+                    index++
+                    continue
                 }
 
                 if (scratchPos > 0) {
@@ -137,11 +141,7 @@ internal object GhostJsonEscapeHelpers {
         while (index < length) {
             val charCode = text[index].code
 
-            if (
-                charCode < ASCII_LIMIT &&
-                (escapeMasks[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
+            if (isPlainAsciiSafe(charCode)) {
                 scratchBuf[scratchPos++] = charCode.toByte()
                 if (scratchPos == scratchSize) {
                     writeBytes(scratchBuf, 0, scratchPos)
@@ -193,7 +193,6 @@ internal object GhostJsonEscapeHelpers {
         writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
         writeQuoteByte: () -> Unit,
     ) {
-        val escapeMasks = ESCAPE_MASKS
         val escapeReplacements = ESCAPE_REPLACEMENTS
         var scratchPos = 1 // Start after the opening quote already written at index 0.
         var index = 0
@@ -201,11 +200,7 @@ internal object GhostJsonEscapeHelpers {
         while (index < length) {
             val charCode = text[index].code
 
-            if (
-                charCode < ASCII_LIMIT &&
-                (escapeMasks[charCode shr BITMASK_SHIFT] shr
-                        (charCode and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
-            ) {
+            if (isPlainAsciiSafe(charCode)) {
                 scratchBuf[scratchPos++] = charCode.toByte()
                 index++
                 continue

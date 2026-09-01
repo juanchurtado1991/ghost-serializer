@@ -5,33 +5,12 @@ import kotlin.math.roundToInt
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * High-performance, Zero-Allocation formatting engine for [Double] numbers.
+ * Zero-allocation ASCII formatter for [Double] values, writing directly into a pre-allocated
+ * [ByteArray] to bypass the GC overhead of `Double.toString()` on the hot serialization path.
  *
- * This utility writes the ASCII representation of floating-point numbers directly to a pre-allocated
- * [ByteArray] buffer. This completely bypasses the garbage collection (GC) overhead typically associated
- * with calling `Double.toString()` or `String.format()`, making it ideal for high-throughput JSON serialization.
- *
- * ### Thresholds and Precision Limits
- * - **Fast-Path Precision:** Supports up to [MAX_DECIMALS] (9) decimal places of precision.
- * - **Magnitude Limits:** Works with values in `[1e-9, 1e9]`
- *   ([MICROSCOPIC_DOUBLE_THRESHOLD] / [MASSIVE_DOUBLE_THRESHOLD]).
- * - **Fallback Mechanism:** Values outside this range, non-finite values (NaN, Infinity), or microscopic
- *   numbers return [FALLBACK_REQUIRED] so the caller can use a platform `toString()` without
- *   allocating a lambda on the hot fractional path.
- *
- * ### Algorithm Overview
- * 1. **Sign Handling:** Negative values write `-` to the buffer, and the absolute value is processed.
- * 2. **Whole Number Fast-Path:** Numbers without decimal fractions are converted to [Long] and written
- *    using [writeLongDirect] with a appended `.0` suffix.
- * 3. **Split and Scale:** Splits the number into its integer part `intPart` and fractional part `fracPart`.
- *    The fractional part is multiplied by `1_000_000_000.0` (precision scale) and rounded to a 9-digit integer `fracInt`.
- * 4. **Carry-over Correction:** If rounding `fracInt` causes a carry-over to the integer boundary (i.e. `fracInt >= 1e9`),
- *    the integer part is incremented by 1, and printed with `.0`.
- * 5. **Trailing Zeros Trimming:** If `fracInt` ends with zeros, they are trimmed by dividing by 10
- *    to write the shortest equivalent decimal representation (e.g., `3.5` instead of `3.500000000`).
- * 6. **Digit Emission:** The integer part is written. A decimal point `.` is appended. Then, digits of `fracInt`
- *    are emitted. Digits are processed in pairs (base 100) using [C.DOUBLE_DIGIT_LUT] for fast lookup
- *    and written backward to maintain correct decimal alignment.
+ * Handles up to [MAX_DECIMALS] (9) decimal places for values in `[1e-9, 1e9]`; anything outside
+ * that range, non-finite, or microscopic returns [FALLBACK_REQUIRED] so the caller falls back to
+ * a platform `toString()` without allocating a lambda on the hot path.
  */
 internal object GhostDoubleFormatter {
 
@@ -54,7 +33,7 @@ internal object GhostDoubleFormatter {
     private const val MAX_DECIMALS = 9
 
     /**
-     * Bytes reserved past [pos] for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
+     * Bytes reserved past position for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
      */
     private const val LONG_DIRECT_SCRATCH_SPAN = 32
 
@@ -69,11 +48,7 @@ internal object GhostDoubleFormatter {
     const val FALLBACK_REQUIRED = -1
 
     /**
-     * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
-     *
-     * @param value The double value to write.
-     * @param scratch The destination byte array.
-     * @param offset The starting position in the destination buffer.
+     * Formats and writes [value] directly into [scratch] starting at [offset].
      * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
      */
     fun writeDoubleDirect(
@@ -83,11 +58,11 @@ internal object GhostDoubleFormatter {
     ): Int {
         if (!value.isFinite()) return FALLBACK_REQUIRED
 
-        var pos = offset
+        var position = offset
         var localValue = value
 
         if (value.toRawBits() < 0) {
-            scratch[pos++] = C.MINUS
+            scratch[position++] = C.MINUS
             localValue = -localValue
         }
 
@@ -100,8 +75,8 @@ internal object GhostDoubleFormatter {
             return writeLongDirect(
                 localValue.toLong(),
                 scratch,
-                pos,
-                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
+                position,
+                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,
                 writeDecimalZero = true
             ) - offset
         }
@@ -124,25 +99,25 @@ internal object GhostDoubleFormatter {
             return writeLongDirect(
                 intPart + 1,
                 scratch,
-                pos,
-                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
+                position,
+                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,
                 writeDecimalZero = true
             ) - offset
         }
 
-        pos = writeLongDirect(
+        position = writeLongDirect(
             intPart,
             scratch,
-            pos,
-            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
+            position,
+            scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,
             writeDecimalZero = false
         )
 
-        scratch[pos++] = C.DOT
+        scratch[position++] = C.DOT
 
         if (fracInt == 0) {
-            scratch[pos++] = C.ZERO
-            return pos - offset
+            scratch[position++] = C.ZERO
+            return position - offset
         }
 
         var decimalsToPrint = MAX_DECIMALS
@@ -152,8 +127,8 @@ internal object GhostDoubleFormatter {
             decimalsToPrint--
         }
 
-        pos += decimalsToPrint
-        var writePos = pos - 1
+        position += decimalsToPrint
+        var writePos = position - 1
 
         while (decimalsToPrint >= 2) {
             val quotient = fracInt / C.BASE_HUNDRED
@@ -172,7 +147,7 @@ internal object GhostDoubleFormatter {
             scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()
         }
 
-        return pos - offset
+        return position - offset
     }
 
     /**
@@ -280,19 +255,9 @@ internal object GhostDoubleFormatter {
     }
 
     /**
-     * Converts a [Long] integer value into its ASCII bytes and writes it directly to [scratch].
-     *
-     * Digits are extracted from right to left using division and base-100 modulo arithmetic.
-     * Digit values are translated via pre-calculated ones and tens lookup tables to minimize computation.
-     * The compiled instruction utilizes an optimized `System.arraycopy` (via [ByteArray.copyInto])
-     * block operation to transfer the written string to its final offset.
-     *
-     * @param value The Long integer to write.
-     * @param scratch The destination byte array.
-     * @param offset The starting position in the destination buffer.
-     * @param scratchEnd The boundary of the scratch segment reserved for backward digit writing.
-     * @param writeDecimalZero If true, appends a `.0` suffix to the formatted integer.
-     * @return The next write index in the scratch buffer.
+     * Writes [value]'s ASCII digits into [scratch], extracting right-to-left via base-100
+     * modulo and pre-computed ones/tens lookup tables, then block-copying into place.
+     * @return The next write index in [scratch].
      */
     private fun writeLongDirect(
         value: Long,

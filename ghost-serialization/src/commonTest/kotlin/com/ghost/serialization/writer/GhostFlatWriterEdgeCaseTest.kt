@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Direct unit tests for [GhostJsonFlatWriter] — the in-memory / [FlatByteArrayWriter]-backed
+ * Direct unit tests for [GhostJsonWriter] — the in-memory / [FlatByteArrayWriter]-backed
  * writer used by every KSP-generated serializer's flat encode path. Exercises the same scenarios
  * as `GhostWriterEdgeCaseTest` (which covers the sibling Okio-streaming
  * [GhostJsonWriter]) so both writers receive equivalent coverage, plus the flat writer's
@@ -19,9 +19,9 @@ import kotlin.test.assertFailsWith
  */
 class GhostFlatWriterEdgeCaseTest {
 
-    private fun writerToString(block: (GhostJsonFlatWriter) -> Any?): String {
+    private fun writerToString(block: (GhostJsonWriter) -> Any?): String {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(byteWriter)
+        val writer = GhostJsonWriter(byteWriter)
         block(writer)
         return byteWriter.toStringUtf8()
     }
@@ -333,7 +333,7 @@ class GhostFlatWriterEdgeCaseTest {
     fun writerRespectsMaxDepth() {
         assertFailsWith<GhostJsonException> {
             val byteWriter = FlatByteArrayWriter()
-            val writer = GhostJsonFlatWriter(byteWriter)
+            val writer = GhostJsonWriter(byteWriter)
             repeat(300) { writer.beginObject().name("a") }
         }
     }
@@ -448,7 +448,7 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun resetAllowsWriterReuseAfterBufferReset() {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(byteWriter)
+        val writer = GhostJsonWriter(byteWriter)
 
         writer.beginObject().name("a").value(1).endObject()
         assertEquals("""{"a":1}""", byteWriter.toStringUtf8())

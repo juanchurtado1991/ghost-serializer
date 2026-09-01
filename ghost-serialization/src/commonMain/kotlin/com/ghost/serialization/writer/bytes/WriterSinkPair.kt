@@ -22,6 +22,6 @@ class WriterSinkPair {
      */
     val byteWriter: FlatByteArrayWriter = FlatByteArrayWriter(INITIAL_WRITE_BUFFER_SIZE)
 
-    /** Writer wired against [byteWriter]; calls into [byteWriter] are monomorphic. */
-    val writer: GhostJsonFlatWriter = GhostJsonFlatWriter(byteWriter)
+    /** Writer wired against [byteWriter] via [GhostByteSink]. */
+    val writer: GhostJsonWriter = GhostJsonWriter(byteWriter)
 }

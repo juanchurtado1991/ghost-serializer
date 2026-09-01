@@ -6,55 +6,38 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.types.RawJson
-import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_QUOTE_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.COMMA_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.DOT_ZERO
-import com.ghost.serialization.parser.common.GhostJsonConstants.EMPTY_STRING_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
 import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
-import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
-import com.ghost.serialization.parser.common.GhostJsonConstants.FALSE_BS
-import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
 import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
-import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
-import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_INT_BS
 import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_LONG_BS
-import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
-import com.ghost.serialization.parser.common.GhostJsonConstants.NULL_BS
-import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
 import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
-import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
-import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
 import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
-import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
-import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
 import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.writer.common.GhostDoubleFormatter
 import com.ghost.serialization.writer.common.GhostJsonEscapeHelpers
-import com.ghost.serialization.writer.common.GhostWriterLongDigits
 import okio.BufferedSink
 import okio.ByteString
 
 /**
  * A highly optimized, low-allocation JSON writer for Kotlin Multiplatform.
+ *
+ * Backed by either a streaming Okio [BufferedSink] or, for in-memory encodes,
+ * a [FlatByteArrayWriter] — both funnel through [GhostByteSink], so the
+ * body of this class is written once and shared by both channels.
  */
-class GhostJsonWriter(
-    internal val sink: BufferedSink
+class GhostJsonWriter private constructor(
+    @PublishedApi internal val sink: GhostByteSink
 ) {
 
-    @PublishedApi
-    internal val buffer = sink.buffer
+    /** Streaming constructor — writes flow through an Okio [BufferedSink]. */
+    constructor(sink: BufferedSink) : this(BufferGhostByteSink(sink))
+
+    /** In-memory constructor — writes accumulate in a [FlatByteArrayWriter]. */
+    @InternalGhostApi
+    constructor(flatBuffer: FlatByteArrayWriter) : this(flatBuffer as GhostByteSink)
 
     internal var needsComma = false
 
@@ -62,9 +45,6 @@ class GhostJsonWriter(
 
     internal var scratch: ByteArray? = null
 
-    /**
-     * Acquires the temporary scratch buffer for numeric/string conversions.
-     */
     internal fun acquireScratch(): ByteArray {
         val currentScratch = scratch
         if (currentScratch != null) {
@@ -101,11 +81,12 @@ class GhostJsonWriter(
     }
 
     /**
-     * Ensures all buffered bytes are pushed to the underlying [BufferedSink].
+     * Ensures all buffered bytes are pushed to the underlying sink.
+     * No-op for the in-memory (flat) channel.
      */
     @InternalGhostApi
     fun flush() {
-        sink.emit()
+        sink.flush()
     }
 
     // ── Structural ────────────────────────────────────────────────────────────
@@ -115,12 +96,15 @@ class GhostJsonWriter(
      * Automatically handles comma insertion and indentation tracking.
      */
     fun beginObject(): GhostJsonWriter {
-        val localDepth = depth
-        if (localDepth >= MAX_DEPTH) throwDepthError()
-        appendSeparator()
-        buffer.writeByte(OPEN_OBJ_INT)
+        GhostJsonWriterHelpers.beginObjectCore(
+            depth = depth,
+            maxDepth = MAX_DEPTH,
+            appendSeparator = { appendSeparator() },
+            writeByte = { sink.writeByte(it) },
+            setDepth = { depth = it },
+            throwDepthError = { throwDepthError() },
+        )
         needsComma = false
-        depth = localDepth + 1
         return this
     }
 
@@ -128,9 +112,12 @@ class GhostJsonWriter(
      * Ends the current JSON object.
      */
     fun endObject(): GhostJsonWriter {
-        buffer.writeByte(CLOSE_OBJ_INT)
+        GhostJsonWriterHelpers.endObjectCore(
+            depth = depth,
+            writeByte = { sink.writeByte(it) },
+            setDepth = { depth = it },
+        )
         needsComma = true
-        depth--
         return this
     }
 
@@ -138,14 +125,15 @@ class GhostJsonWriter(
      * Starts a new JSON array.
      */
     fun beginArray(): GhostJsonWriter {
-        val localDepth = depth
-        if (localDepth >= MAX_DEPTH) {
-            throwDepthError()
-        }
-        appendSeparator()
-        buffer.writeByte(OPEN_ARR_INT)
+        GhostJsonWriterHelpers.beginArrayCore(
+            depth = depth,
+            maxDepth = MAX_DEPTH,
+            appendSeparator = { appendSeparator() },
+            writeByte = { sink.writeByte(it) },
+            setDepth = { depth = it },
+            throwDepthError = { throwDepthError() },
+        )
         needsComma = false
-        depth = localDepth + 1
         return this
     }
 
@@ -153,9 +141,12 @@ class GhostJsonWriter(
      * Ends the current JSON array.
      */
     fun endArray(): GhostJsonWriter {
-        buffer.writeByte(CLOSE_ARR_INT)
+        GhostJsonWriterHelpers.endArrayCore(
+            depth = depth,
+            writeByte = { sink.writeByte(it) },
+            setDepth = { depth = it },
+        )
         needsComma = true
-        depth--
         return this
     }
 
@@ -165,9 +156,9 @@ class GhostJsonWriter(
      */
     fun name(key: String): GhostJsonWriter {
         appendSeparator()
-        buffer.writeByte(QUOTE_INT)
+        sink.writeByte(QUOTE_INT)
         writeEscaped(key)
-        buffer.write(COLON_QUOTE_BS)
+        sink.write(COLON_QUOTE_BS)
         needsComma = false
         return this
     }
@@ -178,7 +169,7 @@ class GhostJsonWriter(
      */
     fun name(key: ByteString): GhostJsonWriter {
         appendSeparator()
-        buffer.write(key)
+        sink.write(key)
         needsComma = false
         return this
     }
@@ -198,7 +189,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: Int): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeIntValueRaw(value)
         needsComma = true
         return this
@@ -211,7 +202,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: Long): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeLongValueRaw(value)
         needsComma = true
         return this
@@ -220,7 +211,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: ULong): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeULongValueRaw(value)
         needsComma = true
         return this
@@ -233,7 +224,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeStringValueRaw(value)
         needsComma = true
         return this
@@ -246,7 +237,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: Boolean): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeBooleanValueRaw(value)
         needsComma = true
         return this
@@ -259,7 +250,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: Double): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeDoubleValueRaw(value)
         needsComma = true
         return this
@@ -272,7 +263,7 @@ class GhostJsonWriter(
     @InternalGhostApi
     fun writeField(header: ByteString, value: Float): GhostJsonWriter {
         appendSeparator()
-        buffer.write(header)
+        sink.write(header)
         writeFloatValueRaw(value)
         needsComma = true
         return this
@@ -342,13 +333,11 @@ class GhostJsonWriter(
      */
     fun value(value: Boolean): GhostJsonWriter {
         appendSeparator()
-        buffer.write(
-            if (value) {
-                TRUE_BS
-            } else {
-                FALSE_BS
-            }
-        )
+        if (value) {
+            sink.writeTrue()
+        } else {
+            sink.writeFalse()
+        }
         needsComma = true
         return this
     }
@@ -358,7 +347,7 @@ class GhostJsonWriter(
      */
     fun value(char: Char): GhostJsonWriter {
         appendSeparator()
-        buffer.writeQuotedBmpCodeUnit(char.code)
+        sink.writeQuotedBmpCodeUnit(char.code)
         needsComma = true
         return this
     }
@@ -368,7 +357,7 @@ class GhostJsonWriter(
      */
     fun nullValue(): GhostJsonWriter {
         appendSeparator()
-        buffer.write(NULL_BS)
+        sink.writeNull()
         needsComma = true
         return this
     }
@@ -380,7 +369,7 @@ class GhostJsonWriter(
      */
     fun rawValue(bytes: ByteArray): GhostJsonWriter {
         appendSeparator()
-        buffer.write(bytes)
+        sink.write(bytes)
         needsComma = true
         return this
     }
@@ -390,7 +379,7 @@ class GhostJsonWriter(
      */
     fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonWriter {
         appendSeparator()
-        buffer.write(bytes, offset, length)
+        sink.write(bytes, offset, length)
         needsComma = true
         return this
     }
@@ -404,13 +393,11 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
-        buffer.write(
-            if (value) {
-                TRUE_BS
-            } else {
-                FALSE_BS
-            }
-        )
+        if (value) {
+            sink.writeTrue()
+        } else {
+            sink.writeFalse()
+        }
     }
 
     /**
@@ -418,20 +405,13 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeIntValueRaw(value: Int) {
-        if (value in 0..9) {
-            buffer.writeByte(ZERO_INT + value)
-            return
-        }
-        if (value in -9..-1) {
-            buffer.writeByte(MINUS_INT)
-            buffer.writeByte(ZERO_INT - value)
-            return
-        }
-        if (value == Int.MIN_VALUE) {
-            buffer.write(MIN_INT_BS)
-            return
-        }
-        writeLongValueRawInternal(value.toLong())
+        GhostJsonWriterHelpers.writeIntValueRawCore(
+            value = value,
+            writeByte = { sink.writeByte(it) },
+            write2Bytes = { a, b -> sink.write2Bytes(a, b) },
+            writeMinIntBs = { sink.write(MIN_INT_BS) },
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) },
+        )
     }
 
     /**
@@ -439,60 +419,36 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeLongValueRaw(value: Long) {
-        if (value in 0L..9L) {
-            val intVal = value.toInt()
-            buffer.writeByte(ZERO_INT + intVal)
-            return
-        }
-        if (value in -9L..-1L) {
-            val intVal = value.toInt()
-            buffer.writeByte(MINUS_INT)
-            buffer.writeByte(ZERO_INT - intVal)
-            return
-        }
-        if (value == Int.MIN_VALUE.toLong()) {
-            buffer.write(MIN_INT_BS)
-            return
-        }
-        if (value == Long.MIN_VALUE) {
-            buffer.write(MIN_LONG_BS)
-            return
-        }
-        writeLongValueRawInternal(value)
+        GhostJsonWriterHelpers.writeLongValueRawCore(
+            value = value,
+            writeByte = { sink.writeByte(it) },
+            write2Bytes = { a, b -> sink.write2Bytes(a, b) },
+            writeMinIntBs = { sink.write(MIN_INT_BS) },
+            writeMinLongBs = { sink.write(MIN_LONG_BS) },
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) },
+        )
     }
 
     @InternalGhostApi
     fun writeULongValueRaw(value: ULong) {
-        if (value <= Long.MAX_VALUE.toULong()) {
-            writeLongValueRaw(value.toLong())
-        } else {
-            writeStringValueRaw(value.toString())
-        }
+        GhostJsonWriterHelpers.writeULongValueRawCore(
+            value = value,
+            writeLongValueRaw = { writeLongValueRaw(it) },
+            writeStringValueRaw = { writeStringValueRaw(it) },
+        )
     }
 
     /**
      * Internal implementation for writing Long values into the scratch buffer.
      */
     private fun writeLongValueRawInternal(value: Long) {
-        val scratchBuf = scratch ?: acquireScratch()
-        var localValue = value
-        val isNegative = localValue < 0
-        if (isNegative) {
-            if (localValue == Long.MIN_VALUE) {
-                buffer.write(MIN_LONG_BS)
-                return
-            }
-            localValue = -localValue
-        }
-
-        val scratchEnd = LONG_SCRATCH_SIZE
-        val pos = GhostWriterLongDigits.writeDigitsBytes(
-            absoluteValue = localValue,
-            negative = isNegative,
-            scratch = scratchBuf,
-            scratchEnd = scratchEnd,
+        GhostJsonWriterHelpers.writeLongValueRawInternalCore(
+            value = value,
+            scratch = scratch,
+            acquireScratch = { acquireScratch() },
+            writeMinLongBs = { sink.write(MIN_LONG_BS) },
+            writeBytes = { buf, offset, length -> sink.write(buf, offset, length) },
         )
-        buffer.write(scratchBuf, pos, scratchEnd - pos)
     }
 
     /**
@@ -500,57 +456,28 @@ class GhostJsonWriter(
      */
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
-        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
-            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &&
-            !(number == 0.0 && number.toRawBits() < 0)
-        ) {
-            writeLongValueRawInternal(number.toLong())
-            buffer.write(DOT_ZERO, 0, DOT_ZERO.size)
-            return
-        }
-
-        val scratchBuf = acquireScratch()
-        val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
-            value = number,
-            scratch = scratchBuf,
-            offset = 0,
+        GhostJsonWriterHelpers.writeDoubleValueRawCore(
+            number = number,
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) },
+            writeDotZero = { sink.writeDotZero() },
+            acquireScratch = { acquireScratch() },
+            writeBytes = { buf, offset, length -> sink.write(buf, offset, length) },
+            writeUtf8 = { sink.writeUtf8(it) },
+            throwNonFinite = { throw GhostJsonException(ERR_NON_FINITE, 0, 0) },
         )
-        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
-            if (!number.isFinite()) {
-                throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-            }
-            buffer.writeUtf8(number.toString())
-        } else if (bytesWrittenLength > 0) {
-            buffer.write(scratchBuf, 0, bytesWrittenLength)
-        }
     }
 
     @InternalGhostApi
     fun writeFloatValueRaw(number: Float) {
-        val doubleVal = number.toDouble()
-        if (doubleVal in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &&
-            doubleVal % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &&
-            !(number == 0.0f && number.toRawBits() < 0)
-        ) {
-            writeLongValueRawInternal(doubleVal.toLong())
-            buffer.write(DOT_ZERO, 0, DOT_ZERO.size)
-            return
-        }
-
-        val scratchBuf = acquireScratch()
-        val bytesWrittenLength = GhostDoubleFormatter.writeFloatDirect(
-            value = number,
-            scratch = scratchBuf,
-            offset = 0,
+        GhostJsonWriterHelpers.writeFloatValueRawCore(
+            number = number,
+            writeLongValueRawInternal = { writeLongValueRawInternal(it) },
+            writeDotZero = { sink.writeDotZero() },
+            acquireScratch = { acquireScratch() },
+            writeBytes = { buf, offset, length -> sink.write(buf, offset, length) },
+            writeUtf8 = { sink.writeUtf8(it) },
+            throwNonFinite = { throw GhostJsonException(ERR_NON_FINITE, 0, 0) },
         )
-        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {
-            if (!number.isFinite()) {
-                throw GhostJsonException(ERR_NON_FINITE, 0, 0)
-            }
-            buffer.writeUtf8(number.toString())
-        } else if (bytesWrittenLength > 0) {
-            buffer.write(scratchBuf, 0, bytesWrittenLength)
-        }
     }
 
     /**
@@ -559,7 +486,7 @@ class GhostJsonWriter(
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun appendSeparator() {
         if (needsComma) {
-            buffer.writeByte(COMMA_INT)
+            sink.writeByte(COMMA_INT)
             needsComma = false
         }
     }
@@ -571,27 +498,23 @@ class GhostJsonWriter(
     fun writeStringValueRaw(value: String) {
         val length = value.length
         if (length == 0) {
-            buffer.write(EMPTY_STRING_BS)
+            sink.write2Bytes(QUOTE_INT, QUOTE_INT)
             return
         }
 
+        // Short strings: scan for the first char that needs escaping / UTF-8. All-plain →
+        // writeQuotedAscii. Mixed → keep the ASCII prefix (breakIndex) so the slow path does
+        // not re-scan it (same shape as GhostJsonStringWriter).
         var breakIndex = 0
         if (length <= PLAIN_ASCII_FAST_PATH_LIMIT) {
-            val escapeMasks = ESCAPE_MASKS
             while (breakIndex < length) {
-                val code = value[breakIndex].code
-                if (code >= ASCII_LIMIT ||
-                    ((escapeMasks[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and
-                            BITMASK_UNIT) != 0L
-                ) {
+                if (!GhostJsonEscapeHelpers.isPlainAsciiSafe(value[breakIndex].code)) {
                     break
                 }
                 breakIndex++
             }
             if (breakIndex == length) {
-                buffer.writeByte(QUOTE_INT)
-                buffer.writeUtf8(value)
-                buffer.writeByte(QUOTE_INT)
+                sink.writeQuotedAscii(value, length)
                 return
             }
         }
@@ -600,32 +523,29 @@ class GhostJsonWriter(
     }
 
     private fun writeStringValueRawSlow(value: String, length: Int, breakIndex: Int) {
-        val scratchBuf = acquireScratch()
-        if (breakIndex == 0 && length + STRING_QUOTE_PAIR_BYTES <= scratchBuf.size) {
-            scratchBuf[0] = QUOTE_BYTE
-            writeEscapedIntoScratch(value, length, scratchBuf)
-            return
-        }
-
-        buffer.writeByte(QUOTE_INT)
-        if (breakIndex > 0) {
-            buffer.writeUtf8(value, 0, breakIndex)
-        }
-        writeEscaped(value, start = breakIndex)
-        buffer.writeByte(QUOTE_INT)
+        GhostJsonWriterHelpers.writeStringValueRawSlowCore(
+            value = value,
+            length = length,
+            breakIndex = breakIndex,
+            scratchBuf = acquireScratch(),
+            writeQuoteByte = { sink.writeByte(QUOTE_INT) },
+            writeUtf8Range = { text, begin, end -> sink.writeUtf8(text, begin, end) },
+            writeEscapedIntoScratch = { text, len, buf -> writeEscapedIntoScratch(text, len, buf) },
+            writeEscaped = { text, start -> writeEscaped(text, start) },
+        )
     }
 
     /**
-     * Helper to write escaped character bytes into the destination sink buffer.
+     * Helper to write escaped character bytes into the destination sink.
      */
     private fun writeEscaped(text: String, start: Int = 0) {
         GhostJsonEscapeHelpers.writeEscapedBytes(
             text = text,
             start = start,
             scratchBuf = acquireScratch(),
-            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
-            writeReplacement = { replacement -> buffer.write(replacement) },
-            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
+            writeBytes = { buf, offset, len -> sink.write(buf, offset, len) },
+            writeReplacement = { replacement -> sink.write(replacement) },
+            writeUtf8Range = { s, begin, end -> sink.writeUtf8(s, begin, end) },
         )
     }
 
@@ -637,21 +557,20 @@ class GhostJsonWriter(
             text = text,
             length = length,
             scratchBuf = scratchBuf,
-            writeBytes = { buf, offset, len -> buffer.write(buf, offset, len) },
-            writeReplacement = { replacement -> buffer.write(replacement) },
-            writeUtf8Range = { s, begin, end -> buffer.writeUtf8(s, begin, end) },
-            writeQuoteByte = { buffer.writeByte(QUOTE_INT) },
+            writeBytes = { buf, offset, len -> sink.write(buf, offset, len) },
+            writeReplacement = { replacement -> sink.write(replacement) },
+            writeUtf8Range = { s, begin, end -> sink.writeUtf8(s, begin, end) },
+            writeQuoteByte = { sink.writeByte(QUOTE_INT) },
         )
     }
 
     /**
      * Throws an exception when max depth limits are exceeded.
      */
-    private fun throwDepthError() {
+    private fun throwDepthError(): Nothing =
         throw GhostJsonException(
             "$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})",
             0,
             0
         )
-    }
 }

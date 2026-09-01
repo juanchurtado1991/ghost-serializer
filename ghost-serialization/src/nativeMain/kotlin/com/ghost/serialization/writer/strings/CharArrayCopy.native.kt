@@ -10,9 +10,9 @@ internal actual fun String.copyRangeToCharArray(
     startIndex: Int,
     endIndex: Int
 ) {
-    var i = startIndex
+    var index = startIndex
     var destIndex = destOffset
-    while (i < endIndex) {
-        dest[destIndex++] = this[i++]
+    while (index < endIndex) {
+        dest[destIndex++] = this[index++]
     }
 }

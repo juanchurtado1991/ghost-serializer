@@ -476,7 +476,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         }
 
         val scratchBuf = acquireScratch()
-        // Format double to a byte scratch then write it to flat char writer
         val byteScratch = acquireScratchBuffer(WRITER_SCRATCH_SIZE)
         try {
             val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(
@@ -490,7 +489,6 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
                 }
                 buffer.writeString(number.toString())
             } else if (bytesWrittenLength > 0) {
-                // Write formatted bytes as chars
                 for (i in 0 until bytesWrittenLength) {
                     scratchBuf[i] = byteScratch[i].toInt().toChar()
                 }
