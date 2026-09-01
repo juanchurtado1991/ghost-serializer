@@ -1,7 +1,10 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package com.ghost.serialization.writer.common
 
 import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
+import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
 import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
@@ -17,6 +20,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
 import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_ESCAPE_LENGTH
 import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
+import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
 import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
 
 /**
@@ -32,8 +36,17 @@ internal object GhostJsonEscapeHelpers {
      * (not a control char, `"`, `\`, or non-ASCII). Single source of truth for the
      * bitmask check duplicated across both byte JSON writers and this file.
      */
-    fun isPlainAsciiSafe(code: Int): Boolean =
+    inline fun isPlainAsciiSafe(code: Int): Boolean =
         code < ASCII_LIMIT &&
+                (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+
+    /**
+     * True when [code] can be emitted verbatim inside a JSON string on the char channel.
+     * Code units `>= ASCII_LIMIT` never need escaping there (unlike the byte writers, which
+     * must UTF-8 encode them) — below that, [ESCAPE_MASKS] rejects controls, `"`, and `\`.
+     */
+    inline fun isSafeUnescapedChar(code: Int): Boolean =
+        code >= ASCII_LIMIT ||
                 (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
 
     /**
@@ -241,6 +254,108 @@ internal object GhostJsonEscapeHelpers {
         } else {
             scratchBuf[scratchPos++] = QUOTE_BYTE
             writeBytes(scratchBuf, 0, scratchPos)
+        }
+    }
+
+    /**
+     * Char-array twin of [writeEscapedBytes] for the string JSON writer. Unlike the byte
+     * channel, code units `>= ASCII_LIMIT` never need escaping (see [isSafeUnescapedChar]) and
+     * an escaped char is always exactly two chars (`\` + [getEscapeSecondChar]), so there is no
+     * UTF-8-range or variable-length-replacement branch to mirror from the byte side.
+     */
+    inline fun writeEscapedChars(
+        text: String,
+        start: Int,
+        scratchBuf: CharArray,
+        writeChars: (scratch: CharArray, offset: Int, length: Int) -> Unit,
+        writeTwoChars: (first: Int, second: Int) -> Unit,
+        getEscapeSecondChar: (Int) -> Int,
+        writeUnicodeEscape: (code: Int, scratch: CharArray) -> Unit,
+    ) {
+        val length = text.length
+        var scratchPos = 0
+        var index = start
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (isSafeUnescapedChar(charCode)) {
+                scratchBuf[scratchPos++] = charCode.toChar()
+                if (scratchPos == scratchBuf.size) {
+                    writeChars(scratchBuf, 0, scratchPos)
+                    scratchPos = 0
+                }
+                index++
+                continue
+            }
+
+            if (scratchPos > 0) {
+                writeChars(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            val esc = getEscapeSecondChar(charCode)
+            if (esc != 0) {
+                writeTwoChars(BACKSLASH_INT, esc)
+            } else {
+                writeUnicodeEscape(charCode, scratchBuf)
+            }
+            index++
+        }
+
+        if (scratchPos > 0) {
+            writeChars(scratchBuf, 0, scratchPos)
+        }
+    }
+
+    /**
+     * Char-array twin of [writeEscapedIntoByteScratch] for the string JSON writer.
+     * [scratchBuf] already has the opening quote written at index 0.
+     */
+    inline fun writeEscapedIntoCharScratch(
+        text: String,
+        length: Int,
+        scratchBuf: CharArray,
+        writeChars: (scratch: CharArray, offset: Int, length: Int) -> Unit,
+        writeTwoChars: (first: Int, second: Int) -> Unit,
+        getEscapeSecondChar: (Int) -> Int,
+        writeUnicodeEscape: (code: Int, scratch: CharArray) -> Unit,
+        writeQuoteChar: () -> Unit,
+    ) {
+        var scratchPos = 1 // Start after the opening quote already written at index 0.
+        var index = 0
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (isSafeUnescapedChar(charCode)) {
+                scratchBuf[scratchPos++] = charCode.toChar()
+                index++
+                continue
+            }
+
+            if (scratchPos > 0) {
+                writeChars(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            val esc = getEscapeSecondChar(charCode)
+            if (esc != 0) {
+                writeTwoChars(BACKSLASH_INT, esc)
+            } else {
+                writeUnicodeEscape(charCode, scratchBuf)
+            }
+            index++
+        }
+
+        if (scratchPos + 1 > scratchBuf.size) {
+            if (scratchPos > 0) {
+                writeChars(scratchBuf, 0, scratchPos)
+            }
+            writeQuoteChar()
+        } else {
+            scratchBuf[scratchPos++] = CHAR_QUOTE
+            writeChars(scratchBuf, 0, scratchPos)
         }
     }
 }
