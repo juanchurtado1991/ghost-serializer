@@ -37,11 +37,9 @@ object GhostProto {
     }
 
     /**
-     * Encodes [value] using its registered [GhostSerializer]. proto3 JSON mapping (int64
-     * quoting, Base64 `bytes`, default-value omission) is already applied by the KSP-generated
-     * serializer for `@GhostProtoSerialization` classes, so this simply delegates to
-     * [Ghost.encodeToBytes] — kept here so callers have one consistent `GhostProto.*`
-     * surface for both directions instead of mixing it with `Ghost.*`.
+     * Encodes [value] using its registered [GhostSerializer]. proto3 JSON mapping is already
+     * applied by the KSP-generated serializer, so this delegates to [Ghost.encodeToBytes] —
+     * kept here for a consistent `GhostProto.*` surface on both directions.
      */
     inline fun <reified T : Any> encodeToBytes(value: T): ByteArray = Ghost.encodeToBytes(value)
 

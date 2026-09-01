@@ -51,7 +51,6 @@ class ProtoJsonNumericTest {
 
     @Test
     fun testBase64Decoding() {
-        // "YWJjMTIzIT8kKiYoKSctPUB+" is standard base64 for "abc123!?$*&()'-=@~"
         val reader = GhostProtoJsonFlatReader("\"YWJjMTIzIT8kKiYoKSctPUB+\"".encodeToByteArray())
         val decoded = reader.nextProtoBytes()
         assertEquals("abc123!?$*&()'-=@~", decoded.decodeToString())

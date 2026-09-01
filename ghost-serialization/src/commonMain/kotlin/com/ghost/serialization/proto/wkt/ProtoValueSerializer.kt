@@ -21,7 +21,6 @@ import com.ghost.serialization.parser.strings.nextDouble
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.parser.strings.readList
 import com.ghost.serialization.parser.strings.readMap
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -31,31 +30,6 @@ object ProtoValueSerializer : GhostSerializer<ProtoValue> {
     override val typeName: String get() = C.WKT_VALUE_TYPE
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoValue) {
-        when (value) {
-            is ProtoValue.Null -> writer.nullValue()
-            is ProtoValue.Number -> writer.value(value.value)
-            is ProtoValue.Str -> writer.value(value.value)
-            is ProtoValue.Bool -> writer.value(value.value)
-            is ProtoValue.Struct -> {
-                writer.beginObject()
-                for ((mapKey, mapValue) in value.value) {
-                    writer.name(mapKey)
-                    serialize(writer, mapValue)
-                }
-                writer.endObject()
-            }
-
-            is ProtoValue.List -> {
-                writer.beginArray()
-                for (listItem in value.value) {
-                    serialize(writer, listItem)
-                }
-                writer.endArray()
-            }
-        }
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoValue) {
         when (value) {
             is ProtoValue.Null -> writer.nullValue()
             is ProtoValue.Number -> writer.value(value.value)

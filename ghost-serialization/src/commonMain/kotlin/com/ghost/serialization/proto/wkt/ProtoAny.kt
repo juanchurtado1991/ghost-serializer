@@ -6,13 +6,11 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * `Any` contains an arbitrary serialized protocol buffer message along with a
- * URL that describes the type of the serialized message.
+ * `Any` contains an arbitrary serialized protocol buffer message along with a URL describing
+ * its type.
  *
- * [value] holds the raw JSON bytes of the WKT-style `"value"` sibling key verbatim
- * (e.g. `"123s"` for a packed `Duration`, or a full JSON object for a packed `Struct`).
- * Empty when the wire object had no `"value"` key. This preserves round-tripping without
- * a type registry to resolve [typeUrl] into a concrete message — see docs/wiki for details.
+ * [value] holds the raw JSON bytes of the WKT-style `"value"` sibling key verbatim (empty if
+ * absent) — this preserves round-tripping without a type registry to resolve [typeUrl].
  */
 data class ProtoAny(val typeUrl: String, val value: ByteArray) {
     override fun equals(other: Any?): Boolean {

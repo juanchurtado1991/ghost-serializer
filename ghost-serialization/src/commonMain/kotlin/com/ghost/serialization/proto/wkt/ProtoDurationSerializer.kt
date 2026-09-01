@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -20,10 +19,6 @@ object ProtoDurationSerializer : GhostSerializer<ProtoDuration> {
     override val typeName: String get() = C.WKT_DURATION_TYPE
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoDuration) {
-        writer.value(formatDuration(value))
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoDuration) {
         writer.value(formatDuration(value))
     }
 

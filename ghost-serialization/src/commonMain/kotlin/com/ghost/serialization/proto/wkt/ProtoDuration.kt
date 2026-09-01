@@ -7,10 +7,8 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * A Duration represents a signed, fixed-length span of time represented
- * as a count of seconds and fractions of seconds at nanosecond
- * resolution. It is independent of any calendar and concepts like "day"
- * or "month".
+ * A signed, fixed-length span of time as seconds + fractional nanoseconds, independent of
+ * any calendar or concepts like "day"/"month".
  */
 data class ProtoDuration(val seconds: Long, val nanos: Int) {
     init {

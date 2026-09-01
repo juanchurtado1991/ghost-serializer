@@ -7,7 +7,6 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -16,6 +15,7 @@ import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject
 import com.ghost.serialization.parser.strings.consumeKeySeparator
@@ -26,7 +26,6 @@ import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.proto.wkt.ProtoDuration
 import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.reflect.KClass
@@ -36,15 +35,6 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
     override val typeName: String = "ProtoEntryPointDevice"
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoEntryPointDevice) {
-        writer.beginObject()
-        writer.name("deviceId")
-        writer.value(value.deviceId.toString())
-        writer.name("label")
-        writer.value(value.label)
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoEntryPointDevice) {
         writer.beginObject()
         writer.name("deviceId")
         writer.value(value.deviceId.toString())

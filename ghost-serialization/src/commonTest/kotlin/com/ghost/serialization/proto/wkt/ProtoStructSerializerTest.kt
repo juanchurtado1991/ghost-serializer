@@ -1,9 +1,7 @@
 package com.ghost.serialization.proto.wkt
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
@@ -22,7 +20,7 @@ class ProtoStructSerializerTest {
     @Test
     fun flatWriter_serializesEmptyStruct() {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(byteWriter)
+        val writer = GhostJsonWriter(byteWriter)
         ProtoStructSerializer.serialize(writer, emptyMap())
         assertEquals("{}", byteWriter.toStringUtf8())
     }
@@ -30,7 +28,7 @@ class ProtoStructSerializerTest {
     @Test
     fun flatWriter_serializesStructWithMultipleEntries() {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(byteWriter)
+        val writer = GhostJsonWriter(byteWriter)
         val struct: ProtoStruct = linkedMapOf(
             "name" to ProtoValue.Str("ghost"),
             "active" to ProtoValue.Bool(true)
@@ -41,13 +39,13 @@ class ProtoStructSerializerTest {
 
     @Test
     fun flatReader_deserializesEmptyStruct() {
-        val reader = GhostJsonFlatReader("{}".encodeToByteArray())
+        val reader = GhostJsonReader("{}".encodeToByteArray())
         assertEquals(emptyMap(), ProtoStructSerializer.deserialize(reader))
     }
 
     @Test
     fun flatReader_deserializesStructWithMultipleEntries() {
-        val reader = GhostJsonFlatReader("""{"a":1.0,"b":"x"}""".encodeToByteArray())
+        val reader = GhostJsonReader("""{"a":1.0,"b":"x"}""".encodeToByteArray())
         val result = ProtoStructSerializer.deserialize(reader)
         assertEquals(2, result.size)
         assertEquals(ProtoValue.Number(1.0), result["a"])
@@ -57,7 +55,7 @@ class ProtoStructSerializerTest {
     @Test
     fun flatWriterAndReader_roundTripNestedStruct() {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(byteWriter)
+        val writer = GhostJsonWriter(byteWriter)
         val struct: ProtoStruct = mapOf(
             "nested" to ProtoValue.Struct(mapOf("inner" to ProtoValue.Number(42.0)))
         )
@@ -66,7 +64,7 @@ class ProtoStructSerializerTest {
         assertEquals("""{"nested":{"inner":42.0}}""", json)
 
         val parsed =
-            ProtoStructSerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+            ProtoStructSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(struct, parsed)
     }
 

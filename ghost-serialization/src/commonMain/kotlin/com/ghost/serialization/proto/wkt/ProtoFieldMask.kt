@@ -5,10 +5,7 @@ package com.ghost.serialization.proto.wkt
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-/**
- * `FieldMask` represents a set of symbolic field paths, for example:
- * paths: "f.a,b"
- */
+/** A set of symbolic field paths, e.g. paths: "f.a,b". */
 data class ProtoFieldMask(val paths: List<String>)
 
 internal fun parseFieldMask(pathsText: String): ProtoFieldMask {

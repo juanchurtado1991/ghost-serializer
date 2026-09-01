@@ -17,7 +17,6 @@ import com.ghost.serialization.parser.strings.consumeArraySeparator
 import com.ghost.serialization.parser.strings.consumeKeySeparator
 import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -30,15 +29,6 @@ object ProtoStructSerializer : GhostSerializer<ProtoStruct> {
     override val typeName: String get() = C.WKT_STRUCT_TYPE
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoStruct) {
-        writer.beginObject()
-        for ((mapKey, mapValue) in value) {
-            writer.name(mapKey)
-            ProtoValueSerializer.serialize(writer, mapValue)
-        }
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoStruct) {
         writer.beginObject()
         for ((mapKey, mapValue) in value) {
             writer.name(mapKey)

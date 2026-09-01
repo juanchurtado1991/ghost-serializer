@@ -9,14 +9,11 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
-    // Spec: "Values with nonzero fractional portions are not allowed"
-    // E.g. "1.0" ok, "1.5" error.
-    // Peek to see if there is a dot.
+    // Spec: nonzero fractional portions are not allowed ("1.0" ok, "1.5" error).
     val token = peekNextToken()
     val isQuoted = token == C.QUOTE_INT
 
-    // We parse via double if there's a dot, otherwise standard nextInt()
-    // To check if there's a dot without allocations:
+    // Scan for a dot without allocating, to decide double vs. int parse path.
     var hasDot = false
     var scanPos = position
     if (isQuoted) scanPos++

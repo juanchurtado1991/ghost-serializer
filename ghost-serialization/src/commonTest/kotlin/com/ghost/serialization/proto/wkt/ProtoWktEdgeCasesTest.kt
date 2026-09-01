@@ -46,7 +46,7 @@ class ProtoWktEdgeCasesTest {
         assertEquals("-9223372036854775808s", formattedDuration)
 
         val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
         ProtoInt64ValueSerializer.serialize(writer, ProtoInt64Value(Long.MIN_VALUE))
         assertEquals("\"-9223372036854775808\"", flatBuffer.toStringUtf8())
     }

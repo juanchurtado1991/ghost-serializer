@@ -20,7 +20,6 @@ class ProtoWktStructsTest {
 
     @Test
     fun testEmpty() {
-        // Should parse empty structures and successfully skip unknown fields
         val parsed = ProtoEmptySerializer.parseTimestampForTesting("{}")
         assertTrue(parsed is ProtoEmpty)
     }

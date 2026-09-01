@@ -5,7 +5,14 @@ package com.ghost.serialization.proto
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextFloat
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextLong
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,7 +34,7 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun plainFlatReaderRejectsQuotedInt32() {
-        val reader = GhostJsonFlatReader("""{"retries":"42"}""".encodeToByteArray())
+        val reader = GhostJsonReader("""{"retries":"42"}""".encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -46,8 +53,8 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun ghostDeserializeRejectsBareInt32WhenFieldIsQuotedOnlyOnWire() {
-        // Ghost path uses GhostJsonFlatReader — bare int32 still works for plain JSON models.
-        val reader = GhostJsonFlatReader("""{"retries":42}""".encodeToByteArray())
+        // Ghost path uses GhostJsonReader — bare int32 still works for plain JSON models.
+        val reader = GhostJsonReader("""{"retries":42}""".encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -59,7 +66,7 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun ghostDeserializeRejectsQuotedInt64OnPlainFlatReader() {
-        val reader = GhostJsonFlatReader("""{"deviceId":"42"}""".encodeToByteArray())
+        val reader = GhostJsonReader("""{"deviceId":"42"}""".encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -98,7 +105,7 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun plainFlatReaderRejectsQuotedNaN() {
-        val reader = GhostJsonFlatReader("""{"v":"NaN"}""".encodeToByteArray())
+        val reader = GhostJsonReader("""{"v":"NaN"}""".encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -149,7 +156,7 @@ class GhostProtoLeniencyTest {
     @Test
     fun plainFlatReaderTruncatesBareFractionalToInt() {
         // Plain JSON reader truncates 1.5 → 1; proto reader rejects fractional int32 outright.
-        val plainReader = GhostJsonFlatReader("1.5".encodeToByteArray())
+        val plainReader = GhostJsonReader("1.5".encodeToByteArray())
         assertEquals(1, plainReader.nextInt())
     }
 }

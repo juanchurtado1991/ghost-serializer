@@ -3,9 +3,9 @@
 package com.ghost.serialization.parser.proto
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 

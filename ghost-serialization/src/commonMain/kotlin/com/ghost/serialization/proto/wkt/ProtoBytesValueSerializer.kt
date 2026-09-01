@@ -12,7 +12,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -32,20 +31,15 @@ object ProtoBytesValueSerializer : GhostSerializer<ProtoBytesValue> {
         writer.value(encodeBase64String(value.value))
     }
 
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoBytesValue) {
-        writer.value(encodeBase64String(value.value))
-    }
-
     override fun serialize(writer: GhostJsonStringWriter, value: ProtoBytesValue) {
         writer.value(encodeBase64String(value.value))
     }
 
-    // Reader-agnostic: works on any reader flavor via nextString() + shared decoder, rather
-    // than requiring the pooled-scratch-buffer fast path on GhostProtoJsonFlatReader
-    // specifically.
     override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
         ProtoBytesValue(decodeBase64String(reader.nextString()))
 
+    // Uses the pooled-scratch-buffer fast path when [reader] is specifically a
+    // GhostProtoJsonFlatReader; falls back to the shared decoder for any other reader flavor.
     override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
         if (reader is GhostProtoJsonFlatReader) {
             return ProtoBytesValue(reader.nextProtoBytes())

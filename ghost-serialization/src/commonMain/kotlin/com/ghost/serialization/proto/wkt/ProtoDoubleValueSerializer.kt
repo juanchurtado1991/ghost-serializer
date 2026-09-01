@@ -9,7 +9,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextDouble
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextDouble
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -26,10 +25,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 object ProtoDoubleValueSerializer : GhostSerializer<ProtoDoubleValue> {
     override val typeName: String get() = C.WKT_DOUBLE_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoDoubleValue) {
-        writer.value(value.value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoDoubleValue) {
         writer.value(value.value)
     }
 

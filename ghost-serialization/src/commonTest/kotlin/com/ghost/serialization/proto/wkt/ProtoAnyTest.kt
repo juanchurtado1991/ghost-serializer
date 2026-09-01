@@ -45,7 +45,7 @@ class ProtoAnyTest {
         assertEquals("{\"a\":1,\"b\":\"c\"}", parsed.value.decodeToString())
 
         val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(256)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
         ProtoAnySerializer.serialize(writer, parsed)
         assertEquals(json, flatBuffer.toStringUtf8())
 

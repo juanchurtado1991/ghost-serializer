@@ -4,9 +4,9 @@ package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -30,12 +30,12 @@ class ProtoWktTest {
     fun fieldMaskSerializerRoundTrips() {
         val original = ProtoFieldMask(listOf("user.display_name", "photo"))
         val buffer = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(buffer)
+        val writer = GhostJsonWriter(buffer)
         ProtoFieldMaskSerializer.serialize(writer, original)
         val json = buffer.toByteArray().decodeToString()
         assertEquals("\"user.displayName,photo\"", json)
         val restored =
-            ProtoFieldMaskSerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+            ProtoFieldMaskSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals(original, restored)
         assertEquals(
             original,

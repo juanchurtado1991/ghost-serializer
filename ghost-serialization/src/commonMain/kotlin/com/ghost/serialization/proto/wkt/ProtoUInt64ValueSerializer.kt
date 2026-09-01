@@ -9,7 +9,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -29,10 +28,6 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 object ProtoUInt64ValueSerializer : GhostSerializer<ProtoUInt64Value> {
     override val typeName: String get() = C.WKT_UINT64_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoUInt64Value) {
-        writer.value(value.value.toString())
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoUInt64Value) {
         writer.value(value.value.toString())
     }
 

@@ -1,9 +1,7 @@
 package com.ghost.serialization.proto.wkt
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
@@ -21,7 +19,7 @@ class ProtoAnyExtraCoverageTest {
     @Test
     fun deserialize_skipsUnrecognizedKeys() {
         val json = """{"@type":"type.googleapis.com/x","extra":"ignored","value":"1s"}"""
-        val parsed = ProtoAnySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        val parsed = ProtoAnySerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals("type.googleapis.com/x", parsed.typeUrl)
         assertEquals("\"1s\"", parsed.value.decodeToString())
     }
@@ -29,7 +27,7 @@ class ProtoAnyExtraCoverageTest {
     @Test
     fun deserialize_toleratesValueKeyBeforeTypeUrlKey() {
         val json = """{"value":"1s","@type":"type.googleapis.com/x"}"""
-        val parsed = ProtoAnySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+        val parsed = ProtoAnySerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
         assertEquals("type.googleapis.com/x", parsed.typeUrl)
         assertEquals("\"1s\"", parsed.value.decodeToString())
     }
@@ -67,7 +65,7 @@ class ProtoAnyExtraCoverageTest {
     @Test
     fun flatWriter_omitsValueKeyWhenEmpty() {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostJsonFlatWriter(byteWriter)
+        val writer = GhostJsonWriter(byteWriter)
         ProtoAnySerializer.serialize(writer, ProtoAny("type.googleapis.com/x", ByteArray(0)))
         assertEquals("""{"@type":"type.googleapis.com/x"}""", byteWriter.toStringUtf8())
     }

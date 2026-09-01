@@ -3,10 +3,10 @@
 package com.ghost.serialization.parser.proto
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.bytes.nextDoubleExtension
 import com.ghost.serialization.parser.bytes.nextFloatExtension
 import com.ghost.serialization.parser.bytes.nextLongExtension
-import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
@@ -18,7 +18,6 @@ internal fun GhostProtoJsonFlatReader.nextProtoFloat(): Float {
             val b0 = getByte(start)
             val b1 = getByte(start + 1)
             val b2 = getByte(start + 2)
-            // check closing quote
             if (start + C.NAN_QUOTED_LEN - 1 <= limit && getByte(start + C.NAN_QUOTED_LEN - 2) == C.QUOTE_INT) {
                 if (b0 == C.N_UPPER_BYTE_INT && b1 == C.A_LOWER_BYTE_INT && b2 == C.N_UPPER_BYTE_INT) { // "NaN"
                     position = start + C.NAN_QUOTED_LEN - 1
@@ -100,8 +99,7 @@ internal fun GhostProtoJsonFlatReader.nextProtoDouble(): Double {
 }
 
 private fun GhostProtoJsonFlatReader.matchInfinityBytes(start: Int): Boolean {
-    // Infinity has 8 characters: I, n, f, i, n, i, t, y
-    // We already checked 'I' (73) in the caller, verify remaining 7 bytes
+    // Caller already checked 'I'; verify the remaining 7 bytes of "Infinity".
     return getByte(start + 1) == C.N_LOWER_BYTE_INT &&
             getByte(start + 2) == C.F_LOWER_BYTE_INT &&
             getByte(start + 3) == C.I_LOWER_BYTE_INT &&
@@ -157,7 +155,6 @@ internal fun GhostProtoJsonFlatReader.readProtoEnum(options: JsonReaderOptions):
         }
         throwError(C.ERR_UNKNOWN_ENUM)
     } else {
-        // Read as integer value index
         return nextInt()
     }
 }

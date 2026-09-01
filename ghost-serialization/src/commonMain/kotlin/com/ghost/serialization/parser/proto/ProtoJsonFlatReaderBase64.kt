@@ -25,10 +25,8 @@ internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
             if (byteCode <= C.SPACE_INT) continue
             chunk[chunkIndex++] = byteCode
             if (chunkIndex == 4) {
-                // Chars outside the LUT's range (any non-Latin-1 code unit) are never valid
-                // base64 alphabet members — bounds-check rather than indexing lut[] directly,
-                // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
-                // documented parse error.
+                // Bounds-check rather than indexing lut[] directly: a non-Latin-1 code unit would
+                // throw ArrayIndexOutOfBoundsException instead of the documented parse error.
                 val value0 = if (chunk[0] < lut.size) lut[chunk[0]] else -1
                 val value1 = if (chunk[1] < lut.size) lut[chunk[1]] else -1
                 val value2 = if (chunk[2] < lut.size) lut[chunk[2]] else -1

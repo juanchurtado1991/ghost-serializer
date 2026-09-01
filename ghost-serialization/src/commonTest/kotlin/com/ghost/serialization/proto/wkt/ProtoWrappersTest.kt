@@ -56,7 +56,7 @@ class ProtoWrappersTest {
         val bytes = "abc".encodeToByteArray()
         val wrapper = ProtoBytesValue(bytes)
         val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(1024)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
         ProtoBytesValueSerializer.serialize(writer, wrapper)
         val serializedJson = flatBuffer.toStringUtf8()
         assertEquals("\"YWJj\"", serializedJson)
@@ -78,7 +78,7 @@ class ProtoWrappersTest {
         val viaStreaming = ProtoBytesValueSerializer.deserialize(streamingReader)
         assertEquals("abc", viaStreaming.value.decodeToString())
 
-        val plainFlatReader = com.ghost.serialization.parser.bytes.GhostJsonFlatReader(
+        val plainFlatReader = com.ghost.serialization.parser.streaming.GhostJsonReader(
             "\"YWJj\"".encodeToByteArray()
         )
         val viaPlainFlat = ProtoBytesValueSerializer.deserialize(plainFlatReader)
@@ -134,7 +134,7 @@ class ProtoWrappersTest {
         assertEquals(ULong.MAX_VALUE, parsed.value)
 
         val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonFlatWriter(flatBuffer)
+        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
         ProtoUInt64ValueSerializer.serialize(writer, parsed)
         assertEquals(maxUInt64Json, flatBuffer.toStringUtf8())
     }

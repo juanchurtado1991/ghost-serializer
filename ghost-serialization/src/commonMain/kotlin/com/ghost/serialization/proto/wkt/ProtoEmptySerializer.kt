@@ -17,7 +17,6 @@ import com.ghost.serialization.parser.strings.consumeKeySeparator
 import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.parser.strings.skipValue
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -30,10 +29,6 @@ object ProtoEmptySerializer : GhostSerializer<ProtoEmpty> {
     override val typeName: String get() = C.WKT_EMPTY_TYPE
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoEmpty) {
-        writer.beginObject().endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoEmpty) {
         writer.beginObject().endObject()
     }
 

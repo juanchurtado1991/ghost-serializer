@@ -17,10 +17,9 @@ import kotlin.reflect.KClass
  * Maps `typeUrl` strings to the Kotlin types packed inside a [ProtoAny], so `pack`/`unpack`
  * work without the caller manually juggling bytes.
  *
- * Registration is independent of [Ghost]'s own serializer registry — the type still needs a
- * `GhostSerializer` registered there too (e.g. via `@GhostProtoSerialization` + KSP, or a manual
- * `GhostRegistry`). This registry only remembers which
- * `typeUrl` string corresponds to which [KClass].
+ * Independent of [Ghost]'s serializer registry — the type still needs a `GhostSerializer`
+ * registered there too (e.g. via `@GhostProtoSerialization` + KSP). This registry only
+ * remembers which `typeUrl` corresponds to which [KClass].
  *
  * ```kotlin
  * ProtoAnyRegistry.register<DeviceRebooted>("type.googleapis.com/myapp.DeviceRebooted")
