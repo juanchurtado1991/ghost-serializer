@@ -1,6 +1,11 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 internal object YamlCapableDtoSerializer :
@@ -8,34 +13,21 @@ internal object YamlCapableDtoSerializer :
     GhostYamlSerializer<YamlCapableDto> {
     override val typeName: String = "YamlCapableDto"
     override fun serialize(
-        writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+        writer: GhostJsonWriter,
         value: YamlCapableDto
     ) = Unit
 
-    override fun serialize(
-        writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
-        value: YamlCapableDto
-    ) = Unit
-
-    override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): YamlCapableDto =
+    override fun deserialize(reader: GhostJsonReader): YamlCapableDto =
         YamlCapableDto(0)
 
-    override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): YamlCapableDto =
-        YamlCapableDto(0)
-
-    override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): YamlCapableDto =
+    override fun deserialize(reader: GhostJsonStringReader): YamlCapableDto =
         YamlCapableDto(0)
 
     override fun serialize(
-        writer: com.ghost.serialization.writer.yaml.GhostYamlWriter,
+        writer: GhostYamlWriter,
         value: YamlCapableDto
     ) = Unit
 
-    override fun serialize(
-        writer: com.ghost.serialization.writer.yaml.GhostYamlFlatWriter,
-        value: YamlCapableDto
-    ) = Unit
-
-    override fun deserialize(reader: com.ghost.serialization.parser.yaml.GhostYamlFlatReader): YamlCapableDto =
+    override fun deserialize(reader: GhostYamlFlatReader): YamlCapableDto =
         YamlCapableDto(0)
 }

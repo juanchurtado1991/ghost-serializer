@@ -11,7 +11,7 @@ import okio.Buffer
 
 /**
  * Round-trip fuzzing for [GhostYamlWriter] — the Okio-streaming counterpart to
- * `GhostYamlWriterFuzzTest` (which only covers [com.ghost.serialization.writer.yaml.GhostYamlFlatWriter]).
+ * `GhostYamlWriterFuzzTest` (which only covers [com.ghost.serialization.writer.yaml.GhostYamlWriter]).
  * Genuinely separate implementation, not a thin wrapper: `GhostYamlWriter.name(String)` used to
  * have **no** key-quoting check at all (a doc comment on `GhostYamlWriterHelpers` said so
  * explicitly), so every mapping key went out bare/unescaped — `name("a: b")` produced YAML

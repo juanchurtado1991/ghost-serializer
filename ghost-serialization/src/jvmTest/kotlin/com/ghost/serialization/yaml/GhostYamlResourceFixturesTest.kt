@@ -13,7 +13,6 @@ class GhostYamlResourceFixturesTest {
     fun `parses spring_boot_app yaml dataset without crash`() {
         val yaml = readResource("yaml/spring_boot_app.yaml")
         val result = parseMap(yaml)
-        // Top-level keys must be present
         assertTrue(result.containsKey("spring"))
         assertTrue(result.containsKey("server"))
         assertTrue(result.containsKey("management"))
@@ -169,7 +168,7 @@ class GhostYamlResourceFixturesTest {
         assertEquals(
             "null",
             result["null_as_string"]
-        ) // !!str null is actually parsed as null or string "null"? Wait, in YAML 1.2, tag !!str forces scalar to be string. So it should be string "null".
+        ) // !!str forces a string per YAML 1.2, not the null scalar
         assertEquals("0xFF", result["hex_as_string"])
 
         assertEquals(42L, result["explicit_int"])
@@ -206,33 +205,28 @@ class GhostYamlResourceFixturesTest {
         val yaml = readResource("yaml/edge_anchors.yaml")
         val result = parseMap(yaml)
 
-        // base_config
         @Suppress("UNCHECKED_CAST")
         val baseConfig = result["base_config"] as Map<String, Any?>
         assertEquals(30L, baseConfig["timeout"])
         assertEquals(3L, baseConfig["retries"])
         assertEquals("INFO", baseConfig["log_level"])
 
-        // service_a
         @Suppress("UNCHECKED_CAST")
         val serviceA = result["service_a"] as Map<String, Any?>
         assertEquals(30L, serviceA["timeout"])
         assertEquals("service-a", serviceA["name"])
         assertEquals(8080L, serviceA["port"])
 
-        // service_b
         @Suppress("UNCHECKED_CAST")
         val serviceB = result["service_b"] as Map<String, Any?>
         assertEquals(60L, serviceB["timeout"]) // overridden
         assertEquals("service-b", serviceB["name"])
         assertEquals(8081L, serviceB["port"])
 
-        // default_host
         assertEquals("localhost", result["default_host"])
         assertEquals("localhost", result["db_host"])
         assertEquals("localhost", result["cache_host"])
 
-        // project_a
         @Suppress("UNCHECKED_CAST")
         val projectA = result["project_a"] as Map<String, Any?>
 
@@ -241,27 +235,14 @@ class GhostYamlResourceFixturesTest {
         assertEquals(3, tagsA.size)
         assertEquals("kotlin", tagsA[0])
 
-        // service_prod (multiple merge)
+        // Multi-key merge (<<: [*defaults, *prod]): earlier sources win, so defaults'
+        // log_level/max_connections survive over prod's.
         @Suppress("UNCHECKED_CAST")
         val serviceProd = result["service_prod"] as Map<String, Any?>
         assertEquals(true, serviceProd["enabled"])
-        // Wait, standard YAML resolution in a merge list:
-        // defaults is &defaults (enabled: true, log_level: WARN, max_connections: 10)
-        // prod is &prod (log_level: ERROR, max_connections: 100)
-        // merge order: defaults then prod. The first occurrences in the merge list take precedence.
-        // So log_level from defaults (WARN) or prod (ERROR)?
-        // If we merge defaults then prod:
-        // map starts empty. For each map in sequence:
-        // add keys that are not present.
-        // So defaults is merged first: map gets (enabled -> true, log_level -> WARN, max_connections -> 10).
-        // Then prod is merged: log_level and max_connections are already in map, so they are not overwritten.
-        // So log_level is WARN, max_connections is 10.
-        // Wait, let's verify if the test expects WARN or ERROR depending on spec.
-        // Let's assert what service_prod should contain based on standard YAML or custom override.
         assertEquals("WARN", serviceProd["log_level"])
         assertEquals(10L, serviceProd["max_connections"])
 
-        // database_defaults
         @Suppress("UNCHECKED_CAST")
         val databases = result["databases"] as Map<String, Any?>
 

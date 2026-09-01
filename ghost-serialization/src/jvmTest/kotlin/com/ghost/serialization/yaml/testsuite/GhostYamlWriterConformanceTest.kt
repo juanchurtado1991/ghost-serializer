@@ -9,7 +9,7 @@ import java.util.stream.Stream
 
 /**
  * Runs [GhostYamlTreeWriter] (a hand-rolled bridge from an already-decoded tree to
- * `GhostYamlFlatWriter`'s low-level API) against every
+ * `GhostYamlWriter`'s low-level API) against every
  * vendored yaml-test-suite case the reader can successfully decode, checking two things:
  *
  * - [roundTripConformance]: does `decode -> encode -> decode` produce the same tree as the

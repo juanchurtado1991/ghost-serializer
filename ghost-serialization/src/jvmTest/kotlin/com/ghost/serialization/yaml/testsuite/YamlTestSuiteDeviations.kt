@@ -6,12 +6,10 @@ data class DeviationCase(val id: String, val reason: String)
 /** Builds a [DeviationCase]: `"9C9N" because "Wrong indented flow sequence"`. */
 infix fun String.because(reason: String): DeviationCase = DeviationCase(this, reason)
 
-// Grouped reasons, not per-case free text: each of these describes a real, distinct category of
+// Grouped reasons, not per-case free text: each names a real, distinct category of
 // unimplemented/incomplete YAML 1.2 spec surface identified while triaging the yaml-test-suite
-// run for issue #17/#18, not a placeholder. See that issue for the full category breakdown and
-// case counts. REASON_MISC is the honest exception — composite spec examples or single edge
-// cases that combine several of the above (or something not yet individually diagnosed) rather
-// than a clean single category.
+// run for issue #17/#18. REASON_MISC is the honest exception — composite or not-yet-individually-
+// diagnosed cases.
 internal const val REASON_ANCHOR_ALIAS = "Anchors/aliases in this position (flow collections, mapping keys, multiple anchors, or specific placements) not fully implemented"
 internal const val REASON_BLOCK_SCALAR = "Block scalar (|/>) edge case beyond the indentation-indicator/root-indent/trailing-text fixes already landed"
 internal const val REASON_COMMENT = "Comment-placement edge case (between continuation lines, immediately after specific tokens) not fully implemented"
@@ -49,19 +47,14 @@ internal val REASON_LABELS: Map<String, String> = mapOf(
 
 /**
  * Known, tracked gaps between Ghost's YAML decoding and the yaml-test-suite's expectations.
- *
- * Philosophy (adapted from `snakeyaml-engine-kmp`'s own `Deviations.kt`): unexplained or
- * deliberate divergences get tracked here by case id with a one-line reason — they are not
- * silently skipped, and their presence is not used to claim 100% spec compliance. Delete an
- * entry once the underlying gap is actually fixed;
- * [GhostYamlTestSuiteConformanceTest.printConformanceSummaryAndValidateDeviations] fails loudly
- * if an entry's id no longer matches any loaded case (e.g. after refreshing the vendored
- * snapshot), so stale entries can't linger unnoticed.
+ * Tracked by case id with a one-line reason rather than silently skipped, so their presence isn't
+ * mistaken for 100% spec compliance; delete an entry once its gap is fixed —
+ * [GhostYamlTestSuiteConformanceTest.printConformanceSummaryAndValidateDeviations] fails loudly if
+ * an id no longer matches a loaded case.
  *
  * Two categories, mirroring the two checks in [GhostYamlTestSuiteConformanceTest]:
- * - [deviationsInOutcome]: Ghost's parse-succeeds/fails outcome itself disagrees with the case.
- * - [deviationsInValue]: Ghost parses successfully, as expected, but the decoded value doesn't
- *   match the case's `in.json` fixture.
+ * [deviationsInOutcome] (parse-succeeds/fails outcome disagrees) and [deviationsInValue] (parses
+ * as expected, but decoded value doesn't match `in.json`).
  */
 val deviationsInOutcome: Set<DeviationCase> = setOf(
     "35KP" because REASON_TAG, // Tags for Root Objects
@@ -77,12 +70,12 @@ val deviationsInOutcome: Set<DeviationCase> = setOf(
     "M6YH" because REASON_INDENTATION, // Block sequence indentation
     "N4JP" because REASON_INDENTATION, // Bad indentation in mapping
     "P2EQ" because REASON_MISC, // Invalid sequene item on same line as previous item
-    "Q9WF" because REASON_FLOW_COLLECTION, // Spec Example 6.12. Separation Spaces (flow mapping used as an implicit block-mapping key: readKey has no bracket-depth tracking, so it breaks at the key's own first inner ':' instead of treating "{ first: Sammy, last: Sosa }" as one unit)
+    "Q9WF" because REASON_FLOW_COLLECTION, // Spec 6.12: readKey has no bracket-depth tracking, so a flow mapping used as an implicit key breaks at its own first inner ':'
     "QB6E" because REASON_INDENTATION, // Wrong indented multiline quoted scalar
     "RZP5" because REASON_COMMENT, // Various Trailing Comments [1.3]
     "U44R" because REASON_INDENTATION, // Bad indentation in mapping (2)
     "UV7Q" because REASON_TAB, // Legal tab after indentation
-    "V9D5" because REASON_EXPLICIT_KEY, // Spec Example 8.19. Compact Block Mappings (an explicit key's compact-notation nested mapping doesn't stop at the right place: it swallows the outer pair's own ": value" continuation line as a second entry of itself instead of returning control to readExplicitKeyEntry)
+    "V9D5" because REASON_EXPLICIT_KEY, // Spec 8.19: explicit key's compact nested mapping swallows the outer pair's ": value" line instead of returning to readExplicitKeyEntry
     "VJP3_00" because REASON_FLOW_COLLECTION, // Flow collections over many lines
     "X38W" because REASON_ANCHOR_ALIAS, // Aliases in Flow Objects
     "XW4D" because REASON_COMMENT, // Various Trailing Comments

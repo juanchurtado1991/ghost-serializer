@@ -13,19 +13,19 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Direct unit tests for [GhostYamlFlatWriter], covering the same scenarios as
+ * Direct unit tests for [GhostYamlWriter], covering the same scenarios as
  * `GhostFlatWriterEdgeCaseTest`.
  */
-class GhostYamlFlatWriterEdgeCaseTest {
+class GhostYamlWriterEdgeCaseTest {
 
-    private fun writerToString(block: (GhostYamlFlatWriter) -> Any?): String {
+    private fun writerToString(block: (GhostYamlWriter) -> Any?): String {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostYamlFlatWriter(byteWriter)
+        val writer = GhostYamlWriter(byteWriter)
         block(writer)
         return byteWriter.toStringUtf8()
     }
 
-    private fun roundTripScalar(key: String, write: (GhostYamlFlatWriter) -> Unit): Any? {
+    private fun roundTripScalar(key: String, write: (GhostYamlWriter) -> Unit): Any? {
         val yaml = writerToString { w ->
             w.beginObject()
             w.name(key)
@@ -330,7 +330,7 @@ class GhostYamlFlatWriterEdgeCaseTest {
     fun writerRespectsMaxDepth() {
         assertFailsWith<GhostYamlException> {
             val byteWriter = FlatByteArrayWriter()
-            val writer = GhostYamlFlatWriter(byteWriter)
+            val writer = GhostYamlWriter(byteWriter)
             repeat(65) { writer.beginObject().name("a") }
         }
     }
@@ -341,7 +341,7 @@ class GhostYamlFlatWriterEdgeCaseTest {
         // only the 65th (currentDepth == MAX_DEPTH) should throw. Regression test for the
         // off-by-one that undersized the contexts/itemCounts arrays by one element.
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostYamlFlatWriter(byteWriter)
+        val writer = GhostYamlWriter(byteWriter)
         repeat(64) { writer.beginObject().name("a") }
         writer.value(1)
     }
@@ -598,7 +598,7 @@ class GhostYamlFlatWriterEdgeCaseTest {
     @Test
     fun resetAllowsWriterReuseAfterBufferReset() {
         val byteWriter = FlatByteArrayWriter()
-        val writer = GhostYamlFlatWriter(byteWriter)
+        val writer = GhostYamlWriter(byteWriter)
 
         writer.beginObject().name("a").value(1).endObject()
         assertTrue(byteWriter.toStringUtf8().contains("a:"))

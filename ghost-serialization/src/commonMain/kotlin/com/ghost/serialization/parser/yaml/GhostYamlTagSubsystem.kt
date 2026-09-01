@@ -35,8 +35,8 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
         }
         val tagLen = position - tagStart
         // A %TAG directive redefining the secondary handle ("!!") overrides the core schema —
-        // "!!int" under a redefined "!!" is that app's custom "int" tag, not YAML's actual
-        // integer type, so it must not be resolved (or type-coerced) as one.
+        // "!!int" under a redefined "!!" is the app's custom "int" tag, not YAML's integer
+        // type, so it must not be resolved (or type-coerced) as one.
         val customSecondaryPrefix = tagDirectives[C.STR_EXCLAMATION + C.STR_EXCLAMATION]
         if (customSecondaryPrefix != null) {
             if (tagLen > 0) resolvedTag = customSecondaryPrefix + localRawData.decodeToString(tagStart, tagStart + tagLen)
@@ -80,10 +80,9 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
                     resolvedTag = rawTagName
                 }
             } else {
-                // Bare "!" with nothing else on this token — YAML's "non-specific tag", which
-                // forces the scalar to resolve as a string rather than running the usual
-                // null/bool/int/float cascade (e.g. "! 12" must decode to the string "12", not
-                // the integer 12).
+                // Bare "!" with nothing else — YAML's "non-specific tag", forcing the scalar to
+                // resolve as a string instead of running the usual null/bool/int/float cascade
+                // (e.g. "! 12" must decode to string "12", not integer 12).
                 tagType = GhostYamlTags.TAG_STR
             }
         }
@@ -136,10 +135,10 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
     return value
 }
 
-/** Flow indicators (`,[]{}`) end a tag name the same way whitespace does — a tag name can never
- *  contain one, in either context — but *stopping* there is only valid inside an actual flow
- *  collection (a tag-only entry like `!!str,`); in block context a tag directly touching one of
- *  these with no separating whitespace is invalid, same as any other unexpected character.
+/**
+ * Flow indicators (`,[]{}`) end a tag name like whitespace does — a tag name can never contain
+ * one — but *stopping* there is only valid inside a flow collection (a tag-only entry like
+ * `!!str,`); in block context a tag touching one with no separating whitespace is invalid.
  */
 private fun isTagNameTerminator(currByte: Byte): Boolean =
     currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||

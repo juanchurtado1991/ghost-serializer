@@ -7,10 +7,10 @@ import com.code_intelligence.jazzer.junit.FuzzTest
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
 /**
- * Coverage-guided robustness + round-trip fuzzing for [GhostYamlFlatWriter], the counterpart to
+ * Coverage-guided robustness + round-trip fuzzing for [GhostYamlWriter], the counterpart to
  * `GhostYamlFuzzTest` (which only fuzzes the reader). The writer's hand-rolled scalar escaping
  * (`writeEscaped`) and bare-vs-quoted key heuristic (`keyNeedsQuoting`) are exactly the kind of
  * byte-level, no-bounds-checking code this session's other fuzz tests already found real bugs in
@@ -38,7 +38,7 @@ class GhostYamlWriterFuzzTest {
         val expected = canonicalize(data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostYamlFlatWriter(byteWriter).beginObject().name("v").value(expected).endObject()
+        GhostYamlWriter(byteWriter).beginObject().name("v").value(expected).endObject()
 
         val decoded = GhostYamlFlatReader(byteWriter.toByteArray()).readDocument()
         check(decoded is Map<*, *> && decoded["v"] == expected) {
@@ -52,7 +52,7 @@ class GhostYamlWriterFuzzTest {
         val expected = canonicalize(data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostYamlFlatWriter(byteWriter).beginObject().name(expected).value(1).endObject()
+        GhostYamlWriter(byteWriter).beginObject().name(expected).value(1).endObject()
 
         val decoded = GhostYamlFlatReader(byteWriter.toByteArray()).readDocument()
         check(decoded is Map<*, *> && decoded.keys.singleOrNull() == expected) {

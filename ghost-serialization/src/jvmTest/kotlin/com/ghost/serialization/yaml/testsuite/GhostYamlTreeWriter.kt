@@ -2,12 +2,12 @@ package com.ghost.serialization.yaml.testsuite
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
 /**
  * Test-only bridge: encodes an `Any?` tree (`Map<String, Any?>`/`List<Any?>`/`String`/`Long`/
  * `Double`/`Boolean`/`null` — exactly what `GhostYamlFlatReader`'s
- * `readDocument()`/`readAllDocuments()` decode into) by driving [GhostYamlFlatWriter]'s low-level
+ * `readDocument()`/`readAllDocuments()` decode into) by driving [GhostYamlWriter]'s low-level
  * `beginObject`/`name`/`value`/`endObject` API directly, bypassing the KSP-generated
  * per-class `GhostYamlSerializer<T>` path entirely. Lets the writer conformance harness reuse the
  * exact decoded trees the reader conformance harness already produces, instead of needing one
@@ -19,7 +19,7 @@ internal object GhostYamlTreeWriter {
     /** Encodes a single document's value. */
     fun encode(value: Any?): String {
         val buffer = FlatByteArrayWriter()
-        writeValue(GhostYamlFlatWriter(buffer), value)
+        writeValue(GhostYamlWriter(buffer), value)
         return buffer.toStringUtf8()
     }
 
@@ -27,7 +27,7 @@ internal object GhostYamlTreeWriter {
     fun encodeAll(values: List<Any?>): String =
         values.joinToString(separator = "\n---\n") { encode(it) }
 
-    private fun writeValue(writer: GhostYamlFlatWriter, value: Any?) {
+    private fun writeValue(writer: GhostYamlWriter, value: Any?) {
         when (value) {
             null -> writer.nullValue()
             is String -> writer.value(value)

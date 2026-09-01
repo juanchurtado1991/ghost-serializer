@@ -13,14 +13,9 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
 /**
  * High-performance YAML reader operating on a [ByteArray] with minimal intermediate allocations.
  *
- * ## Design
- * - Compare bytes directly; avoid `.toChar()` in performance-sensitive paths.
- * - All control bytes are defined in `GhostYamlConstants`.
- * - Validations use bitwise operations for digits, whitespace, and alphabetic characters.
- * - Field matching operates on raw bytes; string decoding is deferred until final value extraction.
- * - Extension hooks for block scalars, flow style, tags, and anchors are wired at construction time.
- *
- * @param rawData The full YAML document as a UTF-8 [ByteArray].
+ * Compares bytes directly (avoids `.toChar()` on hot paths); control bytes live in
+ * `GhostYamlConstants`; digit/whitespace/alpha checks use bitwise ops; field matching operates
+ * on raw bytes with string decoding deferred until final value extraction.
  */
 @OptIn(InternalGhostApi::class)
 open class GhostYamlFlatReader(var rawData: ByteArray) {
@@ -35,11 +30,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     internal var currentIndent: Int = 0
 
     /**
-     * Whether a tab byte appears in the current line's leading whitespace, between the counted
+     * Whether a tab appears in the current line's leading whitespace between the counted
      * [currentIndent] spaces and the first non-whitespace byte. Tabs have no fixed column width,
-     * so the YAML spec forbids them in the indentation used to open or extend a block mapping/
-     * sequence — but they're harmless as ordinary whitespace once a scalar's own content has
-     * started. See the [currentIndent]-consuming checks in `readBlockMapping`/`readBlockSequence`.
+     * so YAML forbids them in indentation that opens/extends a block mapping/sequence, but
+     * they're harmless once a scalar's content has started.
      */
     internal var indentHasTab: Boolean = false
 
@@ -52,9 +46,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     /** Table of defined tag directives for the current document. */
     internal val tagDirectives = HashMap<String, String>()
 
-    /**
-     * Resets the reader's state to process a new byte payload.
-     */
+    /** Resets the reader's state to process a new byte payload. */
     fun reset(newData: ByteArray) {
         rawData = newData
         position = 0
@@ -112,9 +104,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             val sawExplicitMarker = skipDirectivesAndDocumentStart()
             skipWhitespaceAndComments()
             if (!sawExplicitMarker && position >= localLimit) break
-            // A bare `...` with no preceding `---` isn't an empty document — it's the end
-            // marker for a document that was never started (e.g. after a comment, or another
-            // `...`). Consume it and loop rather than reading it as a null-valued document.
+            // A bare `...` with no preceding `---` isn't an empty document — it's the end marker
+            // for a document that never started. Consume it and loop instead of reading it as
+            // a null-valued document.
             if (!sawExplicitMarker && isDocumentEndMarker()) {
                 skipDocumentEnd()
                 previousDocumentExplicitlyEnded = true
@@ -177,46 +169,41 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         expectedTag: Int = GhostYamlTags.TAG_NONE,
         strictDedent: Boolean = false,
         allowMappingRedirect: Boolean = true,
-        // Distinct from `indent`: if this value turns out to be a plain scalar, later lines only
-        // need to be indented more than *this* to keep folding into it — normally the same as
-        // `indent`, since a value read inline (same line as its key's ':') and an already-known
-        // nested-collection's own indent boundary coincide. The one case they diverge is a
-        // mapping value that starts on its own line (resolveValueAfterColon's newline branch):
-        // `indent` there is the *auto-detected column of this specific value* (needed unchanged
-        // if it turns out to be a nested block collection instead), but a plain scalar's fold
-        // boundary per the YAML spec is the *enclosing mapping's* own indent, not the value's.
+        // Distinct from `indent`: if this value is a plain scalar, later lines must indent more
+        // than *this* to keep folding into it. Normally equals `indent`, but diverges for a
+        // mapping value starting on its own line: `indent` there is this value's auto-detected
+        // column (needed if it turns out to be a nested block collection), while a plain
+        // scalar's fold boundary per spec is the *enclosing mapping's* indent, not the value's.
         foldIndent: Int = indent
     ): Any? {
         skipInlineWhitespace()
         val localLimit = limit
         if (position >= localLimit) {
-            // A tag forcing string type (e.g. a bare "!!str" with nothing after it, even at
-            // end of input) still resolves to an empty string, not "no value at all" — same as
-            // it would if there were trailing whitespace/newline instead of EOF.
+            // A bare "!!str" with nothing after it, even at EOF, still resolves to an empty
+            // string, not "no value at all" — same as trailing whitespace/newline instead of EOF.
             return if (expectedTag == GhostYamlTags.TAG_STR) "" else null
         }
 
         val currentByte = rawData[position]
         return when (currentByte) {
-            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte, indent)           // block scalar
+            C.PIPE_BYTE, C.GT_BYTE -> readBlockScalar(currentByte, indent)
             C.LEFT_BRACE_BYTE -> readFlowCollectionOrMappingKey(indent, inFlow) { readFlowMapping() }
             C.LEFT_BRACKET_BYTE -> readFlowCollectionOrMappingKey(indent, inFlow) { readFlowSequence() }
-            C.EXCLAMATION_BYTE -> readTaggedValue(indent, inFlow)      // tagged value
-            C.AMPERSAND_BYTE -> readAnchoredValueOrMappingKey(indent, inFlow, strictDedent)    // anchor definition
-            C.ASTERISK_BYTE -> readAliasOrMappingKey(indent, inFlow)                  // alias reference
+            C.EXCLAMATION_BYTE -> readTaggedValue(indent, inFlow)
+            C.AMPERSAND_BYTE -> readAnchoredValueOrMappingKey(indent, inFlow, strictDedent)
+            C.ASTERISK_BYTE -> readAliasOrMappingKey(indent, inFlow)
             C.DOUBLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }
             C.SINGLE_QUOTE_BYTE -> readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }
             C.DOT_BYTE -> if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)
-            // '%' is reserved for directives and can never start a plain scalar (no "followed by
-            // a safe character" exception the way '-'/'?'/':' get) — a directive-shaped line
-            // appearing where a value is expected (e.g. after the "---" it should have preceded)
-            // is simply invalid, not a scalar that happens to start with '%'.
+            // '%' is reserved for directives, never a plain scalar start (no "followed by a safe
+            // character" exception like '-'/'?'/':' get) — a directive-shaped line where a value
+            // is expected is invalid, not a scalar starting with '%'.
             C.PERCENT_BYTE -> yamlError(C.ERR_PLAIN_SCALAR_PERCENT)
             C.QUESTION_BYTE ->
                 if (!inFlow && isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))
                 else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)
             C.DASH_BYTE -> {
-                // Either: negative number "-42", block sequence "- item", or doc separator "---"
+                // Negative number "-42", block sequence "- item", or doc separator "---".
                 val nextByte = if (position + 1 < localLimit) rawData[position + 1] else 0
                 when {
                     expectedTag != GhostYamlTags.TAG_STR && isDigit(nextByte) -> readNumber()
@@ -224,7 +211,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         nextByte == C.TAB_BYTE || position + 1 >= localLimit ->
                         readBlockSequence(indent)
 
-                    isDocumentMarker() -> null  // document end
+                    isDocumentMarker() -> null
                     else -> readPlainScalar(indent, inFlow, expectedTag, allowMappingRedirect)
                 }
             }
@@ -234,12 +221,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Reads a quoted scalar via [readQuoted], then checks whether a `:` (key separator) follows —
-     * a quoted string can be a mapping key, not just a value (e.g. `"400":` in `responses:` below
-     * a `- `/another key). [readPlainScalarOrMapping] already does this colon-scan for *bare* keys,
-     * but readValue's dispatch never reaches it for quoted content since [C.DOUBLE_QUOTE_BYTE] /
-     * [C.SINGLE_QUOTE_BYTE] are handled directly above — without this check, a quoted key's value
-     * would be silently misread as the quoted string itself, dropping everything nested under it.
+     * Reads a quoted scalar via [readQuoted], then checks whether a `:` follows — a quoted
+     * string can be a mapping key, not just a value (e.g. `"400":`). [readPlainScalarOrMapping]
+     * already does this colon-scan for *bare* keys, but readValue's dispatch never reaches it
+     * for quoted content. Without this check a quoted key's value would be misread as the
+     * quoted string itself, dropping everything nested under it.
      */
     private inline fun readQuotedScalarOrMappingKey(indent: Int, inFlow: Boolean, readQuoted: () -> String): Any? {
         val startPosition = position
@@ -253,19 +239,18 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 rawData[position + 1] == C.CR_BYTE ||
                 rawData[position + 1] == C.TAB_BYTE)
         // Inside a flow collection there's no block mapping to redirect into — leave position
-        // right where readQuoted()/skipInlineWhitespace() left it (at a ':' or not) and let the
-        // caller (a flow sequence entry may be an implicit single-pair mapping) decide.
+        // where it is and let the caller (a flow sequence entry may be an implicit single-pair
+        // mapping) decide.
         if (inFlow || !isMappingKey) return text
         position = startPosition
         return readBlockMapping(indent.coerceAtLeast(0))
     }
 
     /**
-     * Reads a flow collection ([readCollection], `{...}` or `[...]`) via [readValue]'s dispatch,
-     * then — mirroring [readQuotedScalarOrMappingKey] — checks whether a `:` follows: a flow
-     * collection can itself be a block-mapping key (e.g. `[flow]: block`), not just a value.
-     * Without this, `[flow]: block` at the top of a block context would read the `[flow]` list as
-     * a complete document value and then choke on the trailing `: block` as garbage.
+     * Reads a flow collection ([readCollection]), then — mirroring
+     * [readQuotedScalarOrMappingKey] — checks whether a `:` follows: a flow collection can
+     * itself be a block-mapping key (e.g. `[flow]: block`), not just a value. Without this,
+     * `[flow]: block` would read `[flow]` as a complete document value and choke on `: block`.
      */
     private inline fun readFlowCollectionOrMappingKey(indent: Int, inFlow: Boolean, readCollection: () -> Any?): Any? {
         val startPosition = position
@@ -317,10 +302,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     ) {
                         if (!inFlow) {
                             if (!allowMappingRedirect) {
-                                // This colon is being read as an *inline* value/key-node on the
-                                // same line as an enclosing key's own ':' (e.g. the "b: c" in
-                                // "a: b: c") — there's no fresh, more-indented line for a nested
-                                // mapping to start on here, so this shape is just ambiguous, not
+                                // This colon is an *inline* value/key-node on the same line as an
+                                // enclosing key's own ':' (e.g. "b: c" in "a: b: c") — no fresh,
+                                // more-indented line for a nested mapping, so it's ambiguous, not
                                 // a legal redirect. yaml-test-suite case ZCZ6.
                                 yamlError(C.ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON)
                             }
@@ -328,9 +312,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                             position = startPosition
                             return readBlockMapping(indent.coerceAtLeast(0))
                         }
-                        // Inside a flow collection there's no block mapping to redirect into —
-                        // stop the scalar right here and let the caller (a flow sequence entry
-                        // may be an implicit single-pair mapping) decide what the colon means.
+                        // No block mapping to redirect into inside a flow collection — stop the
+                        // scalar here and let the caller decide what the colon means.
                         break
                     }
                     scanPosition++
@@ -338,8 +321,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
                 currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -> break
                 currentByte == C.HASH_BYTE -> {
-                    // Inline comment — the plain scalar ends before '#' (only if preceded by
-                    // whitespace; "d#X" isn't a comment, "d\t#X"/"d #X" are).
+                    // Inline comment ends the scalar before '#', only if preceded by whitespace
+                    // ("d#X" isn't a comment, "d #X" is).
                     if (scanPosition > startPosition &&
                         (localRawData[scanPosition - 1] == C.SPACE_BYTE || localRawData[scanPosition - 1] == C.TAB_BYTE)
                     ) break
@@ -351,25 +334,21 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             }
         }
 
-        // Extract the plain scalar bytes
         val endPosition = trimTrailingSpaces(startPosition, scanPosition)
         position = scanPosition
 
-        // A bare "-" is only a valid plain-scalar start when followed by a "safe" character
-        // (ns-plain-first's rule for '-'/'?'/':') — in flow context that excludes flow indicators
-        // (",[]{}"), so a lone "-" immediately touching one, like the entries in "[-, -]" or
-        // "[-]", has nothing valid to be: it isn't the block sequence indicator (flow has no such
-        // thing) and it doesn't satisfy the plain-scalar exception either.
+        // A bare "-" is a valid plain-scalar start only when followed by a "safe" character
+        // (ns-plain-first's rule for '-'/'?'/':') — in flow context that excludes flow
+        // indicators (",[]{}"), so a lone "-" touching one (e.g. "[-, -]") is neither a block
+        // sequence indicator (flow has none) nor a valid plain scalar.
         if (inFlow && endPosition - startPosition == 1 && localRawData[startPosition] == C.DASH_BYTE) {
             yamlError(C.ERR_LONE_DASH_IN_FLOW)
         }
 
-        // Plain scalars can continue onto following lines, both in block context (more-indented
-        // lines) and in flow context (any line that isn't itself a flow terminator) — see
-        // [foldPlainScalarContinuation] and [foldFlowPlainScalarContinuation] respectively.
-        // Line-folding rule either way: a single newline between continuation lines becomes a
-        // space; a blank line (or N of them) becomes N newlines — same rule readBlockScalarContent
-        // applies for folded (">") block scalars.
+        // Plain scalars continue onto following lines: more-indented lines in block context
+        // ([foldPlainScalarContinuation]), any non-terminator line in flow context
+        // ([foldFlowPlainScalarContinuation]). Folding rule either way: a single newline becomes
+        // a space; N blank lines become N newlines (same as readBlockScalarContent's ">" style).
         if (position < localLimit &&
             (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
         ) {
@@ -384,10 +363,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Consumes zero or more following lines that continue a plain scalar (each more indented than
-     * [indent], the enclosing block's own indentation), folding them onto [firstLine] per the
-     * usual YAML line-folding rule. Returns `null` (without moving [position]) if the very next
-     * line isn't actually a continuation, so the caller falls back to its single-line result.
+     * Consumes following lines that continue a plain scalar (each more indented than [indent],
+     * the enclosing block's indentation), folding them onto [firstLine] per YAML's line-folding
+     * rule. Returns `null` (without moving [position]) if the next line isn't a continuation, so
+     * the caller falls back to its single-line result.
      */
     private fun foldPlainScalarContinuation(indent: Int, firstLine: String): String? {
         val localRawData = rawData
@@ -399,7 +378,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         while (true) {
             val beforeNewline = position
             // Blank-ness is judged after skipping *all* leading whitespace (spaces and tabs) — a
-            // line that's purely whitespace is blank even if that whitespace includes a tab.
+            // line that's purely whitespace is blank even if it includes a tab.
             val blankScan = scanFoldBlankLine(localRawData, position, localLimit)
             if (blankScan.isBlank) {
                 blankLines++
@@ -409,13 +388,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             }
             position = blankScan.afterNewline
 
-            // Not blank — how "indented" this line is (for the continuation-vs-dedent decision)
-            // is judged by real spaces only, the same as everywhere else a tab can't be part of
-            // establishing block-structure indentation (recomputeCurrentIndent/indentHasTab):
-            // otherwise a tab sitting right at a sibling key's indentation would silently read as
-            // "more indented, still a continuation" instead of surfacing as ambiguous/invalid.
-            // Once a real continuation is confirmed, any tab(s) right after those spaces are still
-            // ordinary leading whitespace to skip, same as the spaces themselves.
+            // How "indented" this line is (continuation-vs-dedent) is judged by real spaces only
+            // — a tab can't establish block-structure indentation (see recomputeCurrentIndent/
+            // indentHasTab), else a tab at a sibling key's indentation would falsely read as
+            // "still a continuation" instead of ambiguous/invalid. Once continuation is
+            // confirmed, tabs after those spaces are ordinary leading whitespace like the spaces.
             var spaces = 0
             var peekPos = position
             while (peekPos < localLimit && localRawData[peekPos] == C.SPACE_BYTE) {
@@ -427,11 +404,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
             position = peekPos
             if (spaces <= indent || isDocumentMarker() || isDocumentEndMarker()) {
-                // Not a continuation (dedented, sibling-level, or a new document). If we'd already
-                // folded at least one real continuation line, rewind just past it (trailing blank
-                // lines aren't part of the value). Otherwise rewind all the way to right after the
-                // first line, undoing any blank lines we tentatively scanned past too — the caller
-                // must see them again to reprocess this content correctly.
+                // Not a continuation (dedented, sibling-level, or a new document). If we already
+                // folded a real continuation line, rewind just past it (trailing blank lines
+                // aren't part of the value); otherwise rewind to right after the first line,
+                // undoing any tentatively-scanned blank lines so the caller sees them again.
                 position = if (folded != null) beforeNewline else scalarEndPosition
                 break
             }
@@ -440,11 +416,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             var sawComment = false
             while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
                 val currentByte = localRawData[position]
-                // A comment ends this line's content the same way it ends a single-line plain
-                // scalar (only when preceded by whitespace) — and since a comment can't appear
-                // inside a still-open plain scalar's fold, it ends the whole scalar right here
-                // too, not just this one line (see BF9H: content after the comment needs its own
-                // valid token, it can't be folded in as if the comment weren't there).
+                // A comment ends this line the same way it ends a single-line plain scalar (only
+                // when preceded by whitespace) — and since a comment can't appear inside a
+                // still-open fold, it ends the whole scalar here, not just this line (case BF9H).
                 if (currentByte == C.HASH_BYTE && position > lineStart &&
                     (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
                 ) {
@@ -455,8 +429,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             }
             val lineEnd = trimTrailingSpaces(lineStart, position)
             // A continuation line can't itself look like a mapping key ("word: ") — a plain
-            // scalar's fold can't contain what would otherwise be a nested key/value pair (see
-            // 2CMS: "invalid: x" on a continuation line is forbidden content, not literal text).
+            // scalar's fold can't contain a nested key/value pair (case 2CMS).
             var colonScan = lineStart
             while (colonScan < lineEnd) {
                 if (localRawData[colonScan] == C.COLON_BYTE) {
@@ -476,9 +449,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             appendFoldedLine(folded, blankLines, lineText)
             blankLines = 0
 
-            // Leave position sitting right at the '#' either way — consistent with how the
-            // initial single-line scan above also stops there without consuming it, letting the
-            // caller's own skipWhitespaceAndComments handle it afterward.
+            // Leave position at the '#' — the caller's skipWhitespaceAndComments handles it.
             if (sawComment) break
             if (position >= localLimit) break
         }
@@ -487,13 +458,11 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Flow-context counterpart to [foldPlainScalarContinuation]: folds a plain scalar's
-     * continuation lines inside a flow collection (`[...]`/`{...}`). Unlike block context, a flow
-     * collection isn't indentation-bounded by its surroundings once opened (it's delimited by its
-     * own closing bracket/brace instead), so there's no indentation threshold to compare against
-     * here — continuation is decided purely by what the next line actually starts with, using the
-     * same terminators (`,`, `]`, `}`, a real `:` key separator, or a whitespace-preceded `#`
-     * comment) that already end a single-line flow scalar.
+     * Flow-context counterpart to [foldPlainScalarContinuation]. Unlike block context, a flow
+     * collection isn't indentation-bounded once opened (delimited by its closing bracket/brace
+     * instead), so there's no indentation threshold here — continuation is decided purely by
+     * what the next line starts with, using the same terminators (`,`, `]`, `}`, a real `:` key
+     * separator, or a whitespace-preceded `#` comment) that end a single-line flow scalar.
      */
     private fun foldFlowPlainScalarContinuation(firstLine: String): String? {
         val localRawData = rawData
@@ -512,8 +481,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 continue
             }
 
-            // No indentation threshold to check here (see the KDoc above) — just skip this
-            // line's leading whitespace and look at what actually comes next.
+            // No indentation threshold here (see KDoc above) — skip this line's leading
+            // whitespace and look at what comes next.
             position = blankScan.contentStart
             val lineStart = position
             val leadByte = localRawData[position]
@@ -527,18 +496,15 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 leadByte == C.HASH_BYTE || leadIsColonSeparator || isDocumentMarker() || isDocumentEndMarker()
             ) {
                 // This line is nothing but the scalar's own terminator (or a comment) — not a
-                // continuation. A comment can't appear inside a still-open plain scalar's line-
-                // folding, so a comment-only line ends the scalar right here too, regardless of
-                // what follows it — same as it would outside any fold (see CML9: the line after
-                // a comment that interrupts a plain scalar needs its own comma, not a fold).
-                // Same rewind rule as the block version: undo blank lines tentatively scanned
-                // past, since the caller needs to see them fresh either way.
+                // continuation. A comment can't appear inside a still-open fold, so a
+                // comment-only line ends the scalar here too regardless of what follows
+                // (case CML9). Same rewind rule as the block version.
                 position = if (folded != null) beforeNewline else scalarEndPosition
                 break
             }
 
-            // Scan this continuation line's own content with the same stop rules a single-line
-            // flow scalar already uses (mirrors the scan at the top of readPlainScalarOrMapping).
+            // Scan this line's content with the same stop rules a single-line flow scalar uses
+            // (mirrors the scan at the top of readPlainScalarOrMapping).
             var scanPos = lineStart
             while (scanPos < localLimit) {
                 val currentByte = localRawData[scanPos]
@@ -576,8 +542,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
             position = scanPos
             if (position >= localLimit) break
-            // This line's own scan may have stopped at a mid-line terminator (not a newline) —
-            // if so the scalar is done, don't loop around expecting another continuation line.
+            // If the scan stopped at a mid-line terminator (not a newline), the scalar is done —
+            // don't loop expecting another continuation line.
             if (localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) break
         }
 
@@ -604,18 +570,16 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
         val localRawData = rawData
         if (position >= localLimit) return null
 
-        // Alias as key: "*name" resolves immediately to the aliased node's own value, stringified
-        // the same way an explicit-key node would be (e.g. "*b : *a" below "&a a: &b b" — the
-        // key is whatever "&b" was bound to). Only recognized with no anchor/tag prefix before
-        // it; combining both isn't a case any test exercises and has no clear meaning anyway.
+        // Alias as key: "*name" resolves immediately to the aliased node's value, stringified the
+        // same way an explicit-key node would be. Only recognized with no anchor/tag prefix
+        // before it; combining both has no clear meaning and isn't exercised by any test.
         if (localRawData[position] == C.ASTERISK_BYTE) {
             return stringifyExplicitMappingKey(readAlias())
         }
 
-        // An anchor and/or tag may prefix a key (e.g. "&a5 !!str key5:", "!!str &a10 key10:") —
-        // a tag has no JSON representation on a key, so it's dropped the same way an ordinary
-        // tagged value's tag is; an anchor, though, still needs to end up bound to the key's own
-        // text once known, so later aliases can resolve it (e.g. "&a a: ..." then "*a" elsewhere).
+        // An anchor and/or tag may prefix a key (e.g. "&a5 !!str key5:"). A tag has no JSON
+        // representation on a key, so it's dropped like an ordinary tagged value's tag; an
+        // anchor still needs binding to the key's text so later aliases can resolve it.
         var anchorName: String? = null
         val positionBeforePrefixes = position
         while (position < localLimit &&
@@ -635,18 +599,16 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
             if (isAnchor) anchorName = localRawData.decodeToString(prefixStart, position)
             skipInlineWhitespace()
         }
-        // Having consumed an anchor/tag prefix commits us to there being a real key afterward —
-        // unlike the "nothing here at all" case below, silently returning null having already
-        // eaten those bytes would let a genuinely invalid "dangling" anchor/tag (nothing valid
-        // following it) masquerade as "no more keys in this mapping" instead of erroring.
+        // Having consumed an anchor/tag prefix commits us to a real key afterward — silently
+        // returning null after eating those bytes would let a dangling anchor/tag masquerade as
+        // "no more keys" instead of erroring.
         val hadPrefixes = position != positionBeforePrefixes
         if (position >= localLimit) {
             if (hadPrefixes) yamlError(C.ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY)
             return null
         }
         // An anchor can't wrap an alias reference here either — same rule readAnchoredValue
-        // already enforces for values (an alias points at an existing node, it isn't itself a
-        // node that a new anchor can attach to).
+        // enforces for values (an alias points at an existing node, not one a new anchor can attach to).
         if (anchorName != null && localRawData[position] == C.ASTERISK_BYTE) {
             yamlError("${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}")
         }
@@ -667,9 +629,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                         ) break
                     }
                     if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) break
-                    // An inline comment ends the key the same way it ends a plain scalar value
-                    // (see readPlainScalarOrMapping) — only when preceded by whitespace, so
-                    // "a#b" stays one key while "a #b" ends the key at "a".
+                    // An inline comment ends the key like it ends a plain scalar value, only
+                    // when preceded by whitespace: "a#b" stays one key, "a #b" ends at "a".
                     if (currentByte == C.HASH_BYTE && position > startPosition &&
                         (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
                     ) break
@@ -679,13 +640,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                 val endPosition = trimTrailingSpaces(startPosition, position)
                 if (endPosition == startPosition) {
                     // A bare ':' with nothing before it is a valid empty-string key (e.g.
-                    // ": value", or repeated ": a" / ": b" pairs) — the loop above breaks on
-                    // the very first byte in that case, without advancing. A tag can be the
-                    // entire key by itself the same way (e.g. "!!str : bar" is an empty-string
-                    // key) — a prefix followed directly by ':' isn't "dangling", it's this same
-                    // empty-key shape with the tag already consumed. Anything else here (a
-                    // newline, EOF) really is "no more mapping to read" — or, if a prefix was
-                    // consumed first, a genuinely dangling one.
+                    // ": value") — the loop above breaks on the first byte without advancing.
+                    // A prefix followed directly by ':' is this same empty-key shape, not
+                    // dangling. Anything else (newline, EOF) is "no more mapping to read", or a
+                    // genuinely dangling prefix if one was consumed.
                     if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
                         ""
                     } else if (hadPrefixes) {
@@ -695,9 +653,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
                     }
                 } else {
                     val firstLine = localRawData.decodeToString(startPosition, endPosition)
-                    // A flow mapping key can fold across lines the same way any other flow plain
-                    // scalar does (e.g. "{ matches\n% : 20 }" — the key is "matches %") — block-
-                    // context keys never reach here still sitting on a newline, since a colon
+                    // A flow mapping key can fold across lines like any other flow plain scalar
+                    // — block-context keys never reach here sitting on a newline, since a colon
                     // must follow on the same line there.
                     if (inFlow && position < localLimit &&
                         (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)
@@ -718,10 +675,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     /**
      * Reads a quoted key via [readQuoted], then — in block context only — rejects it if it
      * spanned more than one line. An implicit block-mapping key (no `?` indicator) must fit on a
-     * single line, unlike a quoted scalar used as an ordinary value (which folds across lines
-     * fine); a flow-mapping key has no such restriction, since the surrounding brackets already
-     * give the parser an unambiguous boundary (confirmed by 9BXH/9SA2 expecting a folded multi-
-     * line flow key to succeed, vs. JKF3 expecting the equivalent block key to fail).
+     * single line, unlike an ordinary quoted-scalar value (which folds fine); a flow-mapping key
+     * has no such restriction since its brackets give an unambiguous boundary (cases 9BXH/9SA2
+     * expect a folded multi-line flow key to succeed, JKF3 expects the block equivalent to fail).
      */
     private inline fun readQuotedKeyRejectingMultiLine(inFlow: Boolean, readQuoted: () -> String): String {
         val startPosition = position
@@ -774,11 +730,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Called by both [readAllDocuments] overloads right after a document's value is read.
-     * What may legally follow a document's value is: end of input, a `---` document-start
-     * marker (the next document), or a `%` directive (the next document's directives) — anything
-     * else is leftover content that the value's own reader stopped in front of without
-     * understanding, e.g. a stray closing bracket or a bare word after a flow collection closed.
+     * Called by both [readAllDocuments] overloads after a document's value is read. What may
+     * legally follow is: EOF, a `---` document-start marker, or a `%` directive — anything else
+     * is leftover content the value's reader stopped in front of without understanding.
      */
     private fun rejectTrailingGarbageAfterDocument() {
         skipWhitespaceAndComments()
@@ -790,11 +744,10 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Called by both [readAllDocuments] overloads right before deciding whether the next thing
-     * is a directive. Directives only apply to a document that hasn't started yet — legal at the
-     * very start of the stream, or right after an explicit `...` — not merely because the
-     * previous document's content happened to end (e.g. right after an implicit `---`-to-`---`
-     * transition with no `...` in between).
+     * Called by both [readAllDocuments] overloads before deciding whether the next thing is a
+     * directive. Directives only apply to a document that hasn't started yet — legal at stream
+     * start or right after an explicit `...`, not merely because the previous document ended
+     * (e.g. an implicit `---`-to-`---` transition with no `...` between).
      */
     private fun requireExplicitEndBeforeDirectives(previousDocumentExplicitlyEnded: Boolean) {
         if (previousDocumentExplicitlyEnded) return

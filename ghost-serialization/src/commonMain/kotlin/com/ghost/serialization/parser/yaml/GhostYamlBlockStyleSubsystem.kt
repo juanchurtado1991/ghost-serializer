@@ -7,8 +7,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  */
 
 /**
- * Reads a block mapping starting at the current position.
- * Called when we detect "key: value" on a new line.
+ * Reads a block mapping starting at the current position ("key: value" on a new line).
  *
  * @param blockIndent The indentation of the first key in this mapping.
  */
@@ -26,10 +25,8 @@ internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map<String,
             val lineIndent = currentIndent
             if (result.isNotEmpty() && lineIndent < blockIndent) break  // dedented — end of this mapping
             if (isDocumentMarker() || isDocumentEndMarker()) break
-            // A tab can't be part of the indentation opening or extending a block mapping —
-            // tabs have no fixed column width, so there's no way to compare this line's
-            // indentation against blockIndent/a sibling's. Harmless once inside an already-
-            // established scalar's own content (readValue never reaches this loop for that).
+            // Tabs have no fixed column width, so they can't open/extend a block mapping's
+            // indentation — harmless once inside an already-established scalar's own content.
             if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_MAPPING_INDENT)
 
             if (isExplicitKeyIndicator()) {
@@ -38,20 +35,16 @@ internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map<String,
                 continue
             }
 
-            // Read key
             val key = readKey(inFlow = false) ?: break
             skipInlineWhitespace()
 
-            // Expect ':' after the key
             if (position >= localLimit || localRawData[position] != C.COLON_BYTE) {
                 yamlError("${C.ERR_EXPECTED_COLON_AFTER_KEY_PREFIX}$key${C.ERR_EXPECTED_COLON_AFTER_KEY_MID}$position")
             }
             position++ // consume ':'
-            // An implicit "key: value" pair's value can't redirect into a nested block
-            // mapping while still inline on the same physical line as this ':' (that shape is
-            // only legal via YAML's "compact notation", reserved for explicit "?"/":" entries
-            // — see resolveValueAfterColon's KDoc). Without this, "a: b: c: d" silently parsed
-            // as {"a": {"b": {"c": "d"}}} instead of being rejected (yaml-test-suite ZCZ6).
+            // An implicit pair's value can't redirect into a nested mapping while still inline
+            // on this line — that's only legal via "compact notation" (explicit "?"/":" entries).
+            // Without this, "a: b: c: d" would parse instead of being rejected (yaml-test-suite ZCZ6).
             val value = resolveValueAfterColon(blockIndent, allowMappingRedirect = false)
 
             if (key == C.STR_MERGE_KEY) {
@@ -68,13 +61,10 @@ internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map<String,
 
 /**
  * Called right after a mapping ':' has been consumed and inline whitespace skipped, to
- * determine and read the value. Shared by [readBlockMapping]'s implicit ("key: value")
- * entries and [readExplicitKeyEntry]'s explicit ("? key\n: value") entries — both need
- * exactly the same "same line, next line indented, or no value at all" resolution, but differ
- * on whether an *inline* value may itself redirect into a nested block mapping: explicit
- * entries get YAML's "compact notation" allowance (see the comment at
- * [readExplicitKeyEntry]'s call site), implicit ones
- * don't — [allowMappingRedirect] lets each caller opt in/out.
+ * determine and read the value. Shared by [readBlockMapping]'s implicit entries and
+ * [readExplicitKeyEntry]'s explicit ones, which differ on whether an *inline* value may
+ * redirect into a nested block mapping (YAML's "compact notation") — [allowMappingRedirect]
+ * lets each caller opt in/out.
  */
 internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowMappingRedirect: Boolean = true): Any? {
     skipInlineWhitespace()
@@ -97,12 +87,10 @@ internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowM
                 } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
                     null
                 } else {
-                    // foldIndent = blockIndent (not valueIndent): if this value turns out to
-                    // be a plain scalar, later continuation lines only need to be indented
-                    // more than the *enclosing mapping's* indent to keep folding — matching
-                    // the inline-value case below — not more than this value's own
-                    // auto-detected column, which is typically the SAME indent every
-                    // continuation line also sits at (see 4CQQ/M5C3/NB6Z/RZT7/UGM3).
+                    // foldIndent = blockIndent (not valueIndent): a plain-scalar continuation
+                    // line only needs to be indented past the *enclosing mapping's* indent to
+                    // keep folding, not past this value's own auto-detected column (see
+                    // 4CQQ/M5C3/NB6Z/RZT7/UGM3).
                     readValue(valueIndent, inFlow = false, foldIndent = blockIndent)
                 }
             }
@@ -132,24 +120,20 @@ internal fun GhostYamlFlatReader.readBlockSequence(seqIndent: Int): List<Any?> {
             if (result.isNotEmpty() && lineIndent < seqIndent) break
             if (!isBlockSequenceEntry()) break
             if (isDocumentMarker()) break
-            // See the equivalent check in readBlockMapping — tabs can't be part of the
-            // indentation opening or extending a block sequence.
+            // See the equivalent tab check in readBlockMapping.
             if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_SEQUENCE_INDENT)
 
-            // Consume '-'
             position++ // '-'
 
-            // Indentation of the element value is the position of '-' plus 2.
+            // Element value indent is the '-' column plus 2 (the dash and its following space).
             val elementIndent = lineIndent + 2
 
-            // Skip the optional inline space after '-'
             if (position < localLimit && localRawData[position] == C.SPACE_BYTE) {
                 position++
             }
 
             // A comment directly after "- " (e.g. "- # Empty") leaves no inline value, same
-            // as it would after a mapping key's ':' (see resolveValueAfterColon) — without
-            // this, the comment text would be read as the item's own plain-scalar content.
+            // as after a mapping key's ':' (see resolveValueAfterColon).
             if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
                 skipToEndOfLine()
             }
@@ -164,19 +148,13 @@ internal fun GhostYamlFlatReader.readBlockSequence(seqIndent: Int): List<Any?> {
                     else {
                         val itemIndent = currentIndent
                         if (itemIndent < elementIndent) null
-                        // Delegate to readValue's own dispatch — see the equivalent comment
-                        // in readBlockMapping for why (bare scalar vs. mapping vs. block
-                        // scalar, not just sequence-vs-mapping).
+                        // Delegate to readValue's own dispatch (bare scalar vs. mapping vs.
+                        // block scalar) — see the equivalent comment in readBlockMapping.
                         else readValue(itemIndent, inFlow = false)
                     }
                 }
 
-                else -> {
-                    // Value starts on the same line after '- '
-                    // Try reading plain scalar or mapping or sequence.
-                    // Since we are parsing the list item, we can call readValue with elementIndent.
-                    readValue(elementIndent, inFlow = false)
-                }
+                else -> readValue(elementIndent, inFlow = false)
             }
             result.add(item)
         }

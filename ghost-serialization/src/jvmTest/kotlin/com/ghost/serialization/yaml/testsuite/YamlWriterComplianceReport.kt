@@ -3,14 +3,13 @@ package com.ghost.serialization.yaml.testsuite
 import kotlin.system.exitProcess
 
 /**
- * Standalone CLI report: runs the same conformance check as
- * [GhostYamlWriterConformanceTest.printWriterConformanceSummaryAndValidateDeviations] against the
- * vendored yaml-test-suite snapshot, but prints a readable summary unconditionally (the JUnit
- * version only surfaces with `--info`) and exits non-zero on any unexpected deviation — wired up
- * as `./gradlew :ghost-serialization:yamlWriterComplianceMatrix`.
+ * Standalone CLI report: same conformance check as
+ * [GhostYamlWriterConformanceTest.printWriterConformanceSummaryAndValidateDeviations], but prints
+ * unconditionally and exits non-zero on any unexpected deviation. Wired up as
+ * `./gradlew :ghost-serialization:yamlWriterComplianceMatrix`.
  *
- * Shares [writerRoundTripMatches]/[writerOutputIsKamlAcceptable] with the JUnit test (see
- * `YamlWriterConformance.kt`) so the two can never quietly report different numbers.
+ * Shares [writerRoundTripMatches]/[writerOutputIsKamlAcceptable] with the JUnit test so the two
+ * can never quietly disagree.
  */
 fun main() {
     val writableCases = YamlTestSuiteLoader.cases.filter { decodeOriginal(it) != null }

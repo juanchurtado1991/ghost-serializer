@@ -8,24 +8,17 @@ import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
- * Subsystem for turning raw scalar bytes into Kotlin values: quoted-string unescaping, number
- * parsing, and null/bool/int/float type resolution (YAML 1.2 core schema priority). Pulled out of
- * `GhostYamlFlatReader` itself since this layer is only ever called *from* the core block/flow
- * parser (`readValue`, `readPlainScalarOrMapping`, `readKey`) and never calls back into it.
+ * Turns raw scalar bytes into Kotlin values: quoted-string unescaping, number parsing, and
+ * null/bool/int/float type resolution (YAML 1.2 core schema priority). Pulled out of
+ * `GhostYamlFlatReader` since this layer is only called *from* the core block/flow parser and
+ * never calls back into it.
  */
 
-/**
- * Interprets raw bytes as the appropriate Kotlin type.
- * Never allocates a String until we know it's needed.
- *
- * Type priority (YAML 1.2 core schema):
- *   null → bool → int → float → string
- */
+/** Interprets raw bytes as the right Kotlin type; never allocates a String until needed. Type priority: null → bool → int → float → string. */
 internal fun GhostYamlFlatReader.interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
     val length = end - start
-    // A tag forcing string type still resolves to "" on empty content (e.g. a flow-mapping
-    // entry whose value is just "!!str,") — same as it does at EOF in readValue — so this has
-    // to run before the untagged "empty content means null" default just below.
+    // A tag forcing string type still resolves to "" on empty content (e.g. "!!str,") — same
+    // as at EOF in readValue — so this runs before the untagged "empty means null" default below.
     if (expectedTag == GhostYamlTags.TAG_STR) {
         return data.decodeToString(start, end)
     }
@@ -104,10 +97,9 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
 
     var outBuffer = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
     var outPos = 0
-    // Trailing whitespace before a fold is normally trimmed (see below), but a *escaped*
-    // space/tab ("\ "/"\t"/"\<literal tab>") is real content the author deliberately protected
-    // from exactly that trimming — trimFloor marks how far back the trim loop is allowed to go,
-    // advanced to outPos after every escape write so it can never remove one.
+    // Trailing whitespace before a fold is normally trimmed, but an *escaped* space/tab
+    // ("\ "/"\t") is real content the author deliberately protected — trimFloor marks how far
+    // back the trim loop may go, advanced to outPos after every escape write.
     var trimFloor = 0
     try {
         while (position < localLimit) {
@@ -184,8 +176,8 @@ internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
                 }
                 trimFloor = outPos
             } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {
-                // Trailing spaces/tabs are trimmed before the fold, but never past trimFloor —
-                // that would eat an escaped space/tab the author deliberately protected.
+                // Trim trailing spaces/tabs before the fold, never past trimFloor — that would
+                // eat an escaped space/tab the author deliberately protected.
                 while (outPos > trimFloor && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
                     outPos--
                 }
@@ -287,9 +279,9 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
                     return outBuffer.decodeToString(0, outPos)
                 }
             } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {
-                // Single-quoted scalars have no backslash-escape mechanism at all, so — unlike
-                // the double-quoted reader — there's never a protected trailing space/tab to
-                // preserve here; trailing whitespace before a fold is always trimmed in full.
+                // Single-quoted scalars have no backslash-escape mechanism, so unlike the
+                // double-quoted reader there's never a protected trailing space/tab — always
+                // trim trailing whitespace before a fold in full.
                 while (outPos > 0 && (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {
                     outPos--
                 }
@@ -338,12 +330,11 @@ internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
 }
 
 /**
- * Called with [GhostYamlFlatReader.position] at a line-break byte inside a quoted scalar. Folds
- * it the same way plain and block-folded scalars do: a single line break becomes a space, N
- * consecutive breaks (i.e. N-1 blank lines) become N-1 newlines. Each line's leading whitespace
- * is fully skipped — quoted scalars have no block-style indentation to preserve, unlike literal
- * block scalars. Leaves [GhostYamlFlatReader.position] at the first non-blank content (or the
- * closing quote). Returns the number of line breaks folded.
+ * Called with [GhostYamlFlatReader.position] at a line-break inside a quoted scalar. Folds it
+ * like plain/block-folded scalars: one line break becomes a space, N consecutive breaks (N-1
+ * blank lines) become N-1 newlines. Each line's leading whitespace is fully skipped — quoted
+ * scalars have no block-style indentation to preserve. Leaves position at the first non-blank
+ * content (or closing quote); returns the number of line breaks folded.
  */
 private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
     val localRawData = rawData
@@ -365,9 +356,8 @@ private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
         val next = localRawData[position]
         if (next != C.NEWLINE_BYTE && next != C.CR_BYTE) break
     }
-    // A quoted scalar is still "open" here — the closing quote hasn't been seen yet — but a line
-    // that looks like a document marker is forbidden content inside it regardless (spec's
-    // c-forbidden production), not literal text to fold in.
+    // The quoted scalar is still "open" (closing quote not yet seen), but a line that looks like
+    // a document marker is forbidden content inside it regardless (spec's c-forbidden production).
     if (position < localLimit && (isDocumentMarker() || isDocumentEndMarker())) {
         yamlError("${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX}${if (localRawData[position] == C.DASH_BYTE) C.STR_DOC_START else C.STR_DOC_END}${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX}")
     }
@@ -446,10 +436,9 @@ internal fun GhostYamlFlatReader.readNumber(): Any {
     val localLimit = limit
     val localRawData = rawData
 
-    // Negative hex/octal/binary ("-0x10", "-0o17", "-0b101") aren't plain decimal digits,
-    // so the digit-only loop below would stop right after the leading "-0". Scan their
-    // digit classes explicitly and hand the full token to tryParseNumber, which already
-    // knows how to parse (and negate) these bases — see the DASH_BYTE branch below.
+    // Negative hex/octal/binary ("-0x10", "-0o17", "-0b101") aren't plain decimal digits, so the
+    // digit-only loop below would stop right after the leading "-0". Scan their digit classes
+    // explicitly and hand the full token to tryParseNumber, which parses (and negates) these bases.
     var prefixPosition = position
     if (prefixPosition < localLimit && localRawData[prefixPosition] == C.DASH_BYTE) {
         prefixPosition++
@@ -501,7 +490,7 @@ private fun isNullLiteral(data: ByteArray, start: Int, length: Int): Boolean {
     val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
     val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
     val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-    return byte0 == C.LOWERCASE_N_BYTE && byte1 == C.LOWERCASE_U_BYTE && byte2 == C.LOWERCASE_L_BYTE && byte3 == C.LOWERCASE_L_BYTE  // n,u,l,l
+    return byte0 == C.LOWERCASE_N_BYTE && byte1 == C.LOWERCASE_U_BYTE && byte2 == C.LOWERCASE_L_BYTE && byte3 == C.LOWERCASE_L_BYTE
 }
 
 /** Checks if bytes[start..start+len) match 'true', 'True', or 'TRUE'. */
@@ -511,7 +500,7 @@ private fun isTrueLiteral(data: ByteArray, start: Int, length: Int): Boolean {
     val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
     val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
     val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-    return byte0 == C.LOWERCASE_T_BYTE && byte1 == C.LOWERCASE_R_BYTE && byte2 == C.LOWERCASE_U_BYTE && byte3 == C.LOWERCASE_E_BYTE  // t,r,u,e
+    return byte0 == C.LOWERCASE_T_BYTE && byte1 == C.LOWERCASE_R_BYTE && byte2 == C.LOWERCASE_U_BYTE && byte3 == C.LOWERCASE_E_BYTE
 }
 
 /** Checks if bytes[start..start+len) match 'false', 'False', or 'FALSE'. */
@@ -522,7 +511,7 @@ private fun isFalseLiteral(data: ByteArray, start: Int, length: Int): Boolean {
     val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
     val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
     val byte4 = (data[start + 4].toInt() or C.ASCII_TO_LOWER_MASK).toByte()
-    return byte0 == C.LOWERCASE_F_BYTE && byte1 == C.LOWERCASE_A_BYTE && byte2 == C.LOWERCASE_L_BYTE && byte3 == C.LOWERCASE_S_BYTE && byte4 == C.LOWERCASE_E_BYTE  // f,a,l,s,e
+    return byte0 == C.LOWERCASE_F_BYTE && byte1 == C.LOWERCASE_A_BYTE && byte2 == C.LOWERCASE_L_BYTE && byte3 == C.LOWERCASE_S_BYTE && byte4 == C.LOWERCASE_E_BYTE
 }
 
 /**
@@ -546,15 +535,15 @@ private fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end:
     // Check for hex (0x), octal (0o), binary (0b)
     if (end - currentPosition >= 3 && data[currentPosition] == C.ZERO_BYTE) {
         val nextByte = data[currentPosition + 1]
-        if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X
+        if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) {
             var value = 0L
             var index = currentPosition + 2
             while (index < end) {
                 val currentByte = data[index]
                 val digit = when {
                     isDigit(currentByte) -> (currentByte - C.ZERO_BYTE).toLong()
-                    currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f
-                    currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F
+                    currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -> (currentByte - C.LOWERCASE_A_BYTE + 10).toLong()
+                    currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -> (currentByte - C.UPPERCASE_A_BYTE + 10).toLong()
                     else -> return null
                 }
                 value = (value shl C.HEX_SHIFT) or digit
@@ -562,24 +551,24 @@ private fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end:
             }
             return if (isNegative) -value else value
         }
-        if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O
+        if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) {
             var value = 0L
             var index = currentPosition + 2
             while (index < end) {
                 val currentByte = data[index]
-                if (currentByte < C.ZERO_BYTE || currentByte > C.SEVEN_BYTE) return null // 0-7
+                if (currentByte < C.ZERO_BYTE || currentByte > C.SEVEN_BYTE) return null
                 val digit = (currentByte - C.ZERO_BYTE).toLong()
                 value = (value shl C.OCTAL_SHIFT) or digit
                 index++
             }
             return if (isNegative) -value else value
         }
-        if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B
+        if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) {
             var value = 0L
             var index = currentPosition + 2
             while (index < end) {
                 val currentByte = data[index]
-                if (currentByte != C.ZERO_BYTE && currentByte != C.ONE_BYTE) return null // 0 or 1
+                if (currentByte != C.ZERO_BYTE && currentByte != C.ONE_BYTE) return null
                 val digit = (currentByte - C.ZERO_BYTE).toLong()
                 value = (value shl C.BINARY_SHIFT) or digit
                 index++

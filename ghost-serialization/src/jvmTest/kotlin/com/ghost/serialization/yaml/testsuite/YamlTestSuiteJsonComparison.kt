@@ -21,15 +21,12 @@ private const val ESCAPE = '\\'
 
 /**
  * Parses yaml-test-suite's `in.json` fixture text into a list of top-level JSON values, one per
- * YAML document — mirrors `GhostYamlFlatReader`'s
- * `readAllDocuments()` one-value-per-document semantics.
+ * YAML document — mirrors `GhostYamlFlatReader.readAllDocuments()`'s semantics.
  *
- * Hand-rolled splitting rather than `Json.decodeToSequence(..., DecodeSequenceMode.WHITESPACE_SEPARATED)`:
- * that experimental kotlinx.serialization API misparses two back-to-back top-level JSON *arrays*
- * (confirmed via a standalone repro on case `JHB9`'s `in.json`, which is exactly two concatenated
- * arrays) — it throws "Expected end of the array or comma" instead of treating the second `[` as a
- * new value. [splitTopLevelJsonValues] avoids that API/quirk entirely by locating each value's
- * boundary itself, then parsing each substring independently with [Json.parseToJsonElement].
+ * Hand-rolled splitting instead of `Json.decodeToSequence(..., WHITESPACE_SEPARATED)`: that
+ * experimental API misparses two back-to-back top-level JSON *arrays* (confirmed on case `JHB9`'s
+ * `in.json`), throwing instead of starting a new value at the second `[`.
+ * [splitTopLevelJsonValues] locates each value's boundary itself instead.
  */
 internal fun decodeJsonDocuments(text: String): List<JsonElement> {
     return splitTopLevelJsonValues(text).map { Json.parseToJsonElement(it) }
@@ -94,7 +91,7 @@ private fun scanOneJsonValue(text: String, start: Int): Int {
         }
 
         else -> {
-            // Bare scalar (number/true/false/null) — ends at the next whitespace or EOF.
+            // Bare scalar: ends at next whitespace or EOF.
             var index = start
             while (index < text.length && !text[index].isWhitespace()) index++
             return index
@@ -117,14 +114,12 @@ internal fun normalize(element: JsonElement): Any? = when (element) {
 }
 
 /**
- * Deep-equality between a value Ghost decoded (`Map<String,Any?>`/`List<Any?>`/`String`/`Long`/
- * `Double`/`Boolean`/`null`) and a [normalize]d JSON value, with lenient Long/Double leaf
- * comparison so representational noise (YAML's typed core schema vs. JSON's schema-less numbers)
- * doesn't manufacture false mismatches — real ones get triaged into [deviationsInValue] instead.
+ * Deep-equality between a value Ghost decoded and a [normalize]d JSON value. Compares Long/Double
+ * leaves leniently so YAML's typed schema vs. JSON's schema-less numbers doesn't manufacture false
+ * mismatches — real ones go into [deviationsInValue] instead.
  *
- * [GhostYamlConstants.STR_TAG_KEY] is excluded from a Ghost-decoded map's keys before comparing:
- * it's Ghost's own synthetic field for preserving a custom YAML tag on a mapping (JSON has no way
- * to represent tags at all), not a real divergence from the fixture's expected value.
+ * Excludes [GhostYamlConstants.STR_TAG_KEY] from a Ghost-decoded map's keys: it's Ghost's own
+ * synthetic field for preserving a custom tag, which JSON has no way to represent.
  */
 internal fun deepEquals(ghostValue: Any?, jsonValue: Any?): Boolean {
     return when {
@@ -145,9 +140,8 @@ internal fun deepEquals(ghostValue: Any?, jsonValue: Any?): Boolean {
 }
 
 /**
- * True if parsing [case]'s YAML throws. Shared by [GhostYamlTestSuiteConformanceTest] (as JUnit
- * assertions) and `YamlComplianceReport`'s standalone `main()` (as a plain CLI report) — a single
- * source of truth for what "conformant" means so the two can never quietly drift apart.
+ * True if parsing [case]'s YAML throws. Shared by [GhostYamlTestSuiteConformanceTest] and
+ * `YamlComplianceReport`'s `main()` so the two can never quietly drift apart.
  */
 internal fun parseThrew(case: YamlTestSuiteCase): Boolean {
     return try {

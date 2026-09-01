@@ -8,9 +8,12 @@ import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeToYaml
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.util.isJvm
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
@@ -32,30 +35,17 @@ class GhostYamlReaderPoolTest {
         override val typeName: String = "PoolWidget"
 
         override fun serialize(
-            writer: com.ghost.serialization.writer.bytes.GhostJsonWriter,
+            writer: GhostJsonWriter,
             value: PoolWidget
         ) = Unit
 
-        override fun serialize(
-            writer: com.ghost.serialization.writer.bytes.GhostJsonFlatWriter,
-            value: PoolWidget
-        ) = Unit
-
-        override fun deserialize(reader: com.ghost.serialization.parser.streaming.GhostJsonReader): PoolWidget =
+        override fun deserialize(reader: GhostJsonReader): PoolWidget =
             PoolWidget(0, "")
 
-        override fun deserialize(reader: com.ghost.serialization.parser.bytes.GhostJsonFlatReader): PoolWidget =
+        override fun deserialize(reader: GhostJsonStringReader): PoolWidget =
             PoolWidget(0, "")
 
-        override fun deserialize(reader: com.ghost.serialization.parser.strings.GhostJsonStringReader): PoolWidget =
-            PoolWidget(0, "")
-
-        override fun serialize(
-            writer: com.ghost.serialization.writer.yaml.GhostYamlWriter,
-            value: PoolWidget
-        ) = Unit
-
-        override fun serialize(writer: GhostYamlFlatWriter, value: PoolWidget) {
+        override fun serialize(writer: GhostYamlWriter, value: PoolWidget) {
             writer.beginObject()
             writer.name("id").value(value.id)
             writer.name("tag").value(value.tag)
@@ -121,13 +111,13 @@ class GhostYamlReaderPoolTest {
     @Test
     fun resetReusesSameWriterInstanceOnJvm() {
         if (!isJvm) return
-        var first: GhostYamlFlatWriter? = null
-        var second: GhostYamlFlatWriter? = null
+        var first: GhostYamlWriter? = null
+        var second: GhostYamlWriter? = null
 
-        ghostYamlInternalUseFlatWriter { first = it }
-        ghostYamlInternalUseFlatWriter { second = it }
+        ghostYamlInternalUseFlatWriter { writer, _ -> first = writer }
+        ghostYamlInternalUseFlatWriter { writer, _ -> second = writer }
 
-        assertEquals(first, second, "ThreadLocal pool should reuse GhostYamlFlatWriter")
+        assertEquals(first, second, "ThreadLocal pool should reuse GhostYamlWriter")
     }
 
     @Test

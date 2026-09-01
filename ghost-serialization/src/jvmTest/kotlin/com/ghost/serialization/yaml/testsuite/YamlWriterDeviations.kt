@@ -27,7 +27,7 @@ internal val WRITER_REASON_LABELS: Map<String, String> = mapOf(
  * double-quotes), so a key containing structurally-significant bytes (`": "`, an embedded
  * newline/tab, a leading anchor/tag/alias/quote sigil, or a leading `[`/`{` from a stringified
  * complex key) could round-trip to a different structure or fail to re-parse. Fixed via
- * `GhostYamlFlatWriter.keyNeedsQuoting` — every previously-tracked case here now round-trips
+ * `GhostYamlWriter.keyNeedsQuoting` — every previously-tracked case here now round-trips
  * correctly.
  */
 internal val writerRoundTripDeviations: Set<DeviationCase> = setOf()

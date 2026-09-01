@@ -3,14 +3,12 @@ package com.ghost.serialization.yaml.testsuite
 import kotlin.system.exitProcess
 
 /**
- * Standalone CLI report: runs the same conformance check as
- * [GhostYamlTestSuiteConformanceTest.printConformanceSummaryAndValidateDeviations] against the
- * vendored yaml-test-suite snapshot, but prints a readable summary unconditionally (the JUnit
- * version only surfaces with `--info`) and exits non-zero on any unexpected deviation — wired up
- * as `./gradlew :ghost-serialization:yamlComplianceMatrix`.
+ * Standalone CLI report: same conformance check as
+ * [GhostYamlTestSuiteConformanceTest.printConformanceSummaryAndValidateDeviations], but prints
+ * unconditionally and exits non-zero on any unexpected deviation. Wired up as
+ * `./gradlew :ghost-serialization:yamlComplianceMatrix`.
  *
- * Shares [parseThrew]/[valueMatches] with the JUnit test (see `YamlTestSuiteJsonComparison.kt`)
- * so the two can never quietly report different numbers.
+ * Shares [parseThrew]/[valueMatches] with the JUnit test so the two can never quietly disagree.
  */
 fun main() {
     val cases = YamlTestSuiteLoader.cases
@@ -44,9 +42,8 @@ fun main() {
         }
     }
 
-    // Denominator matching matrix.yaml.info's "json" column: valid (non-error) cases that ship an
-    // in.json fixture — confirmed earlier to be the same vendored tree as matrix.yaml.info's own
-    // snapshot, so this number is directly comparable to that table.
+    // Matches matrix.yaml.info's "json" column (valid cases with an in.json fixture) — same
+    // vendored tree, so directly comparable to that table.
     val denominator = cases.count { !it.expectError && it.inJsonText != null }
     val compliancePercent = if (denominator == 0) 0.0 else valuePass * 100.0 / denominator
 

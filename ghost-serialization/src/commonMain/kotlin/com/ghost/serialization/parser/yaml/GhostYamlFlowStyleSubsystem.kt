@@ -2,9 +2,7 @@ package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
-/**
- * Subsystem for parsing YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]).
- */
+/** Parses YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]). */
 
 /** Parses flow-style mappings (`{key: value}`). */
 internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
@@ -20,9 +18,8 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
         return result
     }
 
-    // Flow collections nest via ordinary recursive readValue calls the same way block ones do
-    // (a value can itself be another "{"/"["), so they need the same depth guard — without it,
-    // deeply nested flow input has no bound on Kotlin call-stack recursion at all.
+    // Flow collections recurse into readValue the same way block ones do, so they need the same
+    // depth guard — without it, deeply nested flow input has no bound on call-stack recursion.
     if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
     depth++
     try {
@@ -37,10 +34,9 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
                 yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_MAPPING)
             }
 
-            // Read key. A nested flow collection used as a key (e.g. "[d, e]: f") has to go
-            // through readValue — readKey()'s bare-scalar scan has no notion of bracket nesting,
-            // so a comma inside it would look identical to the comma separating this entry from
-            // the next one.
+            // A nested flow collection used as a key (e.g. "[d, e]: f") must go through
+            // readValue — readKey()'s bare-scalar scan has no bracket-nesting awareness, so a
+            // comma inside it would look identical to the entry separator.
             val key = if (localRawData[position] == C.LEFT_BRACKET_BYTE || localRawData[position] == C.LEFT_BRACE_BYTE) {
                 stringifyExplicitMappingKey(readValue(indent = 0, inFlow = true))
             } else {
@@ -48,8 +44,8 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
             }
             skipWhitespaceAndComments()
 
-            // A flow mapping entry can be just a key with no ':' at all (e.g. "{ a, b }") — same
-            // "e-node" empty-value shorthand as an explicit block key with nothing after it.
+            // A flow mapping entry can be just a key with no ':' (e.g. "{ a, b }") — same
+            // empty-value shorthand as an explicit block key with nothing after it.
             val value = if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
                 position++ // consume ':'
                 skipWhitespaceAndComments()
@@ -132,15 +128,14 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
 
 /**
  * Reads one flow-sequence entry, which may be a plain value *or* an implicit single-pair
- * mapping (`[a: 1]` is really `[{a: 1}]`, per the "ns-flow-pair" production) — YAML lets a
- * sequence entry look like a bare "key: value" without its own `{ }`. An entry can also be an
- * empty-key pair (`[: value]`), or an *explicit* key/value pair (`[? key\n bar : value]`, the
- * same `?`/`:` shape a block mapping key gets).
+ * mapping (`[a: 1]` is really `[{a: 1}]`, per "ns-flow-pair") — YAML lets an entry look like a
+ * bare "key: value" without its own `{ }`. Also handles an empty-key pair (`[: value]`) or an
+ * *explicit* key/value pair (`[? key\n bar : value]`, same `?`/`:` shape as a block mapping key).
  *
- * The key may be a plain scalar, a quoted string, or a nested flow collection. For a plain
- * scalar, [GhostYamlFlatReader.readPlainScalarOrMapping] itself stops right before the ':' when
- * inside a flow collection (rather than redirecting into a block mapping the way it would
- * outside one), so this only has to check for a ':' immediately after the value it read.
+ * The key may be a plain scalar, quoted string, or nested flow collection. For a plain scalar,
+ * [GhostYamlFlatReader.readPlainScalarOrMapping] stops right before the ':' inside a flow
+ * collection (instead of redirecting into a block mapping), so this only checks for a ':'
+ * immediately after the value read.
  */
 internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
     val localRawData = rawData
@@ -154,13 +149,12 @@ internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
         position++ // consume ':'
         skipWhitespaceAndComments()
         val value = readValue(indent = 0, inFlow = true)
-        return linkedMapOf<String, Any?>("" to value)
+        return linkedMapOf("" to value)
     }
 
     val keyOrValue = readValue(indent = 0, inFlow = true)
-    // Inline whitespace only — an implicit key's ':' must be on the same line as the key itself
-    // (crossing a newline here would let e.g. "[ key\n  : value ]" be misread as a pair, when
-    // the caller's own end-of-entry check should instead reject it for an unexpected ':').
+    // Inline whitespace only — an implicit key's ':' must be on the same line as the key
+    // (crossing a newline would misread "[ key\n  : value ]" as a pair).
     skipInlineWhitespace()
     if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
         position++ // consume ':'
@@ -172,10 +166,10 @@ internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
 }
 
 /**
- * Reads an explicit key/value flow-sequence entry (`? key\n bar : value`) — the same `?`/`:`
- * shape a block mapping key gets ([GhostYamlFlatReader.readExplicitKeyEntry]), just without any
- * indentation to track since it's inside a flow collection. The leading `?` has already been
- * confirmed present via [isExplicitKeyIndicator] but not yet consumed.
+ * Reads an explicit key/value flow-sequence entry (`? key\n bar : value`) — same `?`/`:` shape
+ * as a block mapping key ([GhostYamlFlatReader.readExplicitKeyEntry]), but no indentation to
+ * track since it's inside a flow collection. The leading `?` is confirmed via
+ * [isExplicitKeyIndicator] but not yet consumed.
  */
 private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
     position++ // consume '?'
@@ -205,10 +199,9 @@ private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
 }
 
 /**
- * True if the ':' at the current position is a genuine flow-pair separator (a bare leading ':'
- * with nothing before it needs the same lookahead a plain scalar's own colon-detection uses) —
- * followed by whitespace or end of input — rather than just the first character of a plain
- * scalar that happens to start with ':' (e.g. "::vector" or ":x", both valid YAML strings).
+ * True if the ':' at the current position is a genuine flow-pair separator (followed by
+ * whitespace or EOF) rather than the first character of a plain scalar starting with ':'
+ * (e.g. "::vector" or ":x", both valid YAML strings).
  */
 private fun GhostYamlFlatReader.isFlowPairColon(): Boolean {
     val nextPosition = position + 1

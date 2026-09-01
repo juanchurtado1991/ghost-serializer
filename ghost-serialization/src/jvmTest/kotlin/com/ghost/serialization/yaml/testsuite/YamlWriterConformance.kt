@@ -5,10 +5,9 @@ import com.charleskorn.kaml.YamlException
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 
 /**
- * Decodes [case]'s `in.yaml` with the reader. Null if the reader itself can't decode it — not a
- * writer-harness concern either way, and self-adjusting: a case that starts throwing once a
- * reader bug is fixed elsewhere silently drops out of the writer conformance suite with no
- * coordination needed between the two harnesses.
+ * Decodes [case]'s `in.yaml` with the reader. Null if the reader can't decode it — not a
+ * writer-harness concern, and self-adjusting: a case that starts throwing once a reader bug is
+ * fixed elsewhere just drops out of the writer conformance suite with no coordination needed.
  */
 internal fun decodeOriginal(case: YamlTestSuiteCase): List<Any?>? =
     try {
@@ -36,13 +35,11 @@ internal fun writerRoundTripMatches(case: YamlTestSuiteCase): Boolean {
 }
 
 /**
- * Symmetric deep-equality between two Ghost-native decoded values (both sides from
- * `GhostYamlFlatReader`, not a JSON fixture) — deliberately
- * separate from [deepEquals] in `YamlTestSuiteJsonComparison.kt`, which asymmetrically excludes
- * `STR_TAG_KEY` from only the Ghost-decoded side
- * because a JSON fixture never has that synthetic key at all. Reusing that function here (both
- * sides Ghost-native) would wrongly treat a `_tag` entry that round-tripped correctly as a
- * mismatch, since it'd be filtered from [original] but not [reDecoded].
+ * Symmetric deep-equality between two Ghost-native decoded values (both from
+ * `GhostYamlFlatReader`). Deliberately separate from [deepEquals] in
+ * `YamlTestSuiteJsonComparison.kt`, which excludes `STR_TAG_KEY` from only one side since a JSON
+ * fixture never has it — reusing that here would wrongly flag a correctly round-tripped `_tag`
+ * entry as a mismatch.
  */
 private fun ghostValuesEqual(original: Any?, reDecoded: Any?): Boolean = when {
     original is Map<*, *> && reDecoded is Map<*, *> ->
@@ -59,13 +56,12 @@ private fun ghostValuesEqual(original: Any?, reDecoded: Any?): Boolean = when {
 }
 
 /**
- * True if a second, independent parser (kaml) accepts Ghost's own re-encoded output — not a
- * byte-match target (Ghost's flow style differs from every reference emitter in the vendored
- * snapshot), just "does an independent implementation consider this valid YAML."
+ * True if a second, independent parser (kaml) accepts Ghost's re-encoded output — not a
+ * byte-match target, just "does an independent implementation consider this valid YAML."
  */
 internal fun writerOutputIsKamlAcceptable(case: YamlTestSuiteCase): Boolean {
     val original = decodeOriginal(case) ?: return true
-    if (original.size != 1) return true // kaml's Yaml.default targets one document; multi-doc is out of scope here.
+    if (original.size != 1) return true // kaml's Yaml.default targets one document
     val text = GhostYamlTreeWriter.encode(original[0])
     return try {
         Yaml.default.parseToYamlNode(text)

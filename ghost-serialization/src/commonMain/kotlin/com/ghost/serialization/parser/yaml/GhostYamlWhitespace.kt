@@ -5,8 +5,7 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
 /**
  * Whitespace, comment, indentation, and document-marker handling shared by the core block/flow
  * parser and the anchor/tag/flow-style subsystems. Called extremely frequently (every line
- * transition goes through [GhostYamlFlatReader.skipWhitespaceAndComments]), but moving it to its
- * own file has no runtime cost — see the split's commit message for why.
+ * transition goes through [GhostYamlFlatReader.skipWhitespaceAndComments]).
  */
 
 /** Skips spaces and tabs (inline whitespace — NOT newlines). */
@@ -44,9 +43,8 @@ internal fun GhostYamlFlatReader.skipWhitespaceAndComments() {
             }
 
             currentByte == C.HASH_BYTE -> {
-                // A comment must be preceded by whitespace or be the first thing on its line —
-                // "c,#invalid" and "\"value\"#comment" aren't comments, they're invalid trailing
-                // text directly touching real content.
+                // A comment must be preceded by whitespace or be first on its line —
+                // "c,#invalid" isn't a comment, it's invalid trailing text touching real content.
                 if (position > 0) {
                     val previousByte = localRawData[position - 1]
                     if (previousByte != C.SPACE_BYTE && previousByte != C.TAB_BYTE &&
@@ -108,11 +106,9 @@ internal fun GhostYamlFlatReader.advanceLine() {
 }
 
 /**
- * Skips `%YAML`/`%TAG` directives and an optional `---` document-start marker.
- *
- * Returns true if an explicit `---` marker was consumed. Callers need this to tell an
- * explicit-but-empty document (`---` followed immediately by end of input, which is a valid
- * document whose value is null) apart from genuinely having no more input to read.
+ * Skips `%YAML`/`%TAG` directives and an optional `---` document-start marker. Returns true if
+ * an explicit `---` was consumed, so callers can tell an explicit-but-empty document (`---`
+ * immediately followed by EOF, valid with a null value) apart from having no more input.
  */
 internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
     val localLimit = limit
@@ -210,10 +206,9 @@ private fun isYamlVersionToken(version: String): Boolean {
 
 /**
  * Skips a `...` document end marker if present, requiring only whitespace or a comment to
- * follow on the same line. Returns true if a marker was consumed — after an explicit `...`,
- * the *next* document is allowed to start without a `---` at all (per the YAML stream grammar),
- * so callers should not apply trailing-content-after-a-document restrictions when this returns
- * true.
+ * follow on the same line. Returns true if a marker was consumed — after an explicit `...`, the
+ * *next* document may start without a `---` at all, so callers should skip trailing-content
+ * restrictions when this returns true.
  */
 internal fun GhostYamlFlatReader.skipDocumentEnd(): Boolean {
     skipWhitespaceAndComments()

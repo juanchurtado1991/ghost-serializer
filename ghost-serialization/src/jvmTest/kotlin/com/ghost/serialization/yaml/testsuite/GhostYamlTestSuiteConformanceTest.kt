@@ -9,16 +9,12 @@ import java.util.stream.Stream
 
 /**
  * Runs Ghost's YAML decoder against the vendored yaml-test-suite snapshot (see
- * `yaml-test-suite/README.md`), checking two things per case since Ghost has no low-level
- * parser-event API to compare against `test.event` the way SnakeYAML-based tooling does:
+ * `yaml-test-suite/README.md`). Ghost has no low-level parser-event API to compare against
+ * `test.event` the way SnakeYAML-based tooling does, so it checks two things per case instead:
+ * [outcomeConformance] (throws iff the case expects an error) and [valueConformance] (decoded
+ * tree matches `in.json` when present).
  *
- * - [outcomeConformance]: does parsing throw when the case expects an error, and not throw
- *   otherwise?
- * - [valueConformance]: when the case has an `in.json` fixture and expects success, does the
- *   decoded tree match it?
- *
- * Known gaps are tracked in `YamlTestSuiteDeviations.kt` rather than silently skipped — see that
- * file's KDoc for the philosophy.
+ * Known gaps are tracked in `YamlTestSuiteDeviations.kt` rather than silently skipped.
  */
 class GhostYamlTestSuiteConformanceTest {
 
@@ -57,11 +53,10 @@ class GhostYamlTestSuiteConformanceTest {
     }
 
     /**
-     * Prints a compact pass/known-deviation/unexpected-failure summary (only visible with
-     * `--info`, or from the IDE — the root `build.gradle.kts` sets
-     * `testLogging.showStandardStreams = false`; the JUnit HTML/XML report is CI's real source
-     * of truth), and fails if any tracked deviation id no longer matches a loaded case — the
-     * guard that catches stale entries after refreshing the vendored snapshot.
+     * Prints a pass/known-deviation/unexpected-failure summary (only visible with `--info`, or
+     * the IDE — root `build.gradle.kts` sets `testLogging.showStandardStreams = false`), and
+     * fails if any tracked deviation id no longer matches a loaded case — catches stale entries
+     * after refreshing the vendored snapshot.
      */
     @Test
     fun printConformanceSummaryAndValidateDeviations() {

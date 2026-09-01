@@ -3,15 +3,9 @@ package com.ghost.serialization.parser.yaml
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
- * Subsystem for YAML's explicit block-mapping keys: "? key" optionally followed by ": value" on
- * its own line, e.g.
- * ```
- * ? explicit key
- * : value
- * ```
- * Unlike an implicit "key: value" pair, the key here may be any node — a multi-line plain
- * scalar, a block scalar, or even a nested sequence/mapping — not just plain key text, and the
- * value is entirely optional (a bare "? key" with nothing else is a key mapped to null).
+ * Handles YAML's explicit block-mapping keys (`? key` / `: value`). Unlike an implicit
+ * "key: value" pair, the key may be any node — not just plain scalar text — and the value is
+ * entirely optional; a bare `? key` maps to null.
  */
 
 /** True if position is at a `?` explicit-key indicator (must be followed by whitespace/EOL). */
@@ -26,11 +20,8 @@ internal fun GhostYamlFlatReader.isExplicitKeyIndicator(): Boolean {
 }
 
 /**
- * Reads one "? key" / ": value" entry, with [GhostYamlFlatReader.position] at the "?". The key
- * may be on the same line as "?" or indented on later lines; if a ":" doesn't follow at
- * [blockIndent] (on the key's own line or a later one), the value is null and nothing past the
- * key is consumed — the next loop iteration in [GhostYamlFlatReader.readBlockMapping] sees
- * whatever comes next fresh, the same way a bare "key:" with no value already works.
+ * Reads one "? key" / ": value" entry, with [GhostYamlFlatReader.position] at the "?". If a ":"
+ * doesn't follow at [blockIndent], the value is null and nothing past the key is consumed.
  */
 internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<String, Any?> {
     position++ // consume '?'
@@ -39,10 +30,8 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
     val localLimit = limit
 
     val keyNode = if (position >= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {
-        // Key is on the next line(s), indented more than blockIndent — mirrors how a value
-        // after ':' on its own line is resolved, including the "a '-' sequence entry may sit
-        // at exactly blockIndent" exception (e.g. "?\n- a\n- b" is a sequence key aligned with
-        // the "?" itself, not a dedent out of the mapping).
+        // Key on later line(s): mirrors value-after-':' resolution, including the exception
+        // that a '-' sequence entry may sit at exactly blockIndent (e.g. "?\n- a\n- b").
         advanceLine()
         skipWhitespaceAndComments()
         val continuesAsSequenceEntry =
@@ -56,20 +45,15 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
         // Nothing between '?' and ':' (e.g. "? : x") — an empty/null key.
         null
     } else {
-        // Unlike an implicit "key: value" pair's value, explicit-key content (and its ": value"
-        // counterpart below) legitimately supports YAML's "compact notation" — a nested block
-        // mapping/sequence starting inline right after "?"/":", not just on a fresh indented line
-        // (spec example 8.19, "Compact Block Mappings" — see V9D5). allowMappingRedirect stays at
-        // its default (true) here; only an *implicit* pair's inline value forbids it (see
-        // GhostYamlFlatReader.resolveValueAfterColon).
+        // Unlike an implicit pair's value, explicit-key content supports YAML's "compact
+        // notation" — a nested block mapping/sequence starting inline right after "?"/":"
+        // (spec example 8.19). allowMappingRedirect stays at its default (true) here.
         readValue(blockIndent, inFlow = false, strictDedent = true)
     }
     val key = stringifyExplicitMappingKey(keyNode)
 
-    // Look for ':'. On the key's own line it's always valid regardless of column (e.g. "? : x"
-    // or "? &a a : b" have no ambiguity to resolve) — the indentation check only matters once
-    // we've crossed onto a later line, the same way a value after ':' requires exactly
-    // blockIndent on its own line rather than merely "more indented than before".
+    // Look for ':'. On the key's own line it's always valid regardless of column; the
+    // indentation check only matters once we've crossed onto a later line.
     val positionBeforeGap = position
     skipWhitespaceAndComments()
     var crossedLine = false
@@ -103,9 +87,8 @@ private fun GhostYamlFlatReader.isExplicitValueIndicator(): Boolean {
 
 /**
  * Converts a node read as an explicit key into the String [GhostYamlFlatReader]'s
- * `Map<String, Any?>` representation needs — same requirement JSON object keys already have.
- * Non-scalar keys (a sequence or mapping used as a key) have no clean string form; the
- * yaml-test-suite cases that use them don't have a JSON fixture to match against either.
+ * `Map<String, Any?>` representation needs. Non-scalar keys have no clean string form, but no
+ * yaml-test-suite case using one has a JSON fixture to match against either.
  */
 internal fun stringifyExplicitMappingKey(keyNode: Any?): String = when (keyNode) {
     null -> ""

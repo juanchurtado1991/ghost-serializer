@@ -3,8 +3,8 @@ package com.ghost.serialization.yaml.testsuite
 /**
  * One case from the vendored yaml-test-suite snapshot (see `yaml-test-suite/README.md`).
  *
- * Not a `data class` — [inYamlBytes] is a [ByteArray], and instances here are never compared by
- * value, only looked up/iterated by [id].
+ * Not a `data class`: [inYamlBytes] is a [ByteArray] and instances are only ever looked up by
+ * [id], never compared by value.
  */
 class YamlTestSuiteCase(
     val id: String,

@@ -1,12 +1,15 @@
+@file:OptIn(InternalGhostApi::class)
+
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
 private var cachedReader: GhostYamlFlatReader? = null
-private var cachedWriter: GhostYamlFlatWriter? = null
+private var cachedWriter: GhostYamlWriter? = null
+private var cachedWriterBuffer: FlatByteArrayWriter? = null
 
 @InternalGhostApi
 actual fun <T> ghostYamlInternalUseFlatReader(
@@ -25,14 +28,18 @@ actual fun <T> ghostYamlInternalUseFlatReader(
 
 @InternalGhostApi
 actual fun <T> ghostYamlInternalUseFlatWriter(
-    block: (GhostYamlFlatWriter) -> T
+    block: (GhostYamlWriter, FlatByteArrayWriter) -> T
 ): T {
     var writer = cachedWriter
-    if (writer == null) {
-        writer = GhostYamlFlatWriter(FlatByteArrayWriter())
+    var buffer = cachedWriterBuffer
+    if (writer == null || buffer == null) {
+        buffer = FlatByteArrayWriter()
+        writer = GhostYamlWriter(buffer)
         cachedWriter = writer
+        cachedWriterBuffer = buffer
     } else {
         writer.reset()
+        buffer.reset()
     }
-    return block(writer)
+    return block(writer, buffer)
 }

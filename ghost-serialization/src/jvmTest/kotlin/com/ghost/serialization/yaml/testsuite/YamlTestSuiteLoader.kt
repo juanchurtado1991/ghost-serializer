@@ -10,10 +10,8 @@ import kotlin.streams.asSequence
  * Loads every case from the vendored yaml-test-suite snapshot under
  * `ghost-serialization/src/jvmTest/resources/yaml-test-suite` (see that directory's `README.md`).
  *
- * Locates the snapshot via [repoRoot] rather than classloader resource listing — adapted from the
- * same walk-up-to-`settings.gradle.kts` approach used by
- * `ghost-compiler`'s `RepoSourceHygieneTest`, which sidesteps classloader directory-listing edge
- * cases entirely.
+ * Locates the snapshot via [repoRoot] rather than classloader resource listing, which has
+ * directory-listing edge cases — same approach as `ghost-compiler`'s `RepoSourceHygieneTest`.
  */
 internal object YamlTestSuiteLoader {
 
