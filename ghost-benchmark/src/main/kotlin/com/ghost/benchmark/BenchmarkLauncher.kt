@@ -12,23 +12,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.system.exitProcess
 
 /**
- * CLI entry point for every benchmark suite.
- *
- * Each Gradle task launches a fresh JVM with `-Pghost.benchmark.profile=full|fast`
- * (default `full`). Pass `-PskipTests` to skip the `:allTests` gate.
- *
- * ```
- * ./gradlew :ghost-benchmark:benchmarkTwitter -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkSynthetic -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkSpecial -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkRawJson -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkProto -PskipTests
- * ./gradlew :ghost-benchmark:benchmarkRegression -PskipTests          # ~9 min gate
- * ./gradlew :ghost-benchmark:benchmarkRegressionFast -PskipTests       # ~1–2 min gate
- * ./gradlew :ghost-benchmark:run -PskipTests                           # full README suite
- * ```
- *
+ * CLI entry point for every benchmark suite. Each Gradle task launches a fresh JVM with
+ * `-Pghost.benchmark.profile=full|fast` (default `full`); `-PskipTests` skips the `:allTests` gate.
  * Suite selection is driven by the first CLI argument; see [BenchmarkSuite].
  */
 fun main(args: Array<String>) {

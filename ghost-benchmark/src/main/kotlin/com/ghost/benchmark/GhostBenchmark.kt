@@ -549,10 +549,8 @@ private fun printRankedSubTable(label: String, metrics: BenchmarkMetrics, payloa
 }
 
 /**
- * Cold start measures one-time initialization latency, not sustained throughput.
- *
- * Converting a single first parse to GB/s obscures the startup cost and makes the
- * result payload-size-dependent, so this table intentionally stays in milliseconds.
+ * Cold start is one-time init latency, not throughput — GB/s would obscure the startup
+ * cost and make the result payload-size-dependent, so this stays in milliseconds.
  */
 private fun printColdStartTable(title: String, metrics: BenchmarkMetrics) {
     println("\n========================================================")
@@ -584,9 +582,8 @@ private fun printColdStartTable(title: String, metrics: BenchmarkMetrics) {
 }
 
 /**
- * Micro-benchmarks (deep nesting, malformed JSON) measure per-op latency on tiny payloads.
- * GB/s would be misleading at this scale (same rationale as [printColdStartTable]); allocation
- * is not measured here either.
+ * Deep-nesting / malformed-JSON micro-benchmarks measure latency only (same GB/s rationale
+ * as [printColdStartTable]); allocation isn't measured here.
  */
 private fun printMicroLatencyTable(
     title: String,
@@ -627,9 +624,9 @@ private fun printMicroLatencyTable(
 /**
  * Maps per-session synthetic measurements into calculator observations.
  *
- * Speed uses the **median of per-session** Ghost-vs-KSER advantage ratios (robust to outlier
- * sessions). Ghost and KSER are measured back-to-back in each session (see [measureEnginesRotated]).
- * Encoded as ghost=1.0 and kser=median(kser_i/ghost_i) for [RegressionCalculator.Metric.LATENCY].
+ * Speed uses the median of per-session Ghost-vs-KSER ratios (robust to outliers); Ghost and
+ * KSER are measured back-to-back per session (see [measureEnginesRotated]). Encoded as
+ * ghost=1.0, kser=median(kser_i/ghost_i) for [RegressionCalculator.Metric.LATENCY].
  */
 internal fun syntheticObservations(run: SyntheticRunResults): List<RegressionCalculator.Observed> {
     fun row(

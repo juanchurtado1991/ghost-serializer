@@ -23,13 +23,10 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries.
- *
- * Covers polymorphism, structural flattening, resilience, custom decoders, opaque `RawJson`
- * envelopes, and protobuf well-known types. These workloads are measured independently because
- * Moshi, KotlinX Serialization, and Jackson do not expose comparable capabilities.
- *
- * Uses the same [ThreadMXBean] allocation methodology as the main synthetic harness.
+ * Ghost-only micro-benchmark for features that have no equivalent in other JSON libraries:
+ * polymorphism, structural flattening, resilience, custom decoders, opaque `RawJson` envelopes,
+ * and protobuf well-known types. Uses the same [ThreadMXBean] allocation methodology as the
+ * main synthetic harness.
  */
 object GhostSpecialFeaturesBenchmark {
 

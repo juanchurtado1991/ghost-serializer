@@ -13,24 +13,11 @@ import java.time.Instant
 /**
  * Engine-relative regression detector.
  *
- * ## Why relative to KSER and not absolute ops/s
- *
- * Absolute throughput (ops/s) and latency (ms) scale with the CPU, JVM build, thermal
- * state, and background load of whatever machine runs the benchmark. Comparing a fresh
- * absolute number against a number captured on a different machine (the README baseline)
- * is meaningless — a slower laptop would always "regress".
- *
- * Both Ghost and KSER, however, run in the **same JVM process, back-to-back**, on the
- * same payload. Their ratio `Ghost ÷ KSER` cancels the machine/JIT scaling factor. If a
- * change makes Ghost genuinely slower, its advantage over KSER shrinks on *every* machine;
- * if the machine is simply slow, both engines slow down together and the ratio is stable.
- *
- * This calculator therefore compares the **current Ghost-vs-KSER advantage** against the
- * **README baseline advantage** and flags a regression only when the relative advantage
- * degrades beyond [DEFAULT_TOLERANCE]. That makes the check portable across machines.
- *
- * Memory (allocated bytes per op) is deterministic and already machine-independent, but it
- * is normalized the same way (`KSER ÷ Ghost` leanness) so a single tolerance governs both.
+ * Absolute ops/s and latency scale with the machine, so this compares the **current
+ * Ghost÷KSER advantage ratio** against the **README baseline ratio** instead: Ghost and
+ * KSER run back-to-back in the same JVM process on the same payload, so their ratio cancels
+ * machine/JIT variance — a regression is flagged only when that ratio degrades beyond
+ * [DEFAULT_TOLERANCE]. Memory (KB/op) is normalized the same way (`KSER ÷ Ghost` leanness).
  */
 object RegressionCalculator {
 

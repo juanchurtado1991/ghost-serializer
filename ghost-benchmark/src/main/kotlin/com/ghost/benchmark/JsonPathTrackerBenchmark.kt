@@ -1,8 +1,17 @@
 package com.ghost.benchmark
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.hasNext
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.selectNameAndConsume
+import com.ghost.serialization.parser.streaming.skipValue
 import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
@@ -35,7 +44,7 @@ object JsonPathTrackerBenchmark {
         val userInner = JsonReaderOptions.of("addresses", "age")
         val addrOpts = JsonReaderOptions.of("zip")
 
-        fun walk(reader: GhostJsonFlatReader) {
+        fun walk(reader: GhostJsonReader) {
             reader.reset(bytes)
             reader.beginObject()
             while (true) {
@@ -80,7 +89,7 @@ object JsonPathTrackerBenchmark {
             reader.endObject()
         }
 
-        val reader = GhostJsonFlatReader(bytes)
+        val reader = GhostJsonReader(bytes)
         repeat(WARMUP) { walk(reader) }
 
         val threadId = Thread.currentThread().id

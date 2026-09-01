@@ -30,6 +30,30 @@ fun JavaExec.configureBenchmarkJvm(profile: String = "full") {
         )
         println("🔬 JIT logging enabled → ${logFile.absolutePath}")
     }
+    if (project.hasProperty("profiler")) {
+        val agentLib = "/opt/WebStorm-261.22158.274/lib/async-profiler/amd64/libasyncProfiler.so"
+        val outFile = project.layout.projectDirectory.file("profile.collapsed").asFile
+        jvmArgs(
+            "-agentpath:$agentLib=start,event=cpu,interval=1ms,collapsed,file=${outFile.absolutePath}",
+        )
+        println("🔬 async-profiler enabled → ${outFile.absolutePath}")
+    }
+    if (project.hasProperty("inline")) {
+        jvmArgs(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+PrintCompilation",
+            "-XX:+PrintInlining",
+        )
+        println("🔬 -XX:+PrintInlining enabled")
+    }
+    if (project.hasProperty("alloc")) {
+        val agentLib = "/opt/WebStorm-261.22158.274/lib/async-profiler/amd64/libasyncProfiler.so"
+        val outFile = project.layout.projectDirectory.file("alloc.collapsed").asFile
+        jvmArgs(
+            "-agentpath:$agentLib=start,event=alloc,collapsed,file=${outFile.absolutePath}",
+        )
+        println("🔬 async-profiler (alloc) enabled → ${outFile.absolutePath}")
+    }
 }
 
 /** Runs `:allTests` before benchmarks unless `-PskipTests` is set. */
@@ -175,6 +199,23 @@ tasks.named<JavaExec>("run") {
     args("full")
     configureBenchmarkTestGate()
     configureBenchmarkJvm()
+}
+
+tasks.register<JavaExec>("microIsolated") {
+    group = "benchmark"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.ghost.benchmark.MicroIsolatedKt")
+    dependsOn("classes")
+    configureBenchmarkJvm()
+}
+
+tasks.register("printMicroClasspath") {
+    dependsOn("classes")
+    doLast {
+        println("CLASSPATH_START")
+        println(sourceSets.main.get().runtimeClasspath.asPath)
+        println("CLASSPATH_END")
+    }
 }
 
 kotlin {
