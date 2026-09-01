@@ -66,9 +66,9 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
-    val bytes = ghostYamlInternalUseFlatWriter { writer ->
+    val bytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
         yamlSerializer.serialize(writer, value)
-        writer.buffer.toByteArray()
+        buffer.toByteArray()
     }
     respond(ByteArrayContent(bytes, ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML), status))
 }

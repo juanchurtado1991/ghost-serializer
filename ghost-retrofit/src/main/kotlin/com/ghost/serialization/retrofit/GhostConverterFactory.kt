@@ -8,6 +8,8 @@ import com.ghost.serialization.annotations.GhostCoerce
 import com.ghost.serialization.annotations.GhostStrict
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.ghostInternalUseFlatReader
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.isNextNullValue
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
 import com.ghost.serialization.serializers.SetSerializer

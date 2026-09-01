@@ -3,9 +3,7 @@ package com.ghost.serialization.spring
 import org.springframework.http.MediaType
 import org.springframework.util.MimeType
 
-/**
- * Shared media-type / MIME constants for Ghost Spring MVC and WebFlux converters.
- */
+/** Shared media-type / MIME constants for Ghost Spring MVC and WebFlux converters. */
 internal object GhostSpringMediaTypes {
     const val TYPE_APPLICATION = "application"
     const val TYPE_TEXT = "text"

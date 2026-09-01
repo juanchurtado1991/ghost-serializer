@@ -13,7 +13,6 @@ import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 // --- Mock proto-flavored model & hand-written stand-in for @GhostProtoSerialization codegen ---
@@ -21,15 +20,6 @@ object ProtoKtorEventSerializer : GhostSerializer<ProtoKtorEvent> {
     override val typeName: String = "com.ghost.serialization.ktor.ProtoKtorEvent"
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoKtorEvent) {
-        writer.beginObject()
-        writer.name("deviceId")
-        writer.value(value.deviceId.toString())
-        writer.name("label")
-        writer.value(value.label)
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoKtorEvent) {
         writer.beginObject()
         writer.name("deviceId")
         writer.value(value.deviceId.toString())

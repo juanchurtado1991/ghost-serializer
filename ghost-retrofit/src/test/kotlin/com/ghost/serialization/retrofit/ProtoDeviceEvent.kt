@@ -3,7 +3,6 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.streaming.nextLong
 
 /**
  * Hand-written stand-in for what

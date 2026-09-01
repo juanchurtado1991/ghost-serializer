@@ -13,7 +13,6 @@ import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 /**
@@ -30,15 +29,6 @@ object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
     override val typeName: String = "com.ghost.serialization.retrofit.ProtoDeviceEvent"
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoDeviceEvent) {
-        writer.beginObject()
-        writer.name("deviceId")
-        writer.value(value.deviceId.toString())
-        writer.name("label")
-        writer.value(value.label)
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoDeviceEvent) {
         writer.beginObject()
         writer.name("deviceId")
         writer.value(value.deviceId.toString())
@@ -66,12 +56,9 @@ object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
 
     /**
      * Explicit flat-reader override (not the default interface bridge) so a
-     * `GhostProtoJsonFlatReader` passed in by
-     * [GhostProtoConverterFactory] dispatches
-     * `nextLong` to its
-     * proto3-lenient implementation via virtual dispatch — the default bridge would construct a
-     * plain `GhostJsonReader` internally and lose that
-     * leniency.
+     * `GhostProtoJsonFlatReader` passed in by [GhostProtoConverterFactory] dispatches
+     * `nextLong` to its proto3-lenient implementation via virtual dispatch — the default bridge
+     * would construct a plain `GhostJsonReader` internally and lose that leniency.
      */
     override fun deserialize(reader: GhostJsonFlatReader): ProtoDeviceEvent {
         var deviceId = 0L

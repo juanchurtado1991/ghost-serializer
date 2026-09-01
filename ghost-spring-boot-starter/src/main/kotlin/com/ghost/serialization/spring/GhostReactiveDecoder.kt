@@ -16,10 +16,9 @@ import reactor.core.publisher.Mono
 private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 
 /**
- * Reactive Decoder for Ghost Serialization.
- *
- * Resolves serializers from the full [ResolvableType] so `List` / `Set` / `Map`
- * element types are unwrapped (parity with MVC / Retrofit / Ktor).
+ * Reactive Decoder for Ghost Serialization. Resolves serializers from the full
+ * [ResolvableType] so `List` / `Set` / `Map` element types are unwrapped (parity with
+ * MVC / Retrofit / Ktor).
  */
 class GhostReactiveDecoder : AbstractDecoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
@@ -54,11 +53,9 @@ class GhostReactiveDecoder : AbstractDecoder<Any>(
     }
 
     /**
-     * NDJSON records aren't guaranteed to arrive one-per-[DataBuffer] — a small multi-line
-     * request body will typically arrive as a single network buffer, and a single record can
-     * just as easily be split across two. This re-frames the raw buffer stream on `\n` before
-     * decoding each line, carrying any trailing partial line over to the next buffer and
-     * flushing a final unterminated line at stream completion.
+     * NDJSON records don't align with [DataBuffer] boundaries, so this re-frames the byte
+     * stream on `\n`, carrying partial lines across buffers and flushing the final
+     * unterminated line at completion.
      */
     private fun decodeStreaming(
         inputStream: Publisher<DataBuffer>,

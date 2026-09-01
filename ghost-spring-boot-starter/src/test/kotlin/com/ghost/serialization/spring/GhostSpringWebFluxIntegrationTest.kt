@@ -9,9 +9,8 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 
 /**
- * Verifies end-to-end that [GhostWebFluxAutoConfiguration] registers [GhostReactiveDecoder]
- * and [GhostReactiveEncoder] on a reactive server. Branch coverage for those codecs is
- * provided by [GhostReactiveDecoderTest] and [GhostReactiveEncoderTest].
+ * Verifies [GhostWebFluxAutoConfiguration] end-to-end; branch coverage for the codecs
+ * themselves is in [GhostReactiveDecoderTest] / [GhostReactiveEncoderTest].
  */
 @SpringBootTest(
     classes = [GhostSpringReactiveTestApplication::class],

@@ -16,13 +16,12 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
- * Resolves Ghost serializers from Java [Type] / Spring [ResolvableType], including
- * top-level `List` / `Set` / `Map` unwrap (parity with Retrofit / Ktor).
+ * Resolves Ghost serializers from Java [Type] / Spring [ResolvableType], unwrapping
+ * top-level `List` / `Set` / `Map` (parity with Retrofit / Ktor).
  *
  * Top-level `String` / `byte[]` / primitives / `java.lang.*` stay excluded so Spring's
- * default converters keep those bodies. The same types are still valid as List/Set/Map
- * element arguments (e.g. `List<String>`), matching Retrofit's `Ghost.getSerializer` path.
- * Map unwrap requires a [String] key type.
+ * default converters keep those bodies, though they're still valid as collection element
+ * types. Map unwrap requires a [String] key.
  */
 internal object GhostSpringTypeSerializers {
 

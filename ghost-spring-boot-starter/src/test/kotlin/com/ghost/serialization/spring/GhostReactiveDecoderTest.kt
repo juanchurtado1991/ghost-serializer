@@ -15,9 +15,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for [GhostReactiveDecoder] without a Spring context. Covers `canDecode`,
- * `decode`, and `decodeToMono` branches (multi-buffer join, NDJSON streaming, error
- * wrapping). End-to-end WebFlux wiring is covered by [GhostSpringWebFluxIntegrationTest].
+ * Unit tests for [GhostReactiveDecoder] without a Spring context; see
+ * [GhostSpringWebFluxIntegrationTest] for end-to-end WebFlux coverage.
  */
 class GhostReactiveDecoderTest {
 
@@ -88,9 +87,8 @@ class GhostReactiveDecoderTest {
 
     @Test
     fun decode_ndjson_splitsMultipleRecordsDeliveredInASingleBuffer() {
-        // Regression test: a small multi-line NDJSON body typically arrives as ONE network
-        // buffer, not one buffer per line. Naively mapping 1 buffer -> 1 decoded object (the
-        // previous implementation) silently dropped every record after the first.
+        // Regression: NDJSON bodies can arrive as one network buffer, not one per line; naive
+        // 1 buffer -> 1 object mapping silently dropped every record after the first.
         val ndjson = MimeType("application", "x-ndjson")
         val flux = decoder.decode(
             Flux.just(buffer("{\"id\":1,\"name\":\"a\"}\n{\"id\":2,\"name\":\"b\"}\n")),

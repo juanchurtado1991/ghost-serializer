@@ -15,7 +15,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-// --- Retrofit API Definition ---
 class GhostRetrofitTest {
 
     private lateinit var mockWebServer: MockWebServer
@@ -121,7 +120,7 @@ class GhostRetrofitTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(200)
-                .setBody("""{"id": 42, "name": "John Doe", "isActive": """) // Incomplete JSON
+                .setBody("""{"id": 42, "name": "John Doe", "isActive": """)
         )
 
         assertFailsWith<Exception> {

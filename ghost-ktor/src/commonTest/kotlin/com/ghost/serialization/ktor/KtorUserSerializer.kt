@@ -13,7 +13,6 @@ import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 // --- Mock Models ---
@@ -21,17 +20,6 @@ object KtorUserSerializer : GhostSerializer<KtorUser> {
     override val typeName: String = "com.ghost.serialization.ktor.KtorUser"
 
     override fun serialize(writer: GhostJsonWriter, value: KtorUser) {
-        writer.beginObject()
-        writer.name("id")
-        writer.value(value.id.toLong())
-        writer.name("name")
-        writer.value(value.name)
-        writer.name("isActive")
-        writer.value(value.isActive)
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: KtorUser) {
         writer.beginObject()
         writer.name("id")
         writer.value(value.id.toLong())

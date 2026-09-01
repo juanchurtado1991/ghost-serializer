@@ -22,8 +22,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Direct unit tests for [bodyGhost], [bodyGhostProto], and [bodyGhostYaml] — client bypass
- * extensions that deserialize response bodies without Ktor's `ContentNegotiation` pipeline.
+ * Direct unit tests for [bodyGhost], [bodyGhostProto], and [bodyGhostYaml]: client bypass
+ * extensions that deserialize without Ktor's `ContentNegotiation` pipeline.
  */
 class GhostKtorBypassExtensionsTest {
 
@@ -58,7 +58,7 @@ class GhostKtorBypassExtensionsTest {
             )
         }
 
-        // No `install(ContentNegotiation)` — bodyGhost must work against a bare HttpClient.
+        // No ContentNegotiation installed — bodyGhost must work against a bare HttpClient.
         val client = HttpClient(mockEngine)
         val response = client.get("/user").bodyGhost<KtorUser>()
 

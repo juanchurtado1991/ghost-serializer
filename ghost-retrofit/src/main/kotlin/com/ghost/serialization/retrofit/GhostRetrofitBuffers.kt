@@ -12,10 +12,7 @@ import java.io.InputStream
 internal object GhostRetrofitBuffers {
     const val INITIAL_SIZE = 524288
 
-    /**
-     * Reads [stream] into a pooled scratch buffer that doubles when full.
-     * Invokes [block] with the buffer and filled length, then releases the scratch.
-     */
+    /** Reads [stream] into a pooled scratch buffer that doubles when full, then invokes [block]. */
     inline fun <T> readToScratch(
         stream: InputStream,
         block: (buffer: ByteArray, length: Int) -> T

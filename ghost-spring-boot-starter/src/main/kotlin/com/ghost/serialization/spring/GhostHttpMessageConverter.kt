@@ -22,8 +22,8 @@ import kotlin.reflect.KClass
  * **Read path:** Extracts the request body as a [ByteArray] and feeds it
  * directly to the pooled flat reader, avoiding intermediate Okio wrappers.
  *
- * **Write path:** Serializes through the pooled monomorphic
- * `GhostJsonFlatWriter` and writes the resulting [ByteArray] in a single bulk call.
+ * **Write path:** Serializes through the pooled in-memory `GhostJsonWriter`
+ * and writes the resulting [ByteArray] in a single bulk call.
  */
 class GhostHttpMessageConverter : AbstractGenericHttpMessageConverter<Any>(
     MediaType.APPLICATION_JSON,

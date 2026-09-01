@@ -14,8 +14,7 @@ internal const val CLIENT_ERROR_PREFIX = "Ghost serializer not found for class "
 internal const val CLIENT_ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
 
 /**
- * Deserializes the response body directly using Ghost, bypassing Ktor Client's
- * ContentNegotiation pipeline.
+ * Deserializes the response body directly using Ghost, bypassing Ktor's ContentNegotiation pipeline.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
     val bytes = body<ByteArray>()
@@ -25,9 +24,8 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhost(): T {
 }
 
 /**
- * Proto3-JSON variant of [bodyGhost] for `@GhostProtoSerialization` types — parses through
- * `GhostProtoJsonFlatReader` (quoted-or-bare int64, lenient
- * int32, quoted `NaN`/`Infinity`) instead of the plain flat reader.
+ * Proto3-JSON variant of [bodyGhost]: parses via `GhostProtoJsonFlatReader` for proto3 JSON
+ * leniency (quoted-or-bare int64, lenient int32, quoted `NaN`/`Infinity`).
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
     val bytes = body<ByteArray>()
@@ -35,9 +33,7 @@ suspend inline fun <reified T : Any> HttpResponse.bodyGhostProto(): T {
 }
 
 /**
- * YAML variant of [bodyGhost] for types whose serializer implements
- * `GhostYamlSerializer`.
- * Public API for frameworks — bypasses Ktor ContentNegotiation.
+ * YAML variant of [bodyGhost], bypassing Ktor's ContentNegotiation.
  */
 suspend inline fun <reified T : Any> HttpResponse.bodyGhostYaml(): T {
     val bytes = body<ByteArray>()

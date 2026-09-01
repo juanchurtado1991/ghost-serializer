@@ -13,7 +13,6 @@ import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 @InternalGhostApi
@@ -21,17 +20,6 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
     override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
 
     override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
-        writer.beginObject()
-        writer.name("id")
-        writer.value(value.id.toLong())
-        writer.name("name")
-        writer.value(value.name)
-        writer.name("isActive")
-        writer.value(value.isActive)
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: RetrofitUser) {
         writer.beginObject()
         writer.name("id")
         writer.value(value.id.toLong())

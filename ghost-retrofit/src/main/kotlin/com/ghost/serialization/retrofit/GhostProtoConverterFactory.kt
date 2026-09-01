@@ -5,6 +5,8 @@ package com.ghost.serialization.retrofit
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.isNextNullValue
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer

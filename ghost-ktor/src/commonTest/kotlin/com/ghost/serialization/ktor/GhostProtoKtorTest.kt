@@ -21,7 +21,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// --- Mock proto-flavored model & hand-written stand-in for @GhostProtoSerialization codegen ---
 class GhostProtoKtorTest {
 
     @BeforeTest

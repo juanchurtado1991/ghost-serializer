@@ -34,12 +34,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-// --- Mock Models ---
 class GhostKtorTest {
 
     @BeforeTest
     fun setup() {
-        // Register mock serializer into the Ghost runtime
         Ghost.addRegistry(object : GhostRegistry {
             override fun prewarm() {}
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
@@ -113,7 +111,7 @@ class GhostKtorTest {
     fun testMalformedPayloadThrowsException() = runTest {
         val mockEngine = MockEngine {
             respond(
-                content = """{"id": 42, "name": "John", "isActive": """, // Incomplete JSON
+                content = """{"id": 42, "name": "John", "isActive": """, // incomplete
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
@@ -133,8 +131,7 @@ class GhostKtorTest {
     @Test
     fun testCancellationMidStream() = runTest {
         val mockEngine = MockEngine {
-            // Simulate a slow response that will be cancelled
-            delay(1000)
+            delay(1000) // slow enough to cancel mid-request
             respond(
                 content = """{"id": 42}""",
                 status = HttpStatusCode.OK,
@@ -175,7 +172,7 @@ class GhostKtorTest {
         }
 
         assertFailsWith<Exception> {
-            // Should fail because body is empty but type is not nullable
+            // Body is empty but KtorUser is not nullable
             client.get("/empty").body<KtorUser>()
         }
     }

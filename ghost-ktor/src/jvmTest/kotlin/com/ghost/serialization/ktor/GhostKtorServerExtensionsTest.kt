@@ -14,8 +14,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Integration tests for [respondGhost], [respondGhostProto], and [respondGhostYaml] — server-side
- * bypass extensions that serialize and respond without Ktor's `ContentNegotiation` pipeline.
+ * Integration tests for [respondGhost], [respondGhostProto], and [respondGhostYaml]: server-side
+ * bypass extensions that respond without Ktor's `ContentNegotiation` pipeline.
  * JVM-only because `ktor-server-test-host` is not available on Kotlin/Native targets.
  */
 class GhostKtorServerExtensionsTest {
@@ -80,8 +80,7 @@ class GhostKtorServerExtensionsTest {
             }
         }
 
-        // Ktor 3 test host converts uncaught handler exceptions into 500 responses
-        // instead of rethrowing them at the client call site.
+        // Ktor 3 test host converts uncaught handler exceptions into 500s, not client-side throws.
         val response = client.get("/user")
         assertEquals(HttpStatusCode.InternalServerError, response.status)
     }

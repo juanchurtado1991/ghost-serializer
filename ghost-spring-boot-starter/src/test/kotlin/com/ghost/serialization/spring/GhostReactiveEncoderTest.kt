@@ -13,8 +13,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for [GhostReactiveEncoder] without a Spring context. Covers `canEncode` and
- * `encode` branches. End-to-end WebFlux wiring is covered by [GhostSpringWebFluxIntegrationTest].
+ * Unit tests for [GhostReactiveEncoder] without a Spring context; see
+ * [GhostSpringWebFluxIntegrationTest] for end-to-end WebFlux coverage.
  */
 class GhostReactiveEncoderTest {
 

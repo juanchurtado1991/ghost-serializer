@@ -17,12 +17,9 @@ import kotlin.reflect.KClass
 /**
  * Ktor [ContentConverter] for proto3 JSON mapping (`@GhostProtoSerialization`).
  *
- * Differs from [GhostContentConverter] only on the read path: request/response bodies are
- * parsed through [GhostProtoJsonFlatReader], which additionally accepts quoted-or-bare
- * int64/uint64, lenient int32 (rejects fractional values), and quoted `"NaN"`/`"Infinity"`
- * literals per proto3 JSON rules. Encoding reuses [Ghost.encodeToBytes] since proto3 wire
- * correctness (int64 quoting, Base64 `bytes`, default-value omission) is generated into
- * the `@GhostProtoSerialization` serializer's own `serialize()` method.
+ * Read path parses via [GhostProtoJsonFlatReader] for proto3 JSON leniency (quoted-or-bare
+ * int64, lenient int32, quoted `"NaN"`/`"Infinity"`). Encoding reuses [Ghost.encodeToBytes]
+ * since proto3 wire correctness is generated into the serializer's own `serialize()`.
  *
  * ```kotlin
  * install(ContentNegotiation) { ghostProto() }

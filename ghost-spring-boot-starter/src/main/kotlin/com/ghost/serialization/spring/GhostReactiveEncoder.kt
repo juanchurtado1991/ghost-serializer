@@ -15,10 +15,9 @@ import kotlin.reflect.KClass
 private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
 
 /**
- * Reactive Encoder for Ghost Serialization.
- *
- * [canEncode] / encode resolve serializers from the full [ResolvableType] so
- * collection bodies use the declared generic serializer, not `value::class`.
+ * Reactive Encoder for Ghost Serialization. Resolves serializers from the full
+ * [ResolvableType] so collection bodies use the declared generic serializer, not
+ * `value::class`.
  */
 class GhostReactiveEncoder : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,

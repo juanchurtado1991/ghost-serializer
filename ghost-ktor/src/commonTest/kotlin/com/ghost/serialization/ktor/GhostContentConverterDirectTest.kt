@@ -15,9 +15,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Direct unit tests for [GhostContentConverter] — null-return contract, scratch-buffer growth
- * for payloads larger than the initial buffer, and round-trip deserialization without a Ktor
- * client or server.
+ * Direct unit tests for [GhostContentConverter]: null-return contract, scratch-buffer growth,
+ * and round-trip deserialization without a Ktor client/server.
  */
 class GhostContentConverterDirectTest {
 
@@ -68,8 +67,7 @@ class GhostContentConverterDirectTest {
 
     @Test
     fun deserialize_growsScratchBufferForPayloadsLargerThanInitialSize() = runTest {
-        // BUFFER_SIZE is 524288 (512 KB); a name comfortably larger than that forces at least
-        // one grow-and-copy cycle in the read loop.
+        // Larger than the 512 KB initial buffer, forcing a grow-and-copy cycle.
         val longName = "n".repeat(600_000)
         val json = """{"id":1,"name":"$longName"}"""
         val converter = GhostContentConverter()

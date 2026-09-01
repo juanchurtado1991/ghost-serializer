@@ -14,9 +14,8 @@ import retrofit2.Retrofit
 import kotlin.test.assertEquals
 
 /**
- * Verifies [GhostProtoConverterFactory] end-to-end over real HTTP (MockWebServer), proving the
- * proto3 quoted-int64 wire format round-trips correctly through Retrofit — not just that the
- * generated code contains the right method calls (that's covered by the KSP compiler tests).
+ * Verifies [GhostProtoConverterFactory] end-to-end over real HTTP: proto3 quoted-int64 wire
+ * format round-trips through Retrofit (the KSP compiler tests only check generated code shape).
  */
 class GhostProtoRetrofitTest {
 

@@ -13,12 +13,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Direct unit tests for [GhostConverterFactory] -- calls `responseBodyConverter`/
- * `requestBodyConverter` directly with hand-built `Type`/`ResponseBody` values, no
- * `MockWebServer` round trip needed. [GhostRetrofitTest]/[GhostRetrofitExpansionTest] already
- * cover the registered-type happy paths (including `List`/`Map` generics) and null-body/strict/
- * coerce behavior end-to-end; this fills the null-return contract for unsupported types and the
- * scratch-buffer growth path (payload > the 512 KB initial buffer) that weren't covered anywhere.
+ * Direct unit tests for [GhostConverterFactory], bypassing MockWebServer. Covers the
+ * null-return contract for unsupported types and scratch-buffer growth (payload > 512 KB),
+ * which [GhostRetrofitTest]/[GhostRetrofitExpansionTest] don't exercise.
  */
 class GhostConverterFactoryDirectTest {
 
