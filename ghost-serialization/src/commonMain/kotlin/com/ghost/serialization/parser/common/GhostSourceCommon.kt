@@ -247,6 +247,7 @@ internal inline fun scanStringImpl(
 }
 
 /** Branch-free "does any byte of [v] equal zero?" (McIlroy). Non-zero result ⇒ yes. */
+@Suppress("NOTHING_TO_INLINE")
 internal inline fun swarHasZeroByte(v: Long): Long =
     (v - SWAR_ONES) and v.inv() and SWAR_HIGHS
 

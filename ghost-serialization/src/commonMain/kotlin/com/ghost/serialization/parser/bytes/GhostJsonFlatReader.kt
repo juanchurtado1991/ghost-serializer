@@ -96,8 +96,10 @@ open class GhostJsonFlatReader(
     internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 
     var depth: Int = 0
+
     @PublishedApi
     internal var needsCommaMask: Long = 0L
+
     @PublishedApi
     internal var commaConsumedMask: Long = 0L
 
@@ -258,7 +260,14 @@ open class GhostJsonFlatReader(
     @InternalGhostApi
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
-        if (position + size > limit || !expected.rangeEquals(0, rawData, position, size)) {
+        if (
+            position + size > limit || !expected.rangeEquals(
+                offset = 0,
+                other = rawData,
+                otherOffset = position,
+                byteCount = size
+            )
+        ) {
             throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
         }
         position += size
