@@ -6,9 +6,10 @@ import java.nio.charset.StandardCharsets
 
 
 /**
- * JVM-optimized [GhostSource] that overrides [decodeJsonStringRange]
- * to use [StandardCharsets.US_ASCII] for known 7-bit content,
- * bypassing full UTF-8 validation.
+ * JVM/Android-optimized [GhostSource] that overrides [decodeJsonStringRange]
+ * to use [StandardCharsets.ISO_8859_1] for known 7-bit content.
+ * ISO_8859_1 does a direct byte copy without ASCII validation — safe here
+ * because isKnown7BitContent already guarantees all bytes are < 128.
  */
 @InternalGhostApi
 class JvmByteArraySource(

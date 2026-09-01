@@ -46,6 +46,15 @@ kotlin {
             }
         }
 
+        // Android compiles to JVM bytecode, so `actual`s with no genuinely Android-specific
+        // behavior (no android.* API usage, no minSdk-driven divergence) live here once
+        // instead of being hand-duplicated across jvmMain/androidMain.
+        val jvmAndroidMain by creating {
+            dependsOn(commonMain)
+        }
+        jvmMain.get().dependsOn(jvmAndroidMain)
+        androidMain.get().dependsOn(jvmAndroidMain)
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.core)

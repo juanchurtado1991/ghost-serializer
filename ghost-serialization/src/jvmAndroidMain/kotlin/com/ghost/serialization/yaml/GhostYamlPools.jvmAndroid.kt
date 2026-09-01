@@ -3,10 +3,11 @@ package com.ghost.serialization.yaml
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
 private val flatReaderPool = ThreadLocal<GhostYamlFlatReader>()
-private val flatWriterPool = ThreadLocal<GhostYamlFlatWriter>()
+private val flatWriterPool = ThreadLocal<GhostYamlWriter>()
+private val flatWriterBufferPool = ThreadLocal<FlatByteArrayWriter>()
 
 @InternalGhostApi
 actual fun <T> ghostYamlInternalUseFlatReader(
@@ -25,14 +26,18 @@ actual fun <T> ghostYamlInternalUseFlatReader(
 
 @InternalGhostApi
 actual fun <T> ghostYamlInternalUseFlatWriter(
-    block: (GhostYamlFlatWriter) -> T
+    block: (GhostYamlWriter, FlatByteArrayWriter) -> T
 ): T {
     var writer = flatWriterPool.get()
-    if (writer == null) {
-        writer = GhostYamlFlatWriter(FlatByteArrayWriter())
+    var buffer = flatWriterBufferPool.get()
+    if (writer == null || buffer == null) {
+        buffer = FlatByteArrayWriter()
+        writer = GhostYamlWriter(buffer)
         flatWriterPool.set(writer)
+        flatWriterBufferPool.set(buffer)
     } else {
         writer.reset()
+        buffer.reset()
     }
-    return block(writer)
+    return block(writer, buffer)
 }
