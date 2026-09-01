@@ -11,7 +11,6 @@ class DeepPrewarmValidationTest {
 
     @Test
     fun `prewarm should populate serializer cache eagerly`() {
-        // 1. Create a mock registry
         val mockRegistry = object : GhostRegistry {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = null
 
@@ -22,17 +21,12 @@ class DeepPrewarmValidationTest {
             }
         }
 
-        // 2. Clear cache and register
         Ghost.serializerCache.clear()
         Ghost.addRegistry(mockRegistry)
 
-        // 3. Verify cache is empty before prewarm (discovered registries are lazy)
-        // Note: serializerCache is internal, we check it via prewarm effect
-
-        // 4. Trigger Deep Prewarm
+        // serializerCache is internal; verified indirectly via the prewarm effect below
         Ghost.prewarm()
 
-        // 5. Verify the type is now in the cache
         val serializer = Ghost.getSerializer(String::class)
         assertTrue(
             Ghost.serializerCache.containsKey(String::class),

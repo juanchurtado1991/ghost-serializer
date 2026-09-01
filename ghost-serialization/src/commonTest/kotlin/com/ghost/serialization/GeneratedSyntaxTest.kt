@@ -10,15 +10,12 @@ class GeneratedSyntaxTest {
 
     @Test
     fun testGeneratedSyntax() {
-        // We need to use the generated serializer. 
-        // Since we are in the same module, KSP might have already run or we might need to trigger it.
-        // For now, I'll simulate what the generated code SHOULD do based on SerializeCodeEmitter.
+        // Simulates SerializeCodeEmitter output directly, since KSP may not have run for this module yet.
 
         val model = SyntaxModel(1, "test", listOf("a", "b"), intArrayOf(10, 20))
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
 
-        // This is what SerializeCodeEmitter.emitFirstProperty / emitProperty does:
         writer.beginObject()
         writer.name("id").value(model.id)
         writer.name("name").value(model.name)

@@ -7,11 +7,11 @@ import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.isNextNullValue
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.consumeNull
-import com.ghost.serialization.parser.streaming.endObject
-import com.ghost.serialization.parser.streaming.isNextNullValue
 import com.ghost.serialization.parser.streaming.nextBoolean
 import com.ghost.serialization.parser.streaming.nextDouble
 import com.ghost.serialization.parser.streaming.nextInt

@@ -1,14 +1,13 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.GhostJsonConstants
-import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.common.GhostJsonConstants
+import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject
 import com.ghost.serialization.parser.strings.consumeKeySeparator
@@ -86,7 +85,7 @@ class CollisionHashAlgorithmTest {
         }
 
         // Flat reader
-        val flat = GhostJsonFlatReader(bytes)
+        val flat = GhostJsonReader(bytes)
         val flatResults = mutableListOf<Pair<Int, Int>>()
         flat.beginObject()
         repeat(fields.size) {
@@ -357,7 +356,7 @@ class CollisionHashAlgorithmTest {
         streaming.beginObject()
         assertEquals(GhostJsonConstants.MATCH_NONE, streaming.selectString(options))
 
-        val flat = GhostJsonFlatReader(bytes)
+        val flat = GhostJsonReader(bytes)
         flat.beginObject()
         assertEquals(GhostJsonConstants.MATCH_NONE, flat.selectString(options))
 
@@ -466,7 +465,7 @@ class CollisionHashAlgorithmTest {
             streaming.beginObject()
             val streamIdx = streaming.selectString(options)
 
-            val flat = GhostJsonFlatReader(bytes)
+            val flat = GhostJsonReader(bytes)
             flat.beginObject()
             val flatIdx = flat.selectString(options)
 

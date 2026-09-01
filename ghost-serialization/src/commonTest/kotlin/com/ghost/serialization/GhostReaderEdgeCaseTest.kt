@@ -8,7 +8,6 @@ import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.consumeNull
-import com.ghost.serialization.parser.streaming.decodeResilient
 import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.isNextNullValue
@@ -18,6 +17,7 @@ import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.decodeResilient
 import com.ghost.serialization.parser.streaming.readList
 import kotlin.test.Test
 import kotlin.test.assertEquals

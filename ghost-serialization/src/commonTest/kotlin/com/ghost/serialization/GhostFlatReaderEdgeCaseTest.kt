@@ -1,8 +1,22 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.readQuotedString
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeArraySeparator
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.decodeResilient
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.isNextNullValue
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextDouble
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextLong
+import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.common.GhostJsonConstants
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,8 +28,8 @@ import kotlin.test.assertTrue
 @OptIn(InternalGhostApi::class)
 class GhostFlatReaderEdgeCaseTest {
 
-    private fun readerOf(json: String): GhostJsonFlatReader {
-        return GhostJsonFlatReader(json.encodeToByteArray())
+    private fun readerOf(json: String): GhostJsonReader {
+        return GhostJsonReader(json.encodeToByteArray())
     }
 
     // ── A. NUMERIC HELL ──────────────────────────────────────────────
@@ -352,7 +366,7 @@ class GhostFlatReaderEdgeCaseTest {
     @Test
     fun testPooledResetAndReuseWithDifferentSizes() {
         val initialJson = "{\"short\":1}"
-        val reader = GhostJsonFlatReader(initialJson.encodeToByteArray())
+        val reader = GhostJsonReader(initialJson.encodeToByteArray())
 
         // 1. Verify first parse works
         reader.beginObject()

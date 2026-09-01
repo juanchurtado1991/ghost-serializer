@@ -1,7 +1,16 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeArraySeparator
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.hasNext
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -10,7 +19,7 @@ import kotlin.test.assertTrue
 
 
 /**
- * [GhostJsonFlatReader]-specific coverage for two scenario groups that were already tested
+ * [GhostJsonReader]-specific coverage for two scenario groups that were already tested
  * against sibling reader flavors (`GhostJsonStringReaderTest`, `GhostReaderSelectNameTest` via
  * `GhostJsonReader`) but never against the flat reader itself: strict-mode trailing-comma
  * rejection and `coerceBooleans`. Per-module Kover coverage only counts what this module's own
@@ -18,8 +27,8 @@ import kotlin.test.assertTrue
  */
 class GhostFlatReaderTrailingCommaAndCoercionTest {
 
-    private fun readerOf(json: String): GhostJsonFlatReader =
-        GhostJsonFlatReader(json.encodeToByteArray())
+    private fun readerOf(json: String): GhostJsonReader =
+        GhostJsonReader(json.encodeToByteArray())
 
     // ── Strict-mode trailing comma ──────────────────────────────────
 

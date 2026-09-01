@@ -20,9 +20,9 @@ import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.streaming.readList
 import com.ghost.serialization.parser.streaming.selectString
 import com.ghost.serialization.parser.streaming.skipValue
+import com.ghost.serialization.parser.streaming.readList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

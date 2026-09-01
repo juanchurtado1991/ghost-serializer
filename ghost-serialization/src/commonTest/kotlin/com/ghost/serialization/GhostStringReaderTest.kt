@@ -42,35 +42,9 @@ import kotlin.test.assertTrue
 /**
  * Comprehensive unit tests for [GhostJsonStringReader].
  *
- * Provides coverage comparable to [GhostFlatReaderEdgeCaseTest], [GhostCrashProofTest],
- * and [GhostReaderAdvancedTest] so the string reader meets the same correctness contract
- * as its byte-based siblings.
- *
- * Sections:
- *   1.  isNextNullValue correctness
- *   2.  Unicode escape sequences (valid + invalid)
- *   3.  Long/Int overflow detection
- *   4.  Truncated literals (true/false/null)
- *   5.  Surrogate pair handling
- *   6.  selectString / selectNameAndConsume
- *   7.  Whitespace-only input
- *   8.  Stream exhaustion mid-parse
- *   9.  Escape character roundtrips
- *   10. Numbers at end of stream
- *   11. skipValue stress cases
- *   12. Depth tracking
- *   13. Strict mode enforcement
- *   14. Float precision
- *   15. Reset and reuse
- *   16. Resilient decoder
- *   17. List and map reading
- *   18. peekStringField
- *   19. charToBytePosition / byteToCharPosition
- *   20. Adjacent null values
- *   21. Mixed-type arrays
- *   22. Prefix-sharing field names
- *   23. Boolean coercion
- *   24. String coercion to numbers
+ * Coverage comparable to [GhostFlatReaderEdgeCaseTest], [GhostCrashProofTest], and
+ * [GhostReaderAdvancedTest] so the string reader meets the same contract as its
+ * byte-based siblings. See the numbered section banners below for topic breakdown.
  */
 @OptIn(InternalGhostApi::class)
 class GhostStringReaderTest {
@@ -223,10 +197,9 @@ class GhostStringReaderTest {
 
     @Test
     fun unicodeEscapeWithNonLatin1DigitThrowsCleanlyInsteadOfCrashing() {
-        // Found by GhostJsonStringChannelFuzzTest: unlike the byte-based readers (a byte is
-        // inherently 0..255), a Char's .code here can be any UTF-16 code unit up to 65535 — a
-        // literal CJK character right after `\u` used to index straight past HEX_LUT's 256
-        // entries and crash with ArrayIndexOutOfBoundsException instead of throwing this.
+        // Found by GhostJsonStringChannelFuzzTest: a Char's .code can exceed HEX_LUT's 256
+        // entries (unlike a byte, which is 0..255), so a CJK char after `\u` used to crash
+        // with ArrayIndexOutOfBoundsException instead of throwing cleanly.
         val reader = readerOf("{\"v\":\"\\u00\u6f22G\"}")
         reader.beginObject()
         reader.nextKey()
@@ -1085,11 +1058,8 @@ class GhostStringReaderTest {
 
     @Test
     fun resilientDecodeRestoresPositionOnFailure() {
-        // Canonical decodeResilient use case: a nested object parse that throws internally.
-        // The reader is inside an outer object pointing at a value that is an object.
-        // The lambda attempts an invalid read (nextString on an Int) → throws.
-        // decodeResilient must restore depth + position, then skipValue so the outer
-        // parse can continue with the next field.
+        // Canonical use case: lambda throws (nextString on an Int) mid-nested-object;
+        // decodeResilient must restore depth + position, then skipValue so parsing continues.
         val reader = readerOf("""{"v":{"nested": 42}, "ok":1}""")
         reader.beginObject()
         reader.skipWhitespace()
@@ -1107,9 +1077,7 @@ class GhostStringReaderTest {
         }
 
         assertNull(result)
-        // Depth must be fully restored after failure
         assertEquals(depthBefore, reader.depth)
-        // The outer object must still be parseable after the resilient skip
         reader.skipWhitespace()
         val nextKey = reader.nextKey()
         assertEquals("ok", nextKey)
@@ -1310,16 +1278,12 @@ class GhostStringReaderTest {
 
     @Test
     fun peekStringFieldReturnsValueForKnownKey() {
-        // peekStringField reads from current position in the raw string.
-        // The position starts at 0, so the raw JSON starts with '{' — we advance past it
-        // to position the reader at the first key.
         val json = """{"type":"USER","id":1}"""
         val reader = readerOf(json)
-        // Advance past '{' so position points at the first '"'
         reader.beginObject()
         val typeValue = reader.peekStringField("type")
         assertEquals("USER", typeValue)
-        // Position must NOT advance — the object is still parseable
+        // peekStringField must not advance position — the object is still parseable
         assertNotNull(reader.nextKey())
     }
 
@@ -1600,7 +1564,6 @@ class GhostStringReaderTest {
 
     @Test
     fun lazyBuildsStringDispatchWhenDisabledInitially() {
-        // Construct options with enableStringDispatch = false
         val options = JsonReaderOptions(
             rawBytes = arrayOf("id".encodeToByteArray()),
             shift = 0,
@@ -1611,7 +1574,6 @@ class GhostStringReaderTest {
         )
         val reader = GhostJsonStringReader("""{"id":1}""")
         reader.beginObject()
-        // Accessing stringDispatch should trigger lazy build and find the field successfully
         assertEquals(0, reader.selectString(options))
     }
 

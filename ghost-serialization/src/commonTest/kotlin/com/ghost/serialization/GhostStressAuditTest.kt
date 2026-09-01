@@ -4,10 +4,10 @@ import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
-import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.hasNext
 import com.ghost.serialization.parser.streaming.nextBoolean

@@ -10,7 +10,6 @@ import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectString
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.reflect.KClass
 import kotlin.test.Test
@@ -23,7 +22,6 @@ class GhostPerformanceValidationTest {
     private class MockSerializer : GhostSerializer<String> {
         override val typeName: String = "Mock"
         override fun serialize(writer: GhostJsonWriter, value: String) {}
-        override fun serialize(writer: GhostJsonFlatWriter, value: String) {}
 
         override fun deserialize(reader: GhostJsonReader): String = ""
     }

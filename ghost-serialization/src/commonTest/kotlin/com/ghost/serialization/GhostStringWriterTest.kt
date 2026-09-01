@@ -124,7 +124,7 @@ class GhostStringWriterTest {
 
     @Test
     fun writesLongUnicodeWithoutEscapesOnFastPath() {
-        // Non-ASCII BMP used to force the escape slow path even though JSON needs no escapes.
+        // Non-ASCII BMP chars used to previously force the escape slow path unnecessarily.
         val value = "漢".repeat(200)
         val json = writerToString { w ->
             w.beginObject().name("v").value(value).endObject()
@@ -240,7 +240,6 @@ class GhostStringWriterTest {
             block()
             throw AssertionError("Expected GhostJsonException to be thrown")
         } catch (e: GhostJsonException) {
-            // Expected
         }
     }
 }

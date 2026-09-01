@@ -16,22 +16,17 @@ class FieldTrieLogicTest {
     fun `internalSelect should match fields correctly with optimized filters`() {
         val json = """{"id":1,"name":"Rick"}""".encodeToByteArray()
         val reader = GhostJsonReader(json)
-
-        // Skip '{'
         reader.beginObject()
 
         val options = JsonReaderOptions.of("id", "name", "species")
 
-        // 1. Select "id"
         val index1 = reader.selectString(options)
         assertEquals(0, index1, "Should match 'id' at index 0")
 
-        // Consume value and separator
         reader.expectByte(':'.code)
-        reader.internalSkip(1) // skip '1'
+        reader.internalSkip(1)
         reader.expectByte(','.code)
 
-        // 2. Select "name"
         val index2 = reader.selectString(options)
         assertEquals(1, index2, "Should match 'name' at index 1")
     }

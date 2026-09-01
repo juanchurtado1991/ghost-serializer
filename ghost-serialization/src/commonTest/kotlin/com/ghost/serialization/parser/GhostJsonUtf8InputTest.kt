@@ -12,10 +12,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 
 /**
- * RFC 8259 §8.1 input-encoding normalization: UTF-8 (with/without BOM),
- * UTF-16, and UTF-32 must all reduce to the UTF-8 bytes our parsers consume.
- *
- * The common UTF-8 path must be zero-copy (same [ByteArray] reference).
+ * RFC 8259 §8.1 input-encoding normalization: UTF-8/16/32 (with/without BOM) must all
+ * reduce to the UTF-8 bytes our parsers consume. The UTF-8 path must stay zero-copy.
  */
 class GhostJsonUtf8InputTest {
 
@@ -139,7 +137,7 @@ class GhostJsonUtf8InputTest {
 
     @Test
     fun loneHighSurrogateInUtf16Fails() {
-        // BOM + a high surrogate (0xD800) with no trailing low surrogate.
+        // BOM + high surrogate (0xD800) with no trailing low surrogate
         val bytes = byteArrayOf(
             0xFF.toByte(), 0xFE.toByte(),
             0x00, 0xD8.toByte()

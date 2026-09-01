@@ -1,9 +1,5 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.readQuotedString
-import com.ghost.serialization.parser.common.JsonReaderOptions
-import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -11,6 +7,8 @@ import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextDouble
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.selectString
+import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.serializers.GhostIntList
 import com.ghost.serialization.serializers.GhostLongList
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
@@ -35,8 +33,8 @@ class GhostCoreBugsTest {
             reader1.nextDouble()
         }
 
-        // 2. Test GhostJsonFlatReader
-        val reader2 = GhostJsonFlatReader(bytes)
+        // 2. Test GhostJsonReader
+        val reader2 = GhostJsonReader(bytes)
         assertFails {
             reader2.nextDouble()
         }
@@ -96,7 +94,7 @@ class GhostCoreBugsTest {
     @Test
     fun testDepthLimitNegativeBoundarySafety() {
         val jsonBytes = "}".encodeToByteArray()
-        val reader = GhostJsonFlatReader(jsonBytes)
+        val reader = GhostJsonReader(jsonBytes)
 
         // Depth starts at 0
         assertEquals(0, reader.depth)
@@ -118,8 +116,8 @@ class GhostCoreBugsTest {
         val json = "\"\\uD83D\""
         val bytes = json.encodeToByteArray()
 
-        // 1. Test GhostJsonFlatReader
-        val flatReader = GhostJsonFlatReader(bytes)
+        // 1. Test GhostJsonReader
+        val flatReader = GhostJsonReader(bytes)
         assertFails {
             flatReader.readQuotedString()
         }

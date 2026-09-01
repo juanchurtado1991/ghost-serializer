@@ -6,7 +6,6 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.JvmByteArraySource
 import com.ghost.serialization.parser.common.createByteArraySource
-import com.ghost.serialization.parser.streaming.GhostJsonReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -15,7 +14,7 @@ import kotlin.test.assertTrue
 
 /**
  * FlatReader must use [createByteArraySource] so JVM/Android get the Latin1/ISO-8859-1
- * 7-bit decode path already wired on [GhostJsonReader].
+ * 7-bit decode path already wired on [GhostJsonFlatReader].
  */
 class GhostFlatReaderLatin1SourceTest {
 
@@ -34,7 +33,7 @@ class GhostFlatReaderLatin1SourceTest {
         val next = """{"b":"world"}""".encodeToByteArray()
         reader.resetSlice(next, 0, next.size)
         assertTrue(reader.source === first, "resetSlice should reuse the source wrapper")
-        assertEquals(next, reader.source.data)
+        assertEquals(next, first.data)
     }
 
     @Test

@@ -17,23 +17,16 @@ import com.ghost.serialization.writer.strings.FlatCharArrayWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
 /**
- * Fuzzing for the JSON *string* channel — [GhostJsonStringReader] / [GhostJsonStringWriter], the
- * default `textChannel = true` in-memory path over a UTF-16 [String] rather than raw bytes. The
- * third of JSON's three independent reader/writer implementations (flat-bytes and Okio-streaming
- * are covered by `GhostJsonFuzzTest` and `GhostJsonWriterFuzzTest`/`GhostJsonStreamingWriterFuzzTest`);
- * this one indexes a `CharArray` and has its own string-pool/escape-decode hot path
- * (`readQuotedStringSlow`), never previously fuzzed.
+ * Fuzzing for the JSON *string* channel — [GhostJsonStringReader]/[GhostJsonStringWriter], the
+ * default `textChannel = true` path over a UTF-16 [String]. Independent from the flat-bytes and
+ * Okio-streaming JSON reader/writer implementations, with its own string-pool/escape-decode hot
+ * path (`readQuotedStringSlow`); previously unfuzzed.
  *
- * `fuzzSkipValueStringReader` mirrors the other readers' crash-safety entry point.
- * `fuzzJsonStringChannelValueRoundTrip`/`...KeyRoundTrip` mirror the other writers' round-trip
- * property — the string writer always quotes both, so no bare-vs-quoted heuristic to break, but
- * its own `writeEscaped` is independent code from the byte/streaming writers' escaping.
- *
- * Runs in regression mode (fixed seed corpus, JUnit-speed) as part of `ciTestJvm`. Run actual
- * fuzzing locally with `JAZZER_FUZZ=1 ./gradlew :ghost-serialization:jvmTest --tests
- * "com.ghost.serialization.GhostJsonStringChannelFuzzTest"` — findings are written to
- * `.cifuzz-corpus/com.ghost.serialization.GhostJsonStringChannelFuzzTest/<method>` and replayed
- * automatically on every future run.
+ * Regression mode (fixed seed corpus) runs in `ciTestJvm`. For real fuzzing:
+ * `JAZZER_FUZZ=1 ./gradlew :ghost-serialization:jvmTest --tests
+ * "com.ghost.serialization.GhostJsonStringChannelFuzzTest"` — findings land in
+ * `.cifuzz-corpus/com.ghost.serialization.GhostJsonStringChannelFuzzTest/<method>` and replay
+ * automatically after.
  */
 class GhostJsonStringChannelFuzzTest {
 

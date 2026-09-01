@@ -4,12 +4,16 @@ package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
+import com.ghost.serialization.parser.streaming.consumeNull
 import com.ghost.serialization.parser.streaming.endArray
+import com.ghost.serialization.parser.streaming.isNextNullValue
+import com.ghost.serialization.parser.streaming.nextBooleanOrNull
+import com.ghost.serialization.parser.streaming.nextIntOrNull
 import com.ghost.serialization.parser.streaming.nextLongOrNull
+import com.ghost.serialization.parser.streaming.nextStringOrNull
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginArray
 import com.ghost.serialization.parser.strings.consumeArraySeparator
@@ -28,7 +32,7 @@ class NextOrNullReaderTest {
 
     @Test
     fun flat_nextStringOrNull_readsPresentAndNull() {
-        val reader = GhostJsonFlatReader("""["hi",null]""".encodeToByteArray())
+        val reader = GhostJsonReader("""["hi",null]""".encodeToByteArray())
         reader.beginArray()
         assertEquals("hi", reader.nextStringOrNull())
         reader.consumeArraySeparator()
@@ -38,7 +42,7 @@ class NextOrNullReaderTest {
 
     @Test
     fun flat_nextLongOrNull_and_nextIntOrNull() {
-        val reader = GhostJsonFlatReader("""[42,null,-7,null]""".encodeToByteArray())
+        val reader = GhostJsonReader("""[42,null,-7,null]""".encodeToByteArray())
         reader.beginArray()
         assertEquals(42L, reader.nextLongOrNull())
         reader.consumeArraySeparator()
@@ -52,7 +56,7 @@ class NextOrNullReaderTest {
 
     @Test
     fun flat_nextBooleanOrNull() {
-        val reader = GhostJsonFlatReader("""[true,null,false]""".encodeToByteArray())
+        val reader = GhostJsonReader("""[true,null,false]""".encodeToByteArray())
         reader.beginArray()
         assertEquals(true, reader.nextBooleanOrNull())
         reader.consumeArraySeparator()
@@ -64,7 +68,7 @@ class NextOrNullReaderTest {
 
     @Test
     fun flat_consumeNull_rejectsMalformedLiteral() {
-        val reader = GhostJsonFlatReader("""nu11""".encodeToByteArray())
+        val reader = GhostJsonReader("""nu11""".encodeToByteArray())
         assertEquals(true, reader.isNextNullValue())
         assertFailsWith<GhostJsonException> { reader.consumeNull() }
     }

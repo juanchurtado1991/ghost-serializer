@@ -3,7 +3,6 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.peekStringField
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -25,14 +24,14 @@ class GhostDiscriminatorPeekerRegressionTest {
     @Test
     fun flatReaderPeekDiscriminatorAfterNestedObject() {
         val json = """{"meta":{"version":1},"type":"complex"}"""
-        val reader = GhostJsonFlatReader(json.encodeToByteArray())
+        val reader = GhostJsonReader(json.encodeToByteArray())
         assertEquals("complex", reader.peekDiscriminator())
     }
 
     @Test
     fun flatReaderPeekDiscriminatorAfterNestedArray() {
         val json = """{"devices":[{"id":"hub-1"}],"pageType":"loggedIn"}"""
-        val reader = GhostJsonFlatReader(json.encodeToByteArray())
+        val reader = GhostJsonReader(json.encodeToByteArray())
         assertEquals("loggedIn", reader.peekDiscriminator("pageType"))
     }
 
@@ -67,7 +66,7 @@ class GhostDiscriminatorPeekerRegressionTest {
     @Test
     fun peekDiscriminatorStillReturnsNullWhenKeyMissing() {
         val json = """{"devices":[{"id":"hub-1"}],"name":"Living"}"""
-        val reader = GhostJsonFlatReader(json.encodeToByteArray())
+        val reader = GhostJsonReader(json.encodeToByteArray())
         assertNull(reader.peekDiscriminator("pageType"))
     }
 

@@ -2,7 +2,6 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.readSet
@@ -19,7 +18,6 @@ import com.ghost.serialization.serializers.SetSerializer
 import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.types.RawJsonSerializer
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import okio.Buffer
@@ -40,7 +38,7 @@ class FeatureTriChannelSerializerTest {
         val json = """{"enabled":true}"""
         val bytes = json.encodeToByteArray()
 
-        val fromFlat = RawJsonSerializer.deserialize(GhostJsonFlatReader(bytes))
+        val fromFlat = RawJsonSerializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = RawJsonSerializer.deserialize(GhostJsonReader(bytes))
         val fromString = RawJsonSerializer.deserialize(GhostJsonStringReader(json))
 
@@ -53,14 +51,14 @@ class FeatureTriChannelSerializerTest {
     @Test
     fun rawJsonSerializerWritesOnAllWriters() {
         val value = RawJsonSerializer.deserialize(
-            GhostJsonFlatReader("""{"x":1}""".encodeToByteArray())
+            GhostJsonReader("""{"x":1}""".encodeToByteArray())
         )
 
         val streamingSink = Buffer()
         RawJsonSerializer.serialize(GhostJsonWriter(streamingSink), value)
         assertEquals("""{"x":1}""", streamingSink.readUtf8())
 
-        val flatBytes = ghostInternalEncodeWithWriter { writer: GhostJsonFlatWriter ->
+        val flatBytes = ghostInternalEncodeWithWriter { writer: GhostJsonWriter ->
             RawJsonSerializer.serialize(writer, value)
         }
         assertContentEquals("""{"x":1}""".encodeToByteArray(), flatBytes)
@@ -74,7 +72,7 @@ class FeatureTriChannelSerializerTest {
     @Test
     fun rawJsonStringWriterReuseDoesNotLeakComma() {
         val value = RawJsonSerializer.deserialize(
-            GhostJsonFlatReader("""{"warm":true}""".encodeToByteArray())
+            GhostJsonReader("""{"warm":true}""".encodeToByteArray())
         )
         ghostInternalEncodeToString { writer: GhostJsonStringWriter ->
             RawJsonSerializer.serialize(writer, value)
@@ -83,7 +81,7 @@ class FeatureTriChannelSerializerTest {
             RawJsonSerializer.serialize(
                 writer,
                 RawJsonSerializer.deserialize(
-                    GhostJsonFlatReader("""{"x":1}""".encodeToByteArray())
+                    GhostJsonReader("""{"x":1}""".encodeToByteArray())
                 ),
             )
         }
@@ -96,7 +94,7 @@ class FeatureTriChannelSerializerTest {
         val bytes = json.encodeToByteArray()
         val serializer = SetSerializer(StringSerializer)
 
-        val fromFlat = serializer.deserialize(GhostJsonFlatReader(bytes))
+        val fromFlat = serializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = serializer.deserialize(GhostJsonReader(bytes))
         val fromString = serializer.deserialize(GhostJsonStringReader(json))
 
@@ -118,7 +116,7 @@ class FeatureTriChannelSerializerTest {
         val bytes = json.encodeToByteArray()
         val serializer = ListSerializer(StringSerializer)
 
-        val fromFlat = serializer.deserialize(GhostJsonFlatReader(bytes))
+        val fromFlat = serializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = serializer.deserialize(GhostJsonReader(bytes))
         val fromString = serializer.deserialize(GhostJsonStringReader(json))
 
@@ -139,7 +137,7 @@ class FeatureTriChannelSerializerTest {
         val bytes = json.encodeToByteArray()
         val serializer = MapSerializer(IntSerializer)
 
-        val fromFlat = serializer.deserialize(GhostJsonFlatReader(bytes))
+        val fromFlat = serializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = serializer.deserialize(GhostJsonReader(bytes))
         val fromString = serializer.deserialize(GhostJsonStringReader(json))
 
@@ -168,7 +166,7 @@ class FeatureTriChannelSerializerTest {
         expected: T
     ) {
         val bytes = json.encodeToByteArray()
-        assertEquals(expected, serializer.deserialize(GhostJsonFlatReader(bytes)))
+        assertEquals(expected, serializer.deserialize(GhostJsonReader(bytes)))
         assertEquals(expected, serializer.deserialize(GhostJsonReader(bytes)))
         assertEquals(expected, serializer.deserialize(GhostJsonStringReader(json)))
     }
@@ -178,7 +176,7 @@ class FeatureTriChannelSerializerTest {
         val json = """["x","y"]"""
         val bytes = json.encodeToByteArray()
 
-        val flatReader = GhostJsonFlatReader(bytes)
+        val flatReader = GhostJsonReader(bytes)
         val fromFlat = flatReader.readSet { flatReader.nextString() }
 
         val streamingReader = GhostJsonReader(bytes)

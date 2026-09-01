@@ -24,12 +24,10 @@ class JsonSyntaxTest {
 
         writer.flush()
         val json = buffer.readUtf8()
-        // Verify no missing commas: [0,1,2,...]
-        // If commas are missing, it would be [012...]
+        // Missing commas would collapse this to "[012...]"
         val expectedStart = "[0,1,2,3,4,5,6,7,8,9,10"
         assertEquals(true, json.startsWith(expectedStart), "JSON was: ${json.take(50)}...")
 
-        // Also verify with a real parser (simulated by our reader)
         val reader = GhostJsonReader(json.encodeToByteArray())
         val decoded = IntArraySerializer.deserialize(reader)
         assertEquals(data.size, decoded.size)
@@ -40,7 +38,6 @@ class JsonSyntaxTest {
 
     @Test
     fun testNestedListSyntax() {
-        // List of objects (Maps) with nested lists
         val data = listOf(
             mapOf("id" to 1, "tags" to listOf("a", "b")),
             mapOf("id" to 2, "tags" to emptyList<String>()),

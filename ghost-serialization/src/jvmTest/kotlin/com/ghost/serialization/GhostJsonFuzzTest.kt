@@ -3,13 +3,12 @@ package com.ghost.serialization
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.skipValue
 
 /**
  * Coverage-guided robustness fuzzing for Ghost's two core JSON parsers —
- * [GhostJsonFlatReader] (in-memory `ByteArray`) and [GhostJsonReader] (streaming/`BufferedSource`,
+ * [GhostJsonReader] (in-memory `ByteArray`) and [GhostJsonReader] (streaming/`BufferedSource`,
  * genuinely separate hot-path implementations, not just a thin wrapper over the flat reader) —
  * mirroring `GhostYamlFuzzTest`'s approach for the YAML parser. Both
  * are hand-rolled byte-level state machines with no generated bounds-checking. The goal here is
@@ -35,7 +34,7 @@ class GhostJsonFuzzTest {
     fun fuzzSkipValueFlatReaderBytes(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostJsonFlatReader(bytes).skipValue()
+            GhostJsonReader(bytes).skipValue()
         } catch (_: GhostJsonException) {
             // Expected for malformed input — skipValue's documented contract.
         }
@@ -44,7 +43,7 @@ class GhostJsonFuzzTest {
     @FuzzTest
     fun fuzzSkipValueStreamingReaderBytes(data: FuzzedDataProvider) {
         // Separate entry point from fuzzSkipValueFlatReaderBytes: GhostJsonReader is what actual
-        // deserialization delegates to at runtime (see GhostSerializer.deserialize(GhostJsonFlatReader)),
+        // deserialization delegates to at runtime (see GhostSerializer.deserialize(GhostJsonReader)),
         // and has its own independently-implemented string/number scanning hot paths.
         val bytes = data.consumeRemainingAsBytes()
         try {
@@ -61,7 +60,7 @@ class GhostJsonFuzzTest {
         // budget on malformed UTF-8 byte sequences the two byte-level methods already cover.
         val text = data.consumeRemainingAsString()
         try {
-            GhostJsonFlatReader(text.encodeToByteArray()).skipValue()
+            GhostJsonReader(text.encodeToByteArray()).skipValue()
         } catch (_: GhostJsonException) {
             // Expected for malformed input — skipValue's documented contract.
         }

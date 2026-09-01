@@ -3,14 +3,23 @@ package com.ghost.serialization
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.nextChar
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.decodeResilient
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.hasNext
+import com.ghost.serialization.parser.streaming.nextBoolean
+import com.ghost.serialization.parser.streaming.nextChar
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.readMap
+import com.ghost.serialization.parser.streaming.selectNameAndConsume
+import com.ghost.serialization.parser.streaming.selectString
 import com.ghost.serialization.parser.common.JsonReaderOptions
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
-import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginObject as streamingBeginObject
-import com.ghost.serialization.parser.streaming.nextInt as streamingNextInt
-import com.ghost.serialization.parser.streaming.selectNameAndConsume as streamingSelectNameAndConsume
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject as stringBeginObject
 import com.ghost.serialization.parser.strings.nextInt as stringNextInt
@@ -26,7 +35,7 @@ import kotlin.test.assertTrue
 @OptIn(InternalGhostApi::class)
 class GhostJsonPathErrorTest {
 
-    private fun flat(json: String) = GhostJsonFlatReader(json.encodeToByteArray())
+    private fun flat(json: String) = GhostJsonReader(json.encodeToByteArray())
     private fun string(json: String) = GhostJsonStringReader(json)
     private fun streaming(json: String) = GhostJsonReader(json.encodeToByteArray())
 
@@ -70,11 +79,11 @@ class GhostJsonPathErrorTest {
         val options = JsonReaderOptions.of("user")
         val userOptions = JsonReaderOptions.of("age")
         val r = streaming("""{"user":{"age":"x"}}""")
-        r.streamingBeginObject()
-        assertEquals(0, r.streamingSelectNameAndConsume(options))
-        r.streamingBeginObject()
-        assertEquals(0, r.streamingSelectNameAndConsume(userOptions))
-        val ex = assertFailsWith<GhostJsonException> { r.streamingNextInt() }
+        r.beginObject()
+        assertEquals(0, r.selectNameAndConsume(options))
+        r.beginObject()
+        assertEquals(0, r.selectNameAndConsume(userOptions))
+        val ex = assertFailsWith<GhostJsonException> { r.nextInt() }
         assertEquals("$.user.age", ex.path)
         assertNotNull(ex.hint)
     }
@@ -139,7 +148,7 @@ class GhostJsonPathErrorTest {
     @Test
     fun strictUnknownFieldIncludesHint() {
         val options = JsonReaderOptions.of("id")
-        val r = GhostJsonFlatReader("""{"id":1,"extra":true}""".encodeToByteArray(), strictMode = true)
+        val r = GhostJsonReader("""{"id":1,"extra":true}""".encodeToByteArray(), strictMode = true)
         r.beginObject()
         assertEquals(0, r.selectNameAndConsume(options))
         r.nextInt()

@@ -2,7 +2,6 @@ package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
@@ -10,6 +9,7 @@ import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import okio.Buffer
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.test.Test
@@ -20,13 +20,10 @@ import kotlin.test.assertTrue
 
 
 /**
- * [StreamingGhostSource] backs every [GhostJsonReader] built from an `okio.BufferedSource`
- * (`createSourceBridge` always wraps in it), but almost nothing in the suite constructs a
- * reader that way — [NextCharTest] has the only other direct usage, with a single-character
- * payload. Its internal buffering reads [GhostJsonConstants.STREAMING_BUFFER_SIZE] (8192)
- * bytes at a time, so payloads under that size never exercise the segment-realignment
- * (`getSlow`) or cross-segment continuation branches in the scan methods below — this file
- * specifically uses payloads larger than one segment to reach them.
+ * Tests [StreamingGhostSource], the buffering layer behind every streaming [GhostJsonReader].
+ * Its window is [GhostJsonConstants.STREAMING_BUFFER_SIZE] (8192) bytes, so this file
+ * deliberately uses payloads larger than that to exercise the segment-realignment (`getSlow`)
+ * and cross-segment continuation branches that smaller payloads elsewhere never reach.
  */
 @OptIn(InternalGhostApi::class)
 class StreamingGhostSourceTest {

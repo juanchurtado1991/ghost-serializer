@@ -1,7 +1,5 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.nextChar
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextChar
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -17,7 +15,7 @@ class NextCharTest {
 
     @Test
     fun nextCharFastPathSingleAsciiOnFlatReader() {
-        val reader = GhostJsonFlatReader(quotedZ.encodeToByteArray())
+        val reader = GhostJsonReader(quotedZ.encodeToByteArray())
         assertEquals('Z', reader.nextChar())
     }
 

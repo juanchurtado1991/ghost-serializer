@@ -3,7 +3,10 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.selectNameAndConsume
 import com.ghost.serialization.types.RawJson
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -16,7 +19,7 @@ class GhostWrappedKeysCaptureTest {
     @Test
     fun materializeBuildsSyntheticWrapperObject() {
         val capture = GhostWrappedKeysCapture(2)
-        val reader = GhostJsonFlatReader(
+        val reader = GhostJsonReader(
             """{"extra1":"a","extra2":42}""".encodeToByteArray(),
         )
         reader.beginObject()

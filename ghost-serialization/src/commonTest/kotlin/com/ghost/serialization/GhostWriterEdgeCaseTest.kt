@@ -384,7 +384,6 @@ class GhostWriterEdgeCaseTest {
             block()
             throw AssertionError("Expected GhostJsonException to be thrown")
         } catch (e: GhostJsonException) {
-            // Expected
         }
     }
 }

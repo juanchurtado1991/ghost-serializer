@@ -3,7 +3,6 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import com.ghost.serialization.parser.streaming.beginObject
@@ -25,17 +24,11 @@ import kotlin.test.assertTrue
 
 
 /**
- * Correctness guards for the three hot-path optimizations shared by every reader:
- * optimistic in-order field prediction, SWAR whitespace skipping, and SWAR string
- * scanning with a deferred pool hash.
- *
- * All of them are pure speed shortcuts layered on top of the hashed dispatch and the
- * byte-at-a-time scanners, so a bug in them does not fail loudly — it silently returns
- * the wrong field index or a truncated string. Each test therefore drives the four
- * reader flavours ([GhostJsonFlatReader], the [GhostSource] reader over a [ByteArray],
- * the same reader over an Okio stream, and [GhostJsonStringReader]) through the same
- * payload and asserts identical results, so a shortcut that diverges from the fallback
- * path on any single reader is caught.
+ * Correctness guards for the hot-path shortcuts shared by every reader: optimistic
+ * in-order field prediction, SWAR whitespace skipping, and SWAR string scanning with a
+ * deferred pool hash. These are pure speed optimizations that fail silently (wrong field
+ * index, truncated string) instead of loudly, so each test drives all four reader
+ * flavours through the same payload and checks the results match.
  */
 class HotPathOptimizationsTest {
 
@@ -47,7 +40,7 @@ class HotPathOptimizationsTest {
 
     private val drivers = listOf(
         Driver("flat") { json, names ->
-            val reader = GhostJsonFlatReader(json.encodeToByteArray())
+            val reader = GhostJsonReader(json.encodeToByteArray())
             val options = JsonReaderOptions.of(*names)
             val result = LinkedHashMap<String, String>()
             reader.beginObject()

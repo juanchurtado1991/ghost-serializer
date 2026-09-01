@@ -4,9 +4,14 @@ package com.ghost.serialization
 
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.bytes.captureRawJson
-import com.ghost.serialization.parser.bytes.captureRawJsonBytes
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.captureRawJson
+import com.ghost.serialization.parser.streaming.captureRawJsonBytes
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.selectNameAndConsume
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject
 import com.ghost.serialization.parser.strings.captureRawJson
@@ -29,7 +34,7 @@ class CaptureRawJsonTest {
     @Test
     fun captureRawJsonAliasesInputBufferForStandaloneValue() {
         val json = """{"k":"v"}""".encodeToByteArray()
-        val reader = GhostJsonFlatReader(json)
+        val reader = GhostJsonReader(json)
         val captured = reader.captureRawJson()
 
         assertSame(json, captured.storage)
@@ -40,7 +45,7 @@ class CaptureRawJsonTest {
     @Test
     fun captureRawJsonBytesMaterializesCopy() {
         val json = """{"body":{"k":"v"}}""".encodeToByteArray()
-        val reader = GhostJsonFlatReader(json)
+        val reader = GhostJsonReader(json)
         reader.beginObject()
         reader.selectNameAndConsume(
             com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "body")
@@ -53,7 +58,7 @@ class CaptureRawJsonTest {
     @Test
     fun rawJsonBytesGetterCopiesSliceOnlyWhenNeeded() {
         val json = """{"meta":123}""".encodeToByteArray()
-        val reader = GhostJsonFlatReader(json)
+        val reader = GhostJsonReader(json)
         reader.beginObject()
         reader.selectNameAndConsume(
             com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "meta")

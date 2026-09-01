@@ -4,12 +4,19 @@ package com.ghost.serialization
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.beginObject
+import com.ghost.serialization.parser.streaming.consumeKeySeparator
+import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextInt
+import com.ghost.serialization.parser.streaming.nextKey
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 /**
- * Coverage-guided round-trip fuzzing for [GhostJsonFlatWriter] — the in-memory encode path every
+ * Coverage-guided round-trip fuzzing for [GhostJsonWriter] — the in-memory encode path every
  * KSP-generated serializer uses (see its own KDoc), and the counterpart to `GhostJsonFuzzTest`
  * (which only fuzzes the reader's generic `skipValue()` traversal, never the writer). Its
  * hand-rolled `writeEscaped`/string-quoting logic is example-tested by `GhostCrashProofTest`
@@ -35,9 +42,9 @@ class GhostJsonWriterFuzzTest {
         val expected = canonicalize(data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostJsonFlatWriter(byteWriter).beginObject().name("v").value(expected).endObject()
+        GhostJsonWriter(byteWriter).beginObject().name("v").value(expected).endObject()
 
-        val reader = GhostJsonFlatReader(byteWriter.toByteArray())
+        val reader = GhostJsonReader(byteWriter.toByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -55,9 +62,9 @@ class GhostJsonWriterFuzzTest {
         val expected = canonicalize(data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostJsonFlatWriter(byteWriter).beginObject().name(expected).value(1).endObject()
+        GhostJsonWriter(byteWriter).beginObject().name(expected).value(1).endObject()
 
-        val reader = GhostJsonFlatReader(byteWriter.toByteArray())
+        val reader = GhostJsonReader(byteWriter.toByteArray())
         reader.beginObject()
         val decoded = reader.nextKey()
         reader.consumeKeySeparator()
