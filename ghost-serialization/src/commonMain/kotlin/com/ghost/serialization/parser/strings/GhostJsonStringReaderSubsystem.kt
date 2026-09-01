@@ -87,7 +87,7 @@ fun GhostJsonStringReader.hasNext(): Boolean {
         internalSkip = { internalSkip(it) },
         throwError = { throwError(it) },
     )
-    if (hasMore && pathTracker.isInArray()) {
+    if (hasMore) {
         pathTracker.enterArrayElement()
     }
     return hasMore

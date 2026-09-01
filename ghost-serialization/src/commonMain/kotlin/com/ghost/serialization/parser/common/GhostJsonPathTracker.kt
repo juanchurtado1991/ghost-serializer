@@ -31,26 +31,27 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
         size = if (mark < 0) 0 else mark.coerceAtMost(size)
     }
 
+    // pushObject/pushArray don't write `keys[size]`, and pushKey/pushObject don't write
+    // `indices[size]` — formatPath() only ever reads `keys[i]` under KIND_KEY and `indices[i]`
+    // under KIND_ARRAY, so a stale value left over from a shallower frame at the same stack
+    // depth is never observed; only `kinds[size]` needs to be current for every push.
+
     fun pushKey(name: String) {
         ensureCapacity()
         kinds[size] = KIND_KEY
         keys[size] = name
-        indices[size] = 0
         size++
     }
 
     fun pushObject() {
         ensureCapacity()
         kinds[size] = KIND_OBJECT
-        keys[size] = null
-        indices[size] = 0
         size++
     }
 
     fun pushArray() {
         ensureCapacity()
         kinds[size] = KIND_ARRAY
-        keys[size] = null
         indices[size] = -1
         size++
     }
@@ -69,10 +70,7 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
 
     fun isInArray(): Boolean = size > 0 && kinds[size - 1] == KIND_ARRAY
 
-    /**
-     * After a scalar value under an object key: pop the key.
-     * Scalar elements inside an array leave the array frame in place.
-     */
+    /** After a scalar under an object key: pop the key. Array elements leave the array frame. */
     @PublishedApi
     internal fun finishScalarValue() {
         if (size > 0 && kinds[size - 1] == KIND_KEY) {

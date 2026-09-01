@@ -443,9 +443,7 @@ open class GhostJsonFlatReader(
                 }
             }
         }
-        if (pathTracker.isInArray()) {
-            pathTracker.enterArrayElement()
-        }
+        pathTracker.enterArrayElement()
         return true
     }
 
