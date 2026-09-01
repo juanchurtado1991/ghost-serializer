@@ -6,21 +6,19 @@ import com.ghost.serialization.parser.common.decodeBase64String
 
 
 /**
- * Coverage-guided robustness fuzzing for proto WKT hand-rolled, byte/char-level
- * parsers — [parseDuration], [parseTimestamp], and [decodeBase64String] all do manual digit/char
- * scanning without the bounds-checking a generated parser would get for free, and this exact
- * class of code has already produced two real bugs this session (`Long.MIN_VALUE` sign
- * corruption, non-conformant nanosecond-fraction trimming). The goal here is crash-safety, not
- * correctness — [ProtoJsonConformanceTest] already covers correctness against a reference
- * implementation for well-formed input.
+ * Coverage-guided fuzzing for proto WKT hand-rolled byte/char parsers — [parseDuration],
+ * [parseTimestamp], [decodeBase64String] — which do manual scanning with no generated
+ * bounds-checking. This exact class of code already produced two real bugs (`Long.MIN_VALUE`
+ * sign corruption, non-conformant nanosecond-fraction trimming). Goal is crash-safety;
+ * [ProtoJsonConformanceTest] covers correctness for well-formed input.
  *
- * Every case documents the one exception type malformed input is allowed to throw; anything
- * else Jazzer finds (index-out-of-bounds, arithmetic, stack overflow, hangs) is a real bug.
+ * Each case documents the one exception type malformed input may throw; anything else Jazzer
+ * finds is a real bug.
  *
- * Runs in regression mode (fixed seed corpus, JUnit-speed) as part of `ciTestJvm`. Run actual
- * fuzzing locally with `JAZZER_FUZZ=1 ./gradlew :ghost-serialization:jvmTest --tests
- * "com.ghost.serialization.proto.wkt.ProtoWktFuzzTest"` — findings are written to
- * `src/jvmTest/resources/.../<method>` and replayed automatically on every future run.
+ * Regression mode (fixed seed corpus) runs in `ciTestJvm`. For real fuzzing:
+ * `JAZZER_FUZZ=1 ./gradlew :ghost-serialization:jvmTest --tests
+ * "com.ghost.serialization.proto.wkt.ProtoWktFuzzTest"` — findings land in
+ * `src/jvmTest/resources/.../<method>` and replay automatically after.
  */
 class ProtoWktFuzzTest {
 
@@ -56,8 +54,8 @@ class ProtoWktFuzzTest {
 
     @FuzzTest
     fun fuzzFormatDurationRoundTrip(data: FuzzedDataProvider) {
-        // Round-trip property, not just crash-safety: any (seconds, nanos) pair that satisfies
-        // ProtoDuration's own sign-coherence invariant must format and re-parse back to itself.
+        // Round-trip, not crash-safety: any (seconds, nanos) satisfying ProtoDuration's
+        // sign-coherence invariant must format and re-parse back to itself.
         val seconds = data.consumeLong()
         val nanos = data.consumeInt(-999_999_999, 999_999_999)
         if ((seconds > 0 && nanos < 0) || (seconds < 0 && nanos > 0)) return
