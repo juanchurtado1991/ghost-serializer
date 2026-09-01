@@ -10,12 +10,16 @@ package com.ghost.serialization.parser.common
  * - **Key** — object field name (after a successful select / [nextKey])
  * - **Object** — anonymous `{` frame (so nested [endObject] does not pop a parent key)
  * - **Array** — element index (`-1` = before first element; [enterArrayElement] advances)
+ *
+ * Each stack frame packs its kind and (for array frames) its element index into one `Int`
+ * (`slots[i]`) instead of two parallel arrays — bits 0-1 are the kind tag, bits 2-31 are the
+ * array index biased by +1 (so the `-1` "before first element" sentinel maps to `0` and needs
+ * no sign bit). `keys` stays a separate array since it holds references.
  */
 @PublishedApi
 internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
-    private var kinds: ByteArray = ByteArray(initialCapacity)
+    private var slots: IntArray = IntArray(initialCapacity)
     private var keys: Array<String?> = arrayOfNulls(initialCapacity)
-    private var indices: IntArray = IntArray(initialCapacity)
     private var size: Int = 0
 
     @PublishedApi
@@ -31,49 +35,50 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
         size = if (mark < 0) 0 else mark.coerceAtMost(size)
     }
 
-    // pushObject/pushArray don't write `keys[size]`, and pushKey/pushObject don't write
-    // `indices[size]` — formatPath() only ever reads `keys[i]` under KIND_KEY and `indices[i]`
-    // under KIND_ARRAY, so a stale value left over from a shallower frame at the same stack
-    // depth is never observed; only `kinds[size]` needs to be current for every push.
+    // pushObject/pushArray don't write `keys[size]`, and pushKey/pushObject leave the index
+    // bits of `slots[size]` at zero — formatPath() only ever reads `keys[i]` under KIND_KEY and
+    // the index bits under KIND_ARRAY, so a stale value left over from a shallower frame at the
+    // same stack depth is never observed; only the kind tag needs to be current for every push.
 
     fun pushKey(name: String) {
         ensureCapacity()
-        kinds[size] = KIND_KEY
+        slots[size] = KIND_KEY
         keys[size] = name
         size++
     }
 
     fun pushObject() {
         ensureCapacity()
-        kinds[size] = KIND_OBJECT
+        slots[size] = KIND_OBJECT
         size++
     }
 
     fun pushArray() {
         ensureCapacity()
-        kinds[size] = KIND_ARRAY
-        indices[size] = -1
+        slots[size] = KIND_ARRAY // biased index 0 == actual index -1
         size++
     }
 
     /** Call when [hasNext] returns true inside an array, or before each [readList] element. */
     @PublishedApi
     internal fun enterArrayElement() {
-        if (size == 0 || kinds[size - 1] != KIND_ARRAY) return
+        if (size == 0) return
         val i = size - 1
-        if (indices[i] < 0) {
-            indices[i] = 0
-        } else {
-            indices[i]++
+        val slot = slots[i]
+        if (slot and KIND_MASK != KIND_ARRAY) return
+        // ushr (not shr): the biased index is logically unsigned and its top bit sets once it
+        // approaches MAX_BIASED_INDEX, which would sign-extend under an arithmetic shift.
+        val biased = slot ushr INDEX_SHIFT
+        if (biased < MAX_BIASED_INDEX) {
+            slots[i] = slot + INDEX_UNIT
         }
+        // else: clamp — stop advancing rather than wrap; formatPath renders the capped index.
     }
-
-    fun isInArray(): Boolean = size > 0 && kinds[size - 1] == KIND_ARRAY
 
     /** After a scalar under an object key: pop the key. Array elements leave the array frame. */
     @PublishedApi
     internal fun finishScalarValue() {
-        if (size > 0 && kinds[size - 1] == KIND_KEY) {
+        if (size > 0 && (slots[size - 1] and KIND_MASK) == KIND_KEY) {
             size--
         }
     }
@@ -82,10 +87,10 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
      * After [endObject]: pop the `{` frame, then the owning key if this object was a field value.
      */
     fun finishObjectValue() {
-        if (size > 0 && kinds[size - 1] == KIND_OBJECT) {
+        if (size > 0 && (slots[size - 1] and KIND_MASK) == KIND_OBJECT) {
             size--
         }
-        if (size > 0 && kinds[size - 1] == KIND_KEY) {
+        if (size > 0 && (slots[size - 1] and KIND_MASK) == KIND_KEY) {
             size--
         }
     }
@@ -95,10 +100,10 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
      */
     @PublishedApi
     internal fun finishArrayValue() {
-        if (size > 0 && kinds[size - 1] == KIND_ARRAY) {
+        if (size > 0 && (slots[size - 1] and KIND_MASK) == KIND_ARRAY) {
             size--
         }
-        if (size > 0 && kinds[size - 1] == KIND_KEY) {
+        if (size > 0 && (slots[size - 1] and KIND_MASK) == KIND_KEY) {
             size--
         }
     }
@@ -107,7 +112,8 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
         if (size == 0) return ROOT
         val sb = StringBuilder(ROOT)
         for (i in 0 until size) {
-            when (kinds[i]) {
+            val slot = slots[i]
+            when (slot and KIND_MASK) {
                 KIND_KEY -> {
                     val name = keys[i] ?: continue
                     if (isSimpleName(name)) {
@@ -117,9 +123,9 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
                     }
                 }
                 KIND_ARRAY -> {
-                    val index = indices[i]
-                    if (index >= 0) {
-                        sb.append('[').append(index).append(']')
+                    val biased = slot ushr INDEX_SHIFT
+                    if (biased > 0) {
+                        sb.append('[').append(biased - INDEX_BIAS).append(']')
                     }
                 }
                 // KIND_OBJECT: no path segment
@@ -129,17 +135,21 @@ internal class GhostJsonPathTracker(initialCapacity: Int = 16) {
     }
 
     private fun ensureCapacity() {
-        if (size < kinds.size) return
-        val newSize = kinds.size * 2
-        kinds = kinds.copyOf(newSize)
+        if (size < slots.size) return
+        val newSize = slots.size * 2
+        slots = slots.copyOf(newSize)
         keys = keys.copyOf(newSize)
-        indices = indices.copyOf(newSize)
     }
 
     private companion object {
-        const val KIND_KEY: Byte = 0
-        const val KIND_ARRAY: Byte = 1
-        const val KIND_OBJECT: Byte = 2
+        const val KIND_MASK = 0b11
+        const val INDEX_SHIFT = 2
+        const val INDEX_UNIT = 1 shl INDEX_SHIFT
+        const val INDEX_BIAS = 1
+        const val KIND_KEY = 0
+        const val KIND_ARRAY = 1
+        const val KIND_OBJECT = 2
+        const val MAX_BIASED_INDEX = (1 shl (Int.SIZE_BITS - INDEX_SHIFT)) - 1
         const val ROOT = "$"
 
         fun isSimpleName(name: String): Boolean {
