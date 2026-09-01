@@ -11,11 +11,9 @@ import okio.ByteString
 
 
 /**
- * High-performance [GhostSource] backed by an in-memory [ByteArray].
- *
- * Contains all loop-unrolled hot-path scanning logic shared across every platform.
- * JVM and Android subclass this to override [decodeJsonStringRange] with a faster
- * ASCII decoder; all other platforms use this class directly.
+ * [GhostSource] backed by an in-memory [ByteArray]; holds the loop-unrolled scanning
+ * logic shared across platforms. JVM/Android subclass this to override
+ * [decodeJsonStringRange] with a faster ASCII decoder; other platforms use it directly.
  */
 @InternalGhostApi
 open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {

@@ -20,8 +20,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  *
  * Indexes a reused [CharArray] of UTF-16 code units — hot structure/select/number work never
  * UTF-8-encodes the document. Bridge helpers ([ensureUtf8Bytes], [sliceUtf8Bytes],
- * [captureRawJsonBytes]) encode lazily once per [reset] when a byte-oriented API is needed.
- *
+ * [captureRawJsonBytes]) encode lazily once per [reset] only when a byte API is needed.
  * Sibling of the byte flat reader (`GhostJsonFlatReader`) and the streaming `GhostJsonReader`.
  */
 class GhostJsonStringReader(
@@ -456,12 +455,10 @@ class GhostJsonStringReader(
         val hexByte2 = chars[currentPosition + 2].code
         val hexByte3 = chars[currentPosition + 3].code
 
-        // Unlike the byte-based readers (bytes are inherently 0..255), a Char's .code here can be
-        // any UTF-16 code unit up to 65535 — a non-Latin-1 char right after `\u` (e.g. a literal
-        // CJK character) would index past HEX_LUT's 256 entries. Bounds-check rather than index
-        // directly, same as ProtoJsonFlatReaderBase64's LUT lookups — found by fuzzing
-        // (`GhostJsonStringChannelFuzzTest`): a raw high-code-point char there threw
-        // ArrayIndexOutOfBoundsException instead of the documented parse error.
+        // Unlike byte readers (0..255), a Char's .code can be any UTF-16 unit up to 65535 — a
+        // non-Latin-1 char after `\u` would index past HEX_LUT's 256 entries. Bounds-check
+        // instead of indexing directly (found by fuzzing: raw high-code-point char threw
+        // ArrayIndexOutOfBoundsException instead of the documented parse error).
         val hexLookupTable = C.HEX_LUT
         val lutSize = hexLookupTable.size
         val digitValue0 = if (hexByte0 < lutSize) hexLookupTable[hexByte0] else -1

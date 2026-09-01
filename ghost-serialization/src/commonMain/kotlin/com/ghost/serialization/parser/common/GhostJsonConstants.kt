@@ -4,10 +4,7 @@ import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.pow
 
 
-/**
- * Central repository for all constants used by the Ghost JSON parser and writer.
- * Constants are organized by their role in the serialization lifecycle.
- */
+/** Constants used by the Ghost JSON parser and writer, grouped by role. */
 object GhostJsonConstants {
 
     // --- Error Messages ---
@@ -121,43 +118,20 @@ object GhostJsonConstants {
     const val ESC_T_INT = 116
 
     // --- Case-Folded ASCII Byte Constants ---
-    // Each constant is `'X'.code or 32` where 32 = CASE_INSENSITIVE_MASK.
-    // Folding sets bit 5 of the byte, which turns any ASCII uppercase letter into
-    // its lowercase equivalent. Allows zero-allocation case-insensitive comparisons:
-    //   `(rawByte or CASE_INSENSITIVE_MASK) == FOLD_X`
+    // Each constant is `'X'.code or 32` (32 = CASE_INSENSITIVE_MASK): folding bit 5 turns
+    // uppercase into lowercase, enabling zero-allocation compares: `(rawByte or CASE_INSENSITIVE_MASK) == FOLD_X`.
 
-    /** Case-folded byte for 'T' / 't'. Used in "true". */
-    const val FOLD_T = 't'.code or 32
-
-    /** Case-folded byte for 'R' / 'r'. Used in "true". */
-    const val FOLD_R = 'r'.code or 32
-
-    /** Case-folded byte for 'U' / 'u'. Used in "true". */
-    const val FOLD_U = 'u'.code or 32
-
-    /** Case-folded byte for 'E' / 'e'. Used in "true", "false", "yes". */
-    const val FOLD_E = 'e'.code or 32
-
-    /** Case-folded byte for 'F' / 'f'. Used in "false", "off". */
-    const val FOLD_F = 'f'.code or 32
-
-    /** Case-folded byte for 'A' / 'a'. Used in "false". */
-    const val FOLD_A = 'a'.code or 32
-
-    /** Case-folded byte for 'L' / 'l'. Used in "false". */
-    const val FOLD_L = 'l'.code or 32
-
-    /** Case-folded byte for 'S' / 's'. Used in "false", "yes". */
-    const val FOLD_S = 's'.code or 32
-
-    /** Case-folded byte for 'Y' / 'y'. Used in "yes", "y". */
-    const val FOLD_Y = 'y'.code or 32
-
-    /** Case-folded byte for 'N' / 'n'. Used in "no", "n". */
-    const val FOLD_N = 'n'.code or 32
-
-    /** Case-folded byte for 'O' / 'o'. Used in "on", "no", "off". */
-    const val FOLD_O = 'o'.code or 32
+    const val FOLD_T = 't'.code or 32 // "true"
+    const val FOLD_R = 'r'.code or 32 // "true"
+    const val FOLD_U = 'u'.code or 32 // "true"
+    const val FOLD_E = 'e'.code or 32 // "true", "false", "yes"
+    const val FOLD_F = 'f'.code or 32 // "false", "off"
+    const val FOLD_A = 'a'.code or 32 // "false"
+    const val FOLD_L = 'l'.code or 32 // "false"
+    const val FOLD_S = 's'.code or 32 // "false", "yes"
+    const val FOLD_Y = 'y'.code or 32 // "yes", "y"
+    const val FOLD_N = 'n'.code or 32 // "no", "n"
+    const val FOLD_O = 'o'.code or 32 // "on", "no", "off"
 
     /** String lengths used as a fast gate before byte-level coercion matching. */
     const val BOOL_STR_LEN_1 = 1   // "y", "n", "1", "0"
@@ -320,21 +294,18 @@ object GhostJsonConstants {
     const val WRITER_SCRATCH_SIZE = 512
 
     /**
-     * Initial capacity of `GhostJsonStringReader.slowPathChars`
-     * for decoding escaped JSON strings. Grows on demand; kept as a constant (not a heuristic)
-     * because escape decode is rare and the size only amortizes the first few escapes.
+     * Initial capacity of `GhostJsonStringReader.slowPathChars`. Grows on demand; kept as a
+     * constant (not a heuristic) since escape decode is rare and this only amortizes the first few.
      */
     const val STRING_ESCAPE_SCRATCH_SIZE = 256
 
     const val INITIAL_WRITE_BUFFER_SIZE = 8 * 1024
 
     /**
-     * Streaming window size (bytes) copied out of the Okio buffer per
-     * [com.ghost.serialization.parser.streaming.StreamingGhostSource] slow-path refill, and the sliding-consume retain margin
-     * (see [com.ghost.serialization.parser.streaming.StreamingGhostSource.releaseBefore]).
-     * Kept at one Okio segment (8 KB): larger windows did not improve Decode(Streaming)
-     * throughput and raised both allocated KB/op and peak retained Okio prefix
-     * (retain = 1× window behind the reader).
+     * Bytes copied from the Okio buffer per [com.ghost.serialization.parser.streaming.StreamingGhostSource]
+     * slow-path refill (also the sliding-consume retain margin, see `.releaseBefore`).
+     * Kept at one Okio segment (8 KB): larger windows didn't improve throughput and raised
+     * both allocated KB/op and peak retained Okio prefix.
      */
     const val STREAMING_BUFFER_SIZE = 8192
 
@@ -643,9 +614,9 @@ object GhostJsonConstants {
     }
 
     /**
-     * Maximum string length for the plain-ASCII writeQuotedAscii fast-path.
-     * Strings longer than this still fall through to the scratch-buffer escape path.
-     * Chosen to be larger than the scratch buffer so every short JSON string benefits.
+     * Max string length for the plain-ASCII writeQuotedAscii fast-path (longer strings fall
+     * through to the scratch-buffer escape path). Larger than the scratch buffer so every
+     * short JSON string benefits.
      */
     const val PLAIN_ASCII_FAST_PATH_LIMIT = 512
 

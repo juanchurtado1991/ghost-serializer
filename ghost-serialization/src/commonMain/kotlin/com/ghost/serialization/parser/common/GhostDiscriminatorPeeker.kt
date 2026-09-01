@@ -25,13 +25,8 @@ import okio.ByteString
 object GhostDiscriminatorPeeker {
 
     /**
-     * Attempts to find the value of [key] in the JSON object starting at [start].
-     * Returns the value as a string, or null if not found or if the object is too complex.
-     *
-     * This method decides the branch (Streaming vs Array) once and enters a zero-cost
-     * modular implementation.
-     *
-     * Used by KSP-generated serializers for polymorphic deserialization.
+     * Finds the value of [key] in the JSON object starting at [start] without full parsing,
+     * for KSP-generated polymorphic deserializers. Returns null if not found or too complex.
      */
     fun peek(
         source: GhostSource,

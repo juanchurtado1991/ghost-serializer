@@ -8,14 +8,11 @@ import okio.ByteString
 
 
 /**
- * Core data source abstraction for the Ghost JSON parser.
+ * Data source abstraction letting the parser operate on both [ByteArray] and streaming
+ * `okio.BufferedSource` through one API.
  *
- * This interface allows the parser to operate on both [ByteArray] and streaming `okio.BufferedSource`
- * with a unified, high-performance API.
- *
- * **Key Constraints:**
- * - Implementations MUST return bytes as [Int] values in the range 0-255 (unsigned).
- * - This prevents sign-extension bugs and allows direct comparisons with [GhostJsonConstants].
+ * Implementations MUST return bytes as [Int] in 0-255 (unsigned) — prevents sign-extension
+ * bugs and allows direct comparisons with [GhostJsonConstants].
  */
 @InternalGhostApi
 interface GhostSource {
@@ -54,31 +51,22 @@ interface GhostSource {
     fun findNextNonWhitespace(position: Int, limit: Int): Int
 
     /**
-     * Finds the closing quote (") starting from [position], stopping at [limit].
-     *
-     * This is a "Fast-Path" scan:
-     * - Returns the position of the closing quote.
-     * - Returns -1 if it hits a backslash (\) or control character, signaling that the
-     *   parser must switch to the "Slow-Path" ( StringBuilder/escaping logic).
+     * Fast-path scan for the closing quote from [position] to [limit]. Returns -1 on a
+     * backslash or control character, signaling the parser must fall back to the slow
+     * (escaping) path.
      */
     fun findClosingQuote(position: Int, limit: Int): Int
 
     /**
-     * Scans for the closing quote while calculating a rolling hash in a single pass.
-     *
-     * This is the "Ultra-Fast-Path" for string reading:
-     * - Returns the rolling hash (low 31 bits) AND the length (high 32 bits) if successful.
-     * - Returns -1L if an escape sequence or control character is encountered.
+     * Ultra-fast-path: scans for the closing quote while computing a rolling hash in one
+     * pass. Returns the rolling hash (low 31 bits) and length (high 32 bits) packed into a
+     * Long, or -1L if an escape/control character is hit.
      */
     fun scanString(start: Int, limit: Int): Long
 
-
     /**
-     * Compares the source bytes against a cached [String] instance.
-     *
-     * This optimization is crucial for the [GhostJsonReader] string pool.
-     * It allows checking if a pool-cached string matches the source bytes WITHOUT
-     * allocating a new [String] for the comparison.
+     * Compares source bytes against a cached [String] without allocating a new String for
+     * the comparison — used by the [GhostJsonReader] string pool.
      */
     fun contentEqualsString(start: Int, length: Int, expected: String): Boolean
 }

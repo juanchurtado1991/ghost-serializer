@@ -207,11 +207,9 @@ internal inline fun finalizeParsedDouble(
 }
 
 /**
- * Parses the body of a JSON floating-point number (integer digits, optional fraction,
- * optional exponent) after the numeric header and leading-zero check.
- *
- * Digit runs are walked inside this core via [getByte]/[setPosition] (same allocation-safe
- * shape as [parseIntDigitsCore]) — do not pass nested `readDigitRun` callbacks.
+ * Parses a JSON float body (int digits, optional fraction, optional exponent) after the
+ * header/leading-zero check. Digit runs walk via [getByte]/[setPosition] (same allocation-safe
+ * shape as [parseIntDigitsCore]) — don't pass nested `readDigitRun` callbacks.
  */
 internal inline fun <R> parseJsonFloatingBodyCore(
     precisionLimit: Int,
@@ -275,10 +273,9 @@ internal inline fun <R> parseJsonFloatingBodyCore(
 }
 
 /**
- * Skips the body of a JSON number (integer / fraction / exponent) after the numeric header.
- *
- * Flat and string readers share this path via [getByte]. Streaming keeps its own
- * [readNumericLoop]-based skip to avoid cross-buffer coupling in this helper.
+ * Skips a JSON number body (integer/fraction/exponent) after the numeric header. Flat and
+ * string readers share this via [getByte]; streaming keeps its own [readNumericLoop]-based
+ * skip to avoid cross-buffer coupling here.
  */
 internal inline fun skipNumberBodyCore(
     getPosition: () -> Int,
@@ -363,11 +360,10 @@ internal inline fun skipNumberBodyCore(
 }
 
 /**
- * Accumulates an [Int] from a digit run with overflow checks and early-exit when a
- * fractional/exponent separator appears (caller rewinds and parses as floating).
- *
- * The digit walk lives in this core (same shape as [skipNumberBodyCore]) so call sites
- * stay monomorphic after inlining — avoid nested function-type callbacks that can allocate.
+ * Accumulates an [Int] from a digit run with overflow checks; early-exits on a
+ * fractional/exponent separator (caller rewinds and parses as floating). Digit walk lives
+ * in this core (same shape as [skipNumberBodyCore]) to stay monomorphic after inlining —
+ * avoid nested function-type callbacks that can allocate.
  */
 internal inline fun parseIntDigitsCore(
     isNegative: Boolean,

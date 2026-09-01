@@ -1,6 +1,5 @@
 package com.ghost.serialization.parser.common
 
-import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -10,9 +9,8 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * Decodes a standard or URL-safe Base64 string (with or without `=` padding) into raw bytes.
  *
  * Operates on an already-materialized Kotlin [String] (e.g. from `reader.nextString()`), so
- * it works from any reader flavor (streaming [GhostJsonReader], flat [GhostJsonFlatReader],
- * [GhostJsonStringReader]) — unlike a scratch-buffer-pooled decoder tied to a specific byte
- * buffer implementation.
+ * it works from any reader flavor ([GhostJsonReader] or [GhostJsonStringReader]) — unlike a
+ * scratch-buffer-pooled decoder tied to a specific byte buffer implementation.
  *
  * @throws IllegalArgumentException if [value] contains a non-alphabet, non-whitespace character.
  */

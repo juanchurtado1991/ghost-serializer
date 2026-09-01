@@ -24,11 +24,9 @@ internal inline fun <T> withPreparedUtf8Json(
     if (limit <= 0) return block(bytes, 0, 0)
 
     val firstByte = bytes[0].toInt() and C.BYTE_MASK
-    // Fast path: a JSON text in UTF-8 begins with an ASCII structural/value byte
-    // (`{` `[` `"` whitespace, digit, `t`/`f`/`n`/`-`) that is neither a BOM lead
-    // byte nor a NUL, immediately followed by a non-NUL byte. UTF-16/32 always
-    // interleave NULs for these ASCII code points, so this check alone rules them
-    // out with two comparisons and no allocation.
+    // Fast path: UTF-8 JSON starts with an ASCII structural/value byte, not a BOM lead or
+    // NUL, followed by a non-NUL byte. UTF-16/32 always interleave NULs for ASCII code
+    // points, so this rules them out in two comparisons, no allocation.
     if (firstByte != UTF8_BOM_0 && firstByte != UTF16_BE_BOM_0 &&
         firstByte != UTF16_LE_BOM_0 && firstByte != NUL_BYTE &&
         (limit < UTF16_UNIT_SIZE || (bytes[1].toInt() and C.BYTE_MASK) != NUL_BYTE)

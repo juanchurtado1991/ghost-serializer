@@ -4,10 +4,7 @@ import java.lang.invoke.MethodHandles
 import java.nio.ByteOrder
 
 
-/**
- * Native-order `byte[]`→`long` view. Plain [java.lang.invoke.VarHandle.get] permits unaligned
- * access, letting the JIT emit a single (possibly misaligned) 64-bit load on x86/ARM.
- */
+/** Native-order `byte[]`→`long` view. Plain `get` permits unaligned access, so the JIT can emit a single (possibly misaligned) 64-bit load on x86/ARM. */
 private val LONG_VIEW = MethodHandles.byteArrayViewVarHandle(
     LongArray::class.java,
     ByteOrder.nativeOrder(),

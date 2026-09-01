@@ -9,14 +9,11 @@ import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * Shared UTF-8 slow path for quoted JSON strings that contain escapes.
- *
- * Used by flat ([com.ghost.serialization.parser.bytes.GhostJsonFlatReader]) and streaming
- * ([com.ghost.serialization.parser.streaming.GhostJsonReader]) byte readers. The string
- * ([CharArray]) reader keeps a separate Char-based path.
- *
- * Reader-specific state is supplied via inlined adapters so each call site stays monomorphic
- * after inlining.
+ * Shared UTF-8 slow path for quoted JSON strings containing escapes. Used by flat
+ * ([com.ghost.serialization.parser.bytes.GhostJsonFlatReader]) and streaming
+ * ([com.ghost.serialization.parser.streaming.GhostJsonReader]) byte readers; the
+ * [CharArray] string reader keeps its own Char-based path. Reader state is supplied via
+ * inlined adapters so each call site stays monomorphic after inlining.
  */
 internal inline fun readQuotedStringSlowCore(
     start: Int,

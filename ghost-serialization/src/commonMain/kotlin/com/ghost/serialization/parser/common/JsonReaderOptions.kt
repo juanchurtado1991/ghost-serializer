@@ -6,21 +6,12 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
- * Dispatch options for optimized JSON field identification.
- * Uses a 4-byte hashing engine to minimize collisions during field lookup.
+ * Dispatch options for optimized JSON field identification; uses a 4-byte hashing engine
+ * to minimize collisions during field lookup.
  *
- * [rawBytes] stores field names as raw [ByteArray] instead of Okio ByteString
- * so that [verifyKeyMatch] can compare bytes directly without virtual dispatch
- * or redundant bounds checks inside Okio's `rangeEquals`.
- *
- * [rawChars] stores the same names as [CharArray] for the String-channel
- * [verifyKeyMatch], avoiding per-character [String.get] / coder checks on the
- * hot key-match path.
- *
- * @property rawBytes Array of field names represented as raw byte arrays (UTF-8).
- * @property shift The bit-shift amount used to normalize key distributions.
- * @property multiplier The prime multiplier used to spread key entropy across the address space.
- * @property rawStrings Array of field names as original strings.
+ * [rawBytes] stores field names as raw [ByteArray] (not Okio ByteString) so [verifyKeyMatch]
+ * compares bytes directly, no virtual dispatch or Okio `rangeEquals` bounds checks.
+ * [rawChars] mirrors [rawStrings] as [CharArray] for the same reason on the String channel.
  */
 class JsonReaderOptions(
     val rawBytes: Array<ByteArray>,
@@ -31,10 +22,7 @@ class JsonReaderOptions(
     @PublishedApi internal val enableStringDispatch: Boolean = false,
     @PublishedApi internal val extendedKeyHash: Boolean? = null
 ) {
-    /**
-     * Field names as [CharArray], built once from [rawStrings].
-     * Used exclusively by the String-channel key matcher.
-     */
+    /** Field names as [CharArray], built once from [rawStrings]; used by the String-channel key matcher. */
     @PublishedApi
     internal val rawChars: Array<CharArray> = Array(rawStrings.size) { i ->
         rawStrings[i].toCharArray()

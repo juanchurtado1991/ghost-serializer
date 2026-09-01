@@ -7,64 +7,51 @@ import com.ghost.serialization.parser.common.GhostHeuristics.maxWarmWriteBufferC
 
 
 /**
- * Platform-specific heuristics to balance performance and memory usage.
- * Using 'expect' allows us to tune Ghost for different environments (JVM vs Mobile).
+ * Platform-specific heuristics ('expect') to tune perf/memory tradeoffs per environment.
  *
- * Debt: [maxCollectionSize] and related caps differ by actual (Android tighter than JVM/Native/Wasm);
- * not a single cross-platform constant. Registry discovery is separate
- * ([com.ghost.serialization.discoverRegistries]) — iOS/Wasm discovery is empty and requires
- * manual [com.ghost.serialization.Ghost.addRegistry].
+ * [maxCollectionSize] and related caps differ per platform (Android tighter than
+ * JVM/Native/Wasm), not a single cross-platform constant. Registry discovery
+ * ([com.ghost.serialization.discoverRegistries]) is empty on iOS/Wasm and needs manual
+ * [com.ghost.serialization.Ghost.addRegistry].
  */
 @InternalGhostApi
 expect object GhostHeuristics {
-    /**
-     * The initial capacity for ArrayLists and HashMaps during deserialization.
-     * Prevents excessive resizing.
-     */
+    /** Initial capacity for ArrayLists/HashMaps during deserialization; avoids resizing. */
     val initialCollectionCapacity: Int
 
-    /**
-     * The maximum length of a string to be pooled.
-     * Prevents large payloads from polluting the heap.
-     */
+    /** Max length of a string to be pooled; keeps large payloads off the heap. */
     val maxStringPoolLength: Int
 
     /**
-     * The maximum number of items allowed in a collection (List/Map) during deserialization.
-     * Security limit to prevent DoS via memory exhaustion.
-     *
-     * Platform defaults differ (e.g. Android 50k, Native/Wasm 500k, JVM 1M); not unified.
+     * Max items allowed in a List/Map during deserialization (DoS limit).
+     * Platform defaults differ (e.g. Android 50k, Native/Wasm 500k, JVM 1M).
      */
     val maxCollectionSize: Int
 
-    /**
-     * The maximum distance to scan for a discriminator before giving up.
-     */
+    /** Max distance to scan for a discriminator before giving up. */
     val maxDiscriminatorPeekDistance: Int
 
     /**
-     * Max retained capacity for `FlatByteArrayWriter` after `FlatByteArrayWriter.reset`.
-     * Larger encoded payloads can reuse the grown buffer on the same thread; capacity above this is released.
+     * Max retained capacity for `FlatByteArrayWriter` after `.reset`; capacity above
+     * this is released instead of kept for reuse on the same thread.
      */
     val maxWarmWriteBufferCapacity: Int
 
     /**
-     * Max retained capacity for `FlatCharArrayWriter` after
-     * `FlatCharArrayWriter.reset`.
-     * Deliberately smaller than [maxWarmWriteBufferCapacity] because the char writer only
-     * serves `ghostInternalEncodeToString` — producing text output — and very large String
-     * payloads are rare compared to binary encoding workloads.
+     * Max retained capacity for `FlatCharArrayWriter` after `.reset`. Smaller than
+     * [maxWarmWriteBufferCapacity] since the char writer only serves
+     * `ghostInternalEncodeToString`, where huge String outputs are rare.
      */
     val maxWarmCharWriteBufferCapacity: Int
 
     /**
-     * When true, [com.ghost.serialization.Ghost.encodeToString] serializes through the UTF-8
-     * flat writer and converts the bytes to a [String], instead of [GhostJsonStringWriter] +
+     * When true, [com.ghost.serialization.Ghost.encodeToString] goes through the UTF-8
+     * flat writer + byte-to-String conversion instead of [GhostJsonStringWriter] +
      * `CharArray.concatToString`.
      *
-     * Wasm: resolved at runtime — **true** on JavaScriptCore (Safari / iOS), where the char
-     * writer collapses (~3× behind kotlinx.serialization encode); **false** on V8 (Chrome)
-     * where the char writer stays ahead. JVM/Android/Native always false.
+     * Wasm-only, resolved at runtime: true on JavaScriptCore (Safari/iOS), where the char
+     * writer collapses (~3x behind kotlinx.serialization); false on V8 (Chrome). Other
+     * platforms are always false.
      */
     val encodeToStringViaUtf8Bytes: Boolean
 }
