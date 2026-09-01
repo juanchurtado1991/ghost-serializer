@@ -17,19 +17,22 @@ fun main(args: Array<String>) {
     val json = generateNeutralJson(complex)
     val bytes = json.encodeToByteArray()
 
-    val decode: () -> ComplexResponse = when (mode) {
+    val op: () -> Any = when (mode) {
         "bytes" -> { -> Ghost.deserialize<ComplexResponse>(bytes) }
         "string" -> { -> Ghost.deserialize<ComplexResponse>(json) }
         "streaming" -> { -> Ghost.deserializeStreaming<ComplexResponse>(Buffer().write(bytes)) }
+        "write-bytes" -> { -> Ghost.encodeToBytes(complex) }
+        "write-string" -> { -> Ghost.encodeToString(complex) }
+        "write-streaming" -> { -> Ghost.serialize(Buffer(), complex) }
         else -> error("Unknown mode: $mode")
     }
 
-    repeat(warmup) { decode() }
+    repeat(warmup) { op() }
 
     val roundNanos = LongArray(ROUNDS)
     repeat(ROUNDS) { r ->
         val start = System.nanoTime()
-        repeat(perRound) { decode() }
+        repeat(perRound) { op() }
         roundNanos[r] = (System.nanoTime() - start) / perRound
     }
     roundNanos.sort()
