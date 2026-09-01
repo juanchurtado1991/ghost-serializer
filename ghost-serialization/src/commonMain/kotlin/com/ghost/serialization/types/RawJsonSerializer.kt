@@ -11,7 +11,6 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.captureRawJson
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
@@ -30,10 +29,6 @@ object RawJsonSerializer : GhostSerializer<RawJson> {
         reader.captureRawJson()
 
     override fun serialize(writer: GhostJsonWriter, value: RawJson) {
-        writer.rawValue(value)
-    }
-
-    override fun serialize(writer: GhostJsonFlatWriter, value: RawJson) {
         writer.rawValue(value)
     }
 

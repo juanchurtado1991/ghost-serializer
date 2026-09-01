@@ -13,15 +13,11 @@ import kotlin.reflect.KClass
  */
 object RawJsonDecode {
 
-    /**
-     * Parses this opaque JSON into [T] without copying the slice when it aliases a parent buffer.
-     */
+    /** Parses this opaque JSON into [T] without copying the slice when it aliases a parent buffer. */
     inline fun <reified T : Any> decode(raw: RawJson): T =
         decode(raw, T::class)
 
-    /**
-     * Parses this opaque JSON with an explicit [serializer].
-     */
+    /** Parses this opaque JSON with an explicit [serializer]. */
     fun <T : Any> decode(raw: RawJson, serializer: GhostSerializer<T>): T {
         if (raw.storageOffset == 0 && raw.storageLength == raw.storage.size) {
             return Ghost.deserialize(serializer, raw.storage)

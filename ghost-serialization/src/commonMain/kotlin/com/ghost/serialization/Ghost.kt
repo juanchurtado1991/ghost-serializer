@@ -57,7 +57,7 @@ import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
@@ -102,7 +102,8 @@ expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader)
 expect fun <T> ghostInternalUseStringReader(json: String, block: (GhostJsonStringReader) -> T): T
 
 /**
- * Runs a block of operations using a pooled [GhostJsonFlatReader] instance.
+ * Runs a block of operations using a pooled zero-copy [GhostJsonFlatReader] instance
+ * over a flat [ByteArray] (no Okio streaming).
  */
 expect fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
@@ -116,46 +117,35 @@ expect fun <T> ghostInternalUseFlatReader(
 expect fun <T> ghostInternalUseSource(source: BufferedSource, block: (GhostJsonReader) -> T): T
 
 /**
- * Encodes via the pooled in-memory [GhostJsonStringWriter] and returns the
- * result as a [String]. The string writer holds a contiguous [CharArray]
- * (no Okio segments), so the returned string is built directly from the
- * produced char slice with minimal allocations.
+ * Encodes via the pooled in-memory [GhostJsonStringWriter] and returns the result as a [String],
+ * built directly from the writer's contiguous char slice (no Okio segments) with minimal allocations.
  */
 @InternalGhostApi
 expect inline fun ghostInternalEncodeToString(crossinline block: (GhostJsonStringWriter) -> Unit): String
 
 /**
- * Pools the in-memory [GhostJsonFlatWriter] per-thread and returns the
- * encoded bytes. Use this when you need a [ByteArray] result without the
- * overhead of going through [String].
- *
- * The writer is reset (`needsComma=false, depth=0`) before each call; its
- * scratch buffer is kept warm (not released) to avoid pool round-trips
- * between requests.
+ * Pools the in-memory writer per-thread and returns the encoded bytes, avoiding the overhead
+ * of going through [String]. The writer's scratch buffer is kept warm (not released) between calls.
  */
 @InternalGhostApi
-expect inline fun ghostInternalEncodeWithWriter(crossinline block: (GhostJsonFlatWriter) -> Unit): ByteArray
+expect inline fun ghostInternalEncodeWithWriter(crossinline block: (GhostJsonWriter) -> Unit): ByteArray
 
 /**
- * Serializes via the pooled [GhostJsonFlatWriter] but discards the output
+ * Serializes via the pooled in-memory writer but discards the output
  * without allocating a result [ByteArray]. Useful for warm-up / JIT priming
  * where the encoded bytes are not needed.
  */
 @InternalGhostApi
-expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (GhostJsonFlatWriter) -> Unit)
+expect inline fun ghostInternalEncodeAndDiscard(crossinline block: (GhostJsonWriter) -> Unit)
 
 /**
- * Encodes through the pooled [GhostJsonFlatWriter] and drains the resulting
- * contiguous payload to [sink] in a single bulk write. This is the fast path
- * for `Ghost.serialize(sink, value)` — every byte-level operation goes
- * through the monomorphic flat writer (no per-byte Okio segment dispatch),
- * and the final flush is a single [BufferedSink.write] call which Okio
- * implements as a few `System.arraycopy`s into its segment buffer.
+ * Encodes through the pooled in-memory writer and drains the result to [sink] in a single bulk
+ * write — the fast path for `Ghost.serialize(sink, value)`, avoiding per-byte Okio segment dispatch.
  */
 @InternalGhostApi
 expect inline fun ghostInternalEncodeAndDrainTo(
     sink: BufferedSink,
-    crossinline block: (GhostJsonFlatWriter) -> Unit
+    crossinline block: (GhostJsonWriter) -> Unit
 )
 
 /**
@@ -180,9 +170,8 @@ object Ghost {
 
     /**
      * Fast-path lock-free cache mapping a full [KType] (e.g., generic collections like `List<Int>`)
-     * to its resolved [GhostSerializer].
-     * Annotated with `@PublishedApi` because it is accessed by public inline functions.
-     * Kept separate from [serializerCache] to prevent generic types from colliding on the same [KClass].
+     * to its resolved [GhostSerializer]. Kept separate from [serializerCache] so generic types
+     * don't collide on the same [KClass].
      */
     @PublishedApi
     internal val typeCache = createAtomicMap<KType, GhostSerializer<*>>()
@@ -210,12 +199,10 @@ object Ghost {
     private fun <T : Any> getSerializerFromRegistries(
         clazz: KClass<T>
     ): GhostSerializer<T>? {
-        // 1. Check manual registries
         for (registry in mutableRegistries) {
             registry.getSerializer(clazz)?.let { return it }
         }
 
-        // 2. Check discovered registries
         val disc = _discoveredRegistries
             ?: discoverRegistries().also { _discoveredRegistries = it }
 
@@ -228,21 +215,14 @@ object Ghost {
 
     /**
      * Helper utility to raise a serialization-related exception.
-     *
-     * @param message The detailed error message.
-     * @throws IllegalArgumentException always thrown with the specified message.
      */
     fun throwError(message: String): Nothing {
         throw IllegalArgumentException(message)
     }
 
     /**
-     * Registers a new [GhostRegistry] manually.
-     *
-     * Manual registration is particularly critical on platforms like iOS (Kotlin/Native)
-     * and JS/Wasm where automated discovery via ServiceLoader is unavailable.
-     *
-     * @param registry The registry instance containing the generated serializers to register.
+     * Registers a new [GhostRegistry] manually. Critical on platforms like iOS and JS/Wasm
+     * where automated ServiceLoader discovery is unavailable.
      */
     fun addRegistry(registry: GhostRegistry) {
         runSynchronized(lock) {
@@ -275,12 +255,8 @@ object Ghost {
     }
 
     /**
-     * Resolves a [GhostSerializer] instance for the specified class [clazz].
-     * Checks primitives first, then the fast-path cache, and falls back to
-     * registered modules if necessary.
-     *
-     * @param clazz The [KClass] of the type to resolve the serializer for.
-     * @return The matching [GhostSerializer], or `null` if no serializer is found.
+     * Resolves a [GhostSerializer] for [clazz]. Checks primitives first, then the fast-path
+     * cache, and falls back to registered modules if necessary.
      */
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
         // Fast path for primitives
@@ -427,16 +403,12 @@ object Ghost {
     }
 
     /**
-     * Resolves a [GhostSerializer] instance for the specified type [type],
-     * handling generic type arguments for parameterized classes like lists and maps.
-     *
-     * @param type The [KType] representing the type of the data structure.
-     * @return The matching [GhostSerializer], or `null` if no serializer is found.
+     * Resolves a [GhostSerializer] for [type], handling generic type arguments for
+     * parameterized classes like lists and maps.
      */
     fun getSerializer(type: KType): GhostSerializer<Any>? {
         val classifier = type.classifier
 
-        // Special handling for parameterized collections
         if (classifier == List::class || classifier == Map::class || classifier == Set::class) {
             val cached = typeCache[type]
             if (cached != null) {
@@ -457,7 +429,7 @@ object Ghost {
                         val itemSerializer = getSerializer(itemType)
                             ?: return@runSynchronized null
 
-                        if (itemSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
+                        if (itemSerializer is GhostYamlSerializer<*>) {
                             com.ghost.serialization.yaml.serializer.GhostYamlListSerializer(
                                 itemSerializer
                             )
@@ -487,7 +459,7 @@ object Ghost {
                         val valueSerializer = getSerializer(valueType)
                             ?: return@runSynchronized null
 
-                        if (valueSerializer is com.ghost.serialization.yaml.contract.GhostYamlSerializer<*>) {
+                        if (valueSerializer is GhostYamlSerializer<*>) {
                             com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer(
                                 valueSerializer
                             )
@@ -548,14 +520,8 @@ object Ghost {
     }
 
     /**
-     * Encodes [value] and writes the resulting JSON payload into [sink].
-     *
-     * Employs the zero-allocation [GhostJsonFlatWriter] internally to format the data
-     * into a contiguous scratch buffer and flushes it in a single block write.
-     * This avoids Okio segment management and virtual dispatch overhead on the hot path.
-     *
-     * @param sink The Okio sink to write the JSON payload to.
-     * @param value The value to serialize.
+     * Encodes [value] and writes the resulting JSON payload into [sink]. Uses the zero-allocation
+     * in-memory writer, flushed in a single block write to avoid Okio segment overhead.
      */
     inline fun <reified T : Any> serialize(sink: BufferedSink, value: T) {
         val serializer = resolveSerializer<T>()
@@ -577,9 +543,6 @@ object Ghost {
 
     /**
      * Convenience alias for [encodeToString] to maintain compatibility with standard APIs.
-     *
-     * @param value The value to serialize.
-     * @return The serialized JSON string.
      */
     inline fun <reified T : Any> serialize(value: T): String {
         return encodeToString(value)
@@ -589,12 +552,8 @@ object Ghost {
      * Serializes [value] to an in-memory JSON string.
      *
      * On Wasm JavaScriptCore (`GhostHeuristics.encodeToStringViaUtf8Bytes`), uses the UTF-8
-     * flat writer + platform UTF-8→String conversion — JSC’s `CharArray.concatToString` path is
-     * a known encode cliff (#16). Chrome/V8 and JVM/Android/Native keep the pooled
-     * [GhostJsonStringWriter].
-     *
-     * @param value The value to serialize.
-     * @return The serialized JSON string.
+     * flat writer + platform UTF-8→String conversion — JSC's `CharArray.concatToString` path is
+     * a known encode cliff (#16). Other targets keep the pooled [GhostJsonStringWriter].
      */
     inline fun <reified T : Any> encodeToString(value: T): String {
         val serializer = resolveSerializer<T>()
@@ -617,13 +576,8 @@ object Ghost {
     }
 
     /**
-     * Serializes [value] to an in-memory JSON byte array representation.
-     *
-     * Skips intermediate string formatting/decoding steps by exposing the raw
-     * UTF-8 bytes directly.
-     *
-     * @param value The value to serialize.
-     * @return A [ByteArray] containing the serialized JSON UTF-8 payload.
+     * Serializes [value] to an in-memory JSON [ByteArray], skipping intermediate
+     * string formatting/decoding steps.
      */
     inline fun <reified T : Any> encodeToBytes(value: T): ByteArray {
         val serializer = resolveSerializer<T>()
@@ -644,12 +598,8 @@ object Ghost {
     }
 
     /**
-     * Serializes [value] through the pooled [GhostJsonFlatWriter] and discards
-     * the output. No [BufferedSink] allocation, no Okio wrapper objects.
-     *
+     * Serializes [value] through the pooled in-memory writer and discards the output.
      * Public API for frameworks / JIT warm-up; may not be referenced from this module.
-     *
-     * @param value The value to serialize.
      */
     @Suppress("unused")
     inline fun <reified T : Any> encodeAndDiscard(value: T) {
@@ -664,8 +614,6 @@ object Ghost {
     /**
      * Deserializes the JSON [json] string into an instance of type [T].
      *
-     * @param json The JSON string representation of the object.
-     * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
      */
     inline fun <reified T : Any> deserialize(json: String): T {
@@ -676,10 +624,6 @@ object Ghost {
 
     /**
      * Deserializes the JSON [json] string using a pre-resolved [serializer].
-     *
-     * @param serializer The pre-resolved serializer.
-     * @param json The JSON string representation of the object.
-     * @return A reconstructed instance of type [T].
      */
     fun <T : Any> deserialize(serializer: GhostSerializer<T>, json: String): T {
         return ghostInternalUseStringReader(json) { reader ->
@@ -690,22 +634,10 @@ object Ghost {
     /**
      * Deserializes JSON data from an Okio [BufferedSource] into an instance of type [T].
      *
-     * **⚠️ Not suitable for payloads larger than ~10 MB.**
+     * Loads the entire stream into heap via `source.request(Long.MAX_VALUE)` (~2× payload size
+     * peak RAM) — not suitable for payloads over ~10 MB; use [deserializeStreaming] instead.
      *
-     * This method calls `source.request(Long.MAX_VALUE)` internally, which forces Okio to
-     * download the **entire stream into heap memory** before parsing begins. The peak RAM usage
-     * is approximately **2× the payload size** (one copy in Okio's buffer, one in the scratch
-     * array). On constrained environments such as Android, this will cause an OutOfMemoryError
-     * for large files even if the individual buffers would fit, due to heap fragmentation.
-     *
-     * For payloads that may exceed available heap, use [deserializeStreaming] instead — it reads
-     * in ~8 KB Okio segments and keeps memory usage constant regardless of file size.
-     *
-     * @param source The [BufferedSource] containing the JSON payload. Must be a bounded stream
-     *   whose total size fits comfortably within the available heap (recommended < 10 MB).
-     * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or the structure is invalid.
-     * @see deserializeStreaming for O(1)-memory streaming of large files.
      */
     inline fun <reified T : Any> deserialize(source: BufferedSource): T {
         source.request(Long.MAX_VALUE)
@@ -729,17 +661,10 @@ object Ghost {
     }
 
     /**
-     * Deserializes JSON data from an Okio [BufferedSource] using true O(1)-memory streaming.
+     * Deserializes JSON from [source] using true O(1)-memory streaming — Okio paginates in ~8 KB
+     * segments rather than loading the whole payload into memory, unlike [deserialize]. Prefer
+     * [deserialize] for normal-sized payloads (faster flat-array parsing).
      *
-     * Unlike [deserialize], this method does **not** load the entire file into memory.
-     * Okio paginates the source in ~8 KB segments on demand, making it safe for database
-     * dumps or JSON files of hundreds of megabytes with a constant memory footprint.
-     *
-     * Use [deserialize] for normal REST payloads (faster flat-array parsing).
-     * Use this method when file size may exceed available heap.
-     *
-     * @param source The BufferedSource stream containing the JSON payload.
-     * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException if the JSON payload is malformed or structure is invalid.
      */
     inline fun <reified T : Any> deserializeStreaming(source: BufferedSource): T {
@@ -760,12 +685,9 @@ object Ghost {
     }
 
     /**
-     * Deserializes the JSON [bytes] array into an instance of type [T].
+     * Deserializes the JSON [bytes] array into an instance of type [T]. Uses the flat reader
+     * ([GhostJsonFlatReader]), same engine as the options overload.
      *
-     * Uses the flat reader ([GhostJsonFlatReader]), same engine as the options overload.
-     *
-     * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
-     * @return A reconstructed instance of type [T].
      * @throws com.ghost.serialization.exception.GhostJsonException
      * if the JSON payload is malformed or structure is invalid.
      */
@@ -790,10 +712,6 @@ object Ghost {
 
     /**
      * Advanced: Deserializes the JSON [json] string using custom parser settings.
-     *
-     * @param json The JSON string representation of the object.
-     * @param options A configuration lambda to set reader properties.
-     * @return A reconstructed instance of type [T].
      */
     inline fun <reified T : Any> deserialize(
         json: String,
@@ -807,10 +725,6 @@ object Ghost {
 
     /**
      * Advanced: Deserializes JSON data from a [BufferedSource] stream using custom parser settings.
-     *
-     * @param source The BufferedSource stream containing the JSON payload.
-     * @param options A configuration lambda to set reader properties.
-     * @return A reconstructed instance of type [T].
      */
     inline fun <reified T : Any> deserialize(
         source: BufferedSource,
@@ -828,10 +742,6 @@ object Ghost {
      * Uses the same flat reader as [deserialize] `(bytes)` so `strictMode` /
      * `coerceStringsToNumbers` apply on the hot path. For true streaming from a
      * [BufferedSource], use [deserializeStreaming] or the source+options overload.
-     *
-     * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
-     * @param options A configuration lambda to set [GhostJsonFlatReader] properties.
-     * @return A reconstructed instance of type [T].
      */
     inline fun <reified T : Any> deserialize(
         bytes: ByteArray,
@@ -847,10 +757,7 @@ object Ghost {
      * Non-inline variant of [deserialize] that decodes a [ByteArray] into the specified [clazz].
      * Public API for frameworks (Spring, Retrofit) where reified types are unavailable.
      *
-     * @param bytes A [ByteArray] containing the JSON UTF-8 payload.
-     * @param clazz The KClass of the target type to deserialize.
      * @param limit The byte length boundary of the payload inside [bytes].
-     * @return A reconstructed instance of type [T].
      */
     @Suppress("unused")
     fun <T : Any> decodeFromBytes(bytes: ByteArray, clazz: KClass<T>, limit: Int = bytes.size): T {
@@ -865,10 +772,6 @@ object Ghost {
     /**
      * Non-inline variant of [deserialize] that decodes a [BufferedSource] stream into the specified [clazz].
      * Useful in reflection or framework integration contexts where reified types are unavailable.
-     *
-     * @param source The BufferedSource stream containing the JSON payload.
-     * @param clazz The KClass of the target type to deserialize.
-     * @return A reconstructed instance of type [T].
      */
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T {
         source.request(Long.MAX_VALUE)
@@ -896,9 +799,6 @@ object Ghost {
 
     /**
      * Encodes [value] and writes it directly to [sink]. Alias for [serialize].
-     *
-     * @param sink The Okio sink to write the JSON payload to.
-     * @param value The value to serialize.
      */
     inline fun <reified T : Any> encodeToSink(sink: BufferedSink, value: T) {
         serialize(sink, value)
@@ -908,10 +808,6 @@ object Ghost {
      * Non-inline variant of [encodeToSink] for contexts where the type is known
      * only as a [KClass] at runtime.
      * Public API for frameworks (Spring HttpMessageConverter, Retrofit adapters).
-     *
-     * @param sink The Okio sink to write the JSON payload to.
-     * @param value The value to serialize.
-     * @param clazz The KClass of the target type to serialize.
      */
     @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
@@ -931,7 +827,7 @@ object Ghost {
     }
 
     /**
-     * Helper deserialize routine for KSP generated serializers.
+     * Helper deserialize routine for KSP generated serializers using the flat in-memory reader.
      */
     inline fun <reified T : Any> deserialize(reader: GhostJsonFlatReader): T {
         val serializer = resolveSerializer<T>()

@@ -1,6 +1,4 @@
 package com.ghost.serialization.util
 
-/**
- * Platform identification for Ghost Serialization.
- */
+/** True when running on the JVM. */
 expect val isJvm: Boolean

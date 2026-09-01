@@ -22,10 +22,7 @@ internal expect fun getLocalPool(): GhostPool
 @PublishedApi
 internal val SCRATCH_BUFFER_SIZE_INT = SCRATCH_BUFFER_SIZE
 
-/**
- * Provides access to reusable buffers to minimize allocations during hot paths.
- * Tiered strategy handles small, medium, and large payloads efficiently.
- */
+/** Acquires a reusable buffer of at least [minSize] from the tiered pool, minimizing hot-path allocations. */
 @InternalGhostApi
 fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
     val pool = getLocalPool()
@@ -94,9 +91,7 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
     }
 }
 
-/**
- * Releases a buffer back to the pool.
- */
+/** Releases a buffer back to the pool. */
 @InternalGhostApi
 fun releaseScratchBuffer(buffer: ByteArray) {
     val pool = getLocalPool()

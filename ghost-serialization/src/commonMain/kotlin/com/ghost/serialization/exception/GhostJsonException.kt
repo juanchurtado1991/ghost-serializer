@@ -4,31 +4,17 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * Exception type thrown for JSON parsing/encoding errors.
+ * Exception for JSON parsing/encoding errors.
  *
- * To keep the failure path cheap (the parser may raise this exception in tight
- * loops while probing payloads), [line] and [column] are computed lazily — the
- * O(N) scan over the source bytes is only paid if the caller actually reads
- * either property or accesses [message].
- *
- * [path] is a JSONPath (e.g. `$.user.age`) maintained by JSON readers via a
- * lightweight breadcrumb stack; the path string is formatted only when the
- * exception is constructed, not on the successful hot path.
- *
- * [hint] is an optional fix suggestion derived from the error kind (similar in spirit
- * to kotlinx.serialization's actionable hints). Omitted when there is no clear fix.
+ * [line]/[column] are computed lazily: the parser can raise this in tight probing
+ * loops, so the O(N) source scan only runs if a caller actually reads them.
  */
 class GhostJsonException @InternalGhostApi internal constructor(
     private val baseMessage: String,
     private val computeLineCol: () -> IntArray,
-    /**
-     * JSONPath where the parsing/encoding error occurred (e.g. `$.user.addresses[1].zip`).
-     * Defaults to `"$"` when the error is at the document root or path is unknown.
-     */
+    /** JSONPath of the error (e.g. `$.user.addresses[1].zip`); `"$"` if root/unknown. */
     val path: String = "$",
-    /**
-     * Optional developer-facing suggestion for how to fix or diagnose the failure.
-     */
+    /** Optional developer-facing fix suggestion. */
     val hint: String? = null,
 ) : RuntimeException() {
 
@@ -52,9 +38,7 @@ class GhostJsonException @InternalGhostApi internal constructor(
             }
         }
 
-    /**
-     * Constructs a [GhostJsonException] with an explicit line, column, path, and optional hint.
-     */
+    /** Constructs with an explicit line, column, path, and optional hint. */
     @OptIn(InternalGhostApi::class)
     constructor(
         message: String,

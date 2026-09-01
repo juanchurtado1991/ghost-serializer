@@ -1,7 +1,5 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.InternalGhostApi
-
 /**
  * Converts a UTF-8 byte range to a [String].
  *

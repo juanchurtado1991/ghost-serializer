@@ -8,7 +8,7 @@ import com.ghost.serialization.parser.common.prepareUtf8JsonSource
 import com.ghost.serialization.parser.common.withPreparedUtf8Json
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
-import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.bytes.WriterSinkPair
 import com.ghost.serialization.writer.strings.FlatCharArrayWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
@@ -130,7 +130,7 @@ actual inline fun ghostInternalEncodeToString(
 
 @InternalGhostApi
 actual inline fun ghostInternalEncodeWithWriter(
-    crossinline block: (GhostJsonFlatWriter) -> Unit
+    crossinline block: (GhostJsonWriter) -> Unit
 ): ByteArray {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
@@ -143,7 +143,7 @@ actual inline fun ghostInternalEncodeWithWriter(
 
 @InternalGhostApi
 actual inline fun ghostInternalEncodeAndDiscard(
-    crossinline block: (GhostJsonFlatWriter) -> Unit
+    crossinline block: (GhostJsonWriter) -> Unit
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
@@ -153,7 +153,7 @@ actual inline fun ghostInternalEncodeAndDiscard(
 @InternalGhostApi
 actual inline fun ghostInternalEncodeAndDrainTo(
     sink: okio.BufferedSink,
-    crossinline block: (GhostJsonFlatWriter) -> Unit
+    crossinline block: (GhostJsonWriter) -> Unit
 ) {
     val pair = acquireFlatWriterPair()
     block(pair.writer)

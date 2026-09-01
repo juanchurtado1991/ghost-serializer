@@ -9,7 +9,7 @@ import kotlin.js.JsAny
  * Uses [JsAny] for `Uint8Array` so this module does not need the kotlinx-browser / WebGL
  * typed-array dependency.
  */
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 @InternalGhostApi
 internal actual fun ghostUtf8BytesToString(bytes: ByteArray, offset: Int, length: Int): String {
     if (length <= 0) return ""
@@ -22,13 +22,13 @@ internal actual fun ghostUtf8BytesToString(bytes: ByteArray, offset: Int, length
     return textDecodeUtf8(u8, length)
 }
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private var cachedUtf8View: JsAny? = null
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private var cachedUtf8ViewLength: Int = 0
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun acquireUtf8View(length: Int): JsAny {
     if (cachedUtf8View != null && cachedUtf8ViewLength >= length) {
         return cachedUtf8View!!
@@ -41,14 +41,14 @@ private fun acquireUtf8View(length: Int): JsAny {
     return grown
 }
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun newUint8Array(size: Int): JsAny = js("new Uint8Array(size)")
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun textDecodeUtf8(bytes: JsAny, length: Int): String =
     js("new TextDecoder('utf-8').decode(bytes.length === length ? bytes : bytes.subarray(0, length))")
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun u8Set(arr: JsAny, index: Int, value: Int) {
     js("arr[index] = value")
 }
