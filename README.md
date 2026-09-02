@@ -96,6 +96,16 @@ Twitter macro (**631 KB**) decode:
 
 ---
 
+## Tested against the spec, not just against itself
+
+- **Reader**: **96.06%** of [yaml-test-suite](https://github.com/yaml/yaml-test-suite)'s conformance cases decode exactly right (268/279) — every gap tracked by case ID and reason in-repo, none silently skipped.
+- **Writer**: **100%** round-trip (decode → encode → decode returns the same tree) across every case the reader accepts; **96.26%** of the re-encoded output is also accepted by an independent second parser ([kaml](https://github.com/charleskorn/kaml)) as a cross-check, not just by Ghost's own reader.
+- **Fuzzing**: every JSON/YAML reader and writer has coverage-guided fuzz testing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)) — the accumulated crash corpus replays on every CI run, no open crashes.
+
+Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-conformance)
+
+---
+
 ## Docs
 
 [Quick Start](docs/wiki/quick-start.md) ·
@@ -108,7 +118,8 @@ Twitter macro (**631 KB**) decode:
 [Proto3 JSON](docs/wiki/usage-protobuf.md) ·
 [Advanced](docs/wiki/advanced-features.md) ·
 [Architecture](docs/wiki/architecture.md) ·
-[Contributing](docs/wiki/contributing.md)
+[Contributing](docs/wiki/contributing.md) ·
+[Support & Versioning](SUPPORT.md)
 
 ## License
 
