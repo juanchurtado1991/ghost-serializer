@@ -1,13 +1,13 @@
 package com.ghost.benchmark
 
 /** Relative Ghost÷KSER advantage degradation tolerated on the fast profile only. */
-private const val FAST_REGRESSION_TOLERANCE: Double = 0.20
+private const val FAST_REGRESSION_TOLERANCE: Double = 0.15
 
 /**
  * Benchmark workload shape selected via JVM property `ghost.benchmark.profile`.
  *
  * - [FULL] (default) — **source of truth** for README baselines and release/merge gates (±10%).
- * - [FAST] — smoke gate only (±20%, ~5× fewer iterations). Prefer [FULL] when results disagree.
+ * - [FAST] — smoke gate only (±15%, ~5× fewer iterations). Prefer [FULL] when results disagree.
  */
 internal enum class BenchmarkProfile(
     val warmupIterations: Int,

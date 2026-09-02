@@ -97,27 +97,27 @@ object RegressionCalculator {
      * Split Gradle tasks: `benchmarkSynthetic` / `benchmarkTwitter`.
      */
     private val BASELINES: List<Baseline> = listOf(
-        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1930.3, 1129.0, 361.2, 1337.6),
+        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1829.3, 1090.9, 361.2, 1337.6),
 
-        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1601.5, 653.8, 621.2, 4297.0),
+        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1514.3, 661.6, 621.2, 4297.0),
 
-        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 831.3, 300.9, 1268.7, 1904.9),
+        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 818.3, 303.0, 1268.6, 1904.9),
 
-        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4157.3, 2994.8, 1074.3, 972.1),
-        Baseline(TWITTER, ENCODE_BYTES, Metric.THROUGHPUT, 2341.8, 1226.5, 420.2, 2206.8),
-        Baseline(TWITTER, ENCODE_STREAMING, Metric.THROUGHPUT, 2325.2, 1436.1, 426.9, 455.0),
+        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4445.4, 3129.4, 1074.3, 981.6),
+        Baseline(TWITTER, ENCODE_BYTES, Metric.THROUGHPUT, 2330.2, 1227.7, 420.2, 2216.3),
+        Baseline(TWITTER, ENCODE_STREAMING, Metric.THROUGHPUT, 2310.5, 1576.3, 426.9, 464.5),
 
-        Baseline(LIST_MEDIUM, MODE_STRING, Metric.LATENCY, 1.0, 2.590, 33.9, 113.9),
-        Baseline(LIST_MEDIUM, MODE_BYTES, Metric.LATENCY, 1.0, 2.296, 24.5, 113.9),
-        Baseline(LIST_MEDIUM, MODE_STREAMING, Metric.LATENCY, 1.0, 3.939, 24.5, 113.9),
+        Baseline(LIST_MEDIUM, MODE_STRING, Metric.LATENCY, 1.0, 2.565, 33.9, 113.9),
+        Baseline(LIST_MEDIUM, MODE_BYTES, Metric.LATENCY, 1.0, 2.452, 24.5, 113.9),
+        Baseline(LIST_MEDIUM, MODE_STREAMING, Metric.LATENCY, 1.0, 4.383, 24.5, 113.9),
 
-        Baseline(SYNC_FULL, MODE_STRING, Metric.LATENCY, 1.0, 2.180, 240.3, 1009.3),
-        Baseline(SYNC_FULL, MODE_BYTES, Metric.LATENCY, 1.0, 2.011, 158.3, 1009.3),
-        Baseline(SYNC_FULL, MODE_STREAMING, Metric.LATENCY, 1.0, 3.749, 222.7, 1073.8),
+        Baseline(SYNC_FULL, MODE_STRING, Metric.LATENCY, 1.0, 2.196, 240.3, 1009.3),
+        Baseline(SYNC_FULL, MODE_BYTES, Metric.LATENCY, 1.0, 2.102, 158.3, 1009.3),
+        Baseline(SYNC_FULL, MODE_STREAMING, Metric.LATENCY, 1.0, 3.897, 222.7, 1073.8),
 
-        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 2.103, 92.7, 202.6),
-        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.736, 92.7, 263.9),
-        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.635, 32.3, 141.2),
+        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 1.736, 92.7, 202.6),
+        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.431, 92.6, 263.9),
+        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.573, 32.2, 141.2),
     )
 
     private data class Row(
