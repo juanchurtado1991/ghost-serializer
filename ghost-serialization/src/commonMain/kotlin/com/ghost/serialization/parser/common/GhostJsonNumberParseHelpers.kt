@@ -172,8 +172,14 @@ internal inline fun finalizeParsedFloat(
     throwError: (String) -> Nothing,
 ): Float {
     var result = mantissa.toFloat()
-    if (exponent != 0) {
+    if (exponent > 0) {
         result *= getFloatPowerOfTen(exponent)
+    } else if (exponent < 0) {
+        // Divide by the exact positive power instead of multiplying by a precomputed
+        // reciprocal (1/10^n is itself not exactly representable for n >= 1) — division
+        // by an exact operand is correctly rounded, multiplication by the inexact
+        // reciprocal compounds rounding error (e.g. 98.6 -> 98.60000000000001).
+        result /= getFloatPowerOfTen(-exponent)
     }
     if (isNegative) {
         result = -result
@@ -194,8 +200,12 @@ internal inline fun finalizeParsedDouble(
     throwError: (String) -> Nothing,
 ): Double {
     var result = mantissa.toDouble()
-    if (exponent != 0) {
+    if (exponent > 0) {
         result *= getDoublePowerOfTen(exponent)
+    } else if (exponent < 0) {
+        // See finalizeParsedFloat: divide by the exact positive power rather than
+        // multiplying by the precomputed (inexact) reciprocal.
+        result /= getDoublePowerOfTen(-exponent)
     }
     if (isNegative) {
         result = -result
